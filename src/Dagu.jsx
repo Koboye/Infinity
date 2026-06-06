@@ -1393,24 +1393,8 @@ const QRCodePage = ({ user, onClose }) => (
 // MAIN APP
 // ============================================
 export default function DaguFixedApp() {
-  import { useAuth } from "./context/AuthContext.jsx";  // inside DaguFixedApp: const { user: firebaseUser } = useAuth(); const [currentUser, setCurrentUser] = useState(null);useEffect(() => {
-  if (firebaseUser && users.length > 0) {
-    const match = users.find(u => u.email === firebaseUser.email);
-    setCurrentUser(match || {
-      id: firebaseUser.uid,
-      username: firebaseUser.displayName || firebaseUser.email.split('@')[0],
-      email: firebaseUser.email,
-      avatar: (firebaseUser.displayName || firebaseUser.email)[0].toUpperCase(),
-      avatarColor: '#FF2D55',
-      verified: false,
-      bio: 'Dagu user',
-      followers: [], following: [],
-      coins: 0, walletBalance: 0,
-      level: 1, subscription: 'free'
-    });
-  }
-}, [firebaseUser, users]);
   const [users, setUsers] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
   const [videos, setVideos] = useState([]);
   const [friends, setFriends] = useState([]);
   const [activeTab, setActiveTab] = useState('home');
@@ -1424,7 +1408,6 @@ export default function DaguFixedApp() {
   const [showQRCode, setShowQRCode] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [followed, setFollowed] = useState([]);
-  // FIX: user profile modal state
   const [viewingProfile, setViewingProfile] = useState(null);
 
   const showToast = useCallback((message, type = 'info') => setToast({ message, type }), []);
@@ -1461,25 +1444,19 @@ export default function DaguFixedApp() {
   const handleLogout = () => { setCurrentUser(null); showToast('Logged out', 'info'); };
   const toggleFollow = (userId) => setFollowed(prev => prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]);
   
-  // FIX: open user profile by userId
   const handleViewProfile = (userId) => {
     const user = users.find(u => u.id === userId);
     if (user) setViewingProfile(user);
   };
 
-  // Navigate to inbox and open conversation
   const handleMessage = (userId) => {
     setActiveTab('inbox');
   };
 
- if (!currentUser) {
-  return (
-    <div style={{height:'100dvh',display:'flex',alignItems:'center',justifyContent:'center',background:'#0a0a0a'}}>
-      <div style={{color:'white',fontSize:16}}>Loading...</div>
-    </div>
-  );
-}
-        {toast && <Toast {...toast} onClose={() => setToast(null)} />}
+  if (!currentUser) {
+    return (
+      <div style={{height:'100dvh',display:'flex',alignItems:'center',justifyContent:'center',background:'#0a0a0a'}}>
+        <AuthScreen onLogin={handleLogin} onSignup={handleSignup} />
       </div>
     );
   }
@@ -1511,7 +1488,6 @@ export default function DaguFixedApp() {
       {showSoundLibrary && <SoundLibraryPage onSelectSound={s => { showToast?.(`Selected: ${s.name}`, 'success'); setShowSoundLibrary(false); }} onClose={() => setShowSoundLibrary(false)} />}
       {showQRCode && <QRCodePage user={currentUser} onClose={() => setShowQRCode(false)} />}
       {showAnalytics && <CreatorAnalytics user={currentUser} videos={videos} onClose={() => setShowAnalytics(false)} />}
-      {/* FIX: User profile modal */}
       {viewingProfile && <UserProfileModal user={viewingProfile} currentUser={currentUser} onClose={() => setViewingProfile(null)} onFollow={toggleFollow} onMessage={uid => { handleMessage(uid); setViewingProfile(null); }} onVoiceCall={uid => { const u = users.find(uu=>uu.id===uid); setShowCall({ type:'audio', contactName:u?.username, contactAvatar:u?.avatar }); setViewingProfile(null); }} onVideoCall={uid => { const u = users.find(uu=>uu.id===uid); setShowCall({ type:'video', contactName:u?.username, contactAvatar:u?.avatar }); setViewingProfile(null); }} followed={followed} showToast={showToast} />}
 
       {/* Stories */}
