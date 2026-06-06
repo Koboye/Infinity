@@ -1393,7 +1393,23 @@ const QRCodePage = ({ user, onClose }) => (
 // MAIN APP
 // ============================================
 export default function DaguFixedApp() {
-  const [currentUser, setCurrentUser] = useState(null);
+  import { useAuth } from "./context/AuthContext.jsx";  // inside DaguFixedApp: const { user: firebaseUser } = useAuth(); const [currentUser, setCurrentUser] = useState(null);useEffect(() => {
+  if (firebaseUser && users.length > 0) {
+    const match = users.find(u => u.email === firebaseUser.email);
+    setCurrentUser(match || {
+      id: firebaseUser.uid,
+      username: firebaseUser.displayName || firebaseUser.email.split('@')[0],
+      email: firebaseUser.email,
+      avatar: (firebaseUser.displayName || firebaseUser.email)[0].toUpperCase(),
+      avatarColor: '#FF2D55',
+      verified: false,
+      bio: 'Dagu user',
+      followers: [], following: [],
+      coins: 0, walletBalance: 0,
+      level: 1, subscription: 'free'
+    });
+  }
+}, [firebaseUser, users]);
   const [users, setUsers] = useState([]);
   const [videos, setVideos] = useState([]);
   const [friends, setFriends] = useState([]);
