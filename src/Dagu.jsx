@@ -1,6 +1,8 @@
 // DaguFixed.jsx - FINAL VERSION WITH FRIENDS VISIBILITY
 import React, { useState, useEffect, useRef, useCallback, memo, useMemo } from 'react';
 import emailjs from '@emailjs/browser';
+import { db } from './firebase';
+import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } from 'firebase/firestore';
 emailjs.init('U9fs25Bcx5oQ6A2ru');
 const LOGIN_METHODS = [
   { id: 'facebook', name: 'Facebook', icon: '📘', color: '#1877f2' },
