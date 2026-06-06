@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef, useCallback, memo, useMemo } from 'react';
 import emailjs from '@emailjs/browser';
 import { db } from './firebase';
-import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, getDocs, where, doc, setDoc } from 'firebase/firestore';
 emailjs.init('U9fs25Bcx5oQ6A2ru');
 const LOGIN_METHODS = [
   { id: 'facebook', name: 'Facebook', icon: '📘', color: '#1877f2' },
@@ -1693,76 +1693,69 @@ export default function DaguFixedApp() {
 
   const showToast = useCallback((message, type = 'info') => setToast({ message, type }), []);
 
-  // Initialize demo data
-  useEffect(() => {
-    const demoUsers = [
-      { id: 'u1', username: 'alex_wonders', email: 'alex@example.com', avatar: 'A', avatarColor: '#FF2D55', verified: true, bio: '✨ Content creator & storyteller', followers: ['u2'], following: ['u2'], coins: 5000, walletBalance: 5000, level: 10, streak: 30, subscription: 'pro' },
-      { id: 'u2', username: 'jordan_taylor', email: 'jordan@example.com', avatar: 'J', avatarColor: '#00C7BE', verified: false, bio: '📱 Making content every day', followers: ['u1'], following: ['u1'], coins: 1000, walletBalance: 1000, level: 3, streak: 5, subscription: 'free' },
-      { id: 'u3', username: 'sam_creates', email: 'sam@example.com', avatar: 'S', avatarColor: '#AF52DE', verified: true, bio: '🎨 Artist & Creator', followers: [], following: [], coins: 3000, walletBalance: 3000, level: 7, streak: 12, subscription: 'plus' },
-    ];
-    setUsers(demoUsers);
-    setFriends(['u2']);
-    setFollowed(['u2']);
+ useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'users'), snap => {
+      setUsers(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
     setVideos([
       { id: 'v1', userId: 'u2', username: 'jordan_taylor', avatar: 'J', avatarColor: '#00C7BE', verified: false, description: 'Check this out! 🔥 #fyp #trending', song: 'Sunset Dreams', songId: 's1', videoUrl: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4', likes: 1502, comments: 89, shares: 45, views: 10000, hashtags: ['#fyp','#trending'], category: 'foryou', createdAt: new Date() },
       { id: 'v2', userId: 'u1', username: 'alex_wonders', avatar: 'A', avatarColor: '#FF2D55', verified: true, description: 'Golden hour magic ✨ #viral #lifestyle', song: 'Creative Flow', songId: 's2', videoUrl: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4', likes: 5001, comments: 234, shares: 120, views: 50000, hashtags: ['#viral','#lifestyle'], category: 'foryou', createdAt: new Date() },
       { id: 'v3', userId: 'u3', username: 'sam_creates', avatar: 'S', avatarColor: '#AF52DE', verified: true, description: 'Art process ✏️ #art #creative', song: 'Urban Vibes', songId: 's3', videoUrl: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFunflies.mp4', likes: 3200, comments: 156, shares: 89, views: 25000, hashtags: ['#art','#creative'], category: 'foryou', createdAt: new Date() },
     ]);
+    setFriends([]);
+    setFollowed([]);
+    return () => unsub();
   }, []);
 
-  const handleLogin = (identifier, password) => {
-    let user = users.find(u => u.email === identifier);
-    
-    if (user) {
-      setCurrentUser(user);
-      showToast(`Welcome back, @${user.username}! 👋`, 'success');
-    } else {
-      // Create NEW user
-      const newUsername = identifier.split('@')[0];
-      const newUser = { 
-        id: `u${Date.now()}`, 
-        username: newUsername, 
-        email: identifier, 
-        avatar: newUsername[0].toUpperCase(), 
-        avatarColor: `hsl(${Math.random()*360},70%,60%)`, 
-        verified: false, 
-        bio: 'New to Dagu! 🎬', 
-        followers: [], 
-        following: [], 
-        coins: 500, 
-        walletBalance: 500, 
-        level: 1, 
-        streak: 1, 
-        subscription: 'free' 
-      };
-      setUsers(prev => [...prev, newUser]);
-      setCurrentUser(newUser);
-      showToast(`Welcome to Dagu, @${newUsername}! 🎉`, 'success');
+  const handleLogin = async (identifier, password) => {
+    try {
+      const snap = await getDocs(query(collection(db, 'users'), where('email', '==', identifier)));
+      if (!snap.empty) {
+        const userData = { id: snap.docs[0].id, ...snap.docs[0].data() };
+        setCurrentUser(userData);
+        showToast(`Welcome back, @${userData.username}! 👋`, 'success');
+      } else {
+        const newUsername = identifier.split('@')[0];
+        const newUser = {
+          username: newUsername, email: identifier,
+          avatar: newUsername[0].toUpperCase(),
+          avatarColor: `hsl(${Math.random()*360},70%,60%)`,
+          verified: false, bio: 'New to Dagu! 🎬',
+          followers: [], following: [],
+          coins: 500, walletBalance: 500,
+          level: 1, streak: 1, subscription: 'free', photoURL: ''
+        };
+        const newRef = doc(collection(db, 'users'));
+        await setDoc(newRef, newUser);
+        setCurrentUser({ id: newRef.id, ...newUser });
+        showToast(`Welcome to Dagu, @${newUsername}! 🎉`, 'success');
+      }
+    } catch (err) {
+      showToast('Login failed. Try again.', 'error');
     }
   };
 
-  const handleSignup = (identifier, username, fullName, password) => {
-    const newUser = { 
-      id: `u${Date.now()}`, 
-      username, 
-      email: identifier, 
-      avatar: username[0].toUpperCase(), 
-      avatarColor: `hsl(${Math.random()*360},70%,60%)`, 
-      verified: false, 
-      bio: 'New to Dagu! 🎬', 
-      followers: [], 
-      following: [], 
-      coins: 500, 
-      walletBalance: 500, 
-      level: 1, 
-      streak: 1, 
-      subscription: 'free' 
-    };
-    setUsers(prev => [...prev, newUser]);
-    setCurrentUser(newUser);
-    showToast(`Welcome to Dagu, @${username}! 🎉`, 'success');
+  const handleSignup = async (identifier, username, fullName, password) => {
+    try {
+      const newUser = {
+        username, email: identifier, fullName,
+        avatar: username[0].toUpperCase(),
+        avatarColor: `hsl(${Math.random()*360},70%,60%)`,
+        verified: false, bio: 'New to Dagu! 🎬',
+        followers: [], following: [],
+        coins: 500, walletBalance: 500,
+        level: 1, streak: 1, subscription: 'free', photoURL: ''
+      };
+      const newRef = doc(collection(db, 'users'));
+      await setDoc(newRef, newUser);
+      setCurrentUser({ id: newRef.id, ...newUser });
+      showToast(`Welcome to Dagu, @${username}! 🎉`, 'success');
+    } catch (err) {
+      showToast('Signup failed. Try again.', 'error');
+    }
   };
 
+  const handleLogout = () => { setCurrentUser(null); showToast('Logged out', 'info'); };
   const handleLogout = () => { setCurrentUser(null); showToast('Logged out', 'info'); };
   
   const toggleFollow = (userId) => {
