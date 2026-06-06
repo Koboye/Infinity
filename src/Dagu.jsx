@@ -1107,55 +1107,44 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
 // ============================================
 const InboxPage = ({ users, currentUser, showToast }) => {
   const [activeConversation, setActiveConversation] = useState(null);
-  const [conversations, setConversations] = useState(() =>
-    users.filter(u => u.id !== currentUser?.id).map(u => ({ userId: u.id, messages: [], lastSeen: new Date(Date.now() - Math.random() * 86400000) }))
-  );
-
-  const openConvo = (userId) => {
-    setActiveConversation(userId);
-  };
-
-  const sendMessage = (userId, text, voiceBlob, attachedFile) => {
-    setConversations(prev => prev.map(c => c.userId === userId ? {
-      ...c,
-      messages: [...c.messages, { id: Date.now(), from: currentUser.id, text, voiceBlob, attachedFile, timestamp: new Date() }]
-    } : c));
-    if (text) showToast?.('Message sent!', 'success');
-  };
+  const otherUsers = users.filter(u => u.id !== currentUser?.id);
 
   if (activeConversation) {
-   const ConversationView = ({ currentUser, otherUser, onBack, showToast }) => {
-  const [text, setText] = useState('');
-  const [messages, setMessages] = useState([]);
-  const [showEmoji, setShowEmoji] = useState(false);
-  const messagesEndRef = useRef(null);
-  const chatId = [currentUser?.id, otherUser?.id].sort().join('_');
+    const otherUser = users.find(u => u.id === activeConversation);
+    return <ConversationView currentUser={currentUser} otherUser={otherUser} onBack={() => setActiveConversation(null)} showToast={showToast} />;
+  }
 
-  useEffect(() => {
-    if (!chatId) return;
-    const q = query(collection(db, 'chats', chatId, 'messages'), orderBy('timestamp', 'asc'));
-    const unsub = onSnapshot(q, snap => {
-      setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    });
-    return unsub;
-  }, [chatId]);
-
-  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
-
-  const handleSend = async () => {
-    if (!text.trim()) return;
-    try {
-      await addDoc(collection(db, 'chats', chatId, 'messages'), {
-        text,
-        from: currentUser?.id,
-        fromUsername: currentUser?.username,
-        timestamp: serverTimestamp(),
-      });
-      setText('');
-    } catch (err) {
-      showToast?.('Failed to send', 'error');
-    }
-  };
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#0a0a0a' }}>
+      <div style={{ padding: '16px 16px', borderBottom: '1px solid #1a1a1a' }}>
+        <h2 style={{ color: 'white', fontSize: 20, fontWeight: 700 }}>💬 Messages</h2>
+      </div>
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+        {otherUsers.length === 0 && (
+          <div style={{ textAlign: 'center', padding: 60, color: '#555' }}>
+            <div style={{ fontSize: 44, marginBottom: 12 }}>💬</div>
+            <div>No users yet</div>
+            <div style={{ fontSize: 12, marginTop: 8, color: '#666' }}>Sign up more users to start chatting!</div>
+          </div>
+        )}
+        {otherUsers.map(u => (
+          <div key={u.id} onClick={() => setActiveConversation(u.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: '1px solid #111', cursor: 'pointer' }}>
+            <div style={{ position: 'relative' }}>
+              <div style={{ width: 48, height: 48, borderRadius: '50%', background: u.avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: 20, overflow: 'hidden' }}>
+                {u.photoURL ? <img src={u.photoURL} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : u.avatar}
+              </div>
+              <div style={{ position: 'absolute', bottom: 0, right: 0, width: 12, height: 12, background: '#06d6a0', borderRadius: '50%', border: '2px solid #0a0a0a' }} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ color: 'white', fontWeight: 600, fontSize: 14 }}>@{u.username}</div>
+              <div style={{ color: '#555', fontSize: 12, marginTop: 2 }}>Tap to chat</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#0a0a0a' }}>
