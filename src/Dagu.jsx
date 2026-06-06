@@ -1472,19 +1472,13 @@ export default function DaguFixedApp() {
     setActiveTab('inbox');
   };
 
-  if (!currentUser) {
-    return (
-      <div style={{ maxWidth: 430, margin: '0 auto', height: '100dvh', background: '#0a0a0a', overflow: 'hidden' }}>
-        <style>{`
-          *{margin:0;padding:0;box-sizing:border-box}
-          ::-webkit-scrollbar{display:none}
-          @keyframes heartBurst{0%{transform:scale(0.4) translateY(0);opacity:1}100%{transform:scale(1.5) translateY(-60px);opacity:0}}
-          @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-          @keyframes floatUp{0%{transform:translateY(0) scale(1);opacity:1}100%{transform:translateY(-100px) scale(1.5);opacity:0}}
-          @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
-          button:active{transform:scale(0.95)}
-        `}</style>
-        <AuthScreen onLogin={handleLogin} onSignup={handleSignup} />
+ if (!currentUser) {
+  return (
+    <div style={{height:'100dvh',display:'flex',alignItems:'center',justifyContent:'center',background:'#0a0a0a'}}>
+      <div style={{color:'white',fontSize:16}}>Loading...</div>
+    </div>
+  );
+}
         {toast && <Toast {...toast} onClose={() => setToast(null)} />}
       </div>
     );
