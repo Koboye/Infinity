@@ -1264,8 +1264,18 @@ const sendOTP = async () => {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     setOtpCode(code);
     setTimer(60);
-    // OTP is now hidden - user must check their email/phone
-    console.log('OTP generated'); // remove alert
+    try {
+      await emailjs.send(
+        'service_mtqmvbb',
+        'template_1k7wiqa',
+        { to_email: identifier, otp_code: code },
+        'U9fs25Bcx5oQ6A2ru'
+      );
+      alert('OTP sent to your email! ✅');
+    } catch (err) {
+      console.error('Email failed:', err);
+      alert('Failed to send OTP. Try again.');
+    }
   };
   const verifyOTP = () => {
     if (otpInput === otpCode) { if (isLogin) onLogin(identifier, 'otp'); else onSignup(identifier, username, fullName, 'otp'); }
