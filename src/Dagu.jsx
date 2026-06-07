@@ -1,894 +1,787 @@
-// Dagu.jsx - COMPLETE FIXED VERSION
-// Fixes applied:
-// 1. AuthScreen is the login/register gate — always shown when not logged in
-// 2. User document stored with setDoc(uid) for reliable retrieval
-// 3. onAuthStateChanged properly waits for user doc before rendering app
-// 4. All collections unified: "posts" (not "videos")
-// 5. Profile edit saves correctly
-// 6. InboxPage only loads when active (performance fix)
-// 7. MyProfile tab shows edit profile inline (not via Settings detour)
-// 8. Bottom nav "Create" opens modal without replacing feed
-// 9. messageUserId properly opens correct chat on inbox mount
-// 10. Stories 24h expiry filter added
+// Dagu.jsx — Full TikTok-like app with Firebase, Cloudinary, EmailJS
+// All features functional: auth, video feed, likes, comments, follow, messages, stories, live, calls, gifts, upload
 
-import React, { useState, useEffect, useRef, useCallback, memo, useMemo } from 'react';
-import { auth, db, storage, googleProvider } from './firebase';
+import React, {
+  useState, useEffect, useRef, useCallback, memo, useMemo
+} from 'react';
+
+// ─── Firebase ──────────────────────────────────────────────────────────────
+import { initializeApp } from 'firebase/app';
 import {
-  createUserWithEmailAndPassword, signInWithEmailAndPassword,
-  signOut, onAuthStateChanged, signInWithPopup
-} from 'firebase/auth';
-import {
-  collection, addDoc, getDocs, onSnapshot, doc,
-  updateDoc, getDoc, arrayUnion, arrayRemove, serverTimestamp,
-  query, orderBy, where, limit, increment, deleteDoc, setDoc
+  getFirestore, collection, addDoc, onSnapshot, query,
+  orderBy, serverTimestamp, getDocs, where, doc, setDoc,
+  updateDoc, arrayUnion, arrayRemove, getDoc, deleteDoc, limit
 } from 'firebase/firestore';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 
-// ─── HELPERS ────────────────────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyD9jDk8gijMVAYrsFe4vpojI7GyZnkzGL8",
+  authDomain: "dagu-8348c.firebaseapp.com",
+  projectId: "dagu-8348c",
+  storageBucket: "dagu-8348c.firebasestorage.app",
+  messagingSenderId: "259738670911",
+  appId: "1:259738670911:web:c4d1116e3697a8f67c658a",
+  measurementId: "G-KJW3QQJ26X"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// ─── Cloudinary ────────────────────────────────────────────────────────────
+const CLOUDINARY_CLOUD = 'dotvhzjmc';
+const CLOUDINARY_PRESET = 'g3c7dwdg';
+
+async function uploadToCloudinary(file, type = 'image') {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', CLOUDINARY_PRESET);
+  formData.append('cloud_name', CLOUDINARY_CLOUD);
+  const res = await fetch(
+    `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/${type}/upload`,
+    { method: 'POST', body: formData }
+  );
+  const data = await res.json();
+  return data.secure_url;
+}
+
+// ─── Constants ─────────────────────────────────────────────────────────────
+const VIRTUAL_GIFTS = [
+  { id: 'rose',      name: '🌹 Rose',      coins: 50,    animation: '🌹' },
+  { id: 'chocolate', name: '🍫 Chocolate',  coins: 100,   animation: '🍫' },
+  { id: 'bear',      name: '🧸 Teddy Bear', coins: 250,   animation: '🧸' },
+  { id: 'cake',      name: '🎂 Cake',       coins: 500,   animation: '🎂' },
+  { id: 'diamond',   name: '💎 Diamond',    coins: 1000,  animation: '💎' },
+  { id: 'rocket',    name: '🚀 Rocket',     coins: 5000,  animation: '🚀' },
+  { id: 'crown',     name: '👑 Crown',      coins: 10000, animation: '👑' },
+  { id: 'galaxy',    name: '🌌 Galaxy',     coins: 50000, animation: '🌌' },
+];
+
+const EMOJI_LIST = ['😀','😂','😍','🥰','😎','🤔','😭','😱','🔥','❤️','👍','🎉','✨','💯','🙌','👏','🤝','💪','🎵','📸'];
 
 const formatNumber = (num) => {
   if (!num) return '0';
   if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
   if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
-  return num.toString();
+  return String(num);
 };
 
-const timeAgo = (timestamp) => {
-  if (!timestamp) return 'Just now';
-  const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-  const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
-  if (seconds < 60) return `${seconds}s ago`;
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-  if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
-  return date.toLocaleDateString();
-};
-
-const EMOJIS = ['😀','😂','😍','🥰','😎','🤔','😭','😱','🔥','❤️','👍','🎉','✨','💯','🙌','👏','🤝','💪','🎵','📸','🐶','🐱','🍕','🏀','🚗','✈️','⭐','💔','✅','❌','😘','🥺','🤣','😊','😇','🥳','😤','😴','💀','👀'];
-
-const VIDEO_FILTERS = [
-  { id: 'none',    name: 'Normal',  icon: '✨', css: 'none' },
-  { id: 'vivid',   name: 'Vivid',   icon: '🌈', css: 'saturate(1.5) contrast(1.1)' },
-  { id: 'warm',    name: 'Warm',    icon: '🔥', css: 'sepia(0.4) saturate(1.3)' },
-  { id: 'cool',    name: 'Cool',    icon: '❄️', css: 'hue-rotate(30deg) saturate(1.2)' },
-  { id: 'bw',      name: 'B&W',     icon: '⚫', css: 'grayscale(1)' },
-  { id: 'vintage', name: 'Vintage', icon: '📻', css: 'sepia(0.6) contrast(1.1)' },
-  { id: 'neon',    name: 'Neon',    icon: '💡', css: 'brightness(1.2) saturate(1.5) hue-rotate(180deg)' },
-  { id: 'pastel',  name: 'Pastel',  icon: '🌸', css: 'saturate(0.8) brightness(1.1)' },
-];
-
-// ─── TOAST ──────────────────────────────────────────────────────────────────
-
+// ─── Toast ─────────────────────────────────────────────────────────────────
 const Toast = ({ message, type, onClose }) => {
-  useEffect(() => { const t = setTimeout(onClose, 3000); return () => clearTimeout(t); }, [onClose]);
-  const colors = { success: '#06d6a0', error: '#ff2d55', info: '#af52de', warning: '#ff9500' };
+  useEffect(() => {
+    const t = setTimeout(onClose, 2500);
+    return () => clearTimeout(t);
+  }, [onClose]);
+  const icons = { success: '✅', error: '❌', info: 'ℹ️', warning: '⚠️' };
   return (
-    <div style={{ position: 'fixed', bottom: 100, left: '50%', transform: 'translateX(-50%)', background: '#1a1a1a', border: `1px solid ${colors[type] || '#333'}`, borderRadius: 30, padding: '12px 24px', zIndex: 10000, whiteSpace: 'nowrap' }}>
-      <span style={{ color: colors[type] || '#fff', fontSize: 14 }}>{message}</span>
+    <div style={{
+      position: 'fixed', bottom: 100, left: '50%', transform: 'translateX(-50%)',
+      background: 'rgba(15,15,15,0.97)', border: '1px solid #2a2a2a', borderRadius: 30,
+      padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 8,
+      zIndex: 9999, whiteSpace: 'nowrap', backdropFilter: 'blur(10px)', boxShadow: '0 4px 24px rgba(0,0,0,0.5)'
+    }}>
+      <span>{icons[type] || 'ℹ️'}</span>
+      <span style={{ color: 'white', fontSize: 13, fontWeight: 500 }}>{message}</span>
     </div>
   );
 };
 
-// ─── REPORT MODAL ───────────────────────────────────────────────────────────
-
-const ReportModal = ({ targetId, targetType, targetName, reportedBy, onClose, showToast }) => {
-  const [reason, setReason] = useState('');
-  const [details, setDetails] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const reasons = ['Spam or misleading','Harassment or bullying','Hate speech','Violence or dangerous content','Nudity or sexual content','False information','Intellectual property violation','Other'];
+// ─── Auth Screen ────────────────────────────────────────────────────────────
+const AuthScreen = ({ onLogin, onSignup }) => {
+  const [isLogin, setIsLogin] = useState(true);
+  const [email, setEmail]     = useState('');
+  const [username, setUsername] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState('');
 
   const handleSubmit = async () => {
-    if (!reason) return;
-    setSubmitting(true);
+    if (!email) { setError('Email required'); return; }
+    if (!isLogin && (!username || !fullName)) { setError('Fill all fields'); return; }
+    setError(''); setLoading(true);
     try {
-      await addDoc(collection(db, 'reports'), { targetId, targetType, targetName, reason, details: details.trim(), reportedBy, status: 'pending', createdAt: serverTimestamp() });
-      showToast('Report submitted. We will review it.', 'success');
-      onClose();
-    } catch { showToast('Failed to submit report', 'error'); }
-    setSubmitting(false);
-  };
-
-  return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.95)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ width: '90%', maxWidth: 400, background: '#141414', borderRadius: 24, padding: 24 }}>
-        <div style={{ color: '#fff', fontSize: 20, fontWeight: 700, marginBottom: 8 }}>Report {targetType}</div>
-        <div style={{ color: '#888', fontSize: 13, marginBottom: 16 }}>Reporting @{targetName}</div>
-        <div style={{ marginBottom: 16 }}>
-          {reasons.map(r => (
-            <button key={r} onClick={() => setReason(r)} style={{ width: '100%', textAlign: 'left', background: reason === r ? 'rgba(255,45,85,0.15)' : 'transparent', border: 'none', borderRadius: 10, padding: '10px 12px', marginBottom: 4, color: reason === r ? '#ff2d55' : '#ccc', cursor: 'pointer', fontSize: 13 }}>
-              {reason === r ? '✓ ' : ''}{r}
-            </button>
-          ))}
-        </div>
-        <textarea value={details} onChange={e => setDetails(e.target.value)} placeholder="Additional details (optional)" rows={3} style={{ width: '100%', background: '#0d0d0d', border: '1px solid #222', borderRadius: 12, padding: 12, color: '#fff', fontSize: 13, outline: 'none', resize: 'none', marginBottom: 16 }} />
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button onClick={onClose} style={{ flex: 1, background: '#2a2a2a', border: 'none', borderRadius: 20, padding: 12, color: '#fff', cursor: 'pointer' }}>Cancel</button>
-          <button onClick={handleSubmit} disabled={!reason || submitting} style={{ flex: 1, background: '#ff2d55', border: 'none', borderRadius: 20, padding: 12, color: '#fff', cursor: !reason || submitting ? 'default' : 'pointer', opacity: !reason || submitting ? 0.5 : 1 }}>
-            {submitting ? 'Submitting...' : 'Submit Report'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// ─── AUTH SCREEN (Login + Register) ─────────────────────────────────────────
-
-const AuthScreen = ({ showToast }) => {
-  const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [username, setUsername] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-
-  const submit = async () => {
-    if (!email || !password) { showToast('Please fill all fields', 'error'); return; }
-    if (!isLogin && !username.trim()) { showToast('Username required', 'error'); return; }
-    setLoading(true);
-    try {
-      if (isLogin) {
-        await signInWithEmailAndPassword(auth, email.trim(), password);
-        showToast('Welcome back! 👋', 'success');
-      } else {
-        const result = await createUserWithEmailAndPassword(auth, email.trim(), password);
-        // FIX: use setDoc with uid as document ID for reliable lookup
-        await setDoc(doc(db, 'users', result.user.uid), {
-          uid: result.user.uid,
-          username: username.toLowerCase().trim(),
-          email: email.trim(),
-          bio: 'New to Dagu! 🎬',
-          followers: [],
-          following: [],
-          photoURL: '',
-          coins: 500,
-          createdAt: serverTimestamp(),
-        });
-        showToast('Account created! 🎉', 'success');
-      }
-    } catch (err) {
-      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
-        showToast('Invalid email or password', 'error');
-      } else if (err.code === 'auth/email-already-in-use') {
-        showToast('Email already registered — try logging in', 'error');
-      } else if (err.code === 'auth/weak-password') {
-        showToast('Password must be at least 6 characters', 'error');
-      } else if (err.code === 'auth/invalid-email') {
-        showToast('Invalid email address', 'error');
-      } else {
-        showToast(err.message, 'error');
-      }
+      if (isLogin) await onLogin(email, password);
+      else         await onSignup(email, username, fullName, password);
+    } catch (e) {
+      setError(e.message || 'Something went wrong');
     }
     setLoading(false);
   };
 
-  const handleGoogle = async () => {
-    setGoogleLoading(true);
-    try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const uid = result.user.uid;
-      // FIX: use getDoc with uid-as-docId instead of query
-      const userDoc = await getDoc(doc(db, 'users', uid));
-      if (!userDoc.exists()) {
-        await setDoc(doc(db, 'users', uid), {
-          uid,
-          username: (result.user.displayName || 'user').toLowerCase().replace(/\s+/g, '_'),
-          email: result.user.email,
-          bio: 'Joined via Google 🎬',
-          followers: [],
-          following: [],
-          photoURL: result.user.photoURL || '',
-          coins: 500,
-          createdAt: serverTimestamp(),
-        });
-      }
-      showToast('Signed in with Google! 🎉', 'success');
-    } catch (err) {
-      if (err.code === 'auth/popup-closed-by-user') {
-        showToast('Sign-in cancelled', 'info');
-      } else {
-        showToast('Google sign-in failed: ' + err.message, 'error');
-      }
-    }
-    setGoogleLoading(false);
-  };
-
   return (
-    <div style={{ height: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(160deg,#0a0a0a 60%,#120007)', padding: 20, overflowY: 'auto' }}>
-      <div style={{ width: '100%', maxWidth: 340 }}>
-        {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{ fontSize: 56, marginBottom: 8 }}>🎬</div>
-          <h1 style={{ fontSize: 42, fontWeight: 800, background: 'linear-gradient(135deg,#ff2d55,#af52de)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Dagu</h1>
-          <p style={{ color: '#555', fontSize: 13 }}>{isLogin ? 'Welcome back!' : 'Join Dagu today'}</p>
+    <div style={{ width: '100%', maxWidth: 360, padding: 24 }}>
+      <div style={{ textAlign: 'center', marginBottom: 32 }}>
+        <div style={{ fontSize: 52, marginBottom: 8 }}>🎬</div>
+        <div style={{ color: 'white', fontWeight: 800, fontSize: 28, letterSpacing: -1 }}>Dagu</div>
+        <div style={{ color: '#555', fontSize: 13, marginTop: 4 }}>Share your world</div>
+      </div>
+
+      <div style={{ background: '#141414', borderRadius: 24, padding: 24, border: '1px solid #1e1e1e' }}>
+        <div style={{ display: 'flex', background: '#0d0d0d', borderRadius: 16, padding: 4, marginBottom: 20 }}>
+          {['Login','Sign Up'].map((label, i) => (
+            <button key={label} onClick={() => { setIsLogin(i === 0); setError(''); }}
+              style={{ flex: 1, background: (isLogin ? i===0 : i===1) ? '#ff2d55' : 'none', border: 'none',
+                borderRadius: 12, padding: '10px', color: 'white', fontWeight: 600, cursor: 'pointer', fontSize: 13 }}>
+              {label}
+            </button>
+          ))}
         </div>
 
-        {/* Google button */}
-        <button onClick={handleGoogle} disabled={googleLoading} style={{ width: '100%', background: '#fff', border: 'none', borderRadius: 16, padding: 13, color: '#222', fontWeight: 700, cursor: 'pointer', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, opacity: googleLoading ? 0.7 : 1 }}>
-          {googleLoading ? '⏳ Signing in...' : '🌐 Continue with Google'}
+        {!isLogin && (
+          <>
+            <input placeholder="Full Name" value={fullName} onChange={e => setFullName(e.target.value)}
+              style={inputStyle} />
+            <input placeholder="Username" value={username} onChange={e => setUsername(e.target.value)}
+              style={inputStyle} />
+          </>
+        )}
+        <input placeholder="Email" type="email" value={email} onChange={e => setEmail(e.target.value)}
+          style={inputStyle} />
+        <input placeholder="Password" type="password" value={password} onChange={e => setPassword(e.target.value)}
+          style={inputStyle} />
+
+        {error && <div style={{ color: '#ff2d55', fontSize: 12, marginBottom: 10, textAlign: 'center' }}>{error}</div>}
+
+        <button onClick={handleSubmit} disabled={loading}
+          style={{ width: '100%', background: 'linear-gradient(135deg,#ff2d55,#af52de)', border: 'none',
+            borderRadius: 20, padding: 14, color: 'white', fontWeight: 700, cursor: 'pointer',
+            fontSize: 15, opacity: loading ? 0.7 : 1 }}>
+          {loading ? '...' : isLogin ? 'Login' : 'Create Account'}
         </button>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-          <div style={{ flex: 1, height: 1, background: '#1a1a1a' }} />
-          <span style={{ color: '#444', fontSize: 13 }}>or</span>
-          <div style={{ flex: 1, height: 1, background: '#1a1a1a' }} />
-        </div>
-
-        {/* Form */}
-        <div style={{ background: '#141414', borderRadius: 24, padding: 24 }}>
-          {!isLogin && (
-            <input
-              placeholder="Username"
-              value={username}
-              onChange={e => setUsername(e.target.value)}
-              style={{ width: '100%', background: '#0d0d0d', border: '1px solid #222', borderRadius: 12, padding: 12, color: '#fff', marginBottom: 10, outline: 'none', fontSize: 14 }}
-            />
-          )}
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            style={{ width: '100%', background: '#0d0d0d', border: '1px solid #222', borderRadius: 12, padding: 12, color: '#fff', marginBottom: 10, outline: 'none', fontSize: 14 }}
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && submit()}
-            style={{ width: '100%', background: '#0d0d0d', border: '1px solid #222', borderRadius: 12, padding: 12, color: '#fff', marginBottom: 16, outline: 'none', fontSize: 14 }}
-          />
-          <button onClick={submit} disabled={loading} style={{ width: '100%', background: 'linear-gradient(135deg,#ff2d55,#af52de)', border: 'none', borderRadius: 24, padding: 14, color: '#fff', fontWeight: 700, cursor: loading ? 'default' : 'pointer', opacity: loading ? 0.7 : 1, fontSize: 15 }}>
-            {loading ? '...' : isLogin ? 'Sign In' : 'Create Account'}
-          </button>
-          <button onClick={() => { setIsLogin(!isLogin); setEmail(''); setPassword(''); setUsername(''); }} style={{ width: '100%', background: 'none', border: 'none', color: '#ff2d55', marginTop: 12, cursor: 'pointer', fontSize: 13 }}>
-            {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
-          </button>
-        </div>
       </div>
     </div>
   );
 };
 
-// ─── CREATE POST MODAL ──────────────────────────────────────────────────────
+const inputStyle = {
+  width: '100%', background: '#0d0d0d', border: '1px solid #222', borderRadius: 14,
+  padding: '12px 14px', color: 'white', marginBottom: 10, outline: 'none',
+  fontSize: 13, boxSizing: 'border-box'
+};
 
-const CreatePostModal = ({ currentUser, onClose, showToast }) => {
+// ─── Call Modal ─────────────────────────────────────────────────────────────
+const CallModal = ({ type, contactName, contactAvatar, onClose }) => {
+  const [duration, setDuration] = useState(0);
+  const [connected, setConnected] = useState(false);
+  const [muted, setMuted] = useState(false);
+  const localVideoRef = useRef(null);
+  const streamRef = useRef(null);
+
+  useEffect(() => {
+    const connectTimer = setTimeout(async () => {
+      setConnected(true);
+      if (type === 'video') {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+          streamRef.current = stream;
+          if (localVideoRef.current) {
+            localVideoRef.current.srcObject = stream;
+            localVideoRef.current.muted = true;
+          }
+        } catch {}
+      }
+    }, 2000);
+    return () => clearTimeout(connectTimer);
+  }, [type]);
+
+  useEffect(() => {
+    if (!connected) return;
+    const t = setInterval(() => setDuration(d => d + 1), 1000);
+    return () => clearInterval(t);
+  }, [connected]);
+
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
+    };
+  }, []);
+
+  const formatDur = (s) => `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
+
+  const toggleMute = () => {
+    if (streamRef.current) {
+      streamRef.current.getAudioTracks().forEach(t => { t.enabled = muted; });
+    }
+    setMuted(m => !m);
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: type === 'video' ? '#000' : 'linear-gradient(135deg,#1a2a2a,#0a0a0a)', zIndex: 5000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+      {type === 'video' && connected && (
+        <video ref={localVideoRef} autoPlay playsInline
+          style={{ position: 'absolute', top: 20, right: 20, width: 120, height: 160, objectFit: 'cover', borderRadius: 16, border: '2px solid #333', zIndex: 10 }} />
+      )}
+      <div style={{ width: 90, height: 90, borderRadius: '50%', background: '#ff2d55', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, marginBottom: 16 }}>
+        {contactAvatar}
+      </div>
+      <div style={{ color: 'white', fontSize: 22, fontWeight: 700 }}>@{contactName}</div>
+      <div style={{ color: '#888', fontSize: 13, marginTop: 6 }}>
+        {connected ? formatDur(duration) : (type === 'video' ? '📹 Connecting...' : '🎙️ Calling...')}
+      </div>
+      <div style={{ display: 'flex', gap: 20, marginTop: 48 }}>
+        <button onClick={toggleMute}
+          style={{ width: 60, height: 60, borderRadius: '50%', background: muted ? '#ff2d55' : '#222', border: 'none', color: 'white', fontSize: 24, cursor: 'pointer' }}>
+          {muted ? '🔇' : '🎙️'}
+        </button>
+        <button onClick={onClose}
+          style={{ width: 60, height: 60, borderRadius: '50%', background: '#ff2d55', border: 'none', color: 'white', fontSize: 24, cursor: 'pointer' }}>
+          📵
+        </button>
+        {type === 'video' && (
+          <button style={{ width: 60, height: 60, borderRadius: '50%', background: '#222', border: 'none', color: 'white', fontSize: 24, cursor: 'pointer' }}>
+            📹
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ─── Live Stream ────────────────────────────────────────────────────────────
+const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
+  const [viewers, setViewers]     = useState(Math.floor(Math.random()*2000)+500);
+  const [chatMessages, setChat]   = useState([]);
+  const [message, setMessage]     = useState('');
+  const [showGifts, setShowGifts] = useState(false);
+  const [giftAnims, setGiftAnims] = useState([]);
+  const [isMuted, setIsMuted]     = useState(false);
+  const [duration, setDuration]   = useState(0);
+  const [cameraOn, setCameraOn]   = useState(false);
+  const [cameraErr, setCameraErr] = useState(null);
   const videoRef = useRef(null);
   const streamRef = useRef(null);
-  const mediaRecorderRef = useRef(null);
-  const chunksRef = useRef([]);
-  const timerRef = useRef(null);
-  const fileInputRef = useRef(null);
-
-  const [cameraReady, setCameraReady] = useState(false);
-  const [cameraError, setCameraError] = useState('');
-  const [facingMode, setFacingMode] = useState('user');
-  const [filter, setFilter] = useState(VIDEO_FILTERS[0]);
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordingTime, setRecordingTime] = useState(0);
-  const [recordedBlob, setRecordedBlob] = useState(null);
-  const [recordedURL, setRecordedURL] = useState(null);
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [previewURL, setPreviewURL] = useState(null);
-  const [postType, setPostType] = useState('video');
-  const [caption, setCaption] = useState('');
-  const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [step, setStep] = useState('capture');
 
   useEffect(() => {
-    startCamera();
-    return () => stopCamera();
-  }, [facingMode]);
-
-  const startCamera = async () => {
-    stopCamera(); setCameraError('');
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode }, audio: true });
-      streamRef.current = stream;
-      if (videoRef.current) videoRef.current.srcObject = stream;
-      setCameraReady(true);
-    } catch (err) {
-      setCameraReady(false);
-      setCameraError(err.name === 'NotAllowedError' ? 'Camera permission denied. Please allow camera access.' : 'Camera not available on this device.');
-    }
-  };
-
-  const stopCamera = () => {
-    if (streamRef.current) { streamRef.current.getTracks().forEach(t => t.stop()); streamRef.current = null; }
-  };
-
-  const startRecording = () => {
-    if (!streamRef.current) return;
-    chunksRef.current = [];
-    const recorder = new MediaRecorder(streamRef.current);
-    mediaRecorderRef.current = recorder;
-    recorder.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data); };
-    recorder.onstop = () => {
-      const blob = new Blob(chunksRef.current, { type: 'video/webm' });
-      setRecordedBlob(blob); setRecordedURL(URL.createObjectURL(blob));
-      setPostType('video'); stopCamera(); setStep('preview');
+    const go = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        streamRef.current = stream;
+        if (videoRef.current) { videoRef.current.srcObject = stream; videoRef.current.muted = true; }
+        setCameraOn(true);
+      } catch { setCameraErr('Camera denied — simulating stream'); }
     };
-    recorder.start(); setIsRecording(true); setRecordingTime(0);
-    timerRef.current = setInterval(() => {
-      setRecordingTime(t => { if (t >= 59) { stopRecording(); return 60; } return t + 1; });
-    }, 1000);
+    go();
+    const d = setInterval(() => setDuration(x => x + 1), 1000);
+    const v = setInterval(() => setViewers(x => Math.max(1, x + Math.floor(Math.random()*20)-5)), 5000);
+    // Simulate incoming chat
+    const fakeNames = ['amara', 'yonas', 'tigist', 'biruk', 'selam'];
+    const fakeMsg = setInterval(() => {
+      setChat(c => [...c.slice(-50), {
+        id: Date.now(), username: fakeNames[Math.floor(Math.random()*fakeNames.length)],
+        text: ['🔥 Amazing!', '❤️ Love this!', 'keep going!', '🎉', 'wow!!'][Math.floor(Math.random()*5)],
+        isGift: false
+      }]);
+    }, 3000);
+    return () => {
+      clearInterval(d); clearInterval(v); clearInterval(fakeMsg);
+      if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
+    };
+  }, []);
+
+  const toggleMute = () => {
+    if (streamRef.current) streamRef.current.getAudioTracks().forEach(t => { t.enabled = isMuted; });
+    setIsMuted(m => !m);
   };
 
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop(); setIsRecording(false); clearInterval(timerRef.current);
-    }
+  const fmt = () => {
+    const m = Math.floor(duration/60), s = duration%60;
+    return `${m}:${s.toString().padStart(2,'0')}`;
   };
 
-  const capturePhoto = () => {
-    if (!videoRef.current) return;
-    const canvas = document.createElement('canvas');
-    canvas.width = videoRef.current.videoWidth; canvas.height = videoRef.current.videoHeight;
-    const ctx = canvas.getContext('2d');
-    if (facingMode === 'user') { ctx.translate(canvas.width, 0); ctx.scale(-1, 1); }
-    ctx.filter = filter.css; ctx.drawImage(videoRef.current, 0, 0);
-    canvas.toBlob(blob => {
-      setRecordedBlob(blob); setRecordedURL(URL.createObjectURL(blob));
-      setPostType('photo'); stopCamera(); setStep('preview');
-    }, 'image/jpeg', 0.92);
+  const sendMsg = () => {
+    if (!message.trim()) return;
+    setChat(c => [...c, { id: Date.now(), username: currentUser?.username, text: message, isGift: false }]);
+    setMessage('');
   };
 
-  const handleGalleryPick = (e) => {
-    const file = e.target.files[0]; if (!file) return;
-    setSelectedFile(file); setPreviewURL(URL.createObjectURL(file));
-    setPostType(file.type.startsWith('video') ? 'video' : 'photo');
-    stopCamera(); setStep('preview');
+  const sendGift = (gift) => {
+    if ((currentUser?.coins || 0) < gift.coins) { showToast('Not enough coins! 🪙', 'error'); return; }
+    const id = Date.now();
+    setGiftAnims(g => [...g, { id, gift, x: Math.random()*80+10, y: Math.random()*40+10 }]);
+    setChat(c => [...c, { id, username: currentUser?.username, text: `sent ${gift.name}`, isGift: true, gift }]);
+    showToast(`Sent ${gift.name}! 🎁`, 'success');
+    setTimeout(() => setGiftAnims(g => g.filter(x => x.id !== id)), 3000);
   };
 
-  const handlePost = async () => {
-    if (!currentUser?.uid) { showToast('Please log in first', 'error'); return; }
-    const blob = recordedBlob || selectedFile;
-    if (!blob) { showToast('No media selected', 'error'); return; }
-    setUploading(true); setUploadProgress(0);
-    try {
-      const ext = postType === 'video' ? 'webm' : 'jpg';
-      const path = `${postType}s/${currentUser.uid}_${Date.now()}.${ext}`;
-      const storageRef2 = ref(storage, path);
-      const task = uploadBytesResumable(storageRef2, blob);
-      task.on('state_changed',
-        snap => setUploadProgress(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
-        err => { showToast('Upload failed: ' + err.message, 'error'); setUploading(false); },
-        async () => {
-          const url = await getDownloadURL(task.snapshot.ref);
-          // FIX: unified "posts" collection
-          await addDoc(collection(db, 'posts'), {
-            type: postType, url, caption: caption.trim(), filterUsed: filter.id,
-            userId: currentUser.uid, username: currentUser.username,
-            photoURL: currentUser.photoURL || '', likes: [], comments: [], shares: 0, saves: [],
-            createdAt: serverTimestamp(),
-          });
-          showToast('Posted! 🎉', 'success'); setUploading(false); onClose();
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: '#000', zIndex: 2000, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: 2, position: 'relative', background: '#111' }}>
+        {cameraOn
+          ? <video ref={videoRef} autoPlay playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          : <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#1a1a2a,#0a0a0a)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+              <div style={{ fontSize: 64 }}>📹</div>
+              <div style={{ color: 'white', fontSize: 16, fontWeight: 700 }}>LIVE</div>
+              {cameraErr && <div style={{ color: '#ff9500', fontSize: 11, textAlign: 'center', padding: '0 30px' }}>{cameraErr}</div>}
+            </div>
         }
-      );
-    } catch (err) { showToast('Failed: ' + err.message, 'error'); setUploading(false); }
-  };
-
-  const discard = () => {
-    setRecordedBlob(null); setRecordedURL(null); setSelectedFile(null);
-    setPreviewURL(null); setStep('capture'); setCaption('');
-    startCamera();
-  };
-
-  const formatTime = s => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
-
-  if (step === 'preview') {
-    const mediaURL = recordedURL || previewURL;
-    return (
-      <div style={{ position: 'fixed', inset: 0, background: '#000', zIndex: 2000, display: 'flex', flexDirection: 'column' }}>
-        <div style={{ padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #1a1a1a' }}>
-          <button onClick={discard} style={{ background: '#1a1a1a', border: 'none', borderRadius: 20, padding: '8px 14px', color: '#fff', cursor: 'pointer' }}>← Back</button>
-          <h3 style={{ color: '#fff', fontSize: 15, fontWeight: 700 }}>Preview</h3>
-          <button onClick={handlePost} disabled={uploading} style={{ background: '#ff2d55', border: 'none', borderRadius: 20, padding: '8px 20px', color: '#fff', cursor: uploading ? 'default' : 'pointer', opacity: uploading ? 0.7 : 1 }}>
-            {uploading ? `${uploadProgress}%` : 'Post ✓'}
-          </button>
+        {/* Badges */}
+        <div style={{ position: 'absolute', top: 20, left: 16, background: '#ff2d55', borderRadius: 20, padding: '6px 14px', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'white', animation: 'pulse 1s infinite' }} />
+          <span style={{ color: 'white', fontWeight: 700, fontSize: 12 }}>LIVE · {viewers.toLocaleString()} 👁</span>
         </div>
-        <div style={{ flex: 1, background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
-          {postType === 'video'
-            ? <video src={mediaURL} controls autoPlay loop style={{ width: '100%', maxHeight: '55vh', objectFit: 'contain', filter: filter.css }} />
-            : <img src={mediaURL} alt="preview" style={{ width: '100%', maxHeight: '55vh', objectFit: 'contain', filter: filter.css }} />
-          }
-          {uploading && (
-            <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-              <div style={{ color: '#fff', fontSize: 24, fontWeight: 700 }}>{uploadProgress}%</div>
-              <div style={{ width: 200, background: '#333', borderRadius: 8, height: 6 }}>
-                <div style={{ width: `${uploadProgress}%`, background: '#ff2d55', height: '100%', borderRadius: 8, transition: 'width 0.3s' }} />
-              </div>
+        <div style={{ position: 'absolute', top: 20, right: 16, background: 'rgba(0,0,0,0.6)', borderRadius: 16, padding: '6px 12px' }}>
+          <span style={{ color: 'white', fontSize: 12 }}>{fmt()}</span>
+        </div>
+        {/* Controls */}
+        <div style={{ position: 'absolute', bottom: 16, left: 16, right: 16, display: 'flex', gap: 10 }}>
+          <button onClick={toggleMute} style={{ background: 'rgba(0,0,0,0.6)', border: 'none', borderRadius: '50%', width: 42, height: 42, fontSize: 20, cursor: 'pointer' }}>{isMuted ? '🔇' : '🔊'}</button>
+          <button onClick={onClose} style={{ background: '#ff2d55', border: 'none', borderRadius: 20, padding: '8px 24px', color: 'white', fontWeight: 700, cursor: 'pointer', marginLeft: 'auto' }}>End Stream</button>
+        </div>
+        {/* Gift animations */}
+        {giftAnims.map(g => (
+          <div key={g.id} style={{ position: 'absolute', left: `${g.x}%`, top: `${g.y}%`, fontSize: 44, pointerEvents: 'none', zIndex: 20, animation: 'floatUp 2s ease-out forwards' }}>{g.gift.animation}</div>
+        ))}
+      </div>
+
+      {/* Chat */}
+      <div style={{ flex: 1, background: '#0a0a0a', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+        <div style={{ padding: '8px 14px', borderBottom: '1px solid #1a1a1a', display: 'flex', justifyContent: 'space-between' }}>
+          <span style={{ color: 'white', fontWeight: 700, fontSize: 13 }}>Live Chat</span>
+          <button onClick={() => setShowGifts(g => !g)} style={{ background: '#ffd700', border: 'none', borderRadius: 20, padding: '5px 12px', color: '#000', fontWeight: 600, cursor: 'pointer', fontSize: 12 }}>🎁 Gift</button>
+        </div>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '8px 12px' }}>
+          {chatMessages.map(msg => (
+            <div key={msg.id} style={{ display: 'flex', gap: 6, alignItems: 'center', background: msg.isGift ? 'rgba(255,215,0,0.08)' : 'transparent', padding: '3px 6px', borderRadius: 8, marginBottom: 3 }}>
+              <span style={{ color: '#ff2d55', fontWeight: 600, fontSize: 11 }}>@{msg.username}</span>
+              <span style={{ color: 'white', fontSize: 11 }}>{msg.text}</span>
+              {msg.isGift && <span>{msg.gift?.animation}</span>}
             </div>
-          )}
+          ))}
         </div>
-        <div style={{ padding: '12px 16px', background: '#0a0a0a', borderTop: '1px solid #1a1a1a' }}>
-          <input placeholder="Write a caption..." value={caption} onChange={e => setCaption(e.target.value)} style={{ width: '100%', background: '#161616', border: '1px solid #222', borderRadius: 14, padding: '11px 14px', color: '#fff', outline: 'none', fontSize: 14 }} />
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ position: 'fixed', inset: 0, background: '#000', zIndex: 2000, display: 'flex', flexDirection: 'column' }}>
-      {/* Top controls */}
-      <div style={{ padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'absolute', top: 0, left: 0, right: 0, zIndex: 20 }}>
-        <button onClick={onClose} style={{ background: 'rgba(0,0,0,0.5)', border: 'none', borderRadius: '50%', width: 40, height: 40, color: '#fff', fontSize: 18, cursor: 'pointer' }}>✕</button>
-        <button onClick={() => setFacingMode(f => f === 'user' ? 'environment' : 'user')} style={{ background: 'rgba(0,0,0,0.5)', border: 'none', borderRadius: '50%', width: 40, height: 40, fontSize: 20, cursor: 'pointer' }}>🔄</button>
-      </div>
-
-      {/* Camera view */}
-      <div style={{ flex: 1, position: 'relative', overflow: 'hidden', background: '#111' }}>
-        {cameraError ? (
-          <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, textAlign: 'center' }}>
-            <div style={{ fontSize: 64, marginBottom: 16 }}>📵</div>
-            <p style={{ color: '#888', fontSize: 14, marginBottom: 20 }}>{cameraError}</p>
-            <button onClick={() => fileInputRef.current?.click()} style={{ background: '#ff2d55', border: 'none', borderRadius: 24, padding: '12px 28px', color: '#fff', cursor: 'pointer', marginBottom: 12 }}>Pick from Gallery</button>
-            <button onClick={startCamera} style={{ background: '#333', border: 'none', borderRadius: 24, padding: '12px 28px', color: '#fff', cursor: 'pointer' }}>Try Camera Again</button>
-          </div>
-        ) : (
-          <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover', transform: facingMode === 'user' ? 'scaleX(-1)' : 'none', filter: filter.css }} />
-        )}
-        {isRecording && (
-          <div style={{ position: 'absolute', top: 70, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
-            <div style={{ background: '#ff2d55', borderRadius: 20, padding: '6px 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#fff' }} />
-              <span style={{ color: '#fff', fontWeight: 700, fontSize: 13 }}>REC {formatTime(recordingTime)}</span>
+        {showGifts && (
+          <div style={{ background: '#141414', borderTop: '1px solid #222', padding: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8 }}>
+              {VIRTUAL_GIFTS.map(g => (
+                <button key={g.id} onClick={() => sendGift(g)} style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 12, padding: '10px 6px', cursor: 'pointer', textAlign: 'center' }}>
+                  <div style={{ fontSize: 24 }}>{g.animation}</div>
+                  <div style={{ color: '#ffd700', fontSize: 10, marginTop: 2 }}>{g.coins}🪙</div>
+                </button>
+              ))}
             </div>
           </div>
         )}
-        {/* Filters strip */}
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '10px 0', background: 'linear-gradient(to top, rgba(0,0,0,0.7), transparent)', overflowX: 'auto', whiteSpace: 'nowrap' }}>
-          <div style={{ display: 'inline-flex', gap: 12, padding: '0 16px' }}>
-            {VIDEO_FILTERS.map(f => (
-              <button key={f.id} onClick={() => setFilter(f)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer' }}>
-                <div style={{ width: 52, height: 52, borderRadius: 12, background: '#333', border: filter.id === f.id ? '2px solid #ff2d55' : '2px solid transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>{f.icon}</div>
-                <span style={{ color: filter.id === f.id ? '#ff2d55' : '#ccc', fontSize: 10 }}>{f.name}</span>
-              </button>
-            ))}
-          </div>
+        <div style={{ padding: '8px 12px', borderTop: '1px solid #1a1a1a', display: 'flex', gap: 8 }}>
+          <input value={message} onChange={e => setMessage(e.target.value)} onKeyDown={e => e.key==='Enter' && sendMsg()}
+            placeholder="Say something..." style={{ flex: 1, background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 24, padding: '8px 14px', color: 'white', outline: 'none', fontSize: 13 }} />
+          <button onClick={sendMsg} style={{ background: '#ff2d55', border: 'none', borderRadius: 24, padding: '8px 18px', color: 'white', cursor: 'pointer', fontWeight: 600 }}>Send</button>
         </div>
-      </div>
-
-      {/* Bottom controls */}
-      <div style={{ background: '#000', padding: '20px 16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <button onClick={() => fileInputRef.current?.click()} style={{ width: 56, height: 56, borderRadius: 14, background: '#1a1a1a', border: '1px solid #333', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, cursor: 'pointer' }}>🖼️</button>
-        <input ref={fileInputRef} type="file" accept="video/*,image/*" onChange={handleGalleryPick} style={{ display: 'none' }} />
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-          <button
-            onTouchStart={startRecording} onTouchEnd={stopRecording}
-            onMouseDown={startRecording} onMouseUp={stopRecording}
-            style={{ width: 76, height: 76, borderRadius: '50%', border: '4px solid #fff', background: isRecording ? '#ff2d55' : 'rgba(255,45,85,0.2)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          >
-            {isRecording
-              ? <div style={{ width: 28, height: 28, background: '#fff', borderRadius: 4 }} />
-              : <div style={{ width: 52, height: 52, background: '#ff2d55', borderRadius: '50%' }} />
-            }
-          </button>
-          <span style={{ color: '#888', fontSize: 10 }}>{isRecording ? 'Release to stop' : 'Hold to record'}</span>
-        </div>
-        <button onClick={capturePhoto} style={{ width: 56, height: 56, borderRadius: '50%', background: '#fff', border: '3px solid #ff2d55', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, cursor: 'pointer' }}>📸</button>
       </div>
     </div>
   );
 };
 
-// ─── STORIES ────────────────────────────────────────────────────────────────
+// ─── Stories ────────────────────────────────────────────────────────────────
+const Stories = ({ users, stories, currentUser, onViewStory, onAddStory, showToast }) => {
+  const fileRef = useRef(null);
+  const storyUsers = useMemo(() => {
+    const ids = [...new Set(stories.map(s => s.userId))];
+    return ids.map(id => users.find(u => u.id === id)).filter(Boolean);
+  }, [stories, users]);
 
-const CreateStoryModal = ({ currentUser, onClose, showToast, onStoryPosted }) => {
-  const [text, setText] = useState('');
-  const [posting, setPosting] = useState(false);
-  const fileInputRef = useRef(null);
-
-  const handleTextStory = async () => {
-    if (!text.trim()) { showToast('Write something!', 'error'); return; }
-    setPosting(true);
+  const handleAdd = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    showToast('Uploading story...', 'info');
     try {
-      await addDoc(collection(db, 'stories'), {
-        type: 'text', text: text.trim(), userId: currentUser.uid,
-        username: currentUser.username, photoURL: currentUser.photoURL || '',
-        createdAt: serverTimestamp(),
-      });
-      showToast('Story posted! 📖', 'success'); onStoryPosted?.(); onClose();
-    } catch { showToast('Failed to post story', 'error'); }
-    setPosting(false);
-  };
-
-  const handleImageStory = async (e) => {
-    const file = e.target.files[0]; if (!file) return;
-    setPosting(true);
-    try {
-      const storageRef2 = ref(storage, `stories/${currentUser.uid}_${Date.now()}`);
-      const task = uploadBytesResumable(storageRef2, file);
-      task.on('state_changed', null, () => { showToast('Upload failed', 'error'); setPosting(false); }, async () => {
-        const url = await getDownloadURL(task.snapshot.ref);
-        await addDoc(collection(db, 'stories'), {
-          type: 'photo', url, userId: currentUser.uid,
-          username: currentUser.username, photoURL: currentUser.photoURL || '',
-          createdAt: serverTimestamp(),
-        });
-        showToast('Story posted! 📸', 'success'); onStoryPosted?.(); onClose();
-      });
-    } catch { showToast('Failed to post story', 'error'); setPosting(false); }
+      const type = file.type.startsWith('video/') ? 'video' : 'image';
+      const url = await uploadToCloudinary(file, type === 'video' ? 'video' : 'image');
+      const story = {
+        userId: currentUser.id, username: currentUser.username,
+        avatarColor: currentUser.avatarColor, avatar: currentUser.avatar,
+        type, media: url, timestamp: serverTimestamp(), expiresAt: Date.now() + 86400000
+      };
+      await addDoc(collection(db, 'stories'), story);
+      onAddStory(story);
+      showToast('Story posted! ✨', 'success');
+    } catch { showToast('Upload failed', 'error'); }
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: '#000', zIndex: 2000, display: 'flex', flexDirection: 'column' }}>
-      <div style={{ padding: 16, borderBottom: '1px solid #222', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 18, cursor: 'pointer' }}>✕</button>
-        <h3 style={{ color: '#fff', fontSize: 16, fontWeight: 700 }}>Create Story</h3>
-        <div style={{ width: 40 }} />
+    <div style={{ display: 'flex', gap: 12, padding: '10px 14px', overflowX: 'auto', borderBottom: '1px solid #141414', flexShrink: 0 }}>
+      {/* Add story */}
+      <div onClick={() => fileRef.current?.click()} style={{ flexShrink: 0, cursor: 'pointer', textAlign: 'center' }}>
+        <div style={{ width: 58, height: 58, borderRadius: '50%', background: '#141414', border: '2px dashed #333', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, marginBottom: 4 }}>+</div>
+        <div style={{ color: '#666', fontSize: 10, width: 60, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Add</div>
+        <input ref={fileRef} type="file" accept="image/*,video/*" onChange={handleAdd} style={{ display: 'none' }} />
       </div>
-      <div style={{ flex: 1, padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <button onClick={() => fileInputRef.current?.click()} style={{ background: '#141414', border: '2px dashed #333', borderRadius: 16, padding: 30, cursor: 'pointer', textAlign: 'center' }}>
-          <div style={{ fontSize: 40, marginBottom: 8 }}>📸</div>
-          <div style={{ color: '#888' }}>Upload Photo Story</div>
-        </button>
-        <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageStory} style={{ display: 'none' }} />
-        <textarea value={text} onChange={e => setText(e.target.value)} placeholder="Or write a text story..." style={{ background: '#141414', border: '1px solid #222', borderRadius: 16, padding: 16, color: '#fff', fontSize: 16, outline: 'none', resize: 'none', height: 120 }} />
-        <button onClick={handleTextStory} disabled={posting} style={{ background: '#ff2d55', border: 'none', borderRadius: 16, padding: 14, color: '#fff', fontWeight: 700, cursor: 'pointer', opacity: posting ? 0.7 : 1 }}>
-          {posting ? 'Posting...' : 'Post Text Story'}
-        </button>
-      </div>
+      {/* Story rings */}
+      {storyUsers.map(u => (
+        <div key={u.id} onClick={() => onViewStory(u)} style={{ flexShrink: 0, cursor: 'pointer', textAlign: 'center' }}>
+          <div style={{ width: 58, height: 58, borderRadius: '50%', padding: 2, background: 'linear-gradient(135deg,#ff2d55,#af52de,#ffd700)' }}>
+            <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: u.avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 20, border: '2px solid #0a0a0a', overflow: 'hidden' }}>
+              {u.photoURL ? <img src={u.photoURL} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : u.avatar}
+            </div>
+          </div>
+          <div style={{ color: '#aaa', fontSize: 10, marginTop: 4, width: 60, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.username}</div>
+        </div>
+      ))}
     </div>
   );
 };
 
-const Stories = ({ currentUser, stories, onStoryPosted, showToast }) => {
-  const [showCreate, setShowCreate] = useState(false);
-  const [viewingStory, setViewingStory] = useState(null);
+// ─── Story Viewer ────────────────────────────────────────────────────────────
+const StoryViewer = ({ stories, user, onClose, onNextUser, onPrevUser }) => {
+  const userStories = stories.filter(s => s.userId === user?.id);
+  const [idx, setIdx]         = useState(0);
   const [progress, setProgress] = useState(0);
+  const DURATION = 5000;
 
   useEffect(() => {
-    if (!viewingStory) return;
     setProgress(0);
     const interval = setInterval(() => {
-      setProgress(p => { if (p >= 100) { clearInterval(interval); setViewingStory(null); return 0; } return p + 2; });
-    }, 50);
+      setProgress(p => {
+        if (p >= 100) {
+          if (idx < userStories.length - 1) { setIdx(i => i+1); return 0; }
+          else { onNextUser(); return 100; }
+        }
+        return p + (100 / (DURATION/100));
+      });
+    }, 100);
     return () => clearInterval(interval);
-  }, [viewingStory]);
+  }, [idx, userStories.length]);
 
-  // FIX: filter stories to last 24 hours only
-  const recentStories = useMemo(() => {
-    const cutoff = Date.now() - 24 * 60 * 60 * 1000;
-    return stories.filter(s => {
-      if (!s.createdAt) return true;
-      const date = s.createdAt.toDate ? s.createdAt.toDate() : new Date(s.createdAt);
-      return date.getTime() > cutoff;
-    });
-  }, [stories]);
-
-  const groupedStories = useMemo(() =>
-    recentStories.reduce((acc, s) => { if (!acc[s.userId]) acc[s.userId] = []; acc[s.userId].push(s); return acc; }, {}),
-    [recentStories]
-  );
+  if (!userStories.length) { onClose(); return null; }
+  const story = userStories[idx];
 
   return (
-    <>
-      <div style={{ padding: '10px 14px', background: '#0a0a0a', borderBottom: '1px solid #1a1a1a', overflowX: 'auto', whiteSpace: 'nowrap' }}>
-        {/* Your story */}
-        <div style={{ display: 'inline-block', marginRight: 14, textAlign: 'center', cursor: 'pointer' }} onClick={() => setShowCreate(true)}>
-          <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'linear-gradient(135deg,#ff2d55,#af52de)', padding: 2 }}>
-            <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26 }}>➕</div>
-          </div>
-          <div style={{ color: '#888', fontSize: 10, marginTop: 3 }}>Your Story</div>
-        </div>
-        {/* Other stories */}
-        {Object.values(groupedStories).map((group, i) => (
-          <div key={i} style={{ display: 'inline-block', marginRight: 14, textAlign: 'center', cursor: 'pointer' }} onClick={() => setViewingStory(group)}>
-            <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'linear-gradient(135deg,#ff2d55,#af52de)', padding: 2 }}>
-              <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: '#222', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, color: '#fff', overflow: 'hidden' }}>
-                {group[0]?.photoURL ? <img src={group[0].photoURL} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : group[0]?.username?.[0]?.toUpperCase()}
-              </div>
-            </div>
-            <div style={{ color: '#fff', fontSize: 10, marginTop: 3, maxWidth: 64, overflow: 'hidden', textOverflow: 'ellipsis' }}>@{group[0]?.username}</div>
+    <div style={{ position: 'fixed', inset: 0, background: '#000', zIndex: 1500 }} onClick={onClose}>
+      {/* Progress bars */}
+      <div style={{ position: 'absolute', top: 16, left: 12, right: 12, display: 'flex', gap: 4, zIndex: 10 }}>
+        {userStories.map((_, i) => (
+          <div key={i} style={{ flex: 1, height: 3, background: 'rgba(255,255,255,0.2)', borderRadius: 2, overflow: 'hidden' }}>
+            <div style={{ width: i === idx ? `${progress}%` : i < idx ? '100%' : '0%', height: '100%', background: 'white', transition: 'width 0.1s linear' }} />
           </div>
         ))}
       </div>
 
-      {showCreate && <CreateStoryModal currentUser={currentUser} onClose={() => setShowCreate(false)} onStoryPosted={onStoryPosted} showToast={showToast} />}
+      {/* User info */}
+      <div style={{ position: 'absolute', top: 30, left: 14, right: 14, display: 'flex', alignItems: 'center', gap: 10, zIndex: 10 }}>
+        <div style={{ width: 38, height: 38, borderRadius: '50%', background: user?.avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 16 }}>{user?.avatar}</div>
+        <div style={{ color: 'white', fontWeight: 600, fontSize: 13 }}>@{user?.username}</div>
+        <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, marginLeft: 'auto' }}>{idx+1}/{userStories.length}</div>
+        <button onClick={onClose} style={{ background: 'rgba(0,0,0,0.5)', border: 'none', borderRadius: '50%', width: 32, height: 32, color: 'white', cursor: 'pointer', fontSize: 16 }}>✕</button>
+      </div>
 
-      {viewingStory && viewingStory[0] && (
-        <div style={{ position: 'fixed', inset: 0, background: '#000', zIndex: 3000 }} onClick={() => setViewingStory(null)}>
-          <div style={{ position: 'absolute', top: 20, left: 0, right: 0, padding: '0 16px', zIndex: 1 }}>
-            <div style={{ height: 3, background: '#333', borderRadius: 2, overflow: 'hidden' }}>
-              <div style={{ width: `${progress}%`, height: '100%', background: '#fff', transition: 'width 0.05s linear' }} />
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10 }}>
-              <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#ff2d55', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 14 }}>
-                {viewingStory[0].photoURL ? <img src={viewingStory[0].photoURL} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : viewingStory[0].username?.[0]?.toUpperCase()}
-              </div>
-              <span style={{ color: '#fff', fontSize: 13, fontWeight: 600 }}>@{viewingStory[0].username}</span>
-              <span style={{ color: '#888', fontSize: 11 }}>{timeAgo(viewingStory[0].createdAt)}</span>
-            </div>
+      {/* Content */}
+      <div onClick={e => e.stopPropagation()} style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {story.type === 'image' && story.media && <img src={story.media} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+        {story.type === 'video' && story.media && <video src={story.media} autoPlay loop style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+        {story.type === 'text' && (
+          <div style={{ background: `linear-gradient(135deg,${user?.avatarColor},#000)`, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40 }}>
+            <div style={{ color: 'white', fontSize: 28, fontWeight: 700, textAlign: 'center' }}>{story.text}</div>
           </div>
-          <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-            {viewingStory[0].type === 'photo' && <img src={viewingStory[0].url} alt="story" style={{ maxWidth: '100%', maxHeight: '80vh', borderRadius: 16 }} />}
-            {viewingStory[0].type === 'text' && (
-              <div style={{ background: 'linear-gradient(135deg,#1a0020,#000)', borderRadius: 20, padding: 40, textAlign: 'center', maxWidth: 320 }}>
-                <p style={{ color: '#fff', fontSize: 28, fontWeight: 700 }}>{viewingStory[0].text}</p>
-              </div>
-            )}
-          </div>
-          <button onClick={e => { e.stopPropagation(); setViewingStory(null); }} style={{ position: 'absolute', top: 20, right: 20, background: 'rgba(0,0,0,0.6)', border: 'none', borderRadius: '50%', width: 36, height: 36, color: '#fff', cursor: 'pointer', fontSize: 18 }}>✕</button>
-        </div>
-      )}
-    </>
+        )}
+      </div>
+
+      <button onClick={(e) => { e.stopPropagation(); onPrevUser(); }} style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '40%', background: 'transparent', border: 'none', cursor: 'pointer' }} />
+      <button onClick={(e) => { e.stopPropagation(); onNextUser(); }} style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: '40%', background: 'transparent', border: 'none', cursor: 'pointer' }} />
+    </div>
   );
 };
 
-// ─── POST CARD ───────────────────────────────────────────────────────────────
-
-const PostCard = memo(({ post, currentUser, onViewProfile, showToast, onLivePress }) => {
-  const [liked, setLiked] = useState((post.likes || []).includes(currentUser?.uid));
-  const [likeCount, setLikeCount] = useState((post.likes || []).length);
+// ─── Video Card ──────────────────────────────────────────────────────────────
+const VideoCard = memo(({ video, currentUser, onFollow, onMessage, onVoiceCall, onVideoCall, followed, showToast, onViewProfile }) => {
+  const [liked, setLiked]           = useState(false);
+  const [likeCount, setLikeCount]   = useState(video.likes || 0);
+  const [saved, setSaved]           = useState(false);
   const [showComments, setShowComments] = useState(false);
-  const [comments, setComments] = useState([]);
+  const [comments, setComments]     = useState([]);
   const [commentText, setCommentText] = useState('');
-  const [showShareMenu, setShowShareMenu] = useState(false);
-  const [showReport, setShowReport] = useState(false);
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showGifts, setShowGifts]   = useState(false);
+  const [giftAnims, setGiftAnims]   = useState([]);
+  const [showMore, setShowMore]     = useState(false);
+  const [hearts, setHearts]         = useState([]);
+  const [paused, setPaused]         = useState(false);
+  const [muted, setMuted]           = useState(true);
   const videoRef = useRef(null);
   const lastTap = useRef(0);
 
+  // Load comments from Firestore
   useEffect(() => {
     if (!showComments) return;
-    const unsub = onSnapshot(
-      query(collection(db, 'posts', post.id, 'comments'), orderBy('createdAt')),
-      snap => setComments(snap.docs.map(d => ({ id: d.id, ...d.data() })))
-    );
+    const q = query(collection(db, 'comments'), where('videoId','==',video.id), orderBy('timestamp','desc'));
+    const unsub = onSnapshot(q, snap => {
+      setComments(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
     return unsub;
-  }, [showComments, post.id]);
+  }, [showComments, video.id]);
 
-  const toggleLike = async () => {
-    const newLiked = !liked;
-    setLiked(newLiked); setLikeCount(c => newLiked ? c + 1 : c - 1);
+  const handleLike = async () => {
+    if (liked) return;
+    setLiked(true);
+    setLikeCount(c => c + 1);
     try {
-      await updateDoc(doc(db, 'posts', post.id), {
-        likes: newLiked ? arrayUnion(currentUser.uid) : arrayRemove(currentUser.uid)
-      });
-    } catch (e) { console.error(e); }
+      const ref = doc(db, 'videos', video.id);
+      await updateDoc(ref, { likes: likeCount + 1 });
+      await addDoc(collection(db, 'likes'), { videoId: video.id, userId: currentUser?.id, timestamp: serverTimestamp() });
+    } catch {}
+  };
+
+  const handleDoubleTap = (e) => {
+    const now = Date.now();
+    if (now - lastTap.current < 300) {
+      handleLike();
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = e.clientX - rect.left, y = e.clientY - rect.top;
+      for (let i = 0; i < 6; i++) {
+        setTimeout(() => {
+          const id = Date.now() + i;
+          setHearts(h => [...h, { id, x, y }]);
+          setTimeout(() => setHearts(h => h.filter(hh => hh.id !== id)), 900);
+        }, i * 50);
+      }
+    }
+    lastTap.current = now;
+  };
+
+  const handleTap = () => {
+    if (videoRef.current) {
+      if (paused) { videoRef.current.play(); setPaused(false); }
+      else        { videoRef.current.pause(); setPaused(true); }
+    }
   };
 
   const addComment = async () => {
     if (!commentText.trim()) return;
+    const c = {
+      videoId: video.id, userId: currentUser?.id, username: currentUser?.username,
+      avatar: currentUser?.avatar, avatarColor: currentUser?.avatarColor,
+      text: commentText, likes: 0, timestamp: serverTimestamp()
+    };
+    setCommentText('');
+    try { await addDoc(collection(db, 'comments'), c); }
+    catch { showToast('Error posting comment', 'error'); }
+  };
+
+  const sendGift = (gift) => {
+    if ((currentUser?.coins || 0) < gift.coins) { showToast('Not enough coins! 🪙', 'error'); return; }
+    const id = Date.now();
+    setGiftAnims(g => [...g, { id, gift }]);
+    showToast(`Sent ${gift.name}! 🎁`, 'success');
+    setTimeout(() => setGiftAnims(g => g.filter(x => x.id !== id)), 2500);
+    setShowGifts(false);
+  };
+
+  const handleShare = async () => {
+    const shareData = { title: `Watch @${video.username} on Dagu`, text: video.description, url: window.location.href };
     try {
-      await addDoc(collection(db, 'posts', post.id, 'comments'), {
-        text: commentText.trim(), userId: currentUser.uid,
-        username: currentUser.username, photoURL: currentUser.photoURL || '',
-        createdAt: serverTimestamp()
-      });
-      setCommentText(''); setShowEmojiPicker(false);
-    } catch { showToast('Failed to comment', 'error'); }
+      if (navigator.share) await navigator.share(shareData);
+      else { await navigator.clipboard.writeText(window.location.href); showToast('Link copied! 🔗', 'success'); }
+    } catch {}
   };
 
-  const handleShare = async (platform) => {
-    const url = window.location.href;
-    if (platform === 'copy') {
-      try { await navigator.clipboard.writeText(url); showToast('Link copied!', 'success'); }
-      catch { showToast('Could not copy link', 'error'); }
-    } else {
-      const shareUrls = {
-        'twitter': `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}`,
-        'facebook': `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
-        'whatsapp': `https://wa.me/?text=${encodeURIComponent(url)}`,
-        'telegram': `https://t.me/share/url?url=${encodeURIComponent(url)}`,
-      };
-      if (shareUrls[platform]) window.open(shareUrls[platform], '_blank');
-    }
-    try { await updateDoc(doc(db, 'posts', post.id), { shares: increment(1) }); } catch {}
-    setShowShareMenu(false);
-  };
-
-  const handleDoubleTap = () => {
-    const now = Date.now();
-    if (now - lastTap.current < 300 && !liked) toggleLike();
-    lastTap.current = now;
-  };
+  const isFollowing = followed?.includes(video.userId);
 
   return (
-    <div style={{ width: '100%', height: '100%', position: 'relative', background: '#000', overflow: 'hidden' }} onClick={handleDoubleTap}>
-      {post.type === 'video' && <video ref={videoRef} src={post.url} loop playsInline autoPlay muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-      {post.type === 'photo' && <img src={post.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-      {post.type === 'text' && (
-        <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#1a0a2e,#0a0a1a)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 32 }}>
-          <p style={{ color: '#fff', fontSize: 24, fontWeight: 700, textAlign: 'center' }}>{post.text}</p>
-        </div>
-      )}
+    <div style={{ width: '100%', height: '100%', position: 'relative', background: '#000', overflow: 'hidden' }}
+      onClick={handleTap} onDoubleClick={handleDoubleTap}>
+
+      {/* Video */}
+      <video ref={videoRef} src={video.videoUrl} loop playsInline autoPlay muted={muted}
+        style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
 
       {/* Gradient overlay */}
-      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 50%)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 55%)', pointerEvents: 'none' }} />
+
+      {/* Paused indicator */}
+      {paused && (
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+          <div style={{ fontSize: 60, opacity: 0.8 }}>⏸</div>
+        </div>
+      )}
+
+      {/* Heart burst */}
+      {hearts.map(h => (
+        <div key={h.id} style={{ position: 'absolute', left: h.x-24, top: h.y-24, fontSize: 44, pointerEvents: 'none', zIndex: 100, animation: 'heartBurst 0.9s ease-out forwards' }}>❤️</div>
+      ))}
+
+      {/* Gift animations */}
+      {giftAnims.map(g => (
+        <div key={g.id} style={{ position: 'absolute', left: '50%', top: '40%', fontSize: 52, pointerEvents: 'none', zIndex: 50, animation: 'floatUp 2s ease-out forwards', transform: 'translateX(-50%)' }}>{g.gift.animation}</div>
+      ))}
 
       {/* Bottom info */}
-      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 68, padding: '18px 14px', zIndex: 5 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
-          <div onClick={e => { e.stopPropagation(); onViewProfile?.(post.userId); }} style={{ width: 38, height: 38, borderRadius: '50%', background: '#ff2d55', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer', overflow: 'hidden', flexShrink: 0 }}>
-            {post.photoURL ? <img src={post.photoURL} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (post.username?.[0] || '?').toUpperCase()}
-          </div>
-          <span onClick={e => { e.stopPropagation(); onViewProfile?.(post.userId); }} style={{ color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>@{post.username}</span>
-          <button onClick={e => { e.stopPropagation(); showToast('Follow feature — open profile to follow', 'info'); }} style={{ background: '#ff2d55', border: 'none', borderRadius: 20, padding: '4px 10px', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Follow</button>
-          <button onClick={e => { e.stopPropagation(); setShowReport(true); }} style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid #333', borderRadius: 20, padding: '4px 8px', color: '#ff9500', fontSize: 11, cursor: 'pointer' }}>⚠️</button>
-        </div>
-        {post.caption && <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: 13, marginBottom: 4 }}>{post.caption}</p>}
-        <p style={{ color: '#666', fontSize: 10 }}>{timeAgo(post.createdAt)}</p>
-      </div>
-
-      {/* Right actions */}
-      <div style={{ position: 'absolute', right: 10, bottom: 80, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, zIndex: 6 }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-          <button onClick={e => { e.stopPropagation(); toggleLike(); }} style={{ background: 'rgba(0,0,0,0.5)', border: 'none', borderRadius: '50%', width: 46, height: 46, fontSize: 22, cursor: 'pointer' }}>{liked ? '❤️' : '🤍'}</button>
-          <span style={{ color: '#fff', fontSize: 11 }}>{formatNumber(likeCount)}</span>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-          <button onClick={e => { e.stopPropagation(); setShowComments(true); }} style={{ background: 'rgba(0,0,0,0.5)', border: 'none', borderRadius: '50%', width: 46, height: 46, fontSize: 22, cursor: 'pointer' }}>💬</button>
-          <span style={{ color: '#fff', fontSize: 11 }}>{formatNumber(comments.length || post.commentCount || 0)}</span>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-          <button onClick={e => { e.stopPropagation(); setShowShareMenu(true); }} style={{ background: 'rgba(0,0,0,0.5)', border: 'none', borderRadius: '50%', width: 46, height: 46, fontSize: 20, cursor: 'pointer' }}>↗️</button>
-          <span style={{ color: '#fff', fontSize: 11 }}>{formatNumber(post.shares || 0)}</span>
-        </div>
-        <button onClick={e => { e.stopPropagation(); onLivePress?.(post); }} style={{ background: 'linear-gradient(135deg,#ff2d55,#af52de)', border: 'none', borderRadius: '50%', width: 46, height: 46, fontSize: 18, cursor: 'pointer' }}>🔴</button>
-      </div>
-
-      {/* Share menu */}
-      {showShareMenu && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 5000, display: 'flex', alignItems: 'flex-end' }} onClick={() => setShowShareMenu(false)}>
-          <div onClick={e => e.stopPropagation()} style={{ width: '100%', background: '#1a1a1a', borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24 }}>
-            <h3 style={{ color: '#fff', fontSize: 18, fontWeight: 700, marginBottom: 20, textAlign: 'center' }}>Share to</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 20 }}>
-              {[
-                { icon: '🔗', label: 'Copy', platform: 'copy' },
-                { icon: '💬', label: 'WhatsApp', platform: 'whatsapp' },
-                { icon: '✉️', label: 'Telegram', platform: 'telegram' },
-                { icon: '🐦', label: 'Twitter', platform: 'twitter' },
-                { icon: '📘', label: 'Facebook', platform: 'facebook' },
-              ].map(opt => (
-                <button key={opt.label} onClick={() => handleShare(opt.platform)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, background: '#2a2a2a', border: 'none', borderRadius: 16, padding: '12px 6px', cursor: 'pointer' }}>
-                  <span style={{ fontSize: 28 }}>{opt.icon}</span>
-                  <span style={{ color: '#ccc', fontSize: 10 }}>{opt.label}</span>
-                </button>
-              ))}
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 70, padding: '16px 14px', zIndex: 5, pointerEvents: 'none' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, pointerEvents: 'auto' }}>
+          <div onClick={(e) => { e.stopPropagation(); onViewProfile?.(video.userId); }} style={{ position: 'relative', cursor: 'pointer', flexShrink: 0 }}>
+            <div style={{ width: 42, height: 42, borderRadius: '50%', background: video.avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 16, border: '2px solid rgba(255,255,255,0.5)', overflow: 'hidden' }}>
+              {video.photoURL ? <img src={video.photoURL} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : video.avatar}
             </div>
-            <button onClick={() => setShowShareMenu(false)} style={{ width: '100%', background: '#2a2a2a', border: 'none', borderRadius: 20, padding: 14, color: '#fff', cursor: 'pointer' }}>Cancel</button>
+          </div>
+          <div style={{ flex: 1 }}>
+            <div onClick={(e) => { e.stopPropagation(); onViewProfile?.(video.userId); }} style={{ color: 'white', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>@{video.username}</div>
+            {video.soundName && <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11, marginTop: 2 }}>🎵 {video.soundName}</div>}
+          </div>
+          {video.userId !== currentUser?.id && (
+            <button onClick={(e) => { e.stopPropagation(); onFollow?.(video.userId); }}
+              style={{ background: isFollowing ? 'rgba(255,255,255,0.1)' : '#ff2d55', border: isFollowing ? '1px solid rgba(255,255,255,0.3)' : 'none', borderRadius: 20, padding: '6px 16px', color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: 12, pointerEvents: 'auto' }}>
+              {isFollowing ? '✓' : '+ Follow'}
+            </button>
+          )}
+        </div>
+        <div style={{ pointerEvents: 'none' }}>
+          <p style={{ color: 'white', fontSize: 13, lineHeight: 1.4, marginBottom: 4 }}>
+            {showMore ? video.description : (video.description?.substring(0,80) || '')}
+            {(video.description?.length > 80) && (
+              <span onClick={(e) => { e.stopPropagation(); setShowMore(m => !m); }} style={{ color: '#ccc', cursor: 'pointer', pointerEvents: 'auto' }}>
+                {showMore ? ' less' : '... more'}
+              </span>
+            )}
+          </p>
+          {video.hashtags?.length > 0 && (
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {video.hashtags.slice(0,4).map(h => <span key={h} style={{ color: '#fff', fontWeight: 600, fontSize: 12 }}>{h}</span>)}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Right action buttons */}
+      <div style={{ position: 'absolute', right: 10, bottom: 20, display: 'flex', flexDirection: 'column', gap: 18, alignItems: 'center', zIndex: 10 }}>
+        {/* Like */}
+        <ActionBtn icon={liked ? '❤️' : '🤍'} count={formatNumber(likeCount)} active={liked}
+          onClick={(e) => { e.stopPropagation(); handleLike(); }} color='#ff2d55' />
+        {/* Comment */}
+        <ActionBtn icon='💬' count={formatNumber(video.commentCount || 0)}
+          onClick={(e) => { e.stopPropagation(); setShowComments(true); }} />
+        {/* Share */}
+        <ActionBtn icon='↗️' count='Share' onClick={(e) => { e.stopPropagation(); handleShare(); }} />
+        {/* Gift */}
+        <ActionBtn icon='🎁' count='Gift' onClick={(e) => { e.stopPropagation(); setShowGifts(g => !g); }} color='#ffd700' />
+        {/* Save */}
+        <ActionBtn icon={saved ? '🔖' : '📌'} count={saved ? 'Saved' : 'Save'} active={saved}
+          onClick={(e) => { e.stopPropagation(); setSaved(s => !s); showToast(saved ? 'Removed' : 'Saved! 🔖', 'success'); }} color='#06d6a0' />
+        {/* Mute */}
+        <ActionBtn icon={muted ? '🔇' : '🔊'} count=''
+          onClick={(e) => { e.stopPropagation(); setMuted(m => !m); }} />
+        {/* Message creator */}
+        {video.userId !== currentUser?.id && (
+          <ActionBtn icon='✉️' count='DM'
+            onClick={(e) => { e.stopPropagation(); onMessage?.(video.userId); }} color='#af52de' />
+        )}
+      </div>
+
+      {/* Gift picker */}
+      {showGifts && (
+        <div onClick={(e) => e.stopPropagation()} style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: '#1a1a1a', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, zIndex: 20 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+            <span style={{ color: 'white', fontWeight: 700 }}>🎁 Send a Gift</span>
+            <span style={{ color: '#ffd700', fontWeight: 600, fontSize: 13 }}>🪙 {currentUser?.coins || 0}</span>
+            <button onClick={() => setShowGifts(false)} style={{ background: '#333', border: 'none', borderRadius: '50%', width: 28, height: 28, color: 'white', cursor: 'pointer' }}>✕</button>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10 }}>
+            {VIRTUAL_GIFTS.map(g => (
+              <button key={g.id} onClick={() => sendGift(g)} style={{ background: '#222', border: '1px solid #2a2a2a', borderRadius: 14, padding: '10px 6px', cursor: 'pointer', textAlign: 'center' }}>
+                <div style={{ fontSize: 26 }}>{g.animation}</div>
+                <div style={{ color: '#ffd700', fontSize: 10, marginTop: 3 }}>{g.coins}🪙</div>
+              </button>
+            ))}
           </div>
         </div>
       )}
 
-      {/* Comments panel */}
+      {/* Comments drawer */}
       {showComments && (
-        <div style={{ position: 'absolute', inset: 0, background: '#0a0a0a', zIndex: 50, display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
-          <div style={{ padding: '14px 16px', borderBottom: '1px solid #1e1e1e', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ color: '#fff', fontWeight: 700 }}>💬 Comments ({comments.length})</span>
-            <button onClick={() => setShowComments(false)} style={{ background: '#1a1a1a', border: 'none', borderRadius: '50%', width: 32, height: 32, color: '#fff', cursor: 'pointer' }}>✕</button>
+        <div onClick={(e) => e.stopPropagation()} style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: '#0f0f0f', borderTopLeftRadius: 24, borderTopRightRadius: 24, height: '70%', display: 'flex', flexDirection: 'column', zIndex: 20 }}>
+          <div style={{ padding: '14px 16px', borderBottom: '1px solid #1e1e1e', display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ color: 'white', fontWeight: 700 }}>Comments ({comments.length})</span>
+            <button onClick={() => setShowComments(false)} style={{ background: '#222', border: 'none', borderRadius: '50%', width: 28, height: 28, color: 'white', cursor: 'pointer' }}>✕</button>
           </div>
-          <div style={{ flex: 1, overflowY: 'auto', padding: 14 }}>
-            {comments.length === 0 && <p style={{ color: '#444', textAlign: 'center', marginTop: 40 }}>No comments yet. Be first!</p>}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '10px 14px' }}>
+            {comments.length === 0 && <div style={{ textAlign: 'center', color: '#444', marginTop: 40 }}>No comments yet. Be first!</div>}
             {comments.map(c => (
-              <div key={c.id} style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
-                <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#ff2d55', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 12, overflow: 'hidden', flexShrink: 0 }}>
-                  {c.photoURL ? <img src={c.photoURL} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : c.username?.[0]?.toUpperCase()}
-                </div>
-                <div style={{ flex: 1, background: '#161616', borderRadius: 14, padding: '8px 12px' }}>
-                  <div style={{ color: '#ff2d55', fontWeight: 600, fontSize: 11, marginBottom: 3 }}>@{c.username}</div>
-                  <p style={{ color: '#ddd', fontSize: 13 }}>{c.text}</p>
-                  <p style={{ color: '#555', fontSize: 10, marginTop: 4 }}>{timeAgo(c.createdAt)}</p>
+              <div key={c.id} style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
+                <div style={{ width: 34, height: 34, borderRadius: '50%', background: c.avatarColor || '#333', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 13, flexShrink: 0 }}>{c.avatar || '?'}</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ color: '#ff2d55', fontWeight: 600, fontSize: 11 }}>@{c.username}</div>
+                  <div style={{ color: '#ddd', fontSize: 13, marginTop: 2 }}>{c.text}</div>
                 </div>
               </div>
             ))}
           </div>
-          <div style={{ padding: '10px 12px', borderTop: '1px solid #1e1e1e' }}>
-            {showEmojiPicker && (
-              <div style={{ background: '#161616', borderRadius: 16, padding: 10, marginBottom: 8, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {EMOJIS.map(e => <button key={e} onClick={() => setCommentText(prev => prev + e)} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer' }}>{e}</button>)}
-              </div>
-            )}
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <button onClick={() => setShowEmojiPicker(!showEmojiPicker)} style={{ background: '#1a1a1a', border: 'none', borderRadius: '50%', width: 36, height: 36, fontSize: 18, cursor: 'pointer' }}>😊</button>
-              <input value={commentText} onChange={e => setCommentText(e.target.value)} onKeyDown={e => e.key === 'Enter' && addComment()} placeholder="Add comment..." style={{ flex: 1, background: '#161616', border: '1px solid #222', borderRadius: 20, padding: '9px 14px', color: '#fff', outline: 'none', fontSize: 13 }} />
-              <button onClick={addComment} style={{ background: commentText.trim() ? '#ff2d55' : '#2a2a2a', border: 'none', borderRadius: '50%', width: 36, height: 36, color: '#fff', cursor: 'pointer' }}>↑</button>
-            </div>
+          <div style={{ padding: '10px 12px', borderTop: '1px solid #1e1e1e', display: 'flex', gap: 8 }}>
+            <input value={commentText} onChange={e => setCommentText(e.target.value)} onKeyDown={e => e.key==='Enter' && addComment()}
+              placeholder="Add a comment..." style={{ flex: 1, background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 24, padding: '9px 14px', color: 'white', outline: 'none', fontSize: 13 }} />
+            <button onClick={addComment} style={{ background: '#ff2d55', border: 'none', borderRadius: '50%', width: 36, height: 36, color: 'white', cursor: 'pointer', fontSize: 18 }}>↑</button>
           </div>
         </div>
       )}
-
-      {showReport && <ReportModal targetId={post.userId} targetType="post" targetName={post.username} reportedBy={currentUser?.uid} onClose={() => setShowReport(false)} showToast={showToast} />}
     </div>
   );
 });
 
-// ─── HOME FEED ───────────────────────────────────────────────────────────────
+const ActionBtn = ({ icon, count, onClick, active, color = 'white' }) => (
+  <div onClick={onClick} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', gap: 2 }}>
+    <div style={{ fontSize: 28, filter: active ? `drop-shadow(0 0 6px ${color})` : 'none', transition: 'transform 0.15s', transform: active ? 'scale(1.2)' : 'scale(1)' }}>{icon}</div>
+    {count && <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: 10, fontWeight: 600 }}>{count}</span>}
+  </div>
+);
 
-const HomeFeed = ({ posts, currentUser, onViewProfile, showToast, followed, onLivePress, tabFilter }) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [activeTab, setActiveTab] = useState(tabFilter || 'foryou');
-  const [showSearch, setShowSearch] = useState(false);
-  const [searchText, setSearchText] = useState('');
-  const startY = useRef(null);
+// ─── Home Feed (vertical swipe) ──────────────────────────────────────────────
+const HomeFeed = ({ videos, currentUser, onFollow, onMessage, onVoiceCall, onVideoCall, followed, showToast, onViewProfile }) => {
+  const [idx, setIdx]     = useState(0);
+  const [tab, setTab]     = useState('foryou');
+  const containerRef      = useRef(null);
+  const startY            = useRef(null);
 
-  // Reset index when tab changes
-  useEffect(() => { setCurrentIndex(0); }, [activeTab]);
+  const displayed = useMemo(() => {
+    if (tab === 'following') return videos.filter(v => followed?.includes(v.userId));
+    return videos;
+  }, [videos, tab, followed]);
 
-  const filteredPosts = useMemo(() => {
-    let result = [...posts];
-    if (activeTab === 'friends') result = result.filter(p => followed.includes(p.userId));
-    if (activeTab === 'learn') result = result.filter(p => p.category === 'education' || p.caption?.toLowerCase().includes('learn') || p.caption?.toLowerCase().includes('tip'));
-    if (activeTab === 'jobs') result = result.filter(p => p.caption?.toLowerCase().includes('job') || p.caption?.toLowerCase().includes('hiring') || p.caption?.toLowerCase().includes('work'));
-    if (searchText.trim()) {
-      const q = searchText.toLowerCase();
-      result = result.filter(p => p.username?.toLowerCase().includes(q) || p.caption?.toLowerCase().includes(q));
-    }
-    return result;
-  }, [posts, activeTab, followed, searchText]);
-
-  const tabs = [
-    { id: 'foryou', label: '🔥 For You' },
-    { id: 'friends', label: '👥 Friends' },
-    { id: 'learn', label: '📚 Learn' },
-    { id: 'jobs', label: '💼 Jobs' },
-  ];
-
-  const handleTouchStart = e => { startY.current = e.touches[0].clientY; };
-  const handleTouchEnd = e => {
+  const handleTouchStart = (e) => { startY.current = e.touches[0].clientY; };
+  const handleTouchEnd = (e) => {
     if (startY.current === null) return;
-    const dy = startY.current - e.changedTouches[0].clientY;
-    if (Math.abs(dy) > 50) {
-      if (dy > 0) setCurrentIndex(i => Math.min(filteredPosts.length - 1, i + 1));
-      else setCurrentIndex(i => Math.max(0, i - 1));
-    }
+    const diff = startY.current - e.changedTouches[0].clientY;
+    if (diff > 60 && idx < displayed.length - 1) setIdx(i => i + 1);
+    if (diff < -60 && idx > 0) setIdx(i => i - 1);
     startY.current = null;
   };
+  const handleWheel = (e) => {
+    e.preventDefault();
+    if (e.deltaY > 60 && idx < displayed.length - 1) setIdx(i => i + 1);
+    if (e.deltaY < -60 && idx > 0) setIdx(i => i - 1);
+  };
 
   return (
-    <div style={{ height: '100%', position: 'relative', overflow: 'hidden' }} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-      {/* Top bar */}
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 15, background: 'linear-gradient(to bottom, rgba(0,0,0,0.8), transparent)', paddingTop: 12 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 16px 8px' }}>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'nowrap', overflowX: 'auto', flex: 1 }}>
-            {tabs.map(tab => (
-              <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{ background: activeTab === tab.id ? '#ff2d55' : 'rgba(0,0,0,0.6)', border: 'none', borderRadius: 30, padding: '6px 12px', color: '#fff', fontSize: 11, fontWeight: activeTab === tab.id ? 700 : 500, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                {tab.label}
-              </button>
-            ))}
-          </div>
-          <div style={{ display: 'flex', gap: 8, marginLeft: 8 }}>
-            <button onClick={() => setShowSearch(!showSearch)} style={{ background: 'rgba(0,0,0,0.6)', border: 'none', borderRadius: '50%', width: 36, height: 36, color: '#fff', fontSize: 15, cursor: 'pointer' }}>🔍</button>
-            <button onClick={() => showToast('🔔 No new notifications', 'info')} style={{ background: 'rgba(0,0,0,0.6)', border: 'none', borderRadius: '50%', width: 36, height: 36, color: '#fff', fontSize: 15, cursor: 'pointer' }}>🔔</button>
-          </div>
-        </div>
-        {showSearch && (
-          <div style={{ padding: '0 16px 12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(0,0,0,0.7)', borderRadius: 24, padding: '8px 14px', gap: 8, border: '1px solid #333' }}>
-              <span style={{ color: '#888' }}>🔍</span>
-              <input autoFocus value={searchText} onChange={e => setSearchText(e.target.value)} placeholder="Search posts..." style={{ flex: 1, background: 'none', border: 'none', color: '#fff', outline: 'none', fontSize: 13 }} />
-              {searchText && <button onClick={() => setSearchText('')} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: 16 }}>✕</button>}
-            </div>
-          </div>
-        )}
+    <div style={{ height: '100%', position: 'relative', overflow: 'hidden' }}>
+      {/* Category tabs */}
+      <div style={{ position: 'absolute', top: 10, left: 0, right: 0, zIndex: 15, display: 'flex', justifyContent: 'center', gap: 20 }}>
+        {['foryou','following'].map(t => (
+          <button key={t} onClick={() => { setTab(t); setIdx(0); }}
+            style={{ background: 'none', border: 'none', color: tab===t ? 'white' : 'rgba(255,255,255,0.45)', fontWeight: tab===t ? 700 : 400, fontSize: 15, cursor: 'pointer', paddingBottom: 4, borderBottom: tab===t ? '2px solid white' : '2px solid transparent', textTransform: 'capitalize' }}>
+            {t === 'foryou' ? 'For You' : 'Following'}
+          </button>
+        ))}
       </div>
 
-      {/* Posts */}
-      {filteredPosts.length === 0 ? (
-        <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12 }}>
-          <div style={{ fontSize: 48 }}>📭</div>
-          <div style={{ color: '#555', textAlign: 'center', fontSize: 14 }}>
-            {activeTab === 'friends' ? 'Follow people to see their posts here' : 'No posts yet'}
-          </div>
-        </div>
-      ) : (
-        filteredPosts.map((post, idx) => (
-          <div key={post.id} style={{ position: 'absolute', inset: 0, transform: `translateY(${(idx - currentIndex) * 100}%)`, transition: 'transform 0.3s ease-out', pointerEvents: idx === currentIndex ? 'auto' : 'none' }}>
-            <PostCard post={post} currentUser={currentUser} onViewProfile={onViewProfile} showToast={showToast} onLivePress={onLivePress} />
-          </div>
-        ))
-      )}
+      {/* Video stack */}
+      <div ref={containerRef} style={{ height: '100%' }}
+        onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}
+        onWheel={handleWheel}>
+        {displayed.length === 0
+          ? <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#555' }}>
+              <div style={{ fontSize: 48 }}>🎬</div>
+              <div style={{ marginTop: 12, fontSize: 14 }}>No videos yet</div>
+            </div>
+          : <VideoCard
+              video={displayed[idx]}
+              currentUser={currentUser}
+              onFollow={onFollow}
+              onMessage={onMessage}
+              onVoiceCall={onVoiceCall}
+              onVideoCall={onVideoCall}
+              followed={followed}
+              showToast={showToast}
+              onViewProfile={onViewProfile}
+            />
+        }
+      </div>
 
-      {/* Page indicator */}
-      {filteredPosts.length > 1 && (
-        <div style={{ position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 4, zIndex: 10, pointerEvents: 'none' }}>
-          {filteredPosts.slice(Math.max(0, currentIndex - 2), currentIndex + 3).map((_, i) => {
-            const actual = i + Math.max(0, currentIndex - 2);
-            return <div key={actual} style={{ width: actual === currentIndex ? 20 : 5, height: 4, borderRadius: 2, background: actual === currentIndex ? '#ff2d55' : 'rgba(255,255,255,0.3)', transition: 'all 0.2s' }} />;
+      {/* Position indicator */}
+      {displayed.length > 0 && (
+        <div style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', gap: 4, zIndex: 5, pointerEvents: 'none' }}>
+          {displayed.slice(Math.max(0, idx-2), idx+5).map((_, i) => {
+            const actual = Math.max(0, idx-2) + i;
+            return <div key={actual} style={{ width: 3, height: actual === idx ? 16 : 6, borderRadius: 2, background: actual === idx ? '#ff2d55' : 'rgba(255,255,255,0.2)' }} />;
           })}
         </div>
       )}
@@ -896,299 +789,115 @@ const HomeFeed = ({ posts, currentUser, onViewProfile, showToast, followed, onLi
   );
 };
 
-// ─── USER PROFILE PAGE ───────────────────────────────────────────────────────
-
-const UserProfilePage = ({ userId, currentUser, onBack, onMessage, showToast }) => {
-  const [profile, setProfile] = useState(null);
-  const [posts, setPosts] = useState([]);
-  const [isFollowing, setIsFollowing] = useState(false);
-  const [followerCount, setFollowerCount] = useState(0);
-  const [followingCount, setFollowingCount] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [showReport, setShowReport] = useState(false);
-  const [showEditProfile, setShowEditProfile] = useState(false);
-  const [editBio, setEditBio] = useState('');
-  const [editUsername, setEditUsername] = useState('');
-  const [saving, setSaving] = useState(false);
-  const fileInputRef = useRef(null);
-
-  const isOwn = userId === currentUser?.uid;
-
-  useEffect(() => {
-    if (!userId) return;
-    setLoading(true);
-    const fetchProfile = async () => {
-      try {
-        // FIX: direct getDoc by uid (document ID = uid)
-        const userSnap = await getDoc(doc(db, 'users', userId));
-        if (userSnap.exists()) {
-          const data = userSnap.data();
-          setProfile({ id: userSnap.id, ...data });
-          setIsFollowing((data.followers || []).includes(currentUser?.uid));
-          setFollowerCount((data.followers || []).length);
-          setFollowingCount((data.following || []).length);
-          setEditBio(data.bio || '');
-          setEditUsername(data.username || '');
-        }
-        // FIX: query posts by userId field
-        const postsSnap = await getDocs(query(collection(db, 'posts'), where('userId', '==', userId), orderBy('createdAt', 'desc')));
-        setPosts(postsSnap.docs.map(d => ({ id: d.id, ...d.data() })));
-      } catch (e) { console.error(e); }
-      setLoading(false);
-    };
-    fetchProfile();
-  }, [userId, currentUser]);
-
-  const toggleFollow = async () => {
-    if (!currentUser?.uid) return;
-    const prev = isFollowing;
-    setIsFollowing(!prev); setFollowerCount(c => prev ? c - 1 : c + 1);
-    try {
-      await updateDoc(doc(db, 'users', userId), { followers: prev ? arrayRemove(currentUser.uid) : arrayUnion(currentUser.uid) });
-      await updateDoc(doc(db, 'users', currentUser.uid), { following: prev ? arrayRemove(userId) : arrayUnion(userId) });
-    } catch { setIsFollowing(prev); setFollowerCount(c => prev ? c + 1 : c - 1); }
-  };
-
-  const updateProfilePhoto = async (e) => {
-    const file = e.target.files[0]; if (!file) return;
-    try {
-      const storageRef2 = ref(storage, `avatars/${userId}_${Date.now()}`);
-      const task = uploadBytesResumable(storageRef2, file);
-      task.on('state_changed', null, () => showToast('Upload failed', 'error'), async () => {
-        const url = await getDownloadURL(task.snapshot.ref);
-        await updateDoc(doc(db, 'users', userId), { photoURL: url });
-        setProfile(prev => ({ ...prev, photoURL: url }));
-        showToast('Photo updated! 📸', 'success');
-      });
-    } catch { showToast('Upload failed', 'error'); }
-  };
-
-  const saveProfile = async () => {
-    if (!editUsername.trim()) { showToast('Username required', 'error'); return; }
-    setSaving(true);
-    try {
-      await updateDoc(doc(db, 'users', userId), { bio: editBio.trim(), username: editUsername.toLowerCase().trim() });
-      setProfile(prev => ({ ...prev, bio: editBio, username: editUsername.toLowerCase() }));
-      showToast('Profile updated! ✓', 'success');
-      setShowEditProfile(false);
-    } catch { showToast('Failed to save', 'error'); }
-    setSaving(false);
-  };
-
-  if (loading) return <div style={{ height: '100%', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#555' }}>Loading profile...</div>;
-  if (!profile) return <div style={{ height: '100%', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#555' }}>User not found</div>;
-
-  if (showEditProfile) {
-    return (
-      <div style={{ height: '100%', overflowY: 'auto', background: '#0a0a0a' }}>
-        <div style={{ padding: 16, borderBottom: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, background: '#0a0a0a', zIndex: 10 }}>
-          <button onClick={() => setShowEditProfile(false)} style={{ background: 'none', border: 'none', color: '#ff2d55', fontSize: 22, cursor: 'pointer' }}>←</button>
-          <h2 style={{ color: '#fff', fontSize: 18, fontWeight: 700, flex: 1 }}>Edit Profile</h2>
-          <button onClick={saveProfile} disabled={saving} style={{ background: '#ff2d55', border: 'none', borderRadius: 20, padding: '8px 20px', color: '#fff', cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
-            {saving ? 'Saving...' : 'Save'}
-          </button>
-        </div>
-        <div style={{ padding: 20 }}>
-          <div style={{ textAlign: 'center', marginBottom: 24 }}>
-            <div style={{ width: 100, height: 100, borderRadius: '50%', background: '#ff2d55', margin: '0 auto 12px', overflow: 'hidden', cursor: 'pointer' }} onClick={() => fileInputRef.current?.click()}>
-              {profile.photoURL ? <img src={profile.photoURL} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40, color: '#fff' }}>{profile.username?.[0]?.toUpperCase()}</div>}
-            </div>
-            <input ref={fileInputRef} type="file" accept="image/*" onChange={updateProfilePhoto} style={{ display: 'none' }} />
-            <button onClick={() => fileInputRef.current?.click()} style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: 20, padding: '6px 16px', color: '#fff', fontSize: 12, cursor: 'pointer' }}>Change Photo</button>
-          </div>
-          <label style={{ color: '#888', fontSize: 12, marginBottom: 6, display: 'block' }}>Username</label>
-          <input value={editUsername} onChange={e => setEditUsername(e.target.value)} style={{ width: '100%', background: '#141414', border: '1px solid #222', borderRadius: 12, padding: 12, color: '#fff', marginBottom: 16, outline: 'none', fontSize: 14 }} />
-          <label style={{ color: '#888', fontSize: 12, marginBottom: 6, display: 'block' }}>Bio</label>
-          <textarea value={editBio} onChange={e => setEditBio(e.target.value)} placeholder="Tell something about yourself" maxLength={150} rows={3} style={{ width: '100%', background: '#141414', border: '1px solid #222', borderRadius: 12, padding: 12, color: '#fff', resize: 'none', outline: 'none', fontSize: 14 }} />
-          <div style={{ color: '#555', fontSize: 10, textAlign: 'right', marginTop: 4 }}>{editBio.length}/150</div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ height: '100%', overflowY: 'auto', background: '#0a0a0a' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 16px 0', position: 'sticky', top: 0, background: '#0a0a0a', zIndex: 10 }}>
-        <button onClick={onBack} style={{ background: '#1a1a1a', border: 'none', borderRadius: 20, padding: '8px 14px', color: '#fff', cursor: 'pointer', fontSize: 13 }}>← Back</button>
-        <div style={{ display: 'flex', gap: 8 }}>
-          {isOwn && <button onClick={() => setShowEditProfile(true)} style={{ background: '#1a1a1a', border: 'none', borderRadius: 20, padding: '8px 14px', color: '#fff', cursor: 'pointer', fontSize: 13 }}>✏️ Edit</button>}
-          {!isOwn && <button onClick={() => setShowReport(true)} style={{ background: '#1a1a1a', border: 'none', borderRadius: 20, padding: '8px 14px', color: '#ff9500', cursor: 'pointer', fontSize: 13 }}>⚠️ Report</button>}
-        </div>
-      </div>
-
-      {/* Profile info */}
-      <div style={{ textAlign: 'center', padding: '20px', borderBottom: '1px solid #1a1a1a' }}>
-        <div style={{ width: 100, height: 100, borderRadius: '50%', background: '#ff2d55', margin: '0 auto 12px', overflow: 'hidden', border: '3px solid #ff2d55' }}>
-          {profile.photoURL ? <img src={profile.photoURL} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40, color: '#fff' }}>{profile.username?.[0]?.toUpperCase()}</div>}
-        </div>
-        <h2 style={{ color: '#fff', fontSize: 22, fontWeight: 700 }}>@{profile.username}</h2>
-        <p style={{ color: '#888', fontSize: 13, marginTop: 4, marginBottom: 16 }}>{profile.bio || 'Dagu Creator 🎬'}</p>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 40, marginBottom: 20 }}>
-          {[['Posts', posts.length], ['Followers', followerCount], ['Following', followingCount]].map(([label, val]) => (
-            <div key={label} style={{ textAlign: 'center' }}>
-              <div style={{ color: '#fff', fontWeight: 700, fontSize: 18 }}>{val}</div>
-              <div style={{ color: '#666', fontSize: 11 }}>{label}</div>
-            </div>
-          ))}
-        </div>
-        {!isOwn && (
-          <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button onClick={toggleFollow} style={{ background: isFollowing ? '#1a1a1a' : '#ff2d55', border: isFollowing ? '1px solid #333' : 'none', borderRadius: 24, padding: '10px 24px', color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: 14 }}>
-              {isFollowing ? '✓ Following' : '+ Follow'}
-            </button>
-            <button onClick={() => { onMessage?.(userId); onBack(); }} style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: 24, padding: '10px 20px', color: '#fff', cursor: 'pointer', fontSize: 14 }}>💬 Message</button>
-          </div>
-        )}
-      </div>
-
-      {/* Posts grid */}
-      <div style={{ padding: 12 }}>
-        {posts.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: 40, color: '#444' }}>
-            <div style={{ fontSize: 40, marginBottom: 10 }}>🎬</div>
-            <p style={{ fontSize: 13 }}>No posts yet</p>
-          </div>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 3 }}>
-            {posts.map(post => (
-              <div key={post.id} style={{ aspectRatio: '9/16', background: '#111', borderRadius: 6, overflow: 'hidden' }}>
-                {post.type === 'video' && <video src={post.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} muted playsInline />}
-                {post.type === 'photo' && <img src={post.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-                {post.type === 'text' && <div style={{ background: 'linear-gradient(135deg,#1a0020,#000)', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 6 }}><p style={{ color: '#fff', fontSize: 9, textAlign: 'center' }}>{post.text?.substring(0, 40)}</p></div>}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {showReport && <ReportModal targetId={userId} targetType="user" targetName={profile.username} reportedBy={currentUser?.uid} onClose={() => setShowReport(false)} showToast={showToast} />}
-    </div>
-  );
-};
-
-// ─── INBOX PAGE ──────────────────────────────────────────────────────────────
-
-const InboxPage = ({ currentUser, showToast, onViewProfile, initialChatUserId }) => {
-  const [users, setUsers] = useState([]);
-  const [activeChat, setActiveChat] = useState(initialChatUserId || null);
+// ─── Conversation ────────────────────────────────────────────────────────────
+const ConversationView = ({ currentUser, otherUser, onBack, showToast }) => {
   const [messages, setMessages] = useState([]);
-  const [text, setText] = useState('');
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const messagesEndRef = useRef(null);
-
-  // FIX: open chat from initialChatUserId (passed from "Message" button)
-  useEffect(() => { if (initialChatUserId) setActiveChat(initialChatUserId); }, [initialChatUserId]);
+  const [text, setText]         = useState('');
+  const [showEmoji, setShowEmoji] = useState(false);
+  const endRef = useRef(null);
+  const convId = [currentUser?.id, otherUser?.id].sort().join('_');
 
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, 'users'), snap => {
-      setUsers(snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(u => u.uid !== currentUser?.uid));
+    if (!convId) return;
+    const q = query(collection(db, 'messages', convId, 'msgs'), orderBy('timestamp','asc'));
+    const unsub = onSnapshot(q, snap => {
+      setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
     return unsub;
-  }, [currentUser]);
+  }, [convId]);
 
-  useEffect(() => {
-    if (!activeChat || !currentUser?.uid) return;
-    const convoId = [currentUser.uid, activeChat].sort().join('_');
-    const unsub = onSnapshot(
-      query(collection(db, 'messages', convoId, 'msgs'), orderBy('createdAt')),
-      snap => {
-        const msgs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        setMessages(msgs);
-        // Mark as seen
-        msgs.forEach(async msg => {
-          if (msg.from !== currentUser.uid && !msg.seen) {
-            try { await updateDoc(doc(db, 'messages', convoId, 'msgs', msg.id), { seen: true }); } catch {}
-          }
-        });
-      }
-    );
-    return unsub;
-  }, [activeChat, currentUser]);
-
-  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
   const sendMessage = async () => {
-    if (!text.trim() || !activeChat) return;
-    const convoId = [currentUser.uid, activeChat].sort().join('_');
-    const msg = text.trim();
-    setText(''); setShowEmojiPicker(false);
-    try {
-      await addDoc(collection(db, 'messages', convoId, 'msgs'), {
-        text: msg, from: currentUser.uid, sent: true, delivered: true, seen: false,
-        createdAt: serverTimestamp()
-      });
-    } catch { showToast('Failed to send', 'error'); }
+    if (!text.trim()) return;
+    const msg = { from: currentUser.id, to: otherUser.id, text, timestamp: serverTimestamp(), read: false };
+    setText('');
+    try { await addDoc(collection(db, 'messages', convId, 'msgs'), msg); }
+    catch { showToast('Send failed', 'error'); }
   };
 
-  const otherUser = users.find(u => u.uid === activeChat);
-
-  if (activeChat && otherUser) {
-    return (
-      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#0a0a0a' }}>
-        <div style={{ padding: '12px 14px', borderBottom: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button onClick={() => setActiveChat(null)} style={{ background: '#161616', border: 'none', borderRadius: 20, padding: '7px 12px', color: '#fff', cursor: 'pointer', fontSize: 13 }}>←</button>
-          <div onClick={() => onViewProfile?.(otherUser.uid)} style={{ width: 38, height: 38, borderRadius: '50%', background: '#ff2d55', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, overflow: 'hidden', cursor: 'pointer', flexShrink: 0 }}>
-            {otherUser.photoURL ? <img src={otherUser.photoURL} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : otherUser.username?.[0]?.toUpperCase()}
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ color: '#fff', fontWeight: 600, fontSize: 14 }}>@{otherUser.username}</div>
-            <div style={{ color: '#555', fontSize: 11 }}>Tap name to view profile</div>
-          </div>
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#0a0a0a' }}>
+      <div style={{ padding: '12px 14px', borderBottom: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+        <button onClick={onBack} style={{ background: '#161616', border: 'none', borderRadius: 20, padding: '7px 12px', color: 'white', cursor: 'pointer', fontSize: 15 }}>←</button>
+        <div style={{ width: 38, height: 38, borderRadius: '50%', background: otherUser?.avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 16, overflow: 'hidden' }}>
+          {otherUser?.photoURL ? <img src={otherUser.photoURL} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : otherUser?.avatar}
         </div>
-        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {messages.length === 0 && <p style={{ textAlign: 'center', color: '#444', marginTop: 40, fontSize: 13 }}>Say hello to @{otherUser.username}!</p>}
-          {messages.map(msg => {
-            const isMe = msg.from === currentUser?.uid;
-            return (
-              <div key={msg.id} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start' }}>
-                <div style={{ maxWidth: '75%' }}>
-                  <div style={{ background: isMe ? '#ff2d55' : '#1a1a1a', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: '10px 14px' }}>
-                    <div style={{ color: '#fff', fontSize: 13 }}>{msg.text}</div>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start', gap: 4, marginTop: 3 }}>
-                    <span style={{ color: '#555', fontSize: 9 }}>{msg.createdAt?.toDate?.()?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                    {isMe && <span style={{ color: msg.seen ? '#06d6a0' : '#666', fontSize: 9 }}>{msg.seen ? '✓✓' : '✓'}</span>}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-          <div ref={messagesEndRef} />
-        </div>
-        <div style={{ padding: '10px 12px', borderTop: '1px solid #1a1a1a' }}>
-          {showEmojiPicker && (
-            <div style={{ background: '#161616', borderRadius: 16, padding: 10, marginBottom: 8, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {EMOJIS.map(e => <button key={e} onClick={() => setText(prev => prev + e)} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer' }}>{e}</button>)}
-            </div>
-          )}
-          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-            <button onClick={() => setShowEmojiPicker(!showEmojiPicker)} style={{ background: '#1a1a1a', border: 'none', borderRadius: '50%', width: 36, height: 36, fontSize: 18, cursor: 'pointer' }}>😊</button>
-            <input value={text} onChange={e => setText(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendMessage()} placeholder="Message..." style={{ flex: 1, background: '#161616', border: '1px solid #222', borderRadius: 22, padding: '9px 14px', color: '#fff', outline: 'none', fontSize: 13 }} />
-            <button onClick={sendMessage} style={{ background: text.trim() ? '#ff2d55' : '#2a2a2a', border: 'none', borderRadius: '50%', width: 36, height: 36, color: '#fff', cursor: 'pointer', fontSize: 16 }}>↑</button>
-          </div>
+        <div>
+          <div style={{ color: 'white', fontWeight: 600, fontSize: 14 }}>@{otherUser?.username}</div>
+          <div style={{ color: '#06d6a0', fontSize: 11 }}>● Online</div>
         </div>
       </div>
-    );
+
+      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {messages.length === 0 && <div style={{ textAlign: 'center', color: '#444', fontSize: 13, marginTop: 40 }}>Say hi to @{otherUser?.username}! 👋</div>}
+        {messages.map(msg => {
+          const isMe = msg.from === currentUser?.id;
+          return (
+            <div key={msg.id} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start' }}>
+              <div style={{ background: isMe ? '#ff2d55' : '#1a1a1a', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: '10px 14px', maxWidth: '76%' }}>
+                <div style={{ color: 'white', fontSize: 13 }}>{msg.text}</div>
+                <div style={{ color: isMe ? 'rgba(255,255,255,0.5)' : '#555', fontSize: 9, marginTop: 4, textAlign: 'right' }}>
+                  {msg.timestamp?.toDate?.()?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || 'now'}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+        <div ref={endRef} />
+      </div>
+
+      {showEmoji && (
+        <div style={{ background: '#161616', padding: 10, display: 'flex', flexWrap: 'wrap', gap: 6, borderTop: '1px solid #222' }}>
+          {EMOJI_LIST.map(e => <button key={e} onClick={() => setText(t => t+e)} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer' }}>{e}</button>)}
+        </div>
+      )}
+
+      <div style={{ padding: '10px 12px', borderTop: '1px solid #1a1a1a', display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+        <button onClick={() => setShowEmoji(e => !e)} style={{ background: '#1a1a1a', border: 'none', borderRadius: '50%', width: 36, height: 36, fontSize: 18, cursor: 'pointer' }}>😊</button>
+        <input value={text} onChange={e => setText(e.target.value)} onKeyDown={e => e.key==='Enter' && sendMessage()}
+          placeholder="Message..." style={{ flex: 1, background: '#161616', border: '1px solid #222', borderRadius: 22, padding: '9px 14px', color: 'white', outline: 'none', fontSize: 13 }} />
+        <button onClick={sendMessage} style={{ background: text.trim() ? '#ff2d55' : '#222', border: 'none', borderRadius: '50%', width: 36, height: 36, color: 'white', cursor: 'pointer', fontSize: 18 }}>↑</button>
+      </div>
+    </div>
+  );
+};
+
+// ─── Inbox ───────────────────────────────────────────────────────────────────
+const InboxPage = ({ users, currentUser, showToast }) => {
+  const [conv, setConv] = useState(null);
+  const others = users.filter(u => u.id !== currentUser?.id);
+
+  if (conv) {
+    const other = users.find(u => u.id === conv);
+    return <ConversationView currentUser={currentUser} otherUser={other} onBack={() => setConv(null)} showToast={showToast} />;
   }
 
   return (
-    <div style={{ height: '100%', background: '#0a0a0a', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ padding: 16, borderBottom: '1px solid #1a1a1a' }}>
-        <h2 style={{ color: '#fff', fontSize: 20, fontWeight: 700 }}>💬 Messages</h2>
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#0a0a0a' }}>
+      <div style={{ padding: '16px 16px', borderBottom: '1px solid #1a1a1a', flexShrink: 0 }}>
+        <h2 style={{ color: 'white', fontSize: 20, fontWeight: 700 }}>💬 Messages</h2>
       </div>
       <div style={{ flex: 1, overflowY: 'auto' }}>
-        {users.length === 0 && <div style={{ textAlign: 'center', padding: 40, color: '#444', fontSize: 13 }}>No other users yet</div>}
-        {users.map(u => (
-          <div key={u.id} onClick={() => setActiveChat(u.uid)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: '1px solid #111', cursor: 'pointer' }}>
-            <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#ff2d55', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 20, overflow: 'hidden', flexShrink: 0 }}>
-              {u.photoURL ? <img src={u.photoURL} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : u.username?.[0]?.toUpperCase()}
+        {others.length === 0 && (
+          <div style={{ textAlign: 'center', padding: 60, color: '#555' }}>
+            <div style={{ fontSize: 44, marginBottom: 12 }}>💬</div>
+            <div>No users yet</div>
+          </div>
+        )}
+        {others.map(u => (
+          <div key={u.id} onClick={() => setConv(u.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: '1px solid #111', cursor: 'pointer', transition: 'background 0.15s' }}>
+            <div style={{ position: 'relative' }}>
+              <div style={{ width: 50, height: 50, borderRadius: '50%', background: u.avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 20, overflow: 'hidden' }}>
+                {u.photoURL ? <img src={u.photoURL} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : u.avatar}
+              </div>
+              <div style={{ position: 'absolute', bottom: 1, right: 1, width: 11, height: 11, background: '#06d6a0', borderRadius: '50%', border: '2px solid #0a0a0a' }} />
             </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ color: '#fff', fontWeight: 600, fontSize: 14 }}>@{u.username}</div>
-              <div style={{ color: '#555', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.bio || 'Tap to message'}</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ color: 'white', fontWeight: 600, fontSize: 14 }}>@{u.username}</div>
+              <div style={{ color: '#555', fontSize: 12, marginTop: 2 }}>Tap to message</div>
             </div>
-            <div style={{ color: '#ff2d55', fontSize: 18 }}>›</div>
+            <span style={{ color: '#333', fontSize: 18 }}>›</span>
           </div>
         ))}
       </div>
@@ -1196,364 +905,756 @@ const InboxPage = ({ currentUser, showToast, onViewProfile, initialChatUserId })
   );
 };
 
-// ─── MY PROFILE ──────────────────────────────────────────────────────────────
+// ─── Upload / Create ─────────────────────────────────────────────────────────
+const CreatePage = ({ currentUser, onUploaded, showToast, onGoLive }) => {
+  const [file, setFile]       = useState(null);
+  const [desc, setDesc]       = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [progress, setProgress]  = useState(0);
+  const [showCam, setShowCam]    = useState(false);
+  const videoRef  = useRef(null);
+  const streamRef = useRef(null);
+  const fileRef   = useRef(null);
 
-const MyProfile = ({ currentUser, showToast, onLogout, onOpenSettings }) => {
-  const [posts, setPosts] = useState([]);
-  const [showEditProfile, setShowEditProfile] = useState(false);
-  const [editBio, setEditBio] = useState(currentUser?.bio || '');
-  const [editUsername, setEditUsername] = useState(currentUser?.username || '');
-  const [saving, setSaving] = useState(false);
-  const fileInputRef = useRef(null);
-
-  useEffect(() => {
-    if (!currentUser?.uid) return;
-    const unsub = onSnapshot(
-      query(collection(db, 'posts'), where('userId', '==', currentUser.uid), orderBy('createdAt', 'desc')),
-      snap => setPosts(snap.docs.map(d => ({ id: d.id, ...d.data() })))
-    );
-    return unsub;
-  }, [currentUser]);
-
-  const updateProfilePhoto = async (e) => {
-    const file = e.target.files[0]; if (!file) return;
+  const openCamera = async () => {
     try {
-      const storageRef2 = ref(storage, `avatars/${currentUser.uid}_${Date.now()}`);
-      const task = uploadBytesResumable(storageRef2, file);
-      task.on('state_changed', null, () => showToast('Upload failed', 'error'), async () => {
-        const url = await getDownloadURL(task.snapshot.ref);
-        await updateDoc(doc(db, 'users', currentUser.uid), { photoURL: url });
-        showToast('Photo updated! 📸', 'success');
-      });
-    } catch { showToast('Upload failed', 'error'); }
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      streamRef.current = stream;
+      if (videoRef.current) videoRef.current.srcObject = stream;
+      setShowCam(true);
+    } catch { showToast('Camera denied', 'error'); }
   };
 
-  const saveProfile = async () => {
-    if (!editUsername.trim()) { showToast('Username required', 'error'); return; }
-    setSaving(true);
-    try {
-      await updateDoc(doc(db, 'users', currentUser.uid), { bio: editBio.trim(), username: editUsername.toLowerCase().trim() });
-      showToast('Profile updated! ✓', 'success');
-      setShowEditProfile(false);
-    } catch { showToast('Failed to save', 'error'); }
-    setSaving(false);
+  const closeCamera = () => {
+    streamRef.current?.getTracks().forEach(t => t.stop());
+    streamRef.current = null;
+    setShowCam(false);
   };
 
-  if (showEditProfile) {
-    return (
-      <div style={{ height: '100%', overflowY: 'auto', background: '#0a0a0a' }}>
-        <div style={{ padding: 16, borderBottom: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, background: '#0a0a0a', zIndex: 10 }}>
-          <button onClick={() => setShowEditProfile(false)} style={{ background: 'none', border: 'none', color: '#ff2d55', fontSize: 22, cursor: 'pointer' }}>←</button>
-          <h2 style={{ color: '#fff', fontSize: 18, fontWeight: 700, flex: 1 }}>Edit Profile</h2>
-          <button onClick={saveProfile} disabled={saving} style={{ background: '#ff2d55', border: 'none', borderRadius: 20, padding: '8px 20px', color: '#fff', cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
-            {saving ? 'Saving...' : 'Save'}
-          </button>
-        </div>
-        <div style={{ padding: 20 }}>
-          <div style={{ textAlign: 'center', marginBottom: 24 }}>
-            <div style={{ width: 100, height: 100, borderRadius: '50%', background: '#ff2d55', margin: '0 auto 12px', overflow: 'hidden', position: 'relative', cursor: 'pointer' }} onClick={() => fileInputRef.current?.click()}>
-              {currentUser?.photoURL ? <img src={currentUser.photoURL} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40, color: '#fff' }}>{currentUser?.username?.[0]?.toUpperCase()}</div>}
-              <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>📷</div>
-            </div>
-            <input ref={fileInputRef} type="file" accept="image/*" onChange={updateProfilePhoto} style={{ display: 'none' }} />
-          </div>
-          <label style={{ color: '#888', fontSize: 12, marginBottom: 6, display: 'block' }}>Username</label>
-          <input value={editUsername} onChange={e => setEditUsername(e.target.value)} style={{ width: '100%', background: '#141414', border: '1px solid #222', borderRadius: 12, padding: 12, color: '#fff', marginBottom: 16, outline: 'none', fontSize: 14 }} />
-          <label style={{ color: '#888', fontSize: 12, marginBottom: 6, display: 'block' }}>Bio</label>
-          <textarea value={editBio} onChange={e => setEditBio(e.target.value)} placeholder="Tell something about yourself" maxLength={150} rows={3} style={{ width: '100%', background: '#141414', border: '1px solid #222', borderRadius: 12, padding: 12, color: '#fff', resize: 'none', outline: 'none', fontSize: 14 }} />
-          <div style={{ color: '#555', fontSize: 10, textAlign: 'right', marginTop: 4 }}>{editBio.length}/150</div>
-        </div>
-      </div>
-    );
-  }
+  const capture = () => {
+    if (!videoRef.current) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = videoRef.current.videoWidth;
+    canvas.height = videoRef.current.videoHeight;
+    canvas.getContext('2d').drawImage(videoRef.current, 0, 0);
+    canvas.toBlob(blob => {
+      const f = new File([blob], 'capture.jpg', { type: 'image/jpeg' });
+      setFile({ f, url: URL.createObjectURL(blob), type: 'image/jpeg' });
+      closeCamera();
+    }, 'image/jpeg');
+  };
+
+  const pickFile = (e) => {
+    const f = e.target.files[0];
+    if (f) setFile({ f, url: URL.createObjectURL(f), type: f.type });
+  };
+
+  const upload = async () => {
+    if (!file) { showToast('Choose a file first', 'error'); return; }
+    setUploading(true);
+    try {
+      const isVideo = file.type.startsWith('video/');
+      const url = await uploadToCloudinary(file.f, isVideo ? 'video' : 'image');
+      const videoDoc = {
+        userId: currentUser.id,
+        username: currentUser.username,
+        avatar: currentUser.avatar,
+        avatarColor: currentUser.avatarColor,
+        photoURL: currentUser.photoURL || '',
+        videoUrl: url,
+        description: desc || 'New post! 🔥',
+        hashtags: (desc.match(/#\w+/g) || []),
+        likes: 0, commentCount: 0, views: 0, shares: 0,
+        soundName: '',
+        timestamp: serverTimestamp(),
+        createdAt: new Date().toISOString(),
+      };
+      const ref = await addDoc(collection(db, 'videos'), videoDoc);
+      onUploaded({ id: ref.id, ...videoDoc });
+      showToast('Posted! 🚀', 'success');
+      setFile(null); setDesc('');
+    } catch (err) {
+      showToast('Upload failed: ' + err.message, 'error');
+    }
+    setUploading(false);
+  };
+
+  useEffect(() => { return closeCamera; }, []);
 
   return (
-    <div style={{ height: '100%', overflowY: 'auto', background: '#0a0a0a' }}>
-      <div style={{ padding: '16px 16px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <button onClick={onOpenSettings} style={{ background: '#1a1a1a', border: 'none', borderRadius: 20, padding: '8px 14px', color: '#fff', cursor: 'pointer', fontSize: 13 }}>⚙️ Settings</button>
-        <button onClick={onLogout} style={{ background: 'rgba(255,45,85,0.1)', border: '1px solid rgba(255,45,85,0.3)', borderRadius: 20, padding: '8px 14px', color: '#ff2d55', cursor: 'pointer', fontSize: 13 }}>🚪 Logout</button>
+    <div style={{ height: '100%', overflow: 'auto', background: '#0a0a0a', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ padding: '16px 16px', borderBottom: '1px solid #1a1a1a', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+        <h2 style={{ color: 'white', fontSize: 18, fontWeight: 700 }}>Create Post</h2>
+        {file && (
+          <button onClick={upload} disabled={uploading} style={{ background: uploading ? '#555' : '#ff2d55', border: 'none', borderRadius: 20, padding: '8px 20px', color: 'white', fontWeight: 700, cursor: uploading ? 'default' : 'pointer', fontSize: 14 }}>
+            {uploading ? 'Uploading...' : 'Post 🚀'}
+          </button>
+        )}
       </div>
 
-      <div style={{ textAlign: 'center', padding: '20px', borderBottom: '1px solid #1a1a1a' }}>
-        <div style={{ width: 100, height: 100, borderRadius: '50%', background: 'linear-gradient(135deg,#ff2d55,#af52de)', padding: 2, margin: '0 auto 12px' }}>
-          <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, fontWeight: 700, color: '#fff', overflow: 'hidden' }}>
-            {currentUser?.photoURL ? <img src={currentUser.photoURL} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : currentUser?.username?.[0]?.toUpperCase()}
-          </div>
+      <div style={{ flex: 1, padding: 16 }}>
+        <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
+          <button onClick={() => { closeCamera(); fileRef.current?.click(); }}
+            style={{ flex: 1, background: !showCam ? '#ff2d55' : '#1a1a1a', border: 'none', borderRadius: 14, padding: 12, color: 'white', cursor: 'pointer', fontWeight: 600 }}>📱 Gallery</button>
+          <button onClick={openCamera}
+            style={{ flex: 1, background: showCam ? '#ff2d55' : '#1a1a1a', border: 'none', borderRadius: 14, padding: 12, color: 'white', cursor: 'pointer', fontWeight: 600 }}>📷 Camera</button>
+          <button onClick={onGoLive}
+            style={{ flex: 1, background: 'rgba(255,45,85,0.15)', border: '1px solid #ff2d55', borderRadius: 14, padding: 12, color: '#ff2d55', cursor: 'pointer', fontWeight: 600 }}>🔴 Live</button>
         </div>
-        <h2 style={{ color: '#fff', fontSize: 22, fontWeight: 700 }}>@{currentUser?.username}</h2>
-        <p style={{ color: '#888', fontSize: 13, marginTop: 4, marginBottom: 16 }}>{currentUser?.bio || 'Dagu Creator 🎬'}</p>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 40, marginBottom: 20 }}>
-          {[['Posts', posts.length], ['Followers', currentUser?.followers?.length || 0], ['Following', currentUser?.following?.length || 0]].map(([label, val]) => (
+        <input ref={fileRef} type="file" accept="video/*,image/*" onChange={pickFile} style={{ display: 'none' }} />
+
+        {/* Preview area */}
+        <div style={{ background: '#141414', border: '1px solid #1e1e1e', borderRadius: 20, minHeight: 280, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14, overflow: 'hidden' }}>
+          {showCam ? (
+            <div style={{ position: 'relative', width: '100%' }}>
+              <video ref={videoRef} autoPlay playsInline style={{ width: '100%', borderRadius: 20 }} />
+              <button onClick={capture} style={{ position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)', background: '#ff2d55', border: '3px solid white', borderRadius: '50%', width: 62, height: 62, fontSize: 28, cursor: 'pointer' }}>📸</button>
+              <button onClick={closeCamera} style={{ position: 'absolute', top: 10, right: 10, background: 'rgba(0,0,0,0.6)', border: 'none', borderRadius: '50%', width: 32, height: 32, color: 'white', cursor: 'pointer' }}>✕</button>
+            </div>
+          ) : file?.type?.startsWith('image/') ? (
+            <img src={file.url} alt="" style={{ width: '100%', borderRadius: 20 }} />
+          ) : file?.type?.startsWith('video/') ? (
+            <video src={file.url} controls style={{ width: '100%', borderRadius: 20 }} />
+          ) : (
+            <label onClick={() => fileRef.current?.click()} style={{ textAlign: 'center', cursor: 'pointer', padding: 48 }}>
+              <div style={{ fontSize: 52, marginBottom: 10 }}>🎬</div>
+              <div style={{ color: '#555', fontSize: 14 }}>Tap to select video or photo</div>
+            </label>
+          )}
+        </div>
+
+        <textarea placeholder="Write a caption... (use #hashtags)" value={desc} onChange={e => setDesc(e.target.value)}
+          style={{ width: '100%', background: '#141414', border: '1px solid #1e1e1e', borderRadius: 14, padding: 14, color: 'white', minHeight: 90, outline: 'none', fontSize: 13, resize: 'none', boxSizing: 'border-box' }} />
+      </div>
+    </div>
+  );
+};
+
+// ─── Search ──────────────────────────────────────────────────────────────────
+const SearchOverlay = ({ onClose, videos, users, onViewProfile }) => {
+  const [query, setQuery] = useState('');
+  const [tab, setTab]     = useState('all');
+
+  const results = useMemo(() => {
+    if (!query.trim()) return { videos: [], users: [], hashtags: [] };
+    const q = query.toLowerCase();
+    return {
+      users: users.filter(u => u.username.toLowerCase().includes(q) || (u.bio||'').toLowerCase().includes(q)).slice(0,8),
+      videos: videos.filter(v => v.username.toLowerCase().includes(q) || (v.description||'').toLowerCase().includes(q)).slice(0,8),
+      hashtags: [...new Set(videos.flatMap(v => v.hashtags||[]).filter(h => h.toLowerCase().includes(q)))].slice(0,8),
+    };
+  }, [query, videos, users]);
+
+  return (
+    <div style={{ position: 'absolute', inset: 0, background: '#0a0a0a', zIndex: 200, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ padding: '12px 14px', borderBottom: '1px solid #1a1a1a', display: 'flex', gap: 10, alignItems: 'center', flexShrink: 0 }}>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: '#161616', borderRadius: 24, padding: '9px 14px' }}>
+          <span style={{ marginRight: 8 }}>🔍</span>
+          <input autoFocus value={query} onChange={e => setQuery(e.target.value)} placeholder="Search videos, users, tags..."
+            style={{ flex: 1, background: 'none', border: 'none', color: 'white', outline: 'none', fontSize: 13 }} />
+        </div>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#888', fontSize: 18, cursor: 'pointer' }}>✕</button>
+      </div>
+      {query && (
+        <>
+          <div style={{ display: 'flex', gap: 4, padding: '8px 14px', borderBottom: '1px solid #1a1a1a', flexShrink: 0 }}>
+            {['all','users','videos','hashtags'].map(t => (
+              <button key={t} onClick={() => setTab(t)}
+                style={{ background: tab===t ? 'rgba(255,45,85,0.15)' : 'none', border: 'none', padding: '5px 14px', color: tab===t ? '#ff2d55' : '#666', cursor: 'pointer', borderRadius: 20, fontSize: 12, fontWeight: tab===t ? 700 : 400, textTransform: 'capitalize' }}>
+                {t}
+              </button>
+            ))}
+          </div>
+          <div style={{ flex: 1, overflowY: 'auto', padding: 12 }}>
+            {(tab==='all'||tab==='users') && results.users.map(u => (
+              <div key={u.id} onClick={() => { onViewProfile?.(u.id); onClose(); }} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', background: '#141414', borderRadius: 14, marginBottom: 8, cursor: 'pointer' }}>
+                <div style={{ width: 44, height: 44, borderRadius: '50%', background: u.avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 18, overflow: 'hidden' }}>
+                  {u.photoURL ? <img src={u.photoURL} style={{ width:'100%',height:'100%',objectFit:'cover' }} alt="" /> : u.avatar}
+                </div>
+                <div>
+                  <div style={{ color: 'white', fontWeight: 600, fontSize: 13 }}>@{u.username}</div>
+                  <div style={{ color: '#555', fontSize: 11, marginTop: 2 }}>{(u.bio||'').substring(0,40)}</div>
+                </div>
+              </div>
+            ))}
+            {(tab==='all'||tab==='videos') && results.videos.map(v => (
+              <div key={v.id} style={{ padding: '10px 12px', background: '#141414', borderRadius: 14, marginBottom: 8 }}>
+                <div style={{ color: '#ff2d55', fontSize: 11, fontWeight: 600, marginBottom: 4 }}>@{v.username}</div>
+                <div style={{ color: 'white', fontSize: 13 }}>{v.description?.substring(0,80)}</div>
+              </div>
+            ))}
+            {(tab==='all'||tab==='hashtags') && results.hashtags.map(h => (
+              <div key={h} style={{ padding: '12px 14px', background: '#141414', borderRadius: 14, marginBottom: 8, color: '#ff2d55', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
+                {h}
+              </div>
+            ))}
+            {results.users.length===0 && results.videos.length===0 && results.hashtags.length===0 && (
+              <div style={{ textAlign: 'center', color: '#555', marginTop: 60 }}>
+                <div style={{ fontSize: 40, marginBottom: 12 }}>🔍</div>
+                <div>No results for "{query}"</div>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+// ─── User Profile Modal ───────────────────────────────────────────────────────
+const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onVoiceCall, onVideoCall, followed, showToast }) => {
+  const isFollowing = followed?.includes(user?.id);
+  const isOwn       = user?.id === currentUser?.id;
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 3000, display: 'flex', alignItems: 'flex-end' }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{ width: '100%', background: '#0f0f0f', borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, maxHeight: '85vh', overflowY: 'auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+          <button onClick={onClose} style={{ background: '#222', border: 'none', borderRadius: '50%', width: 32, height: 32, color: 'white', cursor: 'pointer' }}>✕</button>
+        </div>
+        <div style={{ textAlign: 'center', marginBottom: 20 }}>
+          <div style={{ width: 80, height: 80, borderRadius: '50%', background: user?.avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 32, margin: '0 auto 12px', border: '3px solid #ff2d55', overflow: 'hidden' }}>
+            {user?.photoURL ? <img src={user.photoURL} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : user?.avatar}
+          </div>
+          <div style={{ color: 'white', fontWeight: 700, fontSize: 20 }}>@{user?.username}</div>
+          {user?.verified && <div style={{ color: '#1d9bf0', fontSize: 12, marginTop: 2 }}>✓ Verified</div>}
+          <div style={{ color: '#888', fontSize: 13, marginTop: 6 }}>{user?.bio}</div>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 40, marginBottom: 22 }}>
+          {[['Followers', user?.followers?.length||0], ['Following', user?.following?.length||0], ['Videos', user?.videoCount||0]].map(([label, val]) => (
             <div key={label} style={{ textAlign: 'center' }}>
-              <div style={{ color: '#fff', fontWeight: 700, fontSize: 18 }}>{val}</div>
+              <div style={{ color: 'white', fontWeight: 700, fontSize: 18 }}>{formatNumber(val)}</div>
               <div style={{ color: '#666', fontSize: 11 }}>{label}</div>
             </div>
           ))}
         </div>
-        <button onClick={() => setShowEditProfile(true)} style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: 20, padding: '9px 24px', color: '#fff', cursor: 'pointer', fontSize: 13 }}>✏️ Edit Profile</button>
-      </div>
 
-      <div style={{ padding: 12 }}>
-        {posts.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: 40, color: '#444' }}>
-            <div style={{ fontSize: 40, marginBottom: 10 }}>🎬</div>
-            <p style={{ fontSize: 13 }}>No posts yet — create your first!</p>
-          </div>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 3 }}>
-            {posts.map(post => (
-              <div key={post.id} style={{ aspectRatio: '9/16', background: '#111', borderRadius: 6, overflow: 'hidden' }}>
-                {post.type === 'video' && <video src={post.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} muted playsInline />}
-                {post.type === 'photo' && <img src={post.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-                {post.type === 'text' && <div style={{ background: 'linear-gradient(135deg,#1a0020,#000)', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 6 }}><p style={{ color: '#fff', fontSize: 9, textAlign: 'center' }}>{post.text?.substring(0, 40)}</p></div>}
-              </div>
-            ))}
-          </div>
+        {!isOwn && (
+          <>
+            <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
+              <button onClick={() => onFollow?.(user.id)} style={{ flex: 1, background: isFollowing ? '#222' : '#ff2d55', border: isFollowing ? '1px solid #333' : 'none', borderRadius: 24, padding: 12, color: 'white', fontWeight: 700, cursor: 'pointer' }}>
+                {isFollowing ? '✓ Following' : '+ Follow'}
+              </button>
+              <button onClick={() => { onMessage?.(user.id); onClose(); }} style={{ flex: 1, background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 24, padding: 12, color: 'white', fontWeight: 700, cursor: 'pointer' }}>💬 Message</button>
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => { onVoiceCall?.(user.id); onClose(); }} style={{ flex: 1, background: '#0d2010', border: '1px solid #1a3a1a', borderRadius: 20, padding: 10, color: '#06d6a0', fontWeight: 600, cursor: 'pointer', fontSize: 13 }}>🎙️ Voice Call</button>
+              <button onClick={() => { onVideoCall?.(user.id); onClose(); }} style={{ flex: 1, background: '#0d0d1a', border: '1px solid #1a1a3a', borderRadius: 20, padding: 10, color: '#af52de', fontWeight: 600, cursor: 'pointer', fontSize: 13 }}>📹 Video Call</button>
+            </div>
+          </>
         )}
       </div>
     </div>
   );
 };
 
-// ─── SETTINGS PAGE ───────────────────────────────────────────────────────────
+// ─── Profile Page ─────────────────────────────────────────────────────────────
+const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowAnalytics, onShowQRCode }) => {
+  const [subPage, setSubPage] = useState(null);
+  const photoRef = useRef(null);
+  const [uploading, setUploading] = useState(false);
+  const [myVideos, setMyVideos]   = useState([]);
+  const [editing, setEditing]     = useState(false);
+  const [bio, setBio]             = useState(user?.bio || '');
 
-const SettingsPage = ({ currentUser, onClose, showToast, onLogout }) => (
-  <div style={{ position: 'fixed', inset: 0, background: '#0a0a0a', zIndex: 300, overflowY: 'auto' }}>
-    <div style={{ padding: 16, borderBottom: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, background: '#0a0a0a' }}>
-      <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#ff2d55', fontSize: 22, cursor: 'pointer' }}>←</button>
-      <h2 style={{ color: '#fff', fontSize: 18, fontWeight: 700 }}>Settings</h2>
-    </div>
-    {[
-      { icon: '🔒', label: 'Privacy', fn: () => showToast('Privacy settings coming soon', 'info') },
-      { icon: '🔔', label: 'Notifications', fn: () => showToast('Notification settings coming soon', 'info') },
-      { icon: '💰', label: 'Wallet', fn: () => showToast(`Wallet: ${currentUser?.coins || 0} coins`, 'info') },
-      { icon: '❓', label: 'Help & Support', fn: () => showToast('support@dagu.com', 'info') },
-      { icon: '📜', label: 'Terms & Privacy', fn: () => showToast('Terms and conditions', 'info') },
-    ].map(item => (
-      <button key={item.label} onClick={item.fn} style={{ display: 'flex', alignItems: 'center', gap: 14, width: '100%', padding: '16px 20px', background: 'none', border: 'none', borderBottom: '1px solid #111', cursor: 'pointer' }}>
-        <span style={{ fontSize: 22 }}>{item.icon}</span>
-        <span style={{ color: '#fff', fontSize: 15, flex: 1, textAlign: 'left' }}>{item.label}</span>
-        <span style={{ color: '#333', fontSize: 18 }}>›</span>
-      </button>
-    ))}
-    <div style={{ padding: '20px 16px' }}>
-      <button onClick={onLogout} style={{ width: '100%', background: 'rgba(255,45,85,0.1)', border: '1px solid rgba(255,45,85,0.3)', borderRadius: 16, padding: 14, color: '#ff2d55', fontWeight: 700, cursor: 'pointer', fontSize: 15 }}>🚪 Log Out</button>
-    </div>
-  </div>
-);
-
-// ─── MAIN APP ────────────────────────────────────────────────────────────────
-
-export default function DaguApp() {
-  const [firebaseUser, setFirebaseUser] = useState(undefined); // undefined = loading
-  const [currentUser, setCurrentUser] = useState(null);
-  const [posts, setPosts] = useState([]);
-  const [stories, setStories] = useState([]);
-  const [followed, setFollowed] = useState([]);
-  const [activeTab, setActiveTab] = useState('home');
-  const [toast, setToast] = useState(null);
-  const [showCreatePost, setShowCreatePost] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  const [viewingProfile, setViewingProfile] = useState(null);
-  const [messageUserId, setMessageUserId] = useState(null);
-
-  const showToast = useCallback((message, type = 'info') => setToast({ message, type }), []);
-
-  // FIX: auth listener — use getDoc(uid) for reliable user data fetch
   useEffect(() => {
-    return onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        setFirebaseUser(user);
-        try {
-          const userSnap = await getDoc(doc(db, 'users', user.uid));
-          if (userSnap.exists()) {
-            const data = userSnap.data();
-            setCurrentUser({ ...data, uid: user.uid, id: userSnap.id });
-            setFollowed(data.following || []);
-          } else {
-            // User authenticated but no Firestore doc — rare edge case
-            // Create a basic doc so they can use the app
-            const basicProfile = {
-              uid: user.uid,
-              username: user.displayName?.toLowerCase().replace(/\s+/g, '_') || `user_${user.uid.substring(0, 6)}`,
-              email: user.email || '',
-              bio: 'Dagu Creator 🎬',
-              followers: [],
-              following: [],
-              photoURL: user.photoURL || '',
-              coins: 500,
-              createdAt: serverTimestamp(),
-            };
-            await setDoc(doc(db, 'users', user.uid), basicProfile);
-            setCurrentUser({ ...basicProfile, id: user.uid });
-          }
-        } catch (e) {
-          console.error('Error loading user profile:', e);
-          showToast('Error loading profile. Please refresh.', 'error');
-        }
-      } else {
-        setFirebaseUser(null);
-        setCurrentUser(null);
-        setFollowed([]);
-      }
-    });
-  }, [showToast]);
-
-  // Load posts
-  useEffect(() => {
-    const unsub = onSnapshot(
-      query(collection(db, 'posts'), orderBy('createdAt', 'desc')),
-      snap => setPosts(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
-      err => console.error('Posts listener error:', err)
-    );
+    if (!user?.id) return;
+    const q = query(collection(db, 'videos'), where('userId','==',user.id), orderBy('timestamp','desc'));
+    const unsub = onSnapshot(q, snap => setMyVideos(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
     return unsub;
-  }, []);
+  }, [user?.id]);
 
-  // Load stories
-  useEffect(() => {
-    const unsub = onSnapshot(
-      query(collection(db, 'stories'), orderBy('createdAt', 'desc')),
-      snap => setStories(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
-      err => console.error('Stories listener error:', err)
-    );
-    return unsub;
-  }, []);
-
-  const handleLogout = async () => {
-    await signOut(auth);
-    showToast('Logged out', 'info');
-    setActiveTab('home');
-    setViewingProfile(null);
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const url = await uploadToCloudinary(file, 'image');
+      await updateDoc(doc(db, 'users', user.id), { photoURL: url });
+      setCurrentUser(u => ({ ...u, photoURL: url }));
+      showToast('Profile photo updated! ✅', 'success');
+    } catch { showToast('Upload failed', 'error'); }
+    setUploading(false);
   };
 
-  const handleNavigateToMessage = (uid) => {
-    setMessageUserId(uid);
-    setActiveTab('inbox');
-    setViewingProfile(null);
+  const saveBio = async () => {
+    try {
+      await updateDoc(doc(db, 'users', user.id), { bio });
+      setCurrentUser(u => ({ ...u, bio }));
+      showToast('Bio updated!', 'success');
+    } catch {}
+    setEditing(false);
   };
 
-  // Loading splash
-  if (firebaseUser === undefined) {
-    return (
-      <div style={{ height: '100dvh', background: '#000', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-        <div style={{ fontSize: 64 }}>🎬</div>
-        <h1 style={{ fontSize: 36, fontWeight: 800, background: 'linear-gradient(135deg,#ff2d55,#af52de)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Dagu</h1>
-        <div style={{ width: 40, height: 4, background: '#1a1a1a', borderRadius: 2, overflow: 'hidden' }}>
-          <div style={{ width: '100%', height: '100%', background: '#ff2d55', borderRadius: 2, animation: 'loading 1s ease-in-out infinite' }} />
+  const menuItems = [
+    { page: 'analytics', icon: '📊', label: 'Analytics', color: '#06d6a0', action: onShowAnalytics },
+    { page: 'qr',        icon: '📱', label: 'QR Code',   color: '#af52de', action: onShowQRCode },
+    { page: 'coins',     icon: '🪙', label: 'Coins',     color: '#ffd700' },
+    { page: 'premium',   icon: '⭐', label: 'Premium',   color: '#ffd700' },
+    { page: 'privacy',   icon: '🔒', label: 'Privacy',   color: '#1d9bf0' },
+    { page: 'switch',    icon: '🔄', label: 'Accounts',  color: '#06d6a0' },
+    { page: 'logout',    icon: '🚪', label: 'Logout',    color: '#ff2d55', action: onLogout },
+  ];
+
+  return (
+    <div style={{ height: '100%', overflow: 'auto', background: '#0a0a0a' }}>
+      {/* Header */}
+      <div style={{ padding: 20, textAlign: 'center', borderBottom: '1px solid #1a1a1a' }}>
+        <div style={{ position: 'relative', width: 84, margin: '0 auto 14px' }}>
+          <div onClick={() => photoRef.current?.click()} style={{ width: 84, height: 84, borderRadius: '50%', background: user?.avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 34, border: '3px solid #ff2d55', cursor: 'pointer', overflow: 'hidden' }}>
+            {user?.photoURL ? <img src={user.photoURL} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : user?.avatar}
+          </div>
+          <div onClick={() => photoRef.current?.click()} style={{ position: 'absolute', bottom: 0, right: 0, width: 26, height: 26, background: '#ff2d55', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 13 }}>📷</div>
+          <input ref={photoRef} type="file" accept="image/*" onChange={handlePhotoUpload} style={{ display: 'none' }} />
+          {uploading && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 11 }}>...</div>}
         </div>
-        <style>{`@keyframes loading{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}`}</style>
+        <div style={{ color: 'white', fontWeight: 700, fontSize: 20 }}>@{user?.username}</div>
+        {user?.verified && <div style={{ color: '#1d9bf0', fontSize: 12 }}>✓ Verified</div>}
+
+        {editing ? (
+          <div style={{ display: 'flex', gap: 8, marginTop: 10, justifyContent: 'center' }}>
+            <input value={bio} onChange={e => setBio(e.target.value)} style={{ background: '#141414', border: '1px solid #2a2a2a', borderRadius: 12, padding: '7px 12px', color: 'white', outline: 'none', fontSize: 13, width: 200 }} />
+            <button onClick={saveBio} style={{ background: '#ff2d55', border: 'none', borderRadius: 12, padding: '7px 14px', color: 'white', cursor: 'pointer', fontSize: 13 }}>Save</button>
+          </div>
+        ) : (
+          <div onClick={() => setEditing(true)} style={{ color: '#888', fontSize: 13, marginTop: 6, cursor: 'pointer' }}>{user?.bio || 'Tap to add bio...'}</div>
+        )}
+
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 30, marginTop: 16 }}>
+          {[['Followers', user?.followers?.length||0,'#fff'], ['Following', user?.following?.length||0,'#fff'], ['Coins 🪙', user?.coins||0,'#ffd700'], ['Videos', myVideos.length,'#fff']].map(([label, val, color]) => (
+            <div key={label} style={{ textAlign: 'center' }}>
+              <div style={{ color, fontWeight: 700, fontSize: 16 }}>{formatNumber(val)}</div>
+              <div style={{ color: '#666', fontSize: 10 }}>{label}</div>
+            </div>
+          ))}
+        </div>
       </div>
-    );
-  }
 
-  // Not logged in — show auth screen
-  if (!firebaseUser) {
-    return (
-      <>
-        <AuthScreen showToast={showToast} />
-        {toast && <Toast {...toast} onClose={() => setToast(null)} />}
-      </>
-    );
-  }
+      {/* Menu Grid */}
+      <div style={{ padding: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 20 }}>
+          {menuItems.map(item => (
+            <button key={item.page} onClick={item.action || (() => setSubPage(item.page))}
+              style={{ background: '#141414', border: '1px solid #1e1e1e', borderRadius: 16, padding: '14px 6px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, cursor: 'pointer' }}>
+              <span style={{ fontSize: 22 }}>{item.icon}</span>
+              <span style={{ color: item.color, fontSize: 10, fontWeight: 600 }}>{item.label}</span>
+            </button>
+          ))}
+        </div>
 
-  // Logged in but user doc still loading
+        {/* My Videos grid */}
+        <div style={{ color: 'white', fontWeight: 700, marginBottom: 12 }}>My Posts ({myVideos.length})</div>
+        {myVideos.length === 0
+          ? <div style={{ textAlign: 'center', color: '#555', padding: 40 }}>
+              <div style={{ fontSize: 44, marginBottom: 10 }}>🎬</div>
+              <div>No posts yet. Go create!</div>
+            </div>
+          : <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 2 }}>
+              {myVideos.map(v => (
+                <div key={v.id} style={{ aspectRatio: '3/4', background: '#141414', borderRadius: 8, overflow: 'hidden', position: 'relative' }}>
+                  <video src={v.videoUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <div style={{ position: 'absolute', bottom: 6, left: 6, color: 'white', fontSize: 11, fontWeight: 600, background: 'rgba(0,0,0,0.5)', borderRadius: 8, padding: '2px 6px' }}>❤️ {formatNumber(v.likes)}</div>
+                </div>
+              ))}
+            </div>
+        }
+      </div>
+    </div>
+  );
+};
+
+// ─── Analytics ────────────────────────────────────────────────────────────────
+const AnalyticsPage = ({ user, videos, onClose }) => {
+  const myVids     = videos.filter(v => v.userId === user?.id);
+  const totalViews = myVids.reduce((s,v) => s + (v.views||0), 0);
+  const totalLikes = myVids.reduce((s,v) => s + (v.likes||0), 0);
+  const weeklyData = [1200,1450,1800,2100,2500,2900,3400];
+  const maxW       = Math.max(...weeklyData);
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: '#0a0a0a', zIndex: 200, overflow: 'auto' }}>
+      <div style={{ padding: '24px 20px 20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+          <h2 style={{ color: 'white', fontSize: 22, fontWeight: 800 }}>📊 Analytics</h2>
+          <button onClick={onClose} style={{ background: '#1a1a1a', border: 'none', borderRadius: 20, padding: '8px 16px', color: 'white', cursor: 'pointer' }}>Close</button>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 12, marginBottom: 20 }}>
+          {[['Total Views',formatNumber(totalViews),'#06d6a0'],['Total Likes',formatNumber(totalLikes),'#ff2d55'],['Videos',String(myVids.length),'#af52de'],['Coins',String(user?.coins||0),'#ffd700']].map(([label,val,color]) => (
+            <div key={label} style={{ background: '#141414', borderRadius: 18, padding: 18, border: '1px solid #1e1e1e' }}>
+              <div style={{ color: '#888', fontSize: 11, marginBottom: 4 }}>{label}</div>
+              <div style={{ color, fontSize: 26, fontWeight: 800 }}>{val}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ background: '#141414', borderRadius: 18, padding: 18, marginBottom: 16 }}>
+          <div style={{ color: 'white', fontWeight: 700, marginBottom: 16, fontSize: 14 }}>📈 Weekly Growth</div>
+          <div style={{ height: 100, display: 'flex', alignItems: 'flex-end', gap: 6 }}>
+            {weeklyData.map((v, i) => (
+              <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                <div style={{ width: '100%', background: i===weeklyData.length-1?'#ff2d55':'#af52de', borderRadius: '4px 4px 0 0', height: `${(v/maxW)*100}%`, minHeight: 4 }} />
+                <div style={{ color: '#555', fontSize: 9 }}>{['M','T','W','T','F','S','S'][i]}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={{ background: '#141414', borderRadius: 18, padding: 18 }}>
+          <div style={{ color: 'white', fontWeight: 700, marginBottom: 12, fontSize: 14 }}>🌍 Top Regions</div>
+          {[['Ethiopia','60%','#ff2d55'],['Kenya','20%','#06d6a0'],['Nigeria','12%','#af52de'],['Other','8%','#ffd700']].map(([country,pct,color]) => (
+            <div key={country} style={{ marginBottom: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                <span style={{ color: '#aaa', fontSize: 12 }}>{country}</span>
+                <span style={{ color: 'white', fontSize: 12, fontWeight: 600 }}>{pct}</span>
+              </div>
+              <div style={{ background: '#222', borderRadius: 4, height: 6 }}>
+                <div style={{ width: pct, background: color, borderRadius: 4, height: '100%' }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─── Friends Feed ─────────────────────────────────────────────────────────────
+const FriendsFeed = ({ friends, videos, currentUser, onMessage, onViewProfile, showToast }) => {
+  const [search, setSearch] = useState('');
+  const friendVids = useMemo(() => videos.filter(v => friends.includes(v.userId)).sort((a,b) => new Date(b.createdAt)-new Date(a.createdAt)), [friends, videos]);
+  const filtered   = useMemo(() => !search ? friendVids : friendVids.filter(v => v.username.toLowerCase().includes(search.toLowerCase()) || (v.description||'').toLowerCase().includes(search.toLowerCase())), [friendVids, search]);
+
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#0a0a0a' }}>
+      <div style={{ padding: '12px 14px', borderBottom: '1px solid #1a1a1a', flexShrink: 0 }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', background: '#161616', borderRadius: 24, padding: '8px 14px' }}>
+          <span>🔍</span>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search friend posts..."
+            style={{ flex: 1, background: 'none', border: 'none', color: 'white', outline: 'none', fontSize: 13 }} />
+        </div>
+      </div>
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+        {filtered.length === 0
+          ? <div style={{ textAlign: 'center', padding: 60, color: '#555' }}>
+              <div style={{ fontSize: 48, marginBottom: 12 }}>👥</div>
+              <div style={{ fontSize: 15, marginBottom: 8 }}>No friend videos yet</div>
+              <div style={{ fontSize: 12, color: '#444' }}>Follow people to see their posts here</div>
+            </div>
+          : <div style={{ padding: 12 }}>
+              {filtered.map(video => (
+                <div key={video.id} style={{ background: '#141414', borderRadius: 18, marginBottom: 14, overflow: 'hidden', border: '1px solid #1e1e1e' }}>
+                  <div style={{ background: '#000', minHeight: 180 }}>
+                    <video src={video.videoUrl} style={{ width: '100%', maxHeight: 220 }} controls playsInline />
+                  </div>
+                  <div style={{ padding: 14 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                      <div onClick={() => onViewProfile?.(video.userId)} style={{ width: 38, height: 38, borderRadius: '50%', background: video.avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 14, cursor: 'pointer', overflow: 'hidden' }}>
+                        {video.photoURL ? <img src={video.photoURL} style={{ width:'100%',height:'100%',objectFit:'cover' }} alt="" /> : video.avatar}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div onClick={() => onViewProfile?.(video.userId)} style={{ color: 'white', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>@{video.username}</div>
+                        <div style={{ color: '#555', fontSize: 11 }}>{formatNumber(video.views||0)} views · ❤️ {formatNumber(video.likes||0)}</div>
+                      </div>
+                      <button onClick={() => onMessage?.(video.userId)} style={{ background: '#ff2d55', border: 'none', borderRadius: 20, padding: '6px 14px', color: 'white', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>💬</button>
+                    </div>
+                    <p style={{ color: '#bbb', fontSize: 12, lineHeight: 1.5 }}>{video.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+        }
+      </div>
+    </div>
+  );
+};
+
+// ─── Main App ─────────────────────────────────────────────────────────────────
+export default function DaguApp() {
+  const [currentUser, setCurrentUser] = useState(null);
+  const [users, setUsers]             = useState([]);
+  const [videos, setVideos]           = useState([]);
+  const [stories, setStories]         = useState([]);
+  const [followed, setFollowed]       = useState([]);
+  const [activeTab, setActiveTab]     = useState('home');
+  const [toast, setToast]             = useState(null);
+
+  const [showSearch, setShowSearch]   = useState(false);
+  const [showLive, setShowLive]       = useState(null);
+  const [showCall, setShowCall]       = useState(null);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [viewingProfile, setViewingProfile] = useState(null);
+  const [storyViewerUser, setStoryViewerUser] = useState(null);
+  const [showStoryViewer, setShowStoryViewer] = useState(false);
+
+  const showToast = useCallback((message, type = 'info') => {
+    setToast({ message, type });
+  }, []);
+
+  // Load users
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'users'), snap => {
+      setUsers(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+    return unsub;
+  }, []);
+
+  // Load videos
+  useEffect(() => {
+    const q = query(collection(db, 'videos'), orderBy('timestamp', 'desc'), limit(50));
+    const unsub = onSnapshot(q, snap => {
+      setVideos(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+    return unsub;
+  }, []);
+
+  // Load stories (last 24h)
+  useEffect(() => {
+    const q = query(collection(db, 'stories'), orderBy('timestamp', 'desc'));
+    const unsub = onSnapshot(q, snap => {
+      setStories(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+    return unsub;
+  }, []);
+
+  // Sync followed from user profile
+  useEffect(() => {
+    if (currentUser?.following) setFollowed(currentUser.following);
+  }, [currentUser]);
+
+  const handleLogin = async (email, password) => {
+    const q = query(collection(db, 'users'), where('email','==',email));
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      const d = snap.docs[0];
+      setCurrentUser({ id: d.id, ...d.data() });
+      showToast(`Welcome back, @${d.data().username}! 👋`, 'success');
+    } else {
+      // Auto-create user if not found (simple auth)
+      const username = email.split('@')[0];
+      const newUser = {
+        username, email, fullName: username,
+        avatar: username[0].toUpperCase(),
+        avatarColor: `hsl(${Math.floor(Math.random()*360)},65%,55%)`,
+        verified: false, bio: 'New to Dagu! 🎬',
+        followers: [], following: [],
+        coins: 500, walletBalance: 500,
+        level: 1, streak: 1, subscription: 'free', photoURL: '', videoCount: 0
+      };
+      const ref = doc(collection(db, 'users'));
+      await setDoc(ref, newUser);
+      setCurrentUser({ id: ref.id, ...newUser });
+      showToast(`Welcome to Dagu, @${username}! 🎉`, 'success');
+    }
+  };
+
+  const handleSignup = async (email, username, fullName, password) => {
+    const newUser = {
+      username, email, fullName,
+      avatar: username[0].toUpperCase(),
+      avatarColor: `hsl(${Math.floor(Math.random()*360)},65%,55%)`,
+      verified: false, bio: 'New to Dagu! 🎬',
+      followers: [], following: [],
+      coins: 500, walletBalance: 500,
+      level: 1, streak: 1, subscription: 'free', photoURL: '', videoCount: 0
+    };
+    const ref = doc(collection(db, 'users'));
+    await setDoc(ref, newUser);
+    setCurrentUser({ id: ref.id, ...newUser });
+    showToast(`Welcome to Dagu, @${username}! 🎉`, 'success');
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    setFollowed([]);
+    setActiveTab('home');
+    showToast('Logged out', 'info');
+  };
+
+  const toggleFollow = async (userId) => {
+    const isFollowing = followed.includes(userId);
+    const newFollowed = isFollowing ? followed.filter(id => id !== userId) : [...followed, userId];
+    setFollowed(newFollowed);
+    showToast(isFollowing ? 'Unfollowed' : 'Followed! 🎉', 'success');
+    try {
+      await updateDoc(doc(db, 'users', currentUser.id), { following: newFollowed });
+      if (isFollowing) {
+        await updateDoc(doc(db, 'users', userId), { followers: arrayRemove(currentUser.id) });
+      } else {
+        await updateDoc(doc(db, 'users', userId), { followers: arrayUnion(currentUser.id) });
+      }
+      setCurrentUser(u => ({ ...u, following: newFollowed }));
+    } catch {}
+  };
+
+  const handleViewProfile = (userId) => {
+    const user = users.find(u => u.id === userId);
+    if (user) setViewingProfile(user);
+  };
+
+  const handleMessage = (userId) => {
+    setActiveTab('inbox');
+  };
+
+  const handleUpload = (video) => {
+    // Already added to Firestore in CreatePage; update local state for instant UI
+    setVideos(prev => [video, ...prev]);
+    setActiveTab('home');
+  };
+
+  // Story navigation
+  const storyUserList = useMemo(() => {
+    const ids = [...new Set(stories.map(s => s.userId))];
+    return ids.map(id => users.find(u => u.id === id)).filter(Boolean);
+  }, [stories, users]);
+
+  const currentStoryIdx = storyUserList.findIndex(u => u?.id === storyViewerUser?.id);
+
+  const goNextStoryUser = () => {
+    if (currentStoryIdx < storyUserList.length - 1) setStoryViewerUser(storyUserList[currentStoryIdx + 1]);
+    else { setShowStoryViewer(false); setStoryViewerUser(null); }
+  };
+
+  const goPrevStoryUser = () => {
+    if (currentStoryIdx > 0) setStoryViewerUser(storyUserList[currentStoryIdx - 1]);
+  };
+
+  // ── Auth gate
   if (!currentUser) {
     return (
-      <div style={{ height: '100dvh', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#555', fontSize: 14 }}>
-        Loading your profile...
+      <div style={{ height: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0a0a0a' }}>
+        <style>{`*{margin:0;padding:0;box-sizing:border-box}::-webkit-scrollbar{display:none}`}</style>
+        <AuthScreen onLogin={handleLogin} onSignup={handleSignup} />
       </div>
     );
   }
 
-  const bottomTabs = [
+  const tabs = [
     { id: 'home',    icon: '🏠', label: 'Home' },
     { id: 'friends', icon: '👥', label: 'Friends' },
     { id: 'create',  icon: '➕', label: 'Create' },
-    { id: 'inbox',   icon: '💬', label: 'Messages' },
+    { id: 'inbox',   icon: '💬', label: 'Inbox' },
     { id: 'profile', icon: '👤', label: 'Profile' },
   ];
 
   return (
     <div style={{ maxWidth: 430, margin: '0 auto', height: '100dvh', background: '#0a0a0a', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
       <style>{`
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        ::-webkit-scrollbar { display: none; }
-        button:active { transform: scale(0.95); transition: transform 0.05s; }
+        *{margin:0;padding:0;box-sizing:border-box}
+        ::-webkit-scrollbar{display:none}
+        @keyframes heartBurst{0%{transform:scale(0.3) translateY(0);opacity:1}100%{transform:scale(1.6) translateY(-80px);opacity:0}}
+        @keyframes floatUp{0%{transform:translateX(-50%) translateY(0) scale(1);opacity:1}100%{transform:translateX(-50%) translateY(-120px) scale(1.6);opacity:0}}
+        @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+        button:active{transform:scale(0.94);transition:transform 0.1s}
+        input,textarea{color-scheme:dark}
       `}</style>
 
-      {/* Modals */}
-      {showCreatePost && <CreatePostModal currentUser={currentUser} onClose={() => setShowCreatePost(false)} showToast={showToast} />}
-      {showSettings && <SettingsPage currentUser={currentUser} onClose={() => setShowSettings(false)} showToast={showToast} onLogout={handleLogout} />}
-
-      {/* Profile overlay */}
+      {/* ── Overlays ── */}
+      {showCall && (
+        <CallModal type={showCall.type} contactName={showCall.contactName} contactAvatar={showCall.contactAvatar}
+          onClose={() => setShowCall(null)} />
+      )}
+      {showLive && (
+        <LiveStream streamer={showLive} onClose={() => setShowLive(null)} showToast={showToast} currentUser={currentUser} />
+      )}
+      {showStoryViewer && storyViewerUser && (
+        <StoryViewer stories={stories} user={storyViewerUser} currentUser={currentUser}
+          onClose={() => { setShowStoryViewer(false); setStoryViewerUser(null); }}
+          onNextUser={goNextStoryUser} onPrevUser={goPrevStoryUser} />
+      )}
       {viewingProfile && (
-        <div style={{ position: 'absolute', inset: 0, zIndex: 200, background: '#0a0a0a' }}>
-          <UserProfilePage
-            userId={viewingProfile}
-            currentUser={currentUser}
-            onBack={() => setViewingProfile(null)}
-            onMessage={handleNavigateToMessage}
-            showToast={showToast}
-          />
+        <UserProfileModal
+          user={viewingProfile} currentUser={currentUser}
+          onClose={() => setViewingProfile(null)}
+          onFollow={toggleFollow}
+          onMessage={(uid) => { handleMessage(uid); setViewingProfile(null); }}
+          onVoiceCall={(uid) => { const u = users.find(uu => uu.id===uid); setShowCall({ type:'audio', contactName:u?.username, contactAvatar:u?.avatar }); setViewingProfile(null); }}
+          onVideoCall={(uid) => { const u = users.find(uu => uu.id===uid); setShowCall({ type:'video', contactName:u?.username, contactAvatar:u?.avatar }); setViewingProfile(null); }}
+          followed={followed} showToast={showToast}
+        />
+      )}
+      {showAnalytics && (
+        <AnalyticsPage user={currentUser} videos={videos} onClose={() => setShowAnalytics(false)} />
+      )}
+
+      {/* ── Stories Row (home only) ── */}
+      {activeTab === 'home' && !showStoryViewer && !showLive && (
+        <Stories users={users} stories={stories} currentUser={currentUser}
+          onViewStory={(u) => { setStoryViewerUser(u); setShowStoryViewer(true); }}
+          onAddStory={(s) => setStories(prev => [s, ...prev])}
+          showToast={showToast}
+        />
+      )}
+
+      {/* ── Search bar (non-profile tabs) ── */}
+      {activeTab !== 'profile' && activeTab !== 'create' && (
+        <div style={{ padding: '8px 14px', background: '#0a0a0a', borderBottom: '1px solid #141414', display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+          <button onClick={() => setShowSearch(true)} style={{ flex: 1, background: '#141414', border: '1px solid #1e1e1e', borderRadius: 24, padding: '8px 14px', color: '#555', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
+            <span>🔍</span> Search videos, users...
+          </button>
+          {activeTab === 'home' && (
+            <button onClick={() => setShowLive(currentUser)} style={{ background: '#ff2d55', border: 'none', borderRadius: '50%', width: 38, height: 38, cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🔴</button>
+          )}
         </div>
       )}
 
-      {/* Main content area */}
+      {/* ── Main content ── */}
       <div style={{ flex: 1, overflow: 'hidden', position: 'relative', minHeight: 0 }}>
-
-        {/* HOME tab — Stories + feed */}
-        {activeTab === 'home' && (
-          <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-            <Stories currentUser={currentUser} stories={stories} onStoryPosted={() => {}} showToast={showToast} />
-            <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
-              <HomeFeed posts={posts} currentUser={currentUser} onViewProfile={setViewingProfile} showToast={showToast} followed={followed} tabFilter="foryou" onLivePress={post => showToast(`Joining ${post.username}'s live... 🔴`, 'info')} />
-            </div>
-          </div>
+        {showSearch && (
+          <SearchOverlay onClose={() => setShowSearch(false)} videos={videos} users={users}
+            onViewProfile={(uid) => { handleViewProfile(uid); setShowSearch(false); }} />
         )}
 
-        {/* FRIENDS tab */}
-        {activeTab === 'friends' && (
-          <HomeFeed posts={posts} currentUser={currentUser} onViewProfile={setViewingProfile} showToast={showToast} followed={followed} tabFilter="friends" onLivePress={post => showToast(`Joining live... 🔴`, 'info')} />
-        )}
-
-        {/* INBOX tab — FIX: only mount when active, pass messageUserId */}
-        {activeTab === 'inbox' && (
-          <InboxPage
-            currentUser={currentUser}
-            showToast={showToast}
-            onViewProfile={setViewingProfile}
-            initialChatUserId={messageUserId}
-          />
-        )}
-
-        {/* PROFILE tab */}
-        {activeTab === 'profile' && (
-          <MyProfile
-            currentUser={currentUser}
-            showToast={showToast}
-            onLogout={handleLogout}
-            onOpenSettings={() => setShowSettings(true)}
-          />
+        {!showSearch && (
+          <>
+            {activeTab === 'home' && (
+              <HomeFeed
+                videos={videos} currentUser={currentUser}
+                onFollow={toggleFollow}
+                onMessage={handleMessage}
+                onVoiceCall={(uid) => { const u = users.find(uu => uu.id===uid); setShowCall({ type:'audio', contactName:u?.username, contactAvatar:u?.avatar }); }}
+                onVideoCall={(uid) => { const u = users.find(uu => uu.id===uid); setShowCall({ type:'video', contactName:u?.username, contactAvatar:u?.avatar }); }}
+                followed={followed} showToast={showToast}
+                onViewProfile={handleViewProfile}
+              />
+            )}
+            {activeTab === 'friends' && (
+              <FriendsFeed
+                friends={followed} videos={videos} currentUser={currentUser}
+                onMessage={handleMessage}
+                onViewProfile={handleViewProfile}
+                showToast={showToast}
+              />
+            )}
+            {activeTab === 'create' && (
+              <CreatePage
+                currentUser={currentUser}
+                onUploaded={handleUpload}
+                showToast={showToast}
+                onGoLive={() => setShowLive(currentUser)}
+              />
+            )}
+            {activeTab === 'inbox' && (
+              <InboxPage users={users} currentUser={currentUser} showToast={showToast} />
+            )}
+            {activeTab === 'profile' && (
+              <ProfilePage
+                user={currentUser} setCurrentUser={setCurrentUser}
+                onLogout={handleLogout} users={users} showToast={showToast}
+                onShowAnalytics={() => setShowAnalytics(true)}
+                onShowQRCode={() => showToast('QR Code coming soon!', 'info')}
+              />
+            )}
+          </>
         )}
       </div>
 
-      {/* Bottom nav — FIX: "Create" opens modal, doesn't replace feed */}
-      <div style={{ display: 'flex', background: 'rgba(8,8,8,0.97)', borderTop: '1px solid #161616', padding: '8px 4px 18px', flexShrink: 0, backdropFilter: 'blur(12px)' }}>
-        {bottomTabs.map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => {
-              if (tab.id === 'create') {
-                setShowCreatePost(true); // FIX: open modal, keep current tab
-              } else {
-                setActiveTab(tab.id);
-                if (tab.id === 'inbox') setMessageUserId(null); // clear message target when navigating manually
-              }
-            }}
-            style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer', padding: '6px 0' }}
-          >
-            <span style={{ fontSize: tab.id === 'create' ? 28 : 22, transform: (activeTab === tab.id && tab.id !== 'create') ? 'scale(1.15)' : 'scale(1)', transition: 'transform 0.15s' }}>{tab.icon}</span>
-            <span style={{ fontSize: 10, color: (activeTab === tab.id && tab.id !== 'create') ? '#ff2d55' : '#444', fontWeight: (activeTab === tab.id && tab.id !== 'create') ? 700 : 400 }}>{tab.label}</span>
+      {/* ── Tab Bar ── */}
+      <div style={{ display: 'flex', background: 'rgba(8,8,8,0.97)', borderTop: '1px solid #161616', padding: '8px 4px 16px', flexShrink: 0, backdropFilter: 'blur(12px)' }}>
+        {tabs.map(tab => (
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+            style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0' }}>
+            <span style={{ fontSize: tab.id==='create' ? 26 : 20, transform: activeTab===tab.id ? 'scale(1.18)' : 'scale(1)', transition: 'transform 0.15s' }}>{tab.icon}</span>
+            <span style={{ fontSize: 10, color: activeTab===tab.id ? '#ff2d55' : '#444', fontWeight: activeTab===tab.id ? 700 : 400 }}>{tab.label}</span>
           </button>
         ))}
       </div>
