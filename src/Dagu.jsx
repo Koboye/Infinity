@@ -969,11 +969,9 @@ const EnhancedVideoCard = memo(({ video, currentUser, onLike, onComment, onShare
                 <CommentItem comment={pinnedComment} currentUser={currentUser} onLike={()=>{}} onReply={()=>{}} onPin={()=>{}} />
               </div>
             )}
-            {comments.map(comment=>(
-              {comments.length===0 && <div style={{textAlign:'center',padding:40,color:'rgba(255,255,255,0.3)',fontSize:13}}>No comments yet. Be the first! 💬</div>}
+            {comments.length===0 && <div style={{textAlign:'center',padding:40,color:'rgba(255,255,255,0.3)',fontSize:13}}>No comments yet. Be the first! 💬</div>}
             {comments.map(comment=>(
               <CommentItem key={comment.id} comment={comment} currentUser={currentUser} onLike={async id=>{await updateDoc(doc(db,'comments',id),{likes:increment(1)});}} onReply={(c)=>setCommentText(`@${c.username} `)} onPin={id=>{const c=comments.find(cc=>cc.id===id); if(c){setPinnedComment(c); showToast?.('Pinned!','success');}}} onViewProfile={onViewProfile} />
-            ))}
             ))}
           </div>
           <CommentInputBar currentUser={currentUser} commentText={commentText} setCommentText={setCommentText} onSend={addComment} showToast={showToast} videoId={video.id} />
