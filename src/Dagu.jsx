@@ -196,20 +196,104 @@ const Toast = ({ message, type, onClose }) => {
 
 /* ─────────────── SHARE MODAL ─────────────── */
 const ShareModal = ({ video, onClose, showToast }) => {
-  const url = video?.videoUrl || window.location.href;
-  const shareText = video?.description || 'Check this out on Dagu!';
-  const copyLink = () => { navigator.clipboard.writeText(url).then(() => showToast?.('Link copied!', 'success')).catch(() => showToast?.('Copied!', 'success')); };
-  const nativeShare = async () => { if (navigator.share) { try { await navigator.share({ title:'Dagu', text:shareText, url }); showToast?.('Shared!','success'); } catch {} } else showToast?.('Use a copy option below','info'); };
+  const url = `https://dagu-v1.vercel.app`;
+  const shareText = `@${video?.username}: ${video?.description || 'Check this out on Dagu!'}`;
+
+  const doShare = async (platform, action) => {
+    action();
+    await updateDoc(doc(db,'videos',video.id),{ shares: increment(1) });
+  };
+
+  const copyLink = () => {
+    navigator.clipboard.writeText(url)
+      .then(()=>showToast?.('Link copied!','success'))
+      .catch(()=>showToast?.('Copied!','success'));
+    updateDoc(doc(db,'videos',video.id),{ shares: increment(1) });
+  };
+
+  const nativeShare = async () => {
+    if(navigator.share){
+      try {
+        await navigator.share({ title:'Dagu', text:shareText, url });
+        await updateDoc(doc(db,'videos',video.id),{ shares: increment(1) });
+        showToast?.('Shared!','success');
+      } catch {}
+    } else {
+      copyLink();
+    }
+  };
+
   const socialOptions = [
-    { name:'Copy Link', icon:'🔗', action:copyLink, color:'#555' },
-    { name:'Share', icon:'📤', action:nativeShare, color:'#007aff' },
-    { name:'WhatsApp', icon:'📱', action:()=>{ window.open(`https://wa.me/?text=${encodeURIComponent(shareText+' '+url)}`); onClose(); }, color:'#25D366' },
-    { name:'Telegram', icon:'📨', action:()=>{ window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(shareText)}`); onClose(); }, color:'#26A5E4' },
-    { name:'X / Twitter', icon:'🐦', action:()=>{ window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(url)}`); onClose(); }, color:'#1DA1F2' },
-    { name:'Facebook', icon:'📘', action:()=>{ window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`); onClose(); }, color:'#1877f2' },
-    { name:'LinkedIn', icon:'🔗', action:()=>{ window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`); onClose(); }, color:'#0077b5' },
-    { name:'Email', icon:'📧', action:()=>{ window.open(`mailto:?subject=Dagu&body=${encodeURIComponent(shareText+'\n'+url)}`); onClose(); }, color:'#ff2d55' },
+    { name:'Copy Link',   icon:'🔗', color:'#555',     action:()=>copyLink() },
+    { name:'Share',       icon:'📤', color:'#007aff',  action:()=>nativeShare() },
+    { name:'WhatsApp',    icon:'💬', color:'#25D366',  action:()=>doShare('whatsapp',()=>window.open(`https://wa.me/?text=${encodeURIComponent(shareText+' '+url)}`)) },
+    { name:'Telegram',    icon:'✈️', color:'#26A5E4',  action:()=>doShare('telegram',()=>window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(shareText)}`)) },
+    { name:'Facebook',    icon:'👥', color:'#1877f2',  action:()=>doShare('facebook',()=>window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`)) },
+    { name:'X/Twitter',   icon:'🐦', color:'#1DA1F2',  action:()=>doShare('twitter',()=>window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(url)}`)) },
+    { name:'LinkedIn',    icon:'💼', color:'#0077b5',  action:()=>doShare('linkedin',()=>window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`)) },
+    { name:'Pinterest',   icon:'📌', color:'#E60023',  action:()=>doShare('pinterest',()=>window.open(`https://pinterest.com/pin/create/button/?url=${encodeURIComponent(url)}&description=${encodeURIComponent(shareText)}`)) },
+    { name:'Reddit',      icon:'🤖', color:'#FF4500',  action:()=>doShare('reddit',()=>window.open(`https://reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(shareText)}`)) },
+    { name:'TikTok',      icon:'🎵', color:'#010101',  action:()=>doShare('tiktok',()=>window.open(`https://www.tiktok.com`)) },
+    { name:'Instagram',   icon:'📸', color:'#E1306C',  action:()=>{ copyLink(); showToast?.('Link copied — paste in Instagram!','info'); } },
+    { name:'Email',       icon:'📧', color:'#ff2d55',  action:()=>doShare('email',()=>window.open(`mailto:?subject=Check this on Dagu&body=${encodeURIComponent(shareText+'\n'+url)}`)) },
+    { name:'SMS',         icon:'💬', color:'#34c759',  action:()=>doShare('sms',()=>window.open(`sms:?body=${encodeURIComponent(shareText+' '+url)}`)) },
+    { name:'iMessage',    icon:'🟢', color:'#34c759',  action:()=>doShare('imessage',()=>window.open(`sms:?body=${encodeURIComponent(shareText+' '+url)}`)) },
+    { name:'Snapchat',    icon:'👻', color:'#FFFC00',  action:()=>doShare('snapchat',()=>window.open(`https://www.snapchat.com/scan?attachmentUrl=${encodeURIComponent(url)}`)) },
+    { name:'Viber',       icon:'📳', color:'#7360F2',  action:()=>doShare('viber',()=>window.open(`viber://forward?text=${encodeURIComponent(shareText+' '+url)}`)) },
   ];
+
+  return (
+    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.8)', zIndex:4000, display:'flex', alignItems:'flex-end' }} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{ width:'100%', background:'#111', borderTopLeftRadius:32, borderTopRightRadius:32, paddingBottom:40, maxHeight:'85vh', display:'flex', flexDirection:'column' }}>
+        {/* Handle */}
+        <div style={{ display:'flex', justifyContent:'center', padding:'14px 0 10px', flexShrink:0 }}>
+          <div style={{ width:36, height:4, background:'rgba(255,255,255,0.15)', borderRadius:2 }} />
+        </div>
+
+        {/* Post preview */}
+        {video && (
+          <div style={{ margin:'0 16px 14px', background:'rgba(255,255,255,0.04)', borderRadius:18, padding:'12px 14px', display:'flex', alignItems:'center', gap:10, flexShrink:0 }}>
+            <div style={{ width:44, height:44, borderRadius:10, background:'#222', overflow:'hidden', flexShrink:0 }}>
+              {video.videoUrl?.match(/\.(jpg|jpeg|png|gif|webp)/i)
+                ? <img src={video.videoUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" />
+                : <video src={video.videoUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} muted />
+              }
+            </div>
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ color:'white', fontSize:13, fontWeight:700 }}>@{video.username}</div>
+              <div style={{ color:'rgba(255,255,255,0.4)', fontSize:11, marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{video.description}</div>
+            </div>
+            <div style={{ color:'rgba(255,255,255,0.3)', fontSize:11, textAlign:'center', flexShrink:0 }}>
+              <div style={{ color:'white', fontWeight:700, fontSize:14 }}>{formatNumber(video.shares||0)}</div>
+              <div>shares</div>
+            </div>
+          </div>
+        )}
+
+        {/* Share link bar */}
+        <div style={{ margin:'0 16px 14px', background:'rgba(255,255,255,0.05)', borderRadius:14, padding:'10px 14px', display:'flex', alignItems:'center', gap:10, flexShrink:0 }}>
+          <span style={{ color:'rgba(255,255,255,0.4)', fontSize:12, flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{url}</span>
+          <button onClick={copyLink} style={{ background:'linear-gradient(135deg,#ff2d55,#af52de)', border:'none', borderRadius:10, padding:'6px 14px', color:'white', fontSize:12, fontWeight:700, cursor:'pointer', flexShrink:0 }}>Copy</button>
+        </div>
+
+        {/* Section label */}
+        <div style={{ padding:'0 16px 10px', color:'rgba(255,255,255,0.4)', fontSize:11, fontWeight:700, letterSpacing:1, textTransform:'uppercase', flexShrink:0 }}>Share to</div>
+
+        {/* Icons grid — scrollable */}
+        <div style={{ overflowY:'auto', padding:'0 16px' }}>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10 }}>
+            {socialOptions.map(opt=>(
+              <button key={opt.name} onClick={opt.action} style={{ background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:18, padding:'14px 6px', display:'flex', flexDirection:'column', alignItems:'center', gap:7, cursor:'pointer' }}>
+                <div style={{ width:48, height:48, borderRadius:'50%', background:opt.color+'22', border:`1.5px solid ${opt.color}55`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:22 }}>{opt.icon}</div>
+                <span style={{ color:'rgba(255,255,255,0.6)', fontSize:10, fontWeight:500, textAlign:'center' }}>{opt.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
   return (
     <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.75)', zIndex:4000, display:'flex', alignItems:'flex-end' }} onClick={onClose}>
       <div onClick={e=>e.stopPropagation()} style={{ width:'100%', background:'#111', borderTopLeftRadius:32, borderTopRightRadius:32, padding:'0 0 40px' }}>
@@ -831,7 +915,7 @@ const EnhancedVideoCard = memo(({ video, currentUser, onLike, onComment, onShare
         <button onClick={()=>setShowShare(true)} style={{ background:'rgba(0,0,0,0.35)', backdropFilter:'blur(10px)', border:'none', borderRadius:'50%', width:50, height:50, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', marginTop:6 }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
-        <span style={{ color:'white', fontSize:11, fontWeight:700 }}>{formatNumber(video.shares)}</span>
+        <span style={{ color:'white', fontSize:11, fontWeight:700 }}>{formatNumber(video.shares||0)}</span>
         <button onClick={()=>setShowActionMenu(!showActionMenu)} style={{ background:'rgba(0,0,0,0.35)', backdropFilter:'blur(10px)', border:'none', borderRadius:'50%', width:50, height:50, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', marginTop:6 }}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
         </button>
@@ -1695,46 +1779,120 @@ const SearchOverlay = ({ onClose, videos, users, onViewProfile }) => {
 };
 
 /* ─────────────── CAMERA UPLOAD (REAL CLOUDINARY) ─────────────── */
+const FILTERS = [
+  { name:'Normal',   css:'' },
+  { name:'Vivid',    css:'saturate(1.8) contrast(1.1)' },
+  { name:'Warm',     css:'sepia(0.4) saturate(1.4) brightness(1.05)' },
+  { name:'Cool',     css:'hue-rotate(20deg) saturate(1.2) brightness(1.05)' },
+  { name:'B&W',      css:'grayscale(1)' },
+  { name:'Fade',     css:'opacity(0.85) brightness(1.1) saturate(0.7)' },
+  { name:'Drama',    css:'contrast(1.4) saturate(1.3) brightness(0.9)' },
+  { name:'Bloom',    css:'brightness(1.2) saturate(0.8) blur(0.4px)' },
+  { name:'Neon',     css:'saturate(2) hue-rotate(270deg) contrast(1.2)' },
+  { name:'Vintage',  css:'sepia(0.6) contrast(0.9) brightness(0.95) saturate(0.8)' },
+];
+
 const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [description, setDescription] = useState('');
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [showCamera, setShowCamera] = useState(false);
+  const [activeFilter, setActiveFilter] = useState(0);
+  const [cameraMode, setCameraMode] = useState('photo'); // 'photo' | 'video'
+  const [recording, setRecording] = useState(false);
+  const [facingMode, setFacingMode] = useState('user');
+  const [flash, setFlash] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [recordSeconds, setRecordSeconds] = useState(0);
   const videoRef = useRef(null);
   const streamRef = useRef(null);
+  const recorderRef = useRef(null);
+  const chunksRef = useRef([]);
+  const timerRef = useRef(null);
+  const fileInputRef = useRef(null);
 
-  const startCamera = async () => { try { const s=await navigator.mediaDevices.getUserMedia({video:true}); streamRef.current=s; if(videoRef.current) videoRef.current.srcObject=s; setShowCamera(true); } catch { showToast?.('Camera denied','error'); } };
-  const stopCamera = () => { streamRef.current?.getTracks().forEach(t=>t.stop()); streamRef.current=null; setShowCamera(false); };
-  const capturePhoto = () => { if(!videoRef.current) return; const c=document.createElement('canvas'); c.width=videoRef.current.videoWidth; c.height=videoRef.current.videoHeight; c.getContext('2d').drawImage(videoRef.current,0,0); c.toBlob(blob=>{setSelectedFile({file:new File([blob],'photo.jpg',{type:'image/jpeg'}),url:URL.createObjectURL(blob),type:'image/jpeg'}); stopCamera();},'image/jpeg'); };
-  const handleFileSelect = e => { const f=e.target.files[0]; if(f) setSelectedFile({file:f,url:URL.createObjectURL(f),type:f.type}); };
+  const startCamera = async (facing = facingMode) => {
+    streamRef.current?.getTracks().forEach(t => t.stop());
+    try {
+      const s = await navigator.mediaDevices.getUserMedia({ video:{ facingMode: facing }, audio: true });
+      streamRef.current = s;
+      if(videoRef.current) videoRef.current.srcObject = s;
+    } catch { showToast?.('Camera denied','error'); }
+  };
+
+  useEffect(() => { startCamera(); return () => { streamRef.current?.getTracks().forEach(t=>t.stop()); clearInterval(timerRef.current); }; }, []);
+
+  const flipCamera = () => {
+    const next = facingMode==='user'?'environment':'user';
+    setFacingMode(next);
+    startCamera(next);
+  };
+
+  const capturePhoto = () => {
+    if(!videoRef.current) return;
+    const c = document.createElement('canvas');
+    c.width = videoRef.current.videoWidth;
+    c.height = videoRef.current.videoHeight;
+    const ctx = c.getContext('2d');
+    if(flash){ ctx.fillStyle='white'; ctx.fillRect(0,0,c.width,c.height); }
+    ctx.filter = FILTERS[activeFilter].css || 'none';
+    ctx.drawImage(videoRef.current, 0, 0);
+    c.toBlob(blob => {
+      setSelectedFile({ file: new File([blob],'photo.jpg',{type:'image/jpeg'}), url: URL.createObjectURL(blob), type:'image/jpeg' });
+    }, 'image/jpeg');
+  };
+
+  const startRecording = () => {
+    if(!streamRef.current) return;
+    chunksRef.current = [];
+    const r = new MediaRecorder(streamRef.current);
+    r.ondataavailable = e => chunksRef.current.push(e.data);
+    r.onstop = () => {
+      const blob = new Blob(chunksRef.current, { type:'video/webm' });
+      setSelectedFile({ file: new File([blob],'video.webm',{type:'video/webm'}), url: URL.createObjectURL(blob), type:'video/webm' });
+    };
+    r.start();
+    recorderRef.current = r;
+    setRecording(true);
+    setRecordSeconds(0);
+    timerRef.current = setInterval(() => setRecordSeconds(s => { if(s>=59){ stopRecording(); return 60; } return s+1; }), 1000);
+  };
+
+  const stopRecording = () => {
+    recorderRef.current?.stop();
+    setRecording(false);
+    clearInterval(timerRef.current);
+  };
+
+  const handleFileSelect = e => {
+    const f = e.target.files[0];
+    if(f) setSelectedFile({ file:f, url:URL.createObjectURL(f), type:f.type });
+  };
 
   const handleUpload = async () => {
-    if(!selectedFile){showToast?.('Select media first','error'); return;}
+    if(!selectedFile){ showToast?.('Capture or select media first','error'); return; }
     setUploading(true); setUploadProgress(0);
     try {
       const mediaUrl = await uploadToCloudinary(selectedFile.file, setUploadProgress);
-const videoData = {
+      const videoData = {
         userId: currentUser.id,
         username: currentUser.username || '',
-avatar: currentUser.avatar || (currentUser.username||'U')[0].toUpperCase(),
+        avatar: currentUser.avatar || (currentUser.username||'U')[0].toUpperCase(),
         avatarColor: currentUser.avatarColor || '#ff2d55',
         avatarUrl: currentUser.avatarUrl || null,
         verified: currentUser.verified || false,
         description: description || 'New post! 🔥',
         videoUrl: mediaUrl,
-        mediaType: selectedFile?.type || 'video/mp4',
+        mediaType: selectedFile.type,
         song: 'Original sound',
-        likes: 0,
-        comments: 0,
-        shares: 0,
-        views: 0,
+        likes: 0, comments: 0, shares: 0, views: 0,
         hashtags: (description||'').match(/#\w+/g) || [],
-        category: (description||'').toLowerCase().includes('#job') || (description||'').toLowerCase().includes('#work') ? 'job' : (description||'').toLowerCase().includes('#skill') || (description||'').toLowerCase().includes('#learn') ? 'skill' : 'foryou',
+        category: 'foryou',
+        filter: FILTERS[activeFilter].name,
         createdAt: serverTimestamp(),
       };
       const ref = await addDoc(collection(db,'videos'), videoData);
-      onUpload?.({id:ref.id,...videoData,videoUrl:mediaUrl,createdAt:new Date()});
+      onUpload?.({ id:ref.id, ...videoData, videoUrl:mediaUrl, createdAt:new Date() });
       showToast?.('Posted! 🚀','success');
       onClose?.();
     } catch(e) {
@@ -1742,6 +1900,118 @@ avatar: currentUser.avatar || (currentUser.username||'U')[0].toUpperCase(),
     }
     setUploading(false);
   };
+
+  const filterStyle = { filter: FILTERS[activeFilter].css || 'none' };
+
+  // Preview screen (after capture)
+  if(selectedFile) return (
+    <div style={{ position:'fixed', inset:0, background:'#000', zIndex:100, display:'flex', flexDirection:'column' }}>
+      <div style={{ padding:'14px 16px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+        <button onClick={()=>setSelectedFile(null)} style={{ background:'rgba(255,255,255,0.1)', border:'none', borderRadius:20, padding:'8px 16px', color:'white', cursor:'pointer', fontSize:13 }}>Retake</button>
+        <span style={{ color:'white', fontWeight:800, fontSize:16, fontFamily:"'Syne',sans-serif" }}>New Post</span>
+        <button onClick={handleUpload} disabled={uploading} style={{ background:'linear-gradient(135deg,#ff2d55,#af52de)', border:'none', borderRadius:20, padding:'8px 18px', color:'white', fontWeight:700, cursor:'pointer', fontSize:13, opacity:uploading?0.7:1 }}>
+          {uploading ? `${uploadProgress}%` : 'Post ✓'}
+        </button>
+      </div>
+      {uploading && <div style={{ height:3, background:'rgba(255,255,255,0.1)' }}><div style={{ height:'100%', background:'linear-gradient(90deg,#ff2d55,#af52de)', width:`${uploadProgress}%`, transition:'width 0.3s' }} /></div>}
+      <div style={{ flex:1, position:'relative', overflow:'hidden' }}>
+        {selectedFile.type.startsWith('image/') 
+          ? <img src={selectedFile.url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', ...filterStyle }} />
+          : <video src={selectedFile.url} style={{ width:'100%', height:'100%', objectFit:'cover' }} controls autoPlay loop />
+        }
+      </div>
+      {/* Filter strip on preview */}
+      <div style={{ padding:'10px 0', background:'rgba(0,0,0,0.8)', overflowX:'auto', display:'flex', gap:10, paddingLeft:16 }}>
+        {FILTERS.map((f,i)=>(
+          <div key={f.name} onClick={()=>setActiveFilter(i)} style={{ flexShrink:0, textAlign:'center', cursor:'pointer' }}>
+            <div style={{ width:56, height:56, borderRadius:14, overflow:'hidden', border: i===activeFilter?'2px solid #ff2d55':'2px solid transparent' }}>
+              <img src={selectedFile.type.startsWith('image/')?selectedFile.url:'https://picsum.photos/56'} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', filter: f.css||'none' }} />
+            </div>
+            <div style={{ color: i===activeFilter?'#ff2d55':'rgba(255,255,255,0.5)', fontSize:9, marginTop:4, fontWeight:700 }}>{f.name}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ padding:'10px 16px 32px', background:'rgba(0,0,0,0.9)' }}>
+        <textarea placeholder="Write a caption... #hashtags" value={description} onChange={e=>setDescription(e.target.value)} style={{ width:'100%', background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:16, padding:'12px 14px', color:'white', minHeight:70, outline:'none', fontSize:13, resize:'none', boxSizing:'border-box' }} />
+      </div>
+    </div>
+  );
+
+  // Camera screen
+  return (
+    <div style={{ position:'fixed', inset:0, background:'#000', zIndex:100, display:'flex', flexDirection:'column' }}>
+      {/* Top bar */}
+      <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:10, padding:'50px 16px 16px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+        <button onClick={onClose} style={{ background:'rgba(0,0,0,0.5)', border:'none', borderRadius:'50%', width:40, height:40, color:'white', cursor:'pointer', fontSize:20, display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
+        <div style={{ display:'flex', gap:10 }}>
+          <button onClick={()=>setFlash(!flash)} style={{ background: flash?'rgba(255,215,0,0.3)':'rgba(0,0,0,0.5)', border:'none', borderRadius:'50%', width:40, height:40, color: flash?'#ffd700':'white', cursor:'pointer', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center' }}>⚡</button>
+          <button onClick={flipCamera} style={{ background:'rgba(0,0,0,0.5)', border:'none', borderRadius:'50%', width:40, height:40, color:'white', cursor:'pointer', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center' }}>🔄</button>
+          <button onClick={()=>setShowFilters(!showFilters)} style={{ background: showFilters?'rgba(255,45,85,0.5)':'rgba(0,0,0,0.5)', border:'none', borderRadius:'50%', width:40, height:40, color:'white', cursor:'pointer', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center' }}>✨</button>
+        </div>
+      </div>
+
+      {/* Camera viewfinder */}
+      <div style={{ flex:1, position:'relative', overflow:'hidden' }}>
+        <video ref={videoRef} autoPlay playsInline muted style={{ width:'100%', height:'100%', objectFit:'cover', ...filterStyle }} />
+        {/* Recording timer */}
+        {recording && (
+          <div style={{ position:'absolute', top:60, left:'50%', transform:'translateX(-50%)', background:'rgba(255,45,85,0.9)', borderRadius:20, padding:'6px 16px', display:'flex', alignItems:'center', gap:8 }}>
+            <div style={{ width:8, height:8, borderRadius:'50%', background:'white', animation:'pulse 1s infinite' }} />
+            <span style={{ color:'white', fontWeight:700, fontSize:14 }}>00:{String(recordSeconds).padStart(2,'0')}</span>
+          </div>
+        )}
+        {/* Live filter strip */}
+        {showFilters && (
+          <div style={{ position:'absolute', bottom:0, left:0, right:0, padding:'10px 0 10px 16px', background:'linear-gradient(transparent,rgba(0,0,0,0.7))', overflowX:'auto', display:'flex', gap:10 }}>
+            {FILTERS.map((f,i)=>(
+              <div key={f.name} onClick={()=>setActiveFilter(i)} style={{ flexShrink:0, textAlign:'center', cursor:'pointer' }}>
+                <div style={{ width:52, height:52, borderRadius:12, background:'rgba(255,255,255,0.15)', border: i===activeFilter?'2px solid #ff2d55':'2px solid transparent', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden' }}>
+                  <div style={{ width:'100%', height:'100%', background: i===0?'linear-gradient(135deg,#888,#444)':i===1?'linear-gradient(135deg,#ff6b6b,#ffa500)':i===2?'linear-gradient(135deg,#ffd700,#ff8c00)':i===3?'linear-gradient(135deg,#00bfff,#1e90ff)':i===4?'linear-gradient(135deg,#888,#222)':i===5?'linear-gradient(135deg,#ddd,#aaa)':i===6?'linear-gradient(135deg,#333,#000)':i===7?'linear-gradient(135deg,#ffe,#ffd)':i===8?'linear-gradient(135deg,#ff00ff,#00ffff)':'linear-gradient(135deg,#c8a97e,#8b6f47)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                    <span style={{ fontSize:9, color:'white', fontWeight:700 }}>{f.name}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Bottom controls */}
+      <div style={{ background:'rgba(0,0,0,0.9)', padding:'20px 0 48px' }}>
+        {/* Photo / Video toggle */}
+        <div style={{ display:'flex', justifyContent:'center', gap:28, marginBottom:24 }}>
+          {['photo','video'].map(m=>(
+            <button key={m} onClick={()=>setCameraMode(m)} style={{ background:'none', border:'none', color: cameraMode===m?'white':'rgba(255,255,255,0.35)', fontSize:13, fontWeight:700, cursor:'pointer', textTransform:'uppercase', letterSpacing:1, borderBottom: cameraMode===m?'2px solid #ff2d55':'2px solid transparent', paddingBottom:4 }}>{m}</button>
+          ))}
+        </div>
+
+        {/* Capture row */}
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', paddingLeft:60, paddingRight:60 }}>
+          {/* Gallery */}
+          <button onClick={()=>fileInputRef.current?.click()} style={{ width:48, height:48, borderRadius:14, background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', fontSize:22 }}>🖼️</button>
+          <input ref={fileInputRef} type="file" accept="video/*,image/*" onChange={handleFileSelect} style={{ display:'none' }} />
+
+          {/* Shutter / Record */}
+          {cameraMode==='photo' ? (
+            <button onClick={capturePhoto} style={{ width:76, height:76, borderRadius:'50%', background:'white', border:'5px solid rgba(255,255,255,0.3)', cursor:'pointer', position:'relative' }}>
+              <div style={{ position:'absolute', inset:4, borderRadius:'50%', background:'white' }} />
+            </button>
+          ) : (
+            <button onClick={recording?stopRecording:startRecording} style={{ width:76, height:76, borderRadius:'50%', background: recording?'#ff2d55':'white', border:'5px solid rgba(255,255,255,0.3)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+              {recording
+                ? <div style={{ width:24, height:24, borderRadius:4, background:'white' }} />
+                : <div style={{ width:76, height:76, borderRadius:'50%', background:'#ff2d55' }} />
+              }
+            </button>
+          )}
+
+          {/* Flip (right side placeholder for symmetry) */}
+          <button onClick={flipCamera} style={{ width:48, height:48, borderRadius:'50%', background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', fontSize:22 }}>🔄</button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
   useEffect(()=>()=>stopCamera(),[]);
 
