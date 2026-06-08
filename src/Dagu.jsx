@@ -1761,15 +1761,7 @@ const ConversationView = ({ currentUser, otherUser, conversationId, onBack, show
         ))}
         <div ref={bottomRef} />
       </div>
-      <div style={{ padding:'10px 14px 24px', borderTop:'1px solid rgba(255,255,255,0.06)', display:'flex', gap:10, alignItems:'center' }}>
-        <input value={text} onChange={e=>setText(e.target.value)} onKeyDown={e=>e.key==='Enter'&&handleSend()} placeholder="Message..." style={{ flex:1, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:28, padding:'11px 16px', color:'white', outline:'none', fontSize:13 }} />
-        <button onClick={handleSend} style={{ background:'linear-gradient(135deg,#ff2d55,#af52de)', border:'none', borderRadius:'50%', width:42, height:42, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-        </button>
-      </div>
-    </div>
-  );
-};
+      const InboxPage
 
 const InboxPage = ({ users, currentUser, showToast, onViewProfile }) => {
   const [activeConversation, setActiveConversation] = useState(null);
