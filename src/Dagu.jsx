@@ -294,36 +294,6 @@ const ShareModal = ({ video, onClose, showToast }) => {
     </div>
   );
 };
-  return (
-    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.75)', zIndex:4000, display:'flex', alignItems:'flex-end' }} onClick={onClose}>
-      <div onClick={e=>e.stopPropagation()} style={{ width:'100%', background:'#111', borderTopLeftRadius:32, borderTopRightRadius:32, padding:'0 0 40px' }}>
-        <div style={{ display:'flex', justifyContent:'center', padding:'14px 0 10px' }}>
-          <div style={{ width:36, height:4, background:'rgba(255,255,255,0.15)', borderRadius:2 }} />
-        </div>
-        {video && (
-          <div style={{ margin:'0 16px 16px', background:'rgba(255,255,255,0.04)', borderRadius:18, padding:'12px 14px', display:'flex', alignItems:'center', gap:10 }}>
-            <div style={{ width:40, height:40, borderRadius:'50%', background:video.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:16, overflow:'hidden' }}>
-              {video.avatarUrl ? <img src={video.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : video.avatar}
-            </div>
-            <div>
-              <div style={{ color:'white', fontSize:13, fontWeight:600, fontFamily:"'Syne',sans-serif" }}>@{video.username}</div>
-              <div style={{ color:'rgba(255,255,255,0.4)', fontSize:11, marginTop:2 }}>{(video.description||'').substring(0,50)}...</div>
-            </div>
-          </div>
-        )}
-        <div style={{ padding:'0 16px', color:'rgba(255,255,255,0.5)', fontSize:11, fontWeight:700, letterSpacing:1, textTransform:'uppercase', marginBottom:12 }}>Share via</div>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8, padding:'0 16px' }}>
-          {socialOptions.map(opt => (
-            <button key={opt.name} onClick={opt.action} style={{ background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:20, padding:'14px 6px', display:'flex', flexDirection:'column', alignItems:'center', gap:7, cursor:'pointer', transition:'all 0.15s' }}>
-              <div style={{ width:46, height:46, borderRadius:'50%', background:opt.color+'22', border:`1.5px solid ${opt.color}40`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:22 }}>{opt.icon}</div>
-              <span style={{ color:'rgba(255,255,255,0.6)', fontSize:10, fontWeight:500 }}>{opt.name}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-};
 
 const StoryViewer = ({ story, user, onClose }) => {
   const [progress, setProgress] = useState(0);
