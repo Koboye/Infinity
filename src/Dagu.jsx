@@ -40,14 +40,6 @@ const EMAILJS_PUBLIC_KEY = 'U9fs25Bcx5oQ6A2ru';
 const LOGIN_METHODS = [
   { id: 'google', name: 'Google', icon: '🌐', color: '#4285f4' },
   { id: 'email', name: 'Email', icon: '📧', color: '#ff2d55' },
-  { id: 'facebook', name: 'Facebook', icon: '📘', color: '#1877f2' },
-  { id: 'apple', name: 'Apple', icon: '🍎', color: '#000' },
-  { id: 'telegram', name: 'Telegram', icon: '📨', color: '#26A5E4' },
-  { id: 'whatsapp', name: 'WhatsApp', icon: '📱', color: '#25D366' },
-  { id: 'linkedin', name: 'LinkedIn', icon: '🔗', color: '#0077b5' },
-  { id: 'imo', name: 'Imo', icon: '💬', color: '#6f4e7c' },
-  { id: 'phone', name: 'Phone', icon: '📞', color: '#34c759' },
-  { id: 'national_id', name: 'National ID', icon: '🆔', color: '#ff9500' },
 ];
 
 const VIRTUAL_GIFTS = [
@@ -248,7 +240,27 @@ const ShareModal = ({ video, onClose, showToast }) => {
     </div>
   );
 };
-
+const StoryReplyInput = ({ story, user, onClose }) => {
+  const [reply, setReply] = useState('');
+  const sendReply = async () => {
+    if(!reply.trim()) return;
+    await addDoc(collection(db,'storyReplies'),{
+      storyUserId: story?.userId,
+      fromUserId: user?.id,
+      fromUsername: user?.username,
+      text: reply,
+      createdAt: serverTimestamp(),
+    });
+    setReply('');
+    onClose();
+  };
+  return (
+    <div style={{ padding:'14px 16px 24px', display:'flex', gap:10 }}>
+      <input value={reply} onChange={e=>setReply(e.target.value)} onKeyDown={e=>e.key==='Enter'&&sendReply()} placeholder="Reply to story..." style={{ flex:1, background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.15)', borderRadius:28, padding:'10px 16px', color:'white', outline:'none', fontSize:13 }} />
+      <button onClick={sendReply} style={{ background:'#ff2d55', border:'none', borderRadius:'50%', width:42, height:42, color:'white', cursor:'pointer', fontSize:16 }}>↑</button>
+    </div>
+  );
+};
 /* ─────────────── STORY VIEWER ─────────────── */
 const StoryViewer = ({ story, user, onClose }) => {
   const [progress, setProgress] = useState(0);
@@ -283,10 +295,7 @@ const StoryViewer = ({ story, user, onClose }) => {
           </div>
         )}
       </div>
-      <div style={{ padding:'14px 16px 24px', display:'flex', gap:10 }}>
-        <input placeholder="Reply to story..." style={{ flex:1, background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.15)', borderRadius:28, padding:'10px 16px', color:'white', outline:'none', fontSize:13 }} />
-        <button style={{ background:'#ff2d55', border:'none', borderRadius:'50%', width:42, height:42, color:'white', cursor:'pointer', fontSize:16 }}>↑</button>
-      </div>
+      <StoryReplyInput story={story} user={user} onClose={onClose} />
     </div>
   );
 };
@@ -551,11 +560,20 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
     };
     createLive();
 
-    // Real-time viewer count + auto-increment
-    const i=setInterval(()=>{ setViewers(v=>v+Math.floor(Math.random()*5-1)); },3000);
+    // Real viewer count from Firestore
+    let unsubLive = ()=>{};
+    const waitForLive = setInterval(()=>{
+      if(!liveRef.current) return;
+      clearInterval(waitForLive);
+      updateDoc(doc(db,'liveStreams',liveRef.current),{ viewers: increment(1) }).catch(()=>{});
+      unsubLive = onSnapshot(doc(db,'liveStreams',liveRef.current), snap=>{
+        if(snap.exists()) setViewers(snap.data().viewers||0);
+      });
+    },300);
     return ()=>{
-      clearInterval(i);
-      if(liveRef.current) updateDoc(doc(db,'liveStreams',liveRef.current),{active:false}).catch(()=>{});
+      unsubLive();
+      clearInterval(waitForLive);
+      if(liveRef.current) updateDoc(doc(db,'liveStreams',liveRef.current),{ active:false, viewers: increment(-1) }).catch(()=>{});
     };
   },[streamer]);
 
@@ -664,6 +682,8 @@ const EnhancedVideoCard = memo(({ video, currentUser, onLike, onComment, onShare
     getDoc(doc(db,'likes',`${video.id}_${currentUser.id}`)).then(snap=>{
       if(snap.exists()) setLiked(true);
     }).catch(()=>{});
+    // Count this as a view (once per mount)
+    updateDoc(doc(db,'videos',video.id),{ views: increment(1) }).catch(()=>{});
     // Real-time comments
     const q = query(collection(db,'comments'), where('videoId','==',video.id), orderBy('createdAt','asc'));
     const unsub = onSnapshot(q, snap=>{
@@ -714,8 +734,8 @@ const EnhancedVideoCard = memo(({ video, currentUser, onLike, onComment, onShare
       videoId: video.id,
       userId: currentUser.id,
       username: currentUser.username,
-     avatar: currentUser.avatar || (currentUser.username || 'U')[0].toUpperCase(),
-      avatarColor: currentUser.avatarColor,
+     avatar: currentUser.avatar || (currentUser.username||'U')[0].toUpperCase(),
+      avatarColor: currentUser.avatarColor || '#ff2d55',
       avatarUrl: currentUser.avatarUrl||null,
       text: txt,
       likes: 0,
@@ -767,7 +787,7 @@ const EnhancedVideoCard = memo(({ video, currentUser, onLike, onComment, onShare
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-5.99-5.99 19.79 19.79 0 01-3.07-8.67A2 2 0 014 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>, label:'Voice Call', fn:()=>onVoiceCall?.(video.userId)},
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>, label:'Video Call', fn:()=>onVideoCall?.(video.userId)},
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff9500" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>, label:'Report', fn:()=>{ setShowReportModal(true); setShowActionMenu(false); }},
-              {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff2d55" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>, label:'Block', fn:()=>showToast?.('User blocked','warning')},
+             {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff2d55" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>, label:'Block', fn:async()=>{ await updateDoc(doc(db,'users',currentUser.id),{ blockedUsers: arrayUnion(video.userId) }); showToast?.('User blocked','warning'); }},
             ].map(({icon,label,fn})=>(
               <button key={label} onClick={()=>{fn(); setShowActionMenu(false);}} style={{ display:'flex', alignItems:'center', gap:12, width:'100%', padding:'11px 14px', background:'none', border:'none', color:label==='Block'?'#ff2d55':label==='Report'?'#ff9500':'white', cursor:'pointer', borderRadius:16, fontSize:14, fontFamily:"'DM Sans',sans-serif" }}>
                 <span>{icon}</span>{label}
@@ -825,7 +845,7 @@ const EnhancedVideoCard = memo(({ video, currentUser, onLike, onComment, onShare
               </div>
             )}
             {comments.map(comment=>(
-              <CommentItem key={comment.id} comment={comment} currentUser={currentUser} onLike={async id=>{await updateDoc(doc(db,'comments',id),{likes:increment(1)});}} onReply={()=>{}} onPin={id=>{const c=comments.find(cc=>cc.id===id); if(c){setPinnedComment(c); showToast?.('Pinned!','success');}}} />
+              <CommentItem key={comment.id} comment={comment} currentUser={currentUser} onLike={async id=>{await updateDoc(doc(db,'comments',id),{likes:increment(1)});}} onReply={(c)=>setCommentText(`@${c.username} `)} onPin={id=>{const c=comments.find(cc=>cc.id===id); if(c){setPinnedComment(c); showToast?.('Pinned!','success');}}} />
             ))}
           </div>
           <div style={{ padding:'10px 14px 24px', borderTop:'1px solid rgba(255,255,255,0.06)', display:'flex', gap:10, alignItems:'center' }}>
@@ -848,7 +868,10 @@ const EnhancedVideoCard = memo(({ video, currentUser, onLike, onComment, onShare
 const HomeFeed = ({ videos, onLike, onComment, onShare, onFollow, onMessage, onVoiceCall, onVideoCall, onDuet, onStitch, onSaveSound, followed, showToast, onLive, currentUser, onViewProfile, onOpenSearch }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [activeCategory, setActiveCategory] = useState('foryou');
-  const filteredVideos = useMemo(()=>videos,[videos]);
+  const filteredVideos = useMemo(()=>{
+    if(activeCategory==='foryou') return videos;
+    return videos.filter(v=>v.category===activeCategory);
+  },[videos, activeCategory]);
   const startY = useRef(null);
   const handleTouchStart = e => { startY.current=e.touches[0].clientY; };
   const handleTouchEnd = e => {
@@ -1143,7 +1166,28 @@ const EditProfileModal = ({ user, onClose, onSave, showToast }) => {
     </div>
   );
 };
-
+const PrivacyToggles = ({ user, showToast }) => {
+  const defaults = { 'Private Account':false,'Show Activity Status':true,'Allow Comments':true,'Allow Duets':true,'Allow Messages from Everyone':false };
+  const [settings, setSettings] = useState({ ...defaults, ...(user?.privacy||{}) });
+  const toggle = async (label) => {
+    const next = { ...settings, [label]: !settings[label] };
+    setSettings(next);
+    await updateDoc(doc(db,'users',user.id),{ privacy: next });
+    showToast?.('Saved','success');
+  };
+  return (
+    <div style={{ background:'rgba(255,255,255,0.03)', borderRadius:20, overflow:'hidden', marginBottom:20, border:'1px solid rgba(255,255,255,0.06)' }}>
+      {Object.entries(settings).map(([label,on],i,arr)=>(
+        <div key={label} onClick={()=>toggle(label)} style={{ padding:'14px 16px', borderBottom:i<arr.length-1?'1px solid rgba(255,255,255,0.05)':'', display:'flex', justifyContent:'space-between', alignItems:'center', cursor:'pointer' }}>
+          <span style={{ color:'white', fontSize:13 }}>{label}</span>
+          <div style={{ width:46, height:26, background:on?'#ff2d55':'rgba(255,255,255,0.1)', borderRadius:13, position:'relative', transition:'background 0.2s' }}>
+            <div style={{ width:20, height:20, background:'white', borderRadius:'50%', position:'absolute', top:3, left:on?23:3, transition:'left 0.2s' }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
 /* ─────────────── PROFILE PAGE ─────────────── */
 const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowAnalytics, onShowQRCode, allVideos }) => {
   const [activeSubPage, setActiveSubPage] = useState(null);
@@ -1180,16 +1224,7 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
           ))}
         </div>
         <div style={{ color:'rgba(255,255,255,0.3)', fontSize:11, fontWeight:700, marginBottom:8, textTransform:'uppercase', letterSpacing:1.2 }}>Privacy</div>
-        <div style={{ background:'rgba(255,255,255,0.03)', borderRadius:20, overflow:'hidden', marginBottom:20, border:'1px solid rgba(255,255,255,0.06)' }}>
-          {[{label:'Private Account',on:false},{label:'Show Activity Status',on:true},{label:'Allow Comments',on:true},{label:'Allow Duets',on:true},{label:'Allow Messages from Everyone',on:false}].map((item,i,arr)=>(
-            <div key={item.label} style={{ padding:'14px 16px', borderBottom:i<arr.length-1?'1px solid rgba(255,255,255,0.05)':'', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-              <span style={{ color:'white', fontSize:13 }}>{item.label}</span>
-              <div style={{ width:46, height:26, background:item.on?'#ff2d55':'rgba(255,255,255,0.1)', borderRadius:13, position:'relative', cursor:'pointer', transition:'background 0.2s' }}>
-                <div style={{ width:20, height:20, background:'white', borderRadius:'50%', position:'absolute', top:3, left:item.on?23:3, transition:'left 0.2s' }} />
-              </div>
-            </div>
-          ))}
-        </div>
+        <PrivacyToggles user={user} showToast={showToast} />
         <div style={{ color:'rgba(255,255,255,0.3)', fontSize:11, fontWeight:700, marginBottom:8, textTransform:'uppercase', letterSpacing:1.2 }}>Support</div>
         <div style={{ background:'rgba(255,255,255,0.03)', borderRadius:20, overflow:'hidden', marginBottom:20, border:'1px solid rgba(255,255,255,0.06)' }}>
           {[
@@ -1212,7 +1247,7 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff9500" strokeWidth="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             <span style={{ color:'#ff9500', fontSize:14 }}>Log Out</span>
           </div>
-          <div onClick={()=>{if(window.confirm('Delete account? This cannot be undone.')){showToast?.('Account deleted','error'); onLogout?.();}}} style={{ padding:'14px 16px', display:'flex', alignItems:'center', gap:12, cursor:'pointer' }}>
+          <div onClick={async()=>{if(window.confirm('Delete account? This cannot be undone.')){try{ await deleteDoc(doc(db,'users',user.id)); await auth.currentUser?.delete(); onLogout?.(); }catch(e){ showToast?.('Re-login required to delete','error'); }}}} style={{ padding:'14px 16px', display:'flex', alignItems:'center', gap:12, cursor:'pointer' }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff2d55" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
             <span style={{ color:'#ff2d55', fontSize:14 }}>Delete Account</span>
           </div>
@@ -1676,7 +1711,7 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
 const videoData = {
         userId: currentUser.id,
         username: currentUser.username || '',
-        avatar: currentUser.avatar || (currentUser.username || 'U')[0].toUpperCase(),
+avatar: currentUser.avatar || (currentUser.username||'U')[0].toUpperCase(),
         avatarColor: currentUser.avatarColor || '#ff2d55',
         avatarUrl: currentUser.avatarUrl || null,
         verified: currentUser.verified || false,
@@ -1687,8 +1722,8 @@ const videoData = {
         comments: 0,
         shares: 0,
         views: 0,
-        hashtags: [],
-        category: 'foryou',
+        hashtags: (description||'').match(/#\w+/g) || [],
+        category: (description||'').toLowerCase().includes('#job') || (description||'').toLowerCase().includes('#work') ? 'job' : (description||'').toLowerCase().includes('#skill') || (description||'').toLowerCase().includes('#learn') ? 'skill' : 'foryou',
         createdAt: serverTimestamp(),
       };
       const ref = await addDoc(collection(db,'videos'), videoData);
@@ -1789,7 +1824,7 @@ const CreatorAnalytics = ({ user, videos, onClose }) => {
       if(!v.createdAt) return false;
       const d = v.createdAt.toDate ? v.createdAt.toDate() : new Date(v.createdAt);
       return d.toDateString()===day.toDateString();
-    }).reduce((s,v)=>s+(v.views||0),0) || Math.floor(Math.random()*1000);
+    }).reduce((s,v)=>s+(v.views||0),0);
   });
   const maxVal = Math.max(...weeklyData,1);
 
