@@ -812,7 +812,7 @@ const EnhancedVideoCard = memo(({ video, currentUser, onLike, onComment, onShare
   const [showActionMenu, setShowActionMenu] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [heartAnim, setHeartAnim] = useState(false);
-  const [muted, setMuted] = useState(true);
+  const [muted, setMuted] = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
   const tapTimer = useRef(null);
   const videoRef = useRef(null);
@@ -1819,8 +1819,15 @@ const ConversationView = ({ currentUser, otherUser, conversationId, onBack, show
   );
 };
 
-const InboxPage = ({ users, currentUser, showToast, onViewProfile }) => {
+const InboxPage = ({ users, currentUser, showToast, onViewProfile, initialTargetId, onClearTarget }) => {
   const [activeConversation, setActiveConversation] = useState(null);
+
+  useEffect(()=>{
+    if(initialTargetId && currentUser?.id){
+      openConversation(initialTargetId);
+      onClearTarget?.();
+    }
+  },[initialTargetId]);
   const [conversations, setConversations] = useState([]);
 
   useEffect(()=>{
@@ -2551,7 +2558,8 @@ export default function DaguV3App() {
   };
 
   const handleViewProfile = uid => { const user=users.find(u=>u.id===uid); if(user) setViewingProfile(user); };
-  const handleMessage = uid => { setActiveTab('inbox'); };
+  const [inboxTargetId, setInboxTargetId] = useState(null);
+const handleMessage = uid => { setInboxTargetId(uid); setActiveTab('inbox'); };
 
   const tabs = [
     {id:'home'},{id:'friends'},{id:'create'},{id:'inbox'},{id:'profile'},
@@ -2633,7 +2641,7 @@ export default function DaguV3App() {
             {activeTab==='home' && <HomeFeed videos={videos} currentUser={currentUser} onLike={()=>{}} onComment={()=>{}} onShare={()=>{}} onFollow={toggleFollow} onMessage={handleMessage} onVoiceCall={uid=>{const u=users.find(uu=>uu.id===uid); setShowCall({type:'audio',contactName:u?.username,contactAvatar:u?.avatar});}} onVideoCall={uid=>{const u=users.find(uu=>uu.id===uid); setShowCall({type:'video',contactName:u?.username,contactAvatar:u?.avatar});}} onDuet={()=>showToast?.('Duet mode ready','info')} onStitch={()=>showToast?.('Stitch mode ready','info')} onSaveSound={()=>showToast?.('Sound saved!','success')} followed={followed} showToast={showToast} onLive={()=>setShowLiveStream(currentUser)} onViewProfile={handleViewProfile} onOpenSearch={()=>setShowSearch(true)} />}
             {activeTab==='friends' && <FriendsFeed friends={friends} videos={videos} currentUser={currentUser} onMessage={handleMessage} onVoiceCall={uid=>{const u=users.find(uu=>uu.id===uid); setShowCall({type:'audio',contactName:u?.username,contactAvatar:u?.avatar});}} onVideoCall={uid=>{const u=users.find(uu=>uu.id===uid); setShowCall({type:'video',contactName:u?.username,contactAvatar:u?.avatar});}} onViewProfile={handleViewProfile} showToast={showToast} users={users} onCreateStory={()=>setShowCreateStory(true)} onViewStory={setShowStoryViewer} onFollow={toggleFollow} followed={followed} />}
             {activeTab==='create' && <CreateScreen onOpenCamera={()=>setShowCamera(true)} onShowSoundLibrary={()=>setShowSoundLibrary(true)} showToast={showToast} />}
-            {activeTab==='inbox' && <InboxPage users={users} currentUser={currentUser} showToast={showToast} onViewProfile={handleViewProfile} />}
+            {activeTab==='inbox' && <InboxPage users={users} currentUser={currentUser} showToast={showToast} onViewProfile={handleViewProfile} initialTargetId={inboxTargetId} onClearTarget={()=>setInboxTargetId(null)} />}
             {activeTab==='profile' && <ProfilePage user={currentUser} setCurrentUser={setCurrentUser} onLogout={handleLogout} users={users} showToast={showToast} onShowAnalytics={()=>setShowAnalytics(true)} onShowQRCode={()=>setShowQRCode(true)} allVideos={videos} />}
           </>
         )}
