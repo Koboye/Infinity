@@ -325,39 +325,31 @@ const ShareModal = ({ video, onClose, showToast }) => {
   );
 };
 
-<StoryReplyInput story={story} user={user} onClose={onClose} />
-    </div>
-  );
-};
+const StoryViewer = ({ story, user, onClose }) => {
+  const [progress, setProgress] = useState(0);
+  const [storyReply, setStoryReply] = useState('');
 
-const StoryReplyInput = ({ story, user, onClose }) => {
-  const [reply, setReply] = useState('');
-  const sendReply = async () => {
-    if(!reply.trim()) return;
-    await addDoc(collection(db,'storyReplies'),{
+  useEffect(() => {
+    const i = setInterval(() => setProgress(p => {
+      if (p >= 100) { onClose(); return 100; }
+      return p + 1;
+    }), 50);
+    return () => clearInterval(i);
+  }, [onClose]);
+
+  const sendStoryReply = async () => {
+    if(!storyReply.trim()) return;
+    await addDoc(collection(db,'storyReplies'), {
       storyUserId: story?.userId,
       fromUserId: user?.id,
       fromUsername: user?.username,
-      text: reply,
+      text: storyReply,
       createdAt: serverTimestamp(),
     });
-    setReply('');
+    setStoryReply('');
     onClose();
   };
-  return (
-    <div style={{ padding:'14px 16px 24px', display:'flex', gap:10 }}>
-      <input value={reply} onChange={e=>setReply(e.target.value)} onKeyDown={e=>e.key==='Enter'&&sendReply()} placeholder="Reply to story..." style={{ flex:1, background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.15)', borderRadius:28, padding:'10px 16px', color:'white', outline:'none', fontSize:13 }} />
-      <button onClick={sendReply} style={{ background:'#ff2d55', border:'none', borderRadius:'50%', width:42, height:42, color:'white', cursor:'pointer', fontSize:16 }}>↑</button>
-    </div>
-  );
-};
-/* ─────────────── STORY VIEWER ─────────────── */
-const StoryViewer = ({ story, user, onClose }) => {
-  const [progress, setProgress] = useState(0);
-  useEffect(() => {
-    const i = setInterval(() => setProgress(p => { if (p >= 100) { onClose(); return 100; } return p + 1; }), 50);
-    return () => clearInterval(i);
-  }, [onClose]);
+
   const avatarSrc = user?.avatarUrl;
   return (
     <div style={{ position:'fixed', inset:0, background:'#000', zIndex:3000, display:'flex', flexDirection:'column' }}>
@@ -385,7 +377,10 @@ const StoryViewer = ({ story, user, onClose }) => {
           </div>
         )}
       </div>
-      <StoryReplyInput story={story} user={user} onClose={onClose} />
+      <div style={{ padding:'14px 16px 24px', display:'flex', gap:10 }}>
+        <input value={storyReply} onChange={e=>setStoryReply(e.target.value)} onKeyDown={e=>e.key==='Enter'&&sendStoryReply()} placeholder="Reply to story..." style={{ flex:1, background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.15)', borderRadius:28, padding:'10px 16px', color:'white', outline:'none', fontSize:13 }} />
+        <button onClick={sendStoryReply} style={{ background:'#ff2d55', border:'none', borderRadius:'50%', width:42, height:42, color:'white', cursor:'pointer', fontSize:16 }}>↑</button>
+      </div>
     </div>
   );
 };
