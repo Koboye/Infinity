@@ -1673,11 +1673,11 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
     setUploading(true); setUploadProgress(0);
     try {
       const mediaUrl = await uploadToCloudinary(selectedFile.file, setUploadProgress);
-      const videoData = {
+const videoData = {
         userId: currentUser.id,
-        username: currentUser.username,
-        avatar: currentUser.avatar,
-        avatarColor: currentUser.avatarColor,
+        username: currentUser.username || '',
+        avatar: currentUser.avatar || (currentUser.username || 'U')[0].toUpperCase(),
+        avatarColor: currentUser.avatarColor || '#ff2d55',
         avatarUrl: currentUser.avatarUrl || null,
         verified: currentUser.verified || false,
         description: description || 'New post! 🔥',
