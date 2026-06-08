@@ -827,7 +827,7 @@ const EnhancedVideoCard = memo(({ video, currentUser, onLike, onComment, onShare
         <button onClick={()=>setShowComments(true)} style={{ background:'rgba(0,0,0,0.35)', backdropFilter:'blur(10px)', border:'none', borderRadius:'50%', width:50, height:50, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', marginTop:6 }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
         </button>
-        <span style={{ color:'white', fontSize:11, fontWeight:700 }}>{formatNumber(comments.length)}</span>
+        <span style={{ color:'white', fontSize:11, fontWeight:700 }}>{formatNumber(video.comments||comments.length)}</span>
         <button onClick={()=>setShowShare(true)} style={{ background:'rgba(0,0,0,0.35)', backdropFilter:'blur(10px)', border:'none', borderRadius:'50%', width:50, height:50, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', marginTop:6 }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
