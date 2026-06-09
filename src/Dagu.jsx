@@ -364,7 +364,19 @@ const Stories = ({ users, currentUser, onViewStory, onCreateStory }) => (
       </button>
       <span style={{ color:'rgba(255,255,255,0.5)', fontSize:11 }}>Your story</span>
     </div>
-    {users.filter(u => u.id !== currentUser?.id).map(u => (
+    <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5, flexShrink:0 }}>
+      <button onClick={() => onViewStory?.({ userId: currentUser?.id, text:`${currentUser?.username}'s story`, bgColor:'#ff2d55' })} style={{ padding:0, background:'none', border:'none', cursor:'pointer' }}>
+        <div className="story-avatar-ring" style={{ width:66, height:66, borderRadius:'50%' }}>
+          <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:'#0a0a0a', padding:2, display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:currentUser?.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:20, overflow:'hidden' }}>
+              {currentUser?.avatarUrl ? <img src={currentUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : currentUser?.avatar}
+            </div>
+          </div>
+        </div>
+      </button>
+      <span style={{ color:'rgba(255,255,255,0.5)', fontSize:11 }}>Me</span>
+    </div>
+    {users.filter(u => u.id !== currentUser?.id && (currentUser?.following||[]).includes(u.id)).map(u => (
       <div key={u.id} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5, flexShrink:0 }}>
         <button onClick={() => onViewStory?.({ userId:u.id, text:`${u.username}'s story`, bgColor:'#1a1a2e' })} style={{ padding:0, background:'none', border:'none', cursor:'pointer' }}>
           <div className="story-avatar-ring" style={{ width:66, height:66, borderRadius:'50%' }}>
@@ -1025,7 +1037,6 @@ const EnhancedVideoCard = memo(({ video, currentUser, isActive, onLike, onCommen
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="1.8"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
         <span style={{ color:'rgba(255,255,255,0.85)', fontSize:11, fontWeight:600 }}>{formatNumber(video.shares||0)}</span>
-        <span style={{ color:'white', fontSize:11, fontWeight:700 }}>{formatNumber(video.shares||0)}</span>
       </div>
 
       {showComments && (
@@ -1573,7 +1584,17 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff9500" strokeWidth="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             <span style={{ color:'#ff9500', fontSize:14 }}>Log Out</span>
           </div>
-          <div onClick={async()=>{if(window.confirm('Delete account? This cannot be undone.')){try{ await deleteDoc(doc(db,'users',user.id)); await auth.currentUser?.delete(); onLogout?.(); }catch(e){ showToast?.('Re-login required to delete','error'); }}}} style={{ padding:'14px 16px', display:'flex', alignItems:'center', gap:12, cursor:'pointer' }}>
+          <div onClick={async()=>{if(window.confirm('Delete account? This cannot be undone.')){try{
+  const vSnap = await getDocs(query(collection(db,'videos'),where('userId','==',user.id)));
+  await Promise.all(vSnap.docs.map(d=>deleteDoc(doc(db,'videos',d.id))));
+  const cSnap = await getDocs(query(collection(db,'comments'),where('userId','==',user.id)));
+  await Promise.all(cSnap.docs.map(d=>deleteDoc(doc(db,'comments',d.id))));
+  const nSnap = await getDocs(query(collection(db,'notifications'),where('toUserId','==',user.id)));
+  await Promise.all(nSnap.docs.map(d=>deleteDoc(doc(db,'notifications',d.id))));
+  await deleteDoc(doc(db,'users',user.id));
+  await auth.currentUser?.delete();
+  onLogout?.();
+}catch(e){ showToast?.('Re-login required to delete','error'); }}}}} style={{ padding:'14px 16px', display:'flex', alignItems:'center', gap:12, cursor:'pointer' }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff2d55" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
             <span style={{ color:'#ff2d55', fontSize:14 }}>Delete Account</span>
           </div>
