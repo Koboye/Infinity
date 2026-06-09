@@ -2067,6 +2067,16 @@ const CallModal = ({ type, contactName, contactAvatar, contactId, currentUser, o
           iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
             { urls: 'stun:stun1.l.google.com:19302' },
+            {
+              urls: 'turn:relay.metered.ca:80',
+              username: 'YOUR_METERED_USERNAME',
+              credential: 'YOUR_METERED_PASSWORD',
+            },
+            {
+              urls: 'turn:relay.metered.ca:443',
+              username: 'YOUR_METERED_USERNAME',
+              credential: 'YOUR_METERED_PASSWORD',
+            },
           ],
         });
         pcRef.current = pc;
