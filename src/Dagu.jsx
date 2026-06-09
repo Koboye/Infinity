@@ -18,6 +18,9 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({
+  prompt: 'select_account'
+});
 
 /* ─────────────── CLOUDINARY CONFIG ─────────────── */
 const CLOUDINARY_CLOUD = 'dotvhzjmc';
@@ -2384,26 +2387,40 @@ const AuthScreen = ({ onLogin }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Handle Google redirect result on page load
+  useEffect(()=>{
+    setLoading(true);
+    getRedirectResult(auth).then(async (result)=>{
+      if(result?.user){
+        const fbUser = result.user;
+        let profile = await getUserProfile(fbUser.uid);
+        if(!profile){
+          const uname = (fbUser.displayName||fbUser.email||'user').split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g,'') + Math.floor(Math.random()*999);
+          await createUserProfile(fbUser.uid,{
+            username: uname,
+            fullName: fbUser.displayName||'',
+            email: fbUser.email||'',
+            avatarUrl: fbUser.photoURL||null,
+            avatarColor: `hsl(${Math.floor(Math.random()*360)},70%,60%)`,
+          });
+          profile = await getUserProfile(fbUser.uid);
+        }
+        onLogin({...profile, id:fbUser.uid});
+      }
+    }).catch(e=>{
+      setError(e.message.replace('Firebase: ','').replace(/\(auth.*\)/,''));
+    }).finally(()=>setLoading(false));
+  },[]);
+
   const handleGoogleLogin = async () => {
     setLoading(true); setError('');
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const fbUser = result.user;
-      let profile = await getUserProfile(fbUser.uid);
-      if(!profile) {
-        const uname = (fbUser.displayName||fbUser.email||'user').split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g,'') + Math.floor(Math.random()*999);
-        await createUserProfile(fbUser.uid,{
-          username: uname,
-          fullName: fbUser.displayName||'',
-          email: fbUser.email||'',
-          avatarUrl: fbUser.photoURL||null,
-          avatarColor: `hsl(${Math.floor(Math.random()*360)},70%,60%)`,
-        });
-        profile = await getUserProfile(fbUser.uid);
-      }
-      onLogin({...profile, id:fbUser.uid});
-    } catch(e){ setError(e.message); }
-    setLoading(false);
+      await signInWithRedirect(auth, googleProvider);
+      // Result is handled in useEffect below via getRedirectResult
+    } catch(e){ 
+      setError(e.message.replace('Firebase: ','').replace(/\(auth.*\)/,''));
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async () => {
