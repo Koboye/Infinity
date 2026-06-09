@@ -2108,11 +2108,7 @@ const CallModal = ({ type, contactName, contactAvatar, contactId, currentUser, o
           { urls: 'stun:stun1.l.google.com:19302' },
         ];
         try {
-          const turnRes = await fetch(
-            'https://daguv1.metered.live/api/v1/turn/credentials?apiKey=YOUR_METERED_API_KEY'
-          );
-          const turnCreds = await turnRes.json();
-          if (Array.isArray(turnCreds)) iceServers = [...iceServers, ...turnCreds];
+          // TURN fetch removed — using public STUN only
         } catch (e) {
           console.warn('Could not fetch TURN credentials, using STUN only:', e);
         }
@@ -2731,18 +2727,27 @@ const AuthScreen = ({ onLogin }) => {
       const fbUser = result.user;
       let profile = await getUserProfile(fbUser.uid);
       if(!profile){
-        const uname = (fbUser.displayName||fbUser.email||'user')
-          .split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g,'') 
-          + Math.floor(Math.random()*999);
-        await createUserProfile(fbUser.uid,{
-          username: uname,
-          fullName: fbUser.displayName||'',
-          email: fbUser.email||'',
-          avatarUrl: fbUser.photoURL||null,
-          avatarColor: `hsl(${Math.floor(Math.random()*360)},70%,60%)`,
-        });
-        profile = await getUserProfile(fbUser.uid);
-      }
+  // Check if a user doc with this email already exists (e.g. from a previous signup)
+  const emailSnap = await getDocs(query(collection(db,'users'), where('email','==',fbUser.email||'')));
+  if(!emailSnap.empty){
+    // Profile exists under a different UID mapping — reuse it
+    profile = emailSnap.docs[0].data();
+    profile.id = emailSnap.docs[0].id;
+  } else {
+    const baseUsername = (fbUser.displayName||fbUser.email||'user')
+      .split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g,'');
+    // Make username unique but stable: based on UID not random
+    const uname = baseUsername + fbUser.uid.slice(-4);
+    await createUserProfile(fbUser.uid,{
+      username: uname,
+      fullName: fbUser.displayName||'',
+      email: fbUser.email||'',
+      avatarUrl: fbUser.photoURL||null,
+      avatarColor: `hsl(${Math.floor(Math.random()*360)},70%,60%)`,
+    });
+    profile = await getUserProfile(fbUser.uid);
+  }
+}
       if(profile) onLogin({...profile, id:fbUser.uid});
     } catch(e){ 
       console.error('Google auth error:', e.code, e.message);
