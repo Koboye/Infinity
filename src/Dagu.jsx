@@ -2457,11 +2457,9 @@ const AuthScreen = ({ onLogin }) => {
           });
           profile = await getUserProfile(fbUser.uid);
         }
-        onLogin({...profile, id:fbUser.uid});
+        if(profile) onLogin({...profile, id:fbUser.uid});
       }
-    }).catch(e=>{
-      // Silently ignore all redirect errors on page load
-    }).finally(()=>setLoading(false));
+    }).catch(()=>{}).finally(()=>setLoading(false));
   },[]);
 
   const handleGoogleLogin = async () => {
@@ -2714,7 +2712,12 @@ export default function DaguV3App() {
           setAuthLoading(false);
           return;
         }
-        const profile = await getUserProfile(fbUser.uid);
+        let profile = await getUserProfile(fbUser.uid);
+        if(!profile){
+          // Profile may not exist yet if Google signup just happened
+          await new Promise(r => setTimeout(r, 1500));
+          profile = await getUserProfile(fbUser.uid);
+        }
         if(profile) {
           setCurrentUser({...profile, id:fbUser.uid});
           setFollowed(profile.following||[]);
