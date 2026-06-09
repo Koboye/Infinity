@@ -1578,26 +1578,30 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
   <span style={{ color:'#ff9500', fontSize:14 }}>Reset Account</span>
 </div>
 
-{/* LOG OUT — already exists, keep it */}
 <div onClick={onLogout} style={{ padding:'14px 16px', borderBottom:'1px solid rgba(255,255,255,0.05)', display:'flex', alignItems:'center', gap:12, cursor:'pointer' }}>
-          <div onClick={onLogout} style={{ padding:'14px 16px', borderBottom:'1px solid rgba(255,255,255,0.05)', display:'flex', alignItems:'center', gap:12, cursor:'pointer' }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff9500" strokeWidth="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-            <span style={{ color:'#ff9500', fontSize:14 }}>Log Out</span>
-          </div>
-          <div onClick={async()=>{if(window.confirm('Delete account? This cannot be undone.')){try{
-  const vSnap = await getDocs(query(collection(db,'videos'),where('userId','==',user.id)));
-  await Promise.all(vSnap.docs.map(d=>deleteDoc(doc(db,'videos',d.id))));
-  const cSnap = await getDocs(query(collection(db,'comments'),where('userId','==',user.id)));
-  await Promise.all(cSnap.docs.map(d=>deleteDoc(doc(db,'comments',d.id))));
-  const nSnap = await getDocs(query(collection(db,'notifications'),where('toUserId','==',user.id)));
-  await Promise.all(nSnap.docs.map(d=>deleteDoc(doc(db,'notifications',d.id))));
-  await deleteDoc(doc(db,'users',user.id));
-  await auth.currentUser?.delete();
-  onLogout?.();
-}catch(e){ showToast?.('Re-login required to delete','error'); }}}}} style={{ padding:'14px 16px', display:'flex', alignItems:'center', gap:12, cursor:'pointer' }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff2d55" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
-            <span style={{ color:'#ff2d55', fontSize:14 }}>Delete Account</span>
-          </div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff9500" strokeWidth="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          <span style={{ color:'#ff9500', fontSize:14 }}>Log Out</span>
+        </div>
+
+        <div onClick={async()=>{
+          if(window.confirm('Delete account? This cannot be undone.')){
+            try{
+              const vSnap = await getDocs(query(collection(db,'videos'),where('userId','==',user.id)));
+              await Promise.all(vSnap.docs.map(d=>deleteDoc(doc(db,'videos',d.id))));
+              const cSnap = await getDocs(query(collection(db,'comments'),where('userId','==',user.id)));
+              await Promise.all(cSnap.docs.map(d=>deleteDoc(doc(db,'comments',d.id))));
+              const nSnap = await getDocs(query(collection(db,'notifications'),where('toUserId','==',user.id)));
+              await Promise.all(nSnap.docs.map(d=>deleteDoc(doc(db,'notifications',d.id))));
+              await deleteDoc(doc(db,'users',user.id));
+              await auth.currentUser?.delete();
+              onLogout?.();
+            }catch(e){
+              showToast?.('Re-login required to delete','error');
+            }
+          }
+        }} style={{ padding:'14px 16px', display:'flex', alignItems:'center', gap:12, cursor:'pointer' }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff2d55" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+          <span style={{ color:'#ff2d55', fontSize:14 }}>Delete Account</span>
         </div>
         <div style={{ textAlign:'center', color:'rgba(255,255,255,0.15)', fontSize:11, marginBottom:16 }}>Dagu v3.0.0 • Made with ❤️</div>
       </div>
