@@ -2460,11 +2460,7 @@ const AuthScreen = ({ onLogin }) => {
         onLogin({...profile, id:fbUser.uid});
       }
     }).catch(e=>{
-      // Only show error if it's not the "no redirect" case
-      const msg = e.message || '';
-      if(msg && !msg.includes('no-auth-event') && !msg.includes('redirect') && !msg.includes('cancelled') && !msg.includes('auth/null-user')){
-        setError(msg.replace('Firebase: ','').replace(/\(auth.*\)/,'').trim());
-      }
+      // Silently ignore all redirect errors on page load
     }).finally(()=>setLoading(false));
   },[]);
 
@@ -2541,7 +2537,7 @@ const AuthScreen = ({ onLogin }) => {
         </div>
         <div style={{ position:'relative', width:'100%', maxWidth:340 }}>
           <div style={{ color:'rgba(255,255,255,0.3)', fontSize:11, marginBottom:14, textAlign:'center', fontWeight:700, textTransform:'uppercase', letterSpacing:1 }}>{isLogin?'Sign in with':'Sign up with'}</div>
-          {error && error.trim().length > 2 && <div style={{background:'rgba(255,45,85,0.1)',border:'1px solid rgba(255,45,85,0.3)',borderRadius:12,padding:'10px 14px',color:'#ff2d55',fontSize:12,marginBottom:12,textAlign:'center'}}>{error}</div>}
+          {error && error.trim().length > 3 && step !== 'method' && <div style={{background:'rgba(255,45,85,0.1)',border:'1px solid rgba(255,45,85,0.3)',borderRadius:12,padding:'10px 14px',color:'#ff2d55',fontSize:12,marginBottom:12,textAlign:'center'}}>{error}</div>}
           <div style={{ display:'flex', flexWrap:'wrap', gap:8, justifyContent:'center', marginBottom:24 }}>
             {LOGIN_METHODS.map(m=>(
               <button key={m.id} onClick={()=>handleMethodSelect(m)} disabled={loading} style={{ display:'inline-flex', alignItems:'center', gap:6, background:'rgba(255,255,255,0.05)', border:`1px solid rgba(255,255,255,0.1)`, borderRadius:30, padding:'8px 16px', cursor:'pointer', fontSize:13, color:'rgba(255,255,255,0.8)', transition:'all 0.15s', opacity:loading?0.5:1 }}>
