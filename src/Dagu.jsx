@@ -150,9 +150,9 @@ const getUserProfile = async (uid) => {
 /* ─────────────── GLOBAL STYLES ─────────────── */
 const GlobalStyles = () => (
   <style>{`
-    @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
     *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:'DM Sans',sans-serif}
+    body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
     ::-webkit-scrollbar{display:none}
     @keyframes heartBurst{0%{transform:scale(0.4) translateY(0);opacity:1}100%{transform:scale(1.8) translateY(-80px);opacity:0}}
     @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
@@ -186,7 +186,7 @@ const Toast = ({ message, type, onClose }) => {
   return (
     <div style={{ position:'fixed', bottom:110, left:'50%', transform:'translateX(-50%)', zIndex:9999, animation:'slideUp 0.3s ease', display:'flex', alignItems:'center', gap:10, background:'rgba(15,15,15,0.95)', backdropFilter:'blur(20px)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:40, padding:'10px 18px 10px 10px', boxShadow:'0 8px 32px rgba(0,0,0,0.5)', whiteSpace:'nowrap' }}>
       <div style={{ width:26, height:26, borderRadius:'50%', background:c.bg, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:800, fontSize:13, flexShrink:0 }}>{c.icon}</div>
-      <span style={{ color:'white', fontSize:13, fontWeight:500, fontFamily:"'DM Sans',sans-serif" }}>{message}</span>
+      <span style={{ color:'white', fontSize:13, fontWeight:500, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{message}</span>
     </div>
   );
 };
@@ -340,7 +340,7 @@ const StoryViewer = ({ story, user, onClose }) => {
             <img src={story.mediaUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
         ) : (
           <div style={{ textAlign:'center', padding:24, background:story?.bgColor||'#ff2d55', width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column' }}>
-            <div style={{ color:'white', fontSize:28, fontWeight:700, fontFamily:"'Syne',sans-serif", textAlign:'center' }}>{story?.text || 'Story content'}</div>
+            <div style={{ color:'white', fontSize:28, fontWeight:700, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", textAlign:'center' }}>{story?.text || 'Story content'}</div>
           </div>
         )}
       </div>
@@ -456,12 +456,12 @@ const CreateStoryModal = ({ currentUser, onClose, showToast }) => {
     <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.9)', zIndex:3500, display:'flex', alignItems:'flex-end' }} onClick={onClose}>
       <div onClick={e=>e.stopPropagation()} style={{ width:'100%', background:'#0f0f0f', borderTopLeftRadius:32, borderTopRightRadius:32, padding:'20px 20px 44px', border:'1px solid rgba(255,255,255,0.06)' }}>
         <div style={{ width:36, height:4, background:'rgba(255,255,255,0.15)', borderRadius:2, margin:'0 auto 24px' }} />
-        <div style={{ color:'white', fontWeight:800, fontSize:20, marginBottom:20, fontFamily:"'Syne',sans-serif" }}>Create Story</div>
+        <div style={{ color:'white', fontWeight:800, fontSize:20, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Create Story</div>
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
           {[{id:'camera',icon:'📷',label:'Camera',sub:'Photo or video',color:'#ff2d55'},{id:'file',icon:'🖼️',label:'Gallery',sub:'From device',color:'#af52de'},{id:'text',icon:'✏️',label:'Text',sub:'Write a story',color:'#007aff'},{id:'audio',icon:'🎙️',label:'Audio',sub:'Voice story',color:'#34c759'}].map(opt=>(
             <button key={opt.id} onClick={()=>{if(opt.id==='file') fileInputRef.current?.click(); else setMode(opt.id);}} style={{ background:'rgba(255,255,255,0.04)', border:`1px solid ${opt.color}30`, borderRadius:22, padding:'18px 14px', display:'flex', flexDirection:'column', alignItems:'center', gap:8, cursor:'pointer' }}>
               <div style={{ width:52, height:52, borderRadius:'50%', background:opt.color+'18', display:'flex', alignItems:'center', justifyContent:'center', fontSize:26 }}>{opt.icon}</div>
-              <div style={{ color:'white', fontWeight:700, fontSize:14, fontFamily:"'Syne',sans-serif" }}>{opt.label}</div>
+              <div style={{ color:'white', fontWeight:700, fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{opt.label}</div>
               <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11 }}>{opt.sub}</div>
             </button>
           ))}
@@ -474,7 +474,7 @@ const CreateStoryModal = ({ currentUser, onClose, showToast }) => {
     <div style={{ position:'fixed', inset:0, background:'#000', zIndex:3500, display:'flex', flexDirection:'column' }}>
       <div style={{ padding:'16px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
         <button onClick={()=>{stopCamera(); onClose();}} style={{ background:'rgba(255,255,255,0.1)', border:'none', borderRadius:20, padding:'8px 16px', color:'white', cursor:'pointer', fontSize:13 }}>Cancel</button>
-        <span style={{ color:'white', fontWeight:700, fontSize:15, fontFamily:"'Syne',sans-serif" }}>Story</span>
+        <span style={{ color:'white', fontWeight:700, fontSize:15, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Story</span>
         <button onClick={handlePost} disabled={uploading} style={{ background:'linear-gradient(135deg,#ff2d55,#af52de)', border:'none', borderRadius:20, padding:'8px 16px', color:'white', fontWeight:700, cursor:'pointer', fontSize:13, opacity:uploading?0.6:1 }}>{uploading?'Posting...':'Post'}</button>
       </div>
       <div style={{ flex:1, position:'relative', overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center' }}>
@@ -486,7 +486,7 @@ const CreateStoryModal = ({ currentUser, onClose, showToast }) => {
         )}
         {mode==='text' && (
           <div style={{ width:'100%', height:'100%', background:bgColor, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:24 }}>
-            <textarea value={storyText} onChange={e=>setStoryText(e.target.value)} placeholder="Write something..." style={{ background:'transparent', border:'none', outline:'none', color:'white', fontSize:28, fontWeight:700, textAlign:'center', width:'100%', resize:'none', caretColor:'white', fontFamily:"'Syne',sans-serif" }} rows={4} autoFocus />
+            <textarea value={storyText} onChange={e=>setStoryText(e.target.value)} placeholder="Write something..." style={{ background:'transparent', border:'none', outline:'none', color:'white', fontSize:28, fontWeight:700, textAlign:'center', width:'100%', resize:'none', caretColor:'white', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }} rows={4} autoFocus />
             <div style={{ position:'absolute', bottom:28, display:'flex', gap:10 }}>
               {colors.map(c=><div key={c} onClick={()=>setBgColor(c)} style={{ width:30, height:30, borderRadius:'50%', background:c, border:c===bgColor?'3px solid white':'3px solid transparent', cursor:'pointer' }} />)}
             </div>
@@ -534,7 +534,7 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
               </div>
             </div>
           </div>
-          <div style={{ color:'white', fontWeight:800, fontSize:20, fontFamily:"'Syne',sans-serif" }}>@{user?.username}</div>
+          <div style={{ color:'white', fontWeight:800, fontSize:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{user?.username}</div>
           {user?.verified && <div style={{ display:'inline-flex', alignItems:'center', gap:4, color:'#1d9bf0', fontSize:12, marginTop:4, background:'rgba(29,155,240,0.1)', borderRadius:20, padding:'3px 10px' }}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="#1d9bf0"><path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             Verified
@@ -543,7 +543,7 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
           <div style={{ display:'flex', justifyContent:'center', gap:0, marginTop:18, background:'rgba(255,255,255,0.03)', borderRadius:20, padding:'14px 0', border:'1px solid rgba(255,255,255,0.06)' }}>
             {[['Posts', mockVideos.length], ['Followers', user?.followers?.length||0], ['Following', user?.following?.length||0]].map(([label,val],i)=>(
               <div key={label} style={{ flex:1, textAlign:'center', borderRight:i<2?'1px solid rgba(255,255,255,0.08)':'' }}>
-                <div style={{ color:'white', fontWeight:800, fontSize:18, fontFamily:"'Syne',sans-serif" }}>{formatNumber(val)}</div>
+                <div style={{ color:'white', fontWeight:800, fontSize:18, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{formatNumber(val)}</div>
                 <div style={{ color:'rgba(255,255,255,0.4)', fontSize:11, marginTop:2 }}>{label}</div>
               </div>
             ))}
@@ -552,7 +552,7 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
         {!isOwn && (
           <div style={{ display:'flex', gap:8, padding:'0 16px 16px' }}>
             <button onClick={()=>{onFollow?.(user.id); onClose();}}
-              style={{ flex:1, background:isFollowing?'rgba(255,255,255,0.06)':'linear-gradient(135deg,#ff2d55,#af52de)', border:isFollowing?'1px solid rgba(255,45,85,0.4)':'none', borderRadius:14, padding:'12px', color:isFollowing?'#ff2d55':'white', fontWeight:700, cursor:'pointer', fontSize:14, fontFamily:"'Syne',sans-serif" }}>
+              style={{ flex:1, background:isFollowing?'rgba(255,255,255,0.06)':'linear-gradient(135deg,#ff2d55,#af52de)', border:isFollowing?'1px solid rgba(255,45,85,0.4)':'none', borderRadius:14, padding:'12px', color:isFollowing?'#ff2d55':'white', fontWeight:700, cursor:'pointer', fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>
               {isFollowing ? 'Following' : '+ Follow'}
             </button>
             <button onClick={()=>{onMessage?.(user.id); onClose();}} style={{ flex:1, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:'12px', color:'white', fontWeight:600, cursor:'pointer', fontSize:14 }}>Message</button>
@@ -720,7 +720,7 @@ const CommentItem = ({ comment, currentUser, onLike, onReply, onPin, onViewProfi
         {!isMine && (
           <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:4 }}>
             <span onClick={()=>onViewProfile?.(comment.userId)} style={{ color:'rgba(255,255,255,0.6)', fontWeight:700, fontSize:11, cursor:'pointer' }}>@{comment.username}</span>
-            <span style={{ color:'rgba(255,255,255,0.25)', fontSize:10 }}>{comment.time||'1m'}</span>
+                        <span style={{ color:'rgba(255,255,255,0.28)',fontSize:10 }}>{comment.time||'just now'}</span>
           </div>
         )}
         <div style={{ background:isMine?'linear-gradient(135deg,#ff2d55,#af52de)':'rgba(255,255,255,0.09)', borderRadius:isMine?'20px 20px 4px 20px':'20px 20px 20px 4px', padding:'10px 14px' }}>
@@ -868,10 +868,10 @@ const EnhancedVideoCard = memo(({ video, currentUser, isActive, onLike, onCommen
 
   const timeAgo = (date) => {
     const s = Math.floor((new Date()-date)/1000);
-    if(s<60) return `${s}s`;
-    if(s<3600) return `${Math.floor(s/60)}m`;
-    if(s<86400) return `${Math.floor(s/3600)}h`;
-    return `${Math.floor(s/86400)}d`;
+    if(s<60) return `${s}s ago`;
+    if(s<3600) return `${Math.floor(s/60)}m ago`;
+    if(s<86400) return `${Math.floor(s/3600)}h ago`;
+    return `${Math.floor(s/86400)}d ago`;
   };
 
   const handleDoubleTap = async () => {
@@ -954,15 +954,15 @@ const EnhancedVideoCard = memo(({ video, currentUser, isActive, onLike, onCommen
           <div style={{ fontSize:80, animation:'heartBurst 0.9s ease forwards' }}>❤️</div>
         </div>
       )}
-      <div style={{ position:'absolute', bottom:80, left:14, right:70, zIndex:5 }}>
-        <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
+      <div style={{ position:'absolute', bottom:90, left:14, right:70, zIndex:5 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:10 }}>
           <button onClick={()=>onViewProfile?.(video.userId)} style={{ position:'relative', background:'none', border:'none', cursor:'pointer', padding:0 }}>
             <div style={{ width:42, height:42, borderRadius:'50%', background:video.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:16, border:'2px solid rgba(255,255,255,0.5)', overflow:'hidden' }}>
               {video.avatarUrl ? <img src={video.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : video.avatar}
             </div>
             {video.verified && <div style={{ position:'absolute', bottom:-2, right:-2, width:14, height:14, background:'#1d9bf0', borderRadius:'50%', fontSize:9, display:'flex', alignItems:'center', justifyContent:'center', color:'white' }}>✓</div>}
           </button>
-          <span onClick={()=>onViewProfile?.(video.userId)} style={{ color:'white', fontWeight:700, fontSize:15, cursor:'pointer', fontFamily:"'Syne',sans-serif" }}>@{video.username}</span>
+          <span onClick={()=>onViewProfile?.(video.userId)} style={{ color:'white', fontWeight:700, fontSize:15, cursor:'pointer', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{video.username}</span>
           <button onClick={()=>onFollow?.(video.userId)} style={{ padding:'5px 14px', borderRadius:20, background:followed?.includes(video.userId)?'rgba(255,255,255,0.08)':'rgba(255,45,85,0.9)', border:followed?.includes(video.userId)?'1px solid rgba(255,255,255,0.4)':'none', color:'white', fontSize:12, fontWeight:700, cursor:'pointer', backdropFilter:'blur(4px)' }}>{followed?.includes(video.userId)?'Unfollow':'+ Follow'}</button>
           <button onClick={()=>setShowActionMenu(!showActionMenu)} style={{ background:'rgba(0,0,0,0.4)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:'50%', width:30, height:30, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', backdropFilter:'blur(8px)' }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
@@ -988,7 +988,7 @@ const EnhancedVideoCard = memo(({ video, currentUser, isActive, onLike, onCommen
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff9500" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>, label:'Report', fn:()=>{ setShowReportModal(true); setShowActionMenu(false); }},
              {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff2d55" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>, label:'Block', fn:async()=>{ await updateDoc(doc(db,'users',currentUser.id),{ blockedUsers: arrayUnion(video.userId) }); showToast?.('User blocked','warning'); }},
             ].map(({icon,label,fn})=>(
-              <button key={label} onClick={()=>{fn(); setShowActionMenu(false);}} style={{ display:'flex', alignItems:'center', gap:12, width:'100%', padding:'11px 14px', background:'none', border:'none', color:label==='Block'?'#ff2d55':label==='Report'?'#ff9500':'white', cursor:'pointer', borderRadius:16, fontSize:14, fontFamily:"'DM Sans',sans-serif" }}>
+              <button key={label} onClick={()=>{fn(); setShowActionMenu(false);}} style={{ display:'flex', alignItems:'center', gap:12, width:'100%', padding:'11px 14px', background:'none', border:'none', color:label==='Block'?'#ff2d55':label==='Report'?'#ff9500':'white', cursor:'pointer', borderRadius:16, fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>
                 <span>{icon}</span>{label}
               </button>
             ))}
@@ -1000,34 +1000,32 @@ const EnhancedVideoCard = memo(({ video, currentUser, isActive, onLike, onCommen
         <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.9)', zIndex:50, display:'flex', alignItems:'flex-end' }} onClick={()=>setShowReportModal(false)}>
           <div onClick={e=>e.stopPropagation()} style={{ width:'100%', background:'#111', borderTopLeftRadius:28, borderTopRightRadius:28, padding:'20px 20px 40px', animation:'slideUp 0.3s ease' }}>
             <div style={{ width:36, height:4, background:'rgba(255,255,255,0.12)', borderRadius:2, margin:'0 auto 20px' }} />
-            <div style={{ color:'white', fontWeight:800, fontSize:18, marginBottom:4, fontFamily:"'Syne',sans-serif" }}>Report Post</div>
+            <div style={{ color:'white', fontWeight:800, fontSize:18, marginBottom:4, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Report Post</div>
             <div style={{ color:'rgba(255,255,255,0.4)', fontSize:13, marginBottom:16 }}>Why are you reporting this?</div>
             {reportReasons.map(r=>(
               <button key={r} onClick={async ()=>{
                 await addDoc(collection(db,'reports'),{ videoId:video.id, userId:currentUser?.id, reason:r, createdAt:serverTimestamp() });
                 showToast?.('Report submitted','success'); setShowReportModal(false);
-              }} style={{ width:'100%', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:14, padding:'14px 16px', color:'white', textAlign:'left', cursor:'pointer', marginBottom:8, fontSize:14, fontFamily:"'DM Sans',sans-serif" }}>{r}</button>
+              }} style={{ width:'100%', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:14, padding:'14px 16px', color:'white', textAlign:'left', cursor:'pointer', marginBottom:8, fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{r}</button>
             ))}
           </div>
         </div>
       )}
 
       <div style={{ position:'absolute', right:12, bottom:90, display:'flex', flexDirection:'column', alignItems:'center', gap:6, zIndex:6 }}>
-        <button onClick={handleLike} style={{ background:'rgba(0,0,0,0.35)', backdropFilter:'blur(10px)', border:'none', borderRadius:'50%', width:50, height:50, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
-          <svg width="26" height="26" viewBox="0 0 24 24" fill={liked?'#ff2d55':'none'} stroke={liked?'#ff2d55':'white'} strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+        <button onClick={handleLike} style={{ background:'rgba(0,0,0,0.3)', border:'none', borderRadius:'50%', width:48, height:48, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill={liked?'#ff2d55':'none'} stroke={liked?'#ff2d55':'rgba(255,255,255,0.9)'} strokeWidth="1.8"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
         </button>
-        <span style={{ color:'white', fontSize:11, fontWeight:700 }}>{formatNumber(likeCount)}</span>
-        <button onClick={()=>setShowComments(true)} style={{ background:'rgba(0,0,0,0.35)', backdropFilter:'blur(10px)', border:'none', borderRadius:'50%', width:50, height:50, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', marginTop:6 }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        <span style={{ color:'rgba(255,255,255,0.85)', fontSize:11, fontWeight:600, letterSpacing:0.2 }}>{formatNumber(likeCount)}</span>
+        <button onClick={()=>setShowComments(true)} style={{ background:'rgba(0,0,0,0.3)', border:'none', borderRadius:'50%', width:48, height:48, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', marginTop:4 }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
         </button>
-        <span style={{ color:'white', fontSize:11, fontWeight:700 }}>{formatNumber(video.comments||comments.length)}</span>
-        <button onClick={()=>setShowShare(true)} style={{ background:'rgba(0,0,0,0.35)', backdropFilter:'blur(10px)', border:'none', borderRadius:'50%', width:50, height:50, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', marginTop:6 }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        <span style={{ color:'rgba(255,255,255,0.85)', fontSize:11, fontWeight:600 }}>{formatNumber(video.comments||comments.length)}</span>
+        <button onClick={()=>setShowShare(true)} style={{ background:'rgba(0,0,0,0.3)', border:'none', borderRadius:'50%', width:48, height:48, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', marginTop:4 }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="1.8"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
+        <span style={{ color:'rgba(255,255,255,0.85)', fontSize:11, fontWeight:600 }}>{formatNumber(video.shares||0)}</span>
         <span style={{ color:'white', fontSize:11, fontWeight:700 }}>{formatNumber(video.shares||0)}</span>
-        <button onClick={()=>setShowActionMenu(!showActionMenu)} style={{ background:'rgba(0,0,0,0.35)', backdropFilter:'blur(10px)', border:'none', borderRadius:'50%', width:50, height:50, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', marginTop:6 }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
-        </button>
       </div>
 
       {showComments && (
@@ -1037,7 +1035,7 @@ const EnhancedVideoCard = memo(({ video, currentUser, isActive, onLike, onCommen
     onTouchEnd={e => e.stopPropagation()}
     style={{ position:'fixed', top:0, left:'50%', transform:'translateX(-50%)', width:'100%', maxWidth:430, height:'100%', background:'#0a0a0a', zIndex:9000, display:'flex', flexDirection:'column', animation:'slideUp 0.3s ease' }}>
           <div style={{ padding:'16px', borderBottom:'1px solid rgba(255,255,255,0.07)', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-            <span style={{ color:'white', fontWeight:700, fontSize:16, fontFamily:"'Syne',sans-serif" }}>Comments</span>
+            <span style={{ color:'white', fontWeight:700, fontSize:16, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Comments</span>
             <button onClick={()=>setShowComments(false)} style={{ background:'rgba(255,255,255,0.08)', border:'none', borderRadius:'50%', width:32, height:32, color:'white', cursor:'pointer', fontSize:16 }}>✕</button>
           </div>
           <div style={{ flex:1, overflowY:'auto', padding:'14px 16px' }}>
@@ -1082,7 +1080,7 @@ const HomeFeed = ({ videos, onLike, onComment, onShare, onFollow, onMessage, onV
       <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:15, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 16px 0' }}>
         <div style={{ flex:1, display:'flex', justifyContent:'center', gap:24 }}>
           {TOP_CATEGORIES.map(cat=>(
-            <button key={cat.id} onClick={()=>{setActiveCategory(cat.id); setCurrentIndex(0);}} style={{ background:'none', border:'none', color:activeCategory===cat.id?'white':'rgba(255,255,255,0.45)', fontWeight:activeCategory===cat.id?800:500, fontSize:15, cursor:'pointer', paddingBottom:6, borderBottom:activeCategory===cat.id?'2.5px solid white':'2.5px solid transparent', fontFamily:"'Syne',sans-serif", transition:'all 0.2s' }}>
+            <button key={cat.id} onClick={()=>{setActiveCategory(cat.id); setCurrentIndex(0);}} style={{ background:'none', border:'none', color:activeCategory===cat.id?'white':'rgba(255,255,255,0.45)', fontWeight:activeCategory===cat.id?800:500, fontSize:15, cursor:'pointer', paddingBottom:6, borderBottom:activeCategory===cat.id?'2.5px solid white':'2.5px solid transparent', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", transition:'all 0.2s' }}>
               {cat.label}
             </button>
           ))}
@@ -1136,8 +1134,9 @@ const FriendsFeed = ({ friends, videos, currentUser, onMessage, onVoiceCall, onV
   const startY = useRef(null);
 
   const friendsVideos = useMemo(()=>
-    videos.filter(v=>friends.includes(v.userId)).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)),
-  [friends,videos]);
+    videos.filter(v=>friends.includes(v.userId) || v.userId===currentUser?.id)
+      .sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)),
+  [friends,videos,currentUser?.id]);
 
   const filtered = useMemo(()=>
     !search ? friendsVideos : friendsVideos.filter(v=>
@@ -1164,7 +1163,7 @@ const FriendsFeed = ({ friends, videos, currentUser, onMessage, onVoiceCall, onV
     <div style={{ height:'100%', display:'flex', flexDirection:'column', background:'#0a0a0a' }}>
       {/* Top bar */}
       <div style={{ position:'relative', zIndex:15, padding:'14px 16px 0', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-        <div style={{ color:'white', fontWeight:800, fontSize:18, fontFamily:"'Syne',sans-serif" }}>Friends</div>
+        <div style={{ color:'white', fontWeight:800, fontSize:18, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Friends</div>
         <button onClick={()=>setShowSearch(v=>!v)} style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(10px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         </button>
@@ -1213,9 +1212,9 @@ const FriendsFeed = ({ friends, videos, currentUser, onMessage, onVoiceCall, onV
         </div>
       ))}
 
-      {/* Top overlay: Friends label + search */}
-      <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:15, padding:'14px 16px 0', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-        <div style={{ color:'white', fontWeight:800, fontSize:18, fontFamily:"'Syne',sans-serif", textShadow:'0 1px 8px rgba(0,0,0,0.8)' }}>Friends</div>
+      {/* Top overlay: Friends label + search — sits above Stories */}
+      <div style={{ position:'absolute', top:110, left:0, right:0, zIndex:15, padding:'10px 16px 0', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <div style={{ color:'white', fontWeight:800, fontSize:18, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", textShadow:'0 1px 8px rgba(0,0,0,0.8)' }}>Friends</div>
         <button onClick={()=>setShowSearch(v=>!v)} style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(10px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         </button>
@@ -1232,8 +1231,8 @@ const FriendsFeed = ({ friends, videos, currentUser, onMessage, onVoiceCall, onV
         </div>
       )}
 
-      {/* Stories row — pinned above the video */}
-      <div style={{ position:'absolute', top:showSearch?106:56, left:0, right:0, zIndex:14 }}>
+      {/* Stories row — always at top */}
+      <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:14 }}>
         <Stories users={users} currentUser={currentUser} onViewStory={onViewStory} onCreateStory={onCreateStory} />
       </div>
 
@@ -1254,7 +1253,7 @@ const CreateScreen = ({ onOpenCamera, onShowSoundLibrary, showToast }) => (
   <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:24, gap:12, background:'#0a0a0a' }}>
     <div style={{ textAlign:'center', marginBottom:12 }}>
       <div style={{ width:72, height:72, borderRadius:'50%', background:'linear-gradient(135deg,#ff2d55,#af52de)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px', fontSize:32 }}>🎬</div>
-      <div style={{ color:'white', fontWeight:800, fontSize:24, fontFamily:"'Syne',sans-serif" }}>Create & Share</div>
+      <div style={{ color:'white', fontWeight:800, fontSize:24, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Create & Share</div>
       <div style={{ color:'rgba(255,255,255,0.35)', fontSize:14, marginTop:4 }}>Express yourself</div>
     </div>
     {[
@@ -1267,7 +1266,7 @@ const CreateScreen = ({ onOpenCamera, onShowSoundLibrary, showToast }) => (
       <button key={btn.label} onClick={btn.action} style={{ width:'100%', maxWidth:320, background:btn.grad?'linear-gradient(135deg,#ff2d55,#af52de)':'rgba(255,255,255,0.04)', border:btn.grad?'none':'1px solid rgba(255,255,255,0.08)', borderRadius:20, padding:'16px 20px', color:'white', fontSize:14, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:14, textAlign:'left' }}>
         <div style={{ width:44, height:44, borderRadius:14, background:btn.grad?'rgba(255,255,255,0.15)':'rgba(255,255,255,0.06)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22 }}>{btn.icon}</div>
         <div>
-          <div style={{ fontWeight:700, fontFamily:"'Syne',sans-serif" }}>{btn.label}</div>
+          <div style={{ fontWeight:700, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{btn.label}</div>
           <div style={{ color:btn.grad?'rgba(255,255,255,0.65)':'rgba(255,255,255,0.35)', fontSize:11, marginTop:2 }}>{btn.sub}</div>
         </div>
       </button>
@@ -1336,16 +1335,16 @@ const WalletPage = ({ user, setCurrentUser, showToast, onBack }) => {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
           Back
         </button>
-        <div style={{ color:'white', fontWeight:800, fontSize:22, marginBottom:16, fontFamily:"'Syne',sans-serif" }}>Wallet</div>
+        <div style={{ color:'white', fontWeight:800, fontSize:22, marginBottom:16, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Wallet</div>
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:16 }}>
           <div style={{ background:'linear-gradient(135deg,#ffd700,#ff9500)', borderRadius:22, padding:20 }}>
             <div style={{ color:'rgba(0,0,0,0.55)', fontSize:11, fontWeight:600, textTransform:'uppercase', letterSpacing:0.5 }}>Coins</div>
-            <div style={{ color:'#000', fontSize:30, fontWeight:800, marginTop:4, fontFamily:"'Syne',sans-serif" }}>{(user?.coins||0).toLocaleString()}</div>
+            <div style={{ color:'#000', fontSize:30, fontWeight:800, marginTop:4, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{(user?.coins||0).toLocaleString()}</div>
             <div style={{ color:'rgba(0,0,0,0.4)', fontSize:10, marginTop:2 }}>🪙 Dagu Coins</div>
           </div>
           <div style={{ background:'linear-gradient(135deg,#06d6a0,#00b4d8)', borderRadius:22, padding:20 }}>
             <div style={{ color:'rgba(0,0,0,0.55)', fontSize:11, fontWeight:600, textTransform:'uppercase', letterSpacing:0.5 }}>Cash</div>
-            <div style={{ color:'#000', fontSize:30, fontWeight:800, marginTop:4, fontFamily:"'Syne',sans-serif" }}>${(user?.walletBalance||0).toLocaleString()}</div>
+            <div style={{ color:'#000', fontSize:30, fontWeight:800, marginTop:4, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>${(user?.walletBalance||0).toLocaleString()}</div>
             <div style={{ color:'rgba(0,0,0,0.4)', fontSize:10, marginTop:2 }}>💵 USD</div>
           </div>
         </div>
@@ -1377,7 +1376,7 @@ const WalletPage = ({ user, setCurrentUser, showToast, onBack }) => {
                 <button key={v} onClick={()=>setAmount(String(v))} style={{ flex:1, background:amount===String(v)?'rgba(255,45,85,0.9)':'rgba(255,255,255,0.06)', border:'none', borderRadius:10, padding:'8px', color:'white', cursor:'pointer', fontSize:12, fontWeight:600 }}>{v}</button>
               ))}
             </div>
-            <button onClick={activeTab==='deposit'?doDeposit:activeTab==='withdraw'?doWithdraw:convertCoins} style={{ width:'100%', background:'linear-gradient(135deg,#ff2d55,#af52de)', border:'none', borderRadius:24, padding:'14px', color:'white', fontWeight:700, cursor:'pointer', fontSize:14, fontFamily:"'Syne',sans-serif" }}>
+            <button onClick={activeTab==='deposit'?doDeposit:activeTab==='withdraw'?doWithdraw:convertCoins} style={{ width:'100%', background:'linear-gradient(135deg,#ff2d55,#af52de)', border:'none', borderRadius:24, padding:'14px', color:'white', fontWeight:700, cursor:'pointer', fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>
               {activeTab==='deposit'?'Add Coins':activeTab==='withdraw'?'Withdraw':'Convert to ETH'}
             </button>
           </div>
@@ -1426,7 +1425,7 @@ const EditProfileModal = ({ user, onClose, onSave, showToast }) => {
       <div onClick={e=>e.stopPropagation()} style={{ width:'100%', background:'#0f0f0f', borderTopLeftRadius:32, borderTopRightRadius:32, padding:'20px 20px 44px', maxHeight:'92vh', overflowY:'auto', border:'1px solid rgba(255,255,255,0.07)' }}>
         <div style={{ width:36, height:4, background:'rgba(255,255,255,0.12)', borderRadius:2, margin:'0 auto 20px' }} />
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24 }}>
-          <span style={{ color:'white', fontWeight:800, fontSize:20, fontFamily:"'Syne',sans-serif" }}>Edit Profile</span>
+          <span style={{ color:'white', fontWeight:800, fontSize:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Edit Profile</span>
           <button onClick={handleSave} disabled={uploading} style={{ background:'linear-gradient(135deg,#ff2d55,#af52de)', border:'none', borderRadius:20, padding:'9px 20px', color:'white', fontWeight:700, cursor:'pointer', fontSize:14, opacity:uploading?0.6:1 }}>{uploading?'Saving...':'Save'}</button>
         </div>
         <div style={{ textAlign:'center', marginBottom:28 }}>
@@ -1467,7 +1466,7 @@ const EditProfileModal = ({ user, onClose, onSave, showToast }) => {
   );
 };
 const PrivacyToggles = ({ user, showToast }) => {
-  const defaults = { 'Private Account':false,'Show Activity Status':true,'Allow Comments':true,'Allow Duets':true,'Allow Messages from Everyone':false };
+  const defaults = { 'Private Account':false,'Show Activity Status':true,'Allow Comments':true,'Allow Duets':true,'Allow Messages from Everyone':false,'Allow Calls from Everyone':false,'Allow Follow Requests':true };
   const [settings, setSettings] = useState({ ...defaults, ...(user?.privacy||{}) });
   const toggle = async (label) => {
     const next = { ...settings, [label]: !settings[label] };
@@ -1506,7 +1505,7 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
         <button onClick={()=>setActiveSubPage(null)} style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:20, padding:'8px 16px', color:'white', cursor:'pointer', fontSize:13, marginBottom:20, display:'flex', alignItems:'center', gap:6 }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
         </button>
-        <div style={{ color:'white', fontWeight:800, fontSize:22, marginBottom:24, fontFamily:"'Syne',sans-serif" }}>Settings</div>
+        <div style={{ color:'white', fontWeight:800, fontSize:22, marginBottom:24, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Settings</div>
         <div style={{ color:'rgba(255,255,255,0.3)', fontSize:11, fontWeight:700, marginBottom:8, textTransform:'uppercase', letterSpacing:1.2 }}>Account</div>
         <div style={{ background:'rgba(255,255,255,0.03)', borderRadius:20, overflow:'hidden', marginBottom:20, border:'1px solid rgba(255,255,255,0.06)' }}>
           {[
@@ -1562,7 +1561,7 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
       <button onClick={()=>setActiveSubPage(null)} style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:20, padding:'8px 16px', color:'white', cursor:'pointer', fontSize:13, marginBottom:20, display:'flex', alignItems:'center', gap:6 }}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
       </button>
-      <div style={{ color:'white', fontWeight:800, fontSize:22, marginBottom:20, fontFamily:"'Syne',sans-serif" }}>Privacy</div>
+      <div style={{ color:'white', fontWeight:800, fontSize:22, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Privacy</div>
       <div style={{ background:'rgba(255,255,255,0.03)', borderRadius:20, overflow:'hidden', border:'1px solid rgba(255,255,255,0.06)' }}>
         {['Private Account','Show Activity','Allow Messages from Everyone','Allow Comments','Allow Duets','Show Liked Videos'].map((label,i,arr)=>(
           <div key={label} style={{ padding:'14px 16px', borderBottom:i<arr.length-1?'1px solid rgba(255,255,255,0.05)':'', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
@@ -1581,14 +1580,14 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
       <button onClick={()=>setActiveSubPage(null)} style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:20, padding:'8px 16px', color:'white', cursor:'pointer', fontSize:13, marginBottom:20, display:'flex', alignItems:'center', gap:6 }}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
       </button>
-      <div style={{ color:'white', fontWeight:800, fontSize:22, marginBottom:20, fontFamily:"'Syne',sans-serif" }}>Switch Account</div>
+      <div style={{ color:'white', fontWeight:800, fontSize:22, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Switch Account</div>
       {users.map(u=>(
-        <div key={u.id} style={{ background:'rgba(255,255,255,0.03)', borderRadius:18, padding:16, marginBottom:10, display:'flex', alignItems:'center', gap:14, cursor:'pointer', border:u.id===user?.id?'1px solid rgba(255,45,85,0.5)':'1px solid rgba(255,255,255,0.06)' }} onClick={()=>{setCurrentUser(u); showToast?.(`Switched to @${u.username}`,'success'); setActiveSubPage(null);}}>
+        <div key={u.id} style={{ background:'rgba(255,255,255,0.03)', borderRadius:18, padding:16, marginBottom:10, display:'flex', alignItems:'center', gap:14, cursor: u.id===user?.id?'default':'not-allowed', border:u.id===user?.id?'1px solid rgba(255,45,85,0.5)':'1px solid rgba(255,255,255,0.06)', opacity: u.id===user?.id?1:0.4 }} onClick={()=>{ if(u.id!==user?.id){ showToast?.('Sign in to switch accounts','info'); return; } }}>
           <div style={{ width:50, height:50, borderRadius:'50%', background:u.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:20, overflow:'hidden' }}>
             {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : u.avatar}
           </div>
           <div style={{ flex:1 }}>
-            <div style={{ color:'white', fontWeight:700, fontFamily:"'Syne',sans-serif" }}>@{u.username}</div>
+            <div style={{ color:'white', fontWeight:700, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{u.username}</div>
             <div style={{ color:'rgba(255,255,255,0.3)', fontSize:12, marginTop:2 }}>{u.subscription} plan</div>
           </div>
           {u.id===user?.id && <span style={{ color:'#ff2d55', fontSize:12, fontWeight:700 }}>Active</span>}
@@ -1603,12 +1602,12 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
       <button onClick={()=>setActiveSubPage(null)} style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:20, padding:'8px 16px', color:'white', cursor:'pointer', fontSize:13, marginBottom:20, display:'flex', alignItems:'center', gap:6 }}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
       </button>
-      <div style={{ color:'white', fontWeight:800, fontSize:22, marginBottom:20, fontFamily:"'Syne',sans-serif" }}>Badges</div>
+      <div style={{ color:'white', fontWeight:800, fontSize:22, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Badges</div>
       <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12 }}>
         {[['🌟','First Post',myVideos.length>0],['🔥','7 Day Streak',(user?.streak||0)>=7],['💎','Top Creator',(user?.followers?.length||0)>=100],['👑','100K Fans',(user?.followers?.length||0)>=100000],['🚀','Viral',myVideos.some(v=>v.views>=10000)],['🎯','Pro User',user?.subscription==='pro']].map(([icon,name,earned])=>(
           <div key={name} style={{ background:'rgba(255,255,255,0.03)', borderRadius:20, padding:18, textAlign:'center', opacity:earned?1:0.4, border:'1px solid rgba(255,255,255,0.06)' }}>
             <div style={{ fontSize:38, marginBottom:8 }}>{icon}</div>
-            <div style={{ color:'white', fontSize:12, fontWeight:700, fontFamily:"'Syne',sans-serif" }}>{name}</div>
+            <div style={{ color:'white', fontSize:12, fontWeight:700, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{name}</div>
             <div style={{ color:earned?'#06d6a0':'rgba(255,255,255,0.3)', fontSize:10, marginTop:4 }}>{earned?'Earned':'Locked'}</div>
           </div>
         ))}
@@ -1621,18 +1620,18 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
       <button onClick={()=>setActiveSubPage(null)} style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:20, padding:'8px 16px', color:'white', cursor:'pointer', fontSize:13, marginBottom:20, display:'flex', alignItems:'center', gap:6 }}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
       </button>
-      <div style={{ color:'white', fontWeight:800, fontSize:22, marginBottom:20, fontFamily:"'Syne',sans-serif" }}>Premium</div>
+      <div style={{ color:'white', fontWeight:800, fontSize:22, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Premium</div>
       {[{name:'Plus',price:'$4.99/mo',color:'#af52de',features:['Ad-free experience','500 coins/month','Custom profile badge','Priority in search']},{name:'Pro',price:'$9.99/mo',color:'#ffd700',features:['All Plus features','2000 coins/month','Advanced analytics','Priority support','Custom username']}].map(plan=>(
         <div key={plan.name} style={{ background:'rgba(255,255,255,0.03)', border:`1px solid ${plan.color}40`, borderRadius:24, padding:22, marginBottom:14 }}>
-          <div style={{ color:plan.color, fontWeight:800, fontSize:20, marginBottom:4, fontFamily:"'Syne',sans-serif" }}>{plan.name}</div>
-          <div style={{ color:'white', fontSize:28, fontWeight:800, marginBottom:14, fontFamily:"'Syne',sans-serif" }}>{plan.price}</div>
+          <div style={{ color:plan.color, fontWeight:800, fontSize:20, marginBottom:4, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{plan.name}</div>
+          <div style={{ color:'white', fontSize:28, fontWeight:800, marginBottom:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{plan.price}</div>
           {plan.features.map(f=><div key={f} style={{ color:'rgba(255,255,255,0.7)', fontSize:13, marginBottom:8, display:'flex', alignItems:'center', gap:8 }}><span style={{ color:plan.color }}>✓</span>{f}</div>)}
           <button onClick={async()=>{
             await updateDoc(doc(db,'users',user.id),{subscription:plan.name.toLowerCase()});
             setCurrentUser(u=>({...u,subscription:plan.name.toLowerCase()}));
             showToast?.(`${plan.name} activated!`,'success');
             await sendEmailJS({to_email:user?.email,from_name:'Dagu',message:`Your ${plan.name} subscription has been activated!`});
-          }} style={{ width:'100%', background:plan.color, border:'none', borderRadius:20, padding:14, color:'#000', fontWeight:800, cursor:'pointer', marginTop:10, fontSize:14, fontFamily:"'Syne',sans-serif" }}>Subscribe to {plan.name}</button>
+          }} style={{ width:'100%', background:plan.color, border:'none', borderRadius:20, padding:14, color:'#000', fontWeight:800, cursor:'pointer', marginTop:10, fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Subscribe to {plan.name}</button>
         </div>
       ))}
     </div>
@@ -1680,7 +1679,7 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </button>
           </div>
-          <div style={{ color:'white', fontWeight:800, fontSize:22, fontFamily:"'Syne',sans-serif" }}>@{user?.username}</div>
+          <div style={{ color:'white', fontWeight:800, fontSize:22, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{user?.username}</div>
           {user?.verified && (
             <div style={{ display:'inline-flex', alignItems:'center', gap:4, color:'#1d9bf0', fontSize:12, marginTop:4, background:'rgba(29,155,240,0.1)', borderRadius:20, padding:'3px 10px' }}>
               <svg width="11" height="11" viewBox="0 0 24 24" fill="#1d9bf0"><path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -1689,11 +1688,11 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
           )}
           <div style={{ color:'rgba(255,255,255,0.5)', fontSize:13, marginTop:8, lineHeight:1.6, maxWidth:260, margin:'8px auto 0' }}>{user?.bio||'No bio yet'}</div>
           {user?.link && <a href={user.link} target="_blank" rel="noopener noreferrer" style={{ color:'#007aff', fontSize:13, display:'block', marginTop:4 }}>{user.link}</a>}
-          <button onClick={()=>setShowEditProfile(true)} style={{ marginTop:16, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.15)', borderRadius:14, padding:'10px 32px', color:'white', fontWeight:700, cursor:'pointer', fontSize:13, fontFamily:"'Syne',sans-serif" }}>Edit Profile</button>
+          <button onClick={()=>setShowEditProfile(true)} style={{ marginTop:16, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.15)', borderRadius:14, padding:'10px 32px', color:'white', fontWeight:700, cursor:'pointer', fontSize:13, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Edit Profile</button>
           <div style={{ display:'flex', justifyContent:'center', gap:0, marginTop:20, background:'rgba(255,255,255,0.03)', borderRadius:20, padding:'14px 0', border:'1px solid rgba(255,255,255,0.06)' }}>
             {[['Posts',myVideos.length],['Followers',user?.followers?.length||0],['Following',user?.following?.length||0]].map(([label,val],i)=>(
               <div key={label} style={{ flex:1, textAlign:'center', borderRight:i<2?'1px solid rgba(255,255,255,0.06)':'' }}>
-                <div style={{ color:'white', fontWeight:800, fontSize:20, fontFamily:"'Syne',sans-serif" }}>{formatNumber(val)}</div>
+                <div style={{ color:'white', fontWeight:800, fontSize:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{formatNumber(val)}</div>
                 <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11, marginTop:2 }}>{label}</div>
               </div>
             ))}
@@ -1732,7 +1731,7 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
           myVideos.length===0 ? (
             <div style={{ textAlign:'center', padding:48, color:'rgba(255,255,255,0.2)' }}>
               <div style={{ fontSize:48, marginBottom:12 }}>🎬</div>
-              <div style={{ fontSize:15, fontWeight:600, fontFamily:"'Syne',sans-serif" }}>No posts yet</div>
+              <div style={{ fontSize:15, fontWeight:600, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>No posts yet</div>
               <div style={{ fontSize:13, marginTop:4 }}>Create your first video!</div>
             </div>
           ) : (
@@ -1780,21 +1779,31 @@ const ConversationView = ({ currentUser, otherUser, conversationId, onBack, show
     let unsub = ()=>{};
 
     const init = async () => {
-      // Make sure the conversation doc and subcollection exist
       await setDoc(doc(db,'conversations', conversationId),{
         participants: [currentUser.id, otherUser.id],
         lastMessageAt: serverTimestamp(),
       },{ merge: true });
 
-      // Now subscribe to messages
       const q = query(
         collection(db,'messages', conversationId,'msgs'),
         orderBy('createdAt','asc')
       );
       unsub = onSnapshot(q, snap=>{
-        const msgs = snap.docs.map(d=>({id:d.id,...d.data()}));
+        const msgs = snap.docs.map(d=>({id:d.id,...d.data(),
+          ts: d.data().createdAt?.toDate?.() || null
+        }));
         setMessages(msgs);
-        setTimeout(()=>bottomRef.current?.scrollIntoView({behavior:'smooth'}),100);
+        setTimeout(()=>bottomRef.current?.scrollIntoView({behavior:'smooth'}),80);
+      }, async () => {
+        // fallback: no index
+        const q2 = query(collection(db,'messages', conversationId,'msgs'));
+        unsub = onSnapshot(q2, snap2=>{
+          const msgs = snap2.docs.map(d=>({id:d.id,...d.data(),
+            ts: d.data().createdAt?.toDate?.() || null
+          })).sort((a,b)=>(a.createdAt?.seconds||0)-(b.createdAt?.seconds||0));
+          setMessages(msgs);
+          setTimeout(()=>bottomRef.current?.scrollIntoView({behavior:'smooth'}),80);
+        });
       });
     };
 
@@ -1865,7 +1874,7 @@ const ConversationView = ({ currentUser, otherUser, conversationId, onBack, show
           {otherUser?.avatarUrl?<img src={otherUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/>:otherUser?.avatar}
         </div>
         <div onClick={()=>onViewProfile?.(otherUser?.id)} style={{cursor:'pointer'}}>
-          <div style={{color:'white',fontWeight:700,fontFamily:"'Syne',sans-serif"}}>@{otherUser?.username}</div>
+          <div style={{color:'white',fontWeight:700,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>@{otherUser?.username}</div>
           <div style={{color:'#06d6a0',fontSize:11,display:'flex',alignItems:'center',gap:4}}><div style={{width:6,height:6,borderRadius:'50%',background:'#06d6a0'}}/>Online</div>
         </div>
         <div style={{marginLeft:'auto',display:'flex',gap:10}}>
@@ -1890,9 +1899,12 @@ const ConversationView = ({ currentUser, otherUser, conversationId, onBack, show
                 </div>
               )}
               <div style={{maxWidth:'72%'}}>
-                {msg.text&&<div style={{background:isMine?'linear-gradient(135deg,#ff2d55,#af52de)':'rgba(255,255,255,0.07)',borderRadius:isMine?'20px 20px 4px 20px':'20px 20px 20px 4px',padding:'10px 14px',marginBottom:msg.mediaUrl?4:0}}>
-                  <span style={{color:'white',fontSize:14}}>{msg.text}</span>
+                {msg.text&&<div style={{background:isMine?'linear-gradient(135deg,#ff2d55,#af52de)':'rgba(255,255,255,0.09)',borderRadius:isMine?'18px 18px 4px 18px':'18px 18px 18px 4px',padding:'9px 14px',marginBottom:msg.mediaUrl?4:0}}>
+                  <span style={{color:'white',fontSize:14,lineHeight:1.4}}>{msg.text}</span>
                 </div>}
+                <div style={{color:'rgba(255,255,255,0.25)',fontSize:10,marginTop:3,textAlign:isMine?'right':'left',paddingLeft:isMine?0:2,paddingRight:isMine?2:0}}>
+                  {msg.ts ? msg.ts.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : ''}
+                </div>
                 {msg.mediaUrl&&msg.mediaType?.startsWith('image')&&<img src={msg.mediaUrl} alt="" style={{maxWidth:'100%',borderRadius:14,display:'block'}}/>}
                 {msg.mediaUrl&&msg.mediaType?.startsWith('video')&&<video src={msg.mediaUrl} controls style={{maxWidth:'100%',borderRadius:14,display:'block'}}/>}
                 {msg.mediaUrl&&msg.mediaType?.startsWith('audio')&&(
@@ -2008,7 +2020,7 @@ const InboxPage = ({ users, currentUser, showToast, onViewProfile, initialTarget
   return (
     <div style={{ height:'100%', display:'flex', flexDirection:'column', background:'#0a0a0a' }}>
       <div style={{ padding:'16px 16px 12px', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
-        <div style={{ color:'white', fontWeight:800, fontSize:22, fontFamily:"'Syne',sans-serif" }}>Messages</div>
+        <div style={{ color:'white', fontWeight:800, fontSize:22, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Messages</div>
       </div>
       <div style={{ flex:1, overflowY:'auto' }}>
         {convUsers.length===0 && <div style={{textAlign:'center',padding:60,color:'rgba(255,255,255,0.2)'}}><div style={{fontSize:44,marginBottom:12}}>💬</div><div style={{fontSize:14}}>No messages yet</div><div style={{fontSize:12,marginTop:6,color:'rgba(255,255,255,0.12)'}}>Go to a profile and tap Message to start</div></div>}
@@ -2024,7 +2036,7 @@ const InboxPage = ({ users, currentUser, showToast, onViewProfile, initialTarget
                 <div style={{ position:'absolute', bottom:1, right:1, width:13, height:13, background:'#06d6a0', borderRadius:'50%', border:'2px solid #0a0a0a' }} />
               </div>
               <div style={{ flex:1 }}>
-                <div style={{ color:'white', fontWeight:700, fontSize:14, fontFamily:"'Syne',sans-serif" }}>@{u.username}</div>
+                <div style={{ color:'white', fontWeight:700, fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{u.username}</div>
                 <div style={{ color:'rgba(255,255,255,0.35)', fontSize:12, marginTop:2 }}>{conv?.lastMessage||'Tap to start chatting'}</div>
               </div>
               <div style={{ color:'rgba(255,255,255,0.2)', fontSize:11 }}>{conv?.lastMessageAt?'Now':''}</div>
@@ -2223,7 +2235,7 @@ const CallModal = ({ type, contactName, contactAvatar, contactId, currentUser, o
             </div>
           </div>
         )}
-        <div style={{ color:'white', fontSize:22, fontWeight:800, fontFamily:"'Syne',sans-serif" }}>@{contactName}</div>
+        <div style={{ color:'white', fontSize:22, fontWeight:800, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{contactName}</div>
         <div style={{ color:'rgba(255,255,255,0.5)', fontSize:13, marginTop:6 }}>{statusLabel}</div>
       </div>
 
@@ -2299,19 +2311,19 @@ const SearchOverlay = ({ onClose, videos, users, onViewProfile }) => {
                   {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : u.avatar}
                 </div>
                 <div style={{ flex:1 }}>
-                  <div style={{ color:'white', fontWeight:700, fontSize:14, fontFamily:"'Syne',sans-serif" }}>@{u.username}</div>
+                  <div style={{ color:'white', fontWeight:700, fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{u.username}</div>
                   <div style={{ color:'rgba(255,255,255,0.3)', fontSize:11, marginTop:2 }}>{u.bio?.substring(0,45)}</div>
                 </div>
               </div>
             ))}
             {(tab==='all'||tab==='videos')&&results.videos.map(v=>(
               <div key={v.id} style={{ padding:'12px 14px', background:'rgba(255,255,255,0.03)', borderRadius:16, marginBottom:8, border:'1px solid rgba(255,255,255,0.05)' }}>
-                <div style={{ color:'#ff2d55', fontSize:12, fontWeight:700, fontFamily:"'Syne',sans-serif" }}>@{v.username}</div>
+                <div style={{ color:'#ff2d55', fontSize:12, fontWeight:700, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{v.username}</div>
                 <div style={{ color:'rgba(255,255,255,0.8)', fontSize:13, marginTop:4 }}>{v.description}</div>
               </div>
             ))}
             {(tab==='all'||tab==='hashtags')&&results.hashtags.map(h=>(
-              <div key={h} style={{ padding:'12px 16px', background:'rgba(255,255,255,0.03)', borderRadius:16, marginBottom:8, color:'#007aff', fontSize:16, fontWeight:700, fontFamily:"'Syne',sans-serif", border:'1px solid rgba(255,255,255,0.05)' }}>{h}</div>
+              <div key={h} style={{ padding:'12px 16px', background:'rgba(255,255,255,0.03)', borderRadius:16, marginBottom:8, color:'#007aff', fontSize:16, fontWeight:700, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", border:'1px solid rgba(255,255,255,0.05)' }}>{h}</div>
             ))}
           </div>
         </>
@@ -2319,7 +2331,7 @@ const SearchOverlay = ({ onClose, videos, users, onViewProfile }) => {
         <div style={{ flex:1, padding:16 }}>
           <div style={{ color:'rgba(255,255,255,0.3)', fontSize:12, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:14 }}>Trending</div>
           {['#trending','#viral','#art','#music','#dance'].map(tag=>(
-            <div key={tag} onClick={()=>setQuery(tag)} style={{ padding:'12px 16px', background:'rgba(255,255,255,0.03)', borderRadius:14, marginBottom:8, color:'#007aff', fontSize:15, fontWeight:700, border:'1px solid rgba(255,255,255,0.05)', cursor:'pointer', fontFamily:"'Syne',sans-serif" }}>{tag}</div>
+            <div key={tag} onClick={()=>setQuery(tag)} style={{ padding:'12px 16px', background:'rgba(255,255,255,0.03)', borderRadius:14, marginBottom:8, color:'#007aff', fontSize:15, fontWeight:700, border:'1px solid rgba(255,255,255,0.05)', cursor:'pointer', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{tag}</div>
           ))}
         </div>
       )}
@@ -2457,7 +2469,7 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
     <div style={{ position:'fixed', inset:0, background:'#000', zIndex:100, display:'flex', flexDirection:'column' }}>
       <div style={{ padding:'14px 16px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
         <button onClick={()=>setSelectedFile(null)} style={{ background:'rgba(255,255,255,0.1)', border:'none', borderRadius:20, padding:'8px 16px', color:'white', cursor:'pointer', fontSize:13 }}>Retake</button>
-        <span style={{ color:'white', fontWeight:800, fontSize:16, fontFamily:"'Syne',sans-serif" }}>New Post</span>
+        <span style={{ color:'white', fontWeight:800, fontSize:16, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>New Post</span>
         <button onClick={handleUpload} disabled={uploading} style={{ background:'linear-gradient(135deg,#ff2d55,#af52de)', border:'none', borderRadius:20, padding:'8px 18px', color:'white', fontWeight:700, cursor:'pointer', fontSize:13, opacity:uploading?0.7:1 }}>
           {uploading ? `${uploadProgress}%` : 'Post ✓'}
         </button>
@@ -2570,7 +2582,7 @@ const SoundLibraryPage = ({ onSelectSound, onClose }) => {
   return (
     <div style={{ position:'fixed', inset:0, background:'#0a0a0a', zIndex:200, display:'flex', flexDirection:'column' }}>
       <div style={{ padding:'14px 16px', borderBottom:'1px solid rgba(255,255,255,0.06)', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-        <h2 style={{ color:'white', fontSize:20, fontWeight:800, fontFamily:"'Syne',sans-serif" }}>Sounds</h2>
+        <h2 style={{ color:'white', fontSize:20, fontWeight:800, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Sounds</h2>
         <button onClick={onClose} style={{ background:'rgba(255,255,255,0.06)', border:'none', borderRadius:20, padding:'8px 16px', color:'white', cursor:'pointer', fontSize:13 }}>Close</button>
       </div>
       <div style={{ padding:'10px 16px' }}>
@@ -2581,7 +2593,7 @@ const SoundLibraryPage = ({ onSelectSound, onClose }) => {
           <div key={sound.id} onClick={()=>onSelectSound(sound)} style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 12px', background:'rgba(255,255,255,0.03)', borderRadius:18, marginBottom:8, cursor:'pointer', border:'1px solid rgba(255,255,255,0.05)' }}>
             <div style={{ width:48, height:48, borderRadius:16, background:'linear-gradient(135deg,#ff2d55,#af52de)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:24 }}>🎵</div>
             <div style={{ flex:1 }}>
-              <div style={{ color:'white', fontWeight:700, fontSize:13, fontFamily:"'Syne',sans-serif" }}>{sound.name}</div>
+              <div style={{ color:'white', fontWeight:700, fontSize:13, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{sound.name}</div>
               <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11, marginTop:2 }}>{sound.artist} · {sound.duration}</div>
             </div>
             {sound.popular && <span style={{ color:'#ff9500', fontSize:11, fontWeight:700 }}>🔥 {formatNumber(sound.usage)}</span>}
@@ -2614,19 +2626,19 @@ const CreatorAnalytics = ({ user, videos, onClose }) => {
     <div style={{ position:'fixed', inset:0, background:'#0a0a0a', zIndex:200, overflow:'auto' }}>
       <div style={{ padding:'60px 20px 20px' }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24 }}>
-          <h2 style={{ color:'white', fontSize:24, fontWeight:800, fontFamily:"'Syne',sans-serif" }}>Analytics</h2>
+          <h2 style={{ color:'white', fontSize:24, fontWeight:800, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Analytics</h2>
           <button onClick={onClose} style={{ background:'rgba(255,255,255,0.06)', border:'none', borderRadius:20, padding:'8px 18px', color:'white', cursor:'pointer', fontSize:13 }}>Close</button>
         </div>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:12, marginBottom:20 }}>
           {[['Total Views',formatNumber(totalViews),'#06d6a0'],['Total Likes',formatNumber(totalLikes),'#ff2d55'],['Posts',String(userVideos.length),'#af52de'],['Coins',String(user?.coins||0),'#ffd700']].map(([label,val,color])=>(
             <div key={label} style={{ background:'rgba(255,255,255,0.03)', borderRadius:20, padding:20, border:'1px solid rgba(255,255,255,0.06)' }}>
               <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11, textTransform:'uppercase', letterSpacing:0.5 }}>{label}</div>
-              <div style={{ color:color, fontSize:28, fontWeight:800, marginTop:6, fontFamily:"'Syne',sans-serif" }}>{val}</div>
+              <div style={{ color:color, fontSize:28, fontWeight:800, marginTop:6, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{val}</div>
             </div>
           ))}
         </div>
         <div style={{ background:'rgba(255,255,255,0.03)', borderRadius:20, padding:20, marginBottom:16, border:'1px solid rgba(255,255,255,0.06)' }}>
-          <h3 style={{ color:'white', marginBottom:16, fontSize:14, fontWeight:700, fontFamily:"'Syne',sans-serif" }}>Weekly Views</h3>
+          <h3 style={{ color:'white', marginBottom:16, fontSize:14, fontWeight:700, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Weekly Views</h3>
           <div style={{ height:120, display:'flex', alignItems:'flex-end', gap:6 }}>
             {weeklyData.map((v,i)=>(
               <div key={i} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
@@ -2637,7 +2649,7 @@ const CreatorAnalytics = ({ user, videos, onClose }) => {
           </div>
         </div>
         <div style={{ background:'rgba(255,255,255,0.03)', borderRadius:20, padding:20, border:'1px solid rgba(255,255,255,0.06)' }}>
-          <h3 style={{ color:'white', marginBottom:12, fontSize:14, fontWeight:700, fontFamily:"'Syne',sans-serif" }}>Top Videos</h3>
+          <h3 style={{ color:'white', marginBottom:12, fontSize:14, fontWeight:700, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Top Videos</h3>
           {userVideos.sort((a,b)=>(b.views||0)-(a.views||0)).slice(0,3).map(v=>(
             <div key={v.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12, padding:'10px 12px', background:'rgba(255,255,255,0.03)', borderRadius:14 }}>
               <div style={{ color:'white', fontSize:12, flex:1, marginRight:10 }}>{v.description?.substring(0,30)}...</div>
@@ -2656,16 +2668,16 @@ const QRCodePage = ({ user, onClose }) => (
   <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.95)', zIndex:200, display:'flex', alignItems:'center', justifyContent:'center' }}>
     <div style={{ background:'#111', borderRadius:28, padding:32, textAlign:'center', maxWidth:300, width:'100%', margin:'0 20px', border:'1px solid rgba(255,255,255,0.08)', position:'relative' }}>
       <button onClick={onClose} style={{ position:'absolute', top:14, right:14, background:'rgba(255,255,255,0.08)', border:'none', borderRadius:'50%', width:32, height:32, color:'white', cursor:'pointer', fontSize:16 }}>✕</button>
-      <div style={{ color:'white', fontWeight:800, fontSize:18, marginBottom:20, fontFamily:"'Syne',sans-serif" }}>My QR Code</div>
+      <div style={{ color:'white', fontWeight:800, fontSize:18, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>My QR Code</div>
       <div style={{ width:180, height:180, background:'white', margin:'0 auto 20px', borderRadius:20, display:'flex', alignItems:'center', justifyContent:'center', backgroundImage:'repeating-linear-gradient(45deg,#000 0,#000 2px,#fff 2px,#fff 8px)' }}>
         <div style={{ width:140, height:140, background:'white', borderRadius:16, display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column' }}>
           <div style={{ fontSize:36 }}>🎬</div>
           <div style={{ fontSize:11, fontWeight:'bold', marginTop:6 }}>@{user?.username}</div>
         </div>
       </div>
-      <h3 style={{ color:'white', marginBottom:4, fontFamily:"'Syne',sans-serif" }}>@{user?.username}</h3>
+      <h3 style={{ color:'white', marginBottom:4, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{user?.username}</h3>
       <p style={{ color:'rgba(255,255,255,0.35)', fontSize:12, marginBottom:20 }}>Scan to follow on Dagu</p>
-      <button onClick={()=>navigator.share?.({title:'Dagu',text:`Follow @${user?.username} on Dagu`,url:`https://dagu-v1.vercel.app`})} style={{ width:'100%', background:'linear-gradient(135deg,#ff2d55,#af52de)', border:'none', borderRadius:20, padding:13, color:'white', fontWeight:700, cursor:'pointer', fontSize:14, fontFamily:"'Syne',sans-serif" }}>Share Profile</button>
+      <button onClick={()=>navigator.share?.({title:'Dagu',text:`Follow @${user?.username} on Dagu`,url:`https://dagu-v1.vercel.app`})} style={{ width:'100%', background:'linear-gradient(135deg,#ff2d55,#af52de)', border:'none', borderRadius:20, padding:13, color:'white', fontWeight:700, cursor:'pointer', fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Share Profile</button>
     </div>
   </div>
 );
@@ -2739,11 +2751,12 @@ const AuthScreen = ({ onLogin }) => {
       if(!username){ setError('Username required'); setLoading(false); return; }
       if(!fullName){ setError('Full name required'); setLoading(false); return; }
 
-      // Check if username already taken
       const usersSnap = await getDocs(query(collection(db,'users'), where('username','==',username)));
       if(!usersSnap.empty){ setError('Username already taken'); setLoading(false); return; }
 
-      // Check if email already registered (Firebase throws if duplicate)
+      const emailSnap = await getDocs(query(collection(db,'users'), where('email','==',identifier)));
+      if(!emailSnap.empty){ setError('An account with this email already exists. Please sign in.'); setLoading(false); return; }
+
       const result = await createUserWithEmailAndPassword(auth, identifier, password);
       await createUserProfile(result.user.uid,{username, fullName, email:identifier});
       await sendEmailVerification(result.user);
@@ -2808,9 +2821,9 @@ const AuthScreen = ({ onLogin }) => {
     <div style={{height:'100%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:24,background:'#0a0a0a'}}>
       <div style={{textAlign:'center',maxWidth:300}}>
         <div style={{fontSize:64,marginBottom:16}}>📧</div>
-        <div style={{color:'white',fontWeight:800,fontSize:22,marginBottom:10,fontFamily:"'Syne',sans-serif"}}>Verify your email</div>
+        <div style={{color:'white',fontWeight:800,fontSize:22,marginBottom:10,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>Verify your email</div>
         <div style={{color:'rgba(255,255,255,0.5)',fontSize:14,lineHeight:1.6,marginBottom:28}}>We sent a link to <strong style={{color:'white'}}>{identifier}</strong>. Click it then come back to sign in.</div>
-        <button onClick={()=>{setStep('method');setIsLogin(true);}} style={{width:'100%',background:'linear-gradient(135deg,#ff2d55,#af52de)',border:'none',borderRadius:24,padding:15,color:'white',fontWeight:700,cursor:'pointer',fontSize:15,fontFamily:"'Syne',sans-serif"}}>Go to Sign In →</button>
+        <button onClick={()=>{setStep('method');setIsLogin(true);}} style={{width:'100%',background:'linear-gradient(135deg,#ff2d55,#af52de)',border:'none',borderRadius:24,padding:15,color:'white',fontWeight:700,cursor:'pointer',fontSize:15,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>Go to Sign In →</button>
       </div>
     </div>
   );
@@ -2825,7 +2838,7 @@ const AuthScreen = ({ onLogin }) => {
           <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:24 }}>
             <div style={{ width:52, height:52, borderRadius:16, background:`${selectedMethod?.color}22`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:28 }}>{selectedMethod?.icon}</div>
             <div>
-              <div style={{ color:'white', fontWeight:800, fontSize:16, fontFamily:"'Syne',sans-serif" }}>{isLogin?'Sign in':'Sign up'}</div>
+              <div style={{ color:'white', fontWeight:800, fontSize:16, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{isLogin?'Sign in':'Sign up'}</div>
               <div style={{ color:'rgba(255,255,255,0.35)', fontSize:12 }}>with {selectedMethod?.name}</div>
             </div>
           </div>
@@ -2836,7 +2849,7 @@ const AuthScreen = ({ onLogin }) => {
           </>}
           <input placeholder="Email" value={identifier} onChange={e=>setIdentifier(e.target.value)} style={{ width:'100%', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:'13px 16px', color:'white', marginBottom:10, outline:'none', fontSize:14, boxSizing:'border-box' }} />
           <input type="password" placeholder="Password" value={password} onChange={e=>setPassword(e.target.value)} style={{ width:'100%', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:'13px 16px', color:'white', marginBottom:14, outline:'none', fontSize:14, boxSizing:'border-box' }} />
-          <button onClick={handleSubmit} disabled={loading||!identifier||!password||(!isLogin&&(!username||!fullName))} style={{ width:'100%', background:'linear-gradient(135deg,#ff2d55,#af52de)', border:'none', borderRadius:24, padding:15, color:'white', fontWeight:700, cursor:'pointer', fontSize:15, opacity:(loading||!identifier||!password)?0.5:1, fontFamily:"'Syne',sans-serif" }}>
+          <button onClick={handleSubmit} disabled={loading||!identifier||!password||(!isLogin&&(!username||!fullName))} style={{ width:'100%', background:'linear-gradient(135deg,#ff2d55,#af52de)', border:'none', borderRadius:24, padding:15, color:'white', fontWeight:700, cursor:'pointer', fontSize:15, opacity:(loading||!identifier||!password)?0.5:1, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>
             {loading?'Please wait...':'Continue'}
           </button>
         </div>
@@ -2874,7 +2887,7 @@ const NotificationsPage = ({ currentUser, users, videos, onClose, onViewProfile 
   return (
     <div style={{ position:'fixed', inset:0, background:'#0a0a0a', zIndex:300, display:'flex', flexDirection:'column' }}>
       <div style={{ padding:'16px 16px 12px', borderBottom:'1px solid rgba(255,255,255,0.06)', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-        <div style={{ color:'white', fontWeight:800, fontSize:20, fontFamily:"'Syne',sans-serif" }}>Notifications</div>
+        <div style={{ color:'white', fontWeight:800, fontSize:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Notifications</div>
         <div style={{ display:'flex', gap:10, alignItems:'center' }}>
           {unreadCount>0 && <button onClick={markAllRead} style={{ background:'rgba(255,45,85,0.1)', border:'1px solid rgba(255,45,85,0.2)', borderRadius:20, padding:'5px 12px', color:'#ff2d55', fontSize:11, fontWeight:700, cursor:'pointer' }}>Mark all read</button>}
           <button onClick={onClose} style={{ background:'rgba(255,255,255,0.07)', border:'none', borderRadius:'50%', width:32, height:32, color:'white', cursor:'pointer', fontSize:16 }}>✕</button>
@@ -3103,7 +3116,9 @@ const handleMessage = uid => {
       {showAnalytics && <CreatorAnalytics user={currentUser} videos={videos} onClose={()=>setShowAnalytics(false)} />}
       {showCreateStory && <CreateStoryModal currentUser={currentUser} onClose={()=>setShowCreateStory(false)} showToast={showToast} />}
       {viewingProfile && (
-        <UserProfileModal user={viewingProfile} currentUser={currentUser} onClose={()=>setViewingProfile(null)} onFollow={toggleFollow} onMessage={uid=>{handleMessage(uid); setViewingProfile(null);}} onVoiceCall={uid=>{const u=users.find(uu=>uu.id===uid); setShowCall({type:'audio',contactName:u?.username,contactAvatar:u?.avatar}); setViewingProfile(null);}} onVideoCall={uid=>{const u=users.find(uu=>uu.id===uid); setShowCall({type:'video',contactName:u?.username,contactAvatar:u?.avatar}); setViewingProfile(null);}} followed={followed} showToast={showToast} userVideos={videos.filter(v=>v.userId===viewingProfile?.id)} />
+        <UserProfileModal user={viewingProfile} currentUser={currentUser} onClose={()=>setViewingProfile(null)} onFollow={toggleFollow} onMessage={uid=>{handleMessage(uid); setViewingProfile(null);}} onVoiceCall={uid=>{const u=users.find(uu=>uu.id===uid); setShowCall({type:'audio',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid}); setViewingProfile(null);}}
+ onVideoCall={uid=>{const u=users.find(uu=>uu.id===uid); setShowCall({type:'video',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid}); setViewingProfile(null);}}
+ followed={followed} showToast={showToast} userVideos={videos.filter(v=>v.userId===viewingProfile?.id)} />
       )}
 
       <div style={{ flex:1, overflow:'hidden', position:'relative', minHeight:0 }}>
@@ -3138,7 +3153,7 @@ const handleMessage = uid => {
       {activeTab==='home' && (
         <button onClick={()=>setShowLiveStream(currentUser)} style={{ position:'absolute', right:14, bottom:88, background:'linear-gradient(135deg,#ff2d55,#af52de)', border:'none', borderRadius:24, padding:'8px 16px', cursor:'pointer', zIndex:15, display:'flex', alignItems:'center', gap:7, boxShadow:'0 4px 24px rgba(255,45,85,0.5)' }}>
           <div style={{ width:7, height:7, borderRadius:'50%', background:'white', animation:'pulse 1s infinite' }} />
-          <span style={{ color:'white', fontSize:13, fontWeight:800, fontFamily:"'Syne',sans-serif", letterSpacing:0.5 }}>LIVE</span>
+          <span style={{ color:'white', fontSize:13, fontWeight:800, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", letterSpacing:0.5 }}>LIVE</span>
         </button>
       )}
 
