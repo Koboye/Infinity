@@ -2740,12 +2740,6 @@ if(!result.user.emailVerified){
   setLoading(false);
   return;
 }
-      if(!result.user.emailVerified){
-        await signOut(auth);
-        setError('Please verify your email first. Check your inbox.');
-        setLoading(false);
-        return;
-      }
       let profile = await getUserProfile(result.user.uid);
       if(!profile){
         await createUserProfile(result.user.uid,{email:identifier, username:identifier.split('@')[0]});
@@ -2793,14 +2787,7 @@ if(!result.user.emailVerified){
     if(m.id==='google'){ handleGoogleLogin(); return; }
     setSelectedMethod(m); setStep('credentials');
   };
-await result.user.reload();
-if(!result.user.emailVerified){
-  await sendEmailVerification(result.user);
-  await signOut(auth);
-  setStep('verify');
-  setLoading(false);
-  return;
-}
+
   if(step==='method') return (
     <div style={{ height:'100%', display:'flex', flexDirection:'column', background:'#0a0a0a', overflow:'auto' }}>
       <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'40px 24px 20px', position:'relative' }}>
@@ -2998,10 +2985,6 @@ export default function DaguV3App() {
   setAuthLoading(false);
   return;
 }
-          setCurrentUser(null);
-          setAuthLoading(false);
-          return;
-        }
         let profile = await getUserProfile(fbUser.uid);
         if(!profile){
           // Profile may not exist yet if Google signup just happened
