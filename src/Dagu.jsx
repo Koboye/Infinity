@@ -1943,6 +1943,14 @@ const ConversationView = ({ currentUser, otherUser, conversationId, onBack, show
 
 const InboxPage = ({ users, currentUser, showToast, onViewProfile, initialTargetId, onClearTarget, persistedConversation, onSetConversation }) => {
   const [activeConversation, setActiveConversation] = useState(persistedConversation || null);
+  const [conversations, setConversations] = useState([]);
+
+  useEffect(()=>{
+    if(initialTargetId && currentUser?.id){
+      openConversation(initialTargetId);
+      onClearTarget?.();
+    }
+  },[initialTargetId]);
 
   useEffect(()=>{
     if(!currentUser?.id) return;
