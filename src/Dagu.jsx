@@ -66,9 +66,10 @@ const TOP_CATEGORIES = [
 const EMOJI_LIST = ['😀','😂','😍','🥰','😎','🤔','😭','😱','🔥','❤️','👍','🎉','✨','💯','🙌','👏','🤝','💪','🎵','📸'];
 
 const formatNumber = (num) => {
-  if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
-  if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
-  return num?.toString() || '0';
+  const n = Number(num) || 0;
+  if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+  if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+  return String(n);
 };
 
 /* ─────────────── CLOUDINARY UPLOAD ─────────────── */
@@ -640,13 +641,14 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
   useEffect(()=>{},[streamer]);
 
   useEffect(()=>{
-    const q = query(collection(db,'liveMessages'), where('liveId','==',liveRef.current||''), orderBy('createdAt','asc'));
+    if(!liveRef.current) return;
+    const q = query(collection(db,'liveMessages'), where('liveId','==',liveRef.current), orderBy('createdAt','asc'));
     const unsub = onSnapshot(q, snap=>{
       const msgs = snap.docs.map(d=>({id:d.id,...d.data()}));
       setChatMessages(msgs.slice(-20));
     });
     return ()=>unsub();
-  },[]);
+  },[liveRef.current]);
 
   const sendMessage = async () => {
     if(!message.trim()||!liveRef.current) return;
@@ -834,6 +836,8 @@ const EnhancedVideoCard = memo(({ video, currentUser, isActive, onLike, onCommen
   const [isPlaying, setIsPlaying] = useState(true);
   const tapTimer = useRef(null);
   const videoRef = useRef(null);
+
+  useEffect(()=>()=>{ if(tapTimer.current) clearTimeout(tapTimer.current); },[]);
 
   // Load real likes state + comments from Firestore
   useEffect(()=>{
@@ -1280,8 +1284,11 @@ const WalletPage = ({ user, setCurrentUser, showToast, onBack }) => {
     const n=parseInt(amount); if(!n||n<=0){showToast?.('Enter valid amount','error'); return;}
     await addDoc(collection(db,'transactions'),{ userId:user.id, type:'credit', label:`Top-up ${n} coins`, amount:n, coins:true, createdAt:serverTimestamp() });
     await updateDoc(doc(db,'users',user.id),{ coins:increment(n), walletBalance:increment(n) });
-    setCurrentUser(u=>({...u,coins:(u.coins||0)+n,walletBalance:(u.walletBalance||0)+n}));
-    showToast?.(`Added ${n} coins! 🎉`,'success'); setAmount('');
+    setCurrentUser(u=>({...u, coins:(u.coins||0)+n, walletBalance:(u.walletBalance||0)+n}));
+    showToast?.(`Added ${n} coins! 🎉`,'success');
+    setAmount('');
+  } catch(e) {
+    showToast?.('Transaction failed: '+e.message,'error');
   };
   const doWithdraw = async () => {
     const n=parseInt(amount); if(!n||n<=0){showToast?.('Enter valid amount','error'); return;}
@@ -1710,7 +1717,10 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
             <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:2 }}>
               {myVideos.map(v=>(
                 <div key={v.id} style={{ aspectRatio:'9/16', background:'#1a1a1a', position:'relative', overflow:'hidden' }}>
-                  <video src={v.videoUrl} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+                  {v.videoUrl?.match(/\.(jpg|jpeg|png|gif|webp)/i) || v.mediaType?.startsWith('image')
+                    ? <img src={v.videoUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" />
+                    : <video src={v.videoUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} />
+                  }
                   <div style={{ position:'absolute', bottom:4, left:6, color:'white', fontSize:10, fontWeight:700, background:'rgba(0,0,0,0.6)', borderRadius:8, padding:'2px 7px', display:'flex', alignItems:'center', gap:3 }}>
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                     {formatNumber(v.views)}
@@ -1797,11 +1807,11 @@ const ConversationView = ({ currentUser, otherUser, conversationId, onBack, show
       catch{ showToast?.('Upload failed','error'); return; } 
     }
     if(!text.trim() && !mediaUrl) return;
-    const msg = text; 
+    const msg = text.trim();
+    if(!msg && !mediaUrl) return;
     setText('');
     try {
-      // Write message to subcollection
-      await addDoc(collection(db,'messages', conversationId,'msgs'),{ 
+      await addDoc(collection(db,'messages', conversationId,'msgs'),{
         from: currentUser.id, 
         to: otherUser.id, 
         text: msg, 
@@ -2196,7 +2206,7 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
         createdAt: serverTimestamp(),
       };
       const ref = await addDoc(collection(db,'videos'), videoData);
-      onUpload?.({ id:ref.id, ...videoData, videoUrl:mediaUrl, createdAt:new Date() });
+      onUpload?.({ id:ref.id, ...videoData, videoUrl:mediaUrl, createdAt:{ toDate: ()=>new Date() } });
       showToast?.('Posted! 🚀','success');
       onClose?.();
     } catch(e) {
@@ -2540,7 +2550,7 @@ const AuthScreen = ({ onLogin }) => {
         </div>
         <div style={{ position:'relative', width:'100%', maxWidth:340 }}>
           <div style={{ color:'rgba(255,255,255,0.3)', fontSize:11, marginBottom:14, textAlign:'center', fontWeight:700, textTransform:'uppercase', letterSpacing:1 }}>{isLogin?'Sign in with':'Sign up with'}</div>
-          {error && error.trim().length > 3 && step !== 'method' && <div style={{background:'rgba(255,45,85,0.1)',border:'1px solid rgba(255,45,85,0.3)',borderRadius:12,padding:'10px 14px',color:'#ff2d55',fontSize:12,marginBottom:12,textAlign:'center'}}>{error}</div>}
+          {error && error.trim().length > 1 && <div style={{background:'rgba(255,45,85,0.1)',border:'1px solid rgba(255,45,85,0.3)',borderRadius:12,padding:'10px 14px',color:'#ff2d55',fontSize:12,marginBottom:12,textAlign:'center'}}>{error}</div>}
           <div style={{ display:'flex', flexWrap:'wrap', gap:8, justifyContent:'center', marginBottom:24 }}>
             {LOGIN_METHODS.map(m=>(
               <button key={m.id} onClick={()=>handleMethodSelect(m)} disabled={loading} style={{ display:'inline-flex', alignItems:'center', gap:6, background:'rgba(255,255,255,0.05)', border:`1px solid rgba(255,255,255,0.1)`, borderRadius:30, padding:'8px 16px', cursor:'pointer', fontSize:13, color:'rgba(255,255,255,0.8)', transition:'all 0.15s', opacity:loading?0.5:1 }}>
