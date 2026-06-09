@@ -2734,7 +2734,12 @@ const AuthScreen = ({ onLogin }) => {
   try {
     if(isLogin){
       const result = await signInWithEmailAndPassword(auth, identifier, password);
-      // Block login if email not verified
+if(!result.user.emailVerified){
+  await signOut(auth);
+  setError('Please verify your email. Check your inbox for the verification link.');
+  setLoading(false);
+  return;
+}
       if(!result.user.emailVerified){
         await signOut(auth);
         setError('Please verify your email first. Check your inbox.');
@@ -2788,7 +2793,14 @@ const AuthScreen = ({ onLogin }) => {
     if(m.id==='google'){ handleGoogleLogin(); return; }
     setSelectedMethod(m); setStep('credentials');
   };
-
+await result.user.reload();
+if(!result.user.emailVerified){
+  await sendEmailVerification(result.user);
+  await signOut(auth);
+  setStep('verify');
+  setLoading(false);
+  return;
+}
   if(step==='method') return (
     <div style={{ height:'100%', display:'flex', flexDirection:'column', background:'#0a0a0a', overflow:'auto' }}>
       <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'40px 24px 20px', position:'relative' }}>
@@ -2852,6 +2864,27 @@ const AuthScreen = ({ onLogin }) => {
           <button onClick={handleSubmit} disabled={loading||!identifier||!password||(!isLogin&&(!username||!fullName))} style={{ width:'100%', background:'linear-gradient(135deg,#ff2d55,#af52de)', border:'none', borderRadius:24, padding:15, color:'white', fontWeight:700, cursor:'pointer', fontSize:15, opacity:(loading||!identifier||!password)?0.5:1, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>
             {loading?'Please wait...':'Continue'}
           </button>
+          {isLogin && (
+  <button
+    onClick={async () => {
+      if (!identifier) { setError('Enter your email first'); return; }
+      try {
+        await sendPasswordResetEmail(auth, identifier);
+        setError('');
+        alert('Password reset email sent! Check your inbox.');
+      } catch (e) {
+        setError('Could not send reset email: ' + e.message);
+      }
+    }}
+    style={{
+      width: '100%', background: 'none', border: 'none',
+      color: 'rgba(255,255,255,0.4)', fontSize: 13,
+      cursor: 'pointer', marginTop: 10, textDecoration: 'underline'
+    }}
+  >
+    Forgot password?
+  </button>
+)}
         </div>
       </div>
     </div>
@@ -2959,8 +2992,12 @@ export default function DaguV3App() {
     const unsub = onAuthStateChanged(auth, async (fbUser)=>{
       if(fbUser){
         // Block unverified email users from entering the app
-        if(!fbUser.emailVerified && fbUser.providerData?.[0]?.providerId === 'password'){
-          await signOut(auth);
+        if(!fbUser.emailVerified && fbUser.providerData?.some(p => p.providerId === 'password')){
+  await signOut(auth);
+  setCurrentUser(null);
+  setAuthLoading(false);
+  return;
+}
           setCurrentUser(null);
           setAuthLoading(false);
           return;
