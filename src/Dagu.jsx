@@ -1579,7 +1579,6 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
             </div>
           ))}
         </div>
-        <div style={{ background:'rgba(255,255,255,0.03)', borderRadius:20, overflow:'hidden', marginBottom:24, border:'1px solid rgba(255,255,255,0.06)' }}>
           <div onClick={onLogout} style={{ padding:'14px 16px', borderBottom:'1px solid rgba(255,255,255,0.05)', display:'flex', alignItems:'center', gap:12, cursor:'pointer' }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff9500" strokeWidth="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             <span style={{ color:'#ff9500', fontSize:14 }}>Log Out</span>
