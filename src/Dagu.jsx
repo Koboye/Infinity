@@ -1088,9 +1088,26 @@ const HomeFeed = ({ videos, onLike, onComment, onShare, onFollow, onMessage, onV
       </div>
       {filteredVideos.map((video,idx)=>(
   <div key={video.id} style={{ position:'absolute', inset:0, opacity:idx===currentIndex?1:0, translate:`0 ${(idx-currentIndex)*100}%`, transition:'translate 0.3s cubic-bezier(0.25,0.46,0.45,0.94)', pointerEvents:idx===currentIndex?'auto':'none' }}>
-    <EnhancedVideoCard ...
-        </div>
-      ))}
+    <EnhancedVideoCard
+      video={video}
+      currentUser={currentUser}
+      isActive={idx===currentIndex}
+      onLike={onLike}
+      onComment={onComment}
+      onShare={onShare}
+      onFollow={onFollow}
+      onMessage={onMessage}
+      onVoiceCall={onVoiceCall}
+      onVideoCall={onVideoCall}
+      onDuet={onDuet}
+      onStitch={onStitch}
+      onSaveSound={onSaveSound}
+      followed={followed}
+      showToast={showToast}
+      onViewProfile={onViewProfile}
+    />
+  </div>
+))}
       {filteredVideos.length>1 && (
         <div style={{ position:'absolute', right:6, top:'50%', transform:'translateY(-50%)', display:'flex', flexDirection:'column', gap:4, zIndex:10 }}>
           {filteredVideos.map((_,i)=><div key={i} style={{ width:3, height:i===currentIndex?20:4, borderRadius:2, background:i===currentIndex?'white':'rgba(255,255,255,0.2)', cursor:'pointer', transition:'all 0.2s' }} onClick={()=>setCurrentIndex(i)} />)}
