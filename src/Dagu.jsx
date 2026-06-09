@@ -697,8 +697,13 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
     </div>
   );
 };
-/* Helper to send a notification */
 const sendNotification = async (toUserId, fromUserId, type, message, extraData={}) => {
+  if(toUserId === fromUserId) return;
+  await addDoc(collection(db,'notifications'),{
+    toUserId, fromUserId, type, message,
+    read: false, createdAt: serverTimestamp(), ...extraData,
+  });
+};
 /* ─────────────── COMMENT ITEM ─────────────── */
 const CommentItem = ({ comment, currentUser, onLike, onReply, onPin, onViewProfile }) => {
   const isMine = comment.userId === currentUser?.id;
@@ -2657,17 +2662,7 @@ const NotificationsPage = ({ currentUser, users, videos, onClose, onViewProfile 
 };
 
 
-  if(toUserId === fromUserId) return;
-  await addDoc(collection(db,'notifications'),{
-    toUserId,
-    fromUserId,
-    type,
-    message,
-    read: false,
-    createdAt: serverTimestamp(),
-    ...extraData,
-  });
-};
+
 /* ─────────────── MAIN APP ─────────────── */
 export default function DaguV3App() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -2706,12 +2701,9 @@ export default function DaguV3App() {
         let profile = await getUserProfile(fbUser.uid);
         if(!profile){
           // Profile may not exist yet if Google signup just happened
-          for(let i=0; i<5; i++){
-  for(let i=0; i<5; i++){
+for(let i=0; i<5; i++){
   await new Promise(r => setTimeout(r, 1000));
   profile = await getUserProfile(fbUser.uid);
-  if(profile) break;
-}
   if(profile) break;
 }
         }
