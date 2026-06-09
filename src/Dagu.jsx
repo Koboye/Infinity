@@ -2847,18 +2847,55 @@ if(!result.user.emailVerified){
     </div>
   );
 
+  if(step==='verify') return (
+    <div style={{height:'100%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:24,background:'#0a0a0a'}}>
+      <div style={{textAlign:'center',maxWidth:300}}>
+        <div style={{fontSize:64,marginBottom:16}}>📧</div>
+        <div style={{color:'white',fontWeight:800,fontSize:22,marginBottom:10,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>Verify your email</div>
+        <div style={{color:'rgba(255,255,255,0.5)',fontSize:14,lineHeight:1.6,marginBottom:28}}>We sent a link to <strong style={{color:'white'}}>{identifier}</strong>. Click it then come back to sign in.</div>
+        <button onClick={()=>{setStep('method');setIsLogin(true);}} style={{width:'100%',background:'linear-gradient(135deg,#ff2d55,#af52de)',border:'none',borderRadius:24,padding:15,color:'white',fontWeight:700,cursor:'pointer',fontSize:15,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>Go to Sign In →</button>
+      </div>
+    </div>
+  );
+
+  if(step==='resetpw') return (
+    <div style={{height:'100%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:24,background:'#0a0a0a'}}>
+      <div style={{textAlign:'center',maxWidth:300,width:'100%'}}>
+        <div style={{fontSize:64,marginBottom:16}}>🔑</div>
+        <div style={{color:'white',fontWeight:800,fontSize:22,marginBottom:10,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>Reset Password</div>
+        <div style={{color:'rgba(255,255,255,0.5)',fontSize:14,lineHeight:1.6,marginBottom:20}}>Enter your email and we'll send a reset link.</div>
+        {error && <div style={{background:'rgba(255,45,85,0.1)',border:'1px solid rgba(255,45,85,0.3)',borderRadius:12,padding:'10px 14px',color:'#ff2d55',fontSize:12,marginBottom:12}}>{error}</div>}
+        <input placeholder="Your email" value={identifier} onChange={e=>setIdentifier(e.target.value)} style={{width:'100%',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:14,padding:'13px 16px',color:'white',marginBottom:12,outline:'none',fontSize:14,boxSizing:'border-box'}}/>
+        <button onClick={async()=>{
+          if(!identifier){setError('Enter your email'); return;}
+          setLoading(true); setError('');
+          try{
+            await sendPasswordResetEmail(auth, identifier);
+            setStep('resetpw_sent');
+          }catch(e){
+            setError('Could not send: '+(e.message||''));
+          }
+          setLoading(false);
+        }} disabled={loading} style={{width:'100%',background:'linear-gradient(135deg,#ff2d55,#af52de)',border:'none',borderRadius:24,padding:15,color:'white',fontWeight:700,cursor:'pointer',fontSize:15,marginBottom:12,opacity:loading?0.6:1,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>
+          {loading?'Sending...':'Send Reset Link'}
+        </button>
+        <button onClick={()=>{setStep('method');setError('');}} style={{background:'none',border:'none',color:'rgba(255,255,255,0.4)',fontSize:13,cursor:'pointer',textDecoration:'underline'}}>Back to sign in</button>
+      </div>
+    </div>
+  );
+
   if(step==='resetpw_sent') return (
     <div style={{height:'100%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:24,background:'#0a0a0a'}}>
       <div style={{textAlign:'center',maxWidth:300}}>
         <div style={{fontSize:64,marginBottom:16}}>📬</div>
         <div style={{color:'white',fontWeight:800,fontSize:22,marginBottom:10,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>Check your inbox</div>
-        <div style={{color:'rgba(255,255,255,0.5)',fontSize:14,lineHeight:1.6,marginBottom:28}}>We sent a reset link to <strong style={{color:'white'}}>{identifier}</strong>. Click it to set a new password.</div>
+        <div style={{color:'rgba(255,255,255,0.5)',fontSize:14,lineHeight:1.6,marginBottom:28}}>We sent a reset link to <strong style={{color:'white'}}>{identifier}</strong>.</div>
         <button onClick={()=>{setStep('method');setIsLogin(true);setError('');}} style={{width:'100%',background:'linear-gradient(135deg,#ff2d55,#af52de)',border:'none',borderRadius:24,padding:15,color:'white',fontWeight:700,cursor:'pointer',fontSize:15,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>Back to Sign In →</button>
       </div>
     </div>
   );
 
-  if(step==='verify') return (
+  return (
 
   return (
     <div style={{ height:'100%', display:'flex', alignItems:'center', justifyContent:'center', padding:24, background:'#0a0a0a' }}>
