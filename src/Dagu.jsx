@@ -1190,7 +1190,7 @@ const FriendsFeed = ({ friends, videos, currentUser, onMessage, onVoiceCall, onV
 
       {/* Fullscreen video cards — same as HomeFeed */}
       {filtered.map((video,idx)=>(
-  <div key={video.id} style={{ position:'absolute', inset:0, translate:`0 ${(idx-currentIndex)*100}%`, transition:'translate 0.3s cubic-bezier(0.25,0.46,0.45,0.94)', pointerEvents:idx===currentIndex?'auto':'none' }}>
+  <div key={video.id} onClick={()=>setShowSearch(false)} style={{ position:'absolute', inset:0, translate:`0 ${(idx-currentIndex)*100}%`, transition:'translate 0.3s cubic-bezier(0.25,0.46,0.45,0.94)', pointerEvents:idx===currentIndex?'auto':'none' }}>
           <EnhancedVideoCard
             video={video}
             currentUser={currentUser}
@@ -1222,7 +1222,8 @@ const FriendsFeed = ({ friends, videos, currentUser, onMessage, onVoiceCall, onV
 
       {/* Search bar (dropdown) */}
       {showSearch && (
-        <div style={{ position:'absolute', top:60, left:14, right:14, zIndex:20 }}>
+  <div style={{ position:'absolute', top:60, left:14, right:14, zIndex:20 }}
+    onClick={e=>e.stopPropagation()}>
           <div style={{ display:'flex', gap:8, alignItems:'center', background:'rgba(10,10,10,0.92)', backdropFilter:'blur(16px)', borderRadius:28, padding:'10px 16px', border:'1px solid rgba(255,255,255,0.12)' }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             <input autoFocus value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search friends..." style={{ flex:1, background:'none', border:'none', color:'white', outline:'none', fontSize:13 }} />
@@ -2075,22 +2076,21 @@ const CallModal = ({ type, contactName, contactAvatar, contactId, currentUser, o
         if (localVideoRef.current) localVideoRef.current.srcObject = stream;
 
         // Create peer connection using Google STUN servers
-        const pc = new RTCPeerConnection({
-          iceServers: [
-            { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' },
-            {
-              urls: 'turn:relay.metered.ca:80',
-              username: 'YOUR_METERED_USERNAME',
-              credential: 'YOUR_METERED_PASSWORD',
-            },
-            {
-              urls: 'turn:relay.metered.ca:443',
-              username: 'YOUR_METERED_USERNAME',
-              credential: 'YOUR_METERED_PASSWORD',
-            },
-          ],
-        });
+        // Fetch real TURN credentials from Metered
+        let iceServers = [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' },
+        ];
+        try {
+          const turnRes = await fetch(
+            'https://daguv1.metered.live/api/v1/turn/credentials?apiKey=YOUR_METERED_API_KEY'
+          );
+          const turnCreds = await turnRes.json();
+          if (Array.isArray(turnCreds)) iceServers = [...iceServers, ...turnCreds];
+        } catch (e) {
+          console.warn('Could not fetch TURN credentials, using STUN only:', e);
+        }
+        const pc = new RTCPeerConnection({ iceServers });
         pcRef.current = pc;
 
         // Add local tracks
@@ -2810,22 +2810,55 @@ if(!result.user.emailVerified){
           <button onClick={()=>setIsLogin(!isLogin)} style={{ width:'100%', background:'none', border:'none', color:'#ff2d55', fontSize:14, cursor:'pointer', fontWeight:600 }}>
             {isLogin?"Don't have an account? Sign up →":"Already have an account? Sign in →"}
           </button>
+          {isLogin && (
+            <button onClick={()=>setStep('resetpw')} style={{ width:'100%', background:'none', border:'none', color:'rgba(255,255,255,0.35)', fontSize:13, cursor:'pointer', marginTop:10, textDecoration:'underline' }}>
+              Forgot password?
+            </button>
+          )}
         </div>
       </div>
       <div style={{ padding:'0 24px 40px', textAlign:'center', color:'rgba(255,255,255,0.2)', fontSize:11 }}>By continuing, you agree to our Terms of Service & Privacy Policy</div>
     </div>
   );
 
-  if(step==='verify') return (
+  if(step==='resetpw') return (
     <div style={{height:'100%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:24,background:'#0a0a0a'}}>
-      <div style={{textAlign:'center',maxWidth:300}}>
-        <div style={{fontSize:64,marginBottom:16}}>📧</div>
-        <div style={{color:'white',fontWeight:800,fontSize:22,marginBottom:10,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>Verify your email</div>
-        <div style={{color:'rgba(255,255,255,0.5)',fontSize:14,lineHeight:1.6,marginBottom:28}}>We sent a link to <strong style={{color:'white'}}>{identifier}</strong>. Click it then come back to sign in.</div>
-        <button onClick={()=>{setStep('method');setIsLogin(true);}} style={{width:'100%',background:'linear-gradient(135deg,#ff2d55,#af52de)',border:'none',borderRadius:24,padding:15,color:'white',fontWeight:700,cursor:'pointer',fontSize:15,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>Go to Sign In →</button>
+      <div style={{textAlign:'center',maxWidth:300,width:'100%'}}>
+        <div style={{fontSize:64,marginBottom:16}}>🔑</div>
+        <div style={{color:'white',fontWeight:800,fontSize:22,marginBottom:10,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>Reset Password</div>
+        <div style={{color:'rgba(255,255,255,0.5)',fontSize:14,lineHeight:1.6,marginBottom:20}}>Enter your email and we'll send a reset link.</div>
+        {error && <div style={{background:'rgba(255,45,85,0.1)',border:'1px solid rgba(255,45,85,0.3)',borderRadius:12,padding:'10px 14px',color:'#ff2d55',fontSize:12,marginBottom:12}}>{error}</div>}
+        <input placeholder="Your email" value={identifier} onChange={e=>setIdentifier(e.target.value)} style={{width:'100%',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:14,padding:'13px 16px',color:'white',marginBottom:12,outline:'none',fontSize:14,boxSizing:'border-box'}}/>
+        <button onClick={async()=>{
+          if(!identifier){setError('Enter your email'); return;}
+          setLoading(true); setError('');
+          try{
+            await sendPasswordResetEmail(auth, identifier);
+            setStep('resetpw_sent');
+          }catch(e){
+            setError('Could not send reset email: '+(e.message||''));
+          }
+          setLoading(false);
+        }} disabled={loading} style={{width:'100%',background:'linear-gradient(135deg,#ff2d55,#af52de)',border:'none',borderRadius:24,padding:15,color:'white',fontWeight:700,cursor:'pointer',fontSize:15,marginBottom:12,opacity:loading?0.6:1,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>
+          {loading?'Sending...':'Send Reset Link'}
+        </button>
+        <button onClick={()=>{setStep('method');setError('');}} style={{background:'none',border:'none',color:'rgba(255,255,255,0.4)',fontSize:13,cursor:'pointer',textDecoration:'underline'}}>Back to sign in</button>
       </div>
     </div>
   );
+
+  if(step==='resetpw_sent') return (
+    <div style={{height:'100%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:24,background:'#0a0a0a'}}>
+      <div style={{textAlign:'center',maxWidth:300}}>
+        <div style={{fontSize:64,marginBottom:16}}>📬</div>
+        <div style={{color:'white',fontWeight:800,fontSize:22,marginBottom:10,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>Check your inbox</div>
+        <div style={{color:'rgba(255,255,255,0.5)',fontSize:14,lineHeight:1.6,marginBottom:28}}>We sent a reset link to <strong style={{color:'white'}}>{identifier}</strong>. Click it to set a new password.</div>
+        <button onClick={()=>{setStep('method');setIsLogin(true);setError('');}} style={{width:'100%',background:'linear-gradient(135deg,#ff2d55,#af52de)',border:'none',borderRadius:24,padding:15,color:'white',fontWeight:700,cursor:'pointer',fontSize:15,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>Back to Sign In →</button>
+      </div>
+    </div>
+  );
+
+  if(step==='verify') return (
 
   return (
     <div style={{ height:'100%', display:'flex', alignItems:'center', justifyContent:'center', padding:24, background:'#0a0a0a' }}>
