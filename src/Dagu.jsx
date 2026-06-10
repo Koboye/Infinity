@@ -793,7 +793,7 @@ const EnhancedVideoCard = memo(({ video, currentUser, isActive, onLike, onCommen
   const [showActionMenu, setShowActionMenu] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [heartAnim, setHeartAnim] = useState(false);
-  const [muted, setMuted] = useState(false);
+  const [muted, setMuted] = useState(true);
   const [isPlaying, setIsPlaying] = useState(true);
   const tapTimer = useRef(null);
   const videoRef = useRef(null);
@@ -905,11 +905,14 @@ const EnhancedVideoCard = memo(({ video, currentUser, isActive, onLike, onCommen
     <div style={{ position:'absolute', inset:0, background:'#000' }} onClick={handleTap}>
       {video?.videoUrl?.match(/\.(jpg|jpeg|png|gif|webp)/i) || video?.mediaType?.startsWith('image') ?
         <img src={video.videoUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} /> :
-        <video ref={videoRef} src={video?.videoUrl} style={{ width:'100%', height:'100%', objectFit:'cover' }} loop muted={muted} autoPlay playsInline />
+        <video ref={videoRef} src={video?.videoUrl} style={{ width:'100%', height:'100%', objectFit:'cover' }} loop autoPlay playsInline
+        onCanPlay={e=>{ e.target.muted = muted; }}
+      />
       }
       <div style={{ position:'absolute', inset:0, background:'linear-gradient(to top,rgba(0,0,0,0.85) 0%,rgba(0,0,0,0.1) 40%,rgba(0,0,0,0.3) 100%)' }} />
       
-      <button onClick={e=>{e.stopPropagation(); setMuted(v=>!v);}} style={{position:'absolute',top:56,right:14,zIndex:16,background:'rgba(0,0,0,0.4)',border:'none',borderRadius:'50%',width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',backdropFilter:'blur(8px)'}}>
+            <button onClick={e=>{e.stopPropagation(); const next=!muted; setMuted(next); if(videoRef.current) videoRef.current.muted=next;}} style={{position:'absolute',top:56,right:14,zIndex:16,background:'rgba(0,0,0,0.4)',border:'none',borderRadius:'50%',width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',backdropFilter:'blur(8px)'}}>
+
         {muted
           ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
           : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 010 14.14"/><path d="M15.54 8.46a5 5 0 010 7.07"/></svg>
@@ -1187,6 +1190,7 @@ const FriendsFeed = ({ friends, videos, currentUser, onMessage, onVoiceCall, onV
             followed={followed}
             showToast={showToast}
             onViewProfile={onViewProfile}
+            onBlock={uid=>showToast?.('User blocked','warning')}
           />
         </div>
       ))}
@@ -2026,19 +2030,16 @@ const InboxPage = ({ users, currentUser, showToast, onViewProfile, initialTarget
 
   useEffect(()=>{
     if(!initialTargetId || !currentUser?.id) return;
-    if(users.length === 0) return;
     const tid = initialTargetId;
-    const targetUser = users.find(u => u.id === tid);
-    if(!targetUser){ onClearTarget?.(); return; }
-    onClearTarget?.();
     const convId = [currentUser.id, tid].sort().join('_');
     setActiveConversation({ id: convId, otherUserId: tid });
     onSetConversation?.({ id: convId, otherUserId: tid });
+    onClearTarget?.();
     setDoc(doc(db, 'conversations', convId), {
       participants: [currentUser.id, tid],
       lastMessageAt: serverTimestamp(),
     }, { merge: true }).catch(() => {});
-  },[initialTargetId, currentUser?.id, users]);
+  },[initialTargetId, currentUser?.id]);
 
   useEffect(()=>{
     if(!currentUser?.id) return;
@@ -2084,6 +2085,7 @@ const InboxPage = ({ users, currentUser, showToast, onViewProfile, initialTarget
       <div style={{height:'100%',background:'#0a0a0a',display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:12}}>
         <div style={{width:28,height:28,border:'3px solid rgba(255,45,85,0.3)',borderTop:'3px solid #ff2d55',borderRadius:'50%',animation:'spin 1s linear infinite'}}/>
         <div style={{color:'rgba(255,255,255,0.3)',fontSize:13}}>Loading...</div>
+        {users.length > 0 && <button onClick={()=>{ setActiveConversation(null); onSetConversation?.(null); onClearTarget?.(); }} style={{marginTop:8,background:'rgba(255,255,255,0.07)',border:'none',borderRadius:20,padding:'8px 20px',color:'rgba(255,255,255,0.5)',cursor:'pointer',fontSize:12}}>← Back</button>}
       </div>
     );
     return <ConversationView currentUser={currentUser} otherUser={otherUser} conversationId={activeConversation.id} onBack={()=>{ setActiveConversation(null); onSetConversation?.(null); onClearTarget?.(); }} showToast={showToast} onViewProfile={uid=>{ onViewProfile?.(uid); }} />;
