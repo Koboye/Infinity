@@ -1444,8 +1444,7 @@ const EditProfileModal = ({ user, onClose, onSave, showToast }) => {
           <span style={{ color:'white', fontWeight:800, fontSize:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Edit Profile</span>
           <button onClick={handleSave} disabled={uploading} style={{ background:'linear-gradient(135deg,#ff2d55,#af52de)', border:'none', borderRadius:20, padding:'9px 20px', color:'white', fontWeight:700, cursor:'pointer', fontSize:14, opacity:uploading?0.6:1 }}>{uploading?'Saving...':'Save'}</button>
         </div>
-        <div style={{ textAlign:'center', marginBottom:28 }}>
-          <div style={{ position:'relative', display:'inline-block' }}>
+        <div style={{ position:'relative', display:'inline-block' }}>
             <div style={{ width:90, height:90, borderRadius:'50%', background:avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:36, margin:'0 auto', border:'3px solid rgba(255,255,255,0.1)', overflow:'hidden' }}>
               {avatarPreview ? <img src={avatarPreview} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : user?.avatar}
             </div>
