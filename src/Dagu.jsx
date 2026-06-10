@@ -193,7 +193,7 @@ const Toast = ({ message, type, onClose }) => {
 
 /* ─────────────── SHARE MODAL ─────────────── */
 const ShareModal = ({ video, onClose, showToast }) => {
-  const url = `https://dagu-v1.vercel.app`;
+  const url = `https://infinity-v1.vercel.app`;
   const shareText = `@${video?.username}: ${video?.description || 'Check this out on Infinity!'}`;
 
   const doShare = async (platform, action) => {
@@ -2724,7 +2724,8 @@ const QRCodePage = ({ user, onClose }) => (
       </div>
       <h3 style={{ color:'white', marginBottom:4, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{user?.username}</h3>
       <p style={{ color:'rgba(255,255,255,0.35)', fontSize:12, marginBottom:20 }}>Scan to follow on Infinity</p>
-      <button onClick={()=>navigator.share?.({title:'Infinity',text:`Follow @${user?.username} on Infinity`,url:`https://dagu-v1.vercel.app`})} style={{ width:'100%', background:'linear-gradient(135deg,#ff2d55,#af52de)', border:'none', borderRadius:20, padding:13, color:'white', fontWeight:700, cursor:'pointer', fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Share Profile</button>
+      <button onClick={()=>navigator.share?.({title:'Infinity',text:`Follow @${user?.username} on Infinity`,url:`https://infinity-v1.vercel.app`
+})} style={{ width:'100%', background:'linear-gradient(135deg,#ff2d55,#af52de)', border:'none', borderRadius:20, padding:13, color:'white', fontWeight:700, cursor:'pointer', fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Share Profile</button>
     </div>
   </div>
 );
