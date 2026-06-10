@@ -1468,7 +1468,7 @@ const PrivacyToggles = ({ user, showToast }) => {
 };
 
 /* ─────────────── PROFILE PAGE ─────────────── */
-const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowAnalytics, onShowQRCode, allVideos }) => {
+const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowAnalytics, onShowQRCode, allVideos, setBlockedUsers }) => {
   const [activeSubPage, setActiveSubPage] = useState(null);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [profileTab, setProfileTab] = useState('posts');
@@ -1479,7 +1479,42 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
   if(activeSubPage==='qrcode'){onShowQRCode?.(); setActiveSubPage(null); return null;}
   if(activeSubPage==='wallet') return <WalletPage user={user} setCurrentUser={setCurrentUser} showToast={showToast} onBack={()=>setActiveSubPage(null)} />;
 
-  if(activeSubPage==='settings') return (
+  if(activeSubPage==='unblock') return (
+    <div style={{ height:'100%', overflow:'auto', background:'#0a0a0a', padding:16 }}>
+      <button onClick={()=>setActiveSubPage('settings')} style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:20, padding:'8px 16px', color:'white', cursor:'pointer', fontSize:13, marginBottom:20, display:'flex', alignItems:'center', gap:6 }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
+      </button>
+      <div style={{ color:'white', fontWeight:800, fontSize:22, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Blocked Users</div>
+      {(user?.blockedUsers||[]).length===0 && (
+        <div style={{ textAlign:'center', padding:48, color:'rgba(255,255,255,0.25)' }}>
+          <div style={{ fontSize:40, marginBottom:10 }}>🚫</div>
+          <div>No blocked users</div>
+        </div>
+      )}
+      {(user?.blockedUsers||[]).map(uid=>{
+        const u = users.find(uu=>uu.id===uid);
+        return (
+          <div key={uid} style={{ display:'flex', alignItems:'center', gap:12, background:'rgba(255,255,255,0.03)', borderRadius:18, padding:'14px 16px', marginBottom:10, border:'1px solid rgba(255,255,255,0.06)' }}>
+            <div style={{ width:46, height:46, borderRadius:'50%', background:u?.avatarColor||'#333', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:18, overflow:'hidden', flexShrink:0 }}>
+              {u?.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : (u?.avatar||'?')}
+            </div>
+            <div style={{ flex:1 }}>
+              <div style={{ color:'white', fontWeight:700, fontSize:14 }}>@{u?.username||uid}</div>
+              <div style={{ color:'rgba(255,255,255,0.3)', fontSize:12, marginTop:2 }}>{u?.bio?.substring(0,40)||'Blocked user'}</div>
+            </div>
+            <button onClick={async()=>{
+              await updateDoc(doc(db,'users',user.id),{ blockedUsers: arrayRemove(uid) });
+              setCurrentUser(cu=>({...cu, blockedUsers:(cu.blockedUsers||[]).filter(id=>id!==uid)}));
+              setBlockedUsers(p=>p.filter(id=>id!==uid));
+              showToast?.('User unblocked','success');
+            }} style={{ background:'rgba(255,45,85,0.1)', border:'1px solid rgba(255,45,85,0.3)', borderRadius:20, padding:'8px 16px', color:'#ff2d55', fontWeight:700, fontSize:13, cursor:'pointer', flexShrink:0 }}>Unblock</button>
+          </div>
+        );
+      })}
+    </div>
+  );
+
+if(activeSubPage==='settings') return (
     <div style={{ height:'100%', overflow:'auto', background:'#0a0a0a' }}>
       <div style={{ padding:'16px' }}>
         <button onClick={()=>setActiveSubPage(null)} style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:20, padding:'8px 16px', color:'white', cursor:'pointer', fontSize:13, marginBottom:20, display:'flex', alignItems:'center', gap:6 }}>
@@ -1507,6 +1542,7 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
         <div style={{ color:'rgba(255,255,255,0.3)', fontSize:11, fontWeight:700, marginBottom:8, textTransform:'uppercase', letterSpacing:1.2 }}>Support</div>
         <div style={{ background:'rgba(255,255,255,0.03)', borderRadius:20, overflow:'hidden', marginBottom:20, border:'1px solid rgba(255,255,255,0.06)' }}>
           {[
+            {label:'Blocked Users',action:()=>setActiveSubPage('unblock')},
             {label:'Help Center',action:()=>showToast?.('Help center','info')},
             {label:'Report a Problem',action:async()=>{
               await sendEmailJS({to_email:'getachewshambel11@gmail.com',from_name:user?.username,message:`User ${user?.username} (${user?.email}) reported a problem.`});
@@ -3421,7 +3457,7 @@ const handleMessage = uid => {
  onViewProfile={handleViewProfile} showToast={showToast} users={users} onCreateStory={()=>setShowCreateStory(true)} onViewStory={setShowStoryViewer} onFollow={toggleFollow} followed={followed} />}
             {activeTab==='create' && <CreateScreen onOpenCamera={()=>setShowCamera(true)} onShowSoundLibrary={()=>setShowSoundLibrary(true)} showToast={showToast} />}
             {activeTab==='inbox' && <InboxPage users={users} currentUser={currentUser} showToast={showToast} onViewProfile={handleViewProfile} initialTargetId={inboxTargetId} onClearTarget={()=>setInboxTargetId(null)} persistedConversation={activeConversation} onSetConversation={(conv)=>{ setActiveConversation(conv); sessionStorage.setItem('dagu_conv', JSON.stringify(conv)); }} />}
-            {activeTab==='profile' && <ProfilePage user={currentUser} setCurrentUser={setCurrentUser} onLogout={handleLogout} users={users} showToast={showToast} onShowAnalytics={()=>setShowAnalytics(true)} onShowQRCode={()=>setShowQRCode(true)} allVideos={videos} />}
+            {activeTab==='profile' && <ProfilePage user={currentUser} setCurrentUser={setCurrentUser} onLogout={handleLogout} users={users} showToast={showToast} onShowAnalytics={()=>setShowAnalytics(true)} onShowQRCode={()=>setShowQRCode(true)} allVideos={videos} setBlockedUsers={setBlockedUsers} />}
           </>
         )}
       </div>
