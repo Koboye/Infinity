@@ -485,7 +485,19 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
 
   return (
     <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.85)', zIndex:3000, display:'flex', alignItems:'flex-end' }} onClick={onClose}>
-      <div onClick={e=>e.stopPropagation()} style={{ width:'100%', background:'#0d0d0d', borderTopLeftRadius:32, borderTopRightRadius:32, maxHeight:'94vh', overflowY:'auto', border:'1px solid rgba(255,255,255,0.06)' }}>
+      <button onClick={e=>{
+  e.stopPropagation(); 
+  e.preventDefault();
+  const next = !muted; 
+  setMuted(next); 
+  if(videoRef.current){
+    videoRef.current.muted = next;
+    if(!next){
+      videoRef.current.volume = 1.0;
+      videoRef.current.play().catch(()=>{});
+    }
+  }
+}}>
         <div style={{ width:36, height:4, background:'rgba(255,255,255,0.12)', borderRadius:2, margin:'16px auto 0' }} />
         <div style={{ display:'flex', justifyContent:'flex-end', padding:'10px 16px 0' }}>
           <button onClick={onClose} style={{ background:'rgba(255,255,255,0.08)', border:'none', borderRadius:'50%', width:34, height:34, color:'white', cursor:'pointer', fontSize:16 }}>✕</button>
