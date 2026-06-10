@@ -544,8 +544,10 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
               <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:2 }}>
                 {mockVideos.map(v=>(
                   <div key={v.id} style={{ aspectRatio:'9/16', background:'#1a1a1a', position:'relative', overflow:'hidden' }}>
-                    {v.videoUrl?.match(/\.(jpg|jpeg|png|gif|webp)/i) ?
+                    {isImage ?
   <img src={v.videoUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} /> :
+  <video src={v.videoUrl} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+}
   <video src={v.videoUrl} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
 }
                     <div style={{ position:'absolute', bottom:4, left:6, color:'white', fontSize:10, fontWeight:700, background:'rgba(0,0,0,0.6)', borderRadius:6, padding:'2px 6px' }}>{formatNumber(v.views)}</div>
