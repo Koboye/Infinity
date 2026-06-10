@@ -2880,7 +2880,7 @@ if(!result.user.emailVerified){
 await sendEmailJS({
   to_email: identifier,
   from_name: 'Infinity',
-  message: `Your Infinity verification code is: ${otp}\n\nExpires in 10 minutes.`,
+  message: `Your Infinity verification code is: ${otp}\n\nExpires in 3 minutes.`,
   otp_code: otp,
   code: otp,
 });
