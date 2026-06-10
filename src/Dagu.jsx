@@ -1096,6 +1096,8 @@ const HomeFeed = ({ videos, onLike, onComment, onShare, onFollow, onMessage, onV
       showToast={showToast}
       onViewProfile={onViewProfile}
       onBlock={onBlock}
+      onVoiceCall={onVoiceCall}
+      onVideoCall={onVideoCall}
     />
   </div>
 ))}
@@ -1191,6 +1193,8 @@ const FriendsFeed = ({ friends, videos, currentUser, onMessage, onVoiceCall, onV
             showToast={showToast}
             onViewProfile={onViewProfile}
             onBlock={uid=>showToast?.('User blocked','warning')}
+            onVoiceCall={onVoiceCall}
+            onVideoCall={onVideoCall}
           />
         </div>
       ))}
