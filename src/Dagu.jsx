@@ -905,8 +905,8 @@ const EnhancedVideoCard = memo(({ video, currentUser, isActive, onLike, onCommen
     <div style={{ position:'absolute', inset:0, background:'#000' }} onClick={handleTap}>
       {video?.videoUrl?.match(/\.(jpg|jpeg|png|gif|webp)/i) || video?.mediaType?.startsWith('image') ?
         <img src={video.videoUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} /> :
-        <video ref={videoRef} src={video?.videoUrl} style={{ width:'100%', height:'100%', objectFit:'cover' }} loop autoPlay playsInline
-        onCanPlay={e=>{ e.target.muted = muted; }}
+        <video src={video?.videoUrl} style={{ width:'100%', height:'100%', objectFit:'cover' }} loop autoPlay playsInline muted={muted}
+        ref={el=>{ if(el){ el.muted=muted; videoRef.current=el; }}}
       />
       }
       <div style={{ position:'absolute', inset:0, background:'linear-gradient(to top,rgba(0,0,0,0.85) 0%,rgba(0,0,0,0.1) 40%,rgba(0,0,0,0.3) 100%)' }} />
@@ -1732,7 +1732,8 @@ if(activeSubPage==='settings') return (
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
             </button>
           </div>
-          <div style={{ position:'relative', display:'inline-block', marginBottom:14 }} onClick={()=>setShowAvatarViewer(true)}>
+          <div style={{ position:'relative', display:'inline-block', marginBottom:14 }}>
+  <div onClick={()=>setShowAvatarViewer(true)} style={{cursor:'pointer'}}>
             <div style={{ width:96, height:96, borderRadius:'50%', padding:3, background:'conic-gradient(#ff2d55,#ff9500,#af52de,#ff2d55)', margin:'0 auto', cursor:'pointer' }}>
               <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:'#0a0a0a', padding:2, display:'flex', alignItems:'center', justifyContent:'center' }}>
                 <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:user?.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:36, overflow:'hidden' }}>
@@ -1740,7 +1741,7 @@ if(activeSubPage==='settings') return (
                 </div>
               </div>
             </div>
-            <button onClick={()=>setShowEditProfile(true)} style={{ position:'absolute', bottom:2, right:2, background:'linear-gradient(135deg,#ff2d55,#af52de)', border:'2px solid #0a0a0a', borderRadius:'50%', width:30, height:30, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+            <button onClick={(e)=>{e.stopPropagation(); setShowEditProfile(true);}} style={{ position:'absolute', bottom:2, right:2, background:'linear-gradient(135deg,#ff2d55,#af52de)', border:'2px solid #0a0a0a', borderRadius:'50%', width:30, height:30, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </button>
           </div>
@@ -1753,7 +1754,7 @@ if(activeSubPage==='settings') return (
           )}
           <div style={{ color:'rgba(255,255,255,0.5)', fontSize:13, marginTop:8, lineHeight:1.6, maxWidth:260, margin:'8px auto 0' }}>{user?.bio||'No bio yet'}</div>
           {user?.link && <a href={user.link} target="_blank" rel="noopener noreferrer" style={{ color:'#007aff', fontSize:13, display:'block', marginTop:4 }}>{user.link}</a>}
-          <button onClick={()=>setShowEditProfile(true)} style={{ marginTop:16, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.15)', borderRadius:14, padding:'10px 32px', color:'white', fontWeight:700, cursor:'pointer', fontSize:13, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Edit Profile</button>
+          <button onClick={(e)=>{e.stopPropagation(); setShowEditProfile(true);}} style={{ marginTop:16, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.15)', borderRadius:14, padding:'10px 32px', color:'white', fontWeight:700, cursor:'pointer', fontSize:13, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Edit Profile</button>
           <div style={{ display:'flex', justifyContent:'center', gap:0, marginTop:20, background:'rgba(255,255,255,0.03)', borderRadius:20, padding:'14px 0', border:'1px solid rgba(255,255,255,0.06)' }}>
             {[['Posts',myVideos.length],['Followers',user?.followers?.length||0],['Following',user?.following?.length||0]].map(([label,val],i)=>(
               <div key={label} style={{ flex:1, textAlign:'center', borderRight:i<2?'1px solid rgba(255,255,255,0.06)':'' }}>
@@ -1820,9 +1821,12 @@ if(activeSubPage==='settings') return (
         {profileTab==='drafts' && <div style={{ textAlign:'center', padding:48, color:'rgba(255,255,255,0.2)' }}><div style={{ fontSize:40, marginBottom:12 }}>📝</div><div>No drafts yet</div></div>}
       </div>
       {showEditProfile && <EditProfileModal user={user} onClose={()=>setShowEditProfile(false)} onSave={saveProfile} showToast={showToast} />}
+      <button onClick={()=>setShowAvatarViewer(true)} style={{position:'fixed',top:16,left:16,zIndex:20,width:42,height:42,borderRadius:'50%',overflow:'hidden',border:'2px solid rgba(255,255,255,0.25)',background:user?.avatarColor,padding:0,cursor:'pointer'}}>
+        {user?.avatarUrl?<img src={user.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/>:<span style={{color:'white',fontWeight:'bold',fontSize:16,display:'flex',alignItems:'center',justifyContent:'center',height:'100%'}}>{user?.avatar}</span>}
+      </button>
       {showAvatarViewer && (
         <div onClick={()=>setShowAvatarViewer(false)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.97)',zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:16}}>
-          <div style={{position:'absolute',inset:0,backgroundImage:user?.avatarUrl?`url(${user.avatarUrl})`:'none',backgroundSize:'cover',backgroundPosition:'center',filter:'blur(28px) brightness(0.35)',transform:'scale(1.1)'}}/>
+          <div style={{position:'absolute',inset:0,background:user?.avatarUrl?'none':user?.avatarColor,backgroundImage:user?.avatarUrl?`url(${user.avatarUrl})`:'none',backgroundSize:'cover',backgroundPosition:'center',filter:'blur(28px) brightness(0.4)',transform:'scale(1.1)'}}/>
           <div style={{position:'relative',width:260,height:260,borderRadius:'50%',background:user?.avatarColor,display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden',border:'3px solid rgba(255,255,255,0.2)',boxShadow:'0 20px 80px rgba(0,0,0,0.8)'}}>
             {user?.avatarUrl?<img src={user.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/>:<span style={{color:'white',fontSize:90,fontWeight:'bold'}}>{user?.avatar}</span>}
           </div>
@@ -3335,6 +3339,29 @@ setBlockedUsers(profile.blockedUsers||[]);
     setFriends(followed);
   },[followed]);
 
+  // Incoming call listener
+  useEffect(()=>{
+    if(!currentUser?.id) return;
+    const q = query(
+      collection(db,'calls'),
+      where('calleeId','==',currentUser.id),
+      where('status','==','ringing')
+    );
+    const unsub = onSnapshot(q, snap=>{
+      snap.docChanges().forEach(change=>{
+        if(change.type==='added'){
+          const data = change.doc.data();
+          if(window.confirm(`📞 @${data.callerName} is ${data.callType==='video'?'video':'voice'} calling you. Answer?`)){
+            setShowCall({type:data.callType, contactName:data.callerName, contactAvatar:'?', contactId:data.callerId});
+          } else {
+            updateDoc(doc(db,'calls',change.doc.id),{status:'declined'}).catch(()=>{});
+          }
+        }
+      });
+    },()=>{});
+    return ()=>unsub();
+  },[currentUser?.id]);
+
   const handleLogin = (profile) => {
     setCurrentUser(profile);
     setFollowed(profile.following||[]);
@@ -3378,6 +3405,8 @@ const [activeConversation, setActiveConversation] = useState(()=>{
 });
 const handleMessage = uid => {
   if(!uid) return;
+  const targetUser = users.find(u=>u.id===uid);
+  if(!targetUser){ showToast('User not loaded yet, try again','error'); return; }
   setActiveConversation(null);
   sessionStorage.removeItem('dagu_conv');
   setInboxTargetId(uid);
