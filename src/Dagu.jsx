@@ -2133,10 +2133,32 @@ const CallModal = ({ type, contactName, contactAvatar, contactId, currentUser, o
           { urls: 'stun:stun1.l.google.com:19302' },
         ];
         try {
-          // TURN fetch removed — using public STUN only
-        } catch (e) {
-          console.warn('Could not fetch TURN credentials, using STUN only:', e);
-        }
+  iceServers = [
+    { urls: 'stun:stun.metered.live:80' },
+    {
+      urls: 'turn:global.relay.metered.live:80',
+      username: 'f5e29fd91b8ea2fc485c24ac',
+      credential: 'FZlzkJ5GJJUyYocD',
+    },
+    {
+      urls: 'turn:global.relay.metered.live:80?transport=tcp',
+      username: 'f5e29fd91b8ea2fc485c24ac',
+      credential: 'FZlzkJ5GJJUyYocD',
+    },
+    {
+      urls: 'turn:global.relay.metered.live:443',
+      username: 'f5e29fd91b8ea2fc485c24ac',
+      credential: 'FZlzkJ5GJJUyYocD',
+    },
+    {
+      urls: 'turns:global.relay.metered.live:443?transport=tcp',
+      username: 'f5e29fd91b8ea2fc485c24ac',
+      credential: 'FZlzkJ5GJJUyYocD',
+    },
+  ];
+} catch (e) {
+  console.warn('TURN setup failed:', e);
+}
         const pc = new RTCPeerConnection({ iceServers });
         pcRef.current = pc;
 
