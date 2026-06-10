@@ -911,9 +911,19 @@ const EnhancedVideoCard = memo(({ video, currentUser, isActive, onLike, onCommen
     <div style={{ position:'absolute', inset:0, background:'#000' }} onClick={handleTap}>
       {video?.videoUrl?.match(/\.(jpg|jpeg|png|gif|webp)/i) || video?.mediaType?.startsWith('image') ?
         <img src={video.videoUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} /> :
-        <video src={video?.videoUrl} style={{ width:'100%', height:'100%', objectFit:'cover' }} loop autoPlay playsInline muted={muted}
-        ref={el=>{ if(el){ el.muted=muted; videoRef.current=el; }}}
-      />
+        <video 
+  src={video?.videoUrl} 
+  style={{ width:'100%', height:'100%', objectFit:'cover' }} 
+  loop 
+  autoPlay 
+  playsInline 
+  ref={el=>{ 
+    if(el){ 
+      el.muted = muted; 
+      videoRef.current = el; 
+    }
+  }}
+/>
       }
       <div style={{ position:'absolute', inset:0, background:'linear-gradient(to top,rgba(0,0,0,0.85) 0%,rgba(0,0,0,0.1) 40%,rgba(0,0,0,0.3) 100%)' }} />
       
