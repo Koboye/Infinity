@@ -3001,7 +3001,7 @@ if(step==='otp') return (
         />
         <button onClick={async()=>{
           if(Date.now() > otpExpiry){ setError('OTP expired. Please sign up again.'); return; }
-          if(otpInput !== pendingOtp){ setError('Incorrect code. Try again.'); return; }
+          if(otpInput.trim() !== pendingOtp.trim()){ setError('Incorrect code. Try again.'); return; }
           setLoading(true); setError('');
           try {
             const result = await createUserWithEmailAndPassword(auth, pendingCreds.email, pendingCreds.password);
@@ -3024,7 +3024,18 @@ if(profile) {
   setIsLogin(true);
 }
           } catch(e){
-            setError(e.message?.replace('Firebase: ','').replace(/\(auth\/[^)]+\)\.?/g,'').trim()||'Signup failed.');
+            console.error('OTP verify error:', e.code, e.message);
+            if(e.code === 'auth/email-already-in-use'){
+              setError('This email is already registered. Please sign in instead.');
+            } else if(e.code === 'auth/weak-password'){
+              setError('Password must be at least 6 characters.');
+            } else if(e.code === 'auth/invalid-email'){
+              setError('Invalid email address.');
+            } else if(e.code === 'auth/network-request-failed'){
+              setError('Network error. Check your connection and try again.');
+            } else {
+              setError(e.message?.replace('Firebase: ','').replace(/\(auth\/[^)]+\)\.?/g,'').trim() || 'Account creation failed. Please try again.');
+            }
           }
           setLoading(false);
         }} disabled={loading||otpInput.length!==6} style={{width:'100%',background:'linear-gradient(135deg,#ff2d55,#af52de)',border:'none',borderRadius:24,padding:15,color:'white',fontWeight:700,cursor:'pointer',fontSize:15,marginBottom:12,opacity:(loading||otpInput.length!==6)?0.5:1,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>
