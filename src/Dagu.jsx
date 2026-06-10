@@ -127,7 +127,7 @@ const createUserProfile = async (uid, data) => {
     avatar: (data.username || data.email || 'U')[0].toUpperCase(),
     avatarColor: data.avatarColor || `hsl(${Math.floor(Math.random()*360)},70%,60%)`,
     avatarUrl: data.avatarUrl || null,
-    bio: data.bio || 'New to Dagu! 🎬',
+    bio: data.bio || 'New to Infinity! 🎬',
     link: '',
     gender: '',
     verified: false,
@@ -194,7 +194,7 @@ const Toast = ({ message, type, onClose }) => {
 /* ─────────────── SHARE MODAL ─────────────── */
 const ShareModal = ({ video, onClose, showToast }) => {
   const url = `https://dagu-v1.vercel.app`;
-  const shareText = `@${video?.username}: ${video?.description || 'Check this out on Dagu!'}`;
+  const shareText = `@${video?.username}: ${video?.description || 'Check this out on Infinity!'}`;
 
   const doShare = async (platform, action) => {
     action();
@@ -211,7 +211,7 @@ const ShareModal = ({ video, onClose, showToast }) => {
   const nativeShare = async () => {
     if(navigator.share){
       try {
-        await navigator.share({ title:'Dagu', text:shareText, url });
+                await navigator.share({ title:'Infinity', text:shareText, url });
         await updateDoc(doc(db,'videos',video.id),{ shares: increment(1) });
         showToast?.('Shared!','success');
       } catch {}
@@ -1352,7 +1352,7 @@ const WalletPage = ({ user, setCurrentUser, showToast, onBack }) => {
           <div style={{ background:'linear-gradient(135deg,#ffd700,#ff9500)', borderRadius:22, padding:20 }}>
             <div style={{ color:'rgba(0,0,0,0.55)', fontSize:11, fontWeight:600, textTransform:'uppercase', letterSpacing:0.5 }}>Coins</div>
             <div style={{ color:'#000', fontSize:30, fontWeight:800, marginTop:4, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{(user?.coins||0).toLocaleString()}</div>
-            <div style={{ color:'rgba(0,0,0,0.4)', fontSize:10, marginTop:2 }}>🪙 Dagu Coins</div>
+            <div style={{ color:'rgba(255,255,255,0.4)', fontSize:10, marginTop:2 }}>🪙 Infinity Coins</div>
           </div>
           <div style={{ background:'linear-gradient(135deg,#06d6a0,#00b4d8)', borderRadius:22, padding:20 }}>
             <div style={{ color:'rgba(0,0,0,0.55)', fontSize:11, fontWeight:600, textTransform:'uppercase', letterSpacing:0.5 }}>Cash</div>
@@ -1603,7 +1603,7 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff2d55" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
           <span style={{ color:'#ff2d55', fontSize:14 }}>Delete Account</span>
         </div>
-        <div style={{ textAlign:'center', color:'rgba(255,255,255,0.15)', fontSize:11, marginBottom:16 }}>Dagu v3.0.0 • Made with ❤️</div>
+        <div style={{ textAlign:'center', color:'rgba(255,255,255,0.15)', fontSize:11, marginBottom:16 }}>Infinity v3.0.0 • Made with ❤️</div>
       </div>
     </div>
   );
@@ -1633,7 +1633,7 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
       </button>
       <div style={{ color:'white', fontWeight:800, fontSize:22, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Switch Account</div>
-      {JSON.parse(localStorage.getItem('dagu_accounts')||'[]').map(u=>(
+      {JSON.parse(localStorage.getItem('dagu_accounts')||'[]').filter(u=>u.id===user?.id).map(u=>(
         <div key={u.id} style={{ background:'rgba(255,255,255,0.03)', borderRadius:18, padding:16, marginBottom:10, display:'flex', alignItems:'center', gap:14, cursor: u.id===user?.id?'default':'not-allowed', border:u.id===user?.id?'1px solid rgba(255,45,85,0.5)':'1px solid rgba(255,255,255,0.06)', opacity: u.id===user?.id?1:0.4 }} onClick={()=>{ if(u.id!==user?.id){ showToast?.('Sign in to switch accounts','info'); return; } }}>
           <div style={{ width:50, height:50, borderRadius:'50%', background:u.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:20, overflow:'hidden' }}>
             {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : u.avatar}
@@ -2723,11 +2723,60 @@ const QRCodePage = ({ user, onClose }) => (
         </div>
       </div>
       <h3 style={{ color:'white', marginBottom:4, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{user?.username}</h3>
-      <p style={{ color:'rgba(255,255,255,0.35)', fontSize:12, marginBottom:20 }}>Scan to follow on Dagu</p>
-      <button onClick={()=>navigator.share?.({title:'Dagu',text:`Follow @${user?.username} on Dagu`,url:`https://dagu-v1.vercel.app`})} style={{ width:'100%', background:'linear-gradient(135deg,#ff2d55,#af52de)', border:'none', borderRadius:20, padding:13, color:'white', fontWeight:700, cursor:'pointer', fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Share Profile</button>
+      <p style={{ color:'rgba(255,255,255,0.35)', fontSize:12, marginBottom:20 }}>Scan to follow on Infinity</p>
+      <button onClick={()=>navigator.share?.({title:'Infinity',text:`Follow @${user?.username} on Infinity`,url:`https://dagu-v1.vercel.app`})} style={{ width:'100%', background:'linear-gradient(135deg,#ff2d55,#af52de)', border:'none', borderRadius:20, padding:13, color:'white', fontWeight:700, cursor:'pointer', fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Share Profile</button>
     </div>
   </div>
 );
+
+/* ─────────────── GUEST FEED ─────────────── */
+const GuestFeed = ({ onSignIn }) => {
+  const [videos, setVideos] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const startY = useRef(null);
+
+  useEffect(()=>{
+    const q = query(collection(db,'videos'), orderBy('createdAt','desc'));
+    const unsub = onSnapshot(q, snap=>{
+      setVideos(snap.docs.map(d=>({id:d.id,...d.data()})));
+    });
+    return ()=>unsub();
+  },[]);
+
+  const handleTouchStart = e => { startY.current = e.touches[0].clientY; };
+  const handleTouchEnd = e => {
+    if(startY.current===null) return;
+    const dy = startY.current - e.changedTouches[0].clientY;
+    if(Math.abs(dy)>50){
+      if(dy>0) setCurrentIndex(i=>Math.min(videos.length-1,i+1));
+      else setCurrentIndex(i=>Math.max(0,i-1));
+    }
+    startY.current = null;
+  };
+
+  return (
+    <div style={{ height:'100%', position:'relative', overflow:'hidden', background:'#000' }} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+      {videos.map((video,idx)=>(
+        <div key={video.id} style={{ position:'absolute', inset:0, translate:`0 ${(idx-currentIndex)*100}%`, transition:'translate 0.3s cubic-bezier(0.25,0.46,0.45,0.94)', pointerEvents:idx===currentIndex?'auto':'none' }}>
+          {video.videoUrl?.match(/\.(jpg|jpeg|png|gif|webp)/i)
+            ? <img src={video.videoUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+            : <video src={video.videoUrl} style={{ width:'100%', height:'100%', objectFit:'cover' }} loop autoPlay muted playsInline />
+          }
+          <div style={{ position:'absolute', inset:0, background:'linear-gradient(to top,rgba(0,0,0,0.7) 0%,transparent 50%)' }} />
+          <div style={{ position:'absolute', bottom:100, left:14, right:14 }}>
+            <div style={{ color:'white', fontWeight:700, fontSize:15 }}>@{video.username}</div>
+            <div style={{ color:'rgba(255,255,255,0.8)', fontSize:13, marginTop:4 }}>{video.description}</div>
+          </div>
+        </div>
+      ))}
+      <div style={{ position:'absolute', bottom:28, left:0, right:0, display:'flex', justifyContent:'center', zIndex:20 }}>
+        <button onClick={onSignIn} style={{ background:'linear-gradient(135deg,#ff2d55,#af52de)', border:'none', borderRadius:28, padding:'14px 36px', color:'white', fontWeight:800, fontSize:15, cursor:'pointer', boxShadow:'0 4px 24px rgba(255,45,85,0.5)' }}>
+          Sign in to interact 🚀
+        </button>
+      </div>
+    </div>
+  );
+};
 
 /* ─────────────── AUTH SCREEN (REAL FIREBASE) ─────────────── */
 const AuthScreen = ({ onLogin }) => {
@@ -2814,7 +2863,9 @@ if(!result.user.emailVerified){
       if(!usersSnap.empty){ setError('Username already taken'); setLoading(false); return; }
 
       const emailSnap = await getDocs(query(collection(db,'users'), where('email','==',identifier)));
-      if(!emailSnap.empty){ setError('An account with this email already exists. Please sign in.'); setLoading(false); return; }
+      if(!emailSnap.empty){
+        await deleteDoc(doc(db,'users',emailSnap.docs[0].id));
+      }
 
       const otp = String(Math.floor(100000 + Math.random() * 900000));
       await sendEmailJS({
@@ -2852,12 +2903,16 @@ if(!result.user.emailVerified){
     setSelectedMethod(m); setStep('credentials');
   };
 
+  if(step==='guest') return (
+    <GuestFeed onSignIn={()=>setStep('method')} />
+  );
+
   if(step==='method') return (
     <div style={{ height:'100%', display:'flex', flexDirection:'column', background:'#0a0a0a', overflow:'auto' }}>
       <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'40px 24px 20px', position:'relative' }}>
         <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse at 50% 30%,rgba(255,45,85,0.2),rgba(175,82,222,0.1),transparent 65%)' }} />
         <div style={{ position:'relative', textAlign:'center', marginBottom:40 }}>
-          <img src="https://res.cloudinary.com/dotvhzjmc/image/upload/uecikeywyljsh3ze4w2z.png" style={{ width:80, height:80, borderRadius:24, objectFit:'cover', margin:'0 auto 20px', display:'block', boxShadow:'0 20px 60px rgba(255,45,85,0.4)' }} />
+          <img src="https://res.cloudinary.com/dotvhzjmc/image/upload/znfksngv27boh3c1kxpv.png" style={{ width:80, height:80, borderRadius:24, objectFit:'cover', margin:'0 auto 20px', display:'block', boxShadow:'0 20px 60px rgba(255,45,85,0.4)' }} />
           <p style={{ color:'rgba(255,255,255,0.4)', fontSize:14, marginTop:10 }}>{isLogin?'Welcome back! 👋':'Join the community 🎉'}</p>
         </div>
         <div style={{ position:'relative', width:'100%', maxWidth:340 }}>
@@ -2879,6 +2934,9 @@ if(!result.user.emailVerified){
               Forgot password?
             </button>
           )}
+          <button onClick={()=>setStep('guest')} style={{ width:'100%', background:'none', border:'none', color:'rgba(255,255,255,0.3)', fontSize:13, cursor:'pointer', marginTop:10 }}>
+            👁 Browse without account
+          </button>
         </div>
       </div>
       <div style={{ padding:'0 24px 40px', textAlign:'center', color:'rgba(255,255,255,0.2)', fontSize:11 }}>By continuing, you agree to our Terms of Service & Privacy Policy</div>
@@ -3211,9 +3269,12 @@ for(let i=0; i<5; i++){
 const [activeConversation, setActiveConversation] = useState(()=>{
   try { return JSON.parse(sessionStorage.getItem('dagu_conv')||'null'); } catch { return null; }
 });
-const handleMessage = uid => { 
-  setInboxTargetId(uid); 
-  setActiveTab('inbox'); 
+const handleMessage = uid => {
+  if(!uid) return;
+  setActiveConversation(null);
+  sessionStorage.removeItem('dagu_conv');
+  setInboxTargetId(uid);
+  setActiveTab('inbox');
 };
 
   const tabs = [
@@ -3260,7 +3321,7 @@ const handleMessage = uid => {
   if(authLoading) return (
     <div style={{ maxWidth:430, margin:'0 auto', height:'100dvh', background:'#0a0a0a', display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:16 }}>
       <GlobalStyles />
-      <img src="https://res.cloudinary.com/dotvhzjmc/image/upload/uecikeywyljsh3ze4w2z.png" style={{ width:64, height:64, borderRadius:20, objectFit:'cover', boxShadow:'0 20px 60px rgba(255,45,85,0.4)' }} />
+      <img src="https://res.cloudinary.com/dotvhzjmc/image/upload/znfksngv27boh3c1kxpv.png" style={{ width:64, height:64, borderRadius:20, objectFit:'cover', boxShadow:'0 20px 60px rgba(255,45,85,0.4)' }} />
       <div style={{ width:32, height:32, border:'3px solid rgba(255,45,85,0.3)', borderTop:'3px solid #ff2d55', borderRadius:'50%', animation:'spin 1s linear infinite' }} />
     </div>
   );
