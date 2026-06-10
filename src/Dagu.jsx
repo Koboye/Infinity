@@ -1092,6 +1092,7 @@ const HomeFeed = ({ videos, onLike, onComment, onShare, onFollow, onMessage, onV
       followed={followed}
       showToast={showToast}
       onViewProfile={onViewProfile}
+      onBlock={onBlock}
     />
   </div>
 ))}
@@ -2079,9 +2080,10 @@ const InboxPage = ({ users, currentUser, showToast, onViewProfile, initialTarget
 
   if(activeConversation){
     const otherUser = users.find(u=>u.id===activeConversation.otherUserId);
-    if(!otherUser && users.length === 0) return (
-      <div style={{height:'100%',background:'#0a0a0a',display:'flex',alignItems:'center',justifyContent:'center'}}>
+    if(!otherUser) return (
+      <div style={{height:'100%',background:'#0a0a0a',display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:12}}>
         <div style={{width:28,height:28,border:'3px solid rgba(255,45,85,0.3)',borderTop:'3px solid #ff2d55',borderRadius:'50%',animation:'spin 1s linear infinite'}}/>
+        <div style={{color:'rgba(255,255,255,0.3)',fontSize:13}}>Loading...</div>
       </div>
     );
     return <ConversationView currentUser={currentUser} otherUser={otherUser} conversationId={activeConversation.id} onBack={()=>{ setActiveConversation(null); onSetConversation?.(null); onClearTarget?.(); }} showToast={showToast} onViewProfile={uid=>{ onViewProfile?.(uid); }} />;
@@ -3359,10 +3361,6 @@ const [activeConversation, setActiveConversation] = useState(()=>{
 });
 const handleMessage = uid => {
   if(!uid) return;
-  if(!users.find(u => u.id === uid)) {
-    showToast('User not found, please try again','error');
-    return;
-  }
   setActiveConversation(null);
   sessionStorage.removeItem('dagu_conv');
   setInboxTargetId(uid);
