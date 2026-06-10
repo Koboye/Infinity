@@ -1779,7 +1779,6 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
 
 /* ─────────────── INBOX (REAL-TIME FIRESTORE) ─────────────── */
 const ConversationView = ({ currentUser, otherUser, conversationId, onBack, showToast, onViewProfile }) => {
-    if (!otherUser) return <div style={{height:'100%',background:'#0a0a0a',display:'flex',alignItems:'center',justifyContent:'center',color:'rgba(255,255,255,0.3)',fontSize:14}}>User not found</div>;
   const [text, setText] = useState('');
   const [messages, setMessages] = useState([]);
   const [isRecording, setIsRecording] = useState(false);
@@ -1882,6 +1881,7 @@ const ConversationView = ({ currentUser, otherUser, conversationId, onBack, show
       if(msg) setText(msg); // restore text only if there was text
     }
   };
+
 
   if (!otherUser) return (
     <div style={{height:'100%',background:'#0a0a0a',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:12}}>
