@@ -1480,6 +1480,7 @@ const PrivacyToggles = ({ user, showToast }) => {
 const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowAnalytics, onShowQRCode, allVideos, setBlockedUsers }) => {
   const [activeSubPage, setActiveSubPage] = useState(null);
   const [showEditProfile, setShowEditProfile] = useState(false);
+  const [showAvatarViewer, setShowAvatarViewer] = useState(false);
   const [profileTab, setProfileTab] = useState('posts');
   const myVideos = allVideos?.filter(v=>v.userId===user?.id)||[];
   const saveProfile = data=>setCurrentUser(u=>({...u,...data}));
@@ -1731,8 +1732,8 @@ if(activeSubPage==='settings') return (
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
             </button>
           </div>
-          <div style={{ position:'relative', display:'inline-block', marginBottom:14 }}>
-            <div style={{ width:96, height:96, borderRadius:'50%', padding:3, background:'conic-gradient(#ff2d55,#ff9500,#af52de,#ff2d55)', margin:'0 auto' }}>
+          <div style={{ position:'relative', display:'inline-block', marginBottom:14 }} onClick={()=>setShowAvatarViewer(true)}>
+            <div style={{ width:96, height:96, borderRadius:'50%', padding:3, background:'conic-gradient(#ff2d55,#ff9500,#af52de,#ff2d55)', margin:'0 auto', cursor:'pointer' }}>
               <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:'#0a0a0a', padding:2, display:'flex', alignItems:'center', justifyContent:'center' }}>
                 <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:user?.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:36, overflow:'hidden' }}>
                   {user?.avatarUrl ? <img src={user.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : user?.avatar}
@@ -1819,6 +1820,16 @@ if(activeSubPage==='settings') return (
         {profileTab==='drafts' && <div style={{ textAlign:'center', padding:48, color:'rgba(255,255,255,0.2)' }}><div style={{ fontSize:40, marginBottom:12 }}>📝</div><div>No drafts yet</div></div>}
       </div>
       {showEditProfile && <EditProfileModal user={user} onClose={()=>setShowEditProfile(false)} onSave={saveProfile} showToast={showToast} />}
+      {showAvatarViewer && (
+        <div onClick={()=>setShowAvatarViewer(false)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.97)',zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:16}}>
+          <div style={{position:'absolute',inset:0,backgroundImage:user?.avatarUrl?`url(${user.avatarUrl})`:'none',backgroundSize:'cover',backgroundPosition:'center',filter:'blur(28px) brightness(0.35)',transform:'scale(1.1)'}}/>
+          <div style={{position:'relative',width:260,height:260,borderRadius:'50%',background:user?.avatarColor,display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden',border:'3px solid rgba(255,255,255,0.2)',boxShadow:'0 20px 80px rgba(0,0,0,0.8)'}}>
+            {user?.avatarUrl?<img src={user.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/>:<span style={{color:'white',fontSize:90,fontWeight:'bold'}}>{user?.avatar}</span>}
+          </div>
+          <span style={{position:'relative',color:'white',fontSize:16,fontWeight:700}}>@{user?.username}</span>
+          <span style={{position:'relative',color:'rgba(255,255,255,0.4)',fontSize:12}}>Tap anywhere to close</span>
+        </div>
+      )}
     </div>
   );
 };
@@ -2073,7 +2084,7 @@ const InboxPage = ({ users, currentUser, showToast, onViewProfile, initialTarget
   const openConversation = (otherUserId) => {
     if (!currentUser?.id || !otherUserId) return;
     const targetUser = users.find(u => u.id === otherUserId);
-    if (!targetUser) { console.warn('User not found:', otherUserId); return; }
+    if (!targetUser) { showToast?.('User profile not loaded yet, try again','error'); return; }
     const convId = getConversationId(currentUser.id, otherUserId);
     setActiveConversation({ id: convId, otherUserId });
     onSetConversation?.({ id: convId, otherUserId });
@@ -2086,12 +2097,12 @@ const InboxPage = ({ users, currentUser, showToast, onViewProfile, initialTarget
   if(activeConversation){
     const otherUser = users.find(u=>u.id===activeConversation.otherUserId);
     if(!otherUser) return (
-      <div style={{height:'100%',background:'#0a0a0a',display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:12}}>
-        <div style={{width:28,height:28,border:'3px solid rgba(255,45,85,0.3)',borderTop:'3px solid #ff2d55',borderRadius:'50%',animation:'spin 1s linear infinite'}}/>
-        <div style={{color:'rgba(255,255,255,0.3)',fontSize:13}}>Loading...</div>
-        {users.length > 0 && <button onClick={()=>{ setActiveConversation(null); onSetConversation?.(null); onClearTarget?.(); }} style={{marginTop:8,background:'rgba(255,255,255,0.07)',border:'none',borderRadius:20,padding:'8px 20px',color:'rgba(255,255,255,0.5)',cursor:'pointer',fontSize:12}}>← Back</button>}
-      </div>
-    );
+    <div style={{height:'100%',background:'#0a0a0a',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:12}}>
+      <div style={{width:32,height:32,border:'3px solid rgba(255,45,85,0.3)',borderTop:'3px solid #ff2d55',borderRadius:'50%',animation:'spin 1s linear infinite'}}/>
+      <div style={{color:'rgba(255,255,255,0.3)',fontSize:13}}>Loading conversation...</div>
+      <button onClick={onBack} style={{background:'rgba(255,255,255,0.07)',border:'none',borderRadius:20,padding:'8px 20px',color:'rgba(255,255,255,0.5)',cursor:'pointer',fontSize:12,marginTop:8}}>← Back</button>
+    </div>
+  );
     return <ConversationView currentUser={currentUser} otherUser={otherUser} conversationId={activeConversation.id} onBack={()=>{ setActiveConversation(null); onSetConversation?.(null); onClearTarget?.(); }} showToast={showToast} onViewProfile={uid=>{ onViewProfile?.(uid); }} />;
   }
 
@@ -3174,7 +3185,7 @@ const NotificationsPage = ({ currentUser, users, videos, onClose, onViewProfile 
     await Promise.all(unread.map(n=>updateDoc(doc(db,'notifications',n.id),{read:true})));
   };
 
-  const icons = { like:'❤️', comment:'💬', follow:'👤', mention:'@', gift:'🎁', live:'🔴', story:'📖' };
+  const icons = { like:'❤️', comment:'💬', follow:'👤', mention:'@', gift:'🎁', live:'🔴', story:'📖', call:'📞' };
 
   return (
     <div style={{ position:'fixed', inset:0, background:'#0a0a0a', zIndex:300, display:'flex', flexDirection:'column' }}>
