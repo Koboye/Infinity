@@ -2129,36 +2129,43 @@ const CallModal = ({ type, contactName, contactAvatar, contactId, currentUser, o
         // Create peer connection using Google STUN servers
         // Fetch real TURN credentials from Metered
         let iceServers = [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' },
+          { urls: 'stun:stun.relay.metered.ca:80' },
         ];
         try {
-  iceServers = [
-    { urls: 'stun:stun.metered.live:80' },
-    {
-      urls: 'turn:global.relay.metered.live:80',
-      username: 'f5e29fd91b8ea2fc485c24ac',
-      credential: 'FZlzkJ5GJJUyYocD',
-    },
-    {
-      urls: 'turn:global.relay.metered.live:80?transport=tcp',
-      username: 'f5e29fd91b8ea2fc485c24ac',
-      credential: 'FZlzkJ5GJJUyYocD',
-    },
-    {
-      urls: 'turn:global.relay.metered.live:443',
-      username: 'f5e29fd91b8ea2fc485c24ac',
-      credential: 'FZlzkJ5GJJUyYocD',
-    },
-    {
-      urls: 'turns:global.relay.metered.live:443?transport=tcp',
-      username: 'f5e29fd91b8ea2fc485c24ac',
-      credential: 'FZlzkJ5GJJUyYocD',
-    },
-  ];
-} catch (e) {
-  console.warn('TURN setup failed:', e);
-}
+          const turnRes = await fetch(
+            'https://dagu_v1.metered.live/api/v1/turn/credentials?apiKey=7d52bf979697a1475416740a65a999ad38ea'
+          );
+          if (turnRes.ok) {
+            iceServers = await turnRes.json();
+          } else {
+            throw new Error('fetch failed');
+          }
+        } catch (e) {
+          console.warn('TURN fetch failed, using static fallback:', e);
+          iceServers = [
+            { urls: 'stun:stun.relay.metered.ca:80' },
+            {
+              urls: 'turn:global.relay.metered.ca:80',
+              username: 'f5e29fd91b8ea2fc485c24ac',
+              credential: 'FZlzkJ5GJJUyYocD',
+            },
+            {
+              urls: 'turn:global.relay.metered.ca:80?transport=tcp',
+              username: 'f5e29fd91b8ea2fc485c24ac',
+              credential: 'FZlzkJ5GJJUyYocD',
+            },
+            {
+              urls: 'turn:global.relay.metered.ca:443',
+              username: 'f5e29fd91b8ea2fc485c24ac',
+              credential: 'FZlzkJ5GJJUyYocD',
+            },
+            {
+              urls: 'turns:global.relay.metered.ca:443?transport=tcp',
+              username: 'f5e29fd91b8ea2fc485c24ac',
+              credential: 'FZlzkJ5GJJUyYocD',
+            },
+          ];
+        }
         const pc = new RTCPeerConnection({ iceServers });
         pcRef.current = pc;
 
