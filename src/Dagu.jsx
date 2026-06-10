@@ -3006,22 +3006,36 @@ if(step==='otp') return (
           try {
             const result = await createUserWithEmailAndPassword(auth, pendingCreds.email, pendingCreds.password);
 await createUserProfile(result.user.uid, {
-  username: pendingCreds.username, 
-  fullName: pendingCreds.fullName, 
-  email: pendingCreds.email
+  username: pendingCreds.username,
+  fullName: pendingCreds.fullName,
+  email: pendingCreds.email,
 });
-let profile = null;
-for(let i = 0; i < 5; i++){
-  profile = await getUserProfile(result.user.uid);
-  if(profile) break;
-  await new Promise(r => setTimeout(r, 800));
-}
+// Wait for Firestore write to propagate
+await new Promise(r => setTimeout(r, 1500));
+const profile = await getUserProfile(result.user.uid);
 if(profile) {
   onLogin({...profile, id: result.user.uid});
 } else {
-  setError('Account created! Please sign in.');
-  setStep('method');
-  setIsLogin(true);
+  // Profile exists in Auth, build it from what we know and log in directly
+  const fallbackProfile = {
+    id: result.user.uid,
+    username: pendingCreds.username,
+    fullName: pendingCreds.fullName,
+    email: pendingCreds.email,
+    avatar: (pendingCreds.username||'U')[0].toUpperCase(),
+    avatarColor: `hsl(${Math.floor(Math.random()*360)},70%,60%)`,
+    avatarUrl: null,
+    bio: 'New to Infinity! 🎬',
+    followers: [],
+    following: [],
+    coins: 500,
+    walletBalance: 500,
+    verified: false,
+    subscription: 'free',
+    streak: 1,
+    level: 1,
+  };
+  onLogin(fallbackProfile);
 }
           } catch(e){
             console.error('OTP verify error:', e.code, e.message);
