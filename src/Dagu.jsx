@@ -1779,6 +1779,7 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
 
 /* ─────────────── INBOX (REAL-TIME FIRESTORE) ─────────────── */
 const ConversationView = ({ currentUser, otherUser, conversationId, onBack, showToast, onViewProfile }) => {
+    if (!otherUser) return <div style={{height:'100%',background:'#0a0a0a',display:'flex',alignItems:'center',justifyContent:'center',color:'rgba(255,255,255,0.3)',fontSize:14}}>User not found</div>;
   const [text, setText] = useState('');
   const [messages, setMessages] = useState([]);
   const [isRecording, setIsRecording] = useState(false);
@@ -1882,14 +1883,22 @@ const ConversationView = ({ currentUser, otherUser, conversationId, onBack, show
     }
   };
 
+  if (!otherUser) return (
+    <div style={{height:'100%',background:'#0a0a0a',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:12}}>
+      <div style={{fontSize:40}}>👤</div>
+      <div style={{color:'rgba(255,255,255,0.3)',fontSize:14}}>User not found</div>
+      <button onClick={onBack} style={{background:'rgba(255,255,255,0.07)',border:'none',borderRadius:20,padding:'10px 20px',color:'white',cursor:'pointer',fontSize:13}}>← Back</button>
+    </div>
+  );
+
   return (
     <div style={{height:'100%',display:'flex',flexDirection:'column',background:'#0a0a0a'}}>
       <div style={{padding:'14px 16px',borderBottom:'1px solid rgba(255,255,255,0.06)',display:'flex',alignItems:'center',gap:12}}>
         <button onClick={onBack} style={{background:'none',border:'none',color:'white',cursor:'pointer',padding:'4px 0'}}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
-        <div onClick={()=>onViewProfile?.(otherUser?.id)} style={{width:40,height:40,borderRadius:'50%',background:otherUser?.avatarColor,display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontWeight:'bold',overflow:'hidden',cursor:'pointer'}}>
-          {otherUser?.avatarUrl?<img src={otherUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/>:otherUser?.avatar}
+        <div onClick={()=>onViewProfile?.(otherUser?.id)} style={{width:40,height:40,borderRadius:'50%',background:otherUser?.avatarColor||'#555',display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontWeight:'bold',overflow:'hidden',cursor:'pointer'}}>
+          {otherUser?.avatarUrl?<img src={otherUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/>:(otherUser?.avatar||'?')}
         </div>
         <div onClick={()=>onViewProfile?.(otherUser?.id)} style={{cursor:'pointer'}}>
           <div style={{color:'white',fontWeight:700,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>@{otherUser?.username}</div>
@@ -2016,6 +2025,8 @@ const InboxPage = ({ users, currentUser, showToast, onViewProfile, initialTarget
 
   const openConversation = (otherUserId) => {
     if (!currentUser?.id || !otherUserId) return;
+    const targetUser = users.find(u => u.id === otherUserId);
+    if (!targetUser) { console.warn('User not found:', otherUserId); return; }
     const convId = getConversationId(currentUser.id, otherUserId);
     setActiveConversation({ id: convId, otherUserId });
     onSetConversation?.({ id: convId, otherUserId });
