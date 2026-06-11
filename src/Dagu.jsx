@@ -169,13 +169,50 @@ const GlobalStyles = () => (
     @keyframes tabPop{0%{transform:scaleX(0)}100%{transform:scaleX(1)}}
     @keyframes storyRing{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
     @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+    @keyframes notifBar{0%{width:100%}100%{width:0%}}
     button:active{transform:scale(0.94)!important}
     input,textarea{font-family:'DM Sans',sans-serif}
     .tab-active-indicator{animation:tabPop 0.25s ease}
     .story-avatar-ring{background:conic-gradient(#ff2d55,#ff9500,#ffd700,#af52de,#ff2d55);padding:2.5px;border-radius:50%}
   `}</style>
 );
-
+/* ─────────────── NOTIFICATION POPUP (TikTok style) ─────────────── */
+const NotifPopup = ({ notif, user, onClose, onTap }) => {
+  useEffect(()=>{ const t=setTimeout(onClose,4000); return ()=>clearTimeout(t); },[onClose]);
+  const icons = { like:'❤️', comment:'💬', follow:'👤', mention:'@', gift:'🎁', live:'🔴', call:'📞' };
+  return (
+    <div onClick={()=>{ onTap?.(); onClose(); }}
+      style={{ position:'fixed', top:52, left:12, right:12, zIndex:9999, animation:'slideDown 0.35s cubic-bezier(0.34,1.56,0.64,1)', cursor:'pointer',
+        background:'rgba(18,18,22,0.97)', backdropFilter:'blur(24px)', border:'1px solid rgba(255,255,255,0.1)',
+        borderRadius:20, padding:'12px 14px', display:'flex', alignItems:'center', gap:12,
+        boxShadow:'0 8px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05)' }}>
+      <div style={{ position:'relative', flexShrink:0 }}>
+        <div style={{ width:44, height:44, borderRadius:'50%', background:user?.avatarColor||'#ff2d55',
+          display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:18, overflow:'hidden' }}>
+          {user?.avatarUrl ? <img src={user.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/> : (user?.avatar||'?')}
+        </div>
+        <div style={{ position:'absolute', bottom:-2, right:-2, width:18, height:18, borderRadius:'50%',
+          background:'#1a1a2e', display:'flex', alignItems:'center', justifyContent:'center', fontSize:10,
+          border:'1.5px solid rgba(255,255,255,0.1)' }}>{icons[notif?.type]||'🔔'}</div>
+      </div>
+      <div style={{ flex:1, minWidth:0 }}>
+        <div style={{ color:'white', fontSize:13, fontWeight:600, lineHeight:1.35,
+          fontFamily:"'Inter',-apple-system,sans-serif",
+          overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+          <span style={{ color:'#ff2d55' }}>@{user?.username||'someone'}</span>
+          {' '}{notif?.message}
+        </div>
+        <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11, marginTop:2 }}>Just now · Tap to view</div>
+      </div>
+      <button onClick={e=>{e.stopPropagation();onClose();}}
+        style={{ background:'rgba(255,255,255,0.08)', border:'none', borderRadius:'50%', width:26, height:26,
+          color:'rgba(255,255,255,0.5)', cursor:'pointer', fontSize:14, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>✕</button>
+      <div style={{ position:'absolute', bottom:0, left:0, right:0, height:2, background:'rgba(255,255,255,0.06)', borderRadius:'0 0 20px 20px', overflow:'hidden' }}>
+        <div style={{ height:'100%', background:'linear-gradient(90deg,#ff2d55,#af52de)', animation:'notifBar 4s linear forwards' }}/>
+      </div>
+    </div>
+  );
+};
 /* ─────────────── TOAST ─────────────── */
 const Toast = ({ message, type, onClose }) => {
   useEffect(() => { const t = setTimeout(onClose, 2800); return () => clearTimeout(t); }, [onClose]);
@@ -911,23 +948,27 @@ const EnhancedVideoCard = memo(({ video, currentUser, isActive, onLike, onCommen
     <div style={{ position:'absolute', inset:0, background:'#000' }} onClick={handleTap}>
       {video?.videoUrl?.match(/\.(jpg|jpeg|png|gif|webp)/i) || video?.mediaType?.startsWith('image') ?
         <img src={video.videoUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} /> :
-        <video 
-  src={video?.videoUrl} 
-  style={{ width:'100%', height:'100%', objectFit:'cover' }} 
-  loop 
-  autoPlay 
-  playsInline 
-  ref={el=>{ 
-    if(el){ 
-      el.muted = muted; 
-      videoRef.current = el; 
+        <video
+  src={video?.videoUrl}
+  style={{ width:'100%', height:'100%', objectFit:'cover' }}
+  loop
+  autoPlay
+  playsInline
+  muted={muted}
+  ref={el=>{
+    if(el){
+      el.muted = muted;
+      videoRef.current = el;
+      if(isActive && isPlaying){
+        el.play().catch(()=>{});
+      }
     }
   }}
 />
       }
       <div style={{ position:'absolute', inset:0, background:'linear-gradient(to top,rgba(0,0,0,0.85) 0%,rgba(0,0,0,0.1) 40%,rgba(0,0,0,0.3) 100%)' }} />
       
-            <button onClick={e=>{e.stopPropagation(); const next=!muted; setMuted(next); if(videoRef.current) videoRef.current.muted=next;}} style={{position:'absolute',top:56,right:14,zIndex:16,background:'rgba(0,0,0,0.4)',border:'none',borderRadius:'50%',width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',backdropFilter:'blur(8px)'}}>
+            <button onClick={e=>{e.stopPropagation(); const next=!muted; setMuted(next); if(videoRef.current){ videoRef.current.muted=next; if(!next){ videoRef.current.volume=1; videoRef.current.play().catch(()=>{}); }}}} style={{position:'absolute',top:56,right:14,zIndex:16,background:'rgba(0,0,0,0.4)',border:'none',borderRadius:'50%',width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',backdropFilter:'blur(8px)'}}>
 
         {muted
           ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
@@ -948,8 +989,8 @@ const EnhancedVideoCard = memo(({ video, currentUser, isActive, onLike, onCommen
             </div>
             {video.verified && <div style={{ position:'absolute', bottom:-2, right:-2, width:14, height:14, background:'#1d9bf0', borderRadius:'50%', fontSize:9, display:'flex', alignItems:'center', justifyContent:'center', color:'white' }}>✓</div>}
           </button>
-          <span onClick={()=>onViewProfile?.(video.userId)} style={{ color:'white', fontWeight:700, fontSize:15, cursor:'pointer', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{video.username}</span>
-          <button onClick={()=>onFollow?.(video.userId)} style={{ padding:'5px 14px', borderRadius:20, background:followed?.includes(video.userId)?'rgba(255,255,255,0.08)':'rgba(255,45,85,0.9)', border:followed?.includes(video.userId)?'1px solid rgba(255,255,255,0.4)':'none', color:'white', fontSize:12, fontWeight:700, cursor:'pointer', backdropFilter:'blur(4px)' }}>{followed?.includes(video.userId)?'Unfollow':'+ Follow'}</button>
+          <span onClick={e=>{e.stopPropagation();onViewProfile?.(video.userId);}} style={{ color:'white', fontWeight:700, fontSize:15, cursor:'pointer', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{video.username}</span>
+          <button onClick={e=>{e.stopPropagation();onFollow?.(video.userId);}} style={{ padding:'5px 14px', borderRadius:20, background:followed?.includes(video.userId)?'rgba(255,255,255,0.08)':'rgba(255,45,85,0.9)', border:followed?.includes(video.userId)?'1px solid rgba(255,255,255,0.4)':'none', color:'white', fontSize:12, fontWeight:700, cursor:'pointer', backdropFilter:'blur(4px)' }}>{followed?.includes(video.userId)?'Unfollow':'+ Follow'}</button>
           <button onClick={()=>setShowActionMenu(!showActionMenu)} style={{ background:'rgba(0,0,0,0.4)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:'50%', width:30, height:30, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', backdropFilter:'blur(8px)' }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
           </button>
@@ -999,15 +1040,15 @@ const EnhancedVideoCard = memo(({ video, currentUser, isActive, onLike, onCommen
       )}
 
       <div style={{ position:'absolute', right:12, bottom:90, display:'flex', flexDirection:'column', alignItems:'center', gap:6, zIndex:6 }}>
-        <button onClick={handleLike} style={{ background:'rgba(0,0,0,0.3)', border:'none', borderRadius:'50%', width:48, height:48, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+       <button onClick={e=>{e.stopPropagation();handleLike();}} style={{ background:'rgba(0,0,0,0.3)', border:'none', borderRadius:'50%', width:48, height:48, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill={liked?'#ff2d55':'none'} stroke={liked?'#ff2d55':'rgba(255,255,255,0.9)'} strokeWidth="1.8"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
         </button>
         <span style={{ color:'rgba(255,255,255,0.85)', fontSize:11, fontWeight:600, letterSpacing:0.2 }}>{formatNumber(likeCount)}</span>
-        <button onClick={()=>setShowComments(true)} style={{ background:'rgba(0,0,0,0.3)', border:'none', borderRadius:'50%', width:48, height:48, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', marginTop:4 }}>
+        <button onClick={e=>{e.stopPropagation();setShowComments(true);}} style={{ background:'rgba(0,0,0,0.3)', border:'none', borderRadius:'50%', width:48, height:48, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', marginTop:4 }}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
         </button>
         <span style={{ color:'rgba(255,255,255,0.85)', fontSize:11, fontWeight:600 }}>{formatNumber(video.comments||comments.length)}</span>
-        <button onClick={()=>setShowShare(true)} style={{ background:'rgba(0,0,0,0.3)', border:'none', borderRadius:'50%', width:48, height:48, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', marginTop:4 }}>
+        <button onClick={e=>{e.stopPropagation();setShowShare(true);}} style={{ background:'rgba(0,0,0,0.3)', border:'none', borderRadius:'50%', width:48, height:48, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', marginTop:4 }}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="1.8"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
         <span style={{ color:'rgba(255,255,255,0.85)', fontSize:11, fontWeight:600 }}>{formatNumber(video.shares||0)}</span>
@@ -1961,11 +2002,11 @@ const ConversationView = ({ currentUser, otherUser, conversationId, onBack, show
   };
 
 
-  if (!otherUser) return (
+  if(!otherUser) return (
     <div style={{height:'100%',background:'#0a0a0a',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:12}}>
-      <div style={{fontSize:40}}>👤</div>
-      <div style={{color:'rgba(255,255,255,0.3)',fontSize:14}}>User not found</div>
-      <button onClick={onBack} style={{background:'rgba(255,255,255,0.07)',border:'none',borderRadius:20,padding:'10px 20px',color:'white',cursor:'pointer',fontSize:13}}>← Back</button>
+      <div style={{width:32,height:32,border:'3px solid rgba(255,45,85,0.3)',borderTop:'3px solid #ff2d55',borderRadius:'50%',animation:'spin 1s linear infinite'}}/>
+      <div style={{color:'rgba(255,255,255,0.3)',fontSize:13}}>Loading conversation...</div>
+      <button onClick={()=>{ setActiveConversation(null); onSetConversation?.(null); }} style={{background:'rgba(255,255,255,0.07)',border:'none',borderRadius:20,padding:'8px 20px',color:'rgba(255,255,255,0.5)',cursor:'pointer',fontSize:12,marginTop:8}}>← Back</button>
     </div>
   );
 
@@ -2119,7 +2160,7 @@ const InboxPage = ({ users, currentUser, showToast, onViewProfile, initialTarget
     <div style={{height:'100%',background:'#0a0a0a',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:12}}>
       <div style={{width:32,height:32,border:'3px solid rgba(255,45,85,0.3)',borderTop:'3px solid #ff2d55',borderRadius:'50%',animation:'spin 1s linear infinite'}}/>
       <div style={{color:'rgba(255,255,255,0.3)',fontSize:13}}>Loading conversation...</div>
-      <button onClick={onBack} style={{background:'rgba(255,255,255,0.07)',border:'none',borderRadius:20,padding:'8px 20px',color:'rgba(255,255,255,0.5)',cursor:'pointer',fontSize:12,marginTop:8}}>← Back</button>
+      <button onClick={()=>{ setActiveConversation(null); onSetConversation?.(null); }} style={{background:'rgba(255,255,255,0.07)',border:'none',borderRadius:20,padding:'8px 20px',color:'rgba(255,255,255,0.5)',cursor:'pointer',fontSize:12,marginTop:8}}>← Back</button>
     </div>
   );
     return <ConversationView currentUser={currentUser} otherUser={otherUser} conversationId={activeConversation.id} onBack={()=>{ setActiveConversation(null); onSetConversation?.(null); onClearTarget?.(); }} showToast={showToast} onViewProfile={uid=>{ onViewProfile?.(uid); }} />;
@@ -2372,7 +2413,7 @@ const SearchOverlay = ({ onClose, videos, users, onViewProfile }) => {
     };
   },[query,videos,users]);
   return (
-    <div style={{ position:'absolute', inset:0, background:'#0a0a0a', zIndex:200, display:'flex', flexDirection:'column' }}>
+    <div style={{ position:'absolute', inset:0, background:'#0a0a0a', zIndex:200, display:'flex', flexDirection:'column' }} onTouchStart={e=>{if(e.target===e.currentTarget)onClose();}}>
       <div style={{ padding:'14px', borderBottom:'1px solid rgba(255,255,255,0.06)', display:'flex', gap:10, alignItems:'center' }}>
         <div style={{ flex:1, display:'flex', alignItems:'center', background:'rgba(255,255,255,0.06)', borderRadius:28, padding:'10px 16px', border:'1px solid rgba(255,255,255,0.08)' }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" style={{ marginRight:10 }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
