@@ -247,7 +247,9 @@ const ShareModal = ({ video, onClose, showToast }) => {
   const shareText = `@${video?.username}: ${video?.description || 'Check this out on Infinity!'}`;
 
   const copyLink = () => {
-    navigator.clipboard.writeText(url).then(() => showToast?.('Link copied!', 'success')).catch(() => showToast?.('Copied!', 'success'));
+    navigator.clipboard.writeText(url)
+      .then(() => showToast?.('Link copied!', 'success'))
+      .catch(() => showToast?.('Copied!', 'success'));
     updateDoc(doc(db, 'videos', video.id), { shares: increment(1) }).catch(() => {});
     onClose();
   };
@@ -266,92 +268,88 @@ const ShareModal = ({ video, onClose, showToast }) => {
     copyLink();
   };
 
-  const apps = [
-    { name: 'Share', emoji: '⬆️', color: '#007aff', fn: nativeShare },
+  const shareApps = [
+    { name: 'More', emoji: '⬆️', color: '#555', fn: nativeShare },
     { name: 'WhatsApp', emoji: '💬', color: '#25D366', fn: () => { window.open(`https://wa.me/?text=${encodeURIComponent(shareText + ' ' + url)}`); updateDoc(doc(db, 'videos', video.id), { shares: increment(1) }).catch(() => {}); onClose(); } },
     { name: 'Telegram', emoji: '✈️', color: '#26A5E4', fn: () => { window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(shareText)}`); onClose(); } },
-    { name: 'X', emoji: 'X', color: '#000', fn: () => { window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(url)}`); onClose(); } },
-    { name: 'Copy Link', emoji: '🔗', color: '#555', fn: copyLink },
+    { name: 'X (Twitter)', emoji: '𝕏', color: '#000', fn: () => { window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(url)}`); onClose(); } },
+    { name: 'Facebook', emoji: 'f', color: '#1877F2', fn: () => { window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`); onClose(); } },
+    { name: 'Instagram', emoji: '📸', color: '#E1306C', fn: () => { copyLink(); showToast?.('Link copied — paste in Instagram!', 'info'); } },
+    { name: 'TikTok', emoji: '🎵', color: '#010101', fn: () => { copyLink(); showToast?.('Link copied — paste in TikTok!', 'info'); } },
+    { name: 'Copy Link', emoji: '🔗', color: '#444', fn: copyLink },
   ];
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 4000, display: 'flex', alignItems: 'flex-end' }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ width: '100%', background: '#1c1c1e', borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 40 }}>
-        <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 10, paddingBottom: 6 }}>
-          <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.2)' }} />
+    <div
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 4000, display: 'flex', alignItems: 'flex-end' }}
+      onClick={onClose}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{ width: '100%', background: '#1c1c1e', borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 36, animation: 'slideUp 0.3s ease' }}
+      >
+        {/* Handle bar */}
+        <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 12, paddingBottom: 8 }}>
+          <div style={{ width: 40, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.2)' }} />
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-around', padding: '14px 20px 20px' }}>
-          {apps.map(app => (
-            <button key={app.name} onClick={app.fn} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer' }}>
-              <div style={{ width: 56, height: 56, borderRadius: 16, background: app.color === '#000' ? '#222' : app.color + '22', border: `1.5px solid ${app.color}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: app.name === 'X' ? 18 : 26, color: '#fff', fontWeight: 900 }}>{app.emoji}</div>
-              <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: 11 }}>{app.name}</span>
+
+        {/* Header */}
+        <div style={{ padding: '4px 20px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ color: 'white', fontWeight: 700, fontSize: 16, fontFamily: "'Inter',sans-serif" }}>Share to</span>
+          <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '50%', width: 30, height: 30, color: 'white', cursor: 'pointer', fontSize: 14 }}>✕</button>
+        </div>
+
+        {/* Video preview strip */}
+        <div style={{ padding: '0 20px 16px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+          <div style={{ width: 52, height: 72, borderRadius: 10, overflow: 'hidden', background: '#333', flexShrink: 0 }}>
+            {video?.videoUrl?.match(/\.(jpg|jpeg|png|gif|webp)/i)
+              ? <img src={video.videoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              : <video src={video?.videoUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} muted />
+            }
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ color: 'white', fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{video?.username}</div>
+            <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12, marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{video?.description}</div>
+          </div>
+        </div>
+
+        {/* App icons — scrollable row */}
+        <div style={{ overflowX: 'auto', display: 'flex', gap: 0, padding: '18px 16px 8px' }}>
+          {shareApps.map(app => (
+            <button
+              key={app.name}
+              onClick={app.fn}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0, padding: '0 10px' }}
+            >
+              <div style={{
+                width: 56, height: 56, borderRadius: 16,
+                background: app.color === '#000' || app.color === '#010101' ? '#1a1a1a' : app.color + '22',
+                border: `1.5px solid ${app.color}55`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: app.name === 'X (Twitter)' || app.name === 'Facebook' ? 20 : 26,
+                color: app.color === '#000' || app.color === '#010101' ? '#fff' : app.color,
+                fontWeight: 900,
+              }}>
+                {app.emoji}
+              </div>
+              <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 10, textAlign: 'center', maxWidth: 60 }}>{app.name}</span>
             </button>
           ))}
         </div>
-        <div style={{ margin: '0 16px', background: '#2c2c2e', borderRadius: 14, display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
-          <span style={{ flex: 1, color: 'rgba(255,255,255,0.35)', fontSize: 12, padding: '13px 14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{url}</span>
-          <button onClick={copyLink} style={{ background: '#ff2d55', border: 'none', padding: '13px 18px', color: 'white', fontWeight: 700, fontSize: 13, cursor: 'pointer', flexShrink: 0 }}>Copy</button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
-const StoryViewer = ({ story, user, onClose }) => {
-  const [progress, setProgress] = useState(0);
-  const [storyReply, setStoryReply] = useState('');
-
-  useEffect(() => {
-    const i = setInterval(() => setProgress(p => {
-      if (p >= 100) { onClose(); return 100; }
-      return p + 1;
-    }), 50);
-    return () => clearInterval(i);
-  }, [onClose]);
-
-  const sendStoryReply = async () => {
-    if(!storyReply.trim()) return;
-    await addDoc(collection(db,'storyReplies'), {
-      storyUserId: story?.userId,
-      fromUserId: user?.id,
-      fromUsername: user?.username,
-      text: storyReply,
-      createdAt: serverTimestamp(),
-    });
-    setStoryReply('');
-    onClose();
-  };
-
-  const avatarSrc = user?.avatarUrl;
-  return (
-    <div style={{ position:'fixed', inset:0, background:'#000', zIndex:3000, display:'flex', flexDirection:'column' }}>
-      <div style={{ position:'absolute', top:0, left:0, right:0, height:2, background:'rgba(255,255,255,0.15)', zIndex:10 }}>
-        <div style={{ height:'100%', background:'white', width:`${progress}%`, transition:'width 0.05s linear' }} />
-      </div>
-      <div style={{ display:'flex', alignItems:'center', gap:10, padding:'20px 16px 12px', zIndex:10 }}>
-        <div style={{ width:34, height:34, borderRadius:'50%', background:user?.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:14, overflow:'hidden' }}>
-          {avatarSrc ? <img src={avatarSrc} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : user?.avatar}
-        </div>
-        <div style={{ flex:1 }}>
-          <div style={{ color:'white', fontWeight:600, fontSize:13 }}>@{user?.username}</div>
-          <div style={{ color:'rgba(255,255,255,0.5)', fontSize:11 }}>Just now</div>
-        </div>
-        <button onClick={onClose} style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:'50%', width:32, height:32, color:'white', cursor:'pointer', fontSize:16 }}>✕</button>
-      </div>
-      <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', background:'linear-gradient(135deg,#1a1a2e,#16213e)', overflow:'hidden' }}>
-        {story?.mediaUrl ? (
-          story.mediaType?.startsWith('video') ?
-  <video src={story.mediaUrl} style={{ width:'100%', height:'100%', objectFit:'cover' }} autoPlay loop muted playsInline />
-  : <img src={story.mediaUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
-        ) : (
-          <div style={{ textAlign:'center', padding:24, background:story?.bgColor||'#ff2d55', width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column' }}>
-            <div style={{ color:'white', fontSize:28, fontWeight:700, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", textAlign:'center' }}>{story?.text || 'Story content'}</div>
+        {/* Copy link bar */}
+        <div style={{ margin: '12px 16px 0', background: '#2c2c2e', borderRadius: 14, display: 'flex', alignItems: 'center', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.06)' }}>
+          <div style={{ padding: '6px 8px 6px 14px', flexShrink: 0 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2">
+              <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
+              <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+            </svg>
           </div>
-        )}
-      </div>
-      <div style={{ padding:'14px 16px 24px', display:'flex', gap:10 }}>
-        <input value={storyReply} onChange={e=>setStoryReply(e.target.value)} onKeyDown={e=>e.key==='Enter'&&sendStoryReply()} placeholder="Reply to story..." style={{ flex:1, background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.15)', borderRadius:28, padding:'10px 16px', color:'white', outline:'none', fontSize:13 }} />
-        <button onClick={sendStoryReply} style={{ background:'#ff2d55', border:'none', borderRadius:'50%', width:42, height:42, color:'white', cursor:'pointer', fontSize:16 }}>↑</button>
+          <span style={{ flex: 1, color: 'rgba(255,255,255,0.3)', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: 8 }}>{url}</span>
+          <button onClick={copyLink} style={{ background: '#ff2d55', border: 'none', padding: '14px 20px', color: 'white', fontWeight: 700, fontSize: 13, cursor: 'pointer', flexShrink: 0 }}>
+            Copy
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -3501,6 +3499,7 @@ export default function DaguV3App() {
   const [showCreateStory, setShowCreateStory] = useState(false);
   const [followed, setFollowed] = useState([]);
 const [blockedUsers, setBlockedUsers] = useState([]);
+  const [incomingCall, setIncomingCall] = useState(null);
   const [viewingProfile, setViewingProfile] = useState(null);
 
   const showToast = useCallback((message, type='info')=>setToast({message,type}),[]);
@@ -3813,7 +3812,6 @@ const handleMessage = uid => {
     </button>
   );
 })}
-        })}
       </div>
 
 {notifPopup && (
