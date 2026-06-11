@@ -1996,7 +1996,7 @@ const ConversationView = ({ currentUser, otherUser, conversationId, onBack, show
   const timerRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  const isReady = !!(otherUser && conversationId && currentUser?.id);
+  const isReady = !!(otherUser?.id && conversationId && currentUser?.id);
 
   useEffect(()=>{
     if(!isReady) return;
@@ -2089,7 +2089,7 @@ const ConversationView = ({ currentUser, otherUser, conversationId, onBack, show
   };
 
 
-  if(!otherUser) return (
+  if(!isReady) return (
     <div style={{height:'100%',background:'#0a0a0a',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:12}}>
       <div style={{width:32,height:32,border:'3px solid rgba(255,45,85,0.3)',borderTop:'3px solid #ff2d55',borderRadius:'50%',animation:'spin 1s linear infinite'}}/>
       <div style={{color:'rgba(255,255,255,0.3)',fontSize:13}}>Loading conversation...</div>
@@ -2239,12 +2239,15 @@ const InboxPage = ({ users, currentUser, showToast, onViewProfile, initialTarget
     }, { merge: true }).catch(() => {});
   };
 
-  if(activeConversation){
-    const otherUser = users.find(u=>u.id===activeConversation.otherUserId)
-                   || { id: activeConversation.otherUserId, username: '...', avatar: '?', avatarColor: '#555', avatarUrl: null };
-    if(!otherUser.username || otherUser.username === '...') {
-      // still loading — show spinner but don't go dark/blank
-    }
+ if(activeConversation){
+    const otherUser = users.find(u=>u.id===activeConversation.otherUserId);
+    if(!isReady) return (
+      <div style={{height:'100%',background:'#0a0a0a',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:12}}>
+        <div style={{width:32,height:32,border:'3px solid rgba(255,45,85,0.3)',borderTop:'3px solid #ff2d55',borderRadius:'50%',animation:'spin 1s linear infinite'}}/>
+        <div style={{color:'rgba(255,255,255,0.3)',fontSize:13}}>Loading conversation...</div>
+        <button onClick={()=>{ setActiveConversation(null); onSetConversation?.(null); onClearTarget?.(); }} style={{background:'rgba(255,255,255,0.07)',border:'none',borderRadius:20,padding:'8px 20px',color:'rgba(255,255,255,0.5)',cursor:'pointer',fontSize:12,marginTop:8}}>← Back</button>
+      </div>
+    );
     return <ConversationView currentUser={currentUser} otherUser={otherUser} conversationId={activeConversation.id} onBack={()=>{ setActiveConversation(null); onSetConversation?.(null); onClearTarget?.(); }} showToast={showToast} onViewProfile={uid=>{ onViewProfile?.(uid); }} />;
   }
 
