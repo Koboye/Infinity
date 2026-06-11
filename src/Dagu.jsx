@@ -2079,8 +2079,9 @@ const ConversationView = ({ currentUser, otherUser, conversationId, onBack, show
   const chunksRef = useRef([]);
   const timerRef = useRef(null);
   const fileInputRef = useRef(null);
+  const isReady = !!(otherUser?.id && conversationId && currentUser?.id && otherUser?.username);
 
-  const isReady = !!(otherUser?.id && conversationId && currentUser?.id);
+
 
   useEffect(()=>{
     if(!isReady) return;
@@ -2173,13 +2174,19 @@ const ConversationView = ({ currentUser, otherUser, conversationId, onBack, show
   };
 
 
-  if(!isReady) return (
-    <div style={{height:'100%',background:'#0a0a0a',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:12}}>
-      <div style={{width:32,height:32,border:'3px solid rgba(255,45,85,0.3)',borderTop:'3px solid #ff2d55',borderRadius:'50%',animation:'spin 1s linear infinite'}}/>
-      <div style={{color:'rgba(255,255,255,0.3)',fontSize:13}}>Loading conversation...</div>
-      <button onClick={onBack} style={{background:'rgba(255,255,255,0.07)',border:'none',borderRadius:20,padding:'8px 20px',color:'rgba(255,255,255,0.5)',cursor:'pointer',fontSize:12,marginTop:8}}>← Back</button>
-    </div>
-  );
+  if(!isReady) {
+  // Wait for users to load before rendering
+  if (!otherUser?.id) {
+    return (
+      <div style={{height:'100%',background:'#0a0a0a',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:12}}>
+        <div style={{width:32,height:32,border:'3px solid rgba(255,45,85,0.3)',borderTop:'3px solid #ff2d55',borderRadius:'50%',animation:'spin 1s linear infinite'}}/>
+        <div style={{color:'rgba(255,255,255,0.3)',fontSize:13}}>Loading conversation...</div>
+        <button onClick={onBack} style={{background:'rgba(255,255,255,0.07)',border:'none',borderRadius:20,padding:'8px 20px',color:'rgba(255,255,255,0.5)',cursor:'pointer',fontSize:12,marginTop:8}}>← Back</button>
+      </div>
+    );
+  }
+  return null;
+}
 
   return (
     <div style={{height:'100%',display:'flex',flexDirection:'column',background:'#0a0a0a'}}>
@@ -3679,8 +3686,7 @@ const [activeConversation, setActiveConversation] = useState(()=>{
 });
 const handleMessage = uid => {
   if(!uid) return;
-  const targetUser = users.find(u=>u.id===uid);
-  if(!targetUser){ showToast('User not loaded yet, try again','error'); return; }
+  // Don't block if users haven't loaded yet — InboxPage will wait
   setActiveConversation(null);
   sessionStorage.removeItem('dagu_conv');
   setInboxTargetId(uid);
@@ -3759,10 +3765,18 @@ const handleMessage = uid => {
         <IncomingCallScreen
           callData={incomingCall}
           onAnswer={()=>{
-            setShowCall({type:incomingCall.callType, contactName:incomingCall.callerName, contactAvatar:incomingCall.callerAvatar||'?', contactId:incomingCall.callerId});
-            updateDoc(doc(db,'calls',incomingCall.callDocId),{status:'answered'}).catch(()=>{});
-            setIncomingCall(null);
-          }}
+  const callSnapshot = {...incomingCall}; // capture before clearing
+  updateDoc(doc(db,'calls',callSnapshot.callDocId),{status:'answered'}).catch(()=>{});
+  setIncomingCall(null);
+  setTimeout(()=>{
+    setShowCall({
+      type: callSnapshot.callType,
+      contactName: callSnapshot.callerName,
+      contactAvatar: callSnapshot.callerAvatar||'?',
+      contactId: callSnapshot.callerId
+    });
+  }, 100); // let incomingCall screen unmount cleanly first
+}}
           onDecline={()=>{
             updateDoc(doc(db,'calls',incomingCall.callDocId),{status:'declined'}).catch(()=>{});
             setIncomingCall(null);
