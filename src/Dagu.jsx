@@ -1596,6 +1596,8 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showAvatarViewer, setShowAvatarViewer] = useState(false);
   const [profileTab, setProfileTab] = useState('posts');
+  const [showHamburger, setShowHamburger] = useState(false);
+  const [showFollowersList, setShowFollowersList] = useState(null);
   const myVideos = allVideos?.filter(v=>v.userId===user?.id)||[];
   const saveProfile = data=>setCurrentUser(u=>({...u,...data}));
 
@@ -1876,9 +1878,6 @@ if(activeSubPage==='settings') return (
       ))}
     </div>
   );
-
-  const [showHamburger, setShowHamburger] = useState(false);
-  const [showFollowersList, setShowFollowersList] = useState(null); // 'followers' | 'following'
 
   const menuItems = [
     {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffd700" strokeWidth="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>,label:'Wallet',page:'wallet',color:'#ffd700'},
@@ -2326,16 +2325,17 @@ const InboxPage = ({ t, users, currentUser, showToast, onViewProfile, initialTar
 
  if(activeConversation){
     const otherUser = users.find(u=>u.id===activeConversation.otherUserId);
-    if(!isReady) return (
-      <div style={{height:'100%',background:'#0a0a0a',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:12}}>
-        <div style={{width:32,height:32,border:'3px solid rgba(255,45,85,0.3)',borderTop:'3px solid #ff2d55',borderRadius:'50%',animation:'spin 1s linear infinite'}}/>
-        <div style={{color:'rgba(255,255,255,0.3)',fontSize:13}}>Loading conversation...</div>
-        <button onClick={()=>{ setActiveConversation(null); onSetConversation?.(null); onClearTarget?.(); }} style={{background:'rgba(255,255,255,0.07)',border:'none',borderRadius:20,padding:'8px 20px',color:'rgba(255,255,255,0.5)',cursor:'pointer',fontSize:12,marginTop:8}}>← Back</button>
-      </div>
+    return (
+      <ConversationView
+        currentUser={currentUser}
+        otherUser={otherUser}
+        conversationId={activeConversation.id}
+        onBack={()=>{ setActiveConversation(null); onSetConversation?.(null); onClearTarget?.(); }}
+        showToast={showToast}
+        onViewProfile={uid=>{ onViewProfile?.(uid); }}
+      />
     );
-    return <ConversationView currentUser={currentUser} otherUser={otherUser} conversationId={activeConversation.id} onBack={()=>{ setActiveConversation(null); onSetConversation?.(null); onClearTarget?.(); }} showToast={showToast} onViewProfile={uid=>{ onViewProfile?.(uid); }} />;
   }
-
   const convUsers = useMemo(()=>
     users.filter(u=>{
       if(u.id===currentUser?.id) return false;
