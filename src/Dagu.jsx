@@ -3794,18 +3794,19 @@ const handleMessage = uid => {
       </div>
 
       {activeTab==='home' && (
-        <button onClick={()=>setShowLiveStream(currentUser)} style={{ position:'absolute', right:14, bottom:88, background:'linear-gradient(135deg,#ff2d55,#af52de)', border:'none', borderRadius:24, padding:'8px 16px', cursor:'pointer', zIndex:15, display:'flex', alignItems:'center', gap:7, boxShadow:'0 4px 24px rgba(255,45,85,0.5)' }}>
-          {activeTab==='home' && (
-  <button onClick={()=>setShowTranslator(true)}
-    style={{ position:'absolute', left:14, bottom:88, background:'rgba(0,0,0,0.6)', backdropFilter:'blur(10px)', border:'1px solid rgba(255,255,255,0.15)', borderRadius:24, padding:'8px 16px', cursor:'pointer', zIndex:15, display:'flex', alignItems:'center', gap:7 }}>
-    <span style={{ fontSize:16 }}>🌍</span>
-    <span style={{ color:'white', fontSize:13, fontWeight:700 }}>Translate</span>
-  </button>
+  <>
+    <button onClick={()=>setShowTranslator(true)}
+      style={{ position:'absolute', left:14, bottom:88, background:'rgba(0,0,0,0.6)', backdropFilter:'blur(10px)', border:'1px solid rgba(255,255,255,0.15)', borderRadius:24, padding:'8px 16px', cursor:'pointer', zIndex:15, display:'flex', alignItems:'center', gap:7 }}>
+      <span style={{ fontSize:16 }}>🌍</span>
+      <span style={{ color:'white', fontSize:13, fontWeight:700 }}>Translate</span>
+    </button>
+    <button onClick={()=>setShowLiveStream(currentUser)}
+      style={{ position:'absolute', right:14, bottom:88, background:'linear-gradient(135deg,#ff2d55,#af52de)', border:'none', borderRadius:24, padding:'8px 16px', cursor:'pointer', zIndex:15, display:'flex', alignItems:'center', gap:7, boxShadow:'0 4px 24px rgba(255,45,85,0.5)' }}>
+      <div style={{ width:7, height:7, borderRadius:'50%', background:'white', animation:'pulse 1s infinite' }} />
+      <span style={{ color:'white', fontSize:13, fontWeight:800, fontFamily:"'Inter',sans-serif", letterSpacing:0.5 }}>LIVE</span>
+    </button>
+  </>
 )}
-          <div style={{ width:7, height:7, borderRadius:'50%', background:'white', animation:'pulse 1s infinite' }} />
-          <span style={{ color:'white', fontSize:13, fontWeight:800, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", letterSpacing:0.5 }}>LIVE</span>
-        </button>
-      )}
 {notifPopup && (
         <NotifPopup
           notif={notifPopup.notif}
