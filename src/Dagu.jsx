@@ -906,24 +906,6 @@ useEffect(() => {
   };
   translate();
 }, [isActive, video?.description]);
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ q: video.description, source: 'auto', target: 'en' })
-      });
-      const data = await res.json();
-      if (data.translatedText && data.translatedText !== video.description) {
-        setDisplayDesc(data.translatedText);
-      }
-    } catch {
-      try {
-        const r = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(video.description)}&langpair=am|en`);
-        const d = await r.json();
-        if (d.responseData?.translatedText) setDisplayDesc(d.responseData.translatedText);
-      } catch {}
-    }
-  };
-  translate();
-}, [isActive, video?.description]);
   const handleDoubleTap = async () => {
     if(!liked){
       setLiked(true);
