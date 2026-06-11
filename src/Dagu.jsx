@@ -332,8 +332,8 @@ const StoryViewer = ({ story, user, onClose }) => {
       <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', background:'linear-gradient(135deg,#1a1a2e,#16213e)', overflow:'hidden' }}>
         {story?.mediaUrl ? (
           story.mediaType?.startsWith('video') ?
-            <video src={story.mediaUrl} style={{ width:'100%', height:'100%', objectFit:'cover' }} autoPlay loop muted playsInline />
-            <img src={story.mediaUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+  <video src={story.mediaUrl} style={{ width:'100%', height:'100%', objectFit:'cover' }} autoPlay loop muted playsInline />
+  : <img src={story.mediaUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
         ) : (
           <div style={{ textAlign:'center', padding:24, background:story?.bgColor||'#ff2d55', width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column' }}>
             <div style={{ color:'white', fontSize:28, fontWeight:700, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", textAlign:'center' }}>{story?.text || 'Story content'}</div>
@@ -958,25 +958,24 @@ const EnhancedVideoCard = memo(({ video, currentUser, isActive, onLike, onCommen
   return (
     <div style={{ position:'absolute', inset:0, background:'#000' }} onClick={handleTap}>
       {video?.videoUrl?.match(/\.(jpg|jpeg|png|gif|webp)/i) || video?.mediaType?.startsWith('image') ?
-        <img src={video.videoUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />%', objectFit:'cover', transition:'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)', transform:showComments?'translateY(-20%)':'translateY(0)' }} /> :
-        <video
-  src={video?.videoUrl}
-  style={{ width:'100%', height:'100%', objectFit:'cover' }}
-  loop
-  autoPlay
-  playsInline
-  ref={el=>{
-    if(el){
-      el.muted = false;
-      videoRef.current = el;
-      if(isActive && isPlaying){
-        el.play().catch(()=>{});
+  <img src={video.videoUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', transition:'transform 0.3s ease', transform: showComments ? 'translateY(-18%)' : 'translateY(0)' }} /> :
+  <video
+    src={video?.videoUrl}
+    style={{ width:'100%', height:'100%', objectFit:'cover', transition:'transform 0.3s ease', transform: showComments ? 'translateY(-18%)' : 'translateY(0)' }}
+    loop
+    autoPlay
+    playsInline
+    ref={el=>{
+      if(el){
+        el.muted = false;
+        videoRef.current = el;
+        if(isActive && isPlaying){
+          el.play().catch(()=>{});
+        }
       }
-    }
-  }}
-  style={{ width:'100%', height:'100%', objectFit:'cover', transition:'transform 0.3s ease', transform: showComments ? 'translateY(-18%)' : 'translateY(0)' }}
-/>
-      }
+    }}
+  />
+}
       <div style={{ position:'absolute', inset:0, background:'linear-gradient(to top,rgba(0,0,0,0.85) 0%,rgba(0,0,0,0.1) 40%,rgba(0,0,0,0.3) 100%)' }} />
       
       {!isPlaying && (video?.videoUrl && !video.videoUrl.match(/\.(jpg|jpeg|png|gif|webp)/i)) && !video?.mediaType?.startsWith('image') && <div style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',zIndex:15,pointerEvents:'none'}}><div style={{width:72,height:72,borderRadius:'50%',background:'rgba(0,0,0,0.55)',display:'flex',alignItems:'center',justifyContent:'center'}}><svg width="32" height="32" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg></div></div>}
