@@ -332,8 +332,8 @@ const StoryViewer = ({ story, user, onClose }) => {
       <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', background:'linear-gradient(135deg,#1a1a2e,#16213e)', overflow:'hidden' }}>
         {story?.mediaUrl ? (
           story.mediaType?.startsWith('video') ?
-            <video src={story.mediaUrl} style={{ width:'100%', height:'100%', objectFit:'cover', transition:'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)', transform:showComments?'translateY(-20%)':'translateY(0)' }} autoPlay loop muted playsInline /> :
-            <img src={story.mediaUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', transition:'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)', transform:showComments?'translateY(-20%)':'translateY(0)' }} />
+            <video src={story.mediaUrl} style={{ width:'100%', height:'100%', objectFit:'cover' }} autoPlay loop muted playsInline />
+            <img src={story.mediaUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
         ) : (
           <div style={{ textAlign:'center', padding:24, background:story?.bgColor||'#ff2d55', width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column' }}>
             <div style={{ color:'white', fontSize:28, fontWeight:700, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", textAlign:'center' }}>{story?.text || 'Story content'}</div>
@@ -488,7 +488,7 @@ const CreateStoryModal = ({ currentUser, onClose, showToast }) => {
       <div style={{ flex:1, position:'relative', overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center' }}>
         {mode==='camera' && (
           <div style={{ width:'100%', height:'100%', position:'relative' }}>
-            <video ref={videoRef} autoPlay playsInline style={{ width:'100%', height:'100%', objectFit:'cover', transition:'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)', transform:showComments?'translateY(-20%)':'translateY(0)' }} />
+            <video ref={videoRef} autoPlay playsInline style={{ width:'100%', height:'100%', objectFit:'cover' }} />
             <button onClick={capturePhoto} style={{ position:'absolute', bottom:30, left:'50%', transform:'translateX(-50%)', background:'white', border:'4px solid rgba(255,255,255,0.4)', borderRadius:'50%', width:72, height:72, cursor:'pointer', fontSize:28 }}>📸</button>
           </div>
         )}
@@ -512,7 +512,7 @@ const CreateStoryModal = ({ currentUser, onClose, showToast }) => {
           </div>
         )}
         {mode==='file' && selectedFile && (
-          selectedFile.type.startsWith('video/') ? <video src={selectedFile.url} style={{ width:'100%', height:'100%', objectFit:'cover', transition:'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)', transform:showComments?'translateY(-20%)':'translateY(0)' }} controls /> : <img src={selectedFile.url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', transition:'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)', transform:showComments?'translateY(-20%)':'translateY(0)' }} />
+          selectedFile.type.startsWith('video/') ? <video src={selectedFile.url} style={{ width:'100%', height:'100%', objectFit:'cover' }} controls /> : <img src={selectedFile.url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
         )}
       </div>
     </div>
@@ -591,8 +591,8 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
                   return (
                     <div key={v.id} style={{ aspectRatio:'9/16', background:'#1a1a1a', position:'relative', overflow:'hidden' }}>
                       {isImage
-                        ? <img src={v.videoUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', transition:'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)', transform:showComments?'translateY(-20%)':'translateY(0)' }} />
-                        : <video src={v.videoUrl} style={{ width:'100%', height:'100%', objectFit:'cover', transition:'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)', transform:showComments?'translateY(-20%)':'translateY(0)' }} />
+                        ? <img src={v.videoUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+                        : <video src={v.videoUrl} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
                       }
                       <div style={{ position:'absolute', bottom:4, left:6, color:'white', fontSize:10, fontWeight:700, background:'rgba(0,0,0,0.6)', borderRadius:6, padding:'2px 6px' }}>{formatNumber(v.views)}</div>
                     </div>
@@ -958,10 +958,10 @@ const EnhancedVideoCard = memo(({ video, currentUser, isActive, onLike, onCommen
   return (
     <div style={{ position:'absolute', inset:0, background:'#000' }} onClick={handleTap}>
       {video?.videoUrl?.match(/\.(jpg|jpeg|png|gif|webp)/i) || video?.mediaType?.startsWith('image') ?
-        <img src={video.videoUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', transition:'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)', transform:showComments?'translateY(-20%)':'translateY(0)' }} />%', objectFit:'cover', transition:'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)', transform:showComments?'translateY(-20%)':'translateY(0)' }} /> :
+        <img src={video.videoUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />%', objectFit:'cover', transition:'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)', transform:showComments?'translateY(-20%)':'translateY(0)' }} /> :
         <video
   src={video?.videoUrl}
-  style={{ width:'100%', height:'100%', objectFit:'cover', transition:'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)', transform:showComments?'translateY(-20%)':'translateY(0)' }}
+  style={{ width:'100%', height:'100%', objectFit:'cover' }}
   loop
   autoPlay
   playsInline
@@ -2661,7 +2661,7 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
       <div style={{ flex:1, position:'relative', overflow:'hidden' }}>
         {selectedFile.type.startsWith('image/') 
           ? <img src={selectedFile.url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', ...filterStyle }} />
-          : <video src={selectedFile.url} style={{ width:'100%', height:'100%', objectFit:'cover', transition:'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)', transform:showComments?'translateY(-20%)':'translateY(0)' }} controls autoPlay loop />
+          : <video src={selectedFile.url} style={{ width:'100%', height:'100%', objectFit:'cover' }} controls autoPlay loop />
         }
       </div>
       {/* Filter strip on preview */}
@@ -2896,8 +2896,8 @@ const GuestFeed = ({ onSignIn }) => {
       {videos.map((video,idx)=>(
         <div key={video.id} style={{ position:'absolute', inset:0, transform:`translateY(${(idx-currentIndex)*100}%)`, transition:'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)', pointerEvents:idx===currentIndex?'auto':'none' }}>
           {video.videoUrl?.match(/\.(jpg|jpeg|png|gif|webp)/i)
-            ? <img src={video.videoUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', transition:'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)', transform:showComments?'translateY(-20%)':'translateY(0)' }} />%', objectFit:'cover', transition:'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)', transform:showComments?'translateY(-20%)':'translateY(0)' }} />
-            : <video src={video.videoUrl} style={{ width:'100%', height:'100%', objectFit:'cover', transition:'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)', transform:showComments?'translateY(-20%)':'translateY(0)' }} loop autoPlay muted playsInline />
+            ? <img src={video.videoUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+            : <video src={video.videoUrl} style={{ width:'100%', height:'100%', objectFit:'cover' }} loop autoPlay muted playsInline />
           }
           <div style={{ position:'absolute', inset:0, background:'linear-gradient(to top,rgba(0,0,0,0.7) 0%,transparent 50%)' }} />
           <div style={{ position:'absolute', bottom:100, left:14, right:14 }}>
