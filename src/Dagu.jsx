@@ -244,18 +244,24 @@ const ShareModal = ({ video, onClose, showToast }) => {
 
   const nativeShare = async () => {
     if (navigator.share) {
-      try { await navigator.share({ title: 'Infinity', text: shareText, url }); } catch {}
-    } else { copyLink(); return; }
-    updateDoc(doc(db, 'videos', video.id), { shares: increment(1) }).catch(() => {});
-    onClose();
+      try {
+        await navigator.share({ title: 'Infinity', text: shareText, url });
+        updateDoc(doc(db, 'videos', video.id), { shares: increment(1) }).catch(() => {});
+        onClose();
+        return;
+      } catch (e) {
+        if (e.name === 'AbortError') { onClose(); return; }
+      }
+    }
+    copyLink();
   };
 
   const apps = [
+    { name: 'Share', emoji: '⬆️', color: '#007aff', fn: nativeShare },
     { name: 'WhatsApp', emoji: '💬', color: '#25D366', fn: () => { window.open(`https://wa.me/?text=${encodeURIComponent(shareText + ' ' + url)}`); updateDoc(doc(db, 'videos', video.id), { shares: increment(1) }).catch(() => {}); onClose(); } },
     { name: 'Telegram', emoji: '✈️', color: '#26A5E4', fn: () => { window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(shareText)}`); onClose(); } },
     { name: 'X', emoji: 'X', color: '#000', fn: () => { window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(url)}`); onClose(); } },
-    { name: 'Facebook', emoji: '📘', color: '#1877f2', fn: () => { window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`); onClose(); } },
-    { name: 'More', emoji: '...', color: '#555', fn: nativeShare },
+    { name: 'Copy Link', emoji: '🔗', color: '#555', fn: copyLink },
   ];
 
   return (
@@ -836,7 +842,6 @@ const EnhancedVideoCard = memo(({ video, currentUser, isActive, onLike, onCommen
   const [showActionMenu, setShowActionMenu] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [heartAnim, setHeartAnim] = useState(false);
-  const [muted, setMuted] = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
   const tapTimer = useRef(null);
   const videoRef = useRef(null);
@@ -891,6 +896,12 @@ const EnhancedVideoCard = memo(({ video, currentUser, isActive, onLike, onCommen
   };
 
   const handleTap = (e) => {
+    const handleTap = (e) => {
+    // Unmute video on first user interaction (bypass autoplay policy)
+    if(videoRef.current && videoRef.current.muted) {
+      videoRef.current.muted = false;
+      videoRef.current.volume = 1;
+    }
     if(tapTimer.current){
       clearTimeout(tapTimer.current);
       tapTimer.current = null;
@@ -954,10 +965,9 @@ const EnhancedVideoCard = memo(({ video, currentUser, isActive, onLike, onCommen
   loop
   autoPlay
   playsInline
-  muted={muted}
   ref={el=>{
     if(el){
-      el.muted = muted;
+      el.muted = false;
       videoRef.current = el;
       if(isActive && isPlaying){
         el.play().catch(()=>{});
@@ -968,13 +978,6 @@ const EnhancedVideoCard = memo(({ video, currentUser, isActive, onLike, onCommen
       }
       <div style={{ position:'absolute', inset:0, background:'linear-gradient(to top,rgba(0,0,0,0.85) 0%,rgba(0,0,0,0.1) 40%,rgba(0,0,0,0.3) 100%)' }} />
       
-            <button onClick={e=>{e.stopPropagation(); const next=!muted; setMuted(next); if(videoRef.current){ videoRef.current.muted=next; if(!next){ videoRef.current.volume=1; videoRef.current.play().catch(()=>{}); }}}} style={{position:'absolute',top:56,right:14,zIndex:16,background:'rgba(0,0,0,0.4)',border:'none',borderRadius:'50%',width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',backdropFilter:'blur(8px)'}}>
-
-        {muted
-          ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
-          : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 010 14.14"/><path d="M15.54 8.46a5 5 0 010 7.07"/></svg>
-        }
-      </button>
       {!isPlaying && (video?.videoUrl && !video.videoUrl.match(/\.(jpg|jpeg|png|gif|webp)/i)) && !video?.mediaType?.startsWith('image') && <div style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',zIndex:15,pointerEvents:'none'}}><div style={{width:72,height:72,borderRadius:'50%',background:'rgba(0,0,0,0.55)',display:'flex',alignItems:'center',justifyContent:'center'}}><svg width="32" height="32" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg></div></div>}
       {heartAnim && (
         <div style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', zIndex:50, pointerEvents:'none' }}>
@@ -1055,11 +1058,13 @@ const EnhancedVideoCard = memo(({ video, currentUser, isActive, onLike, onCommen
       </div>
 
       {showComments && (
+  <>
+  <div onClick={e=>{e.stopPropagation();setShowComments(false);}} style={{position:'fixed',inset:0,zIndex:8999,background:'rgba(0,0,0,0.5)'}}/>
   <div
     onClick={e => e.stopPropagation()}
     onTouchStart={e => e.stopPropagation()}
     onTouchEnd={e => e.stopPropagation()}
-    style={{ position:'fixed', top:0, left:'50%', transform:'translateX(-50%)', width:'100%', maxWidth:430, height:'100%', background:'#0a0a0a', zIndex:9000, display:'flex', flexDirection:'column', animation:'slideUp 0.3s ease' }}>
+    style={{ position:'fixed', bottom:0, left:'50%', transform:'translateX(-50%)', width:'100%', maxWidth:430, height:'62%', background:'#0a0a0a', borderTopLeftRadius:20, borderTopRightRadius:20, zIndex:9000, display:'flex', flexDirection:'column', animation:'slideUp 0.3s ease' }}>
           <div style={{ padding:'16px', borderBottom:'1px solid rgba(255,255,255,0.07)', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
             <span style={{ color:'white', fontWeight:700, fontSize:16, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Comments</span>
             <button onClick={()=>setShowComments(false)} style={{ background:'rgba(255,255,255,0.08)', border:'none', borderRadius:'50%', width:32, height:32, color:'white', cursor:'pointer', fontSize:16 }}>✕</button>
@@ -1078,6 +1083,7 @@ const EnhancedVideoCard = memo(({ video, currentUser, isActive, onLike, onCommen
           </div>
           <CommentInputBar currentUser={currentUser} commentText={commentText} setCommentText={setCommentText} onSend={() => { addComment(); setShowComments(false); }} showToast={showToast} videoId={video.id} />
         </div>
+  </>
       )}
       {showShare && <ShareModal video={video} onClose={()=>setShowShare(false)} showToast={showToast} />}
     </div>
@@ -1542,6 +1548,67 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
 
   if(activeSubPage==='analytics'){onShowAnalytics?.(); setActiveSubPage(null); return null;}
   if(activeSubPage==='qrcode'){onShowQRCode?.(); setActiveSubPage(null); return null;}
+  if(activeSubPage==='changepw') return (
+    <div style={{height:'100%',overflow:'auto',background:'#0a0a0a',padding:16}}>
+      <button onClick={()=>setActiveSubPage('settings')} style={{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:20,padding:'8px 16px',color:'white',cursor:'pointer',fontSize:13,marginBottom:20,display:'flex',alignItems:'center',gap:6}}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
+      </button>
+      <div style={{color:'white',fontWeight:800,fontSize:22,marginBottom:8,fontFamily:"'Inter',sans-serif"}}>Change Password</div>
+      <div style={{color:'rgba(255,255,255,0.4)',fontSize:13,marginBottom:24}}>A reset link will be sent to {user?.email}</div>
+      <button onClick={async()=>{
+        if(user?.email){ await sendPasswordResetEmail(auth,user.email); showToast?.('Reset link sent to '+user.email,'success'); setActiveSubPage('settings'); }
+        else showToast?.('No email on account','error');
+      }} style={{width:'100%',background:'linear-gradient(135deg,#ff2d55,#af52de)',border:'none',borderRadius:24,padding:15,color:'white',fontWeight:700,cursor:'pointer',fontSize:15}}>
+        Send Reset Link to {user?.email}
+      </button>
+    </div>
+  );
+
+  if(activeSubPage==='emailphone') return (
+    <div style={{height:'100%',overflow:'auto',background:'#0a0a0a',padding:16}}>
+      <button onClick={()=>setActiveSubPage('settings')} style={{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:20,padding:'8px 16px',color:'white',cursor:'pointer',fontSize:13,marginBottom:20,display:'flex',alignItems:'center',gap:6}}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
+      </button>
+      <div style={{color:'white',fontWeight:800,fontSize:22,marginBottom:24,fontFamily:"'Inter',sans-serif"}}>Email & Phone</div>
+      <div style={{background:'rgba(255,255,255,0.03)',borderRadius:20,overflow:'hidden',border:'1px solid rgba(255,255,255,0.06)'}}>
+        <div style={{padding:'16px',borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
+          <div style={{color:'rgba(255,255,255,0.4)',fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:0.5,marginBottom:6}}>Email Address</div>
+          <div style={{color:'white',fontSize:14}}>{user?.email||'Not set'}</div>
+        </div>
+        <div style={{padding:'16px'}}>
+          <div style={{color:'rgba(255,255,255,0.4)',fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:0.5,marginBottom:6}}>Phone Number</div>
+          <div style={{color:'rgba(255,255,255,0.3)',fontSize:14}}>Not added</div>
+        </div>
+      </div>
+      <div style={{marginTop:16,color:'rgba(255,255,255,0.25)',fontSize:12,lineHeight:1.6}}>
+        To change your email address, please contact support. Your email is used for login and notifications.
+      </div>
+    </div>
+  );
+
+  if(activeSubPage==='language') return (
+    <div style={{height:'100%',overflow:'auto',background:'#0a0a0a',padding:16}}>
+      <button onClick={()=>setActiveSubPage('settings')} style={{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:20,padding:'8px 16px',color:'white',cursor:'pointer',fontSize:13,marginBottom:20,display:'flex',alignItems:'center',gap:6}}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
+      </button>
+      <div style={{color:'white',fontWeight:800,fontSize:22,marginBottom:24,fontFamily:"'Inter',sans-serif"}}>Language</div>
+      <div style={{background:'rgba(255,255,255,0.03)',borderRadius:20,overflow:'hidden',border:'1px solid rgba(255,255,255,0.06)'}}>
+        {[['English','English','en'],['አማርኛ','Amharic','am'],['العربية','Arabic','ar'],['Français','French','fr'],['Español','Spanish','es'],['Português','Portuguese','pt'],['हिन्दी','Hindi','hi'],['中文','Chinese','zh']].map(([label,sub,code],i,arr)=>{
+          const selected = (user?.language||'en')===code;
+          return (
+            <div key={code} onClick={async()=>{ await updateDoc(doc(db,'users',user.id),{language:code}); setCurrentUser(u=>({...u,language:code})); showToast?.(`Language set to ${label}`,'success'); }} style={{padding:'15px 16px',borderBottom:i<arr.length-1?'1px solid rgba(255,255,255,0.05)':'',display:'flex',alignItems:'center',justifyContent:'space-between',cursor:'pointer'}}>
+              <div>
+                <div style={{color:'white',fontSize:14,fontWeight:selected?700:400}}>{label}</div>
+                <div style={{color:'rgba(255,255,255,0.3)',fontSize:11,marginTop:2}}>{sub}</div>
+              </div>
+              {selected && <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff2d55" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+
   if(activeSubPage==='wallet') return <WalletPage user={user} setCurrentUser={setCurrentUser} showToast={showToast} onBack={()=>setActiveSubPage(null)} />;
 
   if(activeSubPage==='unblock') return (
@@ -1590,9 +1657,9 @@ if(activeSubPage==='settings') return (
         <div style={{ background:'rgba(255,255,255,0.03)', borderRadius:20, overflow:'hidden', marginBottom:20, border:'1px solid rgba(255,255,255,0.06)' }}>
           {[
             {icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,label:'Edit Profile',action:()=>{setShowEditProfile(true); setActiveSubPage(null);}},
-            {icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>,label:'Change Password',action:async()=>{if(user?.email){await sendPasswordResetEmail(auth,user.email); showToast?.('Password reset email sent!','success');}else showToast?.('No email on account','error');}},
-            {icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>,label:'Email & Phone',action:()=>showToast?.(user?.email||'No email','info')},
-            {icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>,label:'Language',action:()=>showToast?.('Language: English','info')},
+            {icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>,label:'Change Password',action:()=>setActiveSubPage('changepw')},
+            {icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>,label:'Email & Phone',action:()=>setActiveSubPage('emailphone')},
+            {icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>,label:'Language',action:()=>setActiveSubPage('language')},
             {icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>,label:'Switch Account',action:()=>setActiveSubPage('switch')},
           ].map((item,i,arr)=>(
             <div key={item.label} onClick={item.action} style={{ padding:'15px 16px', borderBottom:i<arr.length-1?'1px solid rgba(255,255,255,0.05)':'', display:'flex', alignItems:'center', gap:14, cursor:'pointer' }}>
@@ -2143,8 +2210,6 @@ const InboxPage = ({ users, currentUser, showToast, onViewProfile, initialTarget
 
   const openConversation = (otherUserId) => {
     if (!currentUser?.id || !otherUserId) return;
-    const targetUser = users.find(u => u.id === otherUserId);
-    if (!targetUser) { showToast?.('User profile not loaded yet, try again','error'); return; }
     const convId = getConversationId(currentUser.id, otherUserId);
     setActiveConversation({ id: convId, otherUserId });
     onSetConversation?.({ id: convId, otherUserId });
@@ -2155,14 +2220,11 @@ const InboxPage = ({ users, currentUser, showToast, onViewProfile, initialTarget
   };
 
   if(activeConversation){
-    const otherUser = users.find(u=>u.id===activeConversation.otherUserId);
-    if(!otherUser) return (
-    <div style={{height:'100%',background:'#0a0a0a',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:12}}>
-      <div style={{width:32,height:32,border:'3px solid rgba(255,45,85,0.3)',borderTop:'3px solid #ff2d55',borderRadius:'50%',animation:'spin 1s linear infinite'}}/>
-      <div style={{color:'rgba(255,255,255,0.3)',fontSize:13}}>Loading conversation...</div>
-      <button onClick={()=>{ setActiveConversation(null); onSetConversation?.(null); }} style={{background:'rgba(255,255,255,0.07)',border:'none',borderRadius:20,padding:'8px 20px',color:'rgba(255,255,255,0.5)',cursor:'pointer',fontSize:12,marginTop:8}}>← Back</button>
-    </div>
-  );
+    const otherUser = users.find(u=>u.id===activeConversation.otherUserId)
+                   || { id: activeConversation.otherUserId, username: '...', avatar: '?', avatarColor: '#555', avatarUrl: null };
+    if(!otherUser.username || otherUser.username === '...') {
+      // still loading — show spinner but don't go dark/blank
+    }
     return <ConversationView currentUser={currentUser} otherUser={otherUser} conversationId={activeConversation.id} onBack={()=>{ setActiveConversation(null); onSetConversation?.(null); onClearTarget?.(); }} showToast={showToast} onViewProfile={uid=>{ onViewProfile?.(uid); }} />;
   }
 
