@@ -618,7 +618,16 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
     </div>
   );
 };
-
+const LiveCameraView = () => {
+  const videoRef = useRef(null);
+  useEffect(()=>{
+    navigator.mediaDevices.getUserMedia({video:true,audio:false}).then(stream=>{
+      if(videoRef.current){ videoRef.current.srcObject=stream; }
+      return ()=>stream.getTracks().forEach(t=>t.stop());
+    }).catch(()=>{});
+  },[]);
+  return <video ref={videoRef} autoPlay playsInline muted style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',opacity:0.7}}/>;
+};
 /* ─────────────── LIVE STREAM ─────────────── */
 const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
   const [viewers, setViewers] = useState(0);
@@ -697,6 +706,7 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
         </div>
         <button onClick={onClose} style={{ background:'rgba(255,255,255,0.12)', border:'none', borderRadius:'50%', width:36, height:36, color:'white', cursor:'pointer', fontSize:16 }}>✕</button>
       </div>
+      <LiveCameraView />
       <div style={{ flex:1, display:'flex', alignItems:'flex-end', padding:'0 14px 10px', zIndex:10 }}>
         <div style={{ flex:1, maxHeight:200, overflowY:'hidden', display:'flex', flexDirection:'column', gap:6 }}>
           {chatMessages.slice(-8).map(m=>(
@@ -893,6 +903,18 @@ const EnhancedVideoCard = memo(({ video, currentUser, isActive, onLike, onCommen
     if(s<86400) return `${Math.floor(s/3600)}h ago`;
     return `${Math.floor(s/86400)}d ago`;
   };
+  useEffect(()=>{
+  const el = videoRef.current;
+  if(!el) return;
+  if(isActive){
+    el.muted = false;
+    el.volume = 1;
+    if(isPlaying) el.play().catch(()=>{ el.muted=true; el.play().catch(()=>{}); });
+  } else {
+    el.muted = true;
+    el.pause();
+  }
+},[isActive, isPlaying]);
 useEffect(() => {
   if (!isActive || !video?.description) return;
   setDisplayDesc(video.description);
@@ -998,10 +1020,14 @@ useEffect(() => {
     playsInline
     ref={el=>{
       if(el){
-        el.muted = false;
         videoRef.current = el;
         if(isActive && isPlaying){
-          el.play().catch(()=>{});
+          el.muted = false;
+          el.volume = 1;
+          el.play().catch(()=>{ el.muted=true; el.play().catch(()=>{}); });
+        } else {
+          el.muted = true;
+          el.pause();
         }
       }
     }}
@@ -1097,7 +1123,7 @@ useEffect(() => {
     onClick={e => e.stopPropagation()}
     onTouchStart={e => e.stopPropagation()}
     onTouchEnd={e => e.stopPropagation()}
-    style={{ position:'fixed', bottom:0, left:'50%', transform:'translateX(-50%)', width:'100%', maxWidth:430, height:'55%', background:'#0a0a0a', borderTopLeftRadius:20, borderTopRightRadius:20, zIndex:9000, display:'flex', flexDirection:'column', animation:'slideUp 0.3s ease' }}>
+    style={{ position:'fixed', bottom:0, left:'50%', transform:'translateX(-50%)', width:'100%', maxWidth:430, height:'60%', background:'#111', borderTopLeftRadius:28, borderTopRightRadius:28, zIndex:9000, display:'flex', flexDirection:'column', animation:'slideUp 0.3s ease', boxShadow:'0 -8px 40px rgba(0,0,0,0.7)' }}>
           <div style={{ padding:'16px', borderBottom:'1px solid rgba(255,255,255,0.07)', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
             <span style={{ color:'white', fontWeight:700, fontSize:16, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Comments</span>
             <button onClick={()=>setShowComments(false)} style={{ background:'rgba(255,255,255,0.08)', border:'none', borderRadius:'50%', width:32, height:32, color:'white', cursor:'pointer', fontSize:16 }}>✕</button>
@@ -1853,11 +1879,11 @@ if(activeSubPage==='settings') return (
     </div>
   );
 
+  const [showHamburger, setShowHamburger] = useState(false);
+  const [showFollowersList, setShowFollowersList] = useState(null); // 'followers' | 'following'
+
   const menuItems = [
-    {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>,label:'Settings',page:'settings',color:'#fff'},
     {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffd700" strokeWidth="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>,label:'Wallet',page:'wallet',color:'#ffd700'},
-    {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>,label:'Privacy',page:'privacy',color:'#fff'},
-    {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>,label:'Switch',page:'switch',color:'#fff'},
     {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#af52de" strokeWidth="1.8"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>,label:'Badges',page:'badges',color:'#af52de'},
     {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffd700" strokeWidth="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,label:'Premium',page:'premium',color:'#ffd700'},
     {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#06d6a0" strokeWidth="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,label:'Analytics',page:'analytics',color:'#06d6a0'},
@@ -1876,13 +1902,65 @@ if(activeSubPage==='settings') return (
         </div>
         <div style={{ position:'relative', padding:'52px 20px 0', textAlign:'center' }}>
           <div style={{ position:'absolute', top:10, right:16, display:'flex', gap:8 }}>
-            <button onClick={()=>setActiveSubPage('qrcode')} style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(10px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-            </button>
-            <button onClick={()=>setActiveSubPage('settings')} style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(10px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+            <button onClick={()=>setShowHamburger(true)} style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(10px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
             </button>
           </div>
+          {showHamburger && (
+            <div onClick={()=>setShowHamburger(false)} style={{position:'fixed',inset:0,zIndex:5000,background:'rgba(0,0,0,0.6)',backdropFilter:'blur(4px)'}}>
+              <div onClick={e=>e.stopPropagation()} style={{position:'absolute',top:60,right:16,background:'#1a1a1a',borderRadius:20,padding:'8px 0',minWidth:220,border:'1px solid rgba(255,255,255,0.1)',boxShadow:'0 20px 60px rgba(0,0,0,0.8)',animation:'popIn 0.2s ease'}}>
+                {[
+                  {icon:'⚙️',label:'Settings',action:()=>{setActiveSubPage('settings');setShowHamburger(false);}},
+                  {icon:'🔒',label:'Privacy',action:()=>{setActiveSubPage('privacy');setShowHamburger(false);}},
+                  {icon:'💳',label:'Wallet',action:()=>{setActiveSubPage('wallet');setShowHamburger(false);}},
+                  {icon:'📊',label:'Analytics',action:()=>{onShowAnalytics?.();setShowHamburger(false);}},
+                  {icon:'🏅',label:'Badges',action:()=>{setActiveSubPage('badges');setShowHamburger(false);}},
+                  {icon:'👑',label:'Premium',action:()=>{setActiveSubPage('premium');setShowHamburger(false);}},
+                  {icon:'📱',label:'QR Code',action:()=>{onShowQRCode?.();setShowHamburger(false);}},
+                  {icon:'🔄',label:'Switch Account',action:()=>{setActiveSubPage('switch');setShowHamburger(false);}},
+                  {icon:'🚫',label:'Blocked Users',action:()=>{setActiveSubPage('unblock');setShowHamburger(false);}},
+                  {icon:'🚪',label:'Log Out',action:()=>{setShowHamburger(false);onLogout?.();},danger:true},
+                ].map((item,i,arr)=>(
+                  <div key={item.label} onClick={item.action} style={{display:'flex',alignItems:'center',gap:14,padding:'13px 18px',borderBottom:i<arr.length-1?'1px solid rgba(255,255,255,0.05)':'',cursor:'pointer',color:item.danger?'#ff2d55':'white',fontSize:14}}>
+                    <span style={{fontSize:18}}>{item.icon}</span>{item.label}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {showFollowersList && (
+            <div onClick={()=>setShowFollowersList(null)} style={{position:'fixed',inset:0,zIndex:5000,background:'rgba(0,0,0,0.7)',backdropFilter:'blur(4px)',display:'flex',alignItems:'flex-end'}}>
+              <div onClick={e=>e.stopPropagation()} style={{width:'100%',background:'#111',borderTopLeftRadius:28,borderTopRightRadius:28,maxHeight:'70vh',display:'flex',flexDirection:'column',animation:'slideUp 0.3s ease'}}>
+                <div style={{padding:'16px 16px 12px',borderBottom:'1px solid rgba(255,255,255,0.07)',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                  <span style={{color:'white',fontWeight:800,fontSize:18}}>{showFollowersList==='followers'?'Followers':'Following'}</span>
+                  <button onClick={()=>setShowFollowersList(null)} style={{background:'rgba(255,255,255,0.08)',border:'none',borderRadius:'50%',width:32,height:32,color:'white',cursor:'pointer',fontSize:16}}>✕</button>
+                </div>
+                <div style={{overflowY:'auto',flex:1,padding:'8px 0'}}>
+                  {(showFollowersList==='followers'?(user?.followers||[]):(user?.following||[])).map(uid=>{
+                    const u=users.find(uu=>uu.id===uid);
+                    if(!u) return null;
+                    return (
+                      <div key={uid} style={{display:'flex',alignItems:'center',gap:14,padding:'12px 16px',borderBottom:'1px solid rgba(255,255,255,0.04)'}}>
+                        <div style={{width:46,height:46,borderRadius:'50%',background:u.avatarColor,display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontWeight:'bold',fontSize:18,overflow:'hidden',flexShrink:0}}>
+                          {u.avatarUrl?<img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/>:u.avatar}
+                        </div>
+                        <div style={{flex:1}}>
+                          <div style={{color:'white',fontWeight:700,fontSize:14}}>@{u.username}</div>
+                          <div style={{color:'rgba(255,255,255,0.35)',fontSize:12,marginTop:2}}>{u.bio?.substring(0,40)}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {((showFollowersList==='followers'?(user?.followers||[]):(user?.following||[])).length===0)&&(
+                    <div style={{textAlign:'center',padding:40,color:'rgba(255,255,255,0.25)'}}>
+                      <div style={{fontSize:36,marginBottom:8}}>👥</div>
+                      <div>No {showFollowersList} yet</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
           <div style={{ position:'relative', display:'inline-block', marginBottom:14 }}>
             <div onClick={()=>setShowAvatarViewer(true)} style={{cursor:'pointer'}}>
               <div style={{ width:96, height:96, borderRadius:'50%', padding:3, background:'conic-gradient(#ff2d55,#ff9500,#af52de,#ff2d55)', margin:'0 auto', cursor:'pointer' }}>
@@ -1908,8 +1986,8 @@ if(activeSubPage==='settings') return (
           {user?.link && <a href={user.link} target="_blank" rel="noopener noreferrer" style={{ color:'#007aff', fontSize:13, display:'block', marginTop:4 }}>{user.link}</a>}
           <button onClick={(e)=>{e.stopPropagation(); setShowEditProfile(true);}} style={{ marginTop:16, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.15)', borderRadius:14, padding:'10px 32px', color:'white', fontWeight:700, cursor:'pointer', fontSize:13, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Edit Profile</button>
           <div style={{ display:'flex', justifyContent:'center', gap:0, marginTop:20, background:'rgba(255,255,255,0.03)', borderRadius:20, padding:'14px 0', border:'1px solid rgba(255,255,255,0.06)' }}>
-            {[['Posts',myVideos.length],['Followers',user?.followers?.length||0],['Following',user?.following?.length||0]].map(([label,val],i)=>(
-              <div key={label} style={{ flex:1, textAlign:'center', borderRight:i<2?'1px solid rgba(255,255,255,0.06)':'' }}>
+            {[['Posts',myVideos.length,null],['Followers',user?.followers?.length||0,'followers'],['Following',user?.following?.length||0,'following']].map(([label,val,listKey],i)=>(
+              <div key={label} onClick={()=>listKey&&setShowFollowersList(listKey)} style={{ flex:1, textAlign:'center', borderRight:i<2?'1px solid rgba(255,255,255,0.06)':'', cursor:listKey?'pointer':'default' }}>
                 <div style={{ color:'white', fontWeight:800, fontSize:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{formatNumber(val)}</div>
                 <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11, marginTop:2 }}>{label}</div>
               </div>
@@ -2304,6 +2382,33 @@ const InboxPage = ({ t, users, currentUser, showToast, onViewProfile, initialTar
 };
 
 /* ─────────────── CALL MODAL (REAL WebRTC) ─────────────── */
+const IncomingCallScreen = ({ callData, onAnswer, onDecline }) => (
+  <div style={{position:'fixed',inset:0,background:'linear-gradient(160deg,#0d0025,#001a0d)',zIndex:3000,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'space-between',padding:'80px 40px 80px'}}>
+    <div style={{textAlign:'center'}}>
+      <div style={{color:'rgba(255,255,255,0.5)',fontSize:14,marginBottom:16,letterSpacing:2,textTransform:'uppercase'}}>{callData.callType==='video'?'Incoming Video Call':'Incoming Voice Call'}</div>
+      <div style={{width:120,height:120,borderRadius:'50%',background:callData.callerColor||'#ff2d55',display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontWeight:'bold',fontSize:48,margin:'0 auto 20px',border:'4px solid rgba(255,255,255,0.2)',boxShadow:'0 0 0 12px rgba(255,255,255,0.05),0 0 0 24px rgba(255,255,255,0.03)'}}>
+        {callData.callerAvatar||'?'}
+      </div>
+      <div style={{color:'white',fontSize:28,fontWeight:800,fontFamily:"'Inter',sans-serif"}}>@{callData.callerName}</div>
+      <div style={{color:'rgba(255,255,255,0.4)',fontSize:14,marginTop:8,animation:'pulse 1.5s infinite'}}>Calling...</div>
+    </div>
+    <div style={{display:'flex',justifyContent:'space-around',width:'100%',alignItems:'center'}}>
+      <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:12}}>
+        <button onClick={onDecline} style={{width:70,height:70,borderRadius:'50%',background:'#ff2d55',border:'none',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',boxShadow:'0 8px 30px rgba(255,45,85,0.5)'}}>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M10.68 13.31a16 16 0 003.41 2.6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7 2 2 0 011.72 2v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.42 19.42 0 01-3.33-2.67m-2.67-3.34a19.79 19.79 0 01-3.07-8.63A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91"/><line x1="23" y1="1" x2="1" y2="23"/></svg>
+        </button>
+        <span style={{color:'rgba(255,255,255,0.5)',fontSize:13}}>Decline</span>
+      </div>
+      <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:12}}>
+        <button onClick={onAnswer} style={{width:70,height:70,borderRadius:'50%',background:'#34c759',border:'none',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',boxShadow:'0 8px 30px rgba(52,199,89,0.5)',animation:'pulse 1.5s infinite'}}>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8a19.79 19.79 0 01-3.07-8.67A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>
+        </button>
+        <span style={{color:'rgba(255,255,255,0.5)',fontSize:13}}>Answer</span>
+      </div>
+    </div>
+  </div>
+);
+
 const CallModal = ({ type, contactName, contactAvatar, contactId, currentUser, onClose }) => {
   const [duration, setDuration] = useState(0);
   const [status, setStatus] = useState('calling');
@@ -2355,12 +2460,9 @@ const CallModal = ({ type, contactName, contactAvatar, contactId, currentUser, o
         await setDoc(doc(db, 'calls', callDocId.current), {
           offer: { type: offer.type, sdp: offer.sdp },
           callType: type, callerId: currentUser?.id, callerName: currentUser?.username,
+          callerAvatar: currentUser?.avatar, callerColor: currentUser?.avatarColor,
           calleeId: contactId, calleeName: contactName, status: 'ringing', createdAt: serverTimestamp(),
         }).catch(() => {});
-        await sendNotification(contactId, currentUser?.id, 'call',
-          `is ${type === 'video' ? 'video' : 'voice'} calling you`,
-          { callId: callDocId.current, callType: type }
-        ).catch(() => {});
         unsubAnswer = onSnapshot(doc(db, 'calls', callDocId.current), async (snap) => {
           const data = snap.data();
           if (data?.answer && pc.signalingState !== 'stable') {
@@ -2390,7 +2492,6 @@ const CallModal = ({ type, contactName, contactAvatar, contactId, currentUser, o
       unsubCandidates();
       localStreamRef.current?.getTracks().forEach(t => t.stop());
       pcRef.current?.close();
-      // Mark call as ended in Firestore
       updateDoc(doc(db, 'calls', callDocId.current), { status: 'ended' }).catch(() => {});
     };
   }, []);
@@ -2425,24 +2526,17 @@ const CallModal = ({ type, contactName, contactAvatar, contactId, currentUser, o
 
   return (
     <div style={{ position:'fixed', inset:0, background:'#0a0a0a', zIndex:2500, display:'flex', flexDirection:'column' }}>
-      {/* Remote video (full screen) */}
       {type === 'video' && (
         <video ref={remoteVideoRef} autoPlay playsInline style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', background:'#111' }} />
       )}
-
-      {/* Dark overlay when no remote video yet */}
       {status !== 'connected' && (
         <div style={{ position:'absolute', inset:0, background:'linear-gradient(160deg,#0a0a1a,#1a0a0a)', zIndex:1 }}>
           <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse at 50% 30%,rgba(255,45,85,0.2),transparent 60%)' }} />
         </div>
       )}
-
-      {/* Local video (PiP) */}
       {type === 'video' && (
         <video ref={localVideoRef} autoPlay playsInline muted style={{ position:'absolute', top:60, right:16, width:100, height:140, objectFit:'cover', borderRadius:16, border:'2px solid rgba(255,255,255,0.2)', zIndex:10, background:'#222' }} />
       )}
-
-      {/* Contact info */}
       <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:20, padding:'56px 20px 20px', textAlign:'center' }}>
         {type !== 'video' && (
           <div style={{ width:110, height:110, borderRadius:'50%', padding:3, background:'conic-gradient(#ff2d55,#af52de,#ff2d55)', margin:'0 auto 20px', animation:status==='calling'?'storyRing 4s linear infinite':'' }}>
@@ -2453,13 +2547,10 @@ const CallModal = ({ type, contactName, contactAvatar, contactId, currentUser, o
             </div>
           </div>
         )}
-        <div style={{ color:'white', fontSize:22, fontWeight:800, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{contactName}</div>
+        <div style={{ color:'white', fontSize:22, fontWeight:800, fontFamily:"'Inter',sans-serif" }}>@{contactName}</div>
         <div style={{ color:'rgba(255,255,255,0.5)', fontSize:13, marginTop:6 }}>{statusLabel}</div>
       </div>
-
-      {/* Controls */}
       <div style={{ position:'absolute', bottom:60, left:0, right:0, zIndex:20, display:'flex', justifyContent:'center', gap:20 }}>
-        {/* Mute */}
         <button onClick={toggleMute} style={{ background:isMuted?'rgba(255,45,85,0.9)':'rgba(255,255,255,0.12)', border:'none', borderRadius:'50%', width:60, height:60, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
             {isMuted
@@ -2468,16 +2559,12 @@ const CallModal = ({ type, contactName, contactAvatar, contactId, currentUser, o
             }
           </svg>
         </button>
-
-        {/* Hang up */}
         <button onClick={onClose} style={{ background:'#ff2d55', border:'none', borderRadius:'50%', width:70, height:70, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', boxShadow:'0 0 30px rgba(255,45,85,0.5)' }}>
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
             <path d="M10.68 13.31a16 16 0 003.41 2.6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7 2 2 0 011.72 2v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.42 19.42 0 01-3.33-2.67m-2.67-3.34a19.79 19.79 0 01-3.07-8.63A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91"/>
             <line x1="23" y1="1" x2="1" y2="23"/>
           </svg>
         </button>
-
-        {/* Camera toggle (video only) */}
         {type === 'video' && (
           <button onClick={toggleCam} style={{ background:isCamOff?'rgba(255,45,85,0.9)':'rgba(255,255,255,0.12)', border:'none', borderRadius:'50%', width:60, height:60, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
@@ -2958,6 +3045,7 @@ const AuthScreen = ({ onLogin }) => {
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [fullName, setFullName] = useState('');
+  const [birthdate, setBirthdate] = useState('');
   const [step, setStep] = useState('method');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -3146,6 +3234,7 @@ await createUserProfile(result.user.uid, {
   username: pendingCreds.username,
   fullName: pendingCreds.fullName,
   email: pendingCreds.email,
+  birthdate: pendingCreds.birthdate || '',
 });
 // Wait for Firestore write to propagate
 await new Promise(r => setTimeout(r, 1500));
@@ -3282,6 +3371,10 @@ return (
           {!isLogin && <>
             <input placeholder="Full Name" value={fullName} onChange={e=>setFullName(e.target.value)} style={{ width:'100%', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:'13px 16px', color:'white', marginBottom:10, outline:'none', fontSize:14, boxSizing:'border-box' }} />
             <input placeholder="Username" value={username} onChange={e=>setUsername(e.target.value)} style={{ width:'100%', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:'13px 16px', color:'white', marginBottom:10, outline:'none', fontSize:14, boxSizing:'border-box' }} />
+            <div style={{position:'relative',marginBottom:10}}>
+              <label style={{position:'absolute',top:'-10px',left:12,background:'#0a0a0a',color:'rgba(255,255,255,0.4)',fontSize:11,padding:'0 4px',fontWeight:600,textTransform:'uppercase',letterSpacing:0.5}}>Date of Birth</label>
+              <input type="date" value={birthdate} onChange={e=>setBirthdate(e.target.value)} max={new Date(Date.now()-13*365*24*60*60*1000).toISOString().split('T')[0]} style={{ width:'100%', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:'13px 16px', color:birthdate?'white':'rgba(255,255,255,0.3)', outline:'none', fontSize:14, boxSizing:'border-box', colorScheme:'dark' }} />
+            </div>
           </>}
           <input placeholder="Email" value={identifier} onChange={e=>setIdentifier(e.target.value)} style={{ width:'100%', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:'13px 16px', color:'white', marginBottom:10, outline:'none', fontSize:14, boxSizing:'border-box' }} />
           <input type="password" placeholder="Password" value={password} onChange={e=>setPassword(e.target.value)} style={{ width:'100%', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:'13px 16px', color:'white', marginBottom:14, outline:'none', fontSize:14, boxSizing:'border-box' }} />
@@ -3530,11 +3623,7 @@ setBlockedUsers(profile.blockedUsers||[]);
       snap.docChanges().forEach(change=>{
         if(change.type==='added'){
           const data = change.doc.data();
-          if(window.confirm(`📞 @${data.callerName} is ${data.callType==='video'?'video':'voice'} calling you. Answer?`)){
-            setShowCall({type:data.callType, contactName:data.callerName, contactAvatar:'?', contactId:data.callerId});
-          } else {
-            updateDoc(doc(db,'calls',change.doc.id),{status:'declined'}).catch(()=>{});
-          }
+          setIncomingCall({...data, callDocId: change.doc.id});
         }
       });
     },()=>{});
@@ -3667,7 +3756,20 @@ const handleMessage = uid => {
   return (
     <div style={{ maxWidth:430, margin:'0 auto', height:'100dvh', background:'#0a0a0a', display:'flex', flexDirection:'column', position:'relative', overflow:'hidden' }}>
       <GlobalStyles />
-
+{incomingCall && !showCall && (
+        <IncomingCallScreen
+          callData={incomingCall}
+          onAnswer={()=>{
+            setShowCall({type:incomingCall.callType, contactName:incomingCall.callerName, contactAvatar:incomingCall.callerAvatar||'?', contactId:incomingCall.callerId});
+            updateDoc(doc(db,'calls',incomingCall.callDocId),{status:'answered'}).catch(()=>{});
+            setIncomingCall(null);
+          }}
+          onDecline={()=>{
+            updateDoc(doc(db,'calls',incomingCall.callDocId),{status:'declined'}).catch(()=>{});
+            setIncomingCall(null);
+          }}
+        />
+      )}
       {showCall && <CallModal type={showCall.type} contactName={showCall.contactName} contactAvatar={showCall.contactAvatar} contactId={showCall.contactId} currentUser={currentUser} onClose={()=>setShowCall(null)} />}
       {showLiveStream && <LiveStream streamer={showLiveStream} onClose={()=>setShowLiveStream(null)} showToast={showToast} currentUser={currentUser} />}
       {showStoryViewer && <StoryViewer story={showStoryViewer} user={users.find(u=>u.id===showStoryViewer.userId)||currentUser} onClose={()=>setShowStoryViewer(null)} />}
