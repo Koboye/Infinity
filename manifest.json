@@ -1,0 +1,66 @@
+{
+  "name": "Infinity",
+  "short_name": "Infinity",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#ff2d55",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://res.cloudinary.com/dotvhzjmc/image/upload/znfksngv27boh3c1kxpv.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://res.cloudinary.com/dotvhzjmc/image/upload/znfksngv27boh3c1kxpv.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
+Step 2 — Edit /public/index.html, add inside <head>:
+
+html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- ADD THESE LINES -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#ff2d55" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Infinity" />
+    <link rel="apple-touch-icon" href="https://res.cloudinary.com/dotvhzjmc/image/upload/znfksngv27boh3c1kxpv.png" />
+    <!-- END ADD -->
+
+    <title>Infinity</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
+Step 3 — Push to GitHub, Vercel auto-deploys.
+
+Step 4 — Install on phone:
+
+Android:
+
+Open Chrome → go to your Vercel URL
+Tap the 3 dots menu → "Add to Home Screen"
+Done ✓
+iPhone:
+
+Open Safari → go to your Vercel URL
+Tap the Share button → "Add to Home Screen"
+Done ✓
+The app will open fullscreen with no browser bar, just like a real app.
+
+
+
+You are out of 
