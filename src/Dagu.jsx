@@ -2279,7 +2279,6 @@ unsub = onSnapshot(q, (snap) => {
           const isMine = msg.from===currentUser?.id;
           return (
             <div key={msg.id} style={{display:'flex',justifyContent:isMine?'flex-end':'flex-start',alignItems:'flex-end',gap:8,marginBottom:10}}>
-              {!isMine&&(
                {isMine && (
   <button
     onClick={async () => {
