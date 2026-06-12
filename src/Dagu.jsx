@@ -2414,7 +2414,7 @@ const InboxPage = ({ t, users, currentUser, showToast, onViewProfile, initialTar
   setActiveConversation(null);
   onSetConversation?.(null);
   return null;
-}
+      
         return (
           <div style={{height:'100%',background:'#0a0a0a',display:'flex',alignItems:'center',justifyContent:'center'}}>
             <div style={{width:32,height:32,border:'3px solid rgba(255,45,85,0.3)',borderTop:'3px solid #ff2d55',borderRadius:'50%',animation:'spin 1s linear infinite'}}/>
