@@ -883,6 +883,7 @@ const EnhancedVideoCard = memo(({ video, currentUser, isActive, onLike, onCommen
   const [isPlaying, setIsPlaying] = useState(true);
   const tapTimer = useRef(null);
   const videoRef = useRef(null);
+  const menuButtonRef = useRef(null);
 
   useEffect(()=>()=>{ if(tapTimer.current) clearTimeout(tapTimer.current); },[]);
 
@@ -2354,6 +2355,15 @@ unsub = onSnapshot(q, (snap) => {
 const InboxPage = ({ t, users, currentUser, showToast, onViewProfile, initialTargetId, onClearTarget, persistedConversation, onSetConversation }) => {
   const [activeConversation, setActiveConversation] = useState(initialTargetId ? null : (persistedConversation || null));
   const [conversations, setConversations] = useState([]);
+  useEffect(()=>{
+    if(activeConversation && users.length > 0){
+      const found = users.find(u=>u.id===activeConversation.otherUserId);
+      if(!found){
+        setActiveConversation(null);
+        onSetConversation?.(null);
+      }
+    }
+  },[users, activeConversation]);
 
   useEffect(()=>{
     if(!initialTargetId || !currentUser?.id) return;
@@ -2407,22 +2417,14 @@ const InboxPage = ({ t, users, currentUser, showToast, onViewProfile, initialTar
  if(activeConversation){
     const otherUser = users.find(u=>u.id===activeConversation?.otherUserId) || null;
     if(!otherUser) {
-  if(users.length === 0) {
-}
-  // Users loaded but user not found — reset safely
-  setActiveConversation(null);
-  onSetConversation?.(null);
-  return null;
-      
+      if(users.length === 0) {
         return (
           <div style={{height:'100%',background:'#0a0a0a',display:'flex',alignItems:'center',justifyContent:'center'}}>
             <div style={{width:32,height:32,border:'3px solid rgba(255,45,85,0.3)',borderTop:'3px solid #ff2d55',borderRadius:'50%',animation:'spin 1s linear infinite'}}/>
           </div>
         );
       }
-      // Users loaded but user not found — reset safely
-      setActiveConversation(null);
-      onSetConversation?.(null);
+      // Users loaded but otherUser not found — return null, effect will reset
       return null;
     }
     return (
