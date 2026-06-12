@@ -574,6 +574,22 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
             <button onClick={()=>{onFollow?.(user.id); onClose();}}
               style={{ flex:1, background:isFollowing?'rgba(255,255,255,0.06)':'linear-gradient(135deg,#ff2d55,#af52de)', border:isFollowing?'1px solid rgba(255,45,85,0.4)':'none', borderRadius:14, padding:'12px', color:isFollowing?'#ff2d55':'white', fontWeight:700, cursor:'pointer', fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>
               {isFollowing ? 'Following' : '+ Follow'}
+              <button
+  onClick={async () => {
+    await addDoc(collection(db, 'reports'), {
+      reportedUserId: user.id,
+      reportedBy: currentUser.id,
+      type: 'user',
+      createdAt: serverTimestamp()
+    });
+    showToast?.('User reported', 'success');
+  }}
+  style={{
+    background: 'rgba(255,150,0,0.1)', border: '1px solid rgba(255,150,0,0.3)',
+    borderRadius: 14, padding: '12px', color: '#ff9500',
+    fontWeight: 600, cursor: 'pointer', fontSize: 13
+  }}
+>Report</button>
             </button>
             <button onClick={()=>{onMessage?.(user.id); onClose();}} style={{ flex:1, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:'12px', color:'white', fontWeight:600, cursor:'pointer', fontSize:14 }}>Message</button>
             <button onClick={()=>{onVoiceCall?.(user.id); onClose();}} style={{ background:'rgba(52,199,89,0.12)', border:'1px solid rgba(52,199,89,0.2)', borderRadius:14, padding:'12px 14px', color:'#34c759', cursor:'pointer', fontSize:18 }}>
@@ -867,10 +883,6 @@ const EnhancedVideoCard = memo(({ video, currentUser, isActive, onLike, onCommen
   const [isPlaying, setIsPlaying] = useState(true);
   const tapTimer = useRef(null);
   const videoRef = useRef(null);
-  const EnhancedVideoCard = memo(({ video, currentUser, isActive, onLike, onComment, onShare, onFollow, onMessage, onVoiceCall, onVideoCall, onDuet, onStitch, onSaveSound, followed, showToast, onViewProfile, onBlock }) => {
-  const menuButtonRef = useRef(null);
-  const [liked, setLiked] = useState(false);
-  
 
   useEffect(()=>()=>{ if(tapTimer.current) clearTimeout(tapTimer.current); },[]);
 
@@ -1250,9 +1262,11 @@ const FriendsFeed = ({ t, friends, videos, currentUser, onMessage, onVoiceCall, 
   const startY = useRef(null);
 
   const friendsVideos = useMemo(()=>
-    videos.filter(v=>friends.includes(v.userId) || v.userId===currentUser?.id)
-      .sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)),
-  [friends,videos,currentUser?.id]);
+  videos
+    .filter(v => (friends.includes(v.userId) || v.userId===currentUser?.id))
+    .filter(v => !(blockedUsers||[]).includes(v.userId))
+    .sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)),
+[friends, videos, currentUser?.id, blockedUsers]);
 
   const filtered = useMemo(()=>
     !search ? friendsVideos : friendsVideos.filter(v=>
@@ -1526,8 +1540,16 @@ const EditProfileModal = ({ user, onClose, onSave, showToast }) => {
     setUploading(true);
     try {
       let avatarUrl = user?.avatarUrl || null;
+      if (username !== user.username) {
+  const snap = await getDocs(query(collection(db, 'users'), where('username', '==', username)));
+  if (!snap.empty) {
+    showToast?.('Username already taken', 'error');
+    setUploading(false);
+    return;
+  }
+}
       if(avatarFile) avatarUrl = await uploadToCloudinary(avatarFile);
-      const updates = {username,bio,link,gender,avatarColor,avatarUrl};
+      const updates = {username, bio, link, gender, avatarColor, avatarUrl, avatar: username[0].toUpperCase()};
       await updateDoc(doc(db,'users',user.id), updates);
       onSave(updates);
       showToast?.('Profile updated!','success');
@@ -1664,6 +1686,7 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
       <div style={{background:'rgba(255,255,255,0.03)',borderRadius:20,overflow:'hidden',border:'1px solid rgba(255,255,255,0.06)'}}>
         <div style={{background:'rgba(255,165,0,0.08)',border:'1px solid rgba(255,165,0,0.2)',borderRadius:14,padding:'10px 14px',marginBottom:16,color:'#ff9500',fontSize:12,lineHeight:1.5}}>
   ⚠️ Only navigation labels are currently translated. Buttons, modals, and other text remain in English.
+          );
         {[['English','English','en'],['አማርኛ','Amharic','am'],['العربية','Arabic','ar'],['Français','French','fr'],['Español','Spanish','es'],['Português','Portuguese','pt'],['हिन्दी','Hindi','hi'],['中文','Chinese','zh']].map(([label,sub,code],i,arr)=>{
           const selected = (user?.language||'en')===code;
           return (
@@ -1752,8 +1775,8 @@ if(activeSubPage==='settings') return (
               await sendEmailJS({to_email:'getachewshambel11@gmail.com',from_name:user?.username,message:`User ${user?.username} (${user?.email}) reported a problem.`});
               showToast?.('Report sent!','success');
             }},
-            {label:'Terms of Service',action:()=>showToast?.('Terms of Service','info')},
-            {label:'Privacy Policy',action:()=>showToast?.('Privacy Policy','info')},
+            {label:'Terms of Service', action:()=>window.open('https://yoursite.com/terms','_blank')},
+{label:'Privacy Policy', action:()=>window.open('https://yoursite.com/privacy','_blank')},
           ].map((item,i,arr)=>(
             <div key={item.label} onClick={item.action} style={{ padding:'14px 16px', borderBottom:i<arr.length-1?'1px solid rgba(255,255,255,0.05)':'', display:'flex', alignItems:'center', gap:12, cursor:'pointer' }}>
               <span style={{ color:'white', flex:1, fontSize:14 }}>{item.label}</span>
@@ -2055,6 +2078,24 @@ if(activeSubPage==='settings') return (
                   <div style={{ position:'absolute', bottom:4, left:6, color:'white', fontSize:10, fontWeight:700, background:'rgba(0,0,0,0.6)', borderRadius:8, padding:'2px 7px', display:'flex', alignItems:'center', gap:3 }}>
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                     {formatNumber(v.views)}
+                    {v.userId === user?.id && (
+  <button
+    onClick={async (e) => {
+      e.stopPropagation();
+      if (window.confirm('Delete this post?')) {
+        await deleteDoc(doc(db, 'videos', v.id));
+        showToast?.('Post deleted', 'success');
+      }
+    }}
+    style={{
+      position: 'absolute', top: 4, right: 4,
+      background: 'rgba(255,45,85,0.8)', border: 'none',
+      borderRadius: '50%', width: 22, height: 22,
+      color: 'white', cursor: 'pointer', fontSize: 12,
+      display: 'flex', alignItems: 'center', justifyContent: 'center'
+    }}
+  >✕</button>
+)}
                   </div>
                 </div>
               ))}
@@ -2240,7 +2281,20 @@ unsub = onSnapshot(q, (snap) => {
           return (
             <div key={msg.id} style={{display:'flex',justifyContent:isMine?'flex-end':'flex-start',alignItems:'flex-end',gap:8,marginBottom:10}}>
               {!isMine&&(
-                <div onClick={()=>onViewProfile?.(otherUser?.id)} style={{width:26,height:26,borderRadius:'50%',background:otherUser?.avatarColor,display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontWeight:'bold',fontSize:10,flexShrink:0,cursor:'pointer',overflow:'hidden'}}>
+               {isMine && (
+  <button
+    onClick={async () => {
+      if (window.confirm('Delete this message?')) {
+        await deleteDoc(doc(db, 'messages', conversationId, 'msgs', msg.id));
+      }
+    }}
+    style={{
+      background: 'none', border: 'none', color: 'rgba(255,45,85,0.5)',
+      fontSize: 11, cursor: 'pointer', padding: '0 4px'
+    }}
+  >Delete</button>
+)} 
+              <div onClick={()=>onViewProfile?.(otherUser?.id)} style={{width:26,height:26,borderRadius:'50%',background:otherUser?.avatarColor,display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontWeight:'bold',fontSize:10,flexShrink:0,cursor:'pointer',overflow:'hidden'}}>
                   {otherUser?.avatarUrl?<img src={otherUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/>:otherUser?.avatar}
                 </div>
               )}
@@ -2355,8 +2409,14 @@ const InboxPage = ({ t, users, currentUser, showToast, onViewProfile, initialTar
  if(activeConversation){
     const otherUser = users.find(u=>u.id===activeConversation?.otherUserId) || null;
     if(!otherUser) {
-      if(users.length === 0) {
-        // Still loading users — show spinner, don't reset
+  if(users.length === 0) {
+    // Still loading...
+  }
+  // Users loaded but user not found — reset safely
+  setActiveConversation(null);
+  onSetConversation?.(null);
+  return null;
+}
         return (
           <div style={{height:'100%',background:'#0a0a0a',display:'flex',alignItems:'center',justifyContent:'center'}}>
             <div style={{width:32,height:32,border:'3px solid rgba(255,45,85,0.3)',borderTop:'3px solid #ff2d55',borderRadius:'50%',animation:'spin 1s linear infinite'}}/>
@@ -3101,7 +3161,7 @@ const GuestFeed = ({ onSignIn }) => {
   const startY = useRef(null);
 
   useEffect(()=>{
-    const q = query(collection(db,'videos'), orderBy('createdAt','desc'));
+    const q = query(collection(db,'videos'), orderBy('createdAt','desc'), limit(20));
     const unsub = onSnapshot(q, snap=>{
       setVideos(snap.docs.map(d=>({id:d.id,...d.data()})));
     });
@@ -3211,7 +3271,7 @@ const AuthScreen = ({ onLogin }) => {
       const result = await signInWithEmailAndPassword(auth, identifier, password);
 // Only block login if the account is older than 30 seconds (i.e. not just created)
 const createdAt = result.user.metadata?.creationTime;
-const isNewAccount = createdAt && (Date.now() - new Date(createdAt).getTime()) < 30000;
+const isNewAccount = createdAt && (Date.now() - new Date(createdAt).getTime()) < 120000;
 if(!result.user.emailVerified && !isNewAccount){
   await signOut(auth);
   setError('Please verify your email. Check your inbox for the verification link.');
@@ -3336,6 +3396,8 @@ if(step==='otp') return (
           setLoading(true); setError('');
           try {
             const result = await createUserWithEmailAndPassword(auth, pendingCreds.email, pendingCreds.password);
+            await sendEmailVerification(result.user);
+
 await createUserProfile(result.user.uid, {
   username: pendingCreds.username,
   fullName: pendingCreds.fullName,
@@ -3620,7 +3682,7 @@ const t = TRANSLATIONS[currentUser?.language || 'en'] || TRANSLATIONS.en;
         if(!fbUser.emailVerified && fbUser.providerData?.some(p => p.providerId === 'password')){
   // Don't block if we just created the account (within last 30 seconds)
   const createdAt = fbUser.metadata?.creationTime;
-  const isNewAccount = createdAt && (Date.now() - new Date(createdAt).getTime()) < 30000;
+  const isNewAccount = createdAt && (Date.now() - new Date(createdAt).getTime()) < 120000;
   if(!isNewAccount){
     await signOut(auth);
     setCurrentUser(null);
@@ -3677,7 +3739,7 @@ const t = TRANSLATIONS[currentUser?.language || 'en'] || TRANSLATIONS.en;
   },[]);
   // Real-time videos from Firestore
   useEffect(()=>{
-    const q = query(collection(db,'videos'), orderBy('createdAt','desc'));
+    const q = query(collection(db,'videos'), orderBy('createdAt','desc'), limit(20));
     const unsub = onSnapshot(q, snap=>{
       setVideos(snap.docs.map(d=>({id:d.id,...d.data()})));
     });
@@ -3932,7 +3994,7 @@ const handleMessage = uid => {
             {activeTab==='home' && <HomeFeed t={t} videos={videos} currentUser={currentUser} onLike={()=>{}} onComment={()=>{}} onShare={()=>{}} onFollow={toggleFollow} onMessage={handleMessage} onVoiceCall={uid=>{   const u=users.find(uu=>uu.id===uid);   const callDocId=[currentUser.id,uid].sort().join('_');   setShowCall({type:'audio',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
  onVideoCall={uid=>{   const u=users.find(uu=>uu.id===uid);   const callDocId=[currentUser.id,uid].sort().join('_');   setShowCall({type:'video',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
  onDuet={()=>showToast?.('Duet mode ready','info')} onStitch={()=>showToast?.('Stitch mode ready','info')} onSaveSound={()=>showToast?.('Sound saved!','success')} followed={followed} showToast={showToast} onLive={()=>setShowLiveStream(currentUser)} onViewProfile={handleViewProfile} onOpenSearch={()=>setShowSearch(true)} onOpenNotifications={()=>setShowNotifications(true)} blockedUsers={blockedUsers} onBlock={uid=>setBlockedUsers(p=>[...p,uid])} />}
-            {activeTab==='friends' && <FriendsFeed t={t} friends={friends} videos={videos} currentUser={currentUser} onMessage={handleMessage} onVoiceCall={uid=>{   const u=users.find(uu=>uu.id===uid);   const callDocId=[currentUser.id,uid].sort().join('_');   setShowCall({type:'audio',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
+            {activeTab==='friends' && <FriendsFeed t={t} friends={friends} videos={videos} currentUser={currentUser} onMessage={handleMessage} onVoiceCall={uid=>{   const u=users.find(uu=>uu.id===uid);   const callDocId=[currentUser.id,uid].sort().join('_');   setShowCall({type:'audio',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}blockedUsers={blockedUsers}
  onVideoCall={uid=>{   const u=users.find(uu=>uu.id===uid);   const callDocId=[currentUser.id,uid].sort().join('_');   setShowCall({type:'video',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
  onViewProfile={handleViewProfile} showToast={showToast} users={users} onCreateStory={()=>setShowCreateStory(true)} onViewStory={setShowStoryViewer} onFollow={toggleFollow} followed={followed} />}
             {activeTab==='create' && <CreateScreen onOpenCamera={()=>setShowCamera(true)} onShowSoundLibrary={()=>setShowSoundLibrary(true)} showToast={showToast} />}
@@ -3942,7 +4004,7 @@ const handleMessage = uid => {
         )}
       </div>
 
-      <div style={{ display:'flex', background:'rgba(8,8,8,0.97)', borderTop:'1px solid rgba(255,255,255,0.06)', padding:'12px 8px 24px', flexShrink:0, backdropFilter:'blur(20px)' }}>
+      <div style={{ display:'flex', background:'rgba(8,8,8,0.97)', borderTop:'1px solid rgba(255,255,255,0.06)', padding:'12px 8px max(24px, env(safe-area-inset-bottom))', flexShrink:0, backdropFilter:'blur(20px)' }}>
         {tabs.map(tab=>{
   const isActive=activeTab===tab.id;
   const tabLabels = { home: t?.home||'Home', friends: t?.friends||'Friends', create: t?.create||'Create', inbox: t?.inbox||'Inbox', profile: t?.profile||'Profile' };
