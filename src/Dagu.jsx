@@ -852,7 +852,6 @@ const CommentInputBar = ({ currentUser, commentText, setCommentText, onSend, sho
   );
 };
 /* ─────────────── ENHANCED VIDEO CARD ─────────────── */
-const menuButtonRef = useRef(null);
 const EnhancedVideoCard = memo(({ video, currentUser, isActive, onLike, onComment, onShare, onFollow, onMessage, onVoiceCall, onVideoCall, onDuet, onStitch, onSaveSound, followed, showToast, onViewProfile, onBlock }) => {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(video?.likes||0);
@@ -868,6 +867,10 @@ const EnhancedVideoCard = memo(({ video, currentUser, isActive, onLike, onCommen
   const [isPlaying, setIsPlaying] = useState(true);
   const tapTimer = useRef(null);
   const videoRef = useRef(null);
+  const EnhancedVideoCard = memo(({ video, currentUser, isActive, onLike, onComment, onShare, onFollow, onMessage, onVoiceCall, onVideoCall, onDuet, onStitch, onSaveSound, followed, showToast, onViewProfile, onBlock }) => {
+  const menuButtonRef = useRef(null);
+  const [liked, setLiked] = useState(false);
+  
 
   useEffect(()=>()=>{ if(tapTimer.current) clearTimeout(tapTimer.current); },[]);
 
@@ -1659,6 +1662,8 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
       </button>
       <div style={{color:'white',fontWeight:800,fontSize:22,marginBottom:24,fontFamily:"'Inter',sans-serif"}}>Language</div>
       <div style={{background:'rgba(255,255,255,0.03)',borderRadius:20,overflow:'hidden',border:'1px solid rgba(255,255,255,0.06)'}}>
+        <div style={{background:'rgba(255,165,0,0.08)',border:'1px solid rgba(255,165,0,0.2)',borderRadius:14,padding:'10px 14px',marginBottom:16,color:'#ff9500',fontSize:12,lineHeight:1.5}}>
+  ⚠️ Only navigation labels are currently translated. Buttons, modals, and other text remain in English.
         {[['English','English','en'],['አማርኛ','Amharic','am'],['العربية','Arabic','ar'],['Français','French','fr'],['Español','Spanish','es'],['Português','Portuguese','pt'],['हिन्दी','Hindi','hi'],['中文','Chinese','zh']].map(([label,sub,code],i,arr)=>{
           const selected = (user?.language||'en')===code;
           return (
@@ -1673,8 +1678,7 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
         })}
       </div>
     </div>
-  <div style={{background:'rgba(255,165,0,0.08)',border:'1px solid rgba(255,165,0,0.2)',borderRadius:14,padding:'10px 14px',marginBottom:16,color:'#ff9500',fontSize:12,lineHeight:1.5}}>
-  ⚠️ Only navigation labels are currently translated. Buttons, modals, and other text remain in English.
+  
 </div>
 
   if(activeSubPage==='wallet') return <WalletPage user={user} setCurrentUser={setCurrentUser} showToast={showToast} onBack={()=>setActiveSubPage(null)} />;
@@ -2446,15 +2450,7 @@ const IncomingCallScreen = ({ callData, onAnswer, onDecline }) => (
     </div>
   </div>
 );
-useEffect(() => {
-  if (!callData?.callDocId) return;
-  const unsub = onSnapshot(doc(db, 'calls', callData.callDocId), (snap) => {
-    if (!snap.exists() || snap.data()?.status === 'ended') {
-      onDecline?.();
-    }
-  });
-  return () => unsub();
-}, [callData?.callDocId]);
+
 const CallModal = ({ type, contactName, contactAvatar, contactId, currentUser, onClose, isCallee: isCalleeProp, callDocId: callDocIdProp }) => {
   const [duration, setDuration] = useState(0);
   const [status, setStatus] = useState('calling');
@@ -3786,7 +3782,10 @@ setBlockedUsers(profile.blockedUsers||[]);
 
   const handleViewProfile = uid => { const user=users.find(u=>u.id===uid); if(user) setViewingProfile(user); };
   const [inboxTargetId, setInboxTargetId] = useState(null);
-const [activeConversation, setActiveConversation] = useState(null);
+const [activeConversation, setActiveConversation] = useState(() => {
+  try { return JSON.parse(sessionStorage.getItem('dagu_conv')||'null'); }
+  catch { return null; }
+});
 const handleMessage = uid => {
   if(!uid) return;
   // Don't block if users haven't loaded yet — InboxPage will wait
