@@ -1039,7 +1039,7 @@ useEffect(() => {
           <div style={{ fontSize:80, animation:'heartBurst 0.9s ease forwards' }}>❤️</div>
         </div>
       )}
-      <div style={{ position:'absolute', bottom:72, left:14, right:70, zIndex:5 }}>
+      <div style={{ position:'absolute', bottom:80, left:14, right:70, zIndex:5 }}>
         <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:10 }}>
           <button onClick={()=>onViewProfile?.(video.userId)} style={{ position:'relative', background:'none', border:'none', cursor:'pointer', padding:0 }}>
             <div style={{ width:42, height:42, borderRadius:'50%', background:video.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:16, border:'2px solid rgba(255,255,255,0.5)', overflow:'hidden' }}>
@@ -1099,7 +1099,7 @@ useEffect(() => {
         </div>
       )}
 
-      <div style={{ position:'absolute', right:12, bottom:72, display:'flex', flexDirection:'column', alignItems:'center', gap:6, zIndex:6 }}>
+      <div style={{ position:'absolute', right:12, bottom:80, display:'flex', flexDirection:'column', alignItems:'center', gap:6, zIndex:6 }}>
        <button onClick={e=>{e.stopPropagation();handleLike();}} style={{ background:'rgba(0,0,0,0.3)', border:'none', borderRadius:'50%', width:48, height:48, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill={liked?'#ff2d55':'none'} stroke={liked?'#ff2d55':'rgba(255,255,255,0.9)'} strokeWidth="1.8"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
         </button>
@@ -1265,7 +1265,7 @@ const FriendsFeed = ({ t, friends, videos, currentUser, onMessage, onVoiceCall, 
     <div style={{ height:'100%', display:'flex', flexDirection:'column', background:'#0a0a0a' }}>
       {/* Top bar */}
       <div style={{ position:'relative', zIndex:15, padding:'14px 16px 0', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-        <div style={{ color:'white', fontWeight:800, fontSize:18, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", textShadow:'0 1px 8px rgba(0,0,0,0.8)' }}>Friends</div>
+<div style={{ color:'white', fontWeight:800, fontSize:18, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", textShadow:'0 1px 8px rgba(0,0,0,0.8)' }}>{t?.friends||'Friends'}</div>
         <button onClick={()=>setShowSearch(v=>!v)} style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(10px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         </button>
@@ -1317,7 +1317,7 @@ const FriendsFeed = ({ t, friends, videos, currentUser, onMessage, onVoiceCall, 
 
       {/* Top overlay: Friends label + search — sits above Stories */}
       <div style={{ position:'absolute', top:110, left:0, right:0, zIndex:15, padding:'10px 16px 0', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-        <div style={{ color:'white', fontWeight:800, fontSize:18, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", textShadow:'0 1px 8px rgba(0,0,0,0.8)' }}>Friends</div>
+<div style={{ color:'white', fontWeight:800, fontSize:18, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", textShadow:'0 1px 8px rgba(0,0,0,0.8)' }}>{t?.friends||'Friends'}</div>
         <button onClick={()=>setShowSearch(v=>!v)} style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(10px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         </button>
@@ -1892,10 +1892,10 @@ if(activeSubPage==='settings') return (
       <div style={{ position:'relative', paddingBottom:20 }}>
         <div style={{ height:160, position:'absolute', top:0, left:0, right:0, overflow:'hidden' }}>
           {user?.avatarUrl
-            ? <img src={user.avatarUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', filter:'blur(24px) brightness(0.45) saturate(1.4)', transform:'scale(1.15)' }} />
-            : <div style={{ width:'100%', height:'100%', background:`linear-gradient(135deg,${user?.avatarColor||'#ff2d55'}88,rgba(175,82,222,0.4))` }} />
+            ? <img src={user.avatarUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', filter:'blur(20px) brightness(0.6) saturate(1.6)', transform:'scale(1.2)' }} />
+            : <div style={{ width:'100%', height:'100%', background:`linear-gradient(135deg,${user?.avatarColor||'#ff2d55'},rgba(175,82,222,0.8))` }} />
           }
-          <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom,rgba(10,10,10,0.2),rgba(10,10,10,0.85))' }} />
+          <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom,rgba(10,10,10,0.1),rgba(10,10,10,0.7))' }} />
         </div>
         <div style={{ position:'relative', padding:'52px 20px 0', textAlign:'center' }}>
           <div style={{ position:'absolute', top:10, right:16, display:'flex', gap:8 }}>
@@ -2331,7 +2331,12 @@ const InboxPage = ({ t, users, currentUser, showToast, onViewProfile, initialTar
   };
 
  if(activeConversation){
-    const otherUser = users.find(u=>u.id===activeConversation.otherUserId);
+    const otherUser = users.find(u=>u.id===activeConversation?.otherUserId) || null;
+    if(!otherUser && users.length > 0) {
+      setActiveConversation(null);
+      onSetConversation?.(null);
+      return null;
+    }
     return (
       <ConversationView
         currentUser={currentUser}
@@ -2343,17 +2348,18 @@ const InboxPage = ({ t, users, currentUser, showToast, onViewProfile, initialTar
       />
     );
   }
-  const convUsers = useMemo(()=>
-    users.filter(u=>{
-      if(u.id===currentUser?.id) return false;
+  const convUsers = useMemo(()=>{
+    if(!currentUser?.id) return [];
+    return users.filter(u=>{
+      if(u.id===currentUser.id) return false;
       const convId = getConversationId(currentUser.id, u.id);
       return conversations.some(c=>c.id===convId);
     }).sort((a,b)=>{
       const convA = conversations.find(c=>c.id===getConversationId(currentUser.id,a.id));
       const convB = conversations.find(c=>c.id===getConversationId(currentUser.id,b.id));
       return (convB?.lastMessageAt?.seconds||0)-(convA?.lastMessageAt?.seconds||0);
-    }),
-  [users, conversations, currentUser?.id]);
+    });
+  },[users, conversations, currentUser?.id]);
 
   return (
     <div style={{ height:'100%', display:'flex', flexDirection:'column', background:'#0a0a0a' }}>
@@ -2423,7 +2429,7 @@ const CallModal = ({ type, contactName, contactAvatar, contactId, currentUser, o
   const remoteVideoRef = useRef(null);
   const pcRef = useRef(null);
   const localStreamRef = useRef(null);
-  const callDocId = useRef([[currentUser?.id, contactId].sort().join('_'), Date.now()].join('_'));
+  const callDocId = useRef([currentUser?.id, contactId].sort().join('_'));
 
   useEffect(() => {
     let unsubAnswer = ()=>{};
@@ -2431,14 +2437,15 @@ const CallModal = ({ type, contactName, contactAvatar, contactId, currentUser, o
 
     const startCall = async () => {
       try {
+        const constraints = type === 'video'
+          ? { audio: true, video: { facingMode: 'user' } }
+          : { audio: true, video: false };
         let stream;
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: type === 'video' });
-        } catch {
-          stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-        }
+        try { stream = await navigator.mediaDevices.getUserMedia(constraints); }
+        catch { stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false }); }
         localStreamRef.current = stream;
-        if (localVideoRef.current) localVideoRef.current.srcObject = stream;
+        if (localVideoRef.current) { localVideoRef.current.srcObject = stream; localVideoRef.current.play().catch(()=>{}); }
+
         const pc = new RTCPeerConnection({
           iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
@@ -2449,40 +2456,69 @@ const CallModal = ({ type, contactName, contactAvatar, contactId, currentUser, o
         });
         pcRef.current = pc;
         stream.getTracks().forEach(track => pc.addTrack(track, stream));
+
         pc.ontrack = (e) => {
-          if (remoteVideoRef.current) remoteVideoRef.current.srcObject = e.streams[0];
+          if (remoteVideoRef.current) {
+            remoteVideoRef.current.srcObject = e.streams[0];
+            remoteVideoRef.current.play().catch(()=>{});
+          }
           setStatus('connected');
-        };
-        pc.onicecandidate = (e) => {
-          if (e.candidate) addDoc(collection(db, 'calls', callDocId.current, 'callerCandidates'), e.candidate.toJSON()).catch(() => {});
         };
         pc.onconnectionstatechange = () => {
           if (pc.connectionState === 'connected') setStatus('connected');
-          if (pc.connectionState === 'failed') { setStatus('failed'); setTimeout(onClose, 2000); }
-        };
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-        await setDoc(doc(db, 'calls', callDocId.current), {
-          offer: { type: offer.type, sdp: offer.sdp },
-          callType: type, callerId: currentUser?.id, callerName: currentUser?.username,
-          callerAvatar: currentUser?.avatar, callerColor: currentUser?.avatarColor,
-          calleeId: contactId, calleeName: contactName, status: 'ringing', createdAt: serverTimestamp(),
-        }).catch(() => {});
-        unsubAnswer = onSnapshot(doc(db, 'calls', callDocId.current), async (snap) => {
-          const data = snap.data();
-          if (data?.answer && pc.signalingState !== 'stable') {
-            try { await pc.setRemoteDescription(new RTCSessionDescription(data.answer)); } catch {}
+          if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
+            setStatus('failed'); setTimeout(onClose, 2000);
           }
-          if (data?.status === 'declined') { setStatus('declined'); setTimeout(onClose, 1500); }
-        });
-        unsubCandidates = onSnapshot(collection(db, 'calls', callDocId.current, 'calleeCandidates'), (snap) => {
-          snap.docChanges().forEach(async (change) => {
-            if (change.type === 'added') {
-              try { await pc.addIceCandidate(new RTCIceCandidate(change.doc.data())); } catch {}
-            }
+        };
+
+        const callSnap = await getDoc(doc(db, 'calls', callDocId.current));
+        const isCallee = callSnap.exists() && callSnap.data()?.offer && callSnap.data()?.callerId !== currentUser?.id;
+
+        if (isCallee) {
+          await pc.setRemoteDescription(new RTCSessionDescription(callSnap.data().offer));
+          const answer = await pc.createAnswer();
+          await pc.setLocalDescription(answer);
+          await updateDoc(doc(db, 'calls', callDocId.current), {
+            answer: { type: answer.type, sdp: answer.sdp }, status: 'answered'
           });
-        });
-        setTimeout(() => setStatus(s => s === 'calling' ? 'connected' : s), 5000);
+          pc.onicecandidate = (e) => {
+            if (e.candidate) addDoc(collection(db, 'calls', callDocId.current, 'calleeCandidates'), e.candidate.toJSON()).catch(()=>{});
+          };
+          unsubCandidates = onSnapshot(collection(db, 'calls', callDocId.current, 'callerCandidates'), (snap) => {
+            snap.docChanges().forEach(async (change) => {
+              if (change.type === 'added') {
+                try { await pc.addIceCandidate(new RTCIceCandidate(change.doc.data())); } catch {}
+              }
+            });
+          });
+        } else {
+          pc.onicecandidate = (e) => {
+            if (e.candidate) addDoc(collection(db, 'calls', callDocId.current, 'callerCandidates'), e.candidate.toJSON()).catch(()=>{});
+          };
+          const offer = await pc.createOffer();
+          await pc.setLocalDescription(offer);
+          await setDoc(doc(db, 'calls', callDocId.current), {
+            offer: { type: offer.type, sdp: offer.sdp },
+            callType: type, callerId: currentUser?.id, callerName: currentUser?.username,
+            callerAvatar: currentUser?.avatar, callerColor: currentUser?.avatarColor,
+            calleeId: contactId, calleeName: contactName, status: 'ringing', createdAt: serverTimestamp(),
+          }).catch(()=>{});
+          unsubAnswer = onSnapshot(doc(db, 'calls', callDocId.current), async (snap) => {
+            const data = snap.data();
+            if (data?.answer && pc.signalingState === 'have-local-offer') {
+              try { await pc.setRemoteDescription(new RTCSessionDescription(data.answer)); setStatus('connected'); } catch {}
+            }
+            if (data?.status === 'declined') { setStatus('declined'); setTimeout(onClose, 1500); }
+          });
+          unsubCandidates = onSnapshot(collection(db, 'calls', callDocId.current, 'calleeCandidates'), (snap) => {
+            snap.docChanges().forEach(async (change) => {
+              if (change.type === 'added') {
+                try { await pc.addIceCandidate(new RTCIceCandidate(change.doc.data())); } catch {}
+              }
+            });
+          });
+        }
+        setTimeout(() => setStatus(s => s === 'calling' ? 'connected' : s), 8000);
       } catch (e) {
         console.error('Call error:', e);
         setStatus('failed');
@@ -3765,17 +3801,15 @@ const handleMessage = uid => {
         <IncomingCallScreen
           callData={incomingCall}
           onAnswer={()=>{
-  const callSnapshot = {...incomingCall}; // capture before clearing
-  updateDoc(doc(db,'calls',callSnapshot.callDocId),{status:'answered'}).catch(()=>{});
+  const snap = {...incomingCall};
   setIncomingCall(null);
-  setTimeout(()=>{
-    setShowCall({
-      type: callSnapshot.callType,
-      contactName: callSnapshot.callerName,
-      contactAvatar: callSnapshot.callerAvatar||'?',
-      contactId: callSnapshot.callerId
-    });
-  }, 100); // let incomingCall screen unmount cleanly first
+  updateDoc(doc(db,'calls',snap.callDocId),{status:'answered'}).catch(()=>{});
+  setShowCall({
+    type: snap.callType||'audio',
+    contactName: snap.callerName||'Unknown',
+    contactAvatar: snap.callerAvatar||'?',
+    contactId: snap.callerId
+  });
 }}
           onDecline={()=>{
             updateDoc(doc(db,'calls',incomingCall.callDocId),{status:'declined'}).catch(()=>{});
@@ -3785,7 +3819,31 @@ const handleMessage = uid => {
       )}
       {showCall && <CallModal type={showCall.type} contactName={showCall.contactName} contactAvatar={showCall.contactAvatar} contactId={showCall.contactId} currentUser={currentUser} onClose={()=>setShowCall(null)} />}
       {showLiveStream && <LiveStream streamer={showLiveStream} onClose={()=>setShowLiveStream(null)} showToast={showToast} currentUser={currentUser} />}
-      {showStoryViewer && <StoryViewer story={showStoryViewer} user={users.find(u=>u.id===showStoryViewer.userId)||currentUser} onClose={()=>setShowStoryViewer(null)} />}
+      {showStoryViewer && (
+        <div onClick={()=>setShowStoryViewer(null)} style={{position:'fixed',inset:0,background:'#000',zIndex:3000,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column'}}>
+          <div style={{position:'absolute',top:16,right:16,zIndex:10}}>
+            <button onClick={()=>setShowStoryViewer(null)} style={{background:'rgba(255,255,255,0.12)',border:'none',borderRadius:'50%',width:36,height:36,color:'white',cursor:'pointer',fontSize:18}}>✕</button>
+          </div>
+          <div style={{position:'absolute',top:0,left:0,right:0,height:3,background:'rgba(255,255,255,0.15)',borderRadius:2,margin:'14px 14px 0'}}>
+            <div style={{height:'100%',background:'white',borderRadius:2,width:'100%',animation:'notifBar 5s linear forwards'}}/>
+          </div>
+          {showStoryViewer.mediaUrl?.startsWith('video') ? (
+            <video src={showStoryViewer.mediaUrl} autoPlay loop playsInline style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+          ) : showStoryViewer.mediaUrl ? (
+            <img src={showStoryViewer.mediaUrl} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+          ) : (
+            <div style={{width:'100%',height:'100%',background:showStoryViewer.bgColor||'#ff2d55',display:'flex',alignItems:'center',justifyContent:'center',padding:32}}>
+              <div style={{color:'white',fontSize:28,fontWeight:700,textAlign:'center',lineHeight:1.4}}>{showStoryViewer.text}</div>
+            </div>
+          )}
+          <div style={{position:'absolute',bottom:60,left:16,display:'flex',alignItems:'center',gap:10}}>
+            <div style={{width:40,height:40,borderRadius:'50%',background:showStoryViewer.avatarColor||'#ff2d55',display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontWeight:'bold',fontSize:16,overflow:'hidden'}}>
+              {showStoryViewer.avatarUrl?<img src={showStoryViewer.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/>:(showStoryViewer.username||'?')[0].toUpperCase()}
+            </div>
+            <span style={{color:'white',fontWeight:700,fontSize:14}}>@{showStoryViewer.username||'user'}</span>
+          </div>
+        </div>
+      )}
       {showSoundLibrary && <SoundLibraryPage onSelectSound={s=>{showToast?.(`Selected: ${s.name}`,'success'); setShowSoundLibrary(false);}} onClose={()=>setShowSoundLibrary(false)} />}
       {showQRCode && <QRCodePage user={currentUser} onClose={()=>setShowQRCode(false)} />}
       {showNotifications && <NotificationsPage currentUser={currentUser} users={users} videos={videos} onClose={()=>setShowNotifications(false)} onViewProfile={uid=>{handleViewProfile(uid); setShowNotifications(false);}} />}
