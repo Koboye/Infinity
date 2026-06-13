@@ -571,7 +571,8 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
         </div>
         {!isOwn && (
           <div style={{ display:'flex', gap:8, padding:'0 16px 16px' }}>
-            <button onClick={()=>{onFollow?.(user.id); onClose();}}>
+            <button onClick={()=>{onFollow?.(user.id); onClose();}}
+  style={{ flex:1, background:isFollowing?'rgba(255,255,255,0.06)':'linear-gradient(135deg,#ff2d55,#af52de)', border:isFollowing?'1px solid rgba(255,45,85,0.4)':'none', borderRadius:14, padding:'12px', color:isFollowing?'#ff2d55':'white', fontWeight:700, cursor:'pointer', fontSize:14 }}>
   {isFollowing ? 'Following' : '+ Follow'}
 </button>
 <button
@@ -851,7 +852,7 @@ const CommentInputBar = ({ currentUser, commentText, setCommentText, onSend, sho
       <div style={{display:'flex',gap:8,alignItems:'center'}}>
      <div style={{width:34,height:34,borderRadius:'50%',background:currentUser?.avatarColor,display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontWeight:'bold',fontSize:14,flexShrink:0,overflow:'hidden'}}>          {currentUser?.avatarUrl?<img src={currentUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/>:currentUser?.avatar}
         </div>
-        <input value={commentText} onChange={e=>setCommentText(e.target.value)} onKeyDown={e=>e.key==='Enter'&&handleSend()} placeholder={isRecording?`🔴 ${fmt(recordSecs)}`:t?.addComment||'Add a comment...'} style={{flex:1,background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:28,padding:'10px 14px',color:'white',outline:'none',fontSize:13}}/>
+        <input value={commentText} onChange={e=>setCommentText(e.target.value)} onKeyDown={e=>e.key==='Enter'&&handleSend()} placeholder={isRecording?`🔴 ${fmt(recordSecs)}`:'Add a comment...'} style={{flex:1,background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:28,padding:'10px 14px',color:'white',outline:'none',fontSize:13}}/>
         <button onClick={()=>fileInputRef.current?.click()} style={{background:'rgba(255,255,255,0.07)',border:'none',borderRadius:'50%',width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0}}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
         </button>
@@ -1264,7 +1265,7 @@ const FriendsFeed = ({ t, friends, videos, currentUser, onMessage, onVoiceCall, 
   const friendsVideos = useMemo(()=>
   videos
     .filter(v => (friends.includes(v.userId) || v.userId===currentUser?.id))
-    onBlock={onBlock}
+    .filter(v => !(blockedUsers||[]).includes(v.userId))
     .sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)),
 [friends, videos, currentUser?.id, blockedUsers]);
 
@@ -2292,9 +2293,6 @@ unsub = onSnapshot(q, (snap) => {
       {otherUser?.avatarUrl ? <img src={otherUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/> : otherUser?.avatar}
     </div>
   )}
-                  {otherUser?.avatarUrl?<img src={otherUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/>:otherUser?.avatar}
-                </div>
-              )}
               <div style={{maxWidth:'72%'}}>
                 {msg.text&&<div style={{background:isMine?'linear-gradient(135deg,#ff2d55,#af52de)':'rgba(255,255,255,0.09)',borderRadius:isMine?'18px 18px 4px 18px':'18px 18px 18px 4px',padding:'9px 14px',marginBottom:msg.mediaUrl?4:0}}>
                   <span style={{color:'white',fontSize:14,lineHeight:1.4}}>{msg.text}</span>
@@ -3600,7 +3598,7 @@ return (
   );
 };
 /* ─────────────── NOTIFICATIONS ─────────────── */
-const NotificationsPage = ({ currentUser, users, videos, onClose, onViewProfile }) => {
+const NotificationsPage = ({ currentUser, users, videos, onClose, onViewProfile, t }) => {
   const [notifs, setNotifs] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -3899,8 +3897,41 @@ const InboxBadge = ({ currentUser }) => {
   return <div style={{ position:'absolute', top:-4, right:-4, minWidth:16, height:16, background:'#ff2d55', borderRadius:8, border:'1.5px solid #0a0a0a', display:'flex', alignItems:'center', justifyContent:'center', fontSize:9, color:'white', fontWeight:800, padding:'0 3px' }}>{unread>9?'9+':unread}</div>;
 };
 const TabIcon = ({id, active, currentUser}) => {
-  const TabIcon = ({id,active}) => {
-    const color = active ? '#ff2d55' : 'rgba(255,255,255,0.35)';
+  const color = active ? '#ff2d55' : 'rgba(255,255,255,0.35)';
+  const sw = active ? 2.2 : 1.8;
+  const s = {width:26,height:26,fill:'none',stroke:color,strokeWidth:sw,strokeLinecap:'round',strokeLinejoin:'round'};
+  if(id==='home') return (
+    <div style={{ position:'relative' }}>
+      <svg viewBox="0 0 24 24" style={s}><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#ff2d55' }} />}
+    </div>
+  );
+  if(id==='friends') return (
+    <div style={{ position:'relative' }}>
+      <svg viewBox="0 0 24 24" style={s}><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#ff2d55' }} />}
+    </div>
+  );
+  if(id==='create') return (
+    <div style={{ width:52, height:34, background:'linear-gradient(135deg,#ff2d55,#af52de)', borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 4px 16px rgba(255,45,85,0.4)' }}>
+      <svg viewBox="0 0 24 24" style={{ width:22,height:22,stroke:'white',fill:'none',strokeWidth:2.5,strokeLinecap:'round' }}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </div>
+  );
+  if(id==='inbox') return (
+    <div style={{ position:'relative' }}>
+      <svg viewBox="0 0 24 24" style={s}><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      <InboxBadge currentUser={currentUser} />
+      {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#ff2d55' }} />}
+    </div>
+  );
+  if(id==='profile') return (
+    <div style={{ position:'relative' }}>
+      <svg viewBox="0 0 24 24" style={{...s,fill:active?'rgba(255,45,85,0.15)':''}}><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#ff2d55' }} />}
+    </div>
+  );
+  return null;
+};
     const sw = active ? 2.2 : 1.8;
     const s = {width:26,height:26,fill:'none',stroke:color,strokeWidth:sw,strokeLinecap:'round',strokeLinejoin:'round'};
     if(id==='home') return (
@@ -4015,7 +4046,7 @@ const TabIcon = ({id, active, currentUser}) => {
       )}
       {showSoundLibrary && <SoundLibraryPage onSelectSound={s=>{showToast?.(`Selected: ${s.name}`,'success'); setShowSoundLibrary(false);}} onClose={()=>setShowSoundLibrary(false)} />}
       {showQRCode && <QRCodePage user={currentUser} onClose={()=>setShowQRCode(false)} />}
-      {showNotifications && <NotificationsPage currentUser={currentUser} users={users} videos={videos} onClose={()=>setShowNotifications(false)} onViewProfile={uid=>{handleViewProfile(uid); setShowNotifications(false);}} />}
+      {showNotifications && <NotificationsPage currentUser={currentUser} users={users} videos={videos} onClose={()=>setShowNotifications(false)} onViewProfile={uid=>{handleViewProfile(uid); setShowNotifications(false);}} t={t} />}
       {showAnalytics && <CreatorAnalytics user={currentUser} videos={videos} onClose={()=>setShowAnalytics(false)} />}
       {showCreateStory && <CreateStoryModal currentUser={currentUser} onClose={()=>setShowCreateStory(false)} showToast={showToast} />}
       {viewingProfile && (
