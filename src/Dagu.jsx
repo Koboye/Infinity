@@ -1100,18 +1100,6 @@ const Stories = ({ users, currentUser, onViewStory, onCreateStory, onLive }) => 
       </button>
       <span style={{ color:'rgba(255,255,255,0.5)', fontSize:11 }}>Your story</span>
     </div>
-    <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5, flexShrink:0 }}>
-      <button onClick={async () => {   const snap = await getDocs(query(collection(db,'stories'), where('userId','==',currentUser?.id), orderBy('createdAt','desc'), limit(1)));   if(!snap.empty) onViewStory?.({...snap.docs[0].data(), id: snap.docs[0].id});   else onCreateStory?.(); }} style={{ padding:0, background:'none', border:'none', cursor:'pointer' }}>
-        <div className="story-avatar-ring" style={{ width:66, height:66, borderRadius:'50%' }}>
-          <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:'#0a0a0a', padding:2, display:'flex', alignItems:'center', justifyContent:'center' }}>
-            <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:currentUser?.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:20, overflow:'hidden' }}>
-              {currentUser?.avatarUrl ? <img src={currentUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : currentUser?.avatar}
-            </div>
-          </div>
-        </div>
-      </button>
-      <span style={{ color:'rgba(255,255,255,0.5)', fontSize:11 }}>Me</span>
-    </div>
     {users.filter(u => u.id !== currentUser?.id && (currentUser?.following||[]).includes(u.id)).map(u => (
       <div key={u.id} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5, flexShrink:0 }}>
         <button onClick={async () => {
@@ -1480,13 +1468,6 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
     </div>
   );
 };
-const sendNotification = async (toUserId, fromUserId, type, message, extraData={}) => {
-  if(toUserId === fromUserId) return;
-  await addDoc(collection(db,'notifications'),{
-    toUserId, fromUserId, type, message,
-    read: false, createdAt: serverTimestamp(), ...extraData,
-  });
-};
 /* ─────────────── COMMENT ITEM ─────────────── */
 const CommentItem = ({ comment, currentUser, onLike, onReply, onPin, onViewProfile }) => {
   const isMine = comment.userId === currentUser?.id;
@@ -1849,7 +1830,7 @@ const handleLongPressStart = () => {
           </button>
           <span onClick={e=>{e.stopPropagation();onViewProfile?.(video.userId);}} style={{ color:'white', fontWeight:700, fontSize:15, cursor:'pointer', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{video.username}</span>
           <button onClick={e=>{e.stopPropagation();onFollow?.(video.userId);}} style={{ padding:'5px 14px', borderRadius:20, background:followed?.includes(video.userId)?'rgba(255,255,255,0.08)':'rgba(255,45,85,0.9)', border:followed?.includes(video.userId)?'1px solid rgba(255,255,255,0.4)':'none', color:'white', fontSize:12, fontWeight:700, cursor:'pointer', backdropFilter:'blur(4px)' }}>{followed?.includes(video.userId)?'Unfollow':'+ Follow'}</button>
-          <button ref={menuButtonRef} onClick={()=>setShowActionMenu(!showActionMenu)} style={{ background:'rgba(0,0,0,0.4)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:'50%', width:30, height:30, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', backdropFilter:'blur(8px)' }}>
+          <button ref={menuButtonRef} onClick={e=>{e.stopPropagation();setShowActionMenu(!showActionMenu);}} style={{ background:'rgba(0,0,0,0.4)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:'50%', width:30, height:30, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', backdropFilter:'blur(8px)' }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
           </button>
         </div>
@@ -1864,7 +1845,7 @@ const handleLongPressStart = () => {
       </div>
 
       {showActionMenu && (
-        <div onClick={()=>setShowActionMenu(false)} style={{ position:'absolute', inset:0, zIndex:19 }}>
+        <div onClick={e=>{e.stopPropagation();setShowActionMenu(false);}} style={{ position:'absolute', inset:0, zIndex:19 }}>
           <div onClick={e=>e.stopPropagation()} style={{ position:'absolute',   bottom: menuButtonRef.current     ? Math.max(80, window.innerHeight - menuButtonRef.current.getBoundingClientRect().top + 8)     : 160,   left:14, background:'rgba(18,18,18,0.97)', backdropFilter:'blur(20px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:22, padding:6, zIndex:20, minWidth:210, animation:'popIn 0.2s ease' }}>
             {[
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>, label:t?.duet||'Duet', fn:()=>onDuet?.(video.id)},
@@ -2165,10 +2146,9 @@ onLive={onLive}
 };
 
 /* ─────────────── FRIENDS FEED ─────────────── */
-const FriendsFeed = ({ t, friends, videos, currentUser, onMessage, onVoiceCall, onVideoCall, onViewProfile, showToast, users, onCreateStory, onViewStory, onFollow, followed, blockedUsers, onBlock }) => {
+const FriendsFeed = ({ t, friends, videos, currentUser, onMessage, onVoiceCall, onVideoCall, onViewProfile, showToast, users, onCreateStory, onViewStory, onFollow, followed, blockedUsers, onBlock, onLive }) => {
   const [search, setSearch] = useState('');
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [showSearch, setShowSearch] = useState(false);
   const startY = useRef(null);
   const [refreshing, setRefreshing] = useState(false);
 const pullStartY = useRef(null);
@@ -2232,19 +2212,14 @@ const handlePullEnd = async () => {
       {/* Top bar */}
       <div style={{ position:'relative', zIndex:15, padding:'14px 16px 0', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
 <div style={{ color:'white', fontWeight:800, fontSize:18, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", textShadow:'0 1px 8px rgba(0,0,0,0.8)' }}>{t?.friends||'Friends'}</div>
-        <button onClick={()=>setShowSearch(v=>!v)} style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(10px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        </button>
       </div>
-      {showSearch && (
-        <div style={{ padding:'10px 14px', zIndex:15 }}>
-          <div style={{ display:'flex', gap:8, alignItems:'center', background:'rgba(255,255,255,0.07)', borderRadius:28, padding:'10px 16px', border:'1px solid rgba(255,255,255,0.08)' }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input autoFocus value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search friends..." style={{ flex:1, background:'none', border:'none', color:'white', outline:'none', fontSize:13 }} />
-            {search && <button onClick={()=>setSearch('')} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.4)', cursor:'pointer', fontSize:16 }}>✕</button>}
-          </div>
+      <div style={{ padding:'10px 14px', zIndex:15 }}>
+        <div style={{ display:'flex', gap:8, alignItems:'center', background:'rgba(255,255,255,0.07)', borderRadius:28, padding:'10px 16px', border:'1px solid rgba(255,255,255,0.08)' }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search friends..." style={{ flex:1, background:'none', border:'none', color:'white', outline:'none', fontSize:13 }} />
+          {search && <button onClick={()=>setSearch('')} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.4)', cursor:'pointer', fontSize:16 }}>✕</button>}
         </div>
-      )}
+      </div>
       <Stories users={users} currentUser={currentUser} onViewStory={onViewStory} onCreateStory={onCreateStory} />
       <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:12, color:'rgba(255,255,255,0.2)' }}>
         <div style={{ fontSize:44 }}>👥</div>
@@ -2267,7 +2242,7 @@ const handlePullEnd = async () => {
       {/* Fullscreen video cards — same as HomeFeed */}
       {filtered.map((video,idx)=>(
   Math.abs(idx-currentIndex) > 1 ? null :
-  <div key={video.id} onClick={()=>setShowSearch(false)} style={{ position:'absolute', inset:0, transform:`translateY(${(idx-currentIndex)*100}%)`, transition:'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)', pointerEvents:idx===currentIndex?'auto':'none' }}>
+  <div key={video.id} style={{ position:'absolute', inset:0, transform:`translateY(${(idx-currentIndex)*100}%)`, transition:'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)', pointerEvents:idx===currentIndex?'auto':'none' }}>
           <EnhancedVideoCard
             video={video}
             currentUser={currentUser}
@@ -2286,32 +2261,24 @@ const handlePullEnd = async () => {
             showToast={showToast}
             onViewProfile={onViewProfile}
             onBlock={onBlock}
+            onLive={onLive}
           />
         </div>
       ))}
 
-      {/* Top overlay: Friends label + search — sits above Stories */}
-      <div style={{ position:'absolute', top:110, left:0, right:0, zIndex:15, padding:'10px 16px 0', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-<div style={{ color:'white', fontWeight:800, fontSize:18, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", textShadow:'0 1px 8px rgba(0,0,0,0.8)' }}>{t?.friends||'Friends'}</div>
-        <button onClick={()=>setShowSearch(v=>!v)} style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(10px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        </button>
+      {/* Top overlay: Friends label + search — always visible at top */}
+      <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:15, padding:'14px 16px 10px', background:'linear-gradient(to bottom, rgba(0,0,0,0.5), transparent)' }}>
+        <div style={{ color:'white', fontWeight:800, fontSize:18, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", textShadow:'0 1px 8px rgba(0,0,0,0.8)', marginBottom:10 }}>{t?.friends||'Friends'}</div>
+        <div style={{ display:'flex', gap:8, alignItems:'center', background:'rgba(10,10,10,0.5)', backdropFilter:'blur(16px)', borderRadius:28, padding:'10px 16px', border:'1px solid rgba(255,255,255,0.12)' }}
+          onClick={e=>e.stopPropagation()}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search friends..." style={{ flex:1, background:'none', border:'none', color:'white', outline:'none', fontSize:13 }} />
+          {search && <button onClick={()=>setSearch('')} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.5)', cursor:'pointer', fontSize:16 }}>✕</button>}
+        </div>
       </div>
 
-      {/* Search bar (dropdown) */}
-      {showSearch && (
-  <div style={{ position:'absolute', top:60, left:14, right:14, zIndex:20 }}
-    onClick={e=>e.stopPropagation()}>
-          <div style={{ display:'flex', gap:8, alignItems:'center', background:'rgba(10,10,10,0.92)', backdropFilter:'blur(16px)', borderRadius:28, padding:'10px 16px', border:'1px solid rgba(255,255,255,0.12)' }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input autoFocus value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search friends..." style={{ flex:1, background:'none', border:'none', color:'white', outline:'none', fontSize:13 }} />
-            {search && <button onClick={()=>setSearch('')} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.5)', cursor:'pointer', fontSize:16 }}>✕</button>}
-          </div>
-        </div>
-      )}
-
-      {/* Stories row — always at top */}
-      <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:14 }}>
+      {/* Stories row — always at top, below search */}
+      <div style={{ position:'absolute', top:96, left:0, right:0, zIndex:14 }}>
         <Stories users={users} currentUser={currentUser} onViewStory={onViewStory} onCreateStory={onCreateStory} />
       </div>
 
@@ -4277,7 +4244,9 @@ const QRCodePage = ({ user, onClose }) => (
 const GuestFeed = ({ onSignIn }) => {
   const [videos, setVideos] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [muted, setMuted] = useState(true);
   const startY = useRef(null);
+  const videoRefs = useRef({});
 
   useEffect(()=>{
     const q = query(collection(db,'videos'), orderBy('createdAt','desc'), limit(20));
@@ -4286,6 +4255,14 @@ const GuestFeed = ({ onSignIn }) => {
     });
     return ()=>unsub();
   },[]);
+
+  useEffect(()=>{
+    Object.entries(videoRefs.current).forEach(([id,el])=>{
+      if(!el) return;
+      el.muted = muted;
+      if(id===String(videos[currentIndex]?.id) && !muted) el.play().catch(()=>{});
+    });
+  },[muted, currentIndex, videos]);
 
   const handleTouchStart = e => { startY.current = e.touches[0].clientY; };
   const handleTouchEnd = e => {
@@ -4301,12 +4278,17 @@ const GuestFeed = ({ onSignIn }) => {
   return (
     <div style={{ height:'100%', position:'relative', overflow:'hidden', background:'#000' }} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
       {videos.map((video,idx)=>(
-        <div key={video.id} style={{ position:'absolute', inset:0, transform:`translateY(${(idx-currentIndex)*100}%)`, transition:'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)', pointerEvents:idx===currentIndex?'auto':'none' }}>
+        <div key={video.id} onClick={()=>setMuted(m=>!m)} style={{ position:'absolute', inset:0, transform:`translateY(${(idx-currentIndex)*100}%)`, transition:'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)', pointerEvents:idx===currentIndex?'auto':'none' }}>
           {video.videoUrl?.match(/\.(jpg|jpeg|png|gif|webp)/i)
             ? <img src={video.videoUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
-            : <video src={video.videoUrl} style={{ width:'100%', height:'100%', objectFit:'cover' }} loop autoPlay muted playsInline />
+            : <video ref={el=>{videoRefs.current[video.id]=el;}} src={video.videoUrl} style={{ width:'100%', height:'100%', objectFit:'cover' }} loop autoPlay muted={idx===currentIndex?muted:true} playsInline />
           }
           <div style={{ position:'absolute', inset:0, background:'linear-gradient(to top,rgba(0,0,0,0.7) 0%,transparent 50%)' }} />
+          {idx===currentIndex && muted && (
+            <div style={{ position:'absolute', top:16, right:16, background:'rgba(0,0,0,0.4)', borderRadius:'50%', width:36, height:36, display:'flex', alignItems:'center', justifyContent:'center', zIndex:5 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+            </div>
+          )}
           <div style={{ position:'absolute', bottom:100, left:14, right:14 }}>
             <div style={{ color:'white', fontWeight:700, fontSize:15 }}>@{video.username}</div>
             <div style={{ color:'rgba(255,255,255,0.8)', fontSize:13, marginTop:4 }}>{video.description}</div>
@@ -5176,9 +5158,9 @@ const TabIcon = ({id, active, currentUser}) => {
             {activeTab==='home' && <HomeFeed t={t} videos={videos} currentUser={currentUser} onLike={()=>{}} onComment={()=>{}} onShare={(v)=>setShowShareSheet(v)} onFollow={toggleFollow} onMessage={handleMessage} onVoiceCall={uid=>{   const u=users.find(uu=>uu.id===uid);   const callDocId=[currentUser.id,uid].sort().join('_');   setShowCall({type:'audio',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
  onVideoCall={uid=>{   const u=users.find(uu=>uu.id===uid);   const callDocId=[currentUser.id,uid].sort().join('_');   setShowCall({type:'video',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
  onDuet={()=>showToast?.('Duet mode ready','info')} onStitch={()=>showToast?.('Stitch mode ready','info')} onSaveSound={()=>showToast?.('Sound saved!','success')} followed={followed} showToast={showToast} onLive={()=>setShowLiveStream(currentUser)} onViewProfile={handleViewProfile} onOpenSearch={()=>setShowDiscover(true)} onOpenNotifications={()=>setShowNotifications(true)} blockedUsers={blockedUsers} onBlock={uid=>setBlockedUsers(p=>[...p,uid])} />
-            {activeTab==='friends' && <FriendsFeed t={t} friends={friends} videos={videos} currentUser={currentUser} onMessage={handleMessage} onVoiceCall={uid=>{   const u=users.find(uu=>uu.id===uid);   const callDocId=[currentUser.id,uid].sort().join('_');   setShowCall({type:'audio',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}blockedUsers={blockedUsers}
+            {activeTab==='friends' && <FriendsFeed t={t} friends={friends} videos={videos} currentUser={currentUser} onMessage={handleMessage} onVoiceCall={uid=>{   const u=users.find(uu=>uu.id===uid);   const callDocId=[currentUser.id,uid].sort().join('_');   setShowCall({type:'audio',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }} blockedUsers={blockedUsers}
  onVideoCall={uid=>{   const u=users.find(uu=>uu.id===uid);   const callDocId=[currentUser.id,uid].sort().join('_');   setShowCall({type:'video',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
- onViewProfile={handleViewProfile} showToast={showToast} users={users} onCreateStory={()=>setShowCreateStory(true)} onViewStory={setShowStoryViewer} onFollow={toggleFollow} followed={followed} />}
+ onViewProfile={handleViewProfile} showToast={showToast} users={users} onCreateStory={()=>setShowCreateStory(true)} onViewStory={setShowStoryViewer} onFollow={toggleFollow} followed={followed} onLive={()=>setShowLiveStream(currentUser)} onBlock={uid=>setBlockedUsers(p=>[...p,uid])} />}
             {activeTab==='create' && <CreateScreen onOpenCamera={()=>setShowCamera(true)} onShowSoundLibrary={()=>setShowSoundLibrary(true)} showToast={showToast} t={t} />}
             {activeTab==='inbox' && <InboxPage t={t} users={users} currentUser={currentUser} showToast={showToast} onViewProfile={handleViewProfile} initialTargetId={inboxTargetId} onClearTarget={()=>setInboxTargetId(null)} persistedConversation={activeConversation} onSetConversation={(conv)=>{ if(conv==='groups'){ setShowGroups(true); } else { setActiveConversation(conv); } }} />
             {activeTab==='profile' && <ProfilePage user={currentUser} setCurrentUser={setCurrentUser} onLogout={handleLogout} users={users} showToast={showToast} onShowAnalytics={()=>setShowAnalytics(true)} onShowQRCode={()=>setShowQRCode(true)} allVideos={videos} setBlockedUsers={setBlockedUsers} onShowSavedPosts={()=>setShowSavedPosts(true)} onShowGroups={()=>setShowGroups(true)} onShowBroadcast={()=>setShowBroadcast(true)} />}
