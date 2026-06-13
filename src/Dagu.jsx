@@ -2543,13 +2543,26 @@ const CallModal = ({ type, contactName, contactAvatar, contactId, currentUser, o
 // For production, generate short-lived TURN credentials server-side.
 const pc = new RTCPeerConnection({
   iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' },
-    { urls: 'stun:stun3.l.google.com:19302' },
+    { urls: 'stun:stun.relay.metered.ca:80' },
     {
-      urls: 'turn:relay1.expressturn.com:3478',
-      username: 'efKBDS6AAAJ0XUBT',
-      credential: 'EboObMQApQCdFLpf',
+      urls: 'turn:global.relay.metered.ca:80',
+      username: 'f5e29fd91b8ea2fc485c24ac',
+      credential: 'FZlzkJ5GJJUyYocD',
+    },
+    {
+      urls: 'turn:global.relay.metered.ca:80?transport=tcp',
+      username: 'f5e29fd91b8ea2fc485c24ac',
+      credential: 'FZlzkJ5GJJUyYocD',
+    },
+    {
+      urls: 'turn:global.relay.metered.ca:443',
+      username: 'f5e29fd91b8ea2fc485c24ac',
+      credential: 'FZlzkJ5GJJUyYocD',
+    },
+    {
+      urls: 'turns:global.relay.metered.ca:443?transport=tcp',
+      username: 'f5e29fd91b8ea2fc485c24ac',
+      credential: 'FZlzkJ5GJJUyYocD',
     },
   ]
 });
