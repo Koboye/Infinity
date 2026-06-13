@@ -1243,7 +1243,7 @@ const handleLongPressStart = () => {
           <div style={{ fontSize:80, animation:'heartBurst 0.9s ease forwards' }}>❤️</div>
         </div>
       )}
-      <div style={{ position:'absolute', bottom:90, left:14, right:70, zIndex:5 }}>
+      <div style={{ position:'absolute', bottom:10, left:14, right:70, zIndex:5 }}>
         <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:10 }}>
           <button onClick={()=>onViewProfile?.(video.userId)} style={{ position:'relative', background:'none', border:'none', cursor:'pointer', padding:0 }}>
             <div style={{ width:42, height:42, borderRadius:'50%', background:video.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:16, border:'2px solid rgba(255,255,255,0.5)', overflow:'hidden' }}>
@@ -1304,7 +1304,7 @@ const handleLongPressStart = () => {
         </div>
       )}
 
-      <div style={{ position:'absolute', right:12, bottom:90, display:'flex', flexDirection:'column', alignItems:'center', gap:6, zIndex:6 }}>
+      <div style={{ position:'absolute', right:12, bottom:10, display:'flex', flexDirection:'column', alignItems:'center', gap:6, zIndex:6 }}>
        <button onClick={e=>{e.stopPropagation();haptic('medium');handleLike();}}
           style={{ background:'rgba(0,0,0,0.3)', border:'none', borderRadius:'50%', width:52, height:52, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer',
             transform: liked ? 'scale(1)' : 'scale(1)',
