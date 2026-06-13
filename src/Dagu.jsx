@@ -86,7 +86,7 @@ const TOP_CATEGORIES = [
 
 const EMOJI_LIST = ['😀','😂','😍','🥰','😎','🤔','😭','😱','🔥','❤️','👍','🎉','✨','💯','🙌','👏','🤝','💪','🎵','📸'];
 const TRANSLATIONS = {
-  en: { home:'For You', friends:'Friends', inbox:'Messages', profile:'Profile', create:'Create', foryou:'For You', skills:'Skills', jobs:'Jobs', post:'Post', cancel:'Cancel', save:'Save', follow:'+ Follow', unfollow:'Following', message:'Message', settings:'Settings', logout:'Log Out', editProfile:'Edit Profile', search:'Search anything...', noVideos:'No videos yet. Be the first to post!', addComment:'Add a comment...', noMessages:'No messages yet', startChat:'Go to a profile and tap Message to start', notifications:'Notifications', markRead:'Mark all read', wallet:'Wallet', analytics:'Analytics', badges:'Badges', premium:'Premium', live:'Go Live', report:'Report', block:'Block', duet:'Duet', stitch:'Stitch', voiceCall:'Voice Call', videoCall:'Video Call', pinned:'Pinned', reply:'Reply', pin:'Pin', retake:'Retake', newPost:'New Post', sounds:'Sounds', close:'Close', back:'Back', comments:'Comments', posts:'Posts', followers:'Followers', following:'Following', language:'Language', privacy:'Privacy', deposit:'Deposit', withdraw:'Withdraw', convert:'Convert', transactions:'Transactions', noTransactions:'No transactions yet', coins:'Coins', cash:'Cash', openCamera:'Open Camera', uploadGallery:'Upload from Gallery', writeText:'Write Text', recordAudio:'Record Audio', addSound:'Add Sound', createShare:'Create & Share', expressYourself:'Express Yourself', noPosts:'No posts yet', noSaved:'Nothing saved yet', noDrafts:'No drafts yet', createFirst:'Create your first video!', online:'Online', offline:'Offline', typing:'typing...', startConvo:'Start the conversation! 👋', verified:'Verified', trending:'Trending', noResults:'No results found', shareProfile:'Share Profile', scanToFollow:'Scan to follow', weeklyViews:'Weekly Views', topVideos:'Top Videos', totalViews:'Total Views', totalLikes:'Total Likes', changePassword:'Change Password', emailPhone:'Email & Phone', switchAccount:'Switch Account', blockedUsers:'Blocked Users', helpCenter:'Help Center', reportProblem:'Report a Problem', termsOfService:'Terms of Service', privacyPolicy:'Privacy Policy', resetAccount:'Reset Account', deleteAccount:'Delete Account', logOut:'Log Out', version:'Version', madeWith:'Made with', noNotifications:'No notifications yet', markAllRead:'Mark all as read', calling:'Calling...', videoCalling:'Video calling...', connecting:'Connecting...', connected:'Connected', callDeclined:'Call declined', callFailed:'Call failed', you:'You', messagePlaceholder:'Message...', sayPlaceholder:'Say something...', lastSeen:'last seen', endCall:'End Call', mute:'Mute', unmute:'Unmute', cameraOn:'Camera On', cameraOff:'Camera Off', incomingCall:'Incoming Call', incomingVideoCall:'Incoming Video Call', incomingVoiceCall:'Incoming Voice Call', accept:'Accept', decline:'Decline' },
+  en: { home:'For You', friends:'Friends', inbox:'Messages', profile:'Profile', create:'Create', foryou:'For You', skills:'Skills', jobs:'Jobs', post:'Post', cancel:'Cancel', save:'Save', follow:'+ Follow', unfollow:'Following', message:'Message', settings:'Settings', logout:'Log Out', editProfile:'Edit Profile', search:'Search anything...', noVideos:'No videos yet. Be the first to post!', addComment:'Add a comment...', noMessages:'No messages yet', startChat:'Go to a profile and tap Message to start', notifications:'Notifications', markRead:'Mark all read', wallet:'Wallet', analytics:'Analytics', badges:'Badges', premium:'Premium', live:'Go Live', report:'Report', block:'Block', duet:'Duet', stitch:'Stitch', voiceCall:'Voice Call', videoCall:'Video Call', pinned:'Pinned', reply:'Reply', pin:'Pin', retake:'Retake', newPost:'New Post', sounds:'Sounds', close:'Close', back:'Back', comments:'Comments' },
 am: { home:'ለእርስዎ', friends:'ጓደኞች', inbox:'መልዕክቶች', profile:'መገለጫ', create:'ፍጠር', foryou:'ለእርስዎ', skills:'ችሎታዎች', jobs:'ስራዎች', post:'ለጥፍ', cancel:'ሰርዝ', save:'አስቀምጥ', follow:'+ ተከተል', unfollow:'እየተከተሉ ነው', message:'መልዕክት', settings:'ቅንብሮች', logout:'ውጣ', editProfile:'መገለጫ አርትዕ', search:'ፈልግ...', noVideos:'ምንም ቪዲዮ የለም።', addComment:'አስተያየት ጨምር...', noMessages:'ምንም መልዕክቶች የሉም', startChat:'ወደ መገለጫ ሂድ እና መልዕክት ላክ', notifications:'ማሳወቂያዎች', markRead:'ሁሉንም እንደተነበበ ምልክት አድርግ', wallet:'ቦርሳ', analytics:'ትንተና', badges:'ሽልማቶች', premium:'ፕሪሚየም', live:'ቀጥታ', report:'ሪፖርት', block:'አግድ', duet:'ዱዌት', stitch:'ስቲች', voiceCall:'የድምፅ ጥሪ', videoCall:'ቪዲዮ ጥሪ', pinned:'ተሰክቷል', reply:'መልስ', pin:'ስክ', retake:'እንደገና', newPost:'አዲስ ለጥፍ', sounds:'ድምፆች', close:'ዝጋ', back:'ተመለስ', comments:'አስተያየቶች', posts:'ልጥፎች', followers:'ተከታዮች', following:'እየተከተሉ', language:'ቋንቋ', privacy:'ግላዊነት', wallet:'ቦርሳ', deposit:'ጨምር', withdraw:'አውጣ', convert:'ቀይር', transactions:'ግብይቶች', noTransactions:'ምንም ግብይቶች የሉም', coins:'ሳንቲሞች', cash:'ገንዘብ', openCamera:'ካሜራ ክፈት', uploadGallery:'ከጋለሪ ጫን', writeText:'ጽሁፍ ጻፍ', recordAudio:'ድምፅ ቅዳ', addSound:'ድምፅ ጨምር', createShare:'ፍጠር እና አጋራ', expressYourself:'እራስህን ግለፅ', noPosts:'ምንም ልጥፍ የለም', noSaved:'ምንም አልተቀመጠም', noDrafts:'ምንም ረቂቆች የሉም', createFirst:'የመጀመሪያ ቪዲዮህን ፍጠር!', online:'ኦንላይን', offline:'ኦፍላይን', typing:'እየተየፉ ነው...', startConvo:'ወግ ጀምር! 👋', verified:'የተረጋገጠ', trending:'አዝማሚያ', noResults:'ምንም ውጤት የለም', shareProfile:'መገለጫ አጋራ', scanToFollow:'ለመከተል ቅዱ', weeklyViews:'ሳምንታዊ እይታዎች', topVideos:'ምርጥ ቪዲዮዎች', totalViews:'ጠቅላላ እይታዎች', totalLikes:'ጠቅላላ ወደዶዎች', editProfile:'መገለጫ አርትዕ', changePassword:'የይለፍ ቃል ቀይር', emailPhone:'ኢሜይል እና ስልክ', switchAccount:'አካውንት ቀይር', blockedUsers:'የታገዱ ተጠቃሚዎች', helpCenter:'የእርዳታ ማዕከል', reportProblem:'ችግር ሪፖርት አድርግ', termsOfService:'የአገልግሎት ውሎች', privacyPolicy:'የግላዊነት ፖሊሲ', resetAccount:'አካውንት ዳግም አስጀምር', deleteAccount:'አካውንት ሰርዝ', logOut:'ውጣ', version:'ስሪት', madeWith:'ተሰርቷል', noNotifications:'ምንም ማሳወቂያዎች የሉም', markAllRead:'ሁሉንም እንደተነበበ ምልክት አድርግ' },  ar: { home:'لك', friends:'أصدقاء', inbox:'رسائل', profile:'الملف', create:'إنشاء', foryou:'لك', skills:'مهارات', jobs:'وظائف', post:'نشر', cancel:'إلغاء', save:'حفظ', follow:'+ متابعة', unfollow:'تتابع', message:'رسالة', settings:'الإعدادات', logout:'تسجيل الخروج', editProfile:'تعديل الملف', search:'ابحث...', noVideos:'لا توجد مقاطع بعد.', addComment:'أضف تعليقاً...', noMessages:'لا رسائل بعد', startChat:'اذهب إلى ملف وأرسل رسالة', notifications:'الإشعارات', markRead:'تعليم الكل كمقروء', wallet:'المحفظة', analytics:'التحليلات', badges:'الشارات', premium:'مميز', live:'بث مباشر', report:'إبلاغ', block:'حظر', duet:'ثنائي', stitch:'خياطة', voiceCall:'مكالمة صوتية', videoCall:'مكالمة فيديو', pinned:'مثبت', reply:'رد', pin:'تثبيت', retake:'إعادة', newPost:'منشور جديد', sounds:'أصوات', close:'إغلاق', back:'رجوع', comments:'تعليقات' },
   fr: { home:'Pour vous', friends:'Amis', inbox:'Messages', profile:'Profil', create:'Créer', foryou:'Pour vous', skills:'Compétences', jobs:'Emplois', post:'Publier', cancel:'Annuler', save:'Enregistrer', follow:'+ Suivre', unfollow:'Abonné', message:'Message', settings:'Paramètres', logout:'Déconnexion', editProfile:'Modifier le profil', search:'Rechercher...', noVideos:'Aucune vidéo pour l\'instant.', addComment:'Ajouter un commentaire...', noMessages:'Aucun message', startChat:'Allez sur un profil et envoyez un message', notifications:'Notifications', markRead:'Tout marquer comme lu', wallet:'Portefeuille', analytics:'Analytique', badges:'Badges', premium:'Premium', live:'En direct', report:'Signaler', block:'Bloquer', duet:'Duo', stitch:'Raccord', voiceCall:'Appel vocal', videoCall:'Appel vidéo', pinned:'Épinglé', reply:'Répondre', pin:'Épingler', retake:'Reprendre', newPost:'Nouveau post', sounds:'Sons', close:'Fermer', back:'Retour', comments:'Commentaires' },
   es: { home:'Para ti', friends:'Amigos', inbox:'Mensajes', profile:'Perfil', create:'Crear', foryou:'Para ti', skills:'Habilidades', jobs:'Empleos', post:'Publicar', cancel:'Cancelar', save:'Guardar', follow:'+ Seguir', unfollow:'Siguiendo', message:'Mensaje', settings:'Ajustes', logout:'Cerrar sesión', editProfile:'Editar perfil', search:'Buscar...', noVideos:'Aún no hay videos.', addComment:'Añadir comentario...', noMessages:'Sin mensajes aún', startChat:'Ve a un perfil y envía un mensaje', notifications:'Notificaciones', markRead:'Marcar todo como leído', wallet:'Billetera', analytics:'Analíticas', badges:'Insignias', premium:'Premium', live:'En vivo', report:'Reportar', block:'Bloquear', duet:'Dueto', stitch:'Costura', voiceCall:'Llamada de voz', videoCall:'Videollamada', pinned:'Fijado', reply:'Responder', pin:'Fijar', retake:'Retomar', newPost:'Nueva publicación', sounds:'Sonidos', close:'Cerrar', back:'Atrás', comments:'Comentarios' },
@@ -94,6 +94,602 @@ am: { home:'ለእርስዎ', friends:'ጓደኞች', inbox:'መልዕክቶች'
   hi: { home:'आपके लिए', friends:'दोस्त', inbox:'संदेश', profile:'प्रोफ़ाइल', create:'बनाएं', foryou:'आपके लिए', skills:'कौशल', jobs:'नौकरियाँ', post:'पोस्ट करें', cancel:'रद्द करें', save:'सहेजें', follow:'+ फ़ॉलो', unfollow:'फ़ॉलोइंग', message:'संदेश', settings:'सेटिंग्स', logout:'लॉग आउट', editProfile:'प्रोफ़ाइल संपादित करें', search:'कुछ भी खोजें...', noVideos:'अभी कोई वीडियो नहीं।', addComment:'टिप्पणी जोड़ें...', noMessages:'अभी कोई संदेश नहीं', startChat:'किसी प्रोफ़ाइल पर जाएं और संदेश भेजें', notifications:'सूचनाएं', markRead:'सभी को पढ़ा हुआ चिह्नित करें', wallet:'वॉलेट', analytics:'विश्लेषण', badges:'बैज', premium:'प्रीमियम', live:'लाइव', report:'रिपोर्ट', block:'ब्लॉक', duet:'युगल', stitch:'सिलाई', voiceCall:'वॉयस कॉल', videoCall:'वीडियो कॉल', pinned:'पिन किया', reply:'जवाब', pin:'पिन', retake:'दोबारा', newPost:'नई पोस्ट', sounds:'ध्वनियां', close:'बंद', back:'वापस', comments:'टिप्पणियाँ' },
   zh: { home:'为你', friends:'朋友', inbox:'消息', profile:'我的', create:'创建', foryou:'为你', skills:'技能', jobs:'工作', post:'发布', cancel:'取消', save:'保存', follow:'+ 关注', unfollow:'已关注', message:'消息', settings:'设置', logout:'退出登录', editProfile:'编辑资料', search:'搜索...', noVideos:'暂无视频。', addComment:'添加评论...', noMessages:'暂无消息', startChat:'前往用户资料并发送消息', notifications:'通知', markRead:'全部标为已读', wallet:'钱包', analytics:'分析', badges:'徽章', premium:'高级版', live:'直播', report:'举报', block:'屏蔽', duet:'合唱', stitch:'拼接', voiceCall:'语音通话', videoCall:'视频通话', pinned:'已置顶', reply:'回复', pin:'置顶', retake:'重拍', newPost:'新帖子', sounds:'音效', close:'关闭', back:'返回', comments:'评论' },
 };
+/* ─────────────── ADDITIONAL LANGUAGES (v4 Enhancement) ─────────────── */
+const EXTRA_TRANSLATIONS = {
+  sw: { home:'Kwako', friends:'Marafiki', inbox:'Ujumbe', profile:'Wasifu', create:'Unda', foryou:'Kwako', skills:'Ujuzi', jobs:'Kazi', post:'Chapisha', cancel:'Ghairi', save:'Hifadhi', follow:'+ Fuata', unfollow:'Unafuata', message:'Ujumbe', settings:'Mipangilio', logout:'Toka', editProfile:'Hariri Wasifu', search:'Tafuta...', noVideos:'Hakuna video bado.', addComment:'Ongeza maoni...', noMessages:'Hakuna ujumbe bado', startChat:'Nenda kwenye wasifu na tuma ujumbe', notifications:'Arifa', markRead:'Weka zote kama zilizosomwa', wallet:'Mkoba', analytics:'Uchambuzi', badges:'Beji', premium:'Premium', live:'Moja kwa moja', report:'Ripoti', block:'Zuia', duet:'Dueti', stitch:'Stichi', voiceCall:'Simu ya sauti', videoCall:'Simu ya video', pinned:'Imepachikwa', reply:'Jibu', pin:'Pachika', retake:'Piga tena', newPost:'Chapisho Jipya', sounds:'Sauti', close:'Funga', back:'Rudi', comments:'Maoni' },
+  de: { home:'Für dich', friends:'Freunde', inbox:'Nachrichten', profile:'Profil', create:'Erstellen', foryou:'Für dich', skills:'Fähigkeiten', jobs:'Jobs', post:'Posten', cancel:'Abbrechen', save:'Speichern', follow:'+ Folgen', unfollow:'Du folgst', message:'Nachricht', settings:'Einstellungen', logout:'Abmelden', editProfile:'Profil bearbeiten', search:'Suchen...', noVideos:'Noch keine Videos.', addComment:'Kommentar hinzufügen...', noMessages:'Noch keine Nachrichten', startChat:'Gehe zu einem Profil und sende eine Nachricht', notifications:'Benachrichtigungen', markRead:'Alle als gelesen markieren', wallet:'Geldbörse', analytics:'Analytik', badges:'Abzeichen', premium:'Premium', live:'Live', report:'Melden', block:'Blockieren', duet:'Duett', stitch:'Stitch', voiceCall:'Sprachanruf', videoCall:'Videoanruf', pinned:'Angeheftet', reply:'Antworten', pin:'Anheften', retake:'Wiederholen', newPost:'Neuer Beitrag', sounds:'Sounds', close:'Schließen', back:'Zurück', comments:'Kommentare' },
+  ru: { home:'Для вас', friends:'Друзья', inbox:'Сообщения', profile:'Профиль', create:'Создать', foryou:'Для вас', skills:'Навыки', jobs:'Работа', post:'Опубликовать', cancel:'Отмена', save:'Сохранить', follow:'+ Подписаться', unfollow:'Вы подписаны', message:'Сообщение', settings:'Настройки', logout:'Выйти', editProfile:'Редактировать профиль', search:'Поиск...', noVideos:'Видео пока нет.', addComment:'Добавить комментарий...', noMessages:'Нет сообщений', startChat:'Перейдите в профиль и отправьте сообщение', notifications:'Уведомления', markRead:'Отметить все прочитанными', wallet:'Кошелёк', analytics:'Аналитика', badges:'Значки', premium:'Премиум', live:'Прямой эфир', report:'Пожаловаться', block:'Заблокировать', duet:'Дуэт', stitch:'Стич', voiceCall:'Голосовой звонок', videoCall:'Видеозвонок', pinned:'Закреплено', reply:'Ответить', pin:'Закрепить', retake:'Переснять', newPost:'Новая публикация', sounds:'Звуки', close:'Закрыть', back:'Назад', comments:'Комментарии' },
+  tr: { home:'Sana Özel', friends:'Arkadaşlar', inbox:'Mesajlar', profile:'Profil', create:'Oluştur', foryou:'Sana Özel', skills:'Beceriler', jobs:'İşler', post:'Paylaş', cancel:'İptal', save:'Kaydet', follow:'+ Takip Et', unfollow:'Takip Ediyorsun', message:'Mesaj', settings:'Ayarlar', logout:'Çıkış Yap', editProfile:'Profili Düzenle', search:'Ara...', noVideos:'Henüz video yok.', addComment:'Yorum ekle...', noMessages:'Henüz mesaj yok', startChat:'Bir profile git ve mesaj gönder', notifications:'Bildirimler', markRead:'Tümünü okundu işaretle', wallet:'Cüzdan', analytics:'Analitik', badges:'Rozetler', premium:'Premium', live:'Canlı', report:'Şikayet Et', block:'Engelle', duet:'Düet', stitch:'Stitch', voiceCall:'Sesli Arama', videoCall:'Görüntülü Arama', pinned:'Sabitlendi', reply:'Yanıtla', pin:'Sabitle', retake:'Yeniden Çek', newPost:'Yeni Gönderi', sounds:'Sesler', close:'Kapat', back:'Geri', comments:'Yorumlar' },
+  ja: { home:'あなたへ', friends:'友達', inbox:'メッセージ', profile:'プロフィール', create:'作成', foryou:'あなたへ', skills:'スキル', jobs:'仕事', post:'投稿', cancel:'キャンセル', save:'保存', follow:'+ フォロー', unfollow:'フォロー中', message:'メッセージ', settings:'設定', logout:'ログアウト', editProfile:'プロフィール編集', search:'検索...', noVideos:'まだ動画がありません。', addComment:'コメントを追加...', noMessages:'まだメッセージがありません', startChat:'プロフィールに移動してメッセージを送る', notifications:'通知', markRead:'全て既読にする', wallet:'ウォレット', analytics:'分析', badges:'バッジ', premium:'プレミアム', live:'ライブ', report:'報告', block:'ブロック', duet:'デュエット', stitch:'スティッチ', voiceCall:'音声通話', videoCall:'ビデオ通話', pinned:'固定', reply:'返信', pin:'固定する', retake:'撮り直す', newPost:'新しい投稿', sounds:'サウンド', close:'閉じる', back:'戻る', comments:'コメント' },
+  ko: { home:'추천', friends:'친구', inbox:'메시지', profile:'프로필', create:'만들기', foryou:'추천', skills:'스킬', jobs:'직업', post:'게시', cancel:'취소', save:'저장', follow:'+ 팔로우', unfollow:'팔로잉', message:'메시지', settings:'설정', logout:'로그아웃', editProfile:'프로필 편집', search:'검색...', noVideos:'아직 동영상이 없습니다.', addComment:'댓글 추가...', noMessages:'아직 메시지가 없습니다', startChat:'프로필로 이동하여 메시지를 보내세요', notifications:'알림', markRead:'모두 읽음 표시', wallet:'지갑', analytics:'분석', badges:'배지', premium:'프리미엄', live:'라이브', report:'신고', block:'차단', duet:'듀엣', stitch:'스티치', voiceCall:'음성 통화', videoCall:'영상 통화', pinned:'고정됨', reply:'답글', pin:'고정', retake:'다시 찍기', newPost:'새 게시물', sounds:'사운드', close:'닫기', back:'뒤로', comments:'댓글' },
+  it: { home:'Per te', friends:'Amici', inbox:'Messaggi', profile:'Profilo', create:'Crea', foryou:'Per te', skills:'Competenze', jobs:'Lavoro', post:'Pubblica', cancel:'Annulla', save:'Salva', follow:'+ Segui', unfollow:'Stai seguendo', message:'Messaggio', settings:'Impostazioni', logout:'Esci', editProfile:'Modifica profilo', search:'Cerca...', noVideos:'Nessun video ancora.', addComment:'Aggiungi commento...', noMessages:'Nessun messaggio ancora', startChat:'Vai a un profilo e invia un messaggio', notifications:'Notifiche', markRead:'Segna tutto come letto', wallet:'Portafoglio', analytics:'Analisi', badges:'Badge', premium:'Premium', live:'In diretta', report:'Segnala', block:'Blocca', duet:'Duetto', stitch:'Stitch', voiceCall:'Chiamata vocale', videoCall:'Videochiamata', pinned:'In primo piano', reply:'Rispondi', pin:'Fissa', retake:'Riprendi', newPost:'Nuovo post', sounds:'Suoni', close:'Chiudi', back:'Indietro', comments:'Commenti' },
+};
+// Merge extra translations into TRANSLATIONS
+Object.assign(TRANSLATIONS, EXTRA_TRANSLATIONS);
+
+/* ─────────────── LIVE TRANSLATION HOOK (v4 Enhancement) ─────────────── */
+const translationCache = {};
+const liveTranslate = async (text, targetLang = 'en') => {
+  if (!text || targetLang === 'auto') return text;
+  const cacheKey = `${targetLang}:${text.substring(0, 80)}`;
+  if (translationCache[cacheKey]) return translationCache[cacheKey];
+  try {
+    const res = await fetch(
+      `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`
+    );
+    const data = await res.json();
+    const translated = data?.[0]?.map(s => s?.[0]).filter(Boolean).join('') || text;
+    translationCache[cacheKey] = translated;
+    return translated;
+  } catch { return text; }
+};
+
+const useLiveTranslation = (text, targetLang) => {
+  const [translated, setTranslated] = useState(text);
+  useEffect(() => {
+    if (!text || !targetLang || targetLang === 'en') { setTranslated(text); return; }
+    liveTranslate(text, targetLang).then(setTranslated);
+  }, [text, targetLang]);
+  return translated;
+};
+
+/* ─────────────── EXTRA CONSTANTS (v4) ─────────────── */
+const TRENDING_HASHTAGS = [
+  '#dagu', '#infinity', '#trending', '#viral', '#fyp', '#ethiopia', '#addisababa',
+  '#africa', '#music', '#dance', '#comedy', '#fashion', '#food', '#travel', '#tech',
+];
+
+const SUPPORTED_LANGUAGES = [
+  ['English','en'],['አማርኛ','am'],['العربية','ar'],['Français','fr'],['Español','es'],
+  ['Português','pt'],['हिन्दी','hi'],['中文','zh'],['Kiswahili','sw'],['Deutsch','de'],
+  ['Русский','ru'],['Türkçe','tr'],['日本語','ja'],['한국어','ko'],['Italiano','it'],
+];
+
+const REPORT_REASONS = [
+  'Spam or misleading','Inappropriate content','Hate speech or harassment',
+  'Violence or dangerous acts','Misinformation','Intellectual property violation',
+  'Nudity or sexual content','Suicide or self-harm','Impersonation','Other',
+];
+
+const BADGE_DEFINITIONS = [
+  { id:'pioneer', icon:'🌟', name:'Pioneer', desc:'One of the first 1000 users' },
+  { id:'creator', icon:'🎬', name:'Creator', desc:'Posted 10+ videos' },
+  { id:'popular', icon:'🔥', name:'Trending', desc:'A video got 10K+ views' },
+  { id:'social', icon:'🤝', name:'Social Butterfly', desc:'100+ followers' },
+  { id:'verified', icon:'✅', name:'Verified', desc:'Identity verified' },
+  { id:'premium', icon:'💎', name:'Premium', desc:'Premium subscriber' },
+  { id:'streaker', icon:'⚡', name:'Streaker', desc:'7-day posting streak' },
+  { id:'whale', icon:'🐋', name:'Whale', desc:'Spent 10,000+ coins' },
+];
+
+const STICKER_PACKS = [
+  { id:'fun', name:'Fun', stickers:['😂','🤣','😎','🥳','🎉','🎊','✨','🔥','💯','👏'] },
+  { id:'love', name:'Love', stickers:['❤️','🥰','😍','💕','💖','💗','💘','💝','😘','🫶'] },
+  { id:'reactions', name:'Reactions', stickers:['👍','👎','😮','😡','😢','😱','🙌','🫡','💪','🤔'] },
+  { id:'food', name:'Food', stickers:['🍕','🍔','🍟','🌮','🍜','🍣','🍦','🎂','☕','🧋'] },
+];
+
+/* ─────────────── POLL COMPONENT (v4 — like Instagram/Telegram polls) ─────────────── */
+const PollWidget = ({ poll, currentUser, videoId, showToast }) => {
+  const [voted, setVoted] = useState(null);
+  const [localVotes, setLocalVotes] = useState(poll?.votes || {});
+  const totalVotes = Object.values(localVotes).reduce((s, v) => s + (v || 0), 0);
+
+  const handleVote = async (optionIdx) => {
+    if (voted !== null) return;
+    setVoted(optionIdx);
+    const newVotes = { ...localVotes, [optionIdx]: (localVotes[optionIdx] || 0) + 1 };
+    setLocalVotes(newVotes);
+    try {
+      await updateDoc(doc(db, 'videos', videoId), {
+        [`poll.votes.${optionIdx}`]: increment(1),
+        [`poll.voters.${currentUser?.id}`]: optionIdx
+      });
+    } catch (e) { console.log('Poll vote error:', e); }
+    showToast?.('Vote counted! 🗳️', 'success');
+  };
+
+  if (!poll?.options) return null;
+  return (
+    <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: 16, padding: 14, marginTop: 8 }}>
+      <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>📊 Poll</div>
+      <div style={{ color: 'white', fontWeight: 700, fontSize: 14, marginBottom: 10 }}>{poll.question}</div>
+      {poll.options.map((opt, i) => {
+        const pct = totalVotes > 0 ? Math.round(((localVotes[i] || 0) / totalVotes) * 100) : 0;
+        return (
+          <div key={i} onClick={() => handleVote(i)} style={{ marginBottom: 8, cursor: voted === null ? 'pointer' : 'default' }}>
+            <div style={{ position: 'relative', background: 'rgba(255,255,255,0.06)', borderRadius: 10, overflow: 'hidden', border: voted === i ? '1.5px solid #ff2d55' : '1.5px solid rgba(255,255,255,0.1)' }}>
+              {voted !== null && <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${pct}%`, background: voted === i ? 'rgba(255,45,85,0.25)' : 'rgba(255,255,255,0.06)', transition: 'width 0.4s ease' }} />}
+              <div style={{ position: 'relative', padding: '9px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: 'white', fontSize: 13 }}>{opt}</span>
+                {voted !== null && <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: 700 }}>{pct}%</span>}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+      {voted !== null && <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 11, marginTop: 4 }}>{totalVotes} votes</div>}
+    </div>
+  );
+};
+
+/* ─────────────── BOOKMARK / SAVE BUTTON (v4) ─────────────── */
+const BookmarkButton = ({ videoId, currentUser, showToast }) => {
+  const [saved, setSaved] = useState(false);
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    getDoc(doc(db, 'saves', `${videoId}_${currentUser.id}`)).then(d => setSaved(d.exists())).catch(() => {});
+  }, [videoId, currentUser?.id]);
+
+  const toggle = async (e) => {
+    e.stopPropagation();
+    if (saved) {
+      await deleteDoc(doc(db, 'saves', `${videoId}_${currentUser.id}`));
+      setSaved(false);
+      showToast?.('Removed from saved', 'info');
+    } else {
+      await setDoc(doc(db, 'saves', `${videoId}_${currentUser.id}`), { videoId, userId: currentUser.id, createdAt: serverTimestamp() });
+      setSaved(true);
+      showToast?.('Saved to collection ✨', 'success');
+    }
+  };
+
+  return (
+    <button onClick={toggle} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+      <svg width="26" height="26" viewBox="0 0 24 24" fill={saved ? '#ffd700' : 'none'} stroke={saved ? '#ffd700' : 'white'} strokeWidth="2">
+        <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
+      </svg>
+      <span style={{ color: saved ? '#ffd700' : 'rgba(255,255,255,0.6)', fontSize: 11 }}>Save</span>
+    </button>
+  );
+};
+
+/* ─────────────── SHARE SHEET (v4 — like TikTok/WhatsApp share) ─────────────── */
+const ShareSheet = ({ video, currentUser, onClose, showToast }) => {
+  const shareUrl = `https://infinity-now.vercel.app/video/${video?.id}`;
+  const options = [
+    { icon: '📋', label: 'Copy Link', action: async () => { try { await navigator.clipboard.writeText(shareUrl); showToast?.('Link copied!', 'success'); } catch { showToast?.('Copy failed', 'error'); } onClose(); } },
+    { icon: '📲', label: 'Share', action: async () => { try { await navigator.share({ title: `@${video?.username} on Infinity`, text: video?.description, url: shareUrl }); } catch {} onClose(); } },
+    { icon: '💬', label: 'Send in Chat', action: () => { showToast?.('Open Messages tab to share', 'info'); onClose(); } },
+    { icon: '📸', label: 'Add to Story', action: () => { showToast?.('Open Create to add to story', 'info'); onClose(); } },
+    { icon: '🔗', label: 'WhatsApp', action: () => { window.open(`https://wa.me/?text=${encodeURIComponent(video?.description + ' ' + shareUrl)}`); onClose(); } },
+    { icon: '✈️', label: 'Telegram', action: () => { window.open(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(video?.description||'')}`); onClose(); } },
+    { icon: '🐦', label: 'X (Twitter)', action: () => { window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent((video?.description||'') + ' ' + shareUrl)}`); onClose(); } },
+  ];
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 5000, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-end' }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{ width: '100%', background: '#111', borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: '20px 16px max(34px, env(safe-area-inset-bottom))', border: '1px solid rgba(255,255,255,0.07)' }}>
+        <div style={{ width: 36, height: 4, background: 'rgba(255,255,255,0.15)', borderRadius: 2, margin: '0 auto 20px' }} />
+        <div style={{ color: 'white', fontWeight: 800, fontSize: 17, marginBottom: 18 }}>Share</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 16 }}>
+          {options.map(opt => (
+            <button key={opt.label} onClick={opt.action} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 18, padding: '14px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7, cursor: 'pointer' }}>
+              <span style={{ fontSize: 26 }}>{opt.icon}</span>
+              <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 10, fontWeight: 600, textAlign: 'center' }}>{opt.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ─────────────── STICKER PICKER (v4) ─────────────── */
+const StickerPicker = ({ onSelect, onClose }) => {
+  const [activePack, setActivePack] = useState(0);
+  return (
+    <div style={{ background: '#1a1a1a', borderRadius: 20, padding: 14, border: '1px solid rgba(255,255,255,0.08)' }}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 10, overflowX: 'auto' }}>
+        {STICKER_PACKS.map((pack, i) => (
+          <button key={pack.id} onClick={() => setActivePack(i)} style={{ background: i === activePack ? 'rgba(255,45,85,0.2)' : 'transparent', border: i === activePack ? '1px solid rgba(255,45,85,0.4)' : '1px solid transparent', borderRadius: 20, padding: '4px 12px', color: i === activePack ? '#ff2d55' : 'rgba(255,255,255,0.4)', fontSize: 12, cursor: 'pointer', flexShrink: 0 }}>
+            {pack.name}
+          </button>
+        ))}
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+        {STICKER_PACKS[activePack].stickers.map(s => (
+          <button key={s} onClick={() => onSelect(s)} style={{ background: 'none', border: 'none', fontSize: 28, cursor: 'pointer', padding: 4, borderRadius: 8, transition: 'transform 0.1s' }}
+            onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.3)'}
+            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+          >{s}</button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+/* ─────────────── TRENDING HASHTAGS COMPONENT (v4) ─────────────── */
+const TrendingHashtags = ({ onSearch }) => (
+  <div style={{ padding: '10px 0', overflowX: 'auto', display: 'flex', gap: 8 }}>
+    {TRENDING_HASHTAGS.map(tag => (
+      <button key={tag} onClick={() => onSearch?.(tag)} style={{ background: 'rgba(255,45,85,0.1)', border: '1px solid rgba(255,45,85,0.2)', borderRadius: 20, padding: '6px 14px', color: '#ff2d55', fontSize: 12, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>
+        {tag}
+      </button>
+    ))}
+  </div>
+);
+
+/* ─────────────── GROUP CHAT (v4 — like WhatsApp/Telegram groups) ─────────────── */
+const GroupChatPage = ({ currentUser, users, showToast, onBack }) => {
+  const [groups, setGroups] = useState([]);
+  const [showCreate, setShowCreate] = useState(false);
+  const [groupName, setGroupName] = useState('');
+  const [selectedMembers, setSelectedMembers] = useState([]);
+  const [activeGroup, setActiveGroup] = useState(null);
+  const [groupMessages, setGroupMessages] = useState([]);
+  const [msgText, setMsgText] = useState('');
+
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    const q = query(collection(db, 'groups'), where('members', 'array-contains', currentUser.id), orderBy('lastMessageAt', 'desc'));
+    const unsub = onSnapshot(q, snap => setGroups(snap.docs.map(d => ({ id: d.id, ...d.data() }))), () => {});
+    return () => unsub();
+  }, [currentUser?.id]);
+
+  useEffect(() => {
+    if (!activeGroup) return;
+    const q = query(collection(db, 'groups', activeGroup.id, 'msgs'), orderBy('createdAt', 'asc'), limit(100));
+    const unsub = onSnapshot(q, snap => setGroupMessages(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+    return () => unsub();
+  }, [activeGroup?.id]);
+
+  const createGroup = async () => {
+    if (!groupName.trim() || selectedMembers.length === 0) { showToast?.('Add a name and at least one member', 'error'); return; }
+    const members = [currentUser.id, ...selectedMembers];
+    const ref = await addDoc(collection(db, 'groups'), {
+      name: groupName.trim(), members, admin: currentUser.id,
+      createdAt: serverTimestamp(), lastMessageAt: serverTimestamp(),
+      avatar: groupName.trim()[0].toUpperCase(), avatarColor: `hsl(${Math.floor(Math.random() * 360)},70%,60%)`
+    });
+    showToast?.('Group created! 🎉', 'success');
+    setShowCreate(false); setGroupName(''); setSelectedMembers([]);
+    setActiveGroup({ id: ref.id, name: groupName.trim(), members });
+  };
+
+  const sendGroupMsg = async () => {
+    if (!msgText.trim() || !activeGroup) return;
+    const txt = msgText; setMsgText('');
+    await addDoc(collection(db, 'groups', activeGroup.id, 'msgs'), {
+      text: txt, senderId: currentUser.id, senderName: currentUser.username,
+      senderAvatar: currentUser.avatar, senderAvatarColor: currentUser.avatarColor,
+      senderAvatarUrl: currentUser.avatarUrl || null,
+      createdAt: serverTimestamp(),
+    });
+    await updateDoc(doc(db, 'groups', activeGroup.id), { lastMessage: txt, lastMessageAt: serverTimestamp() });
+  };
+
+  if (activeGroup) {
+    const bottomRef = React.createRef();
+    return (
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#0a0a0a' }}>
+        <div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(255,255,255,0.02)' }}>
+          <button onClick={() => setActiveGroup(null)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: 18 }}>←</button>
+          <div style={{ width: 38, height: 38, borderRadius: '50%', background: activeGroup.avatarColor || '#ff2d55', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: 16 }}>{activeGroup.avatar || '👥'}</div>
+          <div>
+            <div style={{ color: 'white', fontWeight: 700, fontSize: 15 }}>{activeGroup.name}</div>
+            <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11 }}>{(activeGroup.members || []).length} members</div>
+          </div>
+        </div>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '10px 14px' }}>
+          {groupMessages.map(msg => {
+            const isMine = msg.senderId === currentUser.id;
+            return (
+              <div key={msg.id} style={{ display: 'flex', justifyContent: isMine ? 'flex-end' : 'flex-start', marginBottom: 10 }}>
+                {!isMine && (
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: msg.senderAvatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 11, fontWeight: 'bold', marginRight: 8, flexShrink: 0, overflow: 'hidden' }}>
+                    {msg.senderAvatarUrl ? <img src={msg.senderAvatarUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : msg.senderAvatar}
+                  </div>
+                )}
+                <div style={{ maxWidth: '72%' }}>
+                  {!isMine && <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 10, marginBottom: 3 }}>@{msg.senderName}</div>}
+                  <div style={{ background: isMine ? 'linear-gradient(135deg,#ff2d55,#af52de)' : 'rgba(255,255,255,0.09)', borderRadius: isMine ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: '10px 14px', color: 'white', fontSize: 14 }}>{msg.text}</div>
+                </div>
+              </div>
+            );
+          })}
+          <div ref={bottomRef} />
+        </div>
+        <div style={{ padding: '10px 14px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', gap: 8 }}>
+          <input value={msgText} onChange={e => setMsgText(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendGroupMsg()} placeholder="Message group..." style={{ flex: 1, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 24, padding: '11px 16px', color: 'white', outline: 'none', fontSize: 13 }} />
+          <button onClick={sendGroupMsg} style={{ background: 'linear-gradient(135deg,#ff2d55,#af52de)', border: 'none', borderRadius: '50%', width: 42, height: 42, color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (showCreate) return (
+    <div style={{ height: '100%', overflow: 'auto', background: '#0a0a0a', padding: 16 }}>
+      <button onClick={() => setShowCreate(false)} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: 20, padding: '8px 16px', color: 'white', cursor: 'pointer', fontSize: 13, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 6 }}>← Back</button>
+      <div style={{ color: 'white', fontWeight: 800, fontSize: 22, marginBottom: 20 }}>New Group</div>
+      <input value={groupName} onChange={e => setGroupName(e.target.value)} placeholder="Group name" style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16, padding: '13px 16px', color: 'white', outline: 'none', fontSize: 14, boxSizing: 'border-box', marginBottom: 16 }} />
+      <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, marginBottom: 10, fontWeight: 600, textTransform: 'uppercase' }}>Add Members</div>
+      {users.filter(u => u.id !== currentUser?.id).map(u => (
+        <div key={u.id} onClick={() => setSelectedMembers(p => p.includes(u.id) ? p.filter(id => id !== u.id) : [...p, u.id])} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: 'pointer' }}>
+          <div style={{ width: 40, height: 40, borderRadius: '50%', background: u.avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: 16, overflow: 'hidden', flexShrink: 0 }}>
+            {u.avatarUrl ? <img src={u.avatarUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : u.avatar}
+          </div>
+          <div style={{ flex: 1 }}><div style={{ color: 'white', fontSize: 14, fontWeight: 600 }}>@{u.username}</div></div>
+          <div style={{ width: 22, height: 22, borderRadius: '50%', background: selectedMembers.includes(u.id) ? '#ff2d55' : 'rgba(255,255,255,0.1)', border: selectedMembers.includes(u.id) ? 'none' : '2px solid rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s' }}>
+            {selectedMembers.includes(u.id) && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><polyline points="20 6 9 17 4 12" /></svg>}
+          </div>
+        </div>
+      ))}
+      <button onClick={createGroup} style={{ width: '100%', background: 'linear-gradient(135deg,#ff2d55,#af52de)', border: 'none', borderRadius: 24, padding: 15, color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: 15, marginTop: 20 }}>Create Group ({selectedMembers.length} members)</button>
+    </div>
+  );
+
+  return (
+    <div style={{ height: '100%', overflow: 'auto', background: '#0a0a0a' }}>
+      <div style={{ padding: '16px 16px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button onClick={onBack} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: 18 }}>←</button>
+          <div style={{ color: 'white', fontWeight: 800, fontSize: 18 }}>Groups</div>
+        </div>
+        <button onClick={() => setShowCreate(true)} style={{ background: 'linear-gradient(135deg,#ff2d55,#af52de)', border: 'none', borderRadius: 20, padding: '8px 16px', color: 'white', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>+ New</button>
+      </div>
+      <div style={{ padding: 12 }}>
+        {groups.length === 0 && (
+          <div style={{ textAlign: 'center', padding: 60, color: 'rgba(255,255,255,0.2)' }}>
+            <div style={{ fontSize: 44, marginBottom: 12 }}>👥</div>
+            <div style={{ fontSize: 14, marginBottom: 8 }}>No groups yet</div>
+            <div style={{ fontSize: 12 }}>Create a group to chat with multiple friends</div>
+          </div>
+        )}
+        {groups.map(g => (
+          <div key={g.id} onClick={() => setActiveGroup(g)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: 'rgba(255,255,255,0.03)', borderRadius: 18, marginBottom: 8, cursor: 'pointer', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ width: 48, height: 48, borderRadius: '50%', background: g.avatarColor || '#ff2d55', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: 20, flexShrink: 0 }}>{g.avatar || '👥'}</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ color: 'white', fontWeight: 700, fontSize: 14 }}>{g.name}</div>
+              <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12, marginTop: 2 }}>{g.lastMessage || 'No messages yet'} · {(g.members || []).length} members</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+/* ─────────────── SAVED POSTS PAGE (v4 — like Instagram Collections) ─────────────── */
+const SavedPostsPage = ({ currentUser, onClose, showToast }) => {
+  const [saved, setSaved] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    const q = query(collection(db, 'saves'), where('userId', '==', currentUser.id), orderBy('createdAt', 'desc'));
+    const unsub = onSnapshot(q, async snap => {
+      const items = await Promise.all(snap.docs.map(async d => {
+        const vDoc = await getDoc(doc(db, 'videos', d.data().videoId)).catch(() => null);
+        return vDoc?.exists() ? { id: vDoc.id, ...vDoc.data() } : null;
+      }));
+      setSaved(items.filter(Boolean));
+      setLoading(false);
+    }, () => setLoading(false));
+    return () => unsub();
+  }, [currentUser?.id]);
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: '#0a0a0a', zIndex: 300, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ color: 'white', fontWeight: 800, fontSize: 20 }}>Saved</div>
+        <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.07)', border: 'none', borderRadius: '50%', width: 32, height: 32, color: 'white', cursor: 'pointer', fontSize: 16 }}>✕</button>
+      </div>
+      <div style={{ flex: 1, overflowY: 'auto', padding: 12 }}>
+        {loading && <div style={{ textAlign: 'center', padding: 40 }}><div style={{ width: 28, height: 28, border: '3px solid rgba(255,45,85,0.3)', borderTop: '3px solid #ff2d55', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto' }} /></div>}
+        {!loading && saved.length === 0 && (
+          <div style={{ textAlign: 'center', padding: 60, color: 'rgba(255,255,255,0.25)' }}>
+            <div style={{ fontSize: 44, marginBottom: 12 }}>🔖</div>
+            <div style={{ fontSize: 14 }}>No saved posts yet</div>
+            <div style={{ fontSize: 12, marginTop: 6 }}>Tap the bookmark icon on any post to save it</div>
+          </div>
+        )}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 3 }}>
+          {saved.map(v => (
+            <div key={v.id} style={{ aspectRatio: '9/16', position: 'relative', overflow: 'hidden', borderRadius: 8, background: '#222' }}>
+              {v.videoUrl?.match(/\.(jpg|jpeg|png|gif|webp)/i) || v.mediaType?.startsWith('image')
+                ? <img src={v.videoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                : <video src={v.videoUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} muted />}
+              <div style={{ position: 'absolute', bottom: 4, left: 4, color: 'white', fontSize: 10, fontWeight: 700, textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{v.likes || 0} ❤️</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ─────────────── MESSAGE TRANSLATOR BUTTON (v4 — like Telegram live translate) ─────────────── */
+const TranslateButton = ({ text, targetLang, onTranslated }) => {
+  const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(false);
+  if (!text || text.length < 5 || targetLang === 'en') return null;
+  const handle = async () => {
+    setLoading(true);
+    const result = await liveTranslate(text, targetLang);
+    onTranslated(result);
+    setLoading(false);
+    setDone(true);
+  };
+  if (done) return null;
+  return (
+    <button onClick={handle} disabled={loading} style={{ background: 'rgba(0,122,255,0.12)', border: '1px solid rgba(0,122,255,0.25)', borderRadius: 12, padding: '3px 10px', color: '#007aff', fontSize: 11, cursor: 'pointer', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+      {loading ? '...' : '🌐 Translate'}
+    </button>
+  );
+};
+
+/* ─────────────── STATUS / BROADCAST (v4 — like WhatsApp Status) ─────────────── */
+const BroadcastPage = ({ currentUser, users, showToast, onClose }) => {
+  const [text, setText] = useState('');
+  const [bgColor, setBgColor] = useState('#ff2d55');
+  const [posting, setPosting] = useState(false);
+  const colors = ['#ff2d55','#af52de','#007aff','#ff9500','#34c759','#00c7be','#ff3b30'];
+
+  const postStatus = async () => {
+    if (!text.trim()) { showToast?.('Write something first', 'error'); return; }
+    setPosting(true);
+    await addDoc(collection(db, 'broadcasts'), {
+      userId: currentUser.id, username: currentUser.username, text: text.trim(),
+      bgColor, createdAt: serverTimestamp(), expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      seenBy: [], avatarUrl: currentUser.avatarUrl || null, avatarColor: currentUser.avatarColor
+    });
+    showToast?.('Status posted! 📡', 'success');
+    setPosting(false);
+    onClose();
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 4000, background: bgColor, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <button onClick={onClose} style={{ background: 'rgba(0,0,0,0.3)', border: 'none', borderRadius: 20, padding: '8px 16px', color: 'white', cursor: 'pointer', fontSize: 13 }}>Cancel</button>
+        <span style={{ color: 'white', fontWeight: 800, fontSize: 16 }}>Status</span>
+        <button onClick={postStatus} disabled={posting} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 20, padding: '8px 16px', color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: 13 }}>{posting ? '...' : 'Post'}</button>
+      </div>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 32 }}>
+        <textarea value={text} onChange={e => setText(e.target.value)} placeholder="Write your status..." autoFocus style={{ background: 'transparent', border: 'none', outline: 'none', color: 'white', fontSize: 28, fontWeight: 700, textAlign: 'center', width: '100%', resize: 'none', caretColor: 'white' }} rows={4} />
+      </div>
+      <div style={{ padding: '0 20px 40px', display: 'flex', justifyContent: 'center', gap: 12 }}>
+        {colors.map(c => <div key={c} onClick={() => setBgColor(c)} style={{ width: 32, height: 32, borderRadius: '50%', background: c, border: c === bgColor ? '3px solid white' : '3px solid transparent', cursor: 'pointer' }} />)}
+      </div>
+    </div>
+  );
+};
+
+/* ─────────────── DISCOVER / EXPLORE PAGE (v4 — like TikTok Discover) ─────────────── */
+const DiscoverPage = ({ videos, users, onViewProfile, showToast, onClose }) => {
+  const [search, setSearch] = useState('');
+  const [activeFilter, setActiveFilter] = useState('all');
+  const filters = [['all','All'],['video','Videos'],['people','People'],['hashtag','Tags']];
+  const searchLower = search.toLowerCase();
+  const filteredVideos = videos.filter(v =>
+    (!search || v.description?.toLowerCase().includes(searchLower) || v.username?.toLowerCase().includes(searchLower))
+    && (activeFilter === 'all' || activeFilter === 'video')
+  );
+  const filteredUsers = users.filter(u =>
+    search && (u.username?.toLowerCase().includes(searchLower) || u.fullName?.toLowerCase().includes(searchLower))
+    && (activeFilter === 'all' || activeFilter === 'people')
+  );
+  const filteredTags = TRENDING_HASHTAGS.filter(t =>
+    (!search || t.toLowerCase().includes(searchLower))
+    && (activeFilter === 'all' || activeFilter === 'hashtag')
+  );
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: '#0a0a0a', zIndex: 500, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 12 }}>
+          <div style={{ flex: 1, background: 'rgba(255,255,255,0.06)', borderRadius: 24, display: 'flex', alignItems: 'center', padding: '10px 14px', gap: 8 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search Infinity..." autoFocus style={{ flex: 1, background: 'none', border: 'none', color: 'white', outline: 'none', fontSize: 14 }} />
+            {search && <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: 16 }}>✕</button>}
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: 14, padding: 4 }}>Cancel</button>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {filters.map(([id, label]) => (
+            <button key={id} onClick={() => setActiveFilter(id)} style={{ background: activeFilter === id ? 'rgba(255,45,85,0.15)' : 'rgba(255,255,255,0.04)', border: `1px solid ${activeFilter === id ? 'rgba(255,45,85,0.4)' : 'rgba(255,255,255,0.07)'}`, borderRadius: 20, padding: '6px 14px', color: activeFilter === id ? '#ff2d55' : 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: activeFilter === id ? 700 : 400, cursor: 'pointer' }}>{label}</button>
+          ))}
+        </div>
+      </div>
+      <div style={{ flex: 1, overflowY: 'auto', padding: 12 }}>
+        {!search && (
+          <>
+            <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>Trending</div>
+            <TrendingHashtags onSearch={t => setSearch(t)} />
+            <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, margin: '20px 0 10px' }}>Suggested Creators</div>
+            {users.slice(0, 6).map(u => (
+              <div key={u.id} onClick={() => { onViewProfile?.(u.id); onClose(); }} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: 'pointer' }}>
+                <div style={{ width: 44, height: 44, borderRadius: '50%', background: u.avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: 18, overflow: 'hidden', flexShrink: 0 }}>
+                  {u.avatarUrl ? <img src={u.avatarUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : u.avatar}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ color: 'white', fontWeight: 700, fontSize: 14 }}>@{u.username}</div>
+                  <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>{formatNumber(u.followers?.length || 0)} followers</div>
+                </div>
+              </div>
+            ))}
+          </>
+        )}
+        {search && filteredUsers.length > 0 && (
+          <>
+            <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>People</div>
+            {filteredUsers.map(u => (
+              <div key={u.id} onClick={() => { onViewProfile?.(u.id); onClose(); }} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: 'pointer' }}>
+                <div style={{ width: 44, height: 44, borderRadius: '50%', background: u.avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: 18, overflow: 'hidden', flexShrink: 0 }}>
+                  {u.avatarUrl ? <img src={u.avatarUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : u.avatar}
+                </div>
+                <div>
+                  <div style={{ color: 'white', fontWeight: 700, fontSize: 14 }}>@{u.username}</div>
+                  {u.verified && <span style={{ color: '#1d9bf0', fontSize: 11 }}>✓ Verified</span>}
+                </div>
+              </div>
+            ))}
+          </>
+        )}
+        {search && filteredTags.length > 0 && (activeFilter === 'all' || activeFilter === 'hashtag') && (
+          <>
+            <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, margin: '16px 0 10px' }}>Hashtags</div>
+            {filteredTags.map(tag => (
+              <div key={tag} style={{ padding: '10px 14px', background: 'rgba(255,255,255,0.03)', borderRadius: 14, marginBottom: 6, cursor: 'pointer', color: '#ff2d55', fontWeight: 700, fontSize: 14 }}>{tag}</div>
+            ))}
+          </>
+        )}
+        {search && (activeFilter === 'all' || activeFilter === 'video') && filteredVideos.length > 0 && (
+          <>
+            <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, margin: '16px 0 10px' }}>Videos</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              {filteredVideos.slice(0, 8).map(v => (
+                <div key={v.id} style={{ aspectRatio: '9/16', position: 'relative', borderRadius: 14, overflow: 'hidden', background: '#222' }}>
+                  {v.videoUrl?.match(/\.(jpg|jpeg|png|gif|webp)/i) || v.mediaType?.startsWith('image')
+                    ? <img src={v.videoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    : <video src={v.videoUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} muted />}
+                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent,rgba(0,0,0,0.7))', padding: '20px 8px 8px' }}>
+                    <div style={{ color: 'white', fontSize: 11, fontWeight: 600 }}>@{v.username}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
+/* ─────────────── DARK/LIGHT MODE TOGGLE HOOK (v4) ─────────────── */
+const useTheme = (user) => {
+  const [theme, setTheme] = useState(user?.theme || 'dark');
+  const toggleTheme = async (newTheme) => {
+    setTheme(newTheme);
+    if (user?.id) {
+      await updateDoc(doc(db, 'users', user.id), { theme: newTheme }).catch(() => {});
+    }
+  };
+  const isDark = theme === 'dark';
+  const colors = {
+    bg: isDark ? '#0a0a0a' : '#f5f5f7',
+    surface: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.05)',
+    text: isDark ? '#ffffff' : '#1a1a1a',
+    subtext: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)',
+    border: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.08)',
+    card: isDark ? '#111' : '#ffffff',
+  };
+  return { theme, toggleTheme, isDark, colors };
+};
+
+/* ─────────────── SEND NOTIFICATION HELPER (v4 — already defined below, re-export alias) ─────────────── */
+const sendNotification = async (toUserId, fromUserId, type, message, extra = {}) => {
+  if (!toUserId || toUserId === fromUserId) return;
+  try {
+    await addDoc(collection(db, 'notifications'), {
+      toUserId, fromUserId, type, message,
+      read: false, createdAt: serverTimestamp(), ...extra,
+    });
+  } catch (e) { console.log('Notification error:', e); }
+};
+
 const formatNumber = (num) => {
   const n = Number(num) || 0;
   if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
@@ -493,39 +1089,19 @@ const ShareModal = ({ video, onClose, showToast }) => {
 };
 
 /* ─────────────── STORIES BAR ─────────────── */
-const Stories = ({ users, currentUser, onViewStory, onCreateStory, onLive }) => {
-  const openOwnStory = async () => {
-    if(!currentUser?.id) { onCreateStory?.(); return; }
-    try {
-      const snap = await getDocs(query(collection(db,'stories'), where('userId','==',currentUser.id), orderBy('createdAt','desc'), limit(1)));
-      if(!snap.empty) { onViewStory?.({...snap.docs[0].data(), id: snap.docs[0].id}); return; }
-      onCreateStory?.();
-    } catch(e) {
-      console.error('Story index error, falling back:', e);
-      try {
-        const snap2 = await getDocs(query(collection(db,'stories'), where('userId','==',currentUser.id)));
-        if(!snap2.empty) {
-          const docs = snap2.docs.sort((a,b)=>(b.data().createdAt?.seconds||0)-(a.data().createdAt?.seconds||0));
-          onViewStory?.({...docs[0].data(), id: docs[0].id});
-          return;
-        }
-      } catch(e2) { console.error('Story fallback failed:', e2); }
-      onCreateStory?.();
-    }
-  };
-  return (
+const Stories = ({ users, currentUser, onViewStory, onCreateStory, onLive }) => (
   <div style={{ display:'flex', gap:14, padding:'14px 16px', overflowX:'auto', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
     <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5, flexShrink:0 }}>
-      <button onClick={openOwnStory} style={{ width:62, height:62, borderRadius:'50%', background:'rgba(255,255,255,0.05)', border:'1.5px dashed rgba(255,255,255,0.2)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', position:'relative', overflow:'hidden' }}>
+      <button onClick={onCreateStory} style={{ width:62, height:62, borderRadius:'50%', background:'rgba(255,255,255,0.05)', border:'1.5px dashed rgba(255,255,255,0.2)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', position:'relative', overflow:'hidden' }}>
         <div style={{ width:56, height:56, borderRadius:'50%', background:currentUser?.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:20, overflow:'hidden' }}>
           {currentUser?.avatarUrl ? <img src={currentUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : currentUser?.avatar}
         </div>
-        <div onClick={(e)=>{ e.stopPropagation(); onCreateStory?.(); }} style={{ position:'absolute', bottom:0, right:0, width:20, height:20, background:'#ff2d55', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', border:'2px solid #0a0a0a', fontSize:12, color:'white', fontWeight:800 }}>+</div>
+        <div style={{ position:'absolute', bottom:0, right:0, width:20, height:20, background:'#ff2d55', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', border:'2px solid #0a0a0a', fontSize:12, color:'white', fontWeight:800 }}>+</div>
       </button>
       <span style={{ color:'rgba(255,255,255,0.5)', fontSize:11 }}>Your story</span>
     </div>
     <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5, flexShrink:0 }}>
-      <button onClick={openOwnStory} style={{ padding:0, background:'none', border:'none', cursor:'pointer' }}>
+      <button onClick={async () => {   const snap = await getDocs(query(collection(db,'stories'), where('userId','==',currentUser?.id), orderBy('createdAt','desc'), limit(1)));   if(!snap.empty) onViewStory?.({...snap.docs[0].data(), id: snap.docs[0].id});   else onCreateStory?.(); }} style={{ padding:0, background:'none', border:'none', cursor:'pointer' }}>
         <div className="story-avatar-ring" style={{ width:66, height:66, borderRadius:'50%' }}>
           <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:'#0a0a0a', padding:2, display:'flex', alignItems:'center', justifyContent:'center' }}>
             <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:currentUser?.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:20, overflow:'hidden' }}>
@@ -539,19 +1115,9 @@ const Stories = ({ users, currentUser, onViewStory, onCreateStory, onLive }) => 
     {users.filter(u => u.id !== currentUser?.id && (currentUser?.following||[]).includes(u.id)).map(u => (
       <div key={u.id} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5, flexShrink:0 }}>
         <button onClick={async () => {
-        try {
-          const snap = await getDocs(query(collection(db,'stories'), where('userId','==',u.id), orderBy('createdAt','desc'), limit(1)));
-          if(!snap.empty) onViewStory?.({...snap.docs[0].data(), id: snap.docs[0].id});
-        } catch(e) {
-          console.error('Story load error:', e);
-          try {
-            const snap2 = await getDocs(query(collection(db,'stories'), where('userId','==',u.id)));
-            if(!snap2.empty){
-              const docs = snap2.docs.sort((a,b)=>(b.data().createdAt?.seconds||0)-(a.data().createdAt?.seconds||0));
-              onViewStory?.({...docs[0].data(), id: docs[0].id});
-            }
-          } catch(e2) { console.error('Story fallback failed:', e2); }
-        }
+        const snap = await getDocs(query(collection(db,'stories'), where('userId','==',currentUser?.id), orderBy('createdAt','desc'), limit(1)));
+        if(!snap.empty) onViewStory?.({...snap.docs[0].data(), id: snap.docs[0].id});
+        else onCreateStory?.();
       }} style={{ padding:0, background:'none', border:'none', cursor:'pointer' }}>
           <div className="story-avatar-ring" style={{ width:66, height:66, borderRadius:'50%' }}>
             <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:'#0a0a0a', padding:2, display:'flex', alignItems:'center', justifyContent:'center' }}>
@@ -565,8 +1131,9 @@ const Stories = ({ users, currentUser, onViewStory, onCreateStory, onLive }) => 
       </div>
     ))}
   </div>
-  );
-};
+);
+
+/* ─────────────── CREATE STORY MODAL ─────────────── */
 const CreateStoryModal = ({ currentUser, onClose, showToast }) => {
   const [mode, setMode] = useState(null);
   const [storyText, setStoryText] = useState('');
@@ -1272,7 +1839,7 @@ const handleLongPressStart = () => {
           <div style={{ fontSize:80, animation:'heartBurst 0.9s ease forwards' }}>❤️</div>
         </div>
       )}
-      <div style={{ position:'absolute', bottom:0, left:14, right:70, zIndex:5 }}>
+      <div style={{ position:'absolute', bottom:90, left:14, right:70, zIndex:5 }}>
         <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:10 }}>
           <button onClick={()=>onViewProfile?.(video.userId)} style={{ position:'relative', background:'none', border:'none', cursor:'pointer', padding:0 }}>
             <div style={{ width:42, height:42, borderRadius:'50%', background:video.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:16, border:'2px solid rgba(255,255,255,0.5)', overflow:'hidden' }}>
@@ -1333,7 +1900,7 @@ const handleLongPressStart = () => {
         </div>
       )}
 
-      <div style={{ position:'absolute', right:12, bottom:0, display:'flex', flexDirection:'column', alignItems:'center', gap:6, zIndex:6 }}>
+      <div style={{ position:'absolute', right:12, bottom:90, display:'flex', flexDirection:'column', alignItems:'center', gap:6, zIndex:6 }}>
        <button onClick={e=>{e.stopPropagation();haptic('medium');handleLike();}}
           style={{ background:'rgba(0,0,0,0.3)', border:'none', borderRadius:'50%', width:52, height:52, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer',
             transform: liked ? 'scale(1)' : 'scale(1)',
@@ -2007,7 +2574,7 @@ const PrivacyToggles = ({ user, showToast }) => {
 };
 
 /* ─────────────── PROFILE PAGE ─────────────── */
-const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowAnalytics, onShowQRCode, allVideos, setBlockedUsers }) => {
+const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowAnalytics, onShowQRCode, allVideos, setBlockedUsers, onShowSavedPosts, onShowGroups, onShowBroadcast }) => {
   const [activeSubPage, setActiveSubPage] = useState(null);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showAvatarViewer, setShowAvatarViewer] = useState(false);
@@ -2067,7 +2634,7 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
         <div style={{background:'rgba(6,214,160,0.08)',border:'1px solid rgba(6,214,160,0.2)',borderRadius:14,padding:'10px 14px',marginBottom:16,color:'#06d6a0',fontSize:12,lineHeight:1.5}}>
   ✓ Select your language. All app text will update immediately.
           </div>
-        {[['English','English','en'],['አማርኛ','Amharic','am'],['العربية','Arabic','ar'],['Français','French','fr'],['Español','Spanish','es'],['Português','Portuguese','pt'],['हिन्दी','Hindi','hi'],['中文','Chinese','zh']].map(([label,sub,code],i,arr)=>{
+        {[['English','English','en'],['አማርኛ','Amharic','am'],['العربية','Arabic','ar'],['Français','French','fr'],['Español','Spanish','es'],['Português','Portuguese','pt'],['हिन्दी','Hindi','hi'],['中文','Chinese','zh'],['Kiswahili','Swahili','sw'],['Deutsch','German','de'],['Русский','Russian','ru'],['Türkçe','Turkish','tr'],['日本語','Japanese','ja'],['한국어','Korean','ko'],['Italiano','Italian','it']].map(([label,sub,code],i,arr)=>{
           const selected = (user?.language||'en')===code;
           return (
             <div key={code} onClick={async()=>{ await updateDoc(doc(db,'users',user.id),{language:code}); setCurrentUser(u=>({...u,language:code})); showToast?.(`Language set to ${label}`,'success'); }} style={{padding:'15px 16px',borderBottom:i<arr.length-1?'1px solid rgba(255,255,255,0.05)':'',display:'flex',alignItems:'center',justifyContent:'space-between',cursor:'pointer'}}>
@@ -2145,6 +2712,27 @@ if(activeSubPage==='settings') return (
         </div>
         <div style={{ color:'rgba(255,255,255,0.3)', fontSize:11, fontWeight:700, marginBottom:8, textTransform:'uppercase', letterSpacing:1.2 }}>Privacy</div>
         <PrivacyToggles user={user} showToast={showToast} />
+        {/* ── v4 APPEARANCE SECTION ── */}
+        <div style={{ color:'rgba(255,255,255,0.3)', fontSize:11, fontWeight:700, marginBottom:8, textTransform:'uppercase', letterSpacing:1.2 }}>Appearance</div>
+        <div style={{ background:'rgba(255,255,255,0.03)', borderRadius:20, overflow:'hidden', marginBottom:20, border:'1px solid rgba(255,255,255,0.06)' }}>
+          <div style={{ padding:'15px 16px', display:'flex', alignItems:'center', gap:14 }}>
+            <div style={{ width:36, height:36, borderRadius:12, background:'rgba(255,255,255,0.06)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>🌙</div>
+            <span style={{ color:'white', flex:1, fontSize:14 }}>Dark Mode</span>
+            <div onClick={()=>{ /* theme stored locally */ showToast?.('Theme toggle coming soon','info'); }} style={{ width:46, height:26, background:'#ff2d55', borderRadius:13, position:'relative', cursor:'pointer' }}>
+              <div style={{ width:20, height:20, background:'white', borderRadius:'50%', position:'absolute', top:3, left:23, transition:'left 0.2s' }} />
+            </div>
+          </div>
+          <div style={{ padding:'15px 16px', borderTop:'1px solid rgba(255,255,255,0.05)', display:'flex', alignItems:'center', gap:14, cursor:'pointer' }} onClick={()=>setActiveSubPage('language')}>
+            <div style={{ width:36, height:36, borderRadius:12, background:'rgba(255,255,255,0.06)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>🌐</div>
+            <span style={{ color:'white', flex:1, fontSize:14 }}>Language & Translation</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+          <div style={{ padding:'15px 16px', borderTop:'1px solid rgba(255,255,255,0.05)', display:'flex', alignItems:'center', gap:14, cursor:'pointer' }} onClick={()=>showToast?.('Notification settings','info')}>
+            <div style={{ width:36, height:36, borderRadius:12, background:'rgba(255,255,255,0.06)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>🔔</div>
+            <span style={{ color:'white', flex:1, fontSize:14 }}>Notification Preferences</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+        </div>
         <div style={{ color:'rgba(255,255,255,0.3)', fontSize:11, fontWeight:700, marginBottom:8, textTransform:'uppercase', letterSpacing:1.2 }}>Support</div>
         <div style={{ background:'rgba(255,255,255,0.03)', borderRadius:20, overflow:'hidden', marginBottom:20, border:'1px solid rgba(255,255,255,0.06)' }}>
           {[
@@ -2333,6 +2921,9 @@ if(activeSubPage==='settings') return (
                   {icon:'🏅',label:'Badges',action:()=>{setActiveSubPage('badges');setShowHamburger(false);}},
                   {icon:'👑',label:'Premium',action:()=>{setActiveSubPage('premium');setShowHamburger(false);}},
                   {icon:'📱',label:'QR Code',action:()=>{onShowQRCode?.();setShowHamburger(false);}},
+                  {icon:'🔖',label:'Saved Posts',action:()=>{onShowSavedPosts?.();setShowHamburger(false);}},
+                  {icon:'👥',label:'My Groups',action:()=>{onShowGroups?.();setShowHamburger(false);}},
+                  {icon:'📡',label:'Broadcast Status',action:()=>{onShowBroadcast?.();setShowHamburger(false);}},
                   {icon:'🔄',label:'Switch Account',action:()=>{setActiveSubPage('switch');setShowHamburger(false);}},
                   {icon:'🚫',label:'Blocked Users',action:()=>{setActiveSubPage('unblock');setShowHamburger(false);}},
                   {icon:'🚪',label:'Log Out',action:()=>{setShowHamburger(false);onLogout?.();},danger:true},
@@ -2511,7 +3102,7 @@ if(activeSubPage==='settings') return (
 };
 
 /* ─────────────── INBOX (REAL-TIME FIRESTORE) ─────────────── */
-const ConversationView = ({ currentUser, otherUser, conversationId, onBack, showToast, onViewProfile, t }) => {
+const ConversationView = ({ currentUser, otherUser, conversationId, onBack, showToast, onViewProfile }) => {
   const [text, setText] = useState('');
   const [messages, setMessages] = useState([]);
   const [isRecording, setIsRecording] = useState(false);
@@ -2685,7 +3276,7 @@ unseen.forEach(d => updateDoc(d.ref, { status: 'seen' }).catch(()=>{}));
           <div style={{color:'white',fontWeight:700,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>@{otherUser?.username}</div>
           <div style={{color: presenceData?.online ? '#06d6a0':'rgba(255,255,255,0.3)', fontSize:11, display:'flex', alignItems:'center', gap:4}}>
             <div style={{width:6,height:6,borderRadius:'50%', background: presenceData?.online ? '#06d6a0':'rgba(255,255,255,0.3)'}}/>
-            {presenceData?.online ? (t?.online||'Online') : presenceData?.lastSeen ? `${t?.lastSeen||'last seen'} ${timeAgo(presenceData.lastSeen.toDate())}` : (t?.offline||'Offline')}
+            {presenceData?.online ? 'Online' : presenceData?.lastSeen ? `last seen ${timeAgo(presenceData.lastSeen.toDate())}` : 'Offline'}
           </div>
         </div>
         <div style={{marginLeft:'auto',display:'flex',gap:10}}>
@@ -2792,7 +3383,7 @@ unseen.forEach(d => updateDoc(d.ref, { status: 'seen' }).catch(()=>{}));
           transform:`scaleY(${1})` }}/>
       ))}
     </div>
-    <span style={{ color:'rgba(255,255,255,0.25)', fontSize:10, marginBottom:4 }}>{t?.typing||'typing...'}</span>
+    <span style={{ color:'rgba(255,255,255,0.25)', fontSize:10, marginBottom:4 }}>typing...</span>
   </div>
 )}
         <div ref={bottomRef}/>
@@ -2823,7 +3414,7 @@ unseen.forEach(d => updateDoc(d.ref, { status: 'seen' }).catch(()=>{}));
         <input value={text} onChange={e=>{
           setText(e.target.value);
           setDoc(doc(db,'typing',conversationId),{[currentUser.id]:serverTimestamp()},{merge:true}).catch(()=>{});
-        }} onKeyDown={e=>e.key==='Enter'&&handleSend()} placeholder={isRecording?`🔴 ${fmt(recordSecs)}`:(t?.messagePlaceholder||'Message...')} style={{flex:1,background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:28,padding:'11px 16px',color:'white',outline:'none',fontSize:13}}/>
+        }} onKeyDown={e=>e.key==='Enter'&&handleSend()} placeholder={isRecording?`🔴 ${fmt(recordSecs)}`:'Message...'} style={{flex:1,background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:28,padding:'11px 16px',color:'white',outline:'none',fontSize:13}}/>
         <button onMouseDown={startVoice} onMouseUp={stopVoice} onTouchStart={startVoice} onTouchEnd={stopVoice} style={{background:isRecording?'rgba(255,45,85,0.9)':'rgba(255,255,255,0.07)',border:'none',borderRadius:'50%',width:38,height:38,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0,boxShadow:isRecording?'0 0 10px rgba(255,45,85,0.6)':'none'}}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={isRecording?'white':'rgba(255,255,255,0.6)'} strokeWidth="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
         </button>
@@ -2836,27 +3427,17 @@ unseen.forEach(d => updateDoc(d.ref, { status: 'seen' }).catch(()=>{}));
 };
 
 const InboxPage = ({ t, users, currentUser, showToast, onViewProfile, initialTargetId, onClearTarget, persistedConversation, onSetConversation }) => {
-  const [activeConversation, setActiveConversation] = useState(persistedConversation || null);
+  const [activeConversation, setActiveConversation] = useState(null);
   const [conversations, setConversations] = useState([]);
-  const [fetchedOtherUser, setFetchedOtherUser] = useState(null);
   useEffect(()=>{
-    if(!activeConversation?.otherUserId) { setFetchedOtherUser(null); return; }
-    const found = users.find(u=>u.id===activeConversation.otherUserId);
-    if(found) { setFetchedOtherUser(null); return; }
-    // Not in the loaded users list (e.g. not a follower/following) — fetch directly
-    let cancelled = false;
-    getDoc(doc(db,'users',activeConversation.otherUserId)).then(snap=>{
-      if(cancelled) return;
-      if(snap.exists()) setFetchedOtherUser({id:snap.id,...snap.data()});
-      else {
-        // User truly doesn't exist — close the conversation
+    if(activeConversation && users.length > 0){
+      const found = users.find(u=>u.id===activeConversation.otherUserId);
+      if(!found){
         setActiveConversation(null);
         onSetConversation?.(null);
-        showToast?.('User not found','error');
       }
-    }).catch(()=>{});
-    return ()=>{ cancelled = true; };
-  },[users, activeConversation?.otherUserId]);
+    }
+  },[users, activeConversation]);
 
   useEffect(()=>{
     if(!initialTargetId || !currentUser?.id) return;
@@ -2928,13 +3509,17 @@ snap.docs.forEach(async conv => {
   };
 
  if(activeConversation){
-    const otherUser = users.find(u=>u.id===activeConversation?.otherUserId) || fetchedOtherUser;
+    const otherUser = users.find(u=>u.id===activeConversation?.otherUserId) || null;
     if(!otherUser) {
-      return (
-        <div style={{height:'100%',background:'#0a0a0a',display:'flex',alignItems:'center',justifyContent:'center'}}>
-          <div style={{width:32,height:32,border:'3px solid rgba(255,45,85,0.3)',borderTop:'3px solid #ff2d55',borderRadius:'50%',animation:'spin 1s linear infinite'}}/>
-        </div>
-      );
+      if(users.length === 0) {
+        return (
+          <div style={{height:'100%',background:'#0a0a0a',display:'flex',alignItems:'center',justifyContent:'center'}}>
+            <div style={{width:32,height:32,border:'3px solid rgba(255,45,85,0.3)',borderTop:'3px solid #ff2d55',borderRadius:'50%',animation:'spin 1s linear infinite'}}/>
+          </div>
+        );
+      }
+      // Users loaded but otherUser not found — return null, effect will reset
+      return null;
     }
     return (
       <ConversationView
@@ -2944,7 +3529,6 @@ snap.docs.forEach(async conv => {
         onBack={()=>{ setActiveConversation(null); onSetConversation?.(null); onClearTarget?.(); }}
         showToast={showToast}
         onViewProfile={uid=>{ onViewProfile?.(uid); }}
-        t={t}
       />
     );
   }
@@ -2964,7 +3548,10 @@ snap.docs.forEach(async conv => {
   return (
     <div style={{ height:'100%', display:'flex', flexDirection:'column', background:'#0a0a0a' }}>
       <div style={{ padding:'16px 16px 12px', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
-        <div style={{ color:'white', fontWeight:800, fontSize:22, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{t?.inbox||'Messages'}</div>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
+          <div style={{ color:'white', fontWeight:800, fontSize:22, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{t?.inbox||'Messages'}</div>
+          <button onClick={()=>onSetConversation?.('groups')} style={{ background:'rgba(255,45,85,0.1)', border:'1px solid rgba(255,45,85,0.2)', borderRadius:20, padding:'6px 14px', color:'#ff2d55', fontSize:12, fontWeight:700, cursor:'pointer' }}>👥 Groups</button>
+        </div>
       </div>
       <div style={{ flex:1, overflowY:'auto' }}>
         {convUsers.length===0 && <div style={{textAlign:'center',padding:60,color:'rgba(255,255,255,0.2)'}}><div style={{fontSize:44,marginBottom:12}}>💬</div><div style={{fontSize:14}}>{t?.noMessages||'No messages yet'}</div><div style={{fontSize:12,marginTop:6,color:'rgba(255,255,255,0.12)'}}>{t?.startChat||'Go to a profile and tap Message to start'}</div></div>}
@@ -2993,34 +3580,34 @@ snap.docs.forEach(async conv => {
 };
 
 /* ─────────────── CALL MODAL (REAL WebRTC) ─────────────── */
-const IncomingCallScreen = ({ callData, onAnswer, onDecline, t }) => (
+const IncomingCallScreen = ({ callData, onAnswer, onDecline }) => (
   <div style={{position:'fixed',inset:0,background:'linear-gradient(160deg,#0d0025,#001a0d)',zIndex:3000,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'space-between',padding:'80px 40px 80px'}}>
     <div style={{textAlign:'center'}}>
-      <div style={{color:'rgba(255,255,255,0.5)',fontSize:14,marginBottom:16,letterSpacing:2,textTransform:'uppercase'}}>{callData.callType==='video'?(t?.incomingVideoCall||'Incoming Video Call'):(t?.incomingVoiceCall||'Incoming Voice Call')}</div>
+      <div style={{color:'rgba(255,255,255,0.5)',fontSize:14,marginBottom:16,letterSpacing:2,textTransform:'uppercase'}}>{callData.callType==='video'?'Incoming Video Call':'Incoming Voice Call'}</div>
       <div style={{width:120,height:120,borderRadius:'50%',background:callData.callerColor||'#ff2d55',display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontWeight:'bold',fontSize:48,margin:'0 auto 20px',border:'4px solid rgba(255,255,255,0.2)',boxShadow:'0 0 0 12px rgba(255,255,255,0.05),0 0 0 24px rgba(255,255,255,0.03)'}}>
         {callData.callerAvatar||'?'}
       </div>
       <div style={{color:'white',fontSize:28,fontWeight:800,fontFamily:"'Inter',sans-serif"}}>@{callData.callerName}</div>
-      <div style={{color:'rgba(255,255,255,0.4)',fontSize:14,marginTop:8,animation:'pulse 1.5s infinite'}}>{t?.calling||'Calling...'}</div>
+      <div style={{color:'rgba(255,255,255,0.4)',fontSize:14,marginTop:8,animation:'pulse 1.5s infinite'}}>Calling...</div>
     </div>
     <div style={{display:'flex',justifyContent:'space-around',width:'100%',alignItems:'center'}}>
       <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:12}}>
         <button onClick={onDecline} style={{width:70,height:70,borderRadius:'50%',background:'#ff2d55',border:'none',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',boxShadow:'0 8px 30px rgba(255,45,85,0.5)'}}>
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M10.68 13.31a16 16 0 003.41 2.6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7 2 2 0 011.72 2v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.42 19.42 0 01-3.33-2.67m-2.67-3.34a19.79 19.79 0 01-3.07-8.63A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91"/><line x1="23" y1="1" x2="1" y2="23"/></svg>
         </button>
-        <span style={{color:'rgba(255,255,255,0.5)',fontSize:13}}>{t?.decline||'Decline'}</span>
+        <span style={{color:'rgba(255,255,255,0.5)',fontSize:13}}>Decline</span>
       </div>
       <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:12}}>
         <button onClick={onAnswer} style={{width:70,height:70,borderRadius:'50%',background:'#34c759',border:'none',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',boxShadow:'0 8px 30px rgba(52,199,89,0.5)',animation:'pulse 1.5s infinite'}}>
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8a19.79 19.79 0 01-3.07-8.67A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>
         </button>
-        <span style={{color:'rgba(255,255,255,0.5)',fontSize:13}}>{t?.accept||'Answer'}</span>
+        <span style={{color:'rgba(255,255,255,0.5)',fontSize:13}}>Answer</span>
       </div>
     </div>
   </div>
 );
 
-const CallModal = ({ type, contactName, contactAvatar, contactId, currentUser, onClose, isCallee: isCalleeProp, callDocId: callDocIdProp, t }) => {
+const CallModal = ({ type, contactName, contactAvatar, contactId, currentUser, onClose, isCallee: isCalleeProp, callDocId: callDocIdProp }) => {
   const [duration, setDuration] = useState(0);
   const [status, setStatus] = useState('calling');
   const [isMuted, setIsMuted] = useState(false);
@@ -3205,11 +3792,11 @@ cleanupCall();
   };
 
   const statusLabel = {
-    calling: type === 'video' ? (t?.videoCalling||'Video calling...') : (t?.calling||'Calling...'),
-    connected: `${t?.connected||'Connected'} · ${fmt()}`,
-    declined: t?.callDeclined||'Call declined',
-    failed: t?.callFailed||'Call failed',
-  }[status] || (t?.connecting||'Connecting...');
+    calling: type === 'video' ? 'Video calling...' : 'Calling...',
+    connected: `Connected · ${fmt()}`,
+    declined: 'Call declined',
+    failed: 'Call failed',
+  }[status] || 'Connecting...';
 
   return (
     <div style={{ position:'fixed', inset:0, background:'#0a0a0a', zIndex:2500, display:'flex', flexDirection:'column' }}>
@@ -4204,7 +4791,7 @@ const NotificationsPage = ({ currentUser, users, videos, onClose, onViewProfile,
 
 
 /* ─────────────── MAIN APP ─────────────── */
-function DaguV3AppInner() {
+export default function DaguV3App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [users, setUsers] = useState([]);
@@ -4227,10 +4814,18 @@ function DaguV3AppInner() {
 const [blockedUsers, setBlockedUsers] = useState([]);
   const [incomingCall, setIncomingCall] = useState(null);
   const [viewingProfile, setViewingProfile] = useState(null);
+  // ── v4 NEW STATE ──
+  const [showGroups, setShowGroups] = useState(false);
+  const [showSavedPosts, setShowSavedPosts] = useState(false);
+  const [showDiscover, setShowDiscover] = useState(false);
+  const [showShareSheet, setShowShareSheet] = useState(null);
+  const [showBroadcast, setShowBroadcast] = useState(false);
+  const [notifBadgeCount, setNotifBadgeCount] = useState(0);
 
   const showToast = useCallback((message, type='info')=>setToast({message,type}),[]);
   const isOnline = useNetworkStatus();
   const t = TRANSLATIONS[currentUser?.language || 'en'] || TRANSLATIONS.en;
+  const { theme, toggleTheme, isDark } = useTheme(currentUser);
 
   useEffect(()=>{
     if(!messaging || !currentUser?.id) return;
@@ -4508,7 +5103,6 @@ const TabIcon = ({id, active, currentUser}) => {
       {!isOnline && <OfflineBanner />}
 {incomingCall && !showCall && (
         <IncomingCallScreen
-          t={t}
           callData={incomingCall}
           onAnswer={()=>{
   const snap = {...incomingCall};
@@ -4530,7 +5124,7 @@ const TabIcon = ({id, active, currentUser}) => {
           }}
         />
       )}
-      {showCall && <CallModal t={t} type={showCall.type} contactName={showCall.contactName} contactAvatar={showCall.contactAvatar} contactId={showCall.contactId} currentUser={currentUser} onClose={()=>setShowCall(null)} isCallee={showCall.isCallee} callDocId={showCall.callDocId} />}
+      {showCall && <CallModal type={showCall.type} contactName={showCall.contactName} contactAvatar={showCall.contactAvatar} contactId={showCall.contactId} currentUser={currentUser} onClose={()=>setShowCall(null)} isCallee={showCall.isCallee} callDocId={showCall.callDocId} />}
       {showLiveStream && <LiveStream streamer={showLiveStream} onClose={()=>setShowLiveStream(null)} showToast={showToast} currentUser={currentUser} />}
       {showStoryViewer && (
         <div onClick={()=>setShowStoryViewer(null)} style={{position:'fixed',inset:0,background:'#000',zIndex:3000,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column'}}>
@@ -4540,7 +5134,7 @@ const TabIcon = ({id, active, currentUser}) => {
           <div style={{position:'absolute',top:0,left:0,right:0,height:3,background:'rgba(255,255,255,0.15)',borderRadius:2,margin:'14px 14px 0'}}>
             <div style={{height:'100%',background:'white',borderRadius:2,width:'100%',animation:'notifBar 5s linear forwards'}}/>
           </div>
-          {showStoryViewer.mediaUrl && showStoryViewer.mediaType?.startsWith('video') ? (
+          {showStoryViewer.mediaUrl?.startsWith('video') ? (
             <video src={showStoryViewer.mediaUrl} autoPlay loop playsInline style={{width:'100%',height:'100%',objectFit:'cover'}}/>
           ) : showStoryViewer.mediaUrl ? (
             <img src={showStoryViewer.mediaUrl} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
@@ -4562,6 +5156,12 @@ const TabIcon = ({id, active, currentUser}) => {
       {showNotifications && <NotificationsPage currentUser={currentUser} users={users} videos={videos} onClose={()=>setShowNotifications(false)} onViewProfile={uid=>{handleViewProfile(uid); setShowNotifications(false);}} t={t} />}
       {showAnalytics && <CreatorAnalytics user={currentUser} videos={videos} onClose={()=>setShowAnalytics(false)} />}
       {showCreateStory && <CreateStoryModal currentUser={currentUser} onClose={()=>setShowCreateStory(false)} showToast={showToast} />}
+      {/* ── v4 NEW OVERLAYS ── */}
+      {showGroups && <GroupChatPage currentUser={currentUser} users={users} showToast={showToast} onBack={()=>setShowGroups(false)} />}
+      {showSavedPosts && <SavedPostsPage currentUser={currentUser} showToast={showToast} onClose={()=>setShowSavedPosts(false)} />}
+      {showDiscover && <DiscoverPage videos={videos} users={users} onViewProfile={uid=>{handleViewProfile(uid);}} showToast={showToast} onClose={()=>setShowDiscover(false)} />}
+      {showShareSheet && <ShareSheet video={showShareSheet} currentUser={currentUser} onClose={()=>setShowShareSheet(null)} showToast={showToast} />}
+      {showBroadcast && <BroadcastPage currentUser={currentUser} users={users} showToast={showToast} onClose={()=>setShowBroadcast(false)} />}
       {viewingProfile && (
         <UserProfileModal user={viewingProfile} currentUser={currentUser} onClose={()=>setViewingProfile(null)} onFollow={toggleFollow} onMessage={uid=>{handleMessage(uid); setViewingProfile(null);}} onVoiceCall={uid=>{const u=users.find(uu=>uu.id===uid); setShowCall({type:'audio',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid}); setViewingProfile(null);}}
  onVideoCall={uid=>{const u=users.find(uu=>uu.id===uid); setShowCall({type:'video',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid}); setViewingProfile(null);}}
@@ -4573,28 +5173,25 @@ const TabIcon = ({id, active, currentUser}) => {
         {showCamera && <CameraUpload onUpload={v=>{setVideos(prev=>[v,...prev]);}} onClose={()=>setShowCamera(false)} showToast={showToast} currentUser={currentUser} />}
         {!showSearch && !showCamera && (
           <>
-            {activeTab==='home' && <HomeFeed t={t} videos={videos} currentUser={currentUser} onLike={()=>{}} onComment={()=>{}} onShare={()=>{}} onFollow={toggleFollow} onMessage={handleMessage} onVoiceCall={uid=>{   const u=users.find(uu=>uu.id===uid);   const callDocId=[currentUser.id,uid].sort().join('_');   setShowCall({type:'audio',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
+            {activeTab==='home' && <HomeFeed t={t} videos={videos} currentUser={currentUser} onLike={()=>{}} onComment={()=>{}} onShare={(v)=>setShowShareSheet(v)} onFollow={toggleFollow} onMessage={handleMessage} onVoiceCall={uid=>{   const u=users.find(uu=>uu.id===uid);   const callDocId=[currentUser.id,uid].sort().join('_');   setShowCall({type:'audio',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
  onVideoCall={uid=>{   const u=users.find(uu=>uu.id===uid);   const callDocId=[currentUser.id,uid].sort().join('_');   setShowCall({type:'video',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
- onDuet={()=>showToast?.('Duet mode ready','info')} onStitch={()=>showToast?.('Stitch mode ready','info')} onSaveSound={()=>showToast?.('Sound saved!','success')} followed={followed} showToast={showToast} onLive={()=>setShowLiveStream(currentUser)} onViewProfile={handleViewProfile} onOpenSearch={()=>setShowSearch(true)} onOpenNotifications={()=>setShowNotifications(true)} blockedUsers={blockedUsers} onBlock={uid=>setBlockedUsers(p=>[...p,uid])} />}
+ onDuet={()=>showToast?.('Duet mode ready','info')} onStitch={()=>showToast?.('Stitch mode ready','info')} onSaveSound={()=>showToast?.('Sound saved!','success')} followed={followed} showToast={showToast} onLive={()=>setShowLiveStream(currentUser)} onViewProfile={handleViewProfile} onOpenSearch={()=>setShowDiscover(true)} onOpenNotifications={()=>setShowNotifications(true)} blockedUsers={blockedUsers} onBlock={uid=>setBlockedUsers(p=>[...p,uid])} />
             {activeTab==='friends' && <FriendsFeed t={t} friends={friends} videos={videos} currentUser={currentUser} onMessage={handleMessage} onVoiceCall={uid=>{   const u=users.find(uu=>uu.id===uid);   const callDocId=[currentUser.id,uid].sort().join('_');   setShowCall({type:'audio',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}blockedUsers={blockedUsers}
  onVideoCall={uid=>{   const u=users.find(uu=>uu.id===uid);   const callDocId=[currentUser.id,uid].sort().join('_');   setShowCall({type:'video',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
  onViewProfile={handleViewProfile} showToast={showToast} users={users} onCreateStory={()=>setShowCreateStory(true)} onViewStory={setShowStoryViewer} onFollow={toggleFollow} followed={followed} />}
             {activeTab==='create' && <CreateScreen onOpenCamera={()=>setShowCamera(true)} onShowSoundLibrary={()=>setShowSoundLibrary(true)} showToast={showToast} t={t} />}
-            {activeTab==='inbox' && <InboxPage t={t} users={users} currentUser={currentUser} showToast={showToast} onViewProfile={handleViewProfile} initialTargetId={inboxTargetId} onClearTarget={()=>setInboxTargetId(null)} persistedConversation={activeConversation} onSetConversation={(conv)=>{ setActiveConversation(conv); }} />}
-            {activeTab==='profile' && <ProfilePage user={currentUser} setCurrentUser={setCurrentUser} onLogout={handleLogout} users={users} showToast={showToast} onShowAnalytics={()=>setShowAnalytics(true)} onShowQRCode={()=>setShowQRCode(true)} allVideos={videos} setBlockedUsers={setBlockedUsers} />}
+            {activeTab==='inbox' && <InboxPage t={t} users={users} currentUser={currentUser} showToast={showToast} onViewProfile={handleViewProfile} initialTargetId={inboxTargetId} onClearTarget={()=>setInboxTargetId(null)} persistedConversation={activeConversation} onSetConversation={(conv)=>{ if(conv==='groups'){ setShowGroups(true); } else { setActiveConversation(conv); } }} />
+            {activeTab==='profile' && <ProfilePage user={currentUser} setCurrentUser={setCurrentUser} onLogout={handleLogout} users={users} showToast={showToast} onShowAnalytics={()=>setShowAnalytics(true)} onShowQRCode={()=>setShowQRCode(true)} allVideos={videos} setBlockedUsers={setBlockedUsers} onShowSavedPosts={()=>setShowSavedPosts(true)} onShowGroups={()=>setShowGroups(true)} onShowBroadcast={()=>setShowBroadcast(true)} />}
           </>
         )}
       </div>
 
-      <div role="tablist" aria-label="Main navigation" style={{ display:'flex', background:'rgba(6,6,8,0.98)', borderTop:'1px solid rgba(255,255,255,0.05)', padding:`10px 4px max(26px, env(safe-area-inset-bottom))`, flexShrink:0, backdropFilter:'blur(30px)', WebkitBackdropFilter:'blur(30px)' }}>
+      <div style={{ display:'flex', background:'rgba(6,6,8,0.98)', borderTop:'1px solid rgba(255,255,255,0.05)', padding:`10px 4px max(26px, env(safe-area-inset-bottom))`, flexShrink:0, backdropFilter:'blur(30px)', WebkitBackdropFilter:'blur(30px)' }}>
         {tabs.map(tab=>{
           const isActive = activeTab===tab.id;
           const tabLabels = { home: t?.home||'Home', friends: t?.friends||'Friends', create: t?.create||'Create', inbox: t?.inbox||'Inbox', profile: t?.profile||'Profile' };
           return (
             <button key={tab.id}
-              role="tab"
-              aria-selected={isActive}
-              aria-label={tabLabels[tab.id]}
               onClick={()=>{ haptic('light'); if(tab.id==='create'){ setShowCamera(true); } else { setActiveTab(tab.id); } }}
               style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:2, background:'none', border:'none', cursor:'pointer', padding: tab.id==='create'?'0':'6px 0', position:'relative',
                 transform: isActive && tab.id!=='create' ? 'translateY(-1px)' : 'translateY(0)',
@@ -4625,38 +5222,5 @@ const TabIcon = ({id, active, currentUser}) => {
       )}
       {toast && <Toast {...toast} onClose={()=>setToast(null)} />}
     </div>
-  );
-}
-
-/* ─────────────── ERROR BOUNDARY + ROOT EXPORT ─────────────── */
-class ErrorBoundary extends React.Component {
-  constructor(props){ super(props); this.state = { hasError:false, error:null }; }
-  static getDerivedStateFromError(error){ return { hasError:true, error }; }
-  componentDidCatch(error, info){ console.error('App crashed:', error, info); }
-  handleReload = () => { this.setState({ hasError:false, error:null }); window.location.reload(); };
-  render(){
-    if(this.state.hasError){
-      return (
-        <div style={{ position:'fixed', inset:0, background:'#060608', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:24, textAlign:'center', color:'white', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", zIndex:99999 }}>
-          <div style={{ fontSize:48, marginBottom:16 }}>⚠️</div>
-          <div style={{ fontSize:18, fontWeight:800, marginBottom:8 }}>Something went wrong</div>
-          <div style={{ fontSize:13, color:'rgba(255,255,255,0.5)', marginBottom:24, maxWidth:320 }}>
-            An unexpected error occurred. You can try reloading the app — your data is safely stored in the cloud.
-          </div>
-          <button onClick={this.handleReload} style={{ background:'linear-gradient(135deg,#ff2d55,#ff5e7d)', border:'none', borderRadius:14, padding:'13px 28px', color:'white', fontWeight:800, fontSize:14, cursor:'pointer' }}>
-            Reload App
-          </button>
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
-
-export default function DaguV3App() {
-  return (
-    <ErrorBoundary>
-      <DaguV3AppInner />
-    </ErrorBoundary>
   );
 }
