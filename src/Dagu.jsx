@@ -1,7 +1,7 @@
 // DaguV3.jsx — FULLY REAL: Firebase Auth + Firestore + Cloudinary + EmailJS
 import React, { useState, useEffect, useRef, useCallback, memo, useMemo } from 'react';
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot, increment, serverTimestamp, arrayUnion, arrayRemove, limit } from 'firebase/firestore';
+import { getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot, increment, serverTimestamp, arrayUnion, arrayRemove, limit, startAfter } from 'firebase/firestore';
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, updateProfile, sendPasswordResetEmail, sendEmailVerification } from 'firebase/auth';
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 
@@ -1390,16 +1390,91 @@ const NotifBellButton = ({ onOpenNotifications, currentUser }) => {
 
       
 /* ─────────────── HOME FEED ─────────────── */
-const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, onVoiceCall, onVideoCall, onDuet, onStitch, onSaveSound, followed, showToast, onLive, currentUser, onViewProfile, onOpenSearch, onOpenNotifications, blockedUsers, onBlock }) => {
+const SuggestedUsers = ({ currentUser, users, followed, onFollow, onViewProfile }) => {
+  const suggestions = useMemo(()=>
+    users
+      .filter(u=>u.id!==currentUser?.id && !(followed||[]).includes(u.id))
+      .sort((a,b)=>(b.followers?.length||0)-(a.followers?.length||0))
+      .slice(0,10)
+  ,[users, followed, currentUser]);
+
+  if(!suggestions.length) return null;
+
+  return (
+    <div style={{padding:'12px 0 8px'}}>
+      <div style={{color:'rgba(255,255,255,0.4)',fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:1,padding:'0 16px',marginBottom:10}}>
+        Suggested for you
+      </div>
+      <div style={{display:'flex',gap:10,overflowX:'auto',padding:'0 16px 4px'}}>
+        {suggestions.map(u=>(
+          <div key={u.id} style={{flexShrink:0,textAlign:'center',background:'rgba(255,255,255,0.04)',borderRadius:20,padding:'14px 10px',width:110,border:'1px solid rgba(255,255,255,0.06)'}}>
+            <div onClick={()=>onViewProfile?.(u.id)} style={{width:52,height:52,borderRadius:'50%',background:u.avatarColor,margin:'0 auto 8px',display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontWeight:'bold',fontSize:20,overflow:'hidden',cursor:'pointer'}}>
+              {u.avatarUrl?<img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/>:u.avatar}
+            </div>
+            <div style={{color:'white',fontSize:11,fontWeight:700,marginBottom:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>@{u.username}</div>
+            <div style={{color:'rgba(255,255,255,0.3)',fontSize:10,marginBottom:8}}>{formatNumber(u.followers?.length||0)} followers</div>
+            <button onClick={()=>onFollow?.(u.id)} style={{background:'linear-gradient(135deg,#ff2d55,#af52de)',border:'none',borderRadius:20,padding:'5px 0',color:'white',fontSize:11,fontWeight:700,cursor:'pointer',width:'100%'}}>
+              Follow
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, onVoiceCall, onVideoCall, onDuet, onStitch, onSaveSound, followed, showToast, onLive, currentUser, onViewProfile, onOpenSearch, onOpenNotifications, blockedUsers, onBlock, users }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [activeCategory, setActiveCategory] = useState('foryou');
+  const [loadingMore, setLoadingMore] = useState(false);
+  const lastDocRef = useRef(null);
+
+  const loadMoreVideos = useCallback(async()=>{
+    if(loadingMore || !lastDocRef.current) return;
+    setLoadingMore(true);
+    try {
+      const q = query(
+        collection(db,'videos'),
+        orderBy('createdAt','desc'),
+        startAfter(lastDocRef.current),
+        limit(10)
+      );
+      const snap = await getDocs(q);
+      if(!snap.empty){
+        lastDocRef.current = snap.docs[snap.docs.length-1];
+        const newVids = snap.docs.map(d=>({id:d.id,...d.data()}));
+        // passed up via prop — for now just log
+        console.log('Loaded more:', newVids.length);
+      }
+    } catch(e){ console.error(e); }
+    setLoadingMore(false);
+  },[loadingMore]);
   const filteredVideos = useMemo(()=>{
-    const base = videos.filter(v=>!(blockedUsers||[]).includes(v.userId));
+    const base = videos
+      .filter(v=>!(blockedUsers||[]).includes(v.userId))
+      .map(v=>{
+        let score = 0;
+        if(followed?.includes(v.userId)) score += 50;
+        score += Math.log((v.likes||0) + 1) * 10;
+        score += Math.log((v.views||0) + 1) * 2;
+        score += Math.log((v.comments||0) + 1) * 8;
+        const age = Date.now() - (v.createdAt?.seconds||0)*1000;
+        const hoursOld = age / (1000*60*60);
+        score += Math.max(0, 100 - hoursOld * 2);
+        if(v.verified) score += 20;
+        return {...v, _score: score};
+      })
+      .sort((a,b)=>b._score - a._score);
     if(activeCategory==='foryou') return base;
     return base.filter(v=>v.category===activeCategory);
-  },[videos, activeCategory, blockedUsers]);
+  },[videos, activeCategory, blockedUsers, followed]);
   const startY = useRef(null);
   const [refreshing, setRefreshing] = useState(false);
+  // Load more when near end
+  useEffect(()=>{
+    if(filteredVideos.length > 0 && currentIndex >= filteredVideos.length - 3){
+      loadMoreVideos();
+    }
+  },[currentIndex]);
 const pullStartY = useRef(null);
 const [pullDist, setPullDist] = useState(0);
 const handlePullStart = e => { if(currentIndex===0) pullStartY.current = e.touches[0].clientY; };
@@ -1483,6 +1558,7 @@ onLive={onLive}
     />
   </div>
 ))}
+  
       {filteredVideos.length>1 && (
         <div style={{ position:'absolute', right:6, top:'50%', transform:'translateY(-50%)', display:'flex', flexDirection:'column', gap:4, zIndex:10 }}>
           {filteredVideos.map((_,i)=><div key={i} style={{ width:3, height:i===currentIndex?20:4, borderRadius:2, background:i===currentIndex?'white':'rgba(255,255,255,0.2)', cursor:'pointer', transition:'all 0.2s' }} onClick={()=>setCurrentIndex(i)} />)}
@@ -2412,6 +2488,9 @@ const ConversationView = ({ currentUser, otherUser, conversationId, onBack, show
   const [isRecording, setIsRecording] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
   const [otherTyping, setOtherTyping] = useState(false);
+  const [showMsgReactions, setShowMsgReactions] = useState(null);
+  const msgLongTimer = useRef(null);
+  const MSG_EMOJIS = ['❤️','😂','😮','😢','🔥','👏','💯','😍'];
   const [presenceData, setPresenceData] = useState(null);
   const typingTimerRef = useRef(null);
   const [recordSecs, setRecordSecs] = useState(0);
@@ -2595,7 +2674,12 @@ unseen.forEach(d => updateDoc(d.ref, { status: 'seen' }).catch(()=>{}));
         {messages.map(msg=>{
           const isMine = msg.from===currentUser?.id;
           return (
-            <div key={msg.id} style={{display:'flex',justifyContent:isMine?'flex-end':'flex-start',alignItems:'flex-end',gap:8,marginBottom:10}}>
+            <div key={msg.id}
+              onTouchStart={()=>{ msgLongTimer.current=setTimeout(()=>{ haptic('heavy'); setShowMsgReactions(msg.id); },500); }}
+              onTouchEnd={()=>clearTimeout(msgLongTimer.current)}
+              onMouseDown={()=>{ msgLongTimer.current=setTimeout(()=>setShowMsgReactions(msg.id),500); }}
+              onMouseUp={()=>clearTimeout(msgLongTimer.current)}
+              style={{display:'flex',justifyContent:isMine?'flex-end':'flex-start',alignItems:'flex-end',gap:8,marginBottom:10,position:'relative'}}>
   {!isMine && (
     <div onClick={()=>onViewProfile?.(otherUser?.id)} style={{width:26,height:26,borderRadius:'50%',background:otherUser?.avatarColor||'#555',display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontWeight:'bold',fontSize:10,flexShrink:0,cursor:'pointer',overflow:'hidden'}}>
       {otherUser?.avatarUrl ? <img src={otherUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/> : otherUser?.avatar}
@@ -2613,6 +2697,37 @@ unseen.forEach(d => updateDoc(d.ref, { status: 'seen' }).catch(()=>{}));
     </span>
   )}
 </div>
+                {/* Reaction picker */}
+              {showMsgReactions===msg.id && (
+                <div onClick={e=>e.stopPropagation()} style={{position:'absolute',bottom:'100%',left:isMine?'auto':'0',right:isMine?'0':'auto',background:'rgba(20,20,20,0.97)',backdropFilter:'blur(20px)',borderRadius:40,padding:'6px 10px',display:'flex',gap:4,zIndex:100,border:'1px solid rgba(255,255,255,0.12)',animation:'popInBounce 0.25s ease',marginBottom:4,boxShadow:'0 8px 32px rgba(0,0,0,0.5)'}}>
+                  {MSG_EMOJIS.map(emoji=>(
+                    <button key={emoji} onClick={async()=>{
+                      await updateDoc(doc(db,'messages',conversationId,'msgs',msg.id),{[`reactions.${currentUser.id}`]:emoji});
+                      setShowMsgReactions(null);
+                      haptic('light');
+                    }} style={{background:'none',border:'none',fontSize:24,cursor:'pointer',padding:'2px 4px',borderRadius:20,transition:'transform 0.15s'}}
+                    onMouseEnter={e=>e.currentTarget.style.transform='scale(1.3)'}
+                    onMouseLeave={e=>e.currentTarget.style.transform='scale(1)'}
+                    >{emoji}</button>
+                  ))}
+                  <button onClick={()=>setShowMsgReactions(null)} style={{background:'rgba(255,255,255,0.08)',border:'none',borderRadius:'50%',width:28,height:28,color:'rgba(255,255,255,0.5)',cursor:'pointer',fontSize:12,display:'flex',alignItems:'center',justifyContent:'center',marginLeft:4}}>✕</button>
+                </div>
+              )}
+
+              {/* Show reactions below bubble */}
+              {msg.reactions && Object.keys(msg.reactions).length>0 && (
+                <div style={{display:'flex',gap:3,marginTop:3,justifyContent:isMine?'flex-end':'flex-start',flexWrap:'wrap'}}>
+                  {[...new Set(Object.values(msg.reactions))].map(emoji=>(
+                    <span key={emoji} onClick={async()=>{
+                      await updateDoc(doc(db,'messages',conversationId,'msgs',msg.id),{[`reactions.${currentUser.id}`]:emoji});
+                      haptic('light');
+                    }} style={{background:'rgba(255,255,255,0.08)',borderRadius:20,padding:'2px 7px',fontSize:12,border:'1px solid rgba(255,255,255,0.1)',cursor:'pointer',display:'flex',alignItems:'center',gap:3}}>
+                      {emoji}
+                      <span style={{color:'rgba(255,255,255,0.4)',fontSize:10}}>{Object.values(msg.reactions).filter(r=>r===emoji).length}</span>
+                    </span>
+                  ))}
+                </div>
+              )}
                 {msg.mediaUrl&&msg.mediaType?.startsWith('image')&&<img src={msg.mediaUrl} alt="" style={{maxWidth:'100%',borderRadius:14,display:'block'}}/>}
                 {msg.mediaUrl&&msg.mediaType?.startsWith('video')&&<video src={msg.mediaUrl} controls style={{maxWidth:'100%',borderRadius:14,display:'block'}}/>}
                 {msg.mediaUrl&&msg.mediaType?.startsWith('audio')&&(
@@ -3171,9 +3286,19 @@ const SearchOverlay = ({ onClose, videos, users, onViewProfile }) => {
       ) : (
         <div style={{ flex:1, padding:16 }}>
           <div style={{ color:'rgba(255,255,255,0.3)', fontSize:12, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:14 }}>Trending</div>
-          {['#trending','#viral','#art','#music','#dance'].map(tag=>(
+          {useMemo(()=>{
+              const all = videos.flatMap(v=>v.hashtags||[]);
+              const counts = {};
+              all.forEach(h=>{ counts[h]=(counts[h]||0)+1; });
+              return Object.entries(counts)
+                .sort((a,b)=>b[1]-a[1])
+                .slice(0,8)
+                .map(([tag])=>tag);
+            },[videos]).concat(['#trending','#viral','#art','#music','#dance'])
+            .slice(0,8)
+            .map(tag=>(
             <div key={tag} onClick={()=>setQuery(tag)} style={{ padding:'12px 16px', background:'rgba(255,255,255,0.03)', borderRadius:14, marginBottom:8, color:'#007aff', fontSize:15, fontWeight:700, border:'1px solid rgba(255,255,255,0.05)', cursor:'pointer', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{tag}</div>
-          ))}
+          )))}
         </div>
       )}
     </div>
@@ -4145,7 +4270,7 @@ const [blockedUsers, setBlockedUsers] = useState([]);
   },[]);
   // Real-time videos from Firestore
   useEffect(()=>{
-    const q = query(collection(db,'videos'), orderBy('createdAt','desc'), limit(20));
+    const q = query(collection(db,'videos'), orderBy('createdAt','desc'), limit(50));
     const unsub = onSnapshot(q, snap=>{
       setVideos(snap.docs.map(d=>({id:d.id,...d.data()})));
     });
