@@ -571,10 +571,10 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
         </div>
         {!isOwn && (
           <div style={{ display:'flex', gap:8, padding:'0 16px 16px' }}>
-            <button onClick={()=>{onFollow?.(user.id); onClose();}}
-              style={{ flex:1, background:isFollowing?'rgba(255,255,255,0.06)':'linear-gradient(135deg,#ff2d55,#af52de)', border:isFollowing?'1px solid rgba(255,45,85,0.4)':'none', borderRadius:14, padding:'12px', color:isFollowing?'#ff2d55':'white', fontWeight:700, cursor:'pointer', fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>
-              {isFollowing ? 'Following' : '+ Follow'}
-              <button
+            <button onClick={()=>{onFollow?.(user.id); onClose();}}>
+  {isFollowing ? 'Following' : '+ Follow'}
+</button>
+<button
   onClick={async () => {
     await addDoc(collection(db, 'reports'), {
       reportedUserId: user.id,
@@ -590,7 +590,6 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
     fontWeight: 600, cursor: 'pointer', fontSize: 13
   }}
 >Report</button>
-            </button>
             <button onClick={()=>{onMessage?.(user.id); onClose();}} style={{ flex:1, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:'12px', color:'white', fontWeight:600, cursor:'pointer', fontSize:14 }}>Message</button>
             <button onClick={()=>{onVoiceCall?.(user.id); onClose();}} style={{ background:'rgba(52,199,89,0.12)', border:'1px solid rgba(52,199,89,0.2)', borderRadius:14, padding:'12px 14px', color:'#34c759', cursor:'pointer', fontSize:18 }}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34c759" strokeWidth="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8a19.79 19.79 0 01-3.07-8.67A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>
@@ -1256,7 +1255,7 @@ const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, 
 };
 
 /* ─────────────── FRIENDS FEED ─────────────── */
-const FriendsFeed = ({ t, friends, videos, currentUser, onMessage, onVoiceCall, onVideoCall, onViewProfile, showToast, users, onCreateStory, onViewStory, onFollow, followed }) => {
+const FriendsFeed = ({ t, friends, videos, currentUser, onMessage, onVoiceCall, onVideoCall, onViewProfile, showToast, users, onCreateStory, onViewStory, onFollow, followed, blockedUsers, onBlock }) => {
   const [search, setSearch] = useState('');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showSearch, setShowSearch] = useState(false);
@@ -1265,7 +1264,7 @@ const FriendsFeed = ({ t, friends, videos, currentUser, onMessage, onVoiceCall, 
   const friendsVideos = useMemo(()=>
   videos
     .filter(v => (friends.includes(v.userId) || v.userId===currentUser?.id))
-    .filter(v => !(blockedUsers||[]).includes(v.userId))
+    onBlock={onBlock}
     .sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)),
 [friends, videos, currentUser?.id, blockedUsers]);
 
@@ -1339,7 +1338,7 @@ const FriendsFeed = ({ t, friends, videos, currentUser, onMessage, onVoiceCall, 
             followed={followed}
             showToast={showToast}
             onViewProfile={onViewProfile}
-            onBlock={uid=>showToast?.('User blocked','warning')}
+            onBlock={onBlock}
           />
         </div>
       ))}
@@ -2280,20 +2279,11 @@ unsub = onSnapshot(q, (snap) => {
           const isMine = msg.from===currentUser?.id;
           return (
             <div key={msg.id} style={{display:'flex',justifyContent:isMine?'flex-end':'flex-start',alignItems:'flex-end',gap:8,marginBottom:10}}>
-               {isMine && (
-  <button
-    onClick={async () => {
-      if (window.confirm('Delete this message?')) {
-        await deleteDoc(doc(db, 'messages', conversationId, 'msgs', msg.id));
-      }
-    }}
-    style={{
-      background: 'none', border: 'none', color: 'rgba(255,45,85,0.5)',
-      fontSize: 11, cursor: 'pointer', padding: '0 4px'
-    }}
-  >Delete</button>
-)} 
-              <div onClick={()=>onViewProfile?.(otherUser?.id)} style={{width:26,height:26,borderRadius:'50%',background:otherUser?.avatarColor,display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontWeight:'bold',fontSize:10,flexShrink:0,cursor:'pointer',overflow:'hidden'}}>
+               {!isMine && (
+  <div onClick={()=>onViewProfile?.(otherUser?.id)} style={{...}}>
+    {otherUser?.avatarUrl ? <img .../> : otherUser?.avatar}
+  </div>
+)}
                   {otherUser?.avatarUrl?<img src={otherUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/>:otherUser?.avatar}
                 </div>
               )}
