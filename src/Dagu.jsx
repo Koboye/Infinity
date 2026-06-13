@@ -52,6 +52,8 @@ const OfflineBanner = () => (
 const EMAILJS_SERVICE = 'service_mtqmvbb';
 const EMAILJS_TEMPLATE = 'template_1k7wiqa';
 const EMAILJS_PUBLIC_KEY = 'U9fs25Bcx5oQ6A2ru';
+// Recipient for in-app "Report a Problem" submissions. Change in one place if the support inbox changes.
+const SUPPORT_EMAIL = 'getachewshambel11@gmail.com';
 
 /* ─────────────── CONSTANTS ─────────────── */
 const LOGIN_METHODS = [
@@ -759,26 +761,37 @@ const sendEmailJS = async (templateParams) => {
 };
 
 /* ─────────────── FIREBASE HELPERS ─────────────── */
+// Shared defaults for a brand-new user profile. Used by createUserProfile (Firestore)
+// and by the local/in-memory fallback profiles used when a Firestore write hasn't
+// propagated yet. Keeping this in one place avoids the 3-way drift that existed
+// between createUserProfile and the two inline fallback objects in <AuthScreen>
+// and the onAuthStateChanged handler.
+const buildDefaultProfile = (uid, data = {}) => ({
+  id: uid,
+  username: data.username || '',
+  fullName: data.fullName || '',
+  email: data.email || '',
+  avatar: (data.username || data.fullName || data.email || 'U')[0].toUpperCase(),
+  avatarColor: data.avatarColor || `hsl(${Math.floor(Math.random()*360)},70%,60%)`,
+  avatarUrl: data.avatarUrl || null,
+  bio: data.bio || 'New to Infinity! 🎬',
+  link: '',
+  gender: '',
+  birthdate: data.birthdate || '',
+  verified: false,
+  followers: [],
+  following: [],
+  blockedUsers: [],
+  coins: 500,
+  walletBalance: 500,
+  level: 1,
+  streak: 1,
+  subscription: 'free',
+});
+
 const createUserProfile = async (uid, data) => {
   await setDoc(doc(db, 'users', uid), {
-    id: uid,
-    username: data.username || '',
-    fullName: data.fullName || '',
-    email: data.email || '',
-    avatar: (data.username || data.email || 'U')[0].toUpperCase(),
-    avatarColor: data.avatarColor || `hsl(${Math.floor(Math.random()*360)},70%,60%)`,
-    avatarUrl: data.avatarUrl || null,
-    bio: data.bio || 'New to Infinity! 🎬',
-    link: '',
-    gender: '',
-    verified: false,
-    followers: [],
-    following: [],
-    coins: 500,
-    walletBalance: 500,
-    level: 1,
-    streak: 1,
-    subscription: 'free',
+    ...buildDefaultProfile(uid, data),
     createdAt: serverTimestamp(),
   }, { merge: true });
 };
@@ -2706,7 +2719,7 @@ if(activeSubPage==='settings') return (
             {label:'Blocked Users',action:()=>setActiveSubPage('unblock')},
             {label:'Help Center',action:()=>showToast?.('Help center','info')},
             {label:'Report a Problem',action:async()=>{
-              await sendEmailJS({to_email:'getachewshambel11@gmail.com',from_name:user?.username,message:`User ${user?.username} (${user?.email}) reported a problem.`});
+              await sendEmailJS({to_email:SUPPORT_EMAIL,from_name:user?.username,message:`User ${user?.username} (${user?.email}) reported a problem.`});
               showToast?.('Report sent!','success');
             }},
             {label:'Terms of Service', action:()=>window.open('https://yoursite.com/terms','_blank')},
@@ -4401,6 +4414,14 @@ if(!result.user.emailVerified && !isNewAccount){
         await deleteDoc(doc(db,'users',emailSnap.docs[0].id));
       }
 
+      // ⚠️ SECURITY NOTE: This OTP is generated and verified entirely client-side
+      // (compared against React state in the 'otp' step below). Anyone with devtools
+      // access can read `pendingOtp` from component state or React DevTools and bypass
+      // this check entirely — it provides NO real protection against fake signups.
+      // A proper fix requires server-side verification (e.g. a Cloud Function that
+      // generates/stores the OTP and validates it before allowing account creation,
+      // or using Firebase's built-in email-link/phone auth flows instead of a
+      // custom OTP). Treat this as a UX speed-bump only, not a security control.
       const otp = String(Math.floor(100000 + Math.random() * 900000));
 await sendEmailJS({
   to_email: identifier,
@@ -4518,24 +4539,12 @@ if(profile) {
   onLogin({...profile, id: result.user.uid});
 } else {
   // Profile exists in Auth, build it from what we know and log in directly
-  const fallbackProfile = {
-    id: result.user.uid,
+  const fallbackProfile = buildDefaultProfile(result.user.uid, {
     username: pendingCreds.username,
     fullName: pendingCreds.fullName,
     email: pendingCreds.email,
-    avatar: (pendingCreds.username||'U')[0].toUpperCase(),
-    avatarColor: `hsl(${Math.floor(Math.random()*360)},70%,60%)`,
-    avatarUrl: null,
-    bio: 'New to Infinity! 🎬',
-    followers: [],
-    following: [],
-    coins: 500,
-    walletBalance: 500,
-    verified: false,
-    subscription: 'free',
-    streak: 1,
-    level: 1,
-  };
+    birthdate: pendingCreds.birthdate || '',
+  });
   onLogin(fallbackProfile);
 }
           } catch(e){
@@ -4848,19 +4857,12 @@ const [blockedUsers, setBlockedUsers] = useState([]);
   setBlockedUsers(profile.blockedUsers||[]);
 } else {
           // Profile never arrived — build fallback so app doesn't stay blank
-          const fallback = {
-            id: fbUser.uid,
+          const fallback = buildDefaultProfile(fbUser.uid, {
             username: fbUser.displayName?.split(' ')[0]?.toLowerCase() || fbUser.email?.split('@')[0] || 'user',
             fullName: fbUser.displayName || '',
             email: fbUser.email || '',
-            avatar: (fbUser.displayName||fbUser.email||'U')[0].toUpperCase(),
-            avatarColor: `hsl(${Math.floor(Math.random()*360)},70%,60%)`,
             avatarUrl: fbUser.photoURL || null,
-            bio: 'New to Infinity! 🎬',
-            followers: [], following: [], coins: 500,
-            walletBalance: 500, verified: false,
-            subscription: 'free', streak: 1, level: 1,
-          };
+          });
           await createUserProfile(fbUser.uid, fallback);
           setCurrentUser(fallback);
           setFollowed([]);
@@ -4903,6 +4905,11 @@ const [blockedUsers, setBlockedUsers] = useState([]);
     setFriends(followed);
   },[followed]);
 // Real-time notification popup
+  // `users` is read via a ref so this listener doesn't tear down/resubscribe
+  // every time the users collection changes (it previously listed `users` as
+  // a dependency, causing a full unsubscribe+resubscribe on every user update).
+  const usersRef = useRef(users);
+  useEffect(()=>{ usersRef.current = users; },[users]);
   useEffect(()=>{
     if(!currentUser?.id) return;
     let isFirst = true;
@@ -4917,13 +4924,13 @@ const [blockedUsers, setBlockedUsers] = useState([]);
       snap.docChanges().forEach(change=>{
         if(change.type==='added'){
           const data = change.doc.data();
-          const fromUser = users.find(u=>u.id===data.fromUserId);
+          const fromUser = usersRef.current.find(u=>u.id===data.fromUserId);
           setNotifPopup({ notif:{...data,id:change.doc.id}, user:fromUser });
         }
       });
     },()=>{});
     return ()=>unsub();
-  },[currentUser?.id, users]);
+  },[currentUser?.id]);
   // Incoming call listener
   useEffect(()=>{
     if(!currentUser?.id) return;
@@ -5157,7 +5164,7 @@ const TabIcon = ({id, active, currentUser}) => {
           <>
             {activeTab==='home' && <HomeFeed t={t} videos={videos} currentUser={currentUser} onLike={()=>{}} onComment={()=>{}} onShare={(v)=>setShowShareSheet(v)} onFollow={toggleFollow} onMessage={handleMessage} onVoiceCall={uid=>{   const u=users.find(uu=>uu.id===uid);   const callDocId=[currentUser.id,uid].sort().join('_');   setShowCall({type:'audio',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
  onVideoCall={uid=>{   const u=users.find(uu=>uu.id===uid);   const callDocId=[currentUser.id,uid].sort().join('_');   setShowCall({type:'video',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
- onDuet={()=>showToast?.('Duet mode ready','info')} onStitch={()=>showToast?.('Stitch mode ready','info')} onSaveSound={()=>showToast?.('Sound saved!','success')} followed={followed} showToast={showToast} onLive={()=>setShowLiveStream(currentUser)} onViewProfile={handleViewProfile} onOpenSearch={()=>setShowDiscover(true)} onOpenNotifications={()=>setShowNotifications(true)} blockedUsers={blockedUsers} onBlock={uid=>setBlockedUsers(p=>[...p,uid])} />
+ onDuet={()=>showToast?.('Duet mode ready','info')} onStitch={()=>showToast?.('Stitch mode ready','info')} onSaveSound={()=>showToast?.('Sound saved!','success')} followed={followed} showToast={showToast} onLive={()=>setShowLiveStream(currentUser)} onViewProfile={handleViewProfile} onOpenSearch={()=>setShowDiscover(true)} onOpenNotifications={()=>setShowNotifications(true)} blockedUsers={blockedUsers} onBlock={uid=>setBlockedUsers(p=>[...p,uid])} />}
             {activeTab==='friends' && <FriendsFeed t={t} friends={friends} videos={videos} currentUser={currentUser} onMessage={handleMessage} onVoiceCall={uid=>{   const u=users.find(uu=>uu.id===uid);   const callDocId=[currentUser.id,uid].sort().join('_');   setShowCall({type:'audio',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }} blockedUsers={blockedUsers}
  onVideoCall={uid=>{   const u=users.find(uu=>uu.id===uid);   const callDocId=[currentUser.id,uid].sort().join('_');   setShowCall({type:'video',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
  onViewProfile={handleViewProfile} showToast={showToast} users={users} onCreateStory={()=>setShowCreateStory(true)} onViewStory={setShowStoryViewer} onFollow={toggleFollow} followed={followed} onLive={()=>setShowLiveStream(currentUser)} onBlock={uid=>setBlockedUsers(p=>[...p,uid])} />}
