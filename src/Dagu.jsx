@@ -84,7 +84,23 @@ const formatNumber = (num) => {
   if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
   return String(n);
 };
-
+const haptic = (style='light') => {
+  try {
+    if(window.navigator?.vibrate){
+      style==='heavy'?navigator.vibrate([30,10,30]):style==='medium'?navigator.vibrate(20):navigator.vibrate(10);
+    }
+  } catch {}
+};
+const useIntersectionObserver = (ref, options={}) => {
+  const [isIntersecting, setIsIntersecting] = useState(false);
+  useEffect(()=>{
+    if(!ref.current) return;
+    const obs = new IntersectionObserver(([entry])=>setIsIntersecting(entry.isIntersecting), options);
+    obs.observe(ref.current);
+    return ()=>obs.disconnect();
+  },[]);
+  return isIntersecting;
+};
 /* ─────────────── CLOUDINARY UPLOAD ─────────────── */
 const uploadToCloudinary = async (file, onProgress) => {
   const formData = new FormData();
@@ -162,79 +178,179 @@ const getUserProfile = async (uid) => {
 
 /* ─────────────── GLOBAL STYLES ─────────────── */
 const GlobalStyles = () => (
+  {!isOnline && <OfflineBanner />}
   <style>{`
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html{scroll-behavior:smooth}
+    body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;overscroll-behavior:none;touch-action:manipulation}
     ::-webkit-scrollbar{display:none}
+    *{scrollbar-width:none;-ms-overflow-style:none}
     @keyframes heartBurst{0%{transform:scale(0.4) translateY(0);opacity:1}100%{transform:scale(1.8) translateY(-80px);opacity:0}}
     @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
     @keyframes slideDown{from{transform:translateY(-20px);opacity:0}to{transform:translateY(0);opacity:1}}
+    @keyframes slideLeft{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
     @keyframes floatUp{0%{transform:translateY(0) scale(1);opacity:1}100%{transform:translateY(-120px) scale(1.5);opacity:0}}
     @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
     @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+    @keyframes shimmerLoad{0%{opacity:0.4}50%{opacity:0.8}100%{opacity:0.4}}
     @keyframes gradientShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
     @keyframes popIn{0%{transform:scale(0.8);opacity:0}70%{transform:scale(1.05)}100%{transform:scale(1);opacity:1}}
+    @keyframes popInBounce{0%{transform:scale(0.5);opacity:0}60%{transform:scale(1.15)}80%{transform:scale(0.95)}100%{transform:scale(1);opacity:1}}
     @keyframes ripple{0%{transform:scale(0);opacity:0.6}100%{transform:scale(4);opacity:0}}
     @keyframes tabPop{0%{transform:scaleX(0)}100%{transform:scaleX(1)}}
     @keyframes storyRing{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
     @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
     @keyframes notifBar{0%{width:100%}100%{width:0%}}
-    button:active{transform:scale(0.94)!important}
-    input,textarea{font-family:'DM Sans',sans-serif}
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    @keyframes scaleIn{from{transform:scale(0.95);opacity:0}to{transform:scale(1);opacity:1}}
+    @keyframes likeHeart{0%{transform:scale(1)}15%{transform:scale(1.4)}30%{transform:scale(0.9)}45%{transform:scale(1.2)}60%{transform:scale(1)}}
+    @keyframes progressBar{from{width:0%}to{width:100%}}
+    @keyframes bounceIn{0%{transform:scale(0.3);opacity:0}50%{transform:scale(1.1)}70%{transform:scale(0.9)}100%{transform:scale(1);opacity:1}}
+    @keyframes swipeHint{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+    button{touch-action:manipulation}
+    button:active{transform:scale(0.94)!important;transition:transform 0.1s}
+    input,textarea{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif}
+    input:focus,textarea:focus{outline:none}
     .tab-active-indicator{animation:tabPop 0.25s ease}
     .story-avatar-ring{background:conic-gradient(#ff2d55,#ff9500,#ffd700,#af52de,#ff2d55);padding:2.5px;border-radius:50%}
+    .skeleton{background:linear-gradient(90deg,rgba(255,255,255,0.04) 25%,rgba(255,255,255,0.1) 50%,rgba(255,255,255,0.04) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite}
+    .ripple-btn{position:relative;overflow:hidden}
+    .ripple-btn::after{content:'';position:absolute;border-radius:50%;background:rgba(255,255,255,0.3);width:100px;height:100px;margin-top:-50px;margin-left:-50px;top:var(--y,50%);left:var(--x,50%);animation:ripple 0.6s linear;opacity:0}
+    @media (prefers-reduced-motion: reduce){*{animation-duration:0.01ms!important;transition-duration:0.01ms!important}}
   `}</style>
 );
+const SkeletonLoader = ({ count=3 }) => (
+  <div style={{ padding:'14px 16px', display:'flex', flexDirection:'column', gap:12 }}>
+    {Array.from({length:count}).map((_,i)=>(
+      <div key={i} style={{ display:'flex', gap:12, alignItems:'center' }}>
+        <div className="skeleton" style={{ width:52, height:52, borderRadius:'50%', flexShrink:0 }} />
+        <div style={{ flex:1, display:'flex', flexDirection:'column', gap:8 }}>
+          <div className="skeleton" style={{ height:13, borderRadius:6, width:'60%' }} />
+          <div className="skeleton" style={{ height:11, borderRadius:6, width:'40%' }} />
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
+const VideoSkeleton = () => (
+  <div style={{ position:'absolute', inset:0, background:'#111', display:'flex', flexDirection:'column', justifyContent:'flex-end', padding:20 }}>
+    <div style={{ display:'flex', gap:12, alignItems:'center', marginBottom:14 }}>
+      <div className="skeleton" style={{ width:44, height:44, borderRadius:'50%' }} />
+      <div style={{ flex:1 }}>
+        <div className="skeleton" style={{ height:13, borderRadius:6, width:'50%', marginBottom:8 }} />
+        <div className="skeleton" style={{ height:11, borderRadius:6, width:'30%' }} />
+      </div>
+    </div>
+    <div className="skeleton" style={{ height:11, borderRadius:6, width:'80%', marginBottom:6 }} />
+    <div className="skeleton" style={{ height:11, borderRadius:6, width:'60%' }} />
+  </div>
+);
+const RippleButton = ({ onClick, style, children, disabled }) => {
+  const handleClick = (e) => {
+    if(disabled) return;
+    haptic('light');
+    const btn = e.currentTarget;
+    const rect = btn.getBoundingClientRect();
+    btn.style.setProperty('--x', `${e.clientX - rect.left}px`);
+    btn.style.setProperty('--y', `${e.clientY - rect.top}px`);
+    btn.classList.remove('ripple-btn');
+    void btn.offsetWidth;
+    btn.classList.add('ripple-btn');
+    onClick?.(e);
+  };
+  return <button onClick={handleClick} disabled={disabled} style={style} className="ripple-btn">{children}</button>;
+};
+const RippleButton = ({ onClick, style, children, disabled }) => {
+  const handleClick = (e) => {
+    if(disabled) return;
+    haptic('light');
+    const btn = e.currentTarget;
+    const rect = btn.getBoundingClientRect();
+    btn.style.setProperty('--x', `${e.clientX - rect.left}px`);
+    btn.style.setProperty('--y', `${e.clientY - rect.top}px`);
+    btn.classList.remove('ripple-btn');
+    void btn.offsetWidth;
+    btn.classList.add('ripple-btn');
+    onClick?.(e);
+  };
+  return <button onClick={handleClick} disabled={disabled} style={style} className="ripple-btn">{children}</button>;
+};
+const ProgressiveImage = ({ src, alt, style }) => {
+  const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState(false);
+  return (
+    <div style={{ position:'relative', overflow:'hidden', ...style }}>
+      {!loaded && !error && <div className="skeleton" style={{ position:'absolute', inset:0 }} />}
+      {error
+        ? <div style={{ position:'absolute', inset:0, background:'#1a1a1a', display:'flex', alignItems:'center', justifyContent:'center', fontSize:32 }}>🖼️</div>
+        : <img src={src} alt={alt||''} onLoad={()=>setLoaded(true)} onError={()=>setError(true)} style={{ width:'100%', height:'100%', objectFit:'cover', opacity: loaded?1:0, transition:'opacity 0.3s ease' }} />
+      }
+    </div>
+  );
+};
+
 /* ─────────────── NOTIFICATION POPUP (TikTok style) ─────────────── */
 const NotifPopup = ({ notif, user, onClose, onTap }) => {
+  const [swipeX, setSwipeX] = useState(0);
+  const [swiping, setSwiping] = useState(false);
+  const startX = useRef(null);
   useEffect(()=>{
-  const t=setTimeout(onClose,4000); 
-  // Vibrate on mobile
-  navigator.vibrate?.(200);
-  // Ping sound
-  try {
-    const ctx = new (window.AudioContext||window.webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain); gain.connect(ctx.destination);
-    osc.frequency.value = 880;
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
-    osc.start(); osc.stop(ctx.currentTime + 0.3);
-  } catch(e){}
-  return ()=>clearTimeout(t); 
-},[onClose]);
+    const t = setTimeout(onClose, 4500);
+    try {
+      navigator.vibrate?.(200);
+      const ctx = new (window.AudioContext||window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.value = 880;
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+      osc.start(); osc.stop(ctx.currentTime + 0.3);
+    } catch {}
+    return ()=>clearTimeout(t);
+  },[onClose]);
   const icons = { like:'❤️', comment:'💬', follow:'👤', mention:'@', gift:'🎁', live:'🔴', call:'📞' };
+  const handleTouchStart = e => { startX.current = e.touches[0].clientX; setSwiping(true); };
+  const handleTouchMove = e => {
+    if(startX.current===null) return;
+    const dx = e.touches[0].clientX - startX.current;
+    if(dx > 0) setSwipeX(dx);
+  };
+  const handleTouchEnd = () => {
+    if(swipeX > 80) onClose();
+    else setSwipeX(0);
+    setSwiping(false);
+  };
   return (
-    <div onClick={()=>{ onTap?.(); onClose(); }}
-      style={{ position:'fixed', top:52, left:12, right:12, zIndex:9999, animation:'slideDown 0.35s cubic-bezier(0.34,1.56,0.64,1)', cursor:'pointer',
-        background:'rgba(18,18,22,0.97)', backdropFilter:'blur(24px)', border:'1px solid rgba(255,255,255,0.1)',
-        borderRadius:20, padding:'12px 14px', display:'flex', alignItems:'center', gap:12,
-        boxShadow:'0 8px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05)' }}>
+    <div
+      onClick={()=>{ haptic('medium'); onTap?.(); onClose(); }}
+      onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}
+      style={{ position:'fixed', top:52, left:12, right:12, zIndex:9999,
+        transform:`translateX(${swipeX}px)`,
+        transition: swiping?'none':'transform 0.3s cubic-bezier(0.34,1.56,0.64,1)',
+        animation: swipeX===0?'slideDown 0.35s cubic-bezier(0.34,1.56,0.64,1)':'none',
+        cursor:'pointer', background:'rgba(18,18,22,0.97)', backdropFilter:'blur(24px)',
+        border:'1px solid rgba(255,255,255,0.1)', borderRadius:20, padding:'12px 14px',
+        display:'flex', alignItems:'center', gap:12,
+        boxShadow:'0 8px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05)',
+        opacity: 1 - (swipeX / 200) }}>
       <div style={{ position:'relative', flexShrink:0 }}>
-        <div style={{ width:44, height:44, borderRadius:'50%', background:user?.avatarColor||'#ff2d55',
-          display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:18, overflow:'hidden' }}>
+        <div style={{ width:44, height:44, borderRadius:'50%', background:user?.avatarColor||'#ff2d55', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:18, overflow:'hidden' }}>
           {user?.avatarUrl ? <img src={user.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/> : (user?.avatar||'?')}
         </div>
-        <div style={{ position:'absolute', bottom:-2, right:-2, width:18, height:18, borderRadius:'50%',
-          background:'#1a1a2e', display:'flex', alignItems:'center', justifyContent:'center', fontSize:10,
-          border:'1.5px solid rgba(255,255,255,0.1)' }}>{icons[notif?.type]||'🔔'}</div>
+        <div style={{ position:'absolute', bottom:-2, right:-2, width:18, height:18, borderRadius:'50%', background:'#1a1a2e', display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, border:'1.5px solid rgba(255,255,255,0.1)' }}>{icons[notif?.type]||'🔔'}</div>
       </div>
       <div style={{ flex:1, minWidth:0 }}>
-        <div style={{ color:'white', fontSize:13, fontWeight:600, lineHeight:1.35,
-          fontFamily:"'Inter',-apple-system,sans-serif",
-          overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-          <span style={{ color:'#ff2d55' }}>@{user?.username||'someone'}</span>
-          {' '}{notif?.message}
+        <div style={{ color:'white', fontSize:13, fontWeight:600, lineHeight:1.35, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+          <span style={{ color:'#ff2d55' }}>@{user?.username||'someone'}</span>{' '}{notif?.message}
         </div>
-        <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11, marginTop:2 }}>Just now · Tap to view</div>
+        <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11, marginTop:2 }}>Just now · Swipe to dismiss</div>
       </div>
-      <button onClick={e=>{e.stopPropagation();onClose();}}
-        style={{ background:'rgba(255,255,255,0.08)', border:'none', borderRadius:'50%', width:26, height:26,
-          color:'rgba(255,255,255,0.5)', cursor:'pointer', fontSize:14, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>✕</button>
+      <button onClick={e=>{e.stopPropagation();onClose();}} style={{ background:'rgba(255,255,255,0.08)', border:'none', borderRadius:'50%', width:26, height:26, color:'rgba(255,255,255,0.5)', cursor:'pointer', fontSize:14, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>✕</button>
       <div style={{ position:'absolute', bottom:0, left:0, right:0, height:2, background:'rgba(255,255,255,0.06)', borderRadius:'0 0 20px 20px', overflow:'hidden' }}>
-        <div style={{ height:'100%', background:'linear-gradient(90deg,#ff2d55,#af52de)', animation:'notifBar 4s linear forwards' }}/>
+        <div style={{ height:'100%', background:'linear-gradient(90deg,#ff2d55,#af52de)', animation:'notifBar 4.5s linear forwards' }}/>
       </div>
     </div>
   );
@@ -889,6 +1005,23 @@ const CommentInputBar = ({ currentUser, commentText, setCommentText, onSend, sho
     </div>
   );
 };
+const VideoProgressBar = ({ videoRef, isActive, isImage }) => {
+  const [progress, setProgress] = useState(0);
+  useEffect(()=>{
+    if(isImage || !isActive) return;
+    const tick = setInterval(()=>{
+      const el = videoRef?.current;
+      if(el && el.duration) setProgress((el.currentTime / el.duration) * 100);
+    }, 500);
+    return ()=>clearInterval(tick);
+  },[isActive, isImage]);
+  if(isImage) return null;
+  return (
+    <div style={{ position:'absolute', top:0, left:0, right:0, height:2, background:'rgba(255,255,255,0.15)', zIndex:20 }}>
+      <div style={{ height:'100%', background:'linear-gradient(90deg,#ff2d55,#af52de)', width:`${progress}%`, transition:'width 0.5s linear' }} />
+    </div>
+  );
+};
 /* ─────────────── ENHANCED VIDEO CARD ─────────────── */
 const EnhancedVideoCard = memo(({ video, currentUser, isActive, onLike, onComment, onShare, onFollow, onMessage, onVoiceCall, onVideoCall, onDuet, onStitch, onSaveSound, followed, showToast, onViewProfile, onBlock }) => {
   const [liked, setLiked] = useState(false);
@@ -906,6 +1039,10 @@ const EnhancedVideoCard = memo(({ video, currentUser, isActive, onLike, onCommen
   const tapTimer = useRef(null);
   const videoRef = useRef(null);
   const menuButtonRef = useRef(null);
+  const [showReactions, setShowReactions] = useState(false);
+  const [floatingReactions, setFloatingReactions] = useState([]);
+  const longPressTimer = useRef(null);
+  const REACTIONS = ['❤️','😂','😮','😢','😡','🔥','👏','💎'];
 
   useEffect(()=>()=>{ if(tapTimer.current) clearTimeout(tapTimer.current); },[]);
 
@@ -997,7 +1134,6 @@ translate();
   };
 
   const handleTap = (e) => {
-    // Unmute video on first user interaction (bypass autoplay policy)
     if(videoRef.current && videoRef.current.muted) {
       videoRef.current.muted = false;
       videoRef.current.volume = 1;
@@ -1005,21 +1141,31 @@ translate();
     if(tapTimer.current){
       clearTimeout(tapTimer.current);
       tapTimer.current = null;
+      haptic('medium');
       handleDoubleTap();
     } else {
       tapTimer.current = setTimeout(()=>{
         tapTimer.current = null;
+        haptic('light');
         const isImagePost = video?.videoUrl?.match(/\.(jpg|jpeg|png|gif|webp)/i) || video?.mediaType?.startsWith('image');
-        if(isImagePost){
-          setIsPlaying(p => !p);
-        } else if(videoRef.current){
+        if(!isImagePost && videoRef.current){
           if(isPlaying){ videoRef.current.pause(); setIsPlaying(false); }
-          else { videoRef.current.play(); setIsPlaying(true); }
+          else { videoRef.current.play().catch(()=>{}); setIsPlaying(true); }
         }
-      }, 280);
+      }, 250);
     }
   };
-
+const handleLongPressStart = () => {
+    longPressTimer.current = setTimeout(()=>{ haptic('heavy'); setShowReactions(true); }, 500);
+  };
+  const handleLongPressEnd = () => { clearTimeout(longPressTimer.current); };
+  const handleReact = (emoji) => {
+    setShowReactions(false);
+    haptic('medium');
+    const id = Date.now();
+    setFloatingReactions(prev=>[...prev, { id, emoji, x: Math.random()*60+20 }]);
+    setTimeout(()=>setFloatingReactions(prev=>prev.filter(r=>r.id!==id)), 1500);
+  };
   const handleLike = async () => {
     if(!liked){
       setLiked(true);
@@ -1056,7 +1202,12 @@ translate();
   const reportReasons = ['Spam','Inappropriate content','Hate speech','Misinformation','Copyright violation','Other'];
 
   return (
-    <div style={{ position:'absolute', inset:0, background:'#000' }} onClick={handleTap}>
+    <div style={{ position:'absolute', inset:0, background:'#000' }}
+      onClick={handleTap}
+      onTouchStart={handleLongPressStart}
+      onTouchEnd={handleLongPressEnd}
+      onMouseDown={handleLongPressStart}
+      onMouseUp={handleLongPressEnd}>
       {video?.videoUrl?.match(/\.(jpg|jpeg|png|gif|webp)/i) || video?.mediaType?.startsWith('image') ?
   <img src={video.videoUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', transition:'transform 0.3s ease', transform: showComments ? 'translateY(-18%)' : 'translateY(0)' }} /> :
   <video
@@ -1084,6 +1235,7 @@ translate();
       
       {!isPlaying && (video?.videoUrl && !video.videoUrl.match(/\.(jpg|jpeg|png|gif|webp)/i)) && !video?.mediaType?.startsWith('image') && <div style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',zIndex:15,pointerEvents:'none'}}><div style={{width:72,height:72,borderRadius:'50%',background:'rgba(0,0,0,0.55)',display:'flex',alignItems:'center',justifyContent:'center'}}><svg width="32" height="32" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg></div></div>}
       {heartAnim && (
+      <VideoProgressBar videoRef={videoRef} isActive={isActive} isImage={!!(video?.videoUrl?.match(/\.(jpg|jpeg|png|gif|webp)/i) || video?.mediaType?.startsWith('image'))} />
         <div style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', zIndex:50, pointerEvents:'none' }}>
           <div style={{ fontSize:80, animation:'heartBurst 0.9s ease forwards' }}>❤️</div>
         </div>
@@ -1149,10 +1301,17 @@ translate();
       )}
 
       <div style={{ position:'absolute', right:12, bottom:80, display:'flex', flexDirection:'column', alignItems:'center', gap:6, zIndex:6 }}>
-       <button onClick={e=>{e.stopPropagation();handleLike();}} style={{ background:'rgba(0,0,0,0.3)', border:'none', borderRadius:'50%', width:48, height:48, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill={liked?'#ff2d55':'none'} stroke={liked?'#ff2d55':'rgba(255,255,255,0.9)'} strokeWidth="1.8"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+       <button onClick={e=>{e.stopPropagation();haptic('medium');handleLike();}}
+          style={{ background:'rgba(0,0,0,0.3)', border:'none', borderRadius:'50%', width:52, height:52, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer',
+            transform: liked ? 'scale(1)' : 'scale(1)',
+            transition:'transform 0.2s cubic-bezier(0.34,1.56,0.64,1)' }}>
+          <svg width="26" height="26" viewBox="0 0 24 24"
+            fill={liked?'#ff2d55':'none'} stroke={liked?'#ff2d55':'rgba(255,255,255,0.9)'} strokeWidth="1.8"
+            style={{ animation: liked ? 'likeHeart 0.4s ease' : 'none', filter: liked ? 'drop-shadow(0 0 6px rgba(255,45,85,0.6))' : 'none' }}>
+            <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+          </svg>
         </button>
-        <span style={{ color:'rgba(255,255,255,0.85)', fontSize:11, fontWeight:600, letterSpacing:0.2 }}>{formatNumber(likeCount)}</span>
+        <span style={{ color: liked?'#ff2d55':'rgba(255,255,255,0.85)', fontSize:11, fontWeight:700, letterSpacing:0.2, transition:'color 0.2s' }}>{formatNumber(likeCount)}</span>
         <button onClick={e=>{e.stopPropagation();setShowComments(true);}} style={{ background:'rgba(0,0,0,0.3)', border:'none', borderRadius:'50%', width:48, height:48, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', marginTop:4 }}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
         </button>
@@ -1210,6 +1369,37 @@ const NotifBellButton = ({ onOpenNotifications, currentUser }) => {
     </button>
   );
 };
+      {floatingReactions.map(r=>(
+        <div key={r.id} style={{ position:'absolute', bottom:200, left:`${r.x}%`, zIndex:60, pointerEvents:'none', fontSize:36, animation:'floatUp 1.5s ease forwards' }}>{r.emoji}</div>
+      ))}
+      {showReactions && (
+        <div onClick={e=>e.stopPropagation()} style={{ position:'absolute', bottom:160, left:'50%', transform:'translateX(-50%)', zIndex:55, background:'rgba(20,20,20,0.95)', backdropFilter:'blur(20px)', borderRadius:50, padding:'8px 12px', display:'flex', gap:4, border:'1px solid rgba(255,255,255,0.12)', animation:'popInBounce 0.3s ease' }}>
+          {REACTIONS.map(emoji=>(
+            <button key={emoji} onClick={()=>handleReact(emoji)} style={{ background:'none', border:'none', fontSize:28, cursor:'pointer', padding:'4px 6px', borderRadius:30, transition:'transform 0.15s' }}
+              onMouseEnter={e=>e.currentTarget.style.transform='scale(1.4)'}
+              onMouseLeave={e=>e.currentTarget.style.transform='scale(1)'}
+            >{emoji}</button>
+          ))}
+        </div>
+      )}
+      const useNetworkStatus = () => {
+  const [online, setOnline] = useState(navigator.onLine);
+  useEffect(()=>{
+    const on = ()=>setOnline(true);
+    const off = ()=>setOnline(false);
+    window.addEventListener('online', on);
+    window.addEventListener('offline', off);
+    return ()=>{ window.removeEventListener('online',on); window.removeEventListener('offline',off); };
+  },[]);
+  return online;
+};
+
+const OfflineBanner = () => (
+  <div style={{ position:'fixed', top:0, left:0, right:0, zIndex:10000, background:'#ff9500', padding:'10px 16px', display:'flex', alignItems:'center', gap:8, justifyContent:'center', animation:'slideDown 0.3s ease' }}>
+    <span style={{ fontSize:16 }}>📡</span>
+    <span style={{ color:'#000', fontWeight:700, fontSize:13 }}>You're offline — some features may be unavailable</span>
+  </div>
+);
 /* ─────────────── HOME FEED ─────────────── */
 const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, onVoiceCall, onVideoCall, onDuet, onStitch, onSaveSound, followed, showToast, onLive, currentUser, onViewProfile, onOpenSearch, onOpenNotifications, blockedUsers, onBlock }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -1220,16 +1410,31 @@ const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, 
     return base.filter(v=>v.category===activeCategory);
   },[videos, activeCategory, blockedUsers]);
   const startY = useRef(null);
-  const handleTouchStart = e => { startY.current=e.touches[0].clientY; };
+  const startY = useRef(null);
+  const startTime = useRef(null);
+  const lastY = useRef(null);
+  const handleTouchStart = e => {
+    startY.current = e.touches[0].clientY;
+    lastY.current = e.touches[0].clientY;
+    startTime.current = Date.now();
+  };
+  const handleTouchMove = e => { lastY.current = e.touches[0].clientY; };
   const handleTouchEnd = e => {
     if(startY.current===null) return;
-    const dy=startY.current-e.changedTouches[0].clientY;
-    if(Math.abs(dy)>50){if(dy>0) setCurrentIndex(i=>Math.min(filteredVideos.length-1,i+1)); else setCurrentIndex(i=>Math.max(0,i-1));}
-    startY.current=null;
+    const dy = startY.current - e.changedTouches[0].clientY;
+    const dt = Date.now() - startTime.current;
+    const velocity = Math.abs(dy) / dt;
+    const threshold = velocity > 0.3 ? 20 : 60;
+    if(Math.abs(dy) > threshold){
+      haptic('light');
+      if(dy>0) setCurrentIndex(i=>Math.min(filteredVideos.length-1,i+1));
+      else setCurrentIndex(i=>Math.max(0,i-1));
+    }
+    startY.current = null;
   };
   if(!filteredVideos.length) return <div style={{ height:'100%', display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:12 }}><div style={{ fontSize:48 }}>📭</div><div style={{ color:'rgba(255,255,255,0.3)' }}>{t?.noVideos||'No videos yet. Be the first to post!'}</div></div>;
   return (
-    <div style={{ height:'100%', position:'relative', overflow:'hidden' }} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+<div style={{ height:'100%', position:'relative', overflow:'hidden' }} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
       <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:15, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'48px 16px 12px', background:'linear-gradient(to bottom,rgba(0,0,0,0.7) 0%,transparent 100%)' }}>
         <div style={{ flex:1, display:'flex', justifyContent:'center', gap:24 }}>
           {TOP_CATEGORIES.map(cat=>(
@@ -1276,7 +1481,25 @@ const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, 
     </div>
   );
 };
-
+const [refreshing, setRefreshing] = useState(false);
+  const pullStartY = useRef(null);
+  const [pullDist, setPullDist] = useState(0);
+  const handlePullStart = e => { if(currentIndex===0) pullStartY.current = e.touches[0].clientY; };
+  const handlePullMove = e => {
+    if(pullStartY.current===null || currentIndex!==0) return;
+    const dy = e.touches[0].clientY - pullStartY.current;
+    if(dy > 0 && dy < 100) setPullDist(dy);
+  };
+  const handlePullEnd = async () => {
+    if(pullDist > 60){
+      haptic('medium');
+      setRefreshing(true);
+      await new Promise(r=>setTimeout(r, 1200));
+      setRefreshing(false);
+    }
+    setPullDist(0);
+    pullStartY.current = null;
+  };
 /* ─────────────── FRIENDS FEED ─────────────── */
 const FriendsFeed = ({ t, friends, videos, currentUser, onMessage, onVoiceCall, onVideoCall, onViewProfile, showToast, users, onCreateStory, onViewStory, onFollow, followed, blockedUsers, onBlock }) => {
   const [search, setSearch] = useState('');
@@ -1339,7 +1562,16 @@ const FriendsFeed = ({ t, friends, videos, currentUser, onMessage, onVoiceCall, 
   );
 
   return (
-    <div style={{ height:'100%', position:'relative', overflow:'hidden', background:'#000' }} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+    <div style={{ height:'100%', position:'relative', overflow:'hidden' }}
+      onTouchStart={e=>{ handleTouchStart(e); handlePullStart(e); }}
+      onTouchMove={e=>{ handleTouchMove(e); handlePullMove(e); }}
+      onTouchEnd={e=>{ handleTouchEnd(e); handlePullEnd(); }}>
+      {(pullDist > 10 || refreshing) && (
+        <div style={{ position:'absolute', top: refreshing ? 16 : pullDist - 40, left:'50%', transform:'translateX(-50%)', zIndex:25, width:36, height:36, borderRadius:'50%', background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', backdropFilter:'blur(10px)', transition: refreshing?'top 0.3s':'' }}>
+          <div style={{ width:18, height:18, border:'2px solid rgba(255,255,255,0.3)', borderTop:'2px solid #ff2d55', borderRadius:'50%', animation: refreshing ? 'spin 0.8s linear infinite' : '', transform: !refreshing ? `rotate(${pullDist*3}deg)` : '' }} />
+        </div>
+      )}
+    
 
       {/* Fullscreen video cards — same as HomeFeed */}
       {filtered.map((video,idx)=>(
@@ -2052,13 +2284,23 @@ if(activeSubPage==='settings') return (
               </div>
             ))}
           </div>
-          <div style={{ display:'flex', gap:8, marginTop:10, justifyContent:'center' }}>
-            <div style={{ background:'rgba(255,165,0,0.1)', border:'1px solid rgba(255,165,0,0.2)', borderRadius:20, padding:'6px 14px', display:'flex', alignItems:'center', gap:6 }}>
-              <span>🔥</span><span style={{ color:'#ff9500', fontSize:12, fontWeight:700 }}>{user?.streak||1} day streak</span>
+          <div style={{ display:'flex', gap:8, marginTop:12, justifyContent:'center', flexWrap:'wrap' }}>
+            <div style={{ background:'linear-gradient(135deg,rgba(255,149,0,0.15),rgba(255,45,85,0.1))', border:'1px solid rgba(255,149,0,0.3)', borderRadius:20, padding:'7px 16px', display:'flex', alignItems:'center', gap:6, backdropFilter:'blur(10px)' }}>
+              <span style={{ fontSize:16, animation:(user?.streak||1)>=7?'pulse 1.5s infinite':'' }}>🔥</span>
+              <span style={{ color:'#ff9500', fontSize:12, fontWeight:800 }}>{user?.streak||1} day streak</span>
+              {(user?.streak||1)>=7 && <span style={{ background:'rgba(255,149,0,0.2)', color:'#ff9500', fontSize:9, fontWeight:800, borderRadius:10, padding:'2px 6px' }}>HOT</span>}
             </div>
-            <div style={{ background:'rgba(255,215,0,0.08)', border:'1px solid rgba(255,215,0,0.2)', borderRadius:20, padding:'6px 14px', display:'flex', alignItems:'center', gap:6 }}>
-              <span>🪙</span><span style={{ color:'#ffd700', fontSize:12, fontWeight:700 }}>{(user?.coins||0).toLocaleString()} coins</span>
+            <div style={{ background:'linear-gradient(135deg,rgba(255,215,0,0.12),rgba(255,149,0,0.08))', border:'1px solid rgba(255,215,0,0.25)', borderRadius:20, padding:'7px 16px', display:'flex', alignItems:'center', gap:6, backdropFilter:'blur(10px)' }}>
+              <span style={{ fontSize:16 }}>🪙</span>
+              <span style={{ color:'#ffd700', fontSize:12, fontWeight:800 }}>{(user?.coins||0).toLocaleString()}</span>
+              <span style={{ color:'rgba(255,215,0,0.5)', fontSize:10 }}>coins</span>
             </div>
+            {user?.subscription !== 'free' && (
+              <div style={{ background:'linear-gradient(135deg,rgba(175,82,222,0.15),rgba(255,45,85,0.1))', border:'1px solid rgba(175,82,222,0.3)', borderRadius:20, padding:'7px 16px', display:'flex', alignItems:'center', gap:6 }}>
+                <span style={{ fontSize:14 }}>👑</span>
+                <span style={{ background:'linear-gradient(135deg,#af52de,#ff2d55)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', fontSize:12, fontWeight:800, textTransform:'capitalize' }}>{user.subscription}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -2379,15 +2621,18 @@ unseen.forEach(d => updateDoc(d.ref, { status: 'seen' }).catch(()=>{}));
           );
         })}
         {otherTyping && (
-  <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
-    <div style={{ width:26, height:26, borderRadius:'50%', background:otherUser?.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontSize:10, overflow:'hidden' }}>
+  <div style={{ display:'flex', alignItems:'flex-end', gap:8, marginBottom:8, animation:'fadeIn 0.3s ease' }}>
+    <div style={{ width:28, height:28, borderRadius:'50%', background:otherUser?.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontSize:11, overflow:'hidden', flexShrink:0 }}>
       {otherUser?.avatarUrl ? <img src={otherUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/> : otherUser?.avatar}
     </div>
-    <div style={{ background:'rgba(255,255,255,0.09)', borderRadius:'18px 18px 18px 4px', padding:'10px 14px', display:'flex', gap:4, alignItems:'center' }}>
-      {[0,1,2].map(i => (
-        <div key={i} style={{ width:6, height:6, borderRadius:'50%', background:'rgba(255,255,255,0.5)', animation:`pulse 1.2s ease ${i*0.2}s infinite` }}/>
+    <div style={{ background:'rgba(255,255,255,0.09)', borderRadius:'18px 18px 18px 4px', padding:'12px 16px', display:'flex', gap:5, alignItems:'center', border:'1px solid rgba(255,255,255,0.06)' }}>
+      {[0,1,2].map(i=>(
+        <div key={i} style={{ width:7, height:7, borderRadius:'50%', background:'rgba(255,255,255,0.6)',
+          animation:`pulse 1.4s ease ${i*0.22}s infinite`,
+          transform:`scaleY(${1})` }}/>
       ))}
     </div>
+    <span style={{ color:'rgba(255,255,255,0.25)', fontSize:10, marginBottom:4 }}>typing...</span>
   </div>
 )}
         <div ref={bottomRef}/>
@@ -4154,17 +4399,30 @@ const TabIcon = ({id, active, currentUser}) => {
         )}
       </div>
 
-      <div style={{ display:'flex', background:'rgba(8,8,8,0.97)', borderTop:'1px solid rgba(255,255,255,0.06)', padding:'12px 8px max(24px, env(safe-area-inset-bottom))', flexShrink:0, backdropFilter:'blur(20px)' }}>
+      <div style={{ display:'flex', background:'rgba(6,6,8,0.98)', borderTop:'1px solid rgba(255,255,255,0.05)', padding:`10px 4px max(26px, env(safe-area-inset-bottom))`, flexShrink:0, backdropFilter:'blur(30px)', WebkitBackdropFilter:'blur(30px)' }}>
         {tabs.map(tab=>{
-  const isActive=activeTab===tab.id;
-  const tabLabels = { home: t?.home||'Home', friends: t?.friends||'Friends', create: t?.create||'Create', inbox: t?.inbox||'Inbox', profile: t?.profile||'Profile' };
-  return (
-    <button key={tab.id} onClick={()=>{   if(tab.id==='create'){     setShowCamera(true);   } else {     setActiveTab(tab.id);   } }} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:3, background:'none', border:'none', cursor:'pointer', padding:'4px 0', position:'relative', transition:'transform 0.15s' }}>
-      <TabIcon id={tab.id} active={isActive} currentUser={currentUser} />
-      {tab.id !== 'create' && <span style={{fontSize:9, color:isActive?'#ff2d55':'rgba(255,255,255,0.3)', fontWeight:isActive?700:400}}>{tabLabels[tab.id]}</span>}
-    </button>
-  );
-})}
+          const isActive = activeTab===tab.id;
+          const tabLabels = { home: t?.home||'Home', friends: t?.friends||'Friends', create: t?.create||'Create', inbox: t?.inbox||'Inbox', profile: t?.profile||'Profile' };
+          return (
+            <button key={tab.id}
+              onClick={()=>{ haptic('light'); if(tab.id==='create'){ setShowCamera(true); } else { setActiveTab(tab.id); } }}
+              style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:2, background:'none', border:'none', cursor:'pointer', padding: tab.id==='create'?'0':'6px 0', position:'relative',
+                transform: isActive && tab.id!=='create' ? 'translateY(-1px)' : 'translateY(0)',
+                transition:'transform 0.2s cubic-bezier(0.34,1.56,0.64,1)' }}>
+              <div style={{ position:'relative' }}>
+                <TabIcon id={tab.id} active={isActive} currentUser={currentUser} />
+                {isActive && tab.id!=='create' && (
+                  <div style={{ position:'absolute', bottom:-6, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#ff2d55', animation:'bounceIn 0.3s ease' }} />
+                )}
+              </div>
+              {tab.id !== 'create' && (
+                <span style={{ fontSize:9, color:isActive?'#ff2d55':'rgba(255,255,255,0.28)', fontWeight:isActive?800:400, transition:'color 0.2s', letterSpacing:0.3 }}>
+                  {tabLabels[tab.id]}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
 {notifPopup && (
