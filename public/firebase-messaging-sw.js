@@ -16,8 +16,8 @@ messaging.onBackgroundMessage((payload) => {
   const { title, body, icon } = payload.notification;
   self.registration.showNotification(title, {
     body,
-    icon: icon || '/logo192.png',
-    badge: '/logo192.png',
+    icon: icon || 'https://res.cloudinary.com/dotvhzjmc/image/upload/w_192,h_192,c_fill/znfksngv27boh3c1kxpv.png',
+badge: 'https://res.cloudinary.com/dotvhzjmc/image/upload/w_96,h_96,c_fill/znfksngv27boh3c1kxpv.png',
     data: payload.data,
     actions: [
       { action: 'open', title: 'Open' },
