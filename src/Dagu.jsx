@@ -69,14 +69,14 @@ const TOP_CATEGORIES = [
 
 const EMOJI_LIST = ['😀','😂','😍','🥰','😎','🤔','😭','😱','🔥','❤️','👍','🎉','✨','💯','🙌','👏','🤝','💪','🎵','📸'];
 const TRANSLATIONS = {
-  en: { home:'For You', friends:'Friends', inbox:'Messages', profile:'Profile', create:'Create', foryou:'For You', skills:'Skills', jobs:'Jobs' },
-  am: { home:'ለእርስዎ', friends:'ጓደኞች', inbox:'መልዕክቶች', profile:'መገለጫ', create:'ፍጠር', foryou:'ለእርስዎ', skills:'ችሎታዎች', jobs:'ስራዎች' },
-  ar: { home:'لك', friends:'أصدقاء', inbox:'رسائل', profile:'الملف', create:'إنشاء', foryou:'لك', skills:'مهارات', jobs:'وظائف' },
-  fr: { home:'Pour vous', friends:'Amis', inbox:'Messages', profile:'Profil', create:'Créer', foryou:'Pour vous', skills:'Compétences', jobs:'Emplois' },
-  es: { home:'Para ti', friends:'Amigos', inbox:'Mensajes', profile:'Perfil', create:'Crear', foryou:'Para ti', skills:'Habilidades', jobs:'Empleos' },
-  pt: { home:'Para você', friends:'Amigos', inbox:'Mensagens', profile:'Perfil', create:'Criar', foryou:'Para você', skills:'Habilidades', jobs:'Empregos' },
-  hi: { home:'आपके लिए', friends:'दोस्त', inbox:'संदेश', profile:'प्रोफ़ाइल', create:'बनाएं', foryou:'आपके लिए', skills:'कौशल', jobs:'नौकरियाँ' },
-  zh: { home:'为你', friends:'朋友', inbox:'消息', profile:'我的', create:'创建', foryou:'为你', skills:'技能', jobs:'工作' },
+  en: { home:'For You', friends:'Friends', inbox:'Messages', profile:'Profile', create:'Create', foryou:'For You', skills:'Skills', jobs:'Jobs', post:'Post', cancel:'Cancel', save:'Save', follow:'+ Follow', unfollow:'Following', message:'Message', settings:'Settings', logout:'Log Out', editProfile:'Edit Profile', search:'Search anything...', noVideos:'No videos yet. Be the first to post!', addComment:'Add a comment...', noMessages:'No messages yet', startChat:'Go to a profile and tap Message to start', notifications:'Notifications', markRead:'Mark all read', wallet:'Wallet', analytics:'Analytics', badges:'Badges', premium:'Premium' },
+  am: { home:'ለእርስዎ', friends:'ጓደኞች', inbox:'መልዕክቶች', profile:'መገለጫ', create:'ፍጠር', foryou:'ለእርስዎ', skills:'ችሎታዎች', jobs:'ስራዎች', post:'ለጥፍ', cancel:'ሰርዝ', save:'አስቀምጥ', follow:'+ ተከተል', unfollow:'እየተከተሉ ነው', message:'መልዕክት', settings:'ቅንብሮች', logout:'ውጣ', editProfile:'መገለጫ አርትዕ', search:'ፈልግ...', noVideos:'ምንም ቪዲዮ የለም።', addComment:'አስተያየት ጨምር...', noMessages:'ምንም መልዕክቶች የሉም', startChat:'ወደ መገለጫ ሂድ እና መልዕክት ላክ', notifications:'ማሳወቂያዎች', markRead:'ሁሉንም እንደተነበበ ምልክት አድርግ', wallet:'ቦርሳ', analytics:'ትንተና', badges:'ሽልማቶች', premium:'ፕሪሚየም' },
+  ar: { home:'لك', friends:'أصدقاء', inbox:'رسائل', profile:'الملف', create:'إنشاء', foryou:'لك', skills:'مهارات', jobs:'وظائف', post:'نشر', cancel:'إلغاء', save:'حفظ', follow:'+ متابعة', unfollow:'تتابع', message:'رسالة', settings:'الإعدادات', logout:'تسجيل الخروج', editProfile:'تعديل الملف', search:'ابحث...', noVideos:'لا توجد مقاطع بعد.', addComment:'أضف تعليقاً...', noMessages:'لا رسائل بعد', startChat:'اذهب إلى ملف وأرسل رسالة', notifications:'الإشعارات', markRead:'تعليم الكل كمقروء', wallet:'المحفظة', analytics:'التحليلات', badges:'الشارات', premium:'مميز' },
+  fr: { home:'Pour vous', friends:'Amis', inbox:'Messages', profile:'Profil', create:'Créer', foryou:'Pour vous', skills:'Compétences', jobs:'Emplois', post:'Publier', cancel:'Annuler', save:'Enregistrer', follow:'+ Suivre', unfollow:'Abonné', message:'Message', settings:'Paramètres', logout:'Déconnexion', editProfile:'Modifier le profil', search:'Rechercher...', noVideos:'Aucune vidéo pour l\'instant.', addComment:'Ajouter un commentaire...', noMessages:'Aucun message', startChat:'Allez sur un profil et envoyez un message', notifications:'Notifications', markRead:'Tout marquer comme lu', wallet:'Portefeuille', analytics:'Analytique', badges:'Badges', premium:'Premium' },
+  es: { home:'Para ti', friends:'Amigos', inbox:'Mensajes', profile:'Perfil', create:'Crear', foryou:'Para ti', skills:'Habilidades', jobs:'Empleos', post:'Publicar', cancel:'Cancelar', save:'Guardar', follow:'+ Seguir', unfollow:'Siguiendo', message:'Mensaje', settings:'Ajustes', logout:'Cerrar sesión', editProfile:'Editar perfil', search:'Buscar...', noVideos:'Aún no hay videos.', addComment:'Añadir comentario...', noMessages:'Sin mensajes aún', startChat:'Ve a un perfil y envía un mensaje', notifications:'Notificaciones', markRead:'Marcar todo como leído', wallet:'Billetera', analytics:'Analíticas', badges:'Insignias', premium:'Premium' },
+  pt: { home:'Para você', friends:'Amigos', inbox:'Mensagens', profile:'Perfil', create:'Criar', foryou:'Para você', skills:'Habilidades', jobs:'Empregos', post:'Publicar', cancel:'Cancelar', save:'Salvar', follow:'+ Seguir', unfollow:'Seguindo', message:'Mensagem', settings:'Configurações', logout:'Sair', editProfile:'Editar perfil', search:'Pesquisar...', noVideos:'Nenhum vídeo ainda.', addComment:'Adicionar comentário...', noMessages:'Sem mensagens ainda', startChat:'Vá a um perfil e envie uma mensagem', notifications:'Notificações', markRead:'Marcar tudo como lido', wallet:'Carteira', analytics:'Análises', badges:'Emblemas', premium:'Premium' },
+  hi: { home:'आपके लिए', friends:'दोस्त', inbox:'संदेश', profile:'प्रोफ़ाइल', create:'बनाएं', foryou:'आपके लिए', skills:'कौशल', jobs:'नौकरियाँ', post:'पोस्ट करें', cancel:'रद्द करें', save:'सहेजें', follow:'+ फ़ॉलो', unfollow:'फ़ॉलोइंग', message:'संदेश', settings:'सेटिंग्स', logout:'लॉग आउट', editProfile:'प्रोफ़ाइल संपादित करें', search:'कुछ भी खोजें...', noVideos:'अभी कोई वीडियो नहीं।', addComment:'टिप्पणी जोड़ें...', noMessages:'अभी कोई संदेश नहीं', startChat:'किसी प्रोफ़ाइल पर जाएं और संदेश भेजें', notifications:'सूचनाएं', markRead:'सभी को पढ़ा हुआ चिह्नित करें', wallet:'वॉलेट', analytics:'विश्लेषण', badges:'बैज', premium:'प्रीमियम' },
+  zh: { home:'为你', friends:'朋友', inbox:'消息', profile:'我的', create:'创建', foryou:'为你', skills:'技能', jobs:'工作', post:'发布', cancel:'取消', save:'保存', follow:'+ 关注', unfollow:'已关注', message:'消息', settings:'设置', logout:'退出登录', editProfile:'编辑资料', search:'搜索...', noVideos:'暂无视频。', addComment:'添加评论...', noMessages:'暂无消息', startChat:'前往用户资料并发送消息', notifications:'通知', markRead:'全部标为已读', wallet:'钱包', analytics:'分析', badges:'徽章', premium:'高级版' },
 };
 const formatNumber = (num) => {
   const n = Number(num) || 0;
@@ -851,7 +851,7 @@ const CommentInputBar = ({ currentUser, commentText, setCommentText, onSend, sho
       <div style={{display:'flex',gap:8,alignItems:'center'}}>
      <div style={{width:34,height:34,borderRadius:'50%',background:currentUser?.avatarColor,display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontWeight:'bold',fontSize:14,flexShrink:0,overflow:'hidden'}}>          {currentUser?.avatarUrl?<img src={currentUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/>:currentUser?.avatar}
         </div>
-        <input value={commentText} onChange={e=>setCommentText(e.target.value)} onKeyDown={e=>e.key==='Enter'&&handleSend()} placeholder={isRecording?`🔴 ${fmt(recordSecs)}`:'Add a comment...'} style={{flex:1,background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:28,padding:'10px 14px',color:'white',outline:'none',fontSize:13}}/>
+        <input value={commentText} onChange={e=>setCommentText(e.target.value)} onKeyDown={e=>e.key==='Enter'&&handleSend()} placeholder={isRecording?`🔴 ${fmt(recordSecs)}`:t?.addComment||'Add a comment...'} style={{flex:1,background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:28,padding:'10px 14px',color:'white',outline:'none',fontSize:13}}/>
         <button onClick={()=>fileInputRef.current?.click()} style={{background:'rgba(255,255,255,0.07)',border:'none',borderRadius:'50%',width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0}}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
         </button>
@@ -1183,7 +1183,7 @@ const NotifBellButton = ({ onOpenNotifications, currentUser }) => {
   return (
     <button onClick={onOpenNotifications} style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(10px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', position:'relative' }}>
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
-      {unread>0 && <div style={{ position:'absolute', top:6, right:6, width:8, height:8, background:'#ff2d55', borderRadius:'50%', border:'1.5px solid #000' }} />}
+      {unread>0 && <div style={{ position:'absolute', top:-4, right:-4, minWidth:18, height:18, background:'#ff2d55', borderRadius:9, border:'1.5px solid #000', display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, color:'white', fontWeight:800, padding:'0 3px' }}>{unread>9?'9+':unread}</div>}
     </button>
   );
 };
@@ -1204,7 +1204,7 @@ const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, 
     if(Math.abs(dy)>50){if(dy>0) setCurrentIndex(i=>Math.min(filteredVideos.length-1,i+1)); else setCurrentIndex(i=>Math.max(0,i-1));}
     startY.current=null;
   };
-  if(!filteredVideos.length) return <div style={{ height:'100%', display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:12 }}><div style={{ fontSize:48 }}>📭</div><div style={{ color:'rgba(255,255,255,0.3)' }}>No videos yet. Be the first to post!</div></div>;
+  if(!filteredVideos.length) return <div style={{ height:'100%', display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:12 }}><div style={{ fontSize:48 }}>📭</div><div style={{ color:'rgba(255,255,255,0.3)' }}>{t?.noVideos||'No videos yet. Be the first to post!'}</div></div>;
   return (
     <div style={{ height:'100%', position:'relative', overflow:'hidden' }} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
       <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:15, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'48px 16px 12px', background:'linear-gradient(to bottom,rgba(0,0,0,0.7) 0%,transparent 100%)' }}>
@@ -2228,6 +2228,14 @@ unsub = onSnapshot(q, (snap) => {
         [`unread_${otherUser.id}`]: increment(1) 
       },{ merge:true });
       clearAttach();
+      addDoc(collection(db,'notifications'),{
+        toUserId: otherUser.id,
+        fromUserId: currentUser.id,
+        type: 'message',
+        message: 'sent you a message',
+        read: false,
+        createdAt: serverTimestamp(),
+      }).catch(()=>{});
     } catch(e){
       showToast?.('Failed to send: ' + e.message, 'error');
       if(msg) setText(msg);
@@ -2279,11 +2287,11 @@ unsub = onSnapshot(q, (snap) => {
           const isMine = msg.from===currentUser?.id;
           return (
             <div key={msg.id} style={{display:'flex',justifyContent:isMine?'flex-end':'flex-start',alignItems:'flex-end',gap:8,marginBottom:10}}>
-               {!isMine && (
-  <div onClick={()=>onViewProfile?.(otherUser?.id)} style={{...}}>
-    {otherUser?.avatarUrl ? <img .../> : otherUser?.avatar}
-  </div>
-)}
+  {!isMine && (
+    <div onClick={()=>onViewProfile?.(otherUser?.id)} style={{width:26,height:26,borderRadius:'50%',background:otherUser?.avatarColor||'#555',display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontWeight:'bold',fontSize:10,flexShrink:0,cursor:'pointer',overflow:'hidden'}}>
+      {otherUser?.avatarUrl ? <img src={otherUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/> : otherUser?.avatar}
+    </div>
+  )}
                   {otherUser?.avatarUrl?<img src={otherUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/>:otherUser?.avatar}
                 </div>
               )}
@@ -2302,6 +2310,9 @@ unsub = onSnapshot(q, (snap) => {
                   </div>
                 )}
               </div>
+              {isMine && (
+                <button onClick={async()=>{ if(window.confirm('Delete this message?')) await deleteDoc(doc(db,'messages',conversationId,'msgs',msg.id)); }} style={{background:'none',border:'none',color:'rgba(255,45,85,0.4)',fontSize:10,cursor:'pointer',padding:'0 2px',alignSelf:'flex-end',marginBottom:2}}>✕</button>
+              )}
             </div>
           );
         })}
@@ -2447,7 +2458,7 @@ const InboxPage = ({ t, users, currentUser, showToast, onViewProfile, initialTar
         <div style={{ color:'white', fontWeight:800, fontSize:22, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{t?.inbox||'Messages'}</div>
       </div>
       <div style={{ flex:1, overflowY:'auto' }}>
-        {convUsers.length===0 && <div style={{textAlign:'center',padding:60,color:'rgba(255,255,255,0.2)'}}><div style={{fontSize:44,marginBottom:12}}>💬</div><div style={{fontSize:14}}>No messages yet</div><div style={{fontSize:12,marginTop:6,color:'rgba(255,255,255,0.12)'}}>Go to a profile and tap Message to start</div></div>}
+        {convUsers.length===0 && <div style={{textAlign:'center',padding:60,color:'rgba(255,255,255,0.2)'}}><div style={{fontSize:44,marginBottom:12}}>💬</div><div style={{fontSize:14}}>{t?.noMessages||'No messages yet'}</div><div style={{fontSize:12,marginTop:6,color:'rgba(255,255,255,0.12)'}}>{t?.startChat||'Go to a profile and tap Message to start'}</div></div>}
         {convUsers.map(u=>{
           const convId = getConversationId(currentUser.id, u.id);
           const conv = conversations.find(c=>c.id===convId);
@@ -3219,9 +3230,10 @@ const AuthScreen = ({ onLogin }) => {
   // Check if a user doc with this email already exists (e.g. from a previous signup)
   const emailSnap = await getDocs(query(collection(db,'users'), where('email','==',fbUser.email||'')));
   if(!emailSnap.empty){
-    // Profile exists under a different UID mapping — reuse it
-    profile = emailSnap.docs[0].data();
-    profile.id = emailSnap.docs[0].id;
+    profile = { ...emailSnap.docs[0].data(), id: emailSnap.docs[0].id };
+    onLogin({...profile, id: fbUser.uid});
+    setLoading(false);
+    return;
   } else {
     const baseUsername = (fbUser.displayName||fbUser.email||'user')
       .split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g,'');
@@ -3276,6 +3288,9 @@ if(!result.user.emailVerified && !isNewAccount){
     } else {
       if(!username){ setError('Username required'); setLoading(false); return; }
       if(!fullName){ setError('Full name required'); setLoading(false); return; }
+      if(!birthdate){ setError('Date of birth is required'); setLoading(false); return; }
+      const ageMs = Date.now() - new Date(birthdate).getTime();
+      if(ageMs < 13*365.25*24*60*60*1000){ setError('You must be at least 13 years old to sign up'); setLoading(false); return; }
 
       const usersSnap = await getDocs(query(collection(db,'users'), where('username','==',username)));
       if(!usersSnap.empty){ setError('Username already taken'); setLoading(false); return; }
@@ -3386,6 +3401,8 @@ if(step==='otp') return (
           try {
             const result = await createUserWithEmailAndPassword(auth, pendingCreds.email, pendingCreds.password);
             await sendEmailVerification(result.user);
+            const existingProfile = await getUserProfile(result.user.uid);
+            if(existingProfile){ onLogin({...existingProfile, id: result.user.uid}); setLoading(false); return; }
 
 await createUserProfile(result.user.uid, {
   username: pendingCreds.username,
@@ -3528,14 +3545,32 @@ return (
           {!isLogin && <>
             <input placeholder="Full Name" value={fullName} onChange={e=>setFullName(e.target.value)} style={{ width:'100%', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:'13px 16px', color:'white', marginBottom:10, outline:'none', fontSize:14, boxSizing:'border-box' }} />
             <input placeholder="Username" value={username} onChange={e=>setUsername(e.target.value)} style={{ width:'100%', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:'13px 16px', color:'white', marginBottom:10, outline:'none', fontSize:14, boxSizing:'border-box' }} />
-            <div style={{position:'relative',marginBottom:10}}>
-              <label style={{position:'absolute',top:'-10px',left:12,background:'#0a0a0a',color:'rgba(255,255,255,0.4)',fontSize:11,padding:'0 4px',fontWeight:600,textTransform:'uppercase',letterSpacing:0.5}}>Date of Birth</label>
-              <input type="date" value={birthdate} onChange={e=>setBirthdate(e.target.value)} max={new Date(Date.now()-13*365*24*60*60*1000).toISOString().split('T')[0]} style={{ width:'100%', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:'13px 16px', color:birthdate?'white':'rgba(255,255,255,0.3)', outline:'none', fontSize:14, boxSizing:'border-box', colorScheme:'dark' }} />
+            <div style={{marginBottom:10}}>
+              <div style={{color:'rgba(255,255,255,0.4)',fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:0.5,marginBottom:7}}>Date of Birth *</div>
+              <div style={{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:16,padding:'8px 4px',display:'flex',gap:0,position:'relative'}}>
+                <div style={{position:'absolute',top:'50%',left:8,right:8,height:36,background:'rgba(255,45,85,0.08)',borderRadius:10,transform:'translateY(-50%)',pointerEvents:'none',border:'1px solid rgba(255,45,85,0.2)'}}/>
+                {[
+                  {label:'Month',items:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],val:birthdate?parseInt(birthdate.split('-')[1])-1:0,set:(i)=>{ const p=birthdate||'2000-01-01'; const parts=p.split('-'); parts[1]=String(i+1).padStart(2,'0'); setBirthdate(parts.join('-')); }},
+                  {label:'Day',items:Array.from({length:31},(_,i)=>String(i+1)),val:birthdate?parseInt(birthdate.split('-')[2])-1:0,set:(i)=>{ const p=birthdate||'2000-01-01'; const parts=p.split('-'); parts[2]=String(i+1).padStart(2,'0'); setBirthdate(parts.join('-')); }},
+                  {label:'Year',items:Array.from({length:100},(_,i)=>String(new Date().getFullYear()-13-i)),val:birthdate?Array.from({length:100},(_,i)=>String(new Date().getFullYear()-13-i)).indexOf(birthdate.split('-')[0]):0,set:(i)=>{ const p=birthdate||'2000-01-01'; const parts=p.split('-'); parts[0]=String(new Date().getFullYear()-13-i); setBirthdate(parts.join('-')); }},
+                ].map(col=>(
+                  <div key={col.label} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center'}}>
+                    <div style={{color:'rgba(255,255,255,0.3)',fontSize:9,fontWeight:700,textTransform:'uppercase',letterSpacing:0.5,marginBottom:4}}>{col.label}</div>
+                    <div style={{height:108,overflowY:'auto',width:'100%',scrollSnapType:'y mandatory',WebkitOverflowScrolling:'touch'}}>
+                      {col.items.map((item,i)=>(
+                        <div key={item} onClick={()=>col.set(i)} style={{height:36,display:'flex',alignItems:'center',justifyContent:'center',fontSize:i===col.val?15:12,fontWeight:i===col.val?800:400,color:i===col.val?'white':'rgba(255,255,255,0.3)',cursor:'pointer',scrollSnapAlign:'start',transition:'all 0.15s'}}>
+                          {item}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </>}
           <input placeholder="Email" value={identifier} onChange={e=>setIdentifier(e.target.value)} style={{ width:'100%', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:'13px 16px', color:'white', marginBottom:10, outline:'none', fontSize:14, boxSizing:'border-box' }} />
           <input type="password" placeholder="Password" value={password} onChange={e=>setPassword(e.target.value)} style={{ width:'100%', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:'13px 16px', color:'white', marginBottom:14, outline:'none', fontSize:14, boxSizing:'border-box' }} />
-          <button onClick={handleSubmit} disabled={loading||!identifier||!password||(!isLogin&&(!username||!fullName))} style={{ width:'100%', background:'linear-gradient(135deg,#ff2d55,#af52de)', border:'none', borderRadius:24, padding:15, color:'white', fontWeight:700, cursor:'pointer', fontSize:15, opacity:(loading||!identifier||!password)?0.5:1, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>
+          <button onClick={handleSubmit} disabled={loading||!identifier||!password||(!isLogin&&(!username||!fullName||!birthdate))} style={{ width:'100%', background:'linear-gradient(135deg,#ff2d55,#af52de)', border:'none', borderRadius:24, padding:15, color:'white', fontWeight:700, cursor:'pointer', fontSize:15, opacity:(loading||!identifier||!password)?0.5:1, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>
             {loading?'Please wait...':'Continue'}
           </button>
           {isLogin && (
@@ -3594,7 +3629,7 @@ const NotificationsPage = ({ currentUser, users, videos, onClose, onViewProfile 
   return (
     <div style={{ position:'fixed', inset:0, background:'#0a0a0a', zIndex:300, display:'flex', flexDirection:'column' }}>
       <div style={{ padding:'16px 16px 12px', borderBottom:'1px solid rgba(255,255,255,0.06)', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-        <div style={{ color:'white', fontWeight:800, fontSize:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Notifications</div>
+        <div style={{ color:'white', fontWeight:800, fontSize:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{t?.notifications||'Notifications'}</div>
         <div style={{ display:'flex', gap:10, alignItems:'center' }}>
           {unreadCount>0 && <button onClick={markAllRead} style={{ background:'rgba(255,45,85,0.1)', border:'1px solid rgba(255,45,85,0.2)', borderRadius:20, padding:'5px 12px', color:'#ff2d55', fontSize:11, fontWeight:700, cursor:'pointer' }}>Mark all read</button>}
           <button onClick={onClose} style={{ background:'rgba(255,255,255,0.07)', border:'none', borderRadius:'50%', width:32, height:32, color:'white', cursor:'pointer', fontSize:16 }}>✕</button>
@@ -3849,7 +3884,21 @@ const handleMessage = uid => {
   const tabs = [
     {id:'home'},{id:'friends'},{id:'create'},{id:'inbox'},{id:'profile'},
   ];
-
+const InboxBadge = ({ currentUser }) => {
+  const [unread, setUnread] = useState(0);
+  useEffect(()=>{
+    if(!currentUser?.id) return;
+    const q = query(collection(db,'conversations'), where('participants','array-contains',currentUser.id));
+    const unsub = onSnapshot(q, snap=>{
+      const total = snap.docs.reduce((s,d)=>s+(d.data()[`unread_${currentUser.id}`]||0),0);
+      setUnread(total);
+    },()=>{});
+    return ()=>unsub();
+  },[currentUser?.id]);
+  if(!unread) return null;
+  return <div style={{ position:'absolute', top:-4, right:-4, minWidth:16, height:16, background:'#ff2d55', borderRadius:8, border:'1.5px solid #0a0a0a', display:'flex', alignItems:'center', justifyContent:'center', fontSize:9, color:'white', fontWeight:800, padding:'0 3px' }}>{unread>9?'9+':unread}</div>;
+};
+const TabIcon = ({id, active, currentUser}) => {
   const TabIcon = ({id,active}) => {
     const color = active ? '#ff2d55' : 'rgba(255,255,255,0.35)';
     const sw = active ? 2.2 : 1.8;
@@ -3874,7 +3923,7 @@ const handleMessage = uid => {
     if(id==='inbox') return (
       <div style={{ position:'relative' }}>
         <svg viewBox="0 0 24 24" style={s}><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-        <div style={{ position:'absolute', top:-2, right:-4, width:8, height:8, background:'#ff2d55', borderRadius:'50%', border:'1.5px solid #0a0a0a' }} />
+        <InboxBadge currentUser={currentUser} />
         {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#ff2d55' }} />}
       </div>
     );
@@ -3999,7 +4048,7 @@ const handleMessage = uid => {
   const tabLabels = { home: t?.home||'Home', friends: t?.friends||'Friends', create: t?.create||'Create', inbox: t?.inbox||'Inbox', profile: t?.profile||'Profile' };
   return (
     <button key={tab.id} onClick={()=>{   if(tab.id==='create'){     setShowCamera(true);   } else {     setActiveTab(tab.id);   } }} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:3, background:'none', border:'none', cursor:'pointer', padding:'4px 0', position:'relative', transition:'transform 0.15s' }}>
-      <TabIcon id={tab.id} active={isActive} />
+      <TabIcon id={tab.id} active={isActive} currentUser={currentUser} />
       {tab.id !== 'create' && <span style={{fontSize:9, color:isActive?'#ff2d55':'rgba(255,255,255,0.3)', fontWeight:isActive?700:400}}>{tabLabels[tab.id]}</span>}
     </button>
   );
