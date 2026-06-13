@@ -4,19 +4,17 @@
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0a0a0a",
-  "theme_color": "#ff2d55",
-  "orientation": "portrait",
+  "theme_color": "#0a0a0a",
   "icons": [
     {
-      "src": "https://res.cloudinary.com/dotvhzjmc/image/upload/w_192,h_192,c_fill/znfksngv27boh3c1kxpv.png",
+      "src": "https://res.cloudinary.com/dotvhzjmc/image/upload/znfksngv27boh3c1kxpv.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "https://res.cloudinary.com/dotvhzjmc/image/upload/w_512,h_512,c_fill/znfksngv27boh3c1kxpv.png",
+      "src": "https://res.cloudinary.com/dotvhzjmc/image/upload/znfksngv27boh3c1kxpv.png",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     }
   ]
 }
