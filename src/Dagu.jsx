@@ -373,7 +373,7 @@ const Stories = ({ users, currentUser, onViewStory, onCreateStory, onLive }) => 
       <span style={{ color:'rgba(255,255,255,0.5)', fontSize:11 }}>Your story</span>
     </div>
     <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5, flexShrink:0 }}>
-      <button onClick={() => onViewStory?.({ userId: currentUser?.id, text:`${currentUser?.username}'s story`, bgColor:'#ff2d55' })} style={{ padding:0, background:'none', border:'none', cursor:'pointer' }}>
+      <button onClick={async () => {   const snap = await getDocs(query(collection(db,'stories'), where('userId','==',currentUser?.id), orderBy('createdAt','desc'), limit(1)));   if(!snap.empty) onViewStory?.({...snap.docs[0].data(), id: snap.docs[0].id});   else onCreateStory?.(); }} style={{ padding:0, background:'none', border:'none', cursor:'pointer' }}>
         <div className="story-avatar-ring" style={{ width:66, height:66, borderRadius:'50%' }}>
           <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:'#0a0a0a', padding:2, display:'flex', alignItems:'center', justifyContent:'center' }}>
             <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:currentUser?.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:20, overflow:'hidden' }}>
@@ -386,7 +386,11 @@ const Stories = ({ users, currentUser, onViewStory, onCreateStory, onLive }) => 
     </div>
     {users.filter(u => u.id !== currentUser?.id && (currentUser?.following||[]).includes(u.id)).map(u => (
       <div key={u.id} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5, flexShrink:0 }}>
-        <button onClick={() => onViewStory?.({ userId:u.id, text:`${u.username}'s story`, bgColor:'#1a1a2e' })} style={{ padding:0, background:'none', border:'none', cursor:'pointer' }}>
+        <button onClick={async () => {
+        const snap = await getDocs(query(collection(db,'stories'), where('userId','==',currentUser?.id), orderBy('createdAt','desc'), limit(1)));
+        if(!snap.empty) onViewStory?.({...snap.docs[0].data(), id: snap.docs[0].id});
+        else onCreateStory?.();
+      }} style={{ padding:0, background:'none', border:'none', cursor:'pointer' }}>
           <div className="story-avatar-ring" style={{ width:66, height:66, borderRadius:'50%' }}>
             <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:'#0a0a0a', padding:2, display:'flex', alignItems:'center', justifyContent:'center' }}>
               <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:u.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:20, overflow:'hidden' }}>
@@ -2520,9 +2524,9 @@ const CallModal = ({ type, contactName, contactAvatar, contactId, currentUser, o
   const localStreamRef = useRef(null);
   const callDocId = useRef(callDocIdProp || [currentUser?.id, contactId].sort().join('_'));
 
+  const unsubAnswerRef = useRef(()=>{});
+  const unsubCandidatesRef = useRef(()=>{});
   useEffect(() => {
-    let unsubAnswer = ()=>{};
-    let unsubCandidates = ()=>{};
 
     const startCall = async () => {
       try {
@@ -2642,8 +2646,8 @@ if (isCallee) {
     startCall();
 
     return () => {
-      unsubAnswer();
-      unsubCandidates();
+      unsubAnswerRef.current();
+      unsubCandidatesRef.current();
       localStreamRef.current?.getTracks().forEach(t => t.stop());
       pcRef.current?.close();
       const cleanupCall = async () => {
@@ -3932,40 +3936,6 @@ const TabIcon = ({id, active, currentUser}) => {
   );
   return null;
 };
-    const sw = active ? 2.2 : 1.8;
-    const s = {width:26,height:26,fill:'none',stroke:color,strokeWidth:sw,strokeLinecap:'round',strokeLinejoin:'round'};
-    if(id==='home') return (
-      <div style={{ position:'relative' }}>
-        <svg viewBox="0 0 24 24" style={s}><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-        {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#ff2d55' }} />}
-      </div>
-    );
-    if(id==='friends') return (
-      <div style={{ position:'relative' }}>
-        <svg viewBox="0 0 24 24" style={s}><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-        {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#ff2d55' }} />}
-      </div>
-    );
-    if(id==='create') return (
-      <div style={{ width:52, height:34, background:'linear-gradient(135deg,#ff2d55,#af52de)', borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 4px 16px rgba(255,45,85,0.4)' }}>
-        <svg viewBox="0 0 24 24" style={{ width:22,height:22,stroke:'white',fill:'none',strokeWidth:2.5,strokeLinecap:'round' }}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      </div>
-    );
-    if(id==='inbox') return (
-      <div style={{ position:'relative' }}>
-        <svg viewBox="0 0 24 24" style={s}><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-        <InboxBadge currentUser={currentUser} />
-        {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#ff2d55' }} />}
-      </div>
-    );
-    if(id==='profile') return (
-      <div style={{ position:'relative' }}>
-        <svg viewBox="0 0 24 24" style={{...s,fill:active?'rgba(255,45,85,0.15)':''}}><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#ff2d55' }} />}
-      </div>
-    );
-    return null;
-  };
 
   if(authLoading) return (
     <div style={{ maxWidth:430, margin:'0 auto', height:'100dvh', background:'#0a0a0a', display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:16 }}>
