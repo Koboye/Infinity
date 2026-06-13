@@ -3298,7 +3298,7 @@ const SearchOverlay = ({ onClose, videos, users, onViewProfile }) => {
             .slice(0,8)
             .map(tag=>(
             <div key={tag} onClick={()=>setQuery(tag)} style={{ padding:'12px 16px', background:'rgba(255,255,255,0.03)', borderRadius:14, marginBottom:8, color:'#007aff', fontSize:15, fontWeight:700, border:'1px solid rgba(255,255,255,0.05)', cursor:'pointer', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{tag}</div>
-          )))}
+          ))}
         </div>
       )}
     </div>
