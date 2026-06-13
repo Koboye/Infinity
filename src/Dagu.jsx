@@ -1024,7 +1024,7 @@ const VideoProgressBar = ({ videoRef, isActive, isImage }) => {
   );
 };
 /* ─────────────── ENHANCED VIDEO CARD ─────────────── */
-const EnhancedVideoCard = memo(({ video, currentUser, isActive, onLike, onComment, onShare, onFollow, onMessage, onVoiceCall, onVideoCall, onDuet, onStitch, onSaveSound, followed, showToast, onViewProfile, onBlock }) => {
+const EnhancedVideoCard = memo(({ video, currentUser, isActive, onLike, onComment, onShare, onFollow, onMessage, onVoiceCall, onVideoCall, onDuet, onStitch, onSaveSound, followed, showToast, onViewProfile, onBlock, onLive }) => {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(video?.likes||0);
   const [showComments, setShowComments] = useState(false);
@@ -1241,7 +1241,7 @@ const handleLongPressStart = () => {
           <div style={{ fontSize:80, animation:'heartBurst 0.9s ease forwards' }}>❤️</div>
         </div>
       )}
-      <div style={{ position:'absolute', bottom:80, left:14, right:70, zIndex:5 }}>
+      <div style={{ position:'absolute', bottom:20, left:14, right:70, zIndex:5 }}
         <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:10 }}>
           <button onClick={()=>onViewProfile?.(video.userId)} style={{ position:'relative', background:'none', border:'none', cursor:'pointer', padding:0 }}>
             <div style={{ width:42, height:42, borderRadius:'50%', background:video.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:16, border:'2px solid rgba(255,255,255,0.5)', overflow:'hidden' }}>
@@ -1271,7 +1271,8 @@ const handleLongPressStart = () => {
             {[
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>, label:'Duet', fn:()=>onDuet?.(video.id)},
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M15 14l5-5-5-5"/><path d="M4 20v-7a4 4 0 014-4h12"/></svg>, label:'Stitch', fn:()=>onStitch?.(video.id)},
-              {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>, label:'Message', fn:()=>onMessage?.(video.userId)},
+              {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff2d55" strokeWidth="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>, label:'Live', fn:()=>onLive?.()},
+{icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>, label:'Message', fn:()=>onMessage?.(video.userId)},
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-5.99-5.99 19.79 19.79 0 01-3.07-8.67A2 2 0 014 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>, label:'Voice Call', fn:()=>onVoiceCall?.(video.userId)},
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>, label:'Video Call', fn:()=>onVideoCall?.(video.userId)},
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff9500" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>, label:'Report', fn:()=>{ setShowReportModal(true); setShowActionMenu(false); }},
@@ -1301,7 +1302,7 @@ const handleLongPressStart = () => {
         </div>
       )}
 
-      <div style={{ position:'absolute', right:12, bottom:80, display:'flex', flexDirection:'column', alignItems:'center', gap:6, zIndex:6 }}>
+      <div style={{ position:'absolute', right:12, bottom:20, display:'flex', flexDirection:'column', alignItems:'center', gap:6, zIndex:6 }}>
        <button onClick={e=>{e.stopPropagation();haptic('medium');handleLike();}}
           style={{ background:'rgba(0,0,0,0.3)', border:'none', borderRadius:'50%', width:52, height:52, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer',
             transform: liked ? 'scale(1)' : 'scale(1)',
@@ -1339,7 +1340,7 @@ const handleLongPressStart = () => {
 
       {showComments && (
   <>
-  <div onClick={e=>{e.stopPropagation();setShowComments(false);}} style={{position:'fixed',inset:0,zIndex:8999,background:'rgba(0,0,0,0.5)'}}/>
+  <div onClick={()=>setShowComments(false)} style={{position:'fixed',inset:0,zIndex:8999,background:'rgba(0,0,0,0.5)'}}/>
   <div
     onClick={e => e.stopPropagation()}
     onTouchStart={e => e.stopPropagation()}
@@ -1475,6 +1476,7 @@ const handlePullEnd = async () => {
       showToast={showToast}
       onViewProfile={onViewProfile}
       onBlock={onBlock}
+onLive={onLive}
     />
   </div>
 ))}
@@ -3281,7 +3283,7 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
         avatarColor: currentUser.avatarColor || '#ff2d55',
         avatarUrl: currentUser.avatarUrl || null,
         verified: currentUser.verified || false,
-        description: description || 'New post! 🔥',
+        description: description,
         videoUrl: mediaUrl,
         mediaType: selectedFile.type,
         song: 'Original sound',
@@ -4252,8 +4254,7 @@ const handleLogout = async () => {
   const handleViewProfile = uid => { const user=users.find(u=>u.id===uid); if(user) setViewingProfile(user); };
   const [inboxTargetId, setInboxTargetId] = useState(null);
 const [activeConversation, setActiveConversation] = useState(() => {
-  try { return JSON.parse(sessionStorage.getItem('dagu_conv')||'null'); }
-  catch { return null; }
+  return null;
 });
 const handleMessage = uid => {
   if(!uid) return;
