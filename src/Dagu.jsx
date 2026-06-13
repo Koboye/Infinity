@@ -86,7 +86,7 @@ const TOP_CATEGORIES = [
 
 const EMOJI_LIST = ['😀','😂','😍','🥰','😎','🤔','😭','😱','🔥','❤️','👍','🎉','✨','💯','🙌','👏','🤝','💪','🎵','📸'];
 const TRANSLATIONS = {
-  en: { home:'For You', friends:'Friends', inbox:'Messages', profile:'Profile', create:'Create', foryou:'For You', skills:'Skills', jobs:'Jobs', post:'Post', cancel:'Cancel', save:'Save', follow:'+ Follow', unfollow:'Following', message:'Message', settings:'Settings', logout:'Log Out', editProfile:'Edit Profile', search:'Search anything...', noVideos:'No videos yet. Be the first to post!', addComment:'Add a comment...', noMessages:'No messages yet', startChat:'Go to a profile and tap Message to start', notifications:'Notifications', markRead:'Mark all read', wallet:'Wallet', analytics:'Analytics', badges:'Badges', premium:'Premium', live:'Go Live', report:'Report', block:'Block', duet:'Duet', stitch:'Stitch', voiceCall:'Voice Call', videoCall:'Video Call', pinned:'Pinned', reply:'Reply', pin:'Pin', retake:'Retake', newPost:'New Post', sounds:'Sounds', close:'Close', back:'Back', comments:'Comments' },
+  en: { home:'For You', friends:'Friends', inbox:'Messages', profile:'Profile', create:'Create', foryou:'For You', skills:'Skills', jobs:'Jobs', post:'Post', cancel:'Cancel', save:'Save', follow:'+ Follow', unfollow:'Following', message:'Message', settings:'Settings', logout:'Log Out', editProfile:'Edit Profile', search:'Search anything...', noVideos:'No videos yet. Be the first to post!', addComment:'Add a comment...', noMessages:'No messages yet', startChat:'Go to a profile and tap Message to start', notifications:'Notifications', markRead:'Mark all read', wallet:'Wallet', analytics:'Analytics', badges:'Badges', premium:'Premium', live:'Go Live', report:'Report', block:'Block', duet:'Duet', stitch:'Stitch', voiceCall:'Voice Call', videoCall:'Video Call', pinned:'Pinned', reply:'Reply', pin:'Pin', retake:'Retake', newPost:'New Post', sounds:'Sounds', close:'Close', back:'Back', comments:'Comments', posts:'Posts', followers:'Followers', following:'Following', language:'Language', privacy:'Privacy', deposit:'Deposit', withdraw:'Withdraw', convert:'Convert', transactions:'Transactions', noTransactions:'No transactions yet', coins:'Coins', cash:'Cash', openCamera:'Open Camera', uploadGallery:'Upload from Gallery', writeText:'Write Text', recordAudio:'Record Audio', addSound:'Add Sound', createShare:'Create & Share', expressYourself:'Express Yourself', noPosts:'No posts yet', noSaved:'Nothing saved yet', noDrafts:'No drafts yet', createFirst:'Create your first video!', online:'Online', offline:'Offline', typing:'typing...', startConvo:'Start the conversation! 👋', verified:'Verified', trending:'Trending', noResults:'No results found', shareProfile:'Share Profile', scanToFollow:'Scan to follow', weeklyViews:'Weekly Views', topVideos:'Top Videos', totalViews:'Total Views', totalLikes:'Total Likes', changePassword:'Change Password', emailPhone:'Email & Phone', switchAccount:'Switch Account', blockedUsers:'Blocked Users', helpCenter:'Help Center', reportProblem:'Report a Problem', termsOfService:'Terms of Service', privacyPolicy:'Privacy Policy', resetAccount:'Reset Account', deleteAccount:'Delete Account', logOut:'Log Out', version:'Version', madeWith:'Made with', noNotifications:'No notifications yet', markAllRead:'Mark all as read', calling:'Calling...', videoCalling:'Video calling...', connecting:'Connecting...', connected:'Connected', callDeclined:'Call declined', callFailed:'Call failed', you:'You', messagePlaceholder:'Message...', sayPlaceholder:'Say something...', lastSeen:'last seen', endCall:'End Call', mute:'Mute', unmute:'Unmute', cameraOn:'Camera On', cameraOff:'Camera Off', incomingCall:'Incoming Call', incomingVideoCall:'Incoming Video Call', incomingVoiceCall:'Incoming Voice Call', accept:'Accept', decline:'Decline' },
 am: { home:'ለእርስዎ', friends:'ጓደኞች', inbox:'መልዕክቶች', profile:'መገለጫ', create:'ፍጠር', foryou:'ለእርስዎ', skills:'ችሎታዎች', jobs:'ስራዎች', post:'ለጥፍ', cancel:'ሰርዝ', save:'አስቀምጥ', follow:'+ ተከተል', unfollow:'እየተከተሉ ነው', message:'መልዕክት', settings:'ቅንብሮች', logout:'ውጣ', editProfile:'መገለጫ አርትዕ', search:'ፈልግ...', noVideos:'ምንም ቪዲዮ የለም።', addComment:'አስተያየት ጨምር...', noMessages:'ምንም መልዕክቶች የሉም', startChat:'ወደ መገለጫ ሂድ እና መልዕክት ላክ', notifications:'ማሳወቂያዎች', markRead:'ሁሉንም እንደተነበበ ምልክት አድርግ', wallet:'ቦርሳ', analytics:'ትንተና', badges:'ሽልማቶች', premium:'ፕሪሚየም', live:'ቀጥታ', report:'ሪፖርት', block:'አግድ', duet:'ዱዌት', stitch:'ስቲች', voiceCall:'የድምፅ ጥሪ', videoCall:'ቪዲዮ ጥሪ', pinned:'ተሰክቷል', reply:'መልስ', pin:'ስክ', retake:'እንደገና', newPost:'አዲስ ለጥፍ', sounds:'ድምፆች', close:'ዝጋ', back:'ተመለስ', comments:'አስተያየቶች', posts:'ልጥፎች', followers:'ተከታዮች', following:'እየተከተሉ', language:'ቋንቋ', privacy:'ግላዊነት', wallet:'ቦርሳ', deposit:'ጨምር', withdraw:'አውጣ', convert:'ቀይር', transactions:'ግብይቶች', noTransactions:'ምንም ግብይቶች የሉም', coins:'ሳንቲሞች', cash:'ገንዘብ', openCamera:'ካሜራ ክፈት', uploadGallery:'ከጋለሪ ጫን', writeText:'ጽሁፍ ጻፍ', recordAudio:'ድምፅ ቅዳ', addSound:'ድምፅ ጨምር', createShare:'ፍጠር እና አጋራ', expressYourself:'እራስህን ግለፅ', noPosts:'ምንም ልጥፍ የለም', noSaved:'ምንም አልተቀመጠም', noDrafts:'ምንም ረቂቆች የሉም', createFirst:'የመጀመሪያ ቪዲዮህን ፍጠር!', online:'ኦንላይን', offline:'ኦፍላይን', typing:'እየተየፉ ነው...', startConvo:'ወግ ጀምር! 👋', verified:'የተረጋገጠ', trending:'አዝማሚያ', noResults:'ምንም ውጤት የለም', shareProfile:'መገለጫ አጋራ', scanToFollow:'ለመከተል ቅዱ', weeklyViews:'ሳምንታዊ እይታዎች', topVideos:'ምርጥ ቪዲዮዎች', totalViews:'ጠቅላላ እይታዎች', totalLikes:'ጠቅላላ ወደዶዎች', editProfile:'መገለጫ አርትዕ', changePassword:'የይለፍ ቃል ቀይር', emailPhone:'ኢሜይል እና ስልክ', switchAccount:'አካውንት ቀይር', blockedUsers:'የታገዱ ተጠቃሚዎች', helpCenter:'የእርዳታ ማዕከል', reportProblem:'ችግር ሪፖርት አድርግ', termsOfService:'የአገልግሎት ውሎች', privacyPolicy:'የግላዊነት ፖሊሲ', resetAccount:'አካውንት ዳግም አስጀምር', deleteAccount:'አካውንት ሰርዝ', logOut:'ውጣ', version:'ስሪት', madeWith:'ተሰርቷል', noNotifications:'ምንም ማሳወቂያዎች የሉም', markAllRead:'ሁሉንም እንደተነበበ ምልክት አድርግ' },  ar: { home:'لك', friends:'أصدقاء', inbox:'رسائل', profile:'الملف', create:'إنشاء', foryou:'لك', skills:'مهارات', jobs:'وظائف', post:'نشر', cancel:'إلغاء', save:'حفظ', follow:'+ متابعة', unfollow:'تتابع', message:'رسالة', settings:'الإعدادات', logout:'تسجيل الخروج', editProfile:'تعديل الملف', search:'ابحث...', noVideos:'لا توجد مقاطع بعد.', addComment:'أضف تعليقاً...', noMessages:'لا رسائل بعد', startChat:'اذهب إلى ملف وأرسل رسالة', notifications:'الإشعارات', markRead:'تعليم الكل كمقروء', wallet:'المحفظة', analytics:'التحليلات', badges:'الشارات', premium:'مميز', live:'بث مباشر', report:'إبلاغ', block:'حظر', duet:'ثنائي', stitch:'خياطة', voiceCall:'مكالمة صوتية', videoCall:'مكالمة فيديو', pinned:'مثبت', reply:'رد', pin:'تثبيت', retake:'إعادة', newPost:'منشور جديد', sounds:'أصوات', close:'إغلاق', back:'رجوع', comments:'تعليقات' },
   fr: { home:'Pour vous', friends:'Amis', inbox:'Messages', profile:'Profil', create:'Créer', foryou:'Pour vous', skills:'Compétences', jobs:'Emplois', post:'Publier', cancel:'Annuler', save:'Enregistrer', follow:'+ Suivre', unfollow:'Abonné', message:'Message', settings:'Paramètres', logout:'Déconnexion', editProfile:'Modifier le profil', search:'Rechercher...', noVideos:'Aucune vidéo pour l\'instant.', addComment:'Ajouter un commentaire...', noMessages:'Aucun message', startChat:'Allez sur un profil et envoyez un message', notifications:'Notifications', markRead:'Tout marquer comme lu', wallet:'Portefeuille', analytics:'Analytique', badges:'Badges', premium:'Premium', live:'En direct', report:'Signaler', block:'Bloquer', duet:'Duo', stitch:'Raccord', voiceCall:'Appel vocal', videoCall:'Appel vidéo', pinned:'Épinglé', reply:'Répondre', pin:'Épingler', retake:'Reprendre', newPost:'Nouveau post', sounds:'Sons', close:'Fermer', back:'Retour', comments:'Commentaires' },
   es: { home:'Para ti', friends:'Amigos', inbox:'Mensajes', profile:'Perfil', create:'Crear', foryou:'Para ti', skills:'Habilidades', jobs:'Empleos', post:'Publicar', cancel:'Cancelar', save:'Guardar', follow:'+ Seguir', unfollow:'Siguiendo', message:'Mensaje', settings:'Ajustes', logout:'Cerrar sesión', editProfile:'Editar perfil', search:'Buscar...', noVideos:'Aún no hay videos.', addComment:'Añadir comentario...', noMessages:'Sin mensajes aún', startChat:'Ve a un perfil y envía un mensaje', notifications:'Notificaciones', markRead:'Marcar todo como leído', wallet:'Billetera', analytics:'Analíticas', badges:'Insignias', premium:'Premium', live:'En vivo', report:'Reportar', block:'Bloquear', duet:'Dueto', stitch:'Costura', voiceCall:'Llamada de voz', videoCall:'Videollamada', pinned:'Fijado', reply:'Responder', pin:'Fijar', retake:'Retomar', newPost:'Nueva publicación', sounds:'Sonidos', close:'Cerrar', back:'Atrás', comments:'Comentarios' },
@@ -493,19 +493,39 @@ const ShareModal = ({ video, onClose, showToast }) => {
 };
 
 /* ─────────────── STORIES BAR ─────────────── */
-const Stories = ({ users, currentUser, onViewStory, onCreateStory, onLive }) => (
+const Stories = ({ users, currentUser, onViewStory, onCreateStory, onLive }) => {
+  const openOwnStory = async () => {
+    if(!currentUser?.id) { onCreateStory?.(); return; }
+    try {
+      const snap = await getDocs(query(collection(db,'stories'), where('userId','==',currentUser.id), orderBy('createdAt','desc'), limit(1)));
+      if(!snap.empty) { onViewStory?.({...snap.docs[0].data(), id: snap.docs[0].id}); return; }
+      onCreateStory?.();
+    } catch(e) {
+      console.error('Story index error, falling back:', e);
+      try {
+        const snap2 = await getDocs(query(collection(db,'stories'), where('userId','==',currentUser.id)));
+        if(!snap2.empty) {
+          const docs = snap2.docs.sort((a,b)=>(b.data().createdAt?.seconds||0)-(a.data().createdAt?.seconds||0));
+          onViewStory?.({...docs[0].data(), id: docs[0].id});
+          return;
+        }
+      } catch(e2) { console.error('Story fallback failed:', e2); }
+      onCreateStory?.();
+    }
+  };
+  return (
   <div style={{ display:'flex', gap:14, padding:'14px 16px', overflowX:'auto', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
     <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5, flexShrink:0 }}>
-      <button onClick={onCreateStory} style={{ width:62, height:62, borderRadius:'50%', background:'rgba(255,255,255,0.05)', border:'1.5px dashed rgba(255,255,255,0.2)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', position:'relative', overflow:'hidden' }}>
+      <button onClick={openOwnStory} style={{ width:62, height:62, borderRadius:'50%', background:'rgba(255,255,255,0.05)', border:'1.5px dashed rgba(255,255,255,0.2)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', position:'relative', overflow:'hidden' }}>
         <div style={{ width:56, height:56, borderRadius:'50%', background:currentUser?.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:20, overflow:'hidden' }}>
           {currentUser?.avatarUrl ? <img src={currentUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : currentUser?.avatar}
         </div>
-        <div style={{ position:'absolute', bottom:0, right:0, width:20, height:20, background:'#ff2d55', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', border:'2px solid #0a0a0a', fontSize:12, color:'white', fontWeight:800 }}>+</div>
+        <div onClick={(e)=>{ e.stopPropagation(); onCreateStory?.(); }} style={{ position:'absolute', bottom:0, right:0, width:20, height:20, background:'#ff2d55', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', border:'2px solid #0a0a0a', fontSize:12, color:'white', fontWeight:800 }}>+</div>
       </button>
       <span style={{ color:'rgba(255,255,255,0.5)', fontSize:11 }}>Your story</span>
     </div>
     <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5, flexShrink:0 }}>
-      <button onClick={async () => {   const snap = await getDocs(query(collection(db,'stories'), where('userId','==',currentUser?.id), orderBy('createdAt','desc'), limit(1)));   if(!snap.empty) onViewStory?.({...snap.docs[0].data(), id: snap.docs[0].id});   else onCreateStory?.(); }} style={{ padding:0, background:'none', border:'none', cursor:'pointer' }}>
+      <button onClick={openOwnStory} style={{ padding:0, background:'none', border:'none', cursor:'pointer' }}>
         <div className="story-avatar-ring" style={{ width:66, height:66, borderRadius:'50%' }}>
           <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:'#0a0a0a', padding:2, display:'flex', alignItems:'center', justifyContent:'center' }}>
             <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:currentUser?.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:20, overflow:'hidden' }}>
@@ -519,9 +539,19 @@ const Stories = ({ users, currentUser, onViewStory, onCreateStory, onLive }) => 
     {users.filter(u => u.id !== currentUser?.id && (currentUser?.following||[]).includes(u.id)).map(u => (
       <div key={u.id} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5, flexShrink:0 }}>
         <button onClick={async () => {
-        const snap = await getDocs(query(collection(db,'stories'), where('userId','==',currentUser?.id), orderBy('createdAt','desc'), limit(1)));
-        if(!snap.empty) onViewStory?.({...snap.docs[0].data(), id: snap.docs[0].id});
-        else onCreateStory?.();
+        try {
+          const snap = await getDocs(query(collection(db,'stories'), where('userId','==',u.id), orderBy('createdAt','desc'), limit(1)));
+          if(!snap.empty) onViewStory?.({...snap.docs[0].data(), id: snap.docs[0].id});
+        } catch(e) {
+          console.error('Story load error:', e);
+          try {
+            const snap2 = await getDocs(query(collection(db,'stories'), where('userId','==',u.id)));
+            if(!snap2.empty){
+              const docs = snap2.docs.sort((a,b)=>(b.data().createdAt?.seconds||0)-(a.data().createdAt?.seconds||0));
+              onViewStory?.({...docs[0].data(), id: docs[0].id});
+            }
+          } catch(e2) { console.error('Story fallback failed:', e2); }
+        }
       }} style={{ padding:0, background:'none', border:'none', cursor:'pointer' }}>
           <div className="story-avatar-ring" style={{ width:66, height:66, borderRadius:'50%' }}>
             <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:'#0a0a0a', padding:2, display:'flex', alignItems:'center', justifyContent:'center' }}>
@@ -535,9 +565,8 @@ const Stories = ({ users, currentUser, onViewStory, onCreateStory, onLive }) => 
       </div>
     ))}
   </div>
-);
-
-/* ─────────────── CREATE STORY MODAL ─────────────── */
+  );
+};
 const CreateStoryModal = ({ currentUser, onClose, showToast }) => {
   const [mode, setMode] = useState(null);
   const [storyText, setStoryText] = useState('');
@@ -2482,7 +2511,7 @@ if(activeSubPage==='settings') return (
 };
 
 /* ─────────────── INBOX (REAL-TIME FIRESTORE) ─────────────── */
-const ConversationView = ({ currentUser, otherUser, conversationId, onBack, showToast, onViewProfile }) => {
+const ConversationView = ({ currentUser, otherUser, conversationId, onBack, showToast, onViewProfile, t }) => {
   const [text, setText] = useState('');
   const [messages, setMessages] = useState([]);
   const [isRecording, setIsRecording] = useState(false);
@@ -2656,7 +2685,7 @@ unseen.forEach(d => updateDoc(d.ref, { status: 'seen' }).catch(()=>{}));
           <div style={{color:'white',fontWeight:700,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>@{otherUser?.username}</div>
           <div style={{color: presenceData?.online ? '#06d6a0':'rgba(255,255,255,0.3)', fontSize:11, display:'flex', alignItems:'center', gap:4}}>
             <div style={{width:6,height:6,borderRadius:'50%', background: presenceData?.online ? '#06d6a0':'rgba(255,255,255,0.3)'}}/>
-            {presenceData?.online ? 'Online' : presenceData?.lastSeen ? `last seen ${timeAgo(presenceData.lastSeen.toDate())}` : 'Offline'}
+            {presenceData?.online ? (t?.online||'Online') : presenceData?.lastSeen ? `${t?.lastSeen||'last seen'} ${timeAgo(presenceData.lastSeen.toDate())}` : (t?.offline||'Offline')}
           </div>
         </div>
         <div style={{marginLeft:'auto',display:'flex',gap:10}}>
@@ -2763,7 +2792,7 @@ unseen.forEach(d => updateDoc(d.ref, { status: 'seen' }).catch(()=>{}));
           transform:`scaleY(${1})` }}/>
       ))}
     </div>
-    <span style={{ color:'rgba(255,255,255,0.25)', fontSize:10, marginBottom:4 }}>typing...</span>
+    <span style={{ color:'rgba(255,255,255,0.25)', fontSize:10, marginBottom:4 }}>{t?.typing||'typing...'}</span>
   </div>
 )}
         <div ref={bottomRef}/>
@@ -2794,7 +2823,7 @@ unseen.forEach(d => updateDoc(d.ref, { status: 'seen' }).catch(()=>{}));
         <input value={text} onChange={e=>{
           setText(e.target.value);
           setDoc(doc(db,'typing',conversationId),{[currentUser.id]:serverTimestamp()},{merge:true}).catch(()=>{});
-        }} onKeyDown={e=>e.key==='Enter'&&handleSend()} placeholder={isRecording?`🔴 ${fmt(recordSecs)}`:'Message...'} style={{flex:1,background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:28,padding:'11px 16px',color:'white',outline:'none',fontSize:13}}/>
+        }} onKeyDown={e=>e.key==='Enter'&&handleSend()} placeholder={isRecording?`🔴 ${fmt(recordSecs)}`:(t?.messagePlaceholder||'Message...')} style={{flex:1,background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:28,padding:'11px 16px',color:'white',outline:'none',fontSize:13}}/>
         <button onMouseDown={startVoice} onMouseUp={stopVoice} onTouchStart={startVoice} onTouchEnd={stopVoice} style={{background:isRecording?'rgba(255,45,85,0.9)':'rgba(255,255,255,0.07)',border:'none',borderRadius:'50%',width:38,height:38,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0,boxShadow:isRecording?'0 0 10px rgba(255,45,85,0.6)':'none'}}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={isRecording?'white':'rgba(255,255,255,0.6)'} strokeWidth="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
         </button>
@@ -2807,17 +2836,27 @@ unseen.forEach(d => updateDoc(d.ref, { status: 'seen' }).catch(()=>{}));
 };
 
 const InboxPage = ({ t, users, currentUser, showToast, onViewProfile, initialTargetId, onClearTarget, persistedConversation, onSetConversation }) => {
-  const [activeConversation, setActiveConversation] = useState(null);
+  const [activeConversation, setActiveConversation] = useState(persistedConversation || null);
   const [conversations, setConversations] = useState([]);
+  const [fetchedOtherUser, setFetchedOtherUser] = useState(null);
   useEffect(()=>{
-    if(activeConversation && users.length > 0){
-      const found = users.find(u=>u.id===activeConversation.otherUserId);
-      if(!found){
+    if(!activeConversation?.otherUserId) { setFetchedOtherUser(null); return; }
+    const found = users.find(u=>u.id===activeConversation.otherUserId);
+    if(found) { setFetchedOtherUser(null); return; }
+    // Not in the loaded users list (e.g. not a follower/following) — fetch directly
+    let cancelled = false;
+    getDoc(doc(db,'users',activeConversation.otherUserId)).then(snap=>{
+      if(cancelled) return;
+      if(snap.exists()) setFetchedOtherUser({id:snap.id,...snap.data()});
+      else {
+        // User truly doesn't exist — close the conversation
         setActiveConversation(null);
         onSetConversation?.(null);
+        showToast?.('User not found','error');
       }
-    }
-  },[users, activeConversation]);
+    }).catch(()=>{});
+    return ()=>{ cancelled = true; };
+  },[users, activeConversation?.otherUserId]);
 
   useEffect(()=>{
     if(!initialTargetId || !currentUser?.id) return;
@@ -2889,17 +2928,13 @@ snap.docs.forEach(async conv => {
   };
 
  if(activeConversation){
-    const otherUser = users.find(u=>u.id===activeConversation?.otherUserId) || null;
+    const otherUser = users.find(u=>u.id===activeConversation?.otherUserId) || fetchedOtherUser;
     if(!otherUser) {
-      if(users.length === 0) {
-        return (
-          <div style={{height:'100%',background:'#0a0a0a',display:'flex',alignItems:'center',justifyContent:'center'}}>
-            <div style={{width:32,height:32,border:'3px solid rgba(255,45,85,0.3)',borderTop:'3px solid #ff2d55',borderRadius:'50%',animation:'spin 1s linear infinite'}}/>
-          </div>
-        );
-      }
-      // Users loaded but otherUser not found — return null, effect will reset
-      return null;
+      return (
+        <div style={{height:'100%',background:'#0a0a0a',display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <div style={{width:32,height:32,border:'3px solid rgba(255,45,85,0.3)',borderTop:'3px solid #ff2d55',borderRadius:'50%',animation:'spin 1s linear infinite'}}/>
+        </div>
+      );
     }
     return (
       <ConversationView
@@ -2909,6 +2944,7 @@ snap.docs.forEach(async conv => {
         onBack={()=>{ setActiveConversation(null); onSetConversation?.(null); onClearTarget?.(); }}
         showToast={showToast}
         onViewProfile={uid=>{ onViewProfile?.(uid); }}
+        t={t}
       />
     );
   }
@@ -2957,34 +2993,34 @@ snap.docs.forEach(async conv => {
 };
 
 /* ─────────────── CALL MODAL (REAL WebRTC) ─────────────── */
-const IncomingCallScreen = ({ callData, onAnswer, onDecline }) => (
+const IncomingCallScreen = ({ callData, onAnswer, onDecline, t }) => (
   <div style={{position:'fixed',inset:0,background:'linear-gradient(160deg,#0d0025,#001a0d)',zIndex:3000,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'space-between',padding:'80px 40px 80px'}}>
     <div style={{textAlign:'center'}}>
-      <div style={{color:'rgba(255,255,255,0.5)',fontSize:14,marginBottom:16,letterSpacing:2,textTransform:'uppercase'}}>{callData.callType==='video'?'Incoming Video Call':'Incoming Voice Call'}</div>
+      <div style={{color:'rgba(255,255,255,0.5)',fontSize:14,marginBottom:16,letterSpacing:2,textTransform:'uppercase'}}>{callData.callType==='video'?(t?.incomingVideoCall||'Incoming Video Call'):(t?.incomingVoiceCall||'Incoming Voice Call')}</div>
       <div style={{width:120,height:120,borderRadius:'50%',background:callData.callerColor||'#ff2d55',display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontWeight:'bold',fontSize:48,margin:'0 auto 20px',border:'4px solid rgba(255,255,255,0.2)',boxShadow:'0 0 0 12px rgba(255,255,255,0.05),0 0 0 24px rgba(255,255,255,0.03)'}}>
         {callData.callerAvatar||'?'}
       </div>
       <div style={{color:'white',fontSize:28,fontWeight:800,fontFamily:"'Inter',sans-serif"}}>@{callData.callerName}</div>
-      <div style={{color:'rgba(255,255,255,0.4)',fontSize:14,marginTop:8,animation:'pulse 1.5s infinite'}}>Calling...</div>
+      <div style={{color:'rgba(255,255,255,0.4)',fontSize:14,marginTop:8,animation:'pulse 1.5s infinite'}}>{t?.calling||'Calling...'}</div>
     </div>
     <div style={{display:'flex',justifyContent:'space-around',width:'100%',alignItems:'center'}}>
       <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:12}}>
         <button onClick={onDecline} style={{width:70,height:70,borderRadius:'50%',background:'#ff2d55',border:'none',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',boxShadow:'0 8px 30px rgba(255,45,85,0.5)'}}>
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M10.68 13.31a16 16 0 003.41 2.6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7 2 2 0 011.72 2v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.42 19.42 0 01-3.33-2.67m-2.67-3.34a19.79 19.79 0 01-3.07-8.63A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91"/><line x1="23" y1="1" x2="1" y2="23"/></svg>
         </button>
-        <span style={{color:'rgba(255,255,255,0.5)',fontSize:13}}>Decline</span>
+        <span style={{color:'rgba(255,255,255,0.5)',fontSize:13}}>{t?.decline||'Decline'}</span>
       </div>
       <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:12}}>
         <button onClick={onAnswer} style={{width:70,height:70,borderRadius:'50%',background:'#34c759',border:'none',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',boxShadow:'0 8px 30px rgba(52,199,89,0.5)',animation:'pulse 1.5s infinite'}}>
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8a19.79 19.79 0 01-3.07-8.67A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>
         </button>
-        <span style={{color:'rgba(255,255,255,0.5)',fontSize:13}}>Answer</span>
+        <span style={{color:'rgba(255,255,255,0.5)',fontSize:13}}>{t?.accept||'Answer'}</span>
       </div>
     </div>
   </div>
 );
 
-const CallModal = ({ type, contactName, contactAvatar, contactId, currentUser, onClose, isCallee: isCalleeProp, callDocId: callDocIdProp }) => {
+const CallModal = ({ type, contactName, contactAvatar, contactId, currentUser, onClose, isCallee: isCalleeProp, callDocId: callDocIdProp, t }) => {
   const [duration, setDuration] = useState(0);
   const [status, setStatus] = useState('calling');
   const [isMuted, setIsMuted] = useState(false);
@@ -3169,11 +3205,11 @@ cleanupCall();
   };
 
   const statusLabel = {
-    calling: type === 'video' ? 'Video calling...' : 'Calling...',
-    connected: `Connected · ${fmt()}`,
-    declined: 'Call declined',
-    failed: 'Call failed',
-  }[status] || 'Connecting...';
+    calling: type === 'video' ? (t?.videoCalling||'Video calling...') : (t?.calling||'Calling...'),
+    connected: `${t?.connected||'Connected'} · ${fmt()}`,
+    declined: t?.callDeclined||'Call declined',
+    failed: t?.callFailed||'Call failed',
+  }[status] || (t?.connecting||'Connecting...');
 
   return (
     <div style={{ position:'fixed', inset:0, background:'#0a0a0a', zIndex:2500, display:'flex', flexDirection:'column' }}>
@@ -4168,7 +4204,7 @@ const NotificationsPage = ({ currentUser, users, videos, onClose, onViewProfile,
 
 
 /* ─────────────── MAIN APP ─────────────── */
-export default function DaguV3App() {
+function DaguV3AppInner() {
   const [currentUser, setCurrentUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [users, setUsers] = useState([]);
@@ -4472,6 +4508,7 @@ const TabIcon = ({id, active, currentUser}) => {
       {!isOnline && <OfflineBanner />}
 {incomingCall && !showCall && (
         <IncomingCallScreen
+          t={t}
           callData={incomingCall}
           onAnswer={()=>{
   const snap = {...incomingCall};
@@ -4493,7 +4530,7 @@ const TabIcon = ({id, active, currentUser}) => {
           }}
         />
       )}
-      {showCall && <CallModal type={showCall.type} contactName={showCall.contactName} contactAvatar={showCall.contactAvatar} contactId={showCall.contactId} currentUser={currentUser} onClose={()=>setShowCall(null)} isCallee={showCall.isCallee} callDocId={showCall.callDocId} />}
+      {showCall && <CallModal t={t} type={showCall.type} contactName={showCall.contactName} contactAvatar={showCall.contactAvatar} contactId={showCall.contactId} currentUser={currentUser} onClose={()=>setShowCall(null)} isCallee={showCall.isCallee} callDocId={showCall.callDocId} />}
       {showLiveStream && <LiveStream streamer={showLiveStream} onClose={()=>setShowLiveStream(null)} showToast={showToast} currentUser={currentUser} />}
       {showStoryViewer && (
         <div onClick={()=>setShowStoryViewer(null)} style={{position:'fixed',inset:0,background:'#000',zIndex:3000,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column'}}>
@@ -4503,7 +4540,7 @@ const TabIcon = ({id, active, currentUser}) => {
           <div style={{position:'absolute',top:0,left:0,right:0,height:3,background:'rgba(255,255,255,0.15)',borderRadius:2,margin:'14px 14px 0'}}>
             <div style={{height:'100%',background:'white',borderRadius:2,width:'100%',animation:'notifBar 5s linear forwards'}}/>
           </div>
-          {showStoryViewer.mediaUrl?.startsWith('video') ? (
+          {showStoryViewer.mediaUrl && showStoryViewer.mediaType?.startsWith('video') ? (
             <video src={showStoryViewer.mediaUrl} autoPlay loop playsInline style={{width:'100%',height:'100%',objectFit:'cover'}}/>
           ) : showStoryViewer.mediaUrl ? (
             <img src={showStoryViewer.mediaUrl} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
@@ -4549,12 +4586,15 @@ const TabIcon = ({id, active, currentUser}) => {
         )}
       </div>
 
-      <div style={{ display:'flex', background:'rgba(6,6,8,0.98)', borderTop:'1px solid rgba(255,255,255,0.05)', padding:`10px 4px max(26px, env(safe-area-inset-bottom))`, flexShrink:0, backdropFilter:'blur(30px)', WebkitBackdropFilter:'blur(30px)' }}>
+      <div role="tablist" aria-label="Main navigation" style={{ display:'flex', background:'rgba(6,6,8,0.98)', borderTop:'1px solid rgba(255,255,255,0.05)', padding:`10px 4px max(26px, env(safe-area-inset-bottom))`, flexShrink:0, backdropFilter:'blur(30px)', WebkitBackdropFilter:'blur(30px)' }}>
         {tabs.map(tab=>{
           const isActive = activeTab===tab.id;
           const tabLabels = { home: t?.home||'Home', friends: t?.friends||'Friends', create: t?.create||'Create', inbox: t?.inbox||'Inbox', profile: t?.profile||'Profile' };
           return (
             <button key={tab.id}
+              role="tab"
+              aria-selected={isActive}
+              aria-label={tabLabels[tab.id]}
               onClick={()=>{ haptic('light'); if(tab.id==='create'){ setShowCamera(true); } else { setActiveTab(tab.id); } }}
               style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:2, background:'none', border:'none', cursor:'pointer', padding: tab.id==='create'?'0':'6px 0', position:'relative',
                 transform: isActive && tab.id!=='create' ? 'translateY(-1px)' : 'translateY(0)',
@@ -4585,5 +4625,38 @@ const TabIcon = ({id, active, currentUser}) => {
       )}
       {toast && <Toast {...toast} onClose={()=>setToast(null)} />}
     </div>
+  );
+}
+
+/* ─────────────── ERROR BOUNDARY + ROOT EXPORT ─────────────── */
+class ErrorBoundary extends React.Component {
+  constructor(props){ super(props); this.state = { hasError:false, error:null }; }
+  static getDerivedStateFromError(error){ return { hasError:true, error }; }
+  componentDidCatch(error, info){ console.error('App crashed:', error, info); }
+  handleReload = () => { this.setState({ hasError:false, error:null }); window.location.reload(); };
+  render(){
+    if(this.state.hasError){
+      return (
+        <div style={{ position:'fixed', inset:0, background:'#060608', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:24, textAlign:'center', color:'white', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", zIndex:99999 }}>
+          <div style={{ fontSize:48, marginBottom:16 }}>⚠️</div>
+          <div style={{ fontSize:18, fontWeight:800, marginBottom:8 }}>Something went wrong</div>
+          <div style={{ fontSize:13, color:'rgba(255,255,255,0.5)', marginBottom:24, maxWidth:320 }}>
+            An unexpected error occurred. You can try reloading the app — your data is safely stored in the cloud.
+          </div>
+          <button onClick={this.handleReload} style={{ background:'linear-gradient(135deg,#ff2d55,#ff5e7d)', border:'none', borderRadius:14, padding:'13px 28px', color:'white', fontWeight:800, fontSize:14, cursor:'pointer' }}>
+            Reload App
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+export default function DaguV3App() {
+  return (
+    <ErrorBoundary>
+      <DaguV3AppInner />
+    </ErrorBoundary>
   );
 }
