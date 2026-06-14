@@ -1222,68 +1222,303 @@ const ShareModal = ({ video, onClose, showToast }) => {
 };
 
 /* ─────────────── STORIES BAR ─────────────── */
-const Stories = ({ users, currentUser, onViewStory, onCreateStory, onLive, followed }) => (
-  <div style={{ display:'flex', gap:14, padding:'14px 16px', overflowX:'auto', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
-    <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5, flexShrink:0 }}>
-      <button onClick={async () => {
-        try {
-          const snap = await getDocs(query(collection(db,'stories'), where('userId','==',currentUser?.id), orderBy('createdAt','desc'), limit(1)));
-          if(!snap.empty){ onViewStory?.({...snap.docs[0].data(), id: snap.docs[0].id, isOwn:true}); return; }
-          // Fallback without orderBy (in case the composite index isn't ready)
-          const snap2 = await getDocs(query(collection(db,'stories'), where('userId','==',currentUser?.id)));
-          if(!snap2.empty){
-            const docs = snap2.docs.map(d=>({...d.data(), id:d.id}));
-            docs.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
-            onViewStory?.({...docs[0], isOwn:true});
-            return;
-          }
-          onCreateStory?.();
-        } catch(e) {
-          // Even on a query error, try the unordered fallback before giving up
-          try {
-            const snap2 = await getDocs(query(collection(db,'stories'), where('userId','==',currentUser?.id)));
-            if(!snap2.empty){
-              const docs = snap2.docs.map(d=>({...d.data(), id:d.id}));
-              docs.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
-              onViewStory?.({...docs[0], isOwn:true});
-              return;
-            }
-          } catch(e2) {}
-          onCreateStory?.();
-        }
-      }} style={{ width:62, height:62, borderRadius:'50%', background:'rgba(255,255,255,0.05)', border:'1.5px dashed rgba(255,255,255,0.2)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', position:'relative', overflow:'hidden' }}>
-        <div style={{ width:56, height:56, borderRadius:'50%', background:currentUser?.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:20, overflow:'hidden' }}>
-          {currentUser?.avatarUrl ? <img src={currentUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : currentUser?.avatar}
+/* ─────────────── TELEGRAM-STYLE STORY VIEWER ─────────────── */
+const TelegramStoryViewer = ({ storyGroups, startGroupIdx, currentUser, onClose, onViewProfile, showToast }) => {
+  const [groupIdx, setGroupIdx] = useState(startGroupIdx || 0);
+  const [storyIdx, setStoryIdx] = useState(0);
+  const [progress, setProgress] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [replyText, setReplyText] = useState('');
+  const [seenMap, setSeenMap] = useState({});
+  const [liked, setLiked] = useState({});
+  const timerRef = useRef(null);
+  const DURATION = 5000;
+
+  const currentGroup = storyGroups[groupIdx];
+  const currentStory = currentGroup?.stories[storyIdx];
+
+  // Mark story as seen
+  useEffect(() => {
+    if (!currentStory?.id || !currentUser?.id) return;
+    const key = currentStory.id;
+    if (seenMap[key]) return;
+    setSeenMap(p => ({ ...p, [key]: true }));
+    updateDoc(doc(db, 'stories', key), {
+      seenBy: arrayUnion(currentUser.id)
+    }).catch(() => {});
+  }, [currentStory?.id]);
+
+  // Progress timer
+  useEffect(() => {
+    setProgress(0);
+    if (paused) return;
+    const start = Date.now();
+    timerRef.current = setInterval(() => {
+      const elapsed = Date.now() - start;
+      const pct = Math.min((elapsed / DURATION) * 100, 100);
+      setProgress(pct);
+      if (pct >= 100) goNext();
+    }, 50);
+    return () => clearInterval(timerRef.current);
+  }, [storyIdx, groupIdx, paused]);
+
+  const goNext = useCallback(() => {
+    clearInterval(timerRef.current);
+    const grp = storyGroups[groupIdx];
+    if (storyIdx < (grp?.stories?.length || 1) - 1) {
+      setStoryIdx(s => s + 1);
+      setProgress(0);
+    } else if (groupIdx < storyGroups.length - 1) {
+      setGroupIdx(g => g + 1);
+      setStoryIdx(0);
+      setProgress(0);
+    } else {
+      onClose();
+    }
+  }, [storyIdx, groupIdx, storyGroups]);
+
+  const goPrev = useCallback(() => {
+    clearInterval(timerRef.current);
+    if (storyIdx > 0) {
+      setStoryIdx(s => s - 1);
+      setProgress(0);
+    } else if (groupIdx > 0) {
+      setGroupIdx(g => g - 1);
+      setStoryIdx(0);
+      setProgress(0);
+    }
+  }, [storyIdx, groupIdx]);
+
+  const sendReply = async () => {
+    if (!replyText.trim()) return;
+    try {
+      await addDoc(collection(db, 'messages'), {
+        senderId: currentUser.id,
+        receiverId: currentGroup.userId,
+        text: `↩ Story reply: ${replyText}`,
+        createdAt: serverTimestamp(),
+        read: false,
+      });
+      showToast?.('Reply sent ✓', 'success');
+    } catch { showToast?.('Failed to send', 'error'); }
+    setReplyText('');
+  };
+
+  const toggleLike = () => {
+    const key = currentStory?.id;
+    setLiked(p => ({ ...p, [key]: !p[key] }));
+    if (!liked[key]) showToast?.('❤️ Liked!', 'success');
+  };
+
+  if (!currentGroup || !currentStory) return null;
+  const stories = currentGroup.stories;
+  const isOwn = currentGroup.userId === currentUser?.id;
+
+  return (
+    <div style={{ position:'fixed', inset:0, background:'#000', zIndex:3000, display:'flex', flexDirection:'column', userSelect:'none' }}>
+      {/* Progress bars */}
+      <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:20, padding:'10px 10px 0', display:'flex', gap:3 }}>
+        {stories.map((_, i) => (
+          <div key={i} style={{ flex:1, height:2.5, background:'rgba(255,255,255,0.3)', borderRadius:2, overflow:'hidden' }}>
+            <div style={{
+              height:'100%', background:'white', borderRadius:2,
+              width: i < storyIdx ? '100%' : i === storyIdx ? `${progress}%` : '0%',
+              transition: i === storyIdx ? 'none' : undefined
+            }} />
+          </div>
+        ))}
+      </div>
+
+      {/* Header */}
+      <div style={{ position:'absolute', top:20, left:0, right:0, zIndex:20, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 14px' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer' }}
+          onClick={() => { if (currentGroup.userId) { onViewProfile?.(currentGroup.userId); onClose(); } }}>
+          <div style={{ width:42, height:42, borderRadius:'50%', background:currentGroup.avatarColor||'#ff2d55',
+            display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:17,
+            overflow:'hidden', border:'2.5px solid white' }}>
+            {currentGroup.avatarUrl
+              ? <img src={currentGroup.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" />
+              : (currentGroup.username||'?')[0].toUpperCase()}
+          </div>
+          <div>
+            <div style={{ color:'white', fontWeight:700, fontSize:14 }}>@{currentGroup.username}</div>
+            <div style={{ color:'rgba(255,255,255,0.6)', fontSize:11 }}>
+              {currentStory.createdAt?.seconds
+                ? new Date(currentStory.createdAt.seconds * 1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+                : 'Just now'}
+              {isOwn && (currentStory.seenBy?.length > 0) && ` · 👁 ${currentStory.seenBy.length}`}
+            </div>
+          </div>
         </div>
-        <div onClick={e=>{e.stopPropagation(); onCreateStory?.();}} style={{ position:'absolute', bottom:0, right:0, width:20, height:20, background:'#ff2d55', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', border:'2px solid #0a0a0a', fontSize:12, color:'white', fontWeight:800 }}>+</div>
-      </button>
-      <span style={{ color:'rgba(255,255,255,0.5)', fontSize:11 }}>Your story</span>
+        <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+          <button onPointerDown={()=>setPaused(true)} onPointerUp={()=>setPaused(false)}
+            style={{ background:'rgba(255,255,255,0.1)', border:'none', borderRadius:'50%', width:34, height:34, color:'white', cursor:'pointer', fontSize:15, display:'flex', alignItems:'center', justifyContent:'center' }}>
+            {paused ? '▶' : '⏸'}
+          </button>
+          <button onClick={onClose}
+            style={{ background:'rgba(255,255,255,0.1)', border:'none', borderRadius:'50%', width:34, height:34, color:'white', cursor:'pointer', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
+        </div>
+      </div>
+
+      {/* Tap zones */}
+      <div style={{ position:'absolute', inset:0, display:'flex', zIndex:10 }}>
+        <div style={{ flex:1 }} onClick={goPrev} />
+        <div style={{ flex:1 }} onClick={goNext} />
+      </div>
+
+      {/* Story content */}
+      <div style={{ flex:1, position:'relative', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden' }}>
+        {currentStory.mediaType === 'video' || currentStory.mediaUrl?.includes('/video/')
+          ? <video src={currentStory.mediaUrl} autoPlay loop playsInline style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+          : currentStory.mediaUrl
+            ? <img src={currentStory.mediaUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+            : <div style={{ width:'100%', height:'100%', background:currentStory.bgColor||'#ff2d55', display:'flex', alignItems:'center', justifyContent:'center', padding:40 }}>
+                <div style={{ color:'white', fontSize:28, fontWeight:700, textAlign:'center', lineHeight:1.4 }}>{currentStory.text}</div>
+              </div>}
+        {/* Text overlay on media */}
+        {currentStory.text && currentStory.mediaUrl && (
+          <div style={{ position:'absolute', bottom:90, left:0, right:0, textAlign:'center', padding:'0 24px' }}>
+            <div style={{ color:'white', fontSize:18, fontWeight:700, textShadow:'0 2px 8px rgba(0,0,0,0.8)', lineHeight:1.4 }}>{currentStory.text}</div>
+          </div>
+        )}
+      </div>
+
+      {/* Story group dots (showing which user) */}
+      {storyGroups.length > 1 && (
+        <div style={{ position:'absolute', bottom:90, left:0, right:0, zIndex:15, display:'flex', justifyContent:'center', gap:6 }}>
+          {storyGroups.map((_, i) => (
+            <div key={i} onClick={e=>{e.stopPropagation(); setGroupIdx(i); setStoryIdx(0); setProgress(0);}}
+              style={{ width: i===groupIdx ? 22 : 6, height:6, borderRadius:3, background: i===groupIdx ? 'white' : 'rgba(255,255,255,0.35)', cursor:'pointer', transition:'all 0.25s' }} />
+          ))}
+        </div>
+      )}
+
+      {/* Footer: Like + Reply */}
+      <div style={{ position:'absolute', bottom:0, left:0, right:0, zIndex:20, padding:'0 12px 36px', display:'flex', alignItems:'center', gap:10 }}>
+        {!isOwn ? (
+          <>
+            <div style={{ flex:1, display:'flex', alignItems:'center', background:'rgba(255,255,255,0.1)', backdropFilter:'blur(12px)', borderRadius:28, border:'1px solid rgba(255,255,255,0.18)', paddingLeft:16, paddingRight:8 }}>
+              <input value={replyText} onChange={e=>setReplyText(e.target.value)}
+                onKeyDown={e=>{ if(e.key==='Enter') sendReply(); e.stopPropagation(); }}
+                onClick={e=>e.stopPropagation()}
+                placeholder={`Reply to @${currentGroup.username}…`}
+                style={{ flex:1, background:'none', border:'none', outline:'none', color:'white', fontSize:14, padding:'12px 0' }} />
+              {replyText.trim() && (
+                <button onClick={e=>{e.stopPropagation(); sendReply();}}
+                  style={{ background:'#ff2d55', border:'none', borderRadius:'50%', width:32, height:32, color:'white', cursor:'pointer', fontSize:16, display:'flex', alignItems:'center', justifyContent:'center' }}>➤</button>
+              )}
+            </div>
+            <button onClick={e=>{e.stopPropagation(); toggleLike();}}
+              style={{ background:'rgba(255,255,255,0.1)', border:'none', borderRadius:'50%', width:44, height:44, fontSize:22, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', transition:'transform 0.15s', transform: liked[currentStory?.id] ? 'scale(1.3)' : 'scale(1)' }}>
+              {liked[currentStory?.id] ? '❤️' : '🤍'}
+            </button>
+          </>
+        ) : (
+          <div style={{ flex:1, textAlign:'center', color:'rgba(255,255,255,0.5)', fontSize:13 }}>
+            {(currentStory.seenBy?.length || 0) > 0
+              ? `👁 Seen by ${currentStory.seenBy.length} people`
+              : 'No views yet'}
+          </div>
+        )}
+      </div>
     </div>
-    {users.filter(u => u.id !== currentUser?.id && (followed||currentUser?.following||[]).includes(u.id)).map(u => (
-      <div key={u.id} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5, flexShrink:0 }}>
-        <button onClick={async () => {
+  );
+};
+
+/* ─────────────── STORIES ROW ─────────────── */
+const Stories = ({ users, currentUser, onViewStory, onCreateStory, onLive, followed }) => {
+  const [storyUsers, setStoryUsers] = useState([]);
+
+  useEffect(() => {
+    // Load all users who have recent stories (not just followed)
+    const loadStories = async () => {
+      try {
+        const now = new Date();
+        const snap = await getDocs(query(collection(db, 'stories'), orderBy('createdAt', 'desc')));
+        const byUser = {};
+        snap.docs.forEach(d => {
+          const data = d.data();
+          const exp = data.expiresAt?.toDate ? data.expiresAt.toDate() : new Date(data.expiresAt);
+          if (exp < now) return; // skip expired
+          if (!byUser[data.userId]) byUser[data.userId] = { userId: data.userId, stories: [] };
+          byUser[data.userId].stories.push({ id: d.id, ...data });
+        });
+        // Merge user profile info
+        const result = Object.values(byUser).map(g => {
+          const u = users.find(u => u.id === g.userId);
+          return { ...g, username: u?.username || g.stories[0]?.username || 'user', avatarColor: u?.avatarColor || g.stories[0]?.avatarColor, avatarUrl: u?.avatarUrl || g.stories[0]?.avatarUrl };
+        });
+        setStoryUsers(result);
+      } catch (e) {
+        // Fallback: no orderBy
         try {
-          const snap = await getDocs(query(collection(db,'stories'), where('userId','==',u.id), orderBy('createdAt','desc'), limit(1)));
-          if(!snap.empty) onViewStory?.({...snap.docs[0].data(), id: snap.docs[0].id});
-          else {
-            const snap2 = await getDocs(query(collection(db,'stories'), where('userId','==',u.id), limit(1)));
-            if(!snap2.empty) onViewStory?.({...snap2.docs[0].data(), id: snap2.docs[0].id});
-          }
-        } catch(e) { console.error('Story fetch error:', e); }
-      }} style={{ padding:0, background:'none', border:'none', cursor:'pointer' }}>
-          <div className="story-avatar-ring" style={{ width:66, height:66, borderRadius:'50%' }}>
-            <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:'#0a0a0a', padding:2, display:'flex', alignItems:'center', justifyContent:'center' }}>
-              <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:u.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:20, overflow:'hidden' }}>
-                {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : u.avatar}
+          const snap = await getDocs(collection(db, 'stories'));
+          const byUser = {};
+          snap.docs.forEach(d => {
+            const data = d.data();
+            if (!byUser[data.userId]) byUser[data.userId] = { userId: data.userId, stories: [] };
+            byUser[data.userId].stories.push({ id: d.id, ...data });
+          });
+          const result = Object.values(byUser).map(g => {
+            const u = users.find(u => u.id === g.userId);
+            return { ...g, username: u?.username || g.stories[0]?.username || 'user', avatarColor: u?.avatarColor || g.stories[0]?.avatarColor, avatarUrl: u?.avatarUrl || g.stories[0]?.avatarUrl };
+          });
+          setStoryUsers(result);
+        } catch {}
+      }
+    };
+    loadStories();
+  }, [users]);
+
+  const myStories = storyUsers.find(g => g.userId === currentUser?.id);
+  const otherStories = storyUsers.filter(g => g.userId !== currentUser?.id);
+
+  const handleMyStory = async () => {
+    if (myStories) { onViewStory?.({ groups: storyUsers, startIdx: storyUsers.findIndex(g => g.userId === currentUser?.id) }); }
+    else onCreateStory?.();
+  };
+
+  return (
+    <div style={{ display:'flex', gap:14, padding:'14px 16px', overflowX:'auto', borderBottom:'1px solid rgba(255,255,255,0.06)', scrollbarWidth:'none' }}>
+      {/* My Story */}
+      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5, flexShrink:0 }}>
+        <button onClick={handleMyStory} style={{ width:66, height:66, borderRadius:'50%', padding:0, background:'none', border:'none', cursor:'pointer', position:'relative' }}>
+          <div style={{ width:'100%', height:'100%', borderRadius:'50%',
+            background: myStories ? 'linear-gradient(135deg,#ff2d55,#af52de,#ff9500)' : 'rgba(255,255,255,0.05)',
+            padding: myStories ? 2 : 0,
+            display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <div style={{ width:'100%', height:'100%', borderRadius:'50%', background: myStories ? '#0a0a0a' : 'transparent', padding: myStories ? 2 : 0, display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:currentUser?.avatarColor||'#ff2d55',
+                border: !myStories ? '1.5px dashed rgba(255,255,255,0.3)' : 'none',
+                display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:20, overflow:'hidden' }}>
+                {currentUser?.avatarUrl ? <img src={currentUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : currentUser?.avatar}
               </div>
             </div>
           </div>
+          <div onClick={e=>{e.stopPropagation(); onCreateStory?.();}} style={{ position:'absolute', bottom:0, right:0, width:20, height:20, background:'#ff2d55', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', border:'2px solid #0a0a0a', fontSize:12, color:'white', fontWeight:800 }}>+</div>
         </button>
-        <span style={{ color:'rgba(255,255,255,0.5)', fontSize:11 }}>{u.username.split('_')[0]}</span>
+        <span style={{ color:'rgba(255,255,255,0.5)', fontSize:11 }}>Your story</span>
       </div>
-    ))}
-  </div>
-);
+
+      {/* Other users' stories — ALL users, not just followed */}
+      {otherStories.map((group, idx) => (
+        <div key={group.userId} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5, flexShrink:0 }}>
+          <button onClick={() => onViewStory?.({ groups: storyUsers, startIdx: storyUsers.findIndex(g => g.userId === group.userId) })}
+            style={{ padding:0, background:'none', border:'none', cursor:'pointer' }}>
+            <div style={{ width:66, height:66, borderRadius:'50%', background:'linear-gradient(135deg,#ff2d55,#af52de,#ff9500)', padding:2, display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:'#0a0a0a', padding:2, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:group.avatarColor||'#ff2d55', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:20, overflow:'hidden' }}>
+                  {group.avatarUrl ? <img src={group.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : (group.username||'?')[0].toUpperCase()}
+                </div>
+              </div>
+            </div>
+          </button>
+          <span style={{ color:'rgba(255,255,255,0.5)', fontSize:11, maxWidth:60, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', textAlign:'center' }}>{group.username.split('_')[0]}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
 
 /* ─────────────── CREATE STORY MODAL ─────────────── */
 const CreateStoryModal = ({ currentUser, onClose, showToast }) => {
@@ -5427,31 +5662,17 @@ const handleMessage = uid => {
       )}
       {showCall && <CallModal type={showCall.type} contactName={showCall.contactName} contactAvatar={showCall.contactAvatar} contactId={showCall.contactId} currentUser={currentUser} onClose={()=>setShowCall(null)} isCallee={showCall.isCallee} callDocId={showCall.callDocId} />}
       {showLiveStream && <LiveStream streamer={showLiveStream} onClose={()=>setShowLiveStream(null)} showToast={showToast} currentUser={currentUser} />}
-      {showStoryViewer && (
-        <div onClick={()=>setShowStoryViewer(null)} style={{position:'fixed',inset:0,background:'#000',zIndex:3000,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column'}}>
-          <div style={{position:'absolute',top:16,right:16,zIndex:10}}>
-            <button onClick={()=>setShowStoryViewer(null)} style={{background:'rgba(255,255,255,0.12)',border:'none',borderRadius:'50%',width:36,height:36,color:'white',cursor:'pointer',fontSize:18}}>✕</button>
-          </div>
-          <div style={{position:'absolute',top:0,left:0,right:0,height:3,background:'rgba(255,255,255,0.15)',borderRadius:2,margin:'14px 14px 0'}}>
-            <div style={{height:'100%',background:'white',borderRadius:2,width:'100%',animation:'notifBar 5s linear forwards'}}/>
-          </div>
-          {showStoryViewer.mediaType === 'video' || showStoryViewer.mediaUrl?.includes('/video/') ? (
-            <video src={showStoryViewer.mediaUrl} autoPlay loop playsInline style={{width:'100%',height:'100%',objectFit:'cover'}}/>
-          ) : showStoryViewer.mediaUrl ? (
-            <img src={showStoryViewer.mediaUrl} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
-          ) : (
-            <div style={{width:'100%',height:'100%',background:showStoryViewer.bgColor||'#ff2d55',display:'flex',alignItems:'center',justifyContent:'center',padding:32}}>
-              <div style={{color:'white',fontSize:28,fontWeight:700,textAlign:'center',lineHeight:1.4}}>{showStoryViewer.text}</div>
-            </div>
-          )}
-          <div onClick={e=>{ e.stopPropagation(); if(showStoryViewer.userId){ handleViewProfile(showStoryViewer.userId); setShowStoryViewer(null); } }} style={{position:'absolute',bottom:60,left:16,display:'flex',alignItems:'center',gap:10,cursor:showStoryViewer.userId?'pointer':'default'}}>
-            <div style={{width:40,height:40,borderRadius:'50%',background:showStoryViewer.avatarColor||'#ff2d55',display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontWeight:'bold',fontSize:16,overflow:'hidden'}}>
-              {showStoryViewer.avatarUrl?<img src={showStoryViewer.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/>:(showStoryViewer.username||'?')[0].toUpperCase()}
-            </div>
-            <span style={{color:'white',fontWeight:700,fontSize:14}}>@{showStoryViewer.username||'user'}</span>
-          </div>
-        </div>
+      {showStoryViewer && showStoryViewer.groups && (
+        <TelegramStoryViewer
+          storyGroups={showStoryViewer.groups}
+          startGroupIdx={showStoryViewer.startIdx || 0}
+          currentUser={currentUser}
+          onClose={()=>setShowStoryViewer(null)}
+          onViewProfile={uid=>{handleViewProfile(uid); setShowStoryViewer(null);}}
+          showToast={showToast}
+        />
       )}
+
       {showSoundLibrary && <SoundLibraryPage onSelectSound={s=>{showToast?.(`Selected: ${s.name}`,'success'); setShowSoundLibrary(false);}} onClose={()=>setShowSoundLibrary(false)} />}
       {showQRCode && <QRCodePage user={currentUser} onClose={()=>setShowQRCode(false)} />}
       {showNotifications && <NotificationsPage currentUser={currentUser} users={users} videos={videos} onClose={()=>setShowNotifications(false)} onViewProfile={uid=>{handleViewProfile(uid); setShowNotifications(false);}} t={t} />}
