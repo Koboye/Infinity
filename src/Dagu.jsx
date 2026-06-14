@@ -326,8 +326,19 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack }) => {
 
   useEffect(() => {
     if (!currentUser?.id) return;
-    const q = query(collection(db, 'groups'), where('members', 'array-contains', currentUser.id), orderBy('lastMessageAt', 'desc'));
-    const unsub = onSnapshot(q, snap => setGroups(snap.docs.map(d => ({ id: d.id, ...d.data() }))), () => {});
+    // NOTE: avoid combining array-contains with orderBy on a different field —
+    // that requires a Firestore composite index, and without it onSnapshot
+    // silently errors and `groups` stays empty (new groups appear "not found").
+    // Sort client-side instead.
+    const q = query(collection(db, 'groups'), where('members', 'array-contains', currentUser.id));
+    const unsub = onSnapshot(q, snap => {
+      const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      list.sort((a, b) => (b.lastMessageAt?.toMillis?.() || 0) - (a.lastMessageAt?.toMillis?.() || 0));
+      setGroups(list);
+    }, (err) => {
+      console.error('groups query error:', err);
+      showToast?.('Failed to load groups: ' + err.message, 'error');
+    });
     return () => unsub();
   }, [currentUser?.id]);
 
@@ -349,15 +360,23 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack }) => {
   const createGroup = async () => {
     if (!groupName.trim() || selectedMembers.length === 0) { showToast?.('Add a name and at least one member', 'error'); return; }
     const members = [currentUser.id, ...selectedMembers];
-    const ref = await addDoc(collection(db, 'groups'), {
-      name: groupName.trim(), members, admin: currentUser.id,
-      createdAt: serverTimestamp(), lastMessageAt: serverTimestamp(),
-      avatar: groupName.trim()[0].toUpperCase(), avatarColor: `hsl(${Math.floor(Math.random() * 360)},70%,60%)`
-    });
-    showToast?.('Group created! 🎉', 'success');
-    setShowCreate(false); setGroupName(''); setSelectedMembers([]);
-    setActiveGroup({ id: ref.id, name: groupName.trim(), members });
+    const avatar = groupName.trim()[0].toUpperCase();
+    const avatarColor = `hsl(${Math.floor(Math.random() * 360)},70%,60%)`;
+    try {
+      const ref = await addDoc(collection(db, 'groups'), {
+        name: groupName.trim(), members, admin: currentUser.id,
+        createdAt: serverTimestamp(), lastMessageAt: serverTimestamp(),
+        avatar, avatarColor
+      });
+      showToast?.('Group created! 🎉', 'success');
+      setShowCreate(false); setGroupName(''); setSelectedMembers([]);
+      setActiveGroup({ id: ref.id, name: groupName.trim(), members, avatar, avatarColor, admin: currentUser.id });
+    } catch (err) {
+      console.error('createGroup error:', err);
+      showToast?.('Failed to create group: ' + err.message, 'error');
+    }
   };
+
 
   const sendGroupMsg = async () => {
     if (!msgText.trim() || !activeGroup) return;
@@ -3799,9 +3818,25 @@ const CallModal = ({ type, contactName, contactAvatar, contactId, currentUser, o
           ? { audio: true, video: { facingMode: 'user' } }
           : { audio: true, video: false };
         let stream;
-        try { stream = await navigator.mediaDevices.getUserMedia(constraints); }
-        catch { stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false }); }
+        try {
+          stream = await navigator.mediaDevices.getUserMedia(constraints);
+        } catch (camErr) {
+          console.error('getUserMedia failed:', camErr?.name, camErr?.message);
+          if (type === 'video') {
+            // Don't silently fall back to audio — that leaves the UI showing
+            // a "video call" with no camera feed and confuses users.
+            stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            console.warn('Video unavailable, continuing as audio-only:', camErr?.message);
+          } else {
+            stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+          }
+        }
         localStreamRef.current = stream;
+        const gotVideoTrack = stream.getVideoTracks().length > 0;
+        console.log('Call stream tracks:', stream.getTracks().map(t => `${t.kind}:${t.label}`));
+        if (type === 'video' && !gotVideoTrack) {
+          setIsCamOff(true);
+        }
         if (localVideoRef.current) { localVideoRef.current.srcObject = stream; localVideoRef.current.play().catch(()=>{}); }
 
         // DEMO ONLY — expressturn free tier has low bandwidth caps.
