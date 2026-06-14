@@ -1173,9 +1173,29 @@ const Stories = ({ users, currentUser, onViewStory, onCreateStory, onLive, follo
       <button onClick={async () => {
         try {
           const snap = await getDocs(query(collection(db,'stories'), where('userId','==',currentUser?.id), orderBy('createdAt','desc'), limit(1)));
-          if(!snap.empty) onViewStory?.({...snap.docs[0].data(), id: snap.docs[0].id, isOwn:true});
-          else onCreateStory?.();
-        } catch(e) { onCreateStory?.(); }
+          if(!snap.empty){ onViewStory?.({...snap.docs[0].data(), id: snap.docs[0].id, isOwn:true}); return; }
+          // Fallback without orderBy (in case the composite index isn't ready)
+          const snap2 = await getDocs(query(collection(db,'stories'), where('userId','==',currentUser?.id)));
+          if(!snap2.empty){
+            const docs = snap2.docs.map(d=>({...d.data(), id:d.id}));
+            docs.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+            onViewStory?.({...docs[0], isOwn:true});
+            return;
+          }
+          onCreateStory?.();
+        } catch(e) {
+          // Even on a query error, try the unordered fallback before giving up
+          try {
+            const snap2 = await getDocs(query(collection(db,'stories'), where('userId','==',currentUser?.id)));
+            if(!snap2.empty){
+              const docs = snap2.docs.map(d=>({...d.data(), id:d.id}));
+              docs.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+              onViewStory?.({...docs[0], isOwn:true});
+              return;
+            }
+          } catch(e2) {}
+          onCreateStory?.();
+        }
       }} style={{ width:62, height:62, borderRadius:'50%', background:'rgba(255,255,255,0.05)', border:'1.5px dashed rgba(255,255,255,0.2)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', position:'relative', overflow:'hidden' }}>
         <div style={{ width:56, height:56, borderRadius:'50%', background:currentUser?.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:20, overflow:'hidden' }}>
           {currentUser?.avatarUrl ? <img src={currentUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : currentUser?.avatar}
@@ -3499,8 +3519,16 @@ unsub = onSnapshot(q, (snap) => {
 };
 
 const InboxPage = ({ t, users, currentUser, showToast, onViewProfile, initialTargetId, onClearTarget, persistedConversation, onSetConversation, onVoiceCall, onVideoCall }) => {
-  const [activeConversation, setActiveConversation] = useState(null);
+  const [activeConversation, setActiveConversation] = useState(persistedConversation || null);
   const [conversations, setConversations] = useState([]);
+
+  // Sync when the App-level persisted conversation changes (e.g. tab switch back)
+  useEffect(()=>{
+    if(persistedConversation && persistedConversation !== 'groups'){
+      setActiveConversation(persistedConversation);
+    }
+  },[persistedConversation]);
+
   useEffect(()=>{
     // Only clear an active conversation if it's malformed (no target user id).
     // Do NOT clear it just because `users` hasn't loaded that participant yet —
@@ -5212,14 +5240,20 @@ const handleLogout = async () => {
   const handleViewProfile = uid => { const user=users.find(u=>u.id===uid); if(user) setViewingProfile(user); };
   const [inboxTargetId, setInboxTargetId] = useState(null);
 const [activeConversation, setActiveConversation] = useState(null);
+const [quickConversation, setQuickConversation] = useState(null);
 const handleMessage = uid => {
   if(!uid) { showToast?.('Unable to open chat: user not found','error'); return; }
-  // Don't block if users haven't loaded yet — InboxPage will wait
-  setActiveConversation(null);
-  setInboxTargetId(uid);
-  setShowCamera(false);
-  setShowSearch(false);
-  setActiveTab('inbox');
+  if(!currentUser?.id) { showToast?.('Unable to open chat: not signed in','error'); return; }
+  if(uid === currentUser.id) { showToast?.("You can't message yourself",'info'); return; }
+  const convId = [currentUser.id, uid].sort().join('_');
+  const otherUser = users.find(u=>u.id===uid) || { id: uid, username:'', avatar:'?', avatarColor:'#555' };
+  // Open the conversation immediately as a top-level overlay — independent of
+  // activeTab/showCamera/showSearch, so it can never be hidden by other UI state.
+  setQuickConversation({ id: convId, otherUser });
+  setDoc(doc(db, 'conversations', convId), {
+    participants: [currentUser.id, uid],
+    lastMessageAt: serverTimestamp(),
+  }, { merge: true }).catch(() => {});
 };
 
   const tabs = [
@@ -5311,7 +5345,11 @@ const handleMessage = uid => {
       {showAnalytics && <CreatorAnalytics user={currentUser} videos={videos} onClose={()=>setShowAnalytics(false)} />}
       {showCreateStory && <CreateStoryModal currentUser={currentUser} onClose={()=>setShowCreateStory(false)} showToast={showToast} />}
       {/* ── v4 NEW OVERLAYS ── */}
-      {showGroups && <GroupChatPage currentUser={currentUser} users={users} showToast={showToast} onBack={()=>setShowGroups(false)} />}
+      {showGroups && (
+        <div style={{ position:'fixed', inset:0, zIndex:10500, background:'#0a0a0a', maxWidth:430, margin:'0 auto' }}>
+          <GroupChatPage currentUser={currentUser} users={users} showToast={showToast} onBack={()=>setShowGroups(false)} />
+        </div>
+      )}
       {showSavedPosts && <SavedPostsPage currentUser={currentUser} showToast={showToast} onClose={()=>setShowSavedPosts(false)} />}
       {showDiscover && <DiscoverPage videos={videos} users={users} onViewProfile={uid=>{handleViewProfile(uid);}} showToast={showToast} onClose={()=>setShowDiscover(false)} />}
       {showShareSheet && <ShareSheet video={showShareSheet} currentUser={currentUser} onClose={()=>setShowShareSheet(null)} showToast={showToast} />}
@@ -5320,6 +5358,21 @@ const handleMessage = uid => {
         <UserProfileModal user={viewingProfile} currentUser={currentUser} onClose={()=>setViewingProfile(null)} onFollow={toggleFollow} onMessage={uid=>{handleMessage(uid); setViewingProfile(null);}} onVoiceCall={uid=>{const u=users.find(uu=>uu.id===uid); setShowCall({type:'audio',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid}); setViewingProfile(null);}}
  onVideoCall={uid=>{const u=users.find(uu=>uu.id===uid); setShowCall({type:'video',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid}); setViewingProfile(null);}}
  followed={followed} showToast={showToast} userVideos={videos.filter(v=>v.userId===viewingProfile?.id)} />
+      )}
+
+      {quickConversation && (
+        <div style={{ position:'fixed', inset:0, zIndex:10500, background:'#0a0a0a', maxWidth:430, margin:'0 auto' }}>
+          <ConversationView
+            currentUser={currentUser}
+            otherUser={users.find(u=>u.id===quickConversation.otherUser?.id) || quickConversation.otherUser}
+            conversationId={quickConversation.id}
+            onBack={()=>setQuickConversation(null)}
+            showToast={showToast}
+            onViewProfile={uid=>{ setQuickConversation(null); handleViewProfile(uid); }}
+            onVoiceCall={uid=>{const u=users.find(uu=>uu.id===uid); const callDocId=[currentUser.id,uid].sort().join('_'); setShowCall({type:'audio',contactName:u?.username||quickConversation.otherUser?.username,contactAvatar:u?.avatar||quickConversation.otherUser?.avatar,contactId:uid,callDocId});}}
+            onVideoCall={uid=>{const u=users.find(uu=>uu.id===uid); const callDocId=[currentUser.id,uid].sort().join('_'); setShowCall({type:'video',contactName:u?.username||quickConversation.otherUser?.username,contactAvatar:u?.avatar||quickConversation.otherUser?.avatar,contactId:uid,callDocId});}}
+          />
+        </div>
       )}
 
       <div style={{ flex:1, overflow:'hidden', position:'relative', minHeight:0 }}>
