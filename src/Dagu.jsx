@@ -2376,35 +2376,69 @@ const handleLongPressStart = () => {
           <div style={{ fontSize:80, animation:'heartBurst 0.9s ease forwards' }}>❤️</div>
         </div>
       )}
-      <div style={{ position:'absolute', bottom:80, left:14, right:70, zIndex:8, paddingBottom:10 }}>
-        <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:10 }}>
-          <button onClick={()=>onViewProfile?.(video.userId)} style={{ position:'relative', background:'none', border:'none', cursor:'pointer', padding:0 }}>
-            <div style={{ width:42, height:42, borderRadius:'50%', background:video.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:16, border:'2px solid rgba(255,255,255,0.5)', overflow:'hidden' }}>
-              {video.avatarUrl ? <img src={video.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : video.avatar}
+      {/* Facebook-style: if long text, show text block above video in a semi-opaque bar; otherwise overlay at bottom */}
+      {(() => {
+        const desc = (translatedDesc && !showOriginalDesc) ? translatedDesc : displayDesc;
+        const isLongText = desc && desc.length > 80;
+        const isVideo = !(video?.videoUrl?.match(/\.(jpg|jpeg|png|gif|webp)/i) || video?.mediaType?.startsWith('image'));
+        if (isLongText && isVideo) {
+          return (
+            <div data-notap='1' style={{ position:'absolute', top:56, left:0, right:0, zIndex:9, background:'rgba(0,0,0,0.82)', backdropFilter:'blur(8px)', padding:'10px 14px 8px', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6 }}>
+                <button onClick={()=>onViewProfile?.(video.userId)} style={{ position:'relative', background:'none', border:'none', cursor:'pointer', padding:0, flexShrink:0 }}>
+                  <div style={{ width:34, height:34, borderRadius:'50%', background:video.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:14, border:'2px solid rgba(255,255,255,0.5)', overflow:'hidden' }}>
+                    {video.avatarUrl ? <img src={video.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : video.avatar}
+                  </div>
+                  {video.verified && <div style={{ position:'absolute', bottom:-2, right:-2, width:13, height:13, background:'#1d9bf0', borderRadius:'50%', fontSize:8, display:'flex', alignItems:'center', justifyContent:'center', color:'white' }}>✓</div>}
+                </button>
+                <span onClick={e=>{e.stopPropagation();onViewProfile?.(video.userId);}} style={{ color:'white', fontWeight:700, fontSize:14, cursor:'pointer', flex:1, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{video.username}</span>
+                <button data-notap='1' onClick={e=>{e.stopPropagation();onFollow?.(video.userId);}} style={{ padding:'4px 12px', borderRadius:20, background:followed?.includes(video.userId)?'rgba(255,255,255,0.08)':'rgba(255,45,85,0.9)', border:followed?.includes(video.userId)?'1px solid rgba(255,255,255,0.4)':'none', color:'white', fontSize:11, fontWeight:700, cursor:'pointer' }}>{followed?.includes(video.userId)?'Unfollow':'+ Follow'}</button>
+              </div>
+              <p style={{ color:'rgba(255,255,255,0.92)', fontSize:13, lineHeight:1.45, margin:0 }}>{desc}</p>
+              {translatedDesc && (
+                <button data-notap='1' onClick={e=>{e.stopPropagation(); setShowOriginalDesc(s=>!s);}} style={{ background:'rgba(0,122,255,0.15)', border:'1px solid rgba(0,122,255,0.3)', borderRadius:12, padding:'3px 10px', color:'#5ab2ff', fontSize:11, cursor:'pointer', marginTop:5, display:'inline-flex', alignItems:'center', gap:4 }}>
+                  🌐 {showOriginalDesc ? 'See translation' : 'See original'}
+                </button>
+              )}
+              {!translatedDesc && currentUser?.language && currentUser.language !== 'en' && desc && desc.length > 4 && (
+                <TranslateButton text={desc} targetLang={currentUser.language} onTranslated={t=>{ setTranslatedDesc(t); setShowOriginalDesc(false); }} />
+              )}
             </div>
-            {video.verified && <div style={{ position:'absolute', bottom:-2, right:-2, width:14, height:14, background:'#1d9bf0', borderRadius:'50%', fontSize:9, display:'flex', alignItems:'center', justifyContent:'center', color:'white' }}>✓</div>}
-          </button>
-          <span onClick={e=>{e.stopPropagation();onViewProfile?.(video.userId);}} style={{ color:'white', fontWeight:700, fontSize:15, cursor:'pointer', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{video.username}</span>
-          <button data-notap='1' onClick={e=>{e.stopPropagation();onFollow?.(video.userId);}} style={{ padding:'5px 14px', borderRadius:20, background:followed?.includes(video.userId)?'rgba(255,255,255,0.08)':'rgba(255,45,85,0.9)', border:followed?.includes(video.userId)?'1px solid rgba(255,255,255,0.4)':'none', color:'white', fontSize:12, fontWeight:700, cursor:'pointer', backdropFilter:'blur(4px)' }}>{followed?.includes(video.userId)?'Unfollow':'+ Follow'}</button>
-        </div>
-        <p style={{ color:'rgba(255,255,255,0.9)', fontSize:13, marginBottom:4, lineHeight:1.5 }}>
-  {(translatedDesc && !showOriginalDesc) ? translatedDesc : displayDesc}
-</p>
-{translatedDesc && (
-  <button data-notap='1' onClick={e=>{e.stopPropagation(); setShowOriginalDesc(s=>!s);}} style={{ background:'rgba(0,122,255,0.15)', border:'1px solid rgba(0,122,255,0.3)', borderRadius:12, padding:'3px 10px', color:'#5ab2ff', fontSize:11, cursor:'pointer', marginBottom:8, display:'inline-flex', alignItems:'center', gap:4 }}>
-    🌐 {showOriginalDesc ? 'See translation' : 'See original'}
-  </button>
-)}
-        <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-          <div style={{ width:22, height:22, borderRadius:'50%', background:'linear-gradient(135deg,#ff2d55,#af52de)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:12 }}>♪</div>
-          <span style={{ color:'rgba(255,255,255,0.65)', fontSize:12 }}>{video.song}</span>
-          <button onClick={()=>onSaveSound?.()} style={{ marginLeft:8, background:'rgba(255,255,255,0.1)', border:'none', borderRadius:10, padding:'3px 8px', color:'rgba(255,255,255,0.7)', fontSize:10, cursor:'pointer', backdropFilter:'blur(8px)' }}>Save</button>
-        </div>
-      </div>
+          );
+        }
+        return (
+          <div style={{ position:'absolute', bottom:0, left:14, right:70, zIndex:8, paddingBottom:12 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
+              <button onClick={()=>onViewProfile?.(video.userId)} style={{ position:'relative', background:'none', border:'none', cursor:'pointer', padding:0 }}>
+                <div style={{ width:42, height:42, borderRadius:'50%', background:video.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:16, border:'2px solid rgba(255,255,255,0.5)', overflow:'hidden' }}>
+                  {video.avatarUrl ? <img src={video.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : video.avatar}
+                </div>
+                {video.verified && <div style={{ position:'absolute', bottom:-2, right:-2, width:14, height:14, background:'#1d9bf0', borderRadius:'50%', fontSize:9, display:'flex', alignItems:'center', justifyContent:'center', color:'white' }}>✓</div>}
+              </button>
+              <span onClick={e=>{e.stopPropagation();onViewProfile?.(video.userId);}} style={{ color:'white', fontWeight:700, fontSize:15, cursor:'pointer', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{video.username}</span>
+              <button data-notap='1' onClick={e=>{e.stopPropagation();onFollow?.(video.userId);}} style={{ padding:'5px 14px', borderRadius:20, background:followed?.includes(video.userId)?'rgba(255,255,255,0.08)':'rgba(255,45,85,0.9)', border:followed?.includes(video.userId)?'1px solid rgba(255,255,255,0.4)':'none', color:'white', fontSize:12, fontWeight:700, cursor:'pointer', backdropFilter:'blur(4px)' }}>{followed?.includes(video.userId)?'Unfollow':'+ Follow'}</button>
+            </div>
+            <p style={{ color:'rgba(255,255,255,0.9)', fontSize:13, marginBottom:4, lineHeight:1.5 }}>{desc}</p>
+            {translatedDesc && (
+              <button data-notap='1' onClick={e=>{e.stopPropagation(); setShowOriginalDesc(s=>!s);}} style={{ background:'rgba(0,122,255,0.15)', border:'1px solid rgba(0,122,255,0.3)', borderRadius:12, padding:'3px 10px', color:'#5ab2ff', fontSize:11, cursor:'pointer', marginBottom:8, display:'inline-flex', alignItems:'center', gap:4 }}>
+                🌐 {showOriginalDesc ? 'See translation' : 'See original'}
+              </button>
+            )}
+            {!translatedDesc && currentUser?.language && currentUser.language !== 'en' && desc && desc.length > 4 && (
+              <TranslateButton text={desc} targetLang={currentUser.language} onTranslated={t=>{ setTranslatedDesc(t); setShowOriginalDesc(false); }} />
+            )}
+            <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+              <div style={{ width:22, height:22, borderRadius:'50%', background:'linear-gradient(135deg,#ff2d55,#af52de)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:12 }}>♪</div>
+              <span style={{ color:'rgba(255,255,255,0.65)', fontSize:12 }}>{video.song}</span>
+              <button onClick={()=>onSaveSound?.()} style={{ marginLeft:8, background:'rgba(255,255,255,0.1)', border:'none', borderRadius:10, padding:'3px 8px', color:'rgba(255,255,255,0.7)', fontSize:10, cursor:'pointer', backdropFilter:'blur(8px)' }}>Save</button>
+            </div>
+          </div>
+        );
+      })()}
 
       {showActionMenu && (
         <div onClick={e=>{e.stopPropagation();setShowActionMenu(false);}} style={{ position:'fixed', inset:0, zIndex:9990 }}>
-          <div onClick={e=>e.stopPropagation()} style={{ position:'fixed', bottom:90, right:14, background:'rgba(18,18,18,0.97)', backdropFilter:'blur(20px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:22, padding:6, zIndex:9991, minWidth:210, animation:'popIn 0.2s ease' }}>
+          <div onClick={e=>e.stopPropagation()} style={{ position:'fixed', bottom:10, right:14, background:'rgba(18,18,18,0.97)', backdropFilter:'blur(20px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:22, padding:6, zIndex:9991, minWidth:210, animation:'popIn 0.2s ease' }}>
             {[
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>, label:t?.duet||'Duet', fn:()=>onDuet?.(video.id)},
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M15 14l5-5-5-5"/><path d="M4 20v-7a4 4 0 014-4h12"/></svg>, label:t?.stitch||'Stitch', fn:()=>onStitch?.(video.id)},
@@ -2485,7 +2519,7 @@ const handleLongPressStart = () => {
         </div>
       )}
 
-      <div style={{ position:'absolute', right:12, bottom:90, display:'flex', flexDirection:'column', alignItems:'center', gap:6, zIndex:6 }}>
+      <div style={{ position:'absolute', right:12, bottom:0, display:'flex', flexDirection:'column', alignItems:'center', gap:6, zIndex:6, paddingBottom:10 }}>
        <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();haptic('medium');handleLike();}}
           style={{ background:'rgba(0,0,0,0.3)', border:'none', borderRadius:'50%', width:52, height:52, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer',
             transform: liked ? 'scale(1)' : 'scale(1)',
@@ -2573,6 +2607,202 @@ const NotifBellButton = ({ onOpenNotifications, currentUser }) => {
 };
 
       
+/* ─────────────── JOBS & SKILLS PAGE ─────────────── */
+const JobsSkillsPage = ({ currentUser, showToast, mode }) => {
+  const [tab, setTab] = useState(mode === 'skill' ? 'skills' : 'jobs');
+  const [showPost, setShowPost] = useState(false);
+  const [postType, setPostType] = useState('job');
+  const [form, setForm] = useState({ title:'', company:'', location:'', type:'Full-time', salary:'', description:'', skills:'' });
+  const [skillForm, setSkillForm] = useState({ title:'', category:'', level:'Beginner', description:'', price:'', tags:'' });
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('all');
+  const [search, setSearch] = useState('');
+  const jobTypes = ['Full-time','Part-time','Contract','Freelance','Internship','Remote'];
+  const skillCategories = ['Design','Development','Marketing','Writing','Video','Music','Business','Languages','Teaching','Other'];
+  const skillLevels = ['Beginner','Intermediate','Expert'];
+  const jobFilters = [['all','All'],['Full-time','Full-time'],['Part-time','Part-time'],['Remote','Remote'],['Freelance','Freelance']];
+  const skillFilters = [['all','All'],['Development','Dev'],['Design','Design'],['Marketing','Marketing'],['Writing','Writing']];
+
+  useEffect(() => {
+    setLoading(true);
+    const col = tab === 'jobs' ? 'jobs' : 'skills';
+    const q = query(collection(db, col), orderBy('createdAt','desc'), limit(30));
+    const unsub = onSnapshot(q, snap => {
+      setItems(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setLoading(false);
+    }, () => setLoading(false));
+    return () => unsub();
+  }, [tab]);
+
+  const postJob = async () => {
+    if (!form.title.trim() || !form.company.trim()) { showToast?.('Title and company required', 'error'); return; }
+    await addDoc(collection(db, 'jobs'), { ...form, userId: currentUser?.id, username: currentUser?.username, avatarUrl: currentUser?.avatarUrl || null, avatarColor: currentUser?.avatarColor || '#ff2d55', createdAt: serverTimestamp(), applicants: 0, saved: [] });
+    showToast?.('Job posted! 🎉', 'success');
+    setShowPost(false);
+    setForm({ title:'', company:'', location:'', type:'Full-time', salary:'', description:'', skills:'' });
+  };
+
+  const postSkill = async () => {
+    if (!skillForm.title.trim()) { showToast?.('Skill title required', 'error'); return; }
+    await addDoc(collection(db, 'skills'), { ...skillForm, userId: currentUser?.id, username: currentUser?.username, avatarUrl: currentUser?.avatarUrl || null, avatarColor: currentUser?.avatarColor || '#ff2d55', createdAt: serverTimestamp(), rating: 0, reviews: 0, saved: [] });
+    showToast?.('Skill posted! ✨', 'success');
+    setShowPost(false);
+    setSkillForm({ title:'', category:'', level:'Beginner', description:'', price:'', tags:'' });
+  };
+
+  const applyJob = async (item) => {
+    await updateDoc(doc(db, 'jobs', item.id), { applicants: increment(1) }).catch(() => {});
+    showToast?.('Application sent! ✅', 'success');
+  };
+  const saveItem = async (item) => {
+    const col = tab === 'jobs' ? 'jobs' : 'skills';
+    const saved = item.saved || [];
+    const isSaved = saved.includes(currentUser?.id);
+    await updateDoc(doc(db, col, item.id), { saved: isSaved ? arrayRemove(currentUser?.id) : arrayUnion(currentUser?.id) }).catch(() => {});
+    showToast?.(isSaved ? 'Removed' : 'Saved! 🔖', isSaved ? 'info' : 'success');
+  };
+
+  const filters = tab === 'jobs' ? jobFilters : skillFilters;
+  const displayItems = items.filter(it => {
+    const matchFilter = filter === 'all' || (tab === 'jobs' ? it.type === filter : it.category === filter);
+    const matchSearch = !search || it.title?.toLowerCase().includes(search.toLowerCase()) || it.company?.toLowerCase().includes(search.toLowerCase()) || it.description?.toLowerCase().includes(search.toLowerCase());
+    return matchFilter && matchSearch;
+  });
+
+  const inputStyle = { width:'100%', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:'12px 14px', color:'white', outline:'none', fontSize:13, boxSizing:'border-box', fontFamily:"'Inter',-apple-system,sans-serif" };
+  const labelStyle = { color:'rgba(255,255,255,0.5)', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:0.5, marginBottom:6, display:'block' };
+
+  return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column', background:'#0a0a0a', overflow:'hidden' }}>
+      {/* Header */}
+      <div style={{ padding:'14px 16px 0', background:'#0a0a0a', flexShrink:0 }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
+          <div style={{ display:'flex', gap:20 }}>
+            {[['jobs','💼 Jobs'],['skills','🛠️ Skills']].map(([id,label])=>(
+              <button key={id} onClick={()=>{ setTab(id); setFilter('all'); setSearch(''); }} style={{ background:'none', border:'none', color:tab===id?'white':'rgba(255,255,255,0.4)', fontWeight:tab===id?800:500, fontSize:16, cursor:'pointer', paddingBottom:8, borderBottom:tab===id?'2.5px solid #ff2d55':'2.5px solid transparent', fontFamily:"'Inter',-apple-system,sans-serif", transition:'all 0.2s' }}>{label}</button>
+            ))}
+          </div>
+          <button onClick={()=>setShowPost(true)} style={{ background:'linear-gradient(135deg,#ff2d55,#af52de)', border:'none', borderRadius:20, padding:'8px 16px', color:'white', fontWeight:700, fontSize:12, cursor:'pointer' }}>+ Post</button>
+        </div>
+        {/* Search */}
+        <div style={{ background:'rgba(255,255,255,0.06)', borderRadius:22, display:'flex', alignItems:'center', padding:'9px 14px', gap:8, marginBottom:10 }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder={tab==='jobs'?'Search jobs...':'Search skills...'} style={{ flex:1, background:'none', border:'none', color:'white', outline:'none', fontSize:13 }} />
+          {search && <button onClick={()=>setSearch('')} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.4)', cursor:'pointer', fontSize:14 }}>✕</button>}
+        </div>
+        {/* Filters */}
+        <div style={{ display:'flex', gap:7, overflowX:'auto', paddingBottom:10 }}>
+          {filters.map(([id,label])=>(
+            <button key={id} onClick={()=>setFilter(id)} style={{ background:filter===id?'rgba(255,45,85,0.15)':'rgba(255,255,255,0.04)', border:`1px solid ${filter===id?'rgba(255,45,85,0.4)':'rgba(255,255,255,0.08)'}`, borderRadius:20, padding:'5px 13px', color:filter===id?'#ff2d55':'rgba(255,255,255,0.5)', fontSize:12, fontWeight:filter===id?700:400, cursor:'pointer', whiteSpace:'nowrap', flexShrink:0 }}>{label}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* List */}
+      <div style={{ flex:1, overflowY:'auto', padding:'0 12px 16px' }}>
+        {loading && <div style={{ textAlign:'center', padding:40 }}><div style={{ width:28, height:28, border:'3px solid rgba(255,45,85,0.3)', borderTop:'3px solid #ff2d55', borderRadius:'50%', animation:'spin 1s linear infinite', margin:'0 auto' }} /></div>}
+        {!loading && displayItems.length === 0 && (
+          <div style={{ textAlign:'center', padding:60, color:'rgba(255,255,255,0.2)' }}>
+            <div style={{ fontSize:48, marginBottom:12 }}>{tab==='jobs'?'💼':'🛠️'}</div>
+            <div style={{ fontSize:14 }}>No {tab} posted yet</div>
+            <div style={{ fontSize:12, marginTop:6 }}>Be the first to post!</div>
+          </div>
+        )}
+        {displayItems.map(item => (
+          <div key={item.id} style={{ background:'rgba(255,255,255,0.03)', borderRadius:20, padding:16, marginBottom:12, border:'1px solid rgba(255,255,255,0.07)' }}>
+            <div style={{ display:'flex', alignItems:'flex-start', gap:12 }}>
+              <div style={{ width:44, height:44, borderRadius:14, background:item.avatarColor||'#ff2d55', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:18, flexShrink:0, overflow:'hidden' }}>
+                {item.avatarUrl ? <img src={item.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/> : (item.username||'?')[0].toUpperCase()}
+              </div>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ color:'white', fontWeight:800, fontSize:15, marginBottom:3 }}>{item.title}</div>
+                {tab==='jobs' ? (
+                  <>
+                    <div style={{ color:'rgba(255,255,255,0.6)', fontSize:13, marginBottom:4 }}>{item.company} · {item.location}</div>
+                    <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:6 }}>
+                      <span style={{ background:'rgba(255,45,85,0.12)', border:'1px solid rgba(255,45,85,0.25)', borderRadius:20, padding:'2px 10px', color:'#ff2d55', fontSize:11, fontWeight:700 }}>{item.type}</span>
+                      {item.salary && <span style={{ background:'rgba(52,199,89,0.1)', border:'1px solid rgba(52,199,89,0.25)', borderRadius:20, padding:'2px 10px', color:'#34c759', fontSize:11 }}>{item.salary}</span>}
+                    </div>
+                    {item.description && <div style={{ color:'rgba(255,255,255,0.55)', fontSize:12, lineHeight:1.5, marginBottom:6 }}>{item.description.substring(0,120)}{item.description.length>120?'...':''}</div>}
+                    {item.skills && <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11 }}>Skills: {item.skills}</div>}
+                  </>
+                ) : (
+                  <>
+                    <div style={{ color:'rgba(255,255,255,0.5)', fontSize:12, marginBottom:4 }}>@{item.username} · {item.category}</div>
+                    <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:6 }}>
+                      <span style={{ background:'rgba(175,82,222,0.12)', border:'1px solid rgba(175,82,222,0.25)', borderRadius:20, padding:'2px 10px', color:'#af52de', fontSize:11, fontWeight:700 }}>{item.level}</span>
+                      {item.price && <span style={{ background:'rgba(255,149,0,0.1)', border:'1px solid rgba(255,149,0,0.25)', borderRadius:20, padding:'2px 10px', color:'#ff9500', fontSize:11 }}>{item.price}</span>}
+                    </div>
+                    {item.description && <div style={{ color:'rgba(255,255,255,0.55)', fontSize:12, lineHeight:1.5, marginBottom:6 }}>{item.description.substring(0,120)}{item.description.length>120?'...':''}</div>}
+                  </>
+                )}
+                <div style={{ color:'rgba(255,255,255,0.25)', fontSize:11, marginTop:4 }}>{item.applicants||0} {tab==='jobs'?'applicants':'bookings'}</div>
+              </div>
+            </div>
+            <div style={{ display:'flex', gap:8, marginTop:12 }}>
+              {tab === 'jobs' ? (
+                <button onClick={()=>applyJob(item)} style={{ flex:1, background:'linear-gradient(135deg,#ff2d55,#af52de)', border:'none', borderRadius:14, padding:'11px 0', color:'white', fontWeight:700, fontSize:13, cursor:'pointer' }}>Apply Now</button>
+              ) : (
+                <button onClick={()=>showToast?.('Contact sent! 📩','success')} style={{ flex:1, background:'linear-gradient(135deg,#ff2d55,#af52de)', border:'none', borderRadius:14, padding:'11px 0', color:'white', fontWeight:700, fontSize:13, cursor:'pointer' }}>Contact</button>
+              )}
+              <button onClick={()=>saveItem(item)} style={{ background:( item.saved||[]).includes(currentUser?.id)?'rgba(255,45,85,0.15)':'rgba(255,255,255,0.05)', border:`1px solid ${(item.saved||[]).includes(currentUser?.id)?'rgba(255,45,85,0.4)':'rgba(255,255,255,0.1)'}`, borderRadius:14, padding:'11px 16px', color:(item.saved||[]).includes(currentUser?.id)?'#ff2d55':'rgba(255,255,255,0.6)', cursor:'pointer', fontSize:16 }}>🔖</button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Post Modal */}
+      {showPost && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.85)', zIndex:9000, display:'flex', alignItems:'flex-end' }} onClick={()=>setShowPost(false)}>
+          <div onClick={e=>e.stopPropagation()} style={{ width:'100%', background:'#111', borderTopLeftRadius:28, borderTopRightRadius:28, maxHeight:'90vh', overflowY:'auto', padding:'20px 20px 44px', border:'1px solid rgba(255,255,255,0.06)' }}>
+            <div style={{ width:36, height:4, background:'rgba(255,255,255,0.15)', borderRadius:2, margin:'0 auto 20px' }} />
+            <div style={{ display:'flex', gap:12, marginBottom:20 }}>
+              {[['job','💼 Post a Job'],['skill','🛠️ Offer a Skill']].map(([id,label])=>(
+                <button key={id} onClick={()=>setPostType(id)} style={{ flex:1, background:postType===id?'rgba(255,45,85,0.12)':'rgba(255,255,255,0.04)', border:`1px solid ${postType===id?'rgba(255,45,85,0.4)':'rgba(255,255,255,0.08)'}`, borderRadius:14, padding:'10px 0', color:postType===id?'#ff2d55':'rgba(255,255,255,0.5)', fontWeight:postType===id?700:500, cursor:'pointer', fontSize:13 }}>{label}</button>
+              ))}
+            </div>
+            {postType === 'job' ? (
+              <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+                <div><label style={labelStyle}>Job Title *</label><input value={form.title} onChange={e=>setForm(f=>({...f,title:e.target.value}))} placeholder="e.g. Senior React Developer" style={inputStyle} /></div>
+                <div><label style={labelStyle}>Company *</label><input value={form.company} onChange={e=>setForm(f=>({...f,company:e.target.value}))} placeholder="Company name" style={inputStyle} /></div>
+                <div><label style={labelStyle}>Location</label><input value={form.location} onChange={e=>setForm(f=>({...f,location:e.target.value}))} placeholder="City, Country or Remote" style={inputStyle} /></div>
+                <div><label style={labelStyle}>Job Type</label>
+                  <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+                    {jobTypes.map(jt=><button key={jt} onClick={()=>setForm(f=>({...f,type:jt}))} style={{ background:form.type===jt?'rgba(255,45,85,0.15)':'rgba(255,255,255,0.04)', border:`1px solid ${form.type===jt?'rgba(255,45,85,0.4)':'rgba(255,255,255,0.08)'}`, borderRadius:20, padding:'6px 13px', color:form.type===jt?'#ff2d55':'rgba(255,255,255,0.5)', fontSize:12, cursor:'pointer' }}>{jt}</button>)}
+                  </div>
+                </div>
+                <div><label style={labelStyle}>Salary Range</label><input value={form.salary} onChange={e=>setForm(f=>({...f,salary:e.target.value}))} placeholder="e.g. $50k-$80k / yr" style={inputStyle} /></div>
+                <div><label style={labelStyle}>Description</label><textarea value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))} placeholder="Job responsibilities, requirements..." rows={4} style={{ ...inputStyle, resize:'none', lineHeight:1.5 }} /></div>
+                <div><label style={labelStyle}>Required Skills</label><input value={form.skills} onChange={e=>setForm(f=>({...f,skills:e.target.value}))} placeholder="React, Node.js, Python..." style={inputStyle} /></div>
+                <button onClick={postJob} style={{ width:'100%', background:'linear-gradient(135deg,#ff2d55,#af52de)', border:'none', borderRadius:20, padding:'15px 0', color:'white', fontWeight:800, fontSize:15, cursor:'pointer', marginTop:8 }}>Post Job 💼</button>
+              </div>
+            ) : (
+              <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+                <div><label style={labelStyle}>Skill Title *</label><input value={skillForm.title} onChange={e=>setSkillForm(f=>({...f,title:e.target.value}))} placeholder="e.g. Logo Design, Python Tutoring" style={inputStyle} /></div>
+                <div><label style={labelStyle}>Category</label>
+                  <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+                    {skillCategories.map(c=><button key={c} onClick={()=>setSkillForm(f=>({...f,category:c}))} style={{ background:skillForm.category===c?'rgba(175,82,222,0.15)':'rgba(255,255,255,0.04)', border:`1px solid ${skillForm.category===c?'rgba(175,82,222,0.4)':'rgba(255,255,255,0.08)'}`, borderRadius:20, padding:'5px 11px', color:skillForm.category===c?'#af52de':'rgba(255,255,255,0.5)', fontSize:11, cursor:'pointer' }}>{c}</button>)}
+                  </div>
+                </div>
+                <div><label style={labelStyle}>Level</label>
+                  <div style={{ display:'flex', gap:6 }}>
+                    {skillLevels.map(l=><button key={l} onClick={()=>setSkillForm(f=>({...f,level:l}))} style={{ flex:1, background:skillForm.level===l?'rgba(0,122,255,0.15)':'rgba(255,255,255,0.04)', border:`1px solid ${skillForm.level===l?'rgba(0,122,255,0.4)':'rgba(255,255,255,0.08)'}`, borderRadius:14, padding:'8px 0', color:skillForm.level===l?'#007aff':'rgba(255,255,255,0.5)', fontSize:12, fontWeight:skillForm.level===l?700:400, cursor:'pointer' }}>{l}</button>)}
+                  </div>
+                </div>
+                <div><label style={labelStyle}>Description</label><textarea value={skillForm.description} onChange={e=>setSkillForm(f=>({...f,description:e.target.value}))} placeholder="Describe what you offer..." rows={3} style={{ ...inputStyle, resize:'none', lineHeight:1.5 }} /></div>
+                <div><label style={labelStyle}>Rate / Price</label><input value={skillForm.price} onChange={e=>setSkillForm(f=>({...f,price:e.target.value}))} placeholder="e.g. $25/hr, $100/project" style={inputStyle} /></div>
+                <div><label style={labelStyle}>Tags</label><input value={skillForm.tags} onChange={e=>setSkillForm(f=>({...f,tags:e.target.value}))} placeholder="logo, branding, illustrator..." style={inputStyle} /></div>
+                <button onClick={postSkill} style={{ width:'100%', background:'linear-gradient(135deg,#af52de,#007aff)', border:'none', borderRadius:20, padding:'15px 0', color:'white', fontWeight:800, fontSize:15, cursor:'pointer', marginTop:8 }}>Post Skill 🛠️</button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 /* ─────────────── HOME FEED ─────────────── */
 const SuggestedUsers = ({ currentUser, users, followed, onFollow, onViewProfile }) => {
   const suggestions = useMemo(()=>
@@ -2699,7 +2929,34 @@ const handlePullEnd = async () => {
     }
     startY.current = null;
   };
-  if(!filteredVideos.length) return <div style={{ height:'100%', display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:12 }}><div style={{ fontSize:48 }}>📭</div><div style={{ color:'rgba(255,255,255,0.3)' }}>{t?.noVideos||'No videos yet. Be the first to post!'}</div></div>;
+  if(!filteredVideos.length && activeCategory === 'foryou') return <div style={{ height:'100%', display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:12 }}><div style={{ fontSize:48 }}>📭</div><div style={{ color:'rgba(255,255,255,0.3)' }}>{t?.noVideos||'No videos yet. Be the first to post!'}</div></div>;
+
+  if (activeCategory === 'skill' || activeCategory === 'job') {
+    return (
+      <div style={{ height:'100%', position:'relative', overflow:'hidden' }}>
+        {/* Top header with category tabs */}
+        <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:15, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 16px 12px', background:'rgba(10,10,10,0.98)', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
+          <div style={{ flex:1, display:'flex', justifyContent:'center', gap:24 }}>
+            {TOP_CATEGORIES.map(cat=>(
+              <button key={cat.id} onClick={()=>{setActiveCategory(cat.id); setCurrentIndex(0);}} style={{ background:'none', border:'none', color:activeCategory===cat.id?'white':'rgba(255,255,255,0.45)', fontWeight:activeCategory===cat.id?800:500, fontSize:15, cursor:'pointer', paddingBottom:6, borderBottom:activeCategory===cat.id?'2.5px solid white':'2.5px solid transparent', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", transition:'all 0.2s' }}>
+                {cat.id==='foryou'?(t?.foryou||cat.label):cat.id==='skill'?(t?.skills||cat.label):(t?.jobs||cat.label)}
+              </button>
+            ))}
+          </div>
+          <div style={{ display:'flex', gap:10, alignItems:'center' }}>
+            <button onClick={onOpenSearch} style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(10px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </button>
+            <NotifBellButton onOpenNotifications={onOpenNotifications} currentUser={currentUser} />
+          </div>
+        </div>
+        <div style={{ position:'absolute', inset:0, paddingTop:60, overflow:'hidden' }}>
+          <JobsSkillsPage currentUser={currentUser} showToast={showToast} mode={activeCategory} />
+        </div>
+      </div>
+    );
+  }
+
   return (
 <div style={{ height:'100%', position:'relative', overflow:'hidden' }} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
       <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:15, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 16px 12px', background:'linear-gradient(to bottom,rgba(0,0,0,0.7) 0%,transparent 100%)' }}>
@@ -2878,7 +3135,7 @@ const handlePullEnd = async () => {
       </div>
 
       {/* Stories row — always at top, below search */}
-      <div style={{ position:'absolute', top:96, left:0, right:0, zIndex:14 }}>
+      <div style={{ position:'absolute', top:60, left:0, right:0, zIndex:14 }}>
         <Stories users={users} currentUser={currentUser} onViewStory={onViewStory} onCreateStory={onCreateStory} followed={followed} />
       </div>
 
