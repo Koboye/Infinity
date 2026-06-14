@@ -1020,24 +1020,118 @@ const ProgressiveImage = ({ src, alt, style }) => {
   );
 };
 
-/* ─────────────── NOTIFICATION POPUP (TikTok style) ─────────────── */
+/* ─────────────── SOUND HELPERS ─────────────── */
+const playNotifSound = (type = 'notif') => {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (type === 'call') {
+      // Ringtone: two-tone repeating pattern like a phone ring
+      const playRingTone = (startTime) => {
+        const osc1 = ctx.createOscillator();
+        const osc2 = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc1.connect(gain); osc2.connect(gain); gain.connect(ctx.destination);
+        osc1.frequency.value = 480; osc2.frequency.value = 620;
+        gain.gain.setValueAtTime(0, startTime);
+        gain.gain.linearRampToValueAtTime(0.4, startTime + 0.05);
+        gain.gain.setValueAtTime(0.4, startTime + 0.4);
+        gain.gain.linearRampToValueAtTime(0, startTime + 0.5);
+        osc1.start(startTime); osc1.stop(startTime + 0.5);
+        osc2.start(startTime); osc2.stop(startTime + 0.5);
+      };
+      playRingTone(ctx.currentTime);
+      playRingTone(ctx.currentTime + 0.7);
+      playRingTone(ctx.currentTime + 1.4);
+    } else {
+      // Telegram-style ding: two ascending tones
+      [[880, 0, 0.15], [1100, 0.18, 0.28]].forEach(([freq, start, stop]) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.35, ctx.currentTime + start);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + stop);
+        osc.start(ctx.currentTime + start);
+        osc.stop(ctx.currentTime + stop);
+      });
+    }
+  } catch {}
+};
+
+/* ─────────────── BACKGROUND PUSH NOTIFICATIONS (Service Worker) ─────────────── */
+const registerNotifServiceWorker = async () => {
+  if (!('serviceWorker' in navigator) || !('Notification' in window)) return;
+  try {
+    // Inline SW that handles push events when app is closed
+    const swCode = `
+self.addEventListener('push', e => {
+  const data = e.data ? e.data.json() : {};
+  const title = data.title || 'Dagu';
+  const options = {
+    body: data.body || 'You have a new notification',
+    icon: 'https://res.cloudinary.com/dotvhzjmc/image/upload/znfksngv27boh3c1kxpv.png',
+    badge: 'https://res.cloudinary.com/dotvhzjmc/image/upload/znfksngv27boh3c1kxpv.png',
+    vibrate: [200, 100, 200],
+    data: data,
+    actions: data.type === 'call' ? [
+      { action: 'answer', title: '✅ Answer' },
+      { action: 'decline', title: '❌ Decline' }
+    ] : [
+      { action: 'open', title: 'Open' }
+    ],
+    tag: data.type || 'notif',
+    renotify: true,
+  };
+  e.waitUntil(self.registration.showNotification(title, options));
+});
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(clients.openWindow('/'));
+});
+`;
+    const blob = new Blob([swCode], { type: 'application/javascript' });
+    const swUrl = URL.createObjectURL(blob);
+    await navigator.serviceWorker.register(swUrl, { scope: '/' });
+  } catch(e) { console.log('SW registration skipped:', e.message); }
+};
+
+/* ─────────────── BROWSER NOTIFICATION HELPER ─────────────── */
+const showBrowserNotification = (title, body, type = 'notif') => {
+  if (!('Notification' in window)) return;
+  if (Notification.permission !== 'granted') return;
+  if (document.visibilityState === 'visible') return; // Only show when app is in background/closed
+  try {
+    const n = new Notification(title, {
+      body,
+      icon: 'https://res.cloudinary.com/dotvhzjmc/image/upload/znfksngv27boh3c1kxpv.png',
+      badge: 'https://res.cloudinary.com/dotvhzjmc/image/upload/znfksngv27boh3c1kxpv.png',
+      vibrate: type === 'call' ? [300, 100, 300, 100, 300] : [200],
+      tag: type,
+      renotify: true,
+      silent: false,
+    });
+    n.onclick = () => { window.focus(); n.close(); };
+  } catch {}
+};
+
+/* ─────────────── NOTIFICATION POPUP (Telegram style) ─────────────── */
 const NotifPopup = ({ notif, user, onClose, onTap }) => {
   const [swipeX, setSwipeX] = useState(0);
   const [swiping, setSwiping] = useState(false);
   const startX = useRef(null);
   useEffect(()=>{
     const t = setTimeout(onClose, 4500);
+    const isCall = notif?.type === 'call';
     try {
-      navigator.vibrate?.(200);
-      const ctx = new (window.AudioContext||window.webkitAudioContext)();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain); gain.connect(ctx.destination);
-      osc.frequency.value = 880;
-      gain.gain.setValueAtTime(0.3, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
-      osc.start(); osc.stop(ctx.currentTime + 0.3);
+      navigator.vibrate?.(isCall ? [300,100,300,100,300] : [200]);
+      playNotifSound(isCall ? 'call' : 'notif');
     } catch {}
+    // Also fire a browser notification if app is in background
+    showBrowserNotification(
+      isCall ? `📞 Incoming ${notif?.callType||'voice'} call from @${user?.username||'someone'}` : `@${user?.username||'someone'} ${notif?.message||'sent you a notification'}`,
+      isCall ? 'Tap to answer' : 'Tap to view',
+      isCall ? 'call' : 'notif'
+    );
     return ()=>clearTimeout(t);
   },[onClose]);
   const icons = { like:'❤️', comment:'💬', follow:'👤', mention:'@', gift:'🎁', live:'🔴', call:'📞' };
@@ -2052,6 +2146,29 @@ const EnhancedVideoCard = memo(({ video, currentUser, isActive, onLike, onCommen
   const [floatingReactions, setFloatingReactions] = useState([]);
   const longPressTimer = useRef(null);
   const REACTIONS = ['❤️','😂','😮','😢','😡','🔥','👏','💎'];
+  const [showLongPressMenu, setShowLongPressMenu] = useState(false);
+
+  // Helper: download/save post media
+  const handleDownloadPost = async () => {
+    if (!video?.videoUrl) { showToast?.('No media to download', 'error'); return; }
+    try {
+      const response = await fetch(video.videoUrl);
+      const blob = await response.blob();
+      const isImage = /\.(jpg|jpeg|png|gif|webp)/i.test(video.videoUrl) || video.mediaType?.startsWith('image');
+      const ext = isImage ? 'jpg' : 'mp4';
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `dagu_post_${video.id || Date.now()}.${ext}`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast?.('Post downloaded! 📥', 'success');
+    } catch (e) {
+      // Fallback: open in new tab
+      window.open(video.videoUrl, '_blank');
+      showToast?.('Opened in browser — long-press to save 📥', 'info');
+    }
+    setShowLongPressMenu(false);
+  };
 
   useEffect(()=>()=>{ if(tapTimer.current) clearTimeout(tapTimer.current); },[]);
 
@@ -2173,7 +2290,7 @@ translate();
     }
   };
 const handleLongPressStart = () => {
-    longPressTimer.current = setTimeout(()=>{ haptic('heavy'); setShowReactions(true); }, 500);
+    longPressTimer.current = setTimeout(()=>{ haptic('heavy'); setShowLongPressMenu(true); }, 500);
   };
   const handleLongPressEnd = () => { clearTimeout(longPressTimer.current); };
   const handleReact = (emoji) => {
@@ -2295,6 +2412,8 @@ const handleLongPressStart = () => {
 {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>, label:t?.message||'Message', fn:()=>onMessage?.(video.userId)},
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-5.99-5.99 19.79 19.79 0 01-3.07-8.67A2 2 0 014 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>, label:t?.voiceCall||'Voice Call', fn:()=>onVoiceCall?.(video.userId)},
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>, label:t?.videoCall||'Video Call', fn:()=>onVideoCall?.(video.userId)},
+              {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34c759" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>, label:'Download Post', fn:handleDownloadPost},
+              {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffd700" strokeWidth="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>, label:'Save Post', fn:()=>{ /* bookmark */ document.querySelector(`[data-bookmark-${video.id}]`)?.click(); showToast?.('Post saved! 🔖','success'); setShowActionMenu(false); }},
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff9500" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>, label:t?.report||'Report', fn:()=>{ setShowReportModal(true); setShowActionMenu(false); }},
              {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff2d55" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>, label:t?.block||'Block', fn:async()=>{ if(!currentUser?.id) return; await updateDoc(doc(db,'users',currentUser.id),{ blockedUsers: arrayUnion(video.userId) }).catch(()=>{}); showToast?.('User blocked','warning'); onBlock?.(video.userId); }},
             ].map(({icon,label,fn})=>(
@@ -2318,6 +2437,50 @@ const handleLongPressStart = () => {
                 showToast?.('Report submitted','success'); setShowReportModal(false);
               }} style={{ width:'100%', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:14, padding:'14px 16px', color:'white', textAlign:'left', cursor:'pointer', marginBottom:8, fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{r}</button>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Long-press: Download / Save Post sheet */}
+      {showLongPressMenu && (
+        <div onClick={e=>{e.stopPropagation();setShowLongPressMenu(false);}} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', zIndex:9995, display:'flex', alignItems:'flex-end' }}>
+          <div onClick={e=>e.stopPropagation()} style={{ width:'100%', maxWidth:430, margin:'0 auto', background:'#1a1a1e', borderTopLeftRadius:28, borderTopRightRadius:28, padding:'12px 0 40px', animation:'slideUp 0.3s cubic-bezier(0.34,1.56,0.64,1)' }}>
+            <div style={{ width:36, height:4, background:'rgba(255,255,255,0.15)', borderRadius:2, margin:'0 auto 16px' }} />
+            <div style={{ padding:'0 20px 12px', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                <div style={{ width:40, height:40, borderRadius:10, overflow:'hidden', background:'#333', flexShrink:0 }}>
+                  {video?.videoUrl?.match(/\.(jpg|jpeg|png|gif|webp)/i) || video?.mediaType?.startsWith('image')
+                    ? <img src={video.videoUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+                    : <video src={video?.videoUrl} style={{ width:'100%', height:'100%', objectFit:'cover' }} muted />}
+                </div>
+                <div>
+                  <div style={{ color:'white', fontWeight:700, fontSize:13 }}>@{video?.username}</div>
+                  <div style={{ color:'rgba(255,255,255,0.4)', fontSize:11, marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:260 }}>{video?.description}</div>
+                </div>
+              </div>
+            </div>
+            {[
+              { icon:'📥', label:'Download Post', color:'#34c759', fn: handleDownloadPost },
+              { icon:'🔖', label:'Save Post', color:'#ffd700', fn: async()=>{
+                  if(!currentUser?.id){ showToast?.('Sign in to save posts','error'); setShowLongPressMenu(false); return; }
+                  await setDoc(doc(db,'saves',`${video.id}_${currentUser.id}`),{ videoId:video.id, userId:currentUser.id, createdAt:serverTimestamp() });
+                  showToast?.('Saved to collection ✨','success');
+                  setShowLongPressMenu(false);
+                }
+              },
+              { icon:'🔗', label:'Copy Link', color:'#007aff', fn:()=>{
+                  navigator.clipboard.writeText(`https://infinity-now.vercel.app/?post=${video.id}`).then(()=>showToast?.('Link copied!','success')).catch(()=>showToast?.('Copied!','success'));
+                  setShowLongPressMenu(false);
+                }
+              },
+              { icon:'🚩', label:'Report Post', color:'#ff9500', fn:()=>{ setShowReportModal(true); setShowLongPressMenu(false); } },
+            ].map(({ icon, label, color, fn }) => (
+              <button key={label} onClick={fn} style={{ width:'100%', padding:'15px 22px', background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:14, borderBottom:'1px solid rgba(255,255,255,0.04)' }}>
+                <span style={{ fontSize:22, width:30, textAlign:'center' }}>{icon}</span>
+                <span style={{ color, fontSize:15, fontWeight:600, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{label}</span>
+              </button>
+            ))}
+            <button onClick={()=>setShowLongPressMenu(false)} style={{ width:'100%', padding:'15px 22px', background:'none', border:'none', cursor:'pointer', color:'rgba(255,255,255,0.4)', fontSize:14, fontWeight:500, textAlign:'center', marginTop:4 }}>Cancel</button>
           </div>
         </div>
       )}
@@ -4005,7 +4168,19 @@ snap.docs.forEach(async conv => {
 };
 
 /* ─────────────── CALL MODAL (REAL WebRTC) ─────────────── */
-const IncomingCallScreen = ({ callData, onAnswer, onDecline }) => (
+const IncomingCallScreen = ({ callData, onAnswer, onDecline }) => {
+  useEffect(() => {
+    // Play ringtone on loop while incoming call screen is shown
+    let stopped = false;
+    const ring = () => {
+      if (stopped) return;
+      playNotifSound('call');
+      setTimeout(() => { if (!stopped) ring(); }, 2200);
+    };
+    ring();
+    return () => { stopped = true; };
+  }, []);
+  return (
   <div style={{position:'fixed',inset:0,background:'linear-gradient(160deg,#0d0025,#001a0d)',zIndex:3000,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'space-between',padding:'80px 40px 80px'}}>
     <div style={{textAlign:'center'}}>
       <div style={{color:'rgba(255,255,255,0.5)',fontSize:14,marginBottom:16,letterSpacing:2,textTransform:'uppercase'}}>{callData.callType==='video'?'Incoming Video Call':'Incoming Voice Call'}</div>
@@ -4030,7 +4205,8 @@ const IncomingCallScreen = ({ callData, onAnswer, onDecline }) => (
       </div>
     </div>
   </div>
-);
+  );
+};
 
 const CallModal = ({ type, contactName, contactAvatar, contactId, currentUser, onClose, isCallee: isCalleeProp, callDocId: callDocIdProp }) => {
   const [duration, setDuration] = useState(0);
@@ -5410,7 +5586,12 @@ const [blockedUsers, setBlockedUsers] = useState([]);
     if(!messaging || !currentUser?.id) return;
     try {
       const unsub = onMessage(messaging, payload=>{
-        showToast(payload?.notification?.title || 'New notification', 'info');
+        const title = payload?.notification?.title || 'New notification';
+        const body = payload?.notification?.body || '';
+        const type = payload?.data?.type || 'notif';
+        showToast(title, 'info');
+        playNotifSound(type === 'call' ? 'call' : 'notif');
+        showBrowserNotification(title, body, type);
       });
       return ()=>unsub?.();
     } catch {}
@@ -5557,6 +5738,7 @@ setBlockedUsers(profile.blockedUsers||[]);
     try {
       const permission = await Notification.requestPermission();
       if(permission === 'granted') {
+        await registerNotifServiceWorker();
         const token = messaging ? await getToken(messaging, { vapidKey: VAPID_KEY }) : null;
         if(token) await updateDoc(doc(db,'users',profile.id),{ fcmToken: token });
       }
