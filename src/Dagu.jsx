@@ -362,16 +362,80 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack }) => {
 
   if (activeGroup) {
     const bottomRef = React.createRef();
+    const [showGroupInfo, setShowGroupInfo] = React.useState(false);
+    const [groupCallOpen, setGroupCallOpen] = React.useState(null); // 'audio' | 'video' | null
+    const groupMembers = users.filter(u => (activeGroup.members||[]).includes(u.id));
     return (
       <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#0a0a0a' }}>
         <div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(255,255,255,0.02)' }}>
           <button onClick={() => setActiveGroup(null)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: 18 }}>←</button>
-          <div style={{ width: 38, height: 38, borderRadius: '50%', background: activeGroup.avatarColor || '#ff2d55', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: 16 }}>{activeGroup.avatar || '👥'}</div>
-          <div>
-            <div style={{ color: 'white', fontWeight: 700, fontSize: 15 }}>{activeGroup.name}</div>
-            <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11 }}>{(activeGroup.members || []).length} members</div>
+          <div onClick={()=>setShowGroupInfo(true)} style={{ display:'flex', alignItems:'center', gap:10, flex:1, cursor:'pointer' }}>
+            <div style={{ width: 38, height: 38, borderRadius: '50%', background: activeGroup.avatarColor || '#ff2d55', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: 16 }}>{activeGroup.avatar || '👥'}</div>
+            <div>
+              <div style={{ color: 'white', fontWeight: 700, fontSize: 15 }}>{activeGroup.name}</div>
+              <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11 }}>{(activeGroup.members || []).length} members · tap for info</div>
+            </div>
           </div>
+          <button onClick={()=>setGroupCallOpen('audio')} style={{ background:'rgba(52,199,89,0.15)', border:'1px solid rgba(52,199,89,0.25)', borderRadius:'50%', width:36, height:36, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34c759" strokeWidth="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-5.99-5.99 19.79 19.79 0 01-3.07-8.67A2 2 0 014 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>
+          </button>
+          <button onClick={()=>setGroupCallOpen('video')} style={{ background:'rgba(175,82,222,0.15)', border:'1px solid rgba(175,82,222,0.25)', borderRadius:'50%', width:36, height:36, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#af52de" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+          </button>
         </div>
+        {/* Group Info Panel */}
+        {showGroupInfo && (
+          <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.85)', zIndex:50, display:'flex', alignItems:'flex-end' }} onClick={()=>setShowGroupInfo(false)}>
+            <div onClick={e=>e.stopPropagation()} style={{ width:'100%', background:'#111', borderTopLeftRadius:28, borderTopRightRadius:28, padding:'20px 20px 40px', maxHeight:'70%', overflowY:'auto' }}>
+              <div style={{ width:36, height:4, background:'rgba(255,255,255,0.12)', borderRadius:2, margin:'0 auto 20px' }} />
+              <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:20 }}>
+                <div style={{ width:52, height:52, borderRadius:'50%', background:activeGroup.avatarColor||'#ff2d55', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:22 }}>{activeGroup.avatar||'👥'}</div>
+                <div>
+                  <div style={{ color:'white', fontWeight:800, fontSize:18 }}>{activeGroup.name}</div>
+                  <div style={{ color:'rgba(255,255,255,0.4)', fontSize:12 }}>Created by group admin</div>
+                </div>
+              </div>
+              <div style={{ color:'rgba(255,255,255,0.5)', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:12 }}>Members ({groupMembers.length})</div>
+              {groupMembers.map(u=>(
+                <div key={u.id} style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 0', borderBottom:'1px solid rgba(255,255,255,0.04)' }}>
+                  <div style={{ width:38, height:38, borderRadius:'50%', background:u.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:15, overflow:'hidden', flexShrink:0 }}>
+                    {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : u.avatar}
+                  </div>
+                  <div>
+                    <div style={{ color:'white', fontSize:14, fontWeight:600 }}>@{u.username}</div>
+                    {u.displayName && <div style={{ color:'rgba(255,255,255,0.4)', fontSize:11 }}>{u.displayName}</div>}
+                  </div>
+                  {activeGroup.admin === u.id && <div style={{ marginLeft:'auto', background:'rgba(255,45,85,0.15)', border:'1px solid rgba(255,45,85,0.3)', borderRadius:10, padding:'2px 8px', color:'#ff2d55', fontSize:10, fontWeight:700 }}>Admin</div>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {/* Group Call Overlay */}
+        {groupCallOpen && (
+          <div style={{ position:'absolute', inset:0, background:'#0a0a0a', zIndex:60, display:'flex', flexDirection:'column' }}>
+            <div style={{ padding:'20px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
+              <div style={{ color:'white', fontWeight:800, fontSize:18 }}>{groupCallOpen==='video'?'📹':'📞'} Group {groupCallOpen==='video'?'Video':'Voice'} Call</div>
+              <button onClick={()=>setGroupCallOpen(null)} style={{ background:'rgba(255,45,85,0.15)', border:'1px solid rgba(255,45,85,0.3)', borderRadius:'50%', width:36, height:36, color:'#ff2d55', cursor:'pointer', fontSize:18 }}>✕</button>
+            </div>
+            <div style={{ flex:1, overflowY:'auto', padding:16, display:'flex', flexWrap:'wrap', gap:10, alignContent:'flex-start' }}>
+              {groupMembers.map(u=>(
+                <div key={u.id} style={{ width:'calc(50% - 5px)', aspectRatio:'4/3', background:'rgba(255,255,255,0.05)', borderRadius:16, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:8, border:'1px solid rgba(255,255,255,0.08)' }}>
+                  <div style={{ width:52, height:52, borderRadius:'50%', background:u.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:20, overflow:'hidden' }}>
+                    {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : u.avatar}
+                  </div>
+                  <div style={{ color:'white', fontSize:12, fontWeight:600 }}>@{u.username}</div>
+                  {u.id===currentUser?.id && <div style={{ color:'#34c759', fontSize:10 }}>You</div>}
+                </div>
+              ))}
+            </div>
+            <div style={{ padding:'16px 20px 32px', display:'flex', justifyContent:'center', gap:20, borderTop:'1px solid rgba(255,255,255,0.06)' }}>
+              <button onClick={()=>showToast?.('Muted','info')} style={{ width:56, height:56, borderRadius:'50%', background:'rgba(255,255,255,0.1)', border:'none', color:'white', fontSize:22, cursor:'pointer' }}>🎤</button>
+              {groupCallOpen==='video' && <button onClick={()=>showToast?.('Camera toggled','info')} style={{ width:56, height:56, borderRadius:'50%', background:'rgba(255,255,255,0.1)', border:'none', color:'white', fontSize:22, cursor:'pointer' }}>📷</button>}
+              <button onClick={()=>setGroupCallOpen(null)} style={{ width:56, height:56, borderRadius:'50%', background:'#ff2d55', border:'none', color:'white', fontSize:22, cursor:'pointer' }}>📵</button>
+            </div>
+          </div>
+        )}
         <div style={{ flex: 1, overflowY: 'auto', padding: '10px 14px' }}>
           {groupMessages.map(msg => {
             const isMine = msg.senderId === currentUser.id;
@@ -1116,9 +1180,14 @@ const Stories = ({ users, currentUser, onViewStory, onCreateStory, onLive }) => 
     {users.filter(u => u.id !== currentUser?.id && (currentUser?.following||[]).includes(u.id)).map(u => (
       <div key={u.id} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5, flexShrink:0 }}>
         <button onClick={async () => {
-        const snap = await getDocs(query(collection(db,'stories'), where('userId','==',currentUser?.id), orderBy('createdAt','desc'), limit(1)));
-        if(!snap.empty) onViewStory?.({...snap.docs[0].data(), id: snap.docs[0].id});
-        else onCreateStory?.();
+        try {
+          const snap = await getDocs(query(collection(db,'stories'), where('userId','==',u.id), orderBy('createdAt','desc'), limit(1)));
+          if(!snap.empty) onViewStory?.({...snap.docs[0].data(), id: snap.docs[0].id});
+          else {
+            const snap2 = await getDocs(query(collection(db,'stories'), where('userId','==',u.id), limit(1)));
+            if(!snap2.empty) onViewStory?.({...snap2.docs[0].data(), id: snap2.docs[0].id});
+          }
+        } catch(e) { console.error('Story fetch error:', e); }
       }} style={{ padding:0, background:'none', border:'none', cursor:'pointer' }}>
           <div className="story-avatar-ring" style={{ width:66, height:66, borderRadius:'50%' }}>
             <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:'#0a0a0a', padding:2, display:'flex', alignItems:'center', justifyContent:'center' }}>
@@ -1689,26 +1758,24 @@ useEffect(() => {
   if (!isActive || !video?.description) return;
   setDisplayDesc(video.description);
 
-  // Skip if already English (simple heuristic)
-  const hasNonLatin = /[^\u0000-\u007F]/.test(video.description);
-  if (!hasNonLatin) return;
-
+  const targetLang = currentUser?.language || 'en';
   const translate = async () => {
   try {
-    const cacheRef = doc(db, 'translations', video.id);
+    const cacheKey = `${video.id}_${targetLang}`;
+    const cacheRef = doc(db, 'translations', cacheKey);
     const cached = await getDoc(cacheRef);
     if (cached.exists()) {
-      setDisplayDesc(cached.data().en || video.description);
+      setDisplayDesc(cached.data().text || video.description);
       return;
     }
     const res = await fetch(
-      `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encodeURIComponent(video.description)}`
+      `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(video.description)}`
     );
     const data = await res.json();
     const translated = data?.[0]?.map(s => s?.[0]).filter(Boolean).join('');
     if (translated && translated !== video.description) {
       setDisplayDesc(translated);
-      setDoc(cacheRef, { en: translated }, { merge: true }).catch(() => {});
+      setDoc(cacheRef, { text: translated, lang: targetLang }, { merge: true }).catch(() => {});
     }
   } catch {}
 };
@@ -1833,7 +1900,7 @@ const handleLongPressStart = () => {
           <div style={{ fontSize:80, animation:'heartBurst 0.9s ease forwards' }}>❤️</div>
         </div>
       )}
-      <div style={{ position:'absolute', bottom:90, left:14, right:70, zIndex:5 }}>
+      <div style={{ position:'absolute', bottom:80, left:14, right:70, zIndex:5, paddingBottom:10 }}>
         <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:10 }}>
           <button onClick={()=>onViewProfile?.(video.userId)} style={{ position:'relative', background:'none', border:'none', cursor:'pointer', padding:0 }}>
             <div style={{ width:42, height:42, borderRadius:'50%', background:video.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:16, border:'2px solid rgba(255,255,255,0.5)', overflow:'hidden' }}>
@@ -1859,7 +1926,7 @@ const handleLongPressStart = () => {
 
       {showActionMenu && (
         <div onClick={e=>{e.stopPropagation();setShowActionMenu(false);}} style={{ position:'absolute', inset:0, zIndex:19 }}>
-          <div onClick={e=>e.stopPropagation()} style={{ position:'absolute',   bottom: menuButtonRef.current     ? Math.max(80, window.innerHeight - menuButtonRef.current.getBoundingClientRect().top + 8)     : 160,   left:14, background:'rgba(18,18,18,0.97)', backdropFilter:'blur(20px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:22, padding:6, zIndex:20, minWidth:210, animation:'popIn 0.2s ease' }}>
+          <div onClick={e=>e.stopPropagation()} style={{ position:'absolute', bottom:140, left:14, background:'rgba(18,18,18,0.97)', backdropFilter:'blur(20px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:22, padding:6, zIndex:20, minWidth:210, animation:'popIn 0.2s ease' }}>
             {[
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>, label:t?.duet||'Duet', fn:()=>onDuet?.(video.id)},
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M15 14l5-5-5-5"/><path d="M4 20v-7a4 4 0 014-4h12"/></svg>, label:t?.stitch||'Stitch', fn:()=>onStitch?.(video.id)},
@@ -1868,7 +1935,7 @@ const handleLongPressStart = () => {
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-5.99-5.99 19.79 19.79 0 01-3.07-8.67A2 2 0 014 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>, label:t?.voiceCall||'Voice Call', fn:()=>onVoiceCall?.(video.userId)},
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>, label:t?.videoCall||'Video Call', fn:()=>onVideoCall?.(video.userId)},
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff9500" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>, label:t?.report||'Report', fn:()=>{ setShowReportModal(true); setShowActionMenu(false); }},
-             {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff2d55" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>, label:t?.block||'Block', fn:async()=>{ await updateDoc(doc(db,'users',currentUser.id),{ blockedUsers: arrayUnion(video.userId) }); showToast?.('User blocked','warning'); onBlock?.(video.userId); }},
+             {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff2d55" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>, label:t?.block||'Block', fn:async()=>{ if(!currentUser?.id) return; await updateDoc(doc(db,'users',currentUser.id),{ blockedUsers: arrayUnion(video.userId) }).catch(()=>{}); showToast?.('User blocked','warning'); onBlock?.(video.userId); }},
             ].map(({icon,label,fn})=>(
               <button key={label} onClick={()=>{fn(); setShowActionMenu(false);}} style={{ display:'flex', alignItems:'center', gap:12, width:'100%', padding:'11px 14px', background:'none', border:'none', color:label==='Block'?'#ff2d55':label==='Report'?'#ff9500':'white', cursor:'pointer', borderRadius:16, fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>
                 <span>{icon}</span>{label}
@@ -2012,7 +2079,7 @@ const SuggestedUsers = ({ currentUser, users, followed, onFollow, onViewProfile 
     </div>
   );
 };
-const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, onVoiceCall, onVideoCall, onDuet, onStitch, onSaveSound, followed, showToast, onLive, currentUser, onViewProfile, onOpenSearch, onOpenNotifications, blockedUsers, onBlock, users }) => {
+const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, onVoiceCall, onVideoCall, onDuet, onStitch, onSaveSound, followed, showToast, onLive, currentUser, onViewProfile, onOpenSearch, onOpenNotifications, blockedUsers, onBlock, users, onShowGroups }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [activeCategory, setActiveCategory] = useState('foryou');
   const [loadingMore, setLoadingMore] = useState(false);
@@ -2120,6 +2187,9 @@ const handlePullEnd = async () => {
           <button onClick={onOpenSearch} style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(10px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           </button>
+          <button onClick={onShowGroups} style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(10px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+          </button>
           <NotifBellButton onOpenNotifications={onOpenNotifications} currentUser={currentUser} />
         </div>
       </div>
@@ -2159,8 +2229,7 @@ onLive={onLive}
 };
 
 /* ─────────────── FRIENDS FEED ─────────────── */
-const FriendsFeed = ({ t, friends, videos, currentUser, onMessage, onVoiceCall, onVideoCall, onViewProfile, showToast, users, onCreateStory, onViewStory, onFollow, followed, blockedUsers, onBlock, onLive }) => {
-  const [search, setSearch] = useState('');
+const FriendsFeed = ({ t, friends, videos, currentUser, onMessage, onVoiceCall, onVideoCall, onViewProfile, showToast, users, onCreateStory, onViewStory, onFollow, followed, blockedUsers, onBlock, onLive, onOpenSearch, onShowGroups }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const startY = useRef(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -2190,15 +2259,7 @@ const handlePullEnd = async () => {
     .sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)),
 [friends, videos, currentUser?.id, blockedUsers]);
 
-  const filtered = useMemo(()=>
-    !search ? friendsVideos : friendsVideos.filter(v=>
-      v.username.toLowerCase().includes(search.toLowerCase()) ||
-      v.description.toLowerCase().includes(search.toLowerCase())
-    ),
-  [friendsVideos,search]);
-
-  // Reset index when filter changes
-  useEffect(()=>setCurrentIndex(0),[search]);
+  const filtered = friendsVideos;
 
   const startTime = useRef(null);
   const handleTouchStart = e => {
@@ -2224,13 +2285,14 @@ const handlePullEnd = async () => {
     <div style={{ height:'100%', display:'flex', flexDirection:'column', background:'#0a0a0a' }}>
       {/* Top bar */}
       <div style={{ position:'relative', zIndex:15, padding:'14px 16px 0', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-<div style={{ color:'white', fontWeight:800, fontSize:18, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", textShadow:'0 1px 8px rgba(0,0,0,0.8)' }}>{t?.friends||'Friends'}</div>
-      </div>
-      <div style={{ padding:'10px 14px', zIndex:15 }}>
-        <div style={{ display:'flex', gap:8, alignItems:'center', background:'rgba(255,255,255,0.07)', borderRadius:28, padding:'10px 16px', border:'1px solid rgba(255,255,255,0.08)' }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search friends..." style={{ flex:1, background:'none', border:'none', color:'white', outline:'none', fontSize:13 }} />
-          {search && <button onClick={()=>setSearch('')} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.4)', cursor:'pointer', fontSize:16 }}>✕</button>}
+        <div style={{ color:'white', fontWeight:800, fontSize:18, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", textShadow:'0 1px 8px rgba(0,0,0,0.8)' }}>{t?.friends||'Friends'}</div>
+        <div style={{ display:'flex', gap:10, alignItems:'center' }}>
+          <button onClick={onOpenSearch} style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(10px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </button>
+          <button onClick={onShowGroups} style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(10px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+          </button>
         </div>
       </div>
       <Stories users={users} currentUser={currentUser} onViewStory={onViewStory} onCreateStory={onCreateStory} />
@@ -2279,14 +2341,18 @@ const handlePullEnd = async () => {
         </div>
       ))}
 
-      {/* Top overlay: Friends label + search — always visible at top */}
-      <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:15, padding:'14px 16px 10px', background:'linear-gradient(to bottom, rgba(0,0,0,0.5), transparent)' }}>
-        <div style={{ color:'white', fontWeight:800, fontSize:18, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", textShadow:'0 1px 8px rgba(0,0,0,0.8)', marginBottom:10 }}>{t?.friends||'Friends'}</div>
-        <div style={{ display:'flex', gap:8, alignItems:'center', background:'rgba(10,10,10,0.5)', backdropFilter:'blur(16px)', borderRadius:28, padding:'10px 16px', border:'1px solid rgba(255,255,255,0.12)' }}
-          onClick={e=>e.stopPropagation()}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search friends..." style={{ flex:1, background:'none', border:'none', color:'white', outline:'none', fontSize:13 }} />
-          {search && <button onClick={()=>setSearch('')} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.5)', cursor:'pointer', fontSize:16 }}>✕</button>}
+      {/* Top overlay: Friends label + icons — matches Home style */}
+      <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:15, padding:'14px 16px 12px', background:'linear-gradient(to bottom,rgba(0,0,0,0.7) 0%,transparent 100%)' }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+          <div style={{ color:'white', fontWeight:800, fontSize:18, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", textShadow:'0 1px 8px rgba(0,0,0,0.8)' }}>{t?.friends||'Friends'}</div>
+          <div style={{ display:'flex', gap:10, alignItems:'center' }}>
+            <button onClick={onOpenSearch} style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(10px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </button>
+            <button onClick={onShowGroups} style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(10px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -3082,7 +3148,7 @@ if(activeSubPage==='settings') return (
 };
 
 /* ─────────────── INBOX (REAL-TIME FIRESTORE) ─────────────── */
-const ConversationView = ({ currentUser, otherUser, conversationId, onBack, showToast, onViewProfile }) => {
+const ConversationView = ({ currentUser, otherUser, conversationId, onBack, showToast, onViewProfile, onVoiceCall, onVideoCall }) => {
   const [text, setText] = useState('');
   const [messages, setMessages] = useState([]);
   const [isRecording, setIsRecording] = useState(false);
@@ -3148,10 +3214,13 @@ unsub = onSnapshot(q, (snap) => {
     setMessages(msgs);
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 80);
     // Mark incoming messages as seen
-const unseen = snap.docs.filter(d => 
-  d.data().from === otherUser.id && d.data().status !== 'seen'
-);
-unseen.forEach(d => updateDoc(d.ref, { status: 'seen' }).catch(()=>{}));
+    const unseen2 = snap2.docs.filter(d =>
+      d.data().from === otherUser.id && d.data().status !== 'seen'
+    );
+    unseen2.forEach(d => updateDoc(d.ref, { status: 'seen' }).catch(()=>{}));
+    // Also mark on primary path
+    snap2.docs.filter(d => d.data().to === currentUser?.id && d.data().status !== 'seen')
+      .forEach(d => updateDoc(d.ref, { status: 'seen' }).catch(()=>{}));
   });
 });
     };
@@ -3260,11 +3329,11 @@ unseen.forEach(d => updateDoc(d.ref, { status: 'seen' }).catch(()=>{}));
           </div>
         </div>
         <div style={{marginLeft:'auto',display:'flex',gap:10}}>
-          <button style={{background:'rgba(255,255,255,0.06)',border:'none',borderRadius:'50%',width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-5.99-5.99 19.79 19.79 0 01-3.07-8.67A2 2 0 014 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>
+          <button onClick={()=>onVoiceCall?.(otherUser?.id)} style={{background:'rgba(52,199,89,0.12)',border:'1px solid rgba(52,199,89,0.2)',borderRadius:'50%',width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#34c759" strokeWidth="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-5.99-5.99 19.79 19.79 0 01-3.07-8.67A2 2 0 014 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>
           </button>
-          <button style={{background:'rgba(255,255,255,0.06)',border:'none',borderRadius:'50%',width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+          <button onClick={()=>onVideoCall?.(otherUser?.id)} style={{background:'rgba(175,82,222,0.12)',border:'1px solid rgba(175,82,222,0.2)',borderRadius:'50%',width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#af52de" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
           </button>
         </div>
       </div>
@@ -3406,7 +3475,7 @@ unseen.forEach(d => updateDoc(d.ref, { status: 'seen' }).catch(()=>{}));
   );
 };
 
-const InboxPage = ({ t, users, currentUser, showToast, onViewProfile, initialTargetId, onClearTarget, persistedConversation, onSetConversation }) => {
+const InboxPage = ({ t, users, currentUser, showToast, onViewProfile, initialTargetId, onClearTarget, persistedConversation, onSetConversation, onVoiceCall, onVideoCall }) => {
   const [activeConversation, setActiveConversation] = useState(null);
   const [conversations, setConversations] = useState([]);
   useEffect(()=>{
@@ -3461,15 +3530,17 @@ snap.docs.forEach(async conv => {
           .sort((a,b)=>(b.lastMessageAt?.seconds||0)-(a.lastMessageAt?.seconds||0));
         setConversations(sorted);
         // Mark messages as delivered for this user
-snap.docs.forEach(async conv => {
-  const convId = conv.id;
-  const msgSnap = await getDocs(
-    query(collection(db,'messages',convId,'msgs'), 
-    where('to','==',currentUser.id), 
-    where('status','==','sent'))
-  );
-  msgSnap.docs.forEach(d => updateDoc(d.ref, { status: 'delivered' }).catch(()=>{}));
-});
+      snap2.docs.forEach(async conv => {
+        const convId = conv.id;
+        try {
+          const msgSnap = await getDocs(
+            query(collection(db,'messages',convId,'msgs'),
+            where('to','==',currentUser.id),
+            where('status','==','sent'))
+          );
+          msgSnap.docs.forEach(d => updateDoc(d.ref, { status: 'delivered' }).catch(()=>{}));
+        } catch(e) {}
+      });
       });
     });
     return ()=>unsub();
@@ -3509,6 +3580,8 @@ snap.docs.forEach(async conv => {
         onBack={()=>{ setActiveConversation(null); onSetConversation?.(null); onClearTarget?.(); }}
         showToast={showToast}
         onViewProfile={uid=>{ onViewProfile?.(uid); }}
+        onVoiceCall={onVoiceCall}
+        onVideoCall={onVideoCall}
       />
     );
   }
@@ -5123,7 +5196,7 @@ const TabIcon = ({id, active, currentUser}) => {
           <div style={{position:'absolute',top:0,left:0,right:0,height:3,background:'rgba(255,255,255,0.15)',borderRadius:2,margin:'14px 14px 0'}}>
             <div style={{height:'100%',background:'white',borderRadius:2,width:'100%',animation:'notifBar 5s linear forwards'}}/>
           </div>
-          {showStoryViewer.mediaUrl?.startsWith('video') ? (
+          {showStoryViewer.mediaType === 'video' || showStoryViewer.mediaUrl?.includes('/video/') ? (
             <video src={showStoryViewer.mediaUrl} autoPlay loop playsInline style={{width:'100%',height:'100%',objectFit:'cover'}}/>
           ) : showStoryViewer.mediaUrl ? (
             <img src={showStoryViewer.mediaUrl} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
@@ -5162,14 +5235,25 @@ const TabIcon = ({id, active, currentUser}) => {
         {showCamera && <CameraUpload onUpload={v=>{setVideos(prev=>[v,...prev]);}} onClose={()=>setShowCamera(false)} showToast={showToast} currentUser={currentUser} />}
         {!showSearch && !showCamera && (
           <>
-            {activeTab==='home' && <HomeFeed t={t} videos={videos} currentUser={currentUser} onLike={()=>{}} onComment={()=>{}} onShare={(v)=>setShowShareSheet(v)} onFollow={toggleFollow} onMessage={handleMessage} onVoiceCall={uid=>{   const u=users.find(uu=>uu.id===uid);   const callDocId=[currentUser.id,uid].sort().join('_');   setShowCall({type:'audio',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
- onVideoCall={uid=>{   const u=users.find(uu=>uu.id===uid);   const callDocId=[currentUser.id,uid].sort().join('_');   setShowCall({type:'video',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
- onDuet={()=>showToast?.('Duet mode ready','info')} onStitch={()=>showToast?.('Stitch mode ready','info')} onSaveSound={()=>showToast?.('Sound saved!','success')} followed={followed} showToast={showToast} onLive={()=>setShowLiveStream(currentUser)} onViewProfile={handleViewProfile} onOpenSearch={()=>setShowDiscover(true)} onOpenNotifications={()=>setShowNotifications(true)} blockedUsers={blockedUsers} onBlock={uid=>setBlockedUsers(p=>[...p,uid])} />}
-            {activeTab==='friends' && <FriendsFeed t={t} friends={friends} videos={videos} currentUser={currentUser} onMessage={handleMessage} onVoiceCall={uid=>{   const u=users.find(uu=>uu.id===uid);   const callDocId=[currentUser.id,uid].sort().join('_');   setShowCall({type:'audio',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }} blockedUsers={blockedUsers}
- onVideoCall={uid=>{   const u=users.find(uu=>uu.id===uid);   const callDocId=[currentUser.id,uid].sort().join('_');   setShowCall({type:'video',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
- onViewProfile={handleViewProfile} showToast={showToast} users={users} onCreateStory={()=>setShowCreateStory(true)} onViewStory={setShowStoryViewer} onFollow={toggleFollow} followed={followed} onLive={()=>setShowLiveStream(currentUser)} onBlock={uid=>setBlockedUsers(p=>[...p,uid])} />}
+            {activeTab==='home' && <HomeFeed t={t} videos={videos} currentUser={currentUser} onLike={()=>{}} onComment={()=>{}} onShare={(v)=>setShowShareSheet(v)} onFollow={toggleFollow} onMessage={handleMessage}
+  onVoiceCall={uid=>{ const u=users.find(uu=>uu.id===uid); const callDocId=[currentUser.id,uid].sort().join('_'); setShowCall({type:'audio',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
+  onVideoCall={uid=>{ const u=users.find(uu=>uu.id===uid); const callDocId=[currentUser.id,uid].sort().join('_'); setShowCall({type:'video',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
+  onDuet={()=>showToast?.('Duet mode ready','info')} onStitch={()=>showToast?.('Stitch mode ready','info')} onSaveSound={()=>showToast?.('Sound saved!','success')}
+  followed={followed} showToast={showToast} onLive={()=>setShowLiveStream(currentUser)} onViewProfile={handleViewProfile}
+  onOpenSearch={()=>setShowDiscover(true)} onOpenNotifications={()=>setShowNotifications(true)}
+  blockedUsers={blockedUsers} onBlock={uid=>setBlockedUsers(p=>[...p,uid])} onShowGroups={()=>setShowGroups(true)} users={users} />}
+            {activeTab==='friends' && <FriendsFeed t={t} friends={friends} videos={videos} currentUser={currentUser} onMessage={handleMessage}
+  onVoiceCall={uid=>{ const u=users.find(uu=>uu.id===uid); const callDocId=[currentUser.id,uid].sort().join('_'); setShowCall({type:'audio',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
+  onVideoCall={uid=>{ const u=users.find(uu=>uu.id===uid); const callDocId=[currentUser.id,uid].sort().join('_'); setShowCall({type:'video',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
+  blockedUsers={blockedUsers} onViewProfile={handleViewProfile} showToast={showToast} users={users}
+  onCreateStory={()=>setShowCreateStory(true)} onViewStory={setShowStoryViewer} onFollow={toggleFollow} followed={followed}
+  onLive={()=>setShowLiveStream(currentUser)} onBlock={uid=>setBlockedUsers(p=>[...p,uid])}
+  onOpenSearch={()=>setShowDiscover(true)} onShowGroups={()=>setShowGroups(true)} />}
             {activeTab==='create' && <CreateScreen onOpenCamera={()=>setShowCamera(true)} onShowSoundLibrary={()=>setShowSoundLibrary(true)} showToast={showToast} t={t} />}
-            {activeTab==='inbox' && <InboxPage t={t} users={users} currentUser={currentUser} showToast={showToast} onViewProfile={handleViewProfile} initialTargetId={inboxTargetId} onClearTarget={()=>setInboxTargetId(null)} persistedConversation={activeConversation} onSetConversation={(conv)=>{ if(conv==='groups'){ setShowGroups(true); } else { setActiveConversation(conv); } }} />}
+            {activeTab==='inbox' && <InboxPage t={t} users={users} currentUser={currentUser} showToast={showToast} onViewProfile={handleViewProfile} initialTargetId={inboxTargetId} onClearTarget={()=>setInboxTargetId(null)} persistedConversation={activeConversation} onSetConversation={(conv)=>{ if(conv==='groups'){ setShowGroups(true); } else { setActiveConversation(conv); } }}
+  onVoiceCall={uid=>{ const u=users.find(uu=>uu.id===uid); const callDocId=[currentUser.id,uid].sort().join('_'); setShowCall({type:'audio',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
+  onVideoCall={uid=>{ const u=users.find(uu=>uu.id===uid); const callDocId=[currentUser.id,uid].sort().join('_'); setShowCall({type:'video',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
+/>}
             {activeTab==='profile' && <ProfilePage user={currentUser} setCurrentUser={setCurrentUser} onLogout={handleLogout} users={users} showToast={showToast} onShowAnalytics={()=>setShowAnalytics(true)} onShowQRCode={()=>setShowQRCode(true)} allVideos={videos} setBlockedUsers={setBlockedUsers} onShowSavedPosts={()=>setShowSavedPosts(true)} onShowGroups={()=>setShowGroups(true)} onShowBroadcast={()=>setShowBroadcast(true)} />}
           </>
         )}
