@@ -1551,7 +1551,7 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
   );
 };
 /* ─────────────── COMMENT ITEM ─────────────── */
-const CommentItem = ({ comment, currentUser, onLike, onReply, onPin, onViewProfile }) => {
+const CommentItem = ({ comment, currentUser, onLike, onReply, onPin, onViewProfile, onDelete }) => {
   const isMine = comment.userId === currentUser?.id;
   return (
     <div style={{ display:'flex', justifyContent:isMine?'flex-end':'flex-start', alignItems:'flex-end', gap:8, marginBottom:12 }}>
@@ -1580,6 +1580,11 @@ const CommentItem = ({ comment, currentUser, onLike, onReply, onPin, onViewProfi
           </button>
           <button onClick={()=>onReply?.(comment)} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.35)', fontSize:11, cursor:'pointer' }}>Reply</button>
           <button onClick={()=>onPin?.(comment.id)} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.25)', fontSize:10, cursor:'pointer' }}>Pin</button>
+          {isMine && (
+            <button onClick={()=>onDelete?.(comment.id)} title="Delete" style={{ background:'none', border:'none', color:'rgba(255,69,58,0.55)', fontSize:11, cursor:'pointer', display:'flex', alignItems:'center' }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+            </button>
+          )}
         </div>
       </div>
       {isMine && (
@@ -1794,6 +1799,8 @@ translate();
   };
 
   const handleTap = (e) => {
+    // Don't fire tap if user clicked a button/link/input
+    if(e.target.closest('button,a,input,textarea,[data-notap]')) return;
     if(videoRef.current && videoRef.current.muted) {
       videoRef.current.muted = false;
       videoRef.current.volume = 1;
@@ -1861,6 +1868,8 @@ const handleLongPressStart = () => {
 
   const reportReasons = ['Spam','Inappropriate content','Hate speech','Misinformation','Copyright violation','Other'];
 
+  const t = TRANSLATIONS[currentUser?.language || 'en'] || TRANSLATIONS.en;
+
   return (
     <div style={{ position:'absolute', inset:0, background:'#000' }}
       onClick={handleTap}
@@ -1900,7 +1909,7 @@ const handleLongPressStart = () => {
           <div style={{ fontSize:80, animation:'heartBurst 0.9s ease forwards' }}>❤️</div>
         </div>
       )}
-      <div style={{ position:'absolute', bottom:80, left:14, right:70, zIndex:5, paddingBottom:10 }}>
+      <div style={{ position:'absolute', bottom:80, left:14, right:70, zIndex:8, paddingBottom:10 }}>
         <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:10 }}>
           <button onClick={()=>onViewProfile?.(video.userId)} style={{ position:'relative', background:'none', border:'none', cursor:'pointer', padding:0 }}>
             <div style={{ width:42, height:42, borderRadius:'50%', background:video.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:16, border:'2px solid rgba(255,255,255,0.5)', overflow:'hidden' }}>
@@ -1909,8 +1918,8 @@ const handleLongPressStart = () => {
             {video.verified && <div style={{ position:'absolute', bottom:-2, right:-2, width:14, height:14, background:'#1d9bf0', borderRadius:'50%', fontSize:9, display:'flex', alignItems:'center', justifyContent:'center', color:'white' }}>✓</div>}
           </button>
           <span onClick={e=>{e.stopPropagation();onViewProfile?.(video.userId);}} style={{ color:'white', fontWeight:700, fontSize:15, cursor:'pointer', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{video.username}</span>
-          <button onClick={e=>{e.stopPropagation();onFollow?.(video.userId);}} style={{ padding:'5px 14px', borderRadius:20, background:followed?.includes(video.userId)?'rgba(255,255,255,0.08)':'rgba(255,45,85,0.9)', border:followed?.includes(video.userId)?'1px solid rgba(255,255,255,0.4)':'none', color:'white', fontSize:12, fontWeight:700, cursor:'pointer', backdropFilter:'blur(4px)' }}>{followed?.includes(video.userId)?'Unfollow':'+ Follow'}</button>
-          <button ref={menuButtonRef} onClick={e=>{e.stopPropagation();setShowActionMenu(!showActionMenu);}} style={{ background:'rgba(0,0,0,0.4)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:'50%', width:30, height:30, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', backdropFilter:'blur(8px)' }}>
+          <button data-notap='1' onClick={e=>{e.stopPropagation();onFollow?.(video.userId);}} style={{ padding:'5px 14px', borderRadius:20, background:followed?.includes(video.userId)?'rgba(255,255,255,0.08)':'rgba(255,45,85,0.9)', border:followed?.includes(video.userId)?'1px solid rgba(255,255,255,0.4)':'none', color:'white', fontSize:12, fontWeight:700, cursor:'pointer', backdropFilter:'blur(4px)' }}>{followed?.includes(video.userId)?'Unfollow':'+ Follow'}</button>
+          <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();setShowActionMenu(v=>!v);}} style={{ background:'rgba(0,0,0,0.4)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:'50%', width:30, height:30, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', backdropFilter:'blur(8px)' }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
           </button>
         </div>
@@ -1925,8 +1934,8 @@ const handleLongPressStart = () => {
       </div>
 
       {showActionMenu && (
-        <div onClick={e=>{e.stopPropagation();setShowActionMenu(false);}} style={{ position:'absolute', inset:0, zIndex:19 }}>
-          <div onClick={e=>e.stopPropagation()} style={{ position:'absolute', bottom:140, left:14, background:'rgba(18,18,18,0.97)', backdropFilter:'blur(20px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:22, padding:6, zIndex:20, minWidth:210, animation:'popIn 0.2s ease' }}>
+        <div onClick={e=>{e.stopPropagation();setShowActionMenu(false);}} style={{ position:'fixed', inset:0, zIndex:9990 }}>
+          <div onClick={e=>e.stopPropagation()} style={{ position:'fixed', bottom:140, left:14, background:'rgba(18,18,18,0.97)', backdropFilter:'blur(20px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:22, padding:6, zIndex:9991, minWidth:210, animation:'popIn 0.2s ease' }}>
             {[
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>, label:t?.duet||'Duet', fn:()=>onDuet?.(video.id)},
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M15 14l5-5-5-5"/><path d="M4 20v-7a4 4 0 014-4h12"/></svg>, label:t?.stitch||'Stitch', fn:()=>onStitch?.(video.id)},
@@ -1937,7 +1946,7 @@ const handleLongPressStart = () => {
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff9500" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>, label:t?.report||'Report', fn:()=>{ setShowReportModal(true); setShowActionMenu(false); }},
              {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff2d55" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>, label:t?.block||'Block', fn:async()=>{ if(!currentUser?.id) return; await updateDoc(doc(db,'users',currentUser.id),{ blockedUsers: arrayUnion(video.userId) }).catch(()=>{}); showToast?.('User blocked','warning'); onBlock?.(video.userId); }},
             ].map(({icon,label,fn})=>(
-              <button key={label} onClick={()=>{fn(); setShowActionMenu(false);}} style={{ display:'flex', alignItems:'center', gap:12, width:'100%', padding:'11px 14px', background:'none', border:'none', color:label==='Block'?'#ff2d55':label==='Report'?'#ff9500':'white', cursor:'pointer', borderRadius:16, fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>
+              <button key={label} onClick={e=>{e.stopPropagation();fn(); setShowActionMenu(false);}} style={{ display:'flex', alignItems:'center', gap:12, width:'100%', padding:'11px 14px', background:'none', border:'none', color:label==='Block'?'#ff2d55':label==='Report'?'#ff9500':'white', cursor:'pointer', borderRadius:16, fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>
                 <span>{icon}</span>{label}
               </button>
             ))}
@@ -1962,7 +1971,7 @@ const handleLongPressStart = () => {
       )}
 
       <div style={{ position:'absolute', right:12, bottom:90, display:'flex', flexDirection:'column', alignItems:'center', gap:6, zIndex:6 }}>
-       <button onClick={e=>{e.stopPropagation();haptic('medium');handleLike();}}
+       <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();haptic('medium');handleLike();}}
           style={{ background:'rgba(0,0,0,0.3)', border:'none', borderRadius:'50%', width:52, height:52, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer',
             transform: liked ? 'scale(1)' : 'scale(1)',
             transition:'transform 0.2s cubic-bezier(0.34,1.56,0.64,1)' }}>
@@ -1973,11 +1982,11 @@ const handleLongPressStart = () => {
           </svg>
         </button>
         <span style={{ color: liked?'#ff2d55':'rgba(255,255,255,0.85)', fontSize:11, fontWeight:700, letterSpacing:0.2, transition:'color 0.2s' }}>{formatNumber(likeCount)}</span>
-        <button onClick={e=>{e.stopPropagation();setShowComments(true);}} style={{ background:'rgba(0,0,0,0.3)', border:'none', borderRadius:'50%', width:48, height:48, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', marginTop:4 }}>
+        <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();setShowComments(true);}} style={{ background:'rgba(0,0,0,0.3)', border:'none', borderRadius:'50%', width:48, height:48, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', marginTop:4 }}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
         </button>
         <span style={{ color:'rgba(255,255,255,0.85)', fontSize:11, fontWeight:600 }}>{formatNumber(video.comments||comments.length)}</span>
-        <button onClick={e=>{e.stopPropagation();setShowShare(true);}} style={{ background:'rgba(0,0,0,0.3)', border:'none', borderRadius:'50%', width:48, height:48, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', marginTop:4 }}>
+        <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();setShowShare(true);}} style={{ background:'rgba(0,0,0,0.3)', border:'none', borderRadius:'50%', width:48, height:48, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', marginTop:4 }}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="1.8"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
         <span style={{ color:'rgba(255,255,255,0.85)', fontSize:11, fontWeight:600 }}>{formatNumber(video.shares||0)}</span>
@@ -1999,12 +2008,12 @@ const handleLongPressStart = () => {
 
       {showComments && (
   <>
-  <div onClick={()=>setShowComments(false)} style={{position:'fixed',inset:0,zIndex:8999,background:'rgba(0,0,0,0.5)'}}/>
+  <div onClick={()=>setShowComments(false)} style={{position:'fixed',inset:0,zIndex:9499,background:'rgba(0,0,0,0.5)'}}/>
   <div
     onClick={e => e.stopPropagation()}
     onTouchStart={e => e.stopPropagation()}
     onTouchEnd={e => e.stopPropagation()}
-    style={{ position:'fixed', bottom:0, left:'50%', transform:'translateX(-50%)', width:'100%', maxWidth:430, height:'60%', background:'#111', borderTopLeftRadius:28, borderTopRightRadius:28, zIndex:9000, display:'flex', flexDirection:'column', animation:'slideUp 0.3s ease', boxShadow:'0 -8px 40px rgba(0,0,0,0.7)' }}>
+    style={{ position:'fixed', bottom:0, left:'50%', transform:'translateX(-50%)', width:'100%', maxWidth:430, height:'60%', background:'#111', borderTopLeftRadius:28, borderTopRightRadius:28, zIndex:9500, display:'flex', flexDirection:'column', animation:'slideUp 0.3s ease', boxShadow:'0 -8px 40px rgba(0,0,0,0.7)' }}>
           <div style={{ padding:'16px', borderBottom:'1px solid rgba(255,255,255,0.07)', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
             <span style={{ color:'white', fontWeight:700, fontSize:16, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{t?.comments||'Comments'}</span>
             <button onClick={()=>setShowComments(false)} style={{ background:'rgba(255,255,255,0.08)', border:'none', borderRadius:'50%', width:32, height:32, color:'white', cursor:'pointer', fontSize:16 }}>✕</button>
@@ -2018,7 +2027,7 @@ const handleLongPressStart = () => {
             )}
             {comments.length===0 && <div style={{textAlign:'center',padding:40,color:'rgba(255,255,255,0.3)',fontSize:13}}>No comments yet. Be the first! 💬</div>}
             {comments.map(comment=>(
-              <CommentItem key={comment.id} comment={comment} currentUser={currentUser} onLike={async id=>{await updateDoc(doc(db,'comments',id),{likes:increment(1)});}} onReply={(c)=>setCommentText(`@${c.username} `)} onPin={id=>{const c=comments.find(cc=>cc.id===id); if(c){setPinnedComment(c); showToast?.('Pinned!','success');}}} onViewProfile={onViewProfile} />
+              <CommentItem key={comment.id} comment={comment} currentUser={currentUser} onLike={async id=>{await updateDoc(doc(db,'comments',id),{likes:increment(1)});}} onReply={(c)=>setCommentText(`@${c.username} `)} onPin={id=>{const c=comments.find(cc=>cc.id===id); if(c){setPinnedComment(c); showToast?.('Pinned!','success');}}} onViewProfile={onViewProfile} onDelete={async id=>{ await deleteDoc(doc(db,'comments',id)); await updateDoc(doc(db,'videos',video.id),{comments:increment(-1)}); showToast?.('Comment deleted','success'); }} />
             ))}
           </div>
           <CommentInputBar currentUser={currentUser} commentText={commentText} setCommentText={setCommentText} onSend={() => { addComment(); }} showToast={showToast} videoId={video.id} />
@@ -2187,9 +2196,6 @@ const handlePullEnd = async () => {
           <button onClick={onOpenSearch} style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(10px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           </button>
-          <button onClick={onShowGroups} style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(10px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-          </button>
           <NotifBellButton onOpenNotifications={onOpenNotifications} currentUser={currentUser} />
         </div>
       </div>
@@ -2224,6 +2230,11 @@ onLive={onLive}
           {filteredVideos.map((_,i)=><div key={i} style={{ width:3, height:i===currentIndex?20:4, borderRadius:2, background:i===currentIndex?'white':'rgba(255,255,255,0.2)', cursor:'pointer', transition:'all 0.2s' }} onClick={()=>setCurrentIndex(i)} />)}
         </div>
       )}
+      {/* Groups floating pill — bottom of home feed */}
+      <button onClick={onShowGroups} style={{ position:'absolute', bottom:14, left:'50%', transform:'translateX(-50%)', zIndex:12, background:'rgba(18,18,18,0.92)', backdropFilter:'blur(16px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:28, padding:'9px 18px', display:'flex', alignItems:'center', gap:8, cursor:'pointer', boxShadow:'0 4px 20px rgba(0,0,0,0.5)' }}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        <span style={{ color:'white', fontSize:13, fontWeight:700 }}>Groups</span>
+      </button>
     </div>
   );
 };
@@ -2290,9 +2301,7 @@ const handlePullEnd = async () => {
           <button onClick={onOpenSearch} style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(10px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           </button>
-          <button onClick={onShowGroups} style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(10px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-          </button>
+
         </div>
       </div>
       <Stories users={users} currentUser={currentUser} onViewStory={onViewStory} onCreateStory={onCreateStory} />
@@ -2349,9 +2358,7 @@ const handlePullEnd = async () => {
             <button onClick={onOpenSearch} style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(10px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             </button>
-            <button onClick={onShowGroups} style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(10px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-            </button>
+
           </div>
         </div>
       </div>
@@ -2369,6 +2376,11 @@ const handlePullEnd = async () => {
           ))}
         </div>
       )}
+      {/* Groups button — bottom of Friends feed */}
+      <button onClick={onShowGroups} style={{ position:'absolute', bottom:14, left:'50%', transform:'translateX(-50%)', zIndex:12, background:'rgba(18,18,18,0.92)', backdropFilter:'blur(16px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:28, padding:'9px 18px', display:'flex', alignItems:'center', gap:8, cursor:'pointer', boxShadow:'0 4px 20px rgba(0,0,0,0.5)' }}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#af52de" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        <span style={{ color:'white', fontSize:13, fontWeight:700 }}>Groups</span>
+      </button>
     </div>
   );
 };
@@ -3329,6 +3341,9 @@ unsub = onSnapshot(q, (snap) => {
           </div>
         </div>
         <div style={{marginLeft:'auto',display:'flex',gap:10}}>
+          <button onClick={()=>onViewProfile?.(otherUser?.id)} title="View profile" style={{background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:'50%',width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          </button>
           <button onClick={()=>onVoiceCall?.(otherUser?.id)} style={{background:'rgba(52,199,89,0.12)',border:'1px solid rgba(52,199,89,0.2)',borderRadius:'50%',width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#34c759" strokeWidth="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-5.99-5.99 19.79 19.79 0 01-3.07-8.67A2 2 0 014 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>
           </button>
@@ -4854,6 +4869,57 @@ const NotificationsPage = ({ currentUser, users, videos, onClose, onViewProfile,
 };
 
 
+const InboxBadge = ({ currentUser }) => {
+  const [unread, setUnread] = useState(0);
+  useEffect(()=>{
+    if(!currentUser?.id) return;
+    const q = query(collection(db,'conversations'), where('participants','array-contains',currentUser.id));
+    const unsub = onSnapshot(q, snap=>{
+      const total = snap.docs.reduce((s,d)=>s+(d.data()[`unread_${currentUser.id}`]||0),0);
+      setUnread(total);
+    },()=>{});
+    return ()=>unsub();
+  },[currentUser?.id]);
+  if(!unread) return null;
+  return <div style={{ position:'absolute', top:-4, right:-4, minWidth:16, height:16, background:'#ff2d55', borderRadius:8, border:'1.5px solid #0a0a0a', display:'flex', alignItems:'center', justifyContent:'center', fontSize:9, color:'white', fontWeight:800, padding:'0 3px' }}>{unread>9?'9+':unread}</div>;
+};
+const TabIcon = ({id, active, currentUser}) => {
+  const color = active ? '#ff2d55' : 'rgba(255,255,255,0.35)';
+  const sw = active ? 2.2 : 1.8;
+  const s = {width:26,height:26,fill:'none',stroke:color,strokeWidth:sw,strokeLinecap:'round',strokeLinejoin:'round'};
+  if(id==='home') return (
+    <div style={{ position:'relative' }}>
+      <svg viewBox="0 0 24 24" style={s}><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#ff2d55' }} />}
+    </div>
+  );
+  if(id==='friends') return (
+    <div style={{ position:'relative' }}>
+      <svg viewBox="0 0 24 24" style={s}><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#ff2d55' }} />}
+    </div>
+  );
+  if(id==='create') return (
+    <div style={{ width:52, height:34, background:'linear-gradient(135deg,#ff2d55,#af52de)', borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 4px 16px rgba(255,45,85,0.4)' }}>
+      <svg viewBox="0 0 24 24" style={{ width:22,height:22,stroke:'white',fill:'none',strokeWidth:2.5,strokeLinecap:'round' }}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </div>
+  );
+  if(id==='inbox') return (
+    <div style={{ position:'relative' }}>
+      <svg viewBox="0 0 24 24" style={s}><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      <InboxBadge currentUser={currentUser} />
+      {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#ff2d55' }} />}
+    </div>
+  );
+  if(id==='profile') return (
+    <div style={{ position:'relative' }}>
+      <svg viewBox="0 0 24 24" style={{...s,fill:active?'rgba(255,45,85,0.15)':''}}><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#ff2d55' }} />}
+    </div>
+  );
+  return null;
+};
+
 /* ─────────────── MAIN APP ─────────────── */
 export default function DaguV3App() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -5083,56 +5149,6 @@ const handleMessage = uid => {
   const tabs = [
     {id:'home'},{id:'friends'},{id:'create'},{id:'inbox'},{id:'profile'},
   ];
-const InboxBadge = ({ currentUser }) => {
-  const [unread, setUnread] = useState(0);
-  useEffect(()=>{
-    if(!currentUser?.id) return;
-    const q = query(collection(db,'conversations'), where('participants','array-contains',currentUser.id));
-    const unsub = onSnapshot(q, snap=>{
-      const total = snap.docs.reduce((s,d)=>s+(d.data()[`unread_${currentUser.id}`]||0),0);
-      setUnread(total);
-    },()=>{});
-    return ()=>unsub();
-  },[currentUser?.id]);
-  if(!unread) return null;
-  return <div style={{ position:'absolute', top:-4, right:-4, minWidth:16, height:16, background:'#ff2d55', borderRadius:8, border:'1.5px solid #0a0a0a', display:'flex', alignItems:'center', justifyContent:'center', fontSize:9, color:'white', fontWeight:800, padding:'0 3px' }}>{unread>9?'9+':unread}</div>;
-};
-const TabIcon = ({id, active, currentUser}) => {
-  const color = active ? '#ff2d55' : 'rgba(255,255,255,0.35)';
-  const sw = active ? 2.2 : 1.8;
-  const s = {width:26,height:26,fill:'none',stroke:color,strokeWidth:sw,strokeLinecap:'round',strokeLinejoin:'round'};
-  if(id==='home') return (
-    <div style={{ position:'relative' }}>
-      <svg viewBox="0 0 24 24" style={s}><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-      {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#ff2d55' }} />}
-    </div>
-  );
-  if(id==='friends') return (
-    <div style={{ position:'relative' }}>
-      <svg viewBox="0 0 24 24" style={s}><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-      {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#ff2d55' }} />}
-    </div>
-  );
-  if(id==='create') return (
-    <div style={{ width:52, height:34, background:'linear-gradient(135deg,#ff2d55,#af52de)', borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 4px 16px rgba(255,45,85,0.4)' }}>
-      <svg viewBox="0 0 24 24" style={{ width:22,height:22,stroke:'white',fill:'none',strokeWidth:2.5,strokeLinecap:'round' }}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-    </div>
-  );
-  if(id==='inbox') return (
-    <div style={{ position:'relative' }}>
-      <svg viewBox="0 0 24 24" style={s}><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-      <InboxBadge currentUser={currentUser} />
-      {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#ff2d55' }} />}
-    </div>
-  );
-  if(id==='profile') return (
-    <div style={{ position:'relative' }}>
-      <svg viewBox="0 0 24 24" style={{...s,fill:active?'rgba(255,45,85,0.15)':''}}><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#ff2d55' }} />}
-    </div>
-  );
-  return null;
-};
 
   if(authLoading) return (
     <div style={{ maxWidth:430, margin:'0 auto', height:'100dvh', background:'#0a0a0a', display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:16 }}>
