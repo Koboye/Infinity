@@ -448,7 +448,10 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack }) => {
                 )}
                 <div style={{ maxWidth: '72%' }}>
                   {!isMine && <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 10, marginBottom: 3 }}>@{msg.senderName}</div>}
-                  <div style={{ background: isMine ? 'linear-gradient(135deg,#ff2d55,#af52de)' : 'rgba(255,255,255,0.09)', borderRadius: isMine ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: '10px 14px', color: 'white', fontSize: 14 }}>{msg.text}</div>
+                  <div style={{ background: isMine ? 'linear-gradient(135deg,#ff2d55,#af52de)' : 'rgba(255,255,255,0.09)', borderRadius: isMine ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: '10px 14px', color: 'white', fontSize: 14 }}>
+                    {msg.text}
+                    {!isMine && <MessageTranslate text={msg.text} targetLang={currentUser?.language || 'en'} isMine={isMine} />}
+                  </div>
                 </div>
               </div>
             );
@@ -583,6 +586,31 @@ const TranslateButton = ({ text, targetLang, onTranslated }) => {
     <button onClick={handle} disabled={loading} style={{ background: 'rgba(0,122,255,0.12)', border: '1px solid rgba(0,122,255,0.25)', borderRadius: 12, padding: '3px 10px', color: '#007aff', fontSize: 11, cursor: 'pointer', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
       {loading ? '...' : '🌐 Translate'}
     </button>
+  );
+};
+
+/* ─────────────── INLINE MESSAGE TRANSLATE TOGGLE (chat & group messages) ─────────────── */
+const MessageTranslate = ({ text, targetLang, isMine }) => {
+  const [translated, setTranslated] = useState(null);
+  const [showOriginal, setShowOriginal] = useState(false);
+  const [loading, setLoading] = useState(false);
+  if (!text || text.length < 2 || !targetLang || targetLang === 'en') return null;
+  const toggle = async () => {
+    if (translated) { setShowOriginal(s=>!s); return; }
+    setLoading(true);
+    const result = await liveTranslate(text, targetLang);
+    setTranslated(result);
+    setLoading(false);
+  };
+  return (
+    <>
+      {translated && !showOriginal && (
+        <div style={{ fontSize:13, lineHeight:1.4, color: isMine?'rgba(255,255,255,0.9)':'rgba(255,255,255,0.85)', marginTop:4, paddingTop:4, borderTop:'1px solid rgba(255,255,255,0.12)' }}>{translated}</div>
+      )}
+      <button onClick={toggle} disabled={loading} style={{ background:'none', border:'none', color:'#5ab2ff', fontSize:10, cursor:'pointer', padding:0, marginTop:4, display:'block' }}>
+        {loading ? '...' : translated ? (showOriginal ? '🌐 See translation' : '🌐 See original') : '🌐 Translate'}
+      </button>
+    </>
   );
 };
 
@@ -1483,6 +1511,34 @@ const LiveCameraView = () => {
   return <video ref={videoRef} autoPlay playsInline muted style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover'}}/>;
 };
 /* ─────────────── LIVE STREAM ─────────────── */
+/* ─────────────── LIVE CHAT MESSAGE (with live translation) ─────────────── */
+const LiveChatMessage = ({ msg, targetLang }) => {
+  const [translated, setTranslated] = useState(null);
+  const [showOriginal, setShowOriginal] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const eligible = targetLang && targetLang !== 'en' && msg.text && msg.text.length >= 2;
+  const toggle = async () => {
+    if (translated) { setShowOriginal(s=>!s); return; }
+    setLoading(true);
+    const result = await liveTranslate(msg.text, targetLang);
+    setTranslated(result);
+    setLoading(false);
+  };
+  return (
+    <div style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(10px)', borderRadius:20, padding:'6px 12px', display:'inline-flex', flexDirection:'column', gap:2, maxWidth:'85%', alignSelf:'flex-start' }}>
+      <div style={{ display:'flex', gap:7, alignItems:'baseline' }}>
+        <span style={{ color:'#ff2d55', fontSize:11, fontWeight:700 }}>@{msg.user}</span>
+        <span style={{ color:'white', fontSize:11 }}>{(translated && !showOriginal) ? translated : msg.text}</span>
+      </div>
+      {eligible && (
+        <button onClick={toggle} disabled={loading} style={{ alignSelf:'flex-start', background:'none', border:'none', color:'#5ab2ff', fontSize:10, cursor:'pointer', padding:0, marginTop:1 }}>
+          {loading ? '...' : translated ? (showOriginal ? '🌐 See translation' : '🌐 See original') : '🌐 Translate'}
+        </button>
+      )}
+    </div>
+  );
+};
+
 const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
   const [viewers, setViewers] = useState(0);
   const [chatMessages, setChatMessages] = useState([]);
@@ -1562,12 +1618,10 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
       <LiveCameraView />
       <div style={{ flex:1, display:'flex', alignItems:'flex-end', padding:'0 14px 10px', zIndex:10 }}>
         <div style={{ flex:1, maxHeight:200, overflowY:'hidden', display:'flex', flexDirection:'column', gap:6 }}>
-          {chatMessages.slice(-8).map(m=>(
-            <div key={m.id} style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(10px)', borderRadius:20, padding:'6px 12px', display:'inline-flex', gap:7, maxWidth:'85%', alignSelf:'flex-start' }}>
-              <span style={{ color:'#ff2d55', fontSize:11, fontWeight:700 }}>@{m.user}</span>
-              <span style={{ color:'white', fontSize:11 }}>{m.text}</span>
-            </div>
-          ))}
+          {chatMessages.slice(-8).map(m=>{
+            const targetLang = currentUser?.language || 'en';
+            return <LiveChatMessage key={m.id} msg={m} targetLang={targetLang} />;
+          })}
         </div>
       </div>
       <div style={{ display:'flex', gap:10, padding:'10px 14px 28px', borderTop:'1px solid rgba(255,255,255,0.06)', zIndex:10 }}>
@@ -1723,6 +1777,8 @@ const EnhancedVideoCard = memo(({ video, currentUser, isActive, onLike, onCommen
   const [pinnedComment, setPinnedComment] = useState(null);
   const [showShare, setShowShare] = useState(false);
   const [displayDesc, setDisplayDesc] = useState(video?.description || '');
+  const [showOriginalDesc, setShowOriginalDesc] = useState(false);
+  const [translatedDesc, setTranslatedDesc] = useState(null);
   const [showActionMenu, setShowActionMenu] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [heartAnim, setHeartAnim] = useState(false);
@@ -1790,15 +1846,19 @@ const EnhancedVideoCard = memo(({ video, currentUser, isActive, onLike, onCommen
 useEffect(() => {
   if (!isActive || !video?.description) return;
   setDisplayDesc(video.description);
+  setTranslatedDesc(null);
+  setShowOriginalDesc(false);
 
   const targetLang = currentUser?.language || 'en';
+  if (targetLang === 'en') return; // assume source captions are already English by default
   const translate = async () => {
   try {
     const cacheKey = `${video.id}_${targetLang}`;
     const cacheRef = doc(db, 'translations', cacheKey);
     const cached = await getDoc(cacheRef);
     if (cached.exists()) {
-      setDisplayDesc(cached.data().text || video.description);
+      const cachedText = cached.data().text || video.description;
+      if (cachedText !== video.description) setTranslatedDesc(cachedText);
       return;
     }
     const res = await fetch(
@@ -1807,13 +1867,13 @@ useEffect(() => {
     const data = await res.json();
     const translated = data?.[0]?.map(s => s?.[0]).filter(Boolean).join('');
     if (translated && translated !== video.description) {
-      setDisplayDesc(translated);
+      setTranslatedDesc(translated);
       setDoc(cacheRef, { text: translated, lang: targetLang }, { merge: true }).catch(() => {});
     }
   } catch {}
 };
 translate();
-}, [isActive, video?.description]);
+}, [isActive, video?.description, currentUser?.language]);
   const handleDoubleTap = async () => {
     if(!liked){
       setLiked(true);
@@ -1949,8 +2009,13 @@ const handleLongPressStart = () => {
           <button data-notap='1' onClick={e=>{e.stopPropagation();onFollow?.(video.userId);}} style={{ padding:'5px 14px', borderRadius:20, background:followed?.includes(video.userId)?'rgba(255,255,255,0.08)':'rgba(255,45,85,0.9)', border:followed?.includes(video.userId)?'1px solid rgba(255,255,255,0.4)':'none', color:'white', fontSize:12, fontWeight:700, cursor:'pointer', backdropFilter:'blur(4px)' }}>{followed?.includes(video.userId)?'Unfollow':'+ Follow'}</button>
         </div>
         <p style={{ color:'rgba(255,255,255,0.9)', fontSize:13, marginBottom:4, lineHeight:1.5 }}>
-  {displayDesc}
+  {(translatedDesc && !showOriginalDesc) ? translatedDesc : displayDesc}
 </p>
+{translatedDesc && (
+  <button data-notap='1' onClick={e=>{e.stopPropagation(); setShowOriginalDesc(s=>!s);}} style={{ background:'rgba(0,122,255,0.15)', border:'1px solid rgba(0,122,255,0.3)', borderRadius:12, padding:'3px 10px', color:'#5ab2ff', fontSize:11, cursor:'pointer', marginBottom:8, display:'inline-flex', alignItems:'center', gap:4 }}>
+    🌐 {showOriginalDesc ? 'See translation' : 'See original'}
+  </button>
+)}
         <div style={{ display:'flex', alignItems:'center', gap:6 }}>
           <div style={{ width:22, height:22, borderRadius:'50%', background:'linear-gradient(135deg,#ff2d55,#af52de)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:12 }}>♪</div>
           <span style={{ color:'rgba(255,255,255,0.65)', fontSize:12 }}>{video.song}</span>
@@ -2116,7 +2181,7 @@ const SuggestedUsers = ({ currentUser, users, followed, onFollow, onViewProfile 
     </div>
   );
 };
-const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, onVoiceCall, onVideoCall, onDuet, onStitch, onSaveSound, followed, showToast, onLive, currentUser, onViewProfile, onOpenSearch, onOpenNotifications, blockedUsers, onBlock, users, onShowGroups }) => {
+const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, onVoiceCall, onVideoCall, onDuet, onStitch, onSaveSound, followed, showToast, onLive, currentUser, onViewProfile, onOpenSearch, onOpenNotifications, blockedUsers, onBlock, users }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [activeCategory, setActiveCategory] = useState('foryou');
   const [loadingMore, setLoadingMore] = useState(false);
@@ -2258,17 +2323,13 @@ onLive={onLive}
           {filteredVideos.map((_,i)=><div key={i} style={{ width:3, height:i===currentIndex?20:4, borderRadius:2, background:i===currentIndex?'white':'rgba(255,255,255,0.2)', cursor:'pointer', transition:'all 0.2s' }} onClick={()=>setCurrentIndex(i)} />)}
         </div>
       )}
-      {/* Groups floating pill — bottom of home feed */}
-      <button onClick={onShowGroups} style={{ position:'absolute', bottom:96, left:'50%', transform:'translateX(-50%)', zIndex:12, background:'rgba(18,18,18,0.92)', backdropFilter:'blur(16px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:28, padding:'9px 18px', display:'flex', alignItems:'center', gap:8, cursor:'pointer', boxShadow:'0 4px 20px rgba(0,0,0,0.5)' }}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-        <span style={{ color:'white', fontSize:13, fontWeight:700 }}>Groups</span>
-      </button>
+
     </div>
   );
 };
 
 /* ─────────────── FRIENDS FEED ─────────────── */
-const FriendsFeed = ({ t, friends, videos, currentUser, onMessage, onVoiceCall, onVideoCall, onViewProfile, showToast, users, onCreateStory, onViewStory, onFollow, followed, blockedUsers, onBlock, onLive, onOpenSearch, onShowGroups }) => {
+const FriendsFeed = ({ t, friends, videos, currentUser, onMessage, onVoiceCall, onVideoCall, onViewProfile, showToast, users, onCreateStory, onViewStory, onFollow, followed, blockedUsers, onBlock, onLive, onOpenSearch }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const startY = useRef(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -2404,11 +2465,7 @@ const handlePullEnd = async () => {
           ))}
         </div>
       )}
-      {/* Groups button — bottom of Friends feed */}
-      <button onClick={onShowGroups} style={{ position:'absolute', bottom:96, left:'50%', transform:'translateX(-50%)', zIndex:12, background:'rgba(18,18,18,0.92)', backdropFilter:'blur(16px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:28, padding:'9px 18px', display:'flex', alignItems:'center', gap:8, cursor:'pointer', boxShadow:'0 4px 20px rgba(0,0,0,0.5)' }}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#af52de" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-        <span style={{ color:'white', fontSize:13, fontWeight:700 }}>Groups</span>
-      </button>
+
     </div>
   );
 };
@@ -2660,7 +2717,7 @@ const PrivacyToggles = ({ user, showToast }) => {
 };
 
 /* ─────────────── PROFILE PAGE ─────────────── */
-const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowAnalytics, onShowQRCode, allVideos, setBlockedUsers, onShowSavedPosts, onShowGroups, onShowBroadcast, onViewProfile }) => {
+const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowAnalytics, onShowQRCode, allVideos, setBlockedUsers, onShowSavedPosts, onGoToGroups, onShowBroadcast, onViewProfile }) => {
   const [activeSubPage, setActiveSubPage] = useState(null);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showAvatarViewer, setShowAvatarViewer] = useState(false);
@@ -3008,7 +3065,7 @@ if(activeSubPage==='settings') return (
                   {icon:'👑',label:'Premium',action:()=>{setActiveSubPage('premium');setShowHamburger(false);}},
                   {icon:'📱',label:'QR Code',action:()=>{onShowQRCode?.();setShowHamburger(false);}},
                   {icon:'🔖',label:'Saved Posts',action:()=>{onShowSavedPosts?.();setShowHamburger(false);}},
-                  {icon:'👥',label:'My Groups',action:()=>{onShowGroups?.();setShowHamburger(false);}},
+                  {icon:'👥',label:'My Groups',action:()=>{onGoToGroups?.();setShowHamburger(false);}},
                   {icon:'📡',label:'Broadcast Status',action:()=>{onShowBroadcast?.();setShowHamburger(false);}},
                   {icon:'🔄',label:'Switch Account',action:()=>{setActiveSubPage('switch');setShowHamburger(false);}},
                   {icon:'🚫',label:'Blocked Users',action:()=>{setActiveSubPage('unblock');setShowHamburger(false);}},
@@ -3400,6 +3457,7 @@ unsub = onSnapshot(q, (snap) => {
               <div style={{maxWidth:'72%'}}>
                 {msg.text&&<div style={{background: msg.deleted ? 'rgba(255,255,255,0.04)' : isMine?'linear-gradient(135deg,#ff2d55,#af52de)':'rgba(255,255,255,0.09)', borderRadius:isMine?'18px 18px 4px 18px':'18px 18px 18px 4px',padding:'9px 14px',marginBottom:msg.mediaUrl?4:0}}>
   <span style={{color: msg.deleted ? 'rgba(255,255,255,0.3)':'white', fontSize:14, lineHeight:1.4, fontStyle: msg.deleted?'italic':'normal'}}>{msg.text}</span>
+  {!msg.deleted && !isMine && <MessageTranslate text={msg.text} targetLang={currentUser?.language || 'en'} isMine={isMine} />}
 </div>}
                 <div style={{ color:'rgba(255,255,255,0.25)', fontSize:10, marginTop:3, textAlign:isMine?'right':'left', paddingLeft:isMine?0:2, paddingRight:isMine?2:0, display:'flex', alignItems:'center', justifyContent:isMine?'flex-end':'flex-start', gap:3 }}>
   <span>{msg.ts ? msg.ts.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : ''}</span>
@@ -3518,17 +3576,13 @@ unsub = onSnapshot(q, (snap) => {
   );
 };
 
-const InboxPage = ({ t, users, currentUser, showToast, onViewProfile, initialTargetId, onClearTarget, persistedConversation, onSetConversation, onVoiceCall, onVideoCall }) => {
+const InboxPage = ({ t, users, currentUser, showToast, onViewProfile, initialTargetId, onClearTarget, persistedConversation, onSetConversation, onVoiceCall, onVideoCall, openGroupsSignal }) => {
   const [activeConversation, setActiveConversation] = useState(persistedConversation || null);
   const [conversations, setConversations] = useState([]);
-
-  // Sync when the App-level persisted conversation changes (e.g. tab switch back)
+  const [showGroupsView, setShowGroupsView] = useState(false);
   useEffect(()=>{
-    if(persistedConversation && persistedConversation !== 'groups'){
-      setActiveConversation(persistedConversation);
-    }
-  },[persistedConversation]);
-
+    if(openGroupsSignal){ setShowGroupsView(true); }
+  },[openGroupsSignal]);
   useEffect(()=>{
     // Only clear an active conversation if it's malformed (no target user id).
     // Do NOT clear it just because `users` hasn't loaded that participant yet —
@@ -3611,6 +3665,19 @@ snap.docs.forEach(async conv => {
     }, { merge: true }).catch(() => {});
   };
 
+ if(showGroupsView){
+    return (
+      <GroupChatPage
+        currentUser={currentUser}
+        users={users}
+        showToast={showToast}
+        onBack={()=>setShowGroupsView(false)}
+        onVoiceCall={onVoiceCall}
+        onVideoCall={onVideoCall}
+      />
+    );
+  }
+
  if(activeConversation && activeConversation.otherUserId){
     const otherUser = users.find(u=>u.id===activeConversation.otherUserId)
       || { id: activeConversation.otherUserId, username: '', avatar:'?', avatarColor:'#555' };
@@ -3645,7 +3712,7 @@ snap.docs.forEach(async conv => {
       <div style={{ padding:'16px 16px 12px', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
           <div style={{ color:'white', fontWeight:800, fontSize:22, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{t?.inbox||'Messages'}</div>
-          <button onClick={()=>onSetConversation?.('groups')} style={{ background:'rgba(255,45,85,0.1)', border:'1px solid rgba(255,45,85,0.2)', borderRadius:20, padding:'6px 14px', color:'#ff2d55', fontSize:12, fontWeight:700, cursor:'pointer' }}>👥 Groups</button>
+          <button onClick={()=>setShowGroupsView(true)} style={{ background:'rgba(255,45,85,0.1)', border:'1px solid rgba(255,45,85,0.2)', borderRadius:20, padding:'6px 14px', color:'#ff2d55', fontSize:12, fontWeight:700, cursor:'pointer' }}>👥 Groups</button>
         </div>
       </div>
       <div style={{ flex:1, overflowY:'auto' }}>
@@ -5047,7 +5114,6 @@ const [blockedUsers, setBlockedUsers] = useState([]);
   const [incomingCall, setIncomingCall] = useState(null);
   const [viewingProfile, setViewingProfile] = useState(null);
   // ── v4 NEW STATE ──
-  const [showGroups, setShowGroups] = useState(false);
   const [showSavedPosts, setShowSavedPosts] = useState(false);
   const [showDiscover, setShowDiscover] = useState(false);
   const [showShareSheet, setShowShareSheet] = useState(null);
@@ -5239,6 +5305,7 @@ const handleLogout = async () => {
 
   const handleViewProfile = uid => { const user=users.find(u=>u.id===uid); if(user) setViewingProfile(user); };
   const [inboxTargetId, setInboxTargetId] = useState(null);
+const [inboxOpenGroups, setInboxOpenGroups] = useState(0);
 const [activeConversation, setActiveConversation] = useState(null);
 const [quickConversation, setQuickConversation] = useState(null);
 const handleMessage = uid => {
@@ -5345,11 +5412,7 @@ const handleMessage = uid => {
       {showAnalytics && <CreatorAnalytics user={currentUser} videos={videos} onClose={()=>setShowAnalytics(false)} />}
       {showCreateStory && <CreateStoryModal currentUser={currentUser} onClose={()=>setShowCreateStory(false)} showToast={showToast} />}
       {/* ── v4 NEW OVERLAYS ── */}
-      {showGroups && (
-        <div style={{ position:'fixed', inset:0, zIndex:10500, background:'#0a0a0a', maxWidth:430, margin:'0 auto' }}>
-          <GroupChatPage currentUser={currentUser} users={users} showToast={showToast} onBack={()=>setShowGroups(false)} />
-        </div>
-      )}
+
       {showSavedPosts && <SavedPostsPage currentUser={currentUser} showToast={showToast} onClose={()=>setShowSavedPosts(false)} />}
       {showDiscover && <DiscoverPage videos={videos} users={users} onViewProfile={uid=>{handleViewProfile(uid);}} showToast={showToast} onClose={()=>setShowDiscover(false)} />}
       {showShareSheet && <ShareSheet video={showShareSheet} currentUser={currentUser} onClose={()=>setShowShareSheet(null)} showToast={showToast} />}
@@ -5386,20 +5449,20 @@ const handleMessage = uid => {
   onDuet={()=>showToast?.('Duet mode ready','info')} onStitch={()=>showToast?.('Stitch mode ready','info')} onSaveSound={()=>showToast?.('Sound saved!','success')}
   followed={followed} showToast={showToast} onLive={()=>setShowLiveStream(currentUser)} onViewProfile={handleViewProfile}
   onOpenSearch={()=>setShowDiscover(true)} onOpenNotifications={()=>setShowNotifications(true)}
-  blockedUsers={blockedUsers} onBlock={uid=>setBlockedUsers(p=>[...p,uid])} onShowGroups={()=>setShowGroups(true)} users={users} />}
+  blockedUsers={blockedUsers} onBlock={uid=>setBlockedUsers(p=>[...p,uid])} users={users} />}
             {activeTab==='friends' && <FriendsFeed t={t} friends={friends} videos={videos} currentUser={currentUser} onMessage={handleMessage}
   onVoiceCall={uid=>{ const u=users.find(uu=>uu.id===uid); const callDocId=[currentUser.id,uid].sort().join('_'); setShowCall({type:'audio',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
   onVideoCall={uid=>{ const u=users.find(uu=>uu.id===uid); const callDocId=[currentUser.id,uid].sort().join('_'); setShowCall({type:'video',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
   blockedUsers={blockedUsers} onViewProfile={handleViewProfile} showToast={showToast} users={users}
   onCreateStory={()=>setShowCreateStory(true)} onViewStory={setShowStoryViewer} onFollow={toggleFollow} followed={followed}
   onLive={()=>setShowLiveStream(currentUser)} onBlock={uid=>setBlockedUsers(p=>[...p,uid])}
-  onOpenSearch={()=>setShowDiscover(true)} onShowGroups={()=>setShowGroups(true)} />}
+  onOpenSearch={()=>setShowDiscover(true)} />}
             {activeTab==='create' && <CreateScreen onOpenCamera={()=>setShowCamera(true)} onShowSoundLibrary={()=>setShowSoundLibrary(true)} showToast={showToast} t={t} />}
-            {activeTab==='inbox' && <InboxPage t={t} users={users} currentUser={currentUser} showToast={showToast} onViewProfile={handleViewProfile} initialTargetId={inboxTargetId} onClearTarget={()=>setInboxTargetId(null)} persistedConversation={activeConversation} onSetConversation={(conv)=>{ if(conv==='groups'){ setShowGroups(true); } else { setActiveConversation(conv); } }}
+            {activeTab==='inbox' && <InboxPage t={t} users={users} currentUser={currentUser} showToast={showToast} onViewProfile={handleViewProfile} initialTargetId={inboxTargetId} onClearTarget={()=>setInboxTargetId(null)} persistedConversation={activeConversation} openGroupsSignal={inboxOpenGroups} onSetConversation={(conv)=>{ setActiveConversation(conv); }}
   onVoiceCall={uid=>{ const u=users.find(uu=>uu.id===uid); const callDocId=[currentUser.id,uid].sort().join('_'); setShowCall({type:'audio',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
   onVideoCall={uid=>{ const u=users.find(uu=>uu.id===uid); const callDocId=[currentUser.id,uid].sort().join('_'); setShowCall({type:'video',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
 />}
-            {activeTab==='profile' && <ProfilePage user={currentUser} setCurrentUser={setCurrentUser} onLogout={handleLogout} users={users} showToast={showToast} onShowAnalytics={()=>setShowAnalytics(true)} onShowQRCode={()=>setShowQRCode(true)} allVideos={videos} setBlockedUsers={setBlockedUsers} onShowSavedPosts={()=>setShowSavedPosts(true)} onShowGroups={()=>setShowGroups(true)} onShowBroadcast={()=>setShowBroadcast(true)} onViewProfile={handleViewProfile} />}
+            {activeTab==='profile' && <ProfilePage user={currentUser} setCurrentUser={setCurrentUser} onLogout={handleLogout} users={users} showToast={showToast} onShowAnalytics={()=>setShowAnalytics(true)} onShowQRCode={()=>setShowQRCode(true)} allVideos={videos} setBlockedUsers={setBlockedUsers} onShowSavedPosts={()=>setShowSavedPosts(true)} onGoToGroups={()=>{ setActiveTab('inbox'); setInboxOpenGroups(n=>n+1); }} onShowBroadcast={()=>setShowBroadcast(true)} onViewProfile={handleViewProfile} />}
           </>
         )}
       </div>
