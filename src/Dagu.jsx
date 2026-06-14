@@ -320,6 +320,9 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack }) => {
   const [activeGroup, setActiveGroup] = useState(null);
   const [groupMessages, setGroupMessages] = useState([]);
   const [msgText, setMsgText] = useState('');
+  const [showGroupInfo, setShowGroupInfo] = useState(false);
+  const [groupCallOpen, setGroupCallOpen] = useState(null); // 'audio' | 'video' | null
+  const bottomRef = useRef(null);
 
   useEffect(() => {
     if (!currentUser?.id) return;
@@ -331,8 +334,16 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack }) => {
   useEffect(() => {
     if (!activeGroup) return;
     const q = query(collection(db, 'groups', activeGroup.id, 'msgs'), orderBy('createdAt', 'asc'), limit(100));
-    const unsub = onSnapshot(q, snap => setGroupMessages(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+    const unsub = onSnapshot(q, snap => {
+      setGroupMessages(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 80);
+    });
     return () => unsub();
+  }, [activeGroup?.id]);
+
+  useEffect(() => {
+    setShowGroupInfo(false);
+    setGroupCallOpen(null);
   }, [activeGroup?.id]);
 
   const createGroup = async () => {
@@ -361,9 +372,6 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack }) => {
   };
 
   if (activeGroup) {
-    const bottomRef = React.createRef();
-    const [showGroupInfo, setShowGroupInfo] = React.useState(false);
-    const [groupCallOpen, setGroupCallOpen] = React.useState(null); // 'audio' | 'video' | null
     const groupMembers = users.filter(u => (activeGroup.members||[]).includes(u.id));
     return (
       <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#0a0a0a' }}>
@@ -3665,7 +3673,20 @@ snap.docs.forEach(async conv => {
     }, { merge: true }).catch(() => {});
   };
 
- if(showGroupsView){
+  const convUsers = useMemo(()=>{
+    if(!currentUser?.id) return [];
+    return users.filter(u=>{
+      if(u.id===currentUser.id) return false;
+      const convId = getConversationId(currentUser.id, u.id);
+      return conversations.some(c=>c.id===convId);
+    }).sort((a,b)=>{
+      const convA = conversations.find(c=>c.id===getConversationId(currentUser.id,a.id));
+      const convB = conversations.find(c=>c.id===getConversationId(currentUser.id,b.id));
+      return (convB?.lastMessageAt?.seconds||0)-(convA?.lastMessageAt?.seconds||0);
+    });
+  },[users, conversations, currentUser?.id]);
+
+  if(showGroupsView){
     return (
       <GroupChatPage
         currentUser={currentUser}
@@ -3678,7 +3699,7 @@ snap.docs.forEach(async conv => {
     );
   }
 
- if(activeConversation && activeConversation.otherUserId){
+  if(activeConversation && activeConversation.otherUserId){
     const otherUser = users.find(u=>u.id===activeConversation.otherUserId)
       || { id: activeConversation.otherUserId, username: '', avatar:'?', avatarColor:'#555' };
     return (
@@ -3694,18 +3715,6 @@ snap.docs.forEach(async conv => {
       />
     );
   }
-  const convUsers = useMemo(()=>{
-    if(!currentUser?.id) return [];
-    return users.filter(u=>{
-      if(u.id===currentUser.id) return false;
-      const convId = getConversationId(currentUser.id, u.id);
-      return conversations.some(c=>c.id===convId);
-    }).sort((a,b)=>{
-      const convA = conversations.find(c=>c.id===getConversationId(currentUser.id,a.id));
-      const convB = conversations.find(c=>c.id===getConversationId(currentUser.id,b.id));
-      return (convB?.lastMessageAt?.seconds||0)-(convA?.lastMessageAt?.seconds||0);
-    });
-  },[users, conversations, currentUser?.id]);
 
   return (
     <div style={{ height:'100%', display:'flex', flexDirection:'column', background:'#0a0a0a' }}>
@@ -3962,8 +3971,10 @@ cleanupCall();
 
   return (
     <div style={{ position:'fixed', inset:0, background:'#0a0a0a', zIndex:2500, display:'flex', flexDirection:'column' }}>
-      {type === 'video' && (
+      {type === 'video' ? (
         <video ref={remoteVideoRef} autoPlay playsInline style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', background:'#111' }} />
+      ) : (
+        <audio ref={remoteVideoRef} autoPlay playsInline style={{ display:'none' }} />
       )}
       {status !== 'connected' && (
         <div style={{ position:'absolute', inset:0, background:'linear-gradient(160deg,#0a0a1a,#1a0a0a)', zIndex:1 }}>
