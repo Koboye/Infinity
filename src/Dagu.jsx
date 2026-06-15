@@ -84,9 +84,28 @@ const SOUND_LIBRARY = [
 
 const TOP_CATEGORIES = [
   { id: 'foryou', label: 'For You' },
-  { id: 'market', label: 'Market' },
-  { id: 'job', label: 'Jobs' },
+  { id: 'jobs', label: 'Jobs' },
+  { id: 'skills', label: 'Market' },
 ];
+
+// Keywords/patterns that frequently indicate a fake or scammy Jobs/Market post.
+// Posts matching these get auto-flagged as "pending review" for the creator,
+// while normal posts from permitted users go live immediately.
+const FAKE_POST_PATTERNS = [
+  /work\s*from\s*home.*(\$|usd|etb)?\s*\d{3,}.*(day|hour|week)/i,
+  /send\s+(money|payment|deposit|registration\s*fee)/i,
+  /no\s+experience.*(guarantee|guaranteed).*(income|money|salary)/i,
+  /telegram.*(only|contact).*(\+?\d{6,})/i,
+  /click\s+(this|the)\s+link/i,
+  /western\s*union|moneygram|crypto\s*wallet|bitcoin\s*wallet/i,
+  /100%\s*(guarantee|free\s*money)/i,
+];
+
+const isLikelyFakePost = (item) => {
+  const text = `${item.title||''} ${item.description||''} ${item.company||''}`;
+  return FAKE_POST_PATTERNS.some(re => re.test(text));
+};
+
 
 const EMOJI_LIST = ['😀','😂','😍','🥰','😎','🤔','😭','😱','🔥','❤️','👍','🎉','✨','💯','🙌','👏','🤝','💪','🎵','📸'];
 const TRANSLATIONS = {
@@ -2157,14 +2176,33 @@ const EnhancedVideoCard = memo(({ video, currentUser, isActive, onLike, onCommen
   const longPressTimer = useRef(null);
   const REACTIONS = ['❤️','😂','😮','😢','😡','🔥','👏','💎'];
   const [showLongPressMenu, setShowLongPressMenu] = useState(false);
+  const [showFullText, setShowFullText] = useState(false);
+  const [slideIndex, setSlideIndex] = useState(0);
+  const slideStartX = useRef(null);
+  const images = useMemo(()=>{
+    if(Array.isArray(video?.images) && video.images.length) return video.images;
+    if(video?.videoUrl?.match(/\.(jpg|jpeg|png|gif|webp)/i) || video?.mediaType?.startsWith('image')) return [video.videoUrl];
+    return null;
+  },[video?.images, video?.videoUrl, video?.mediaType]);
+  const handleSlideTouchStart = e => { if(images && images.length>1) slideStartX.current = e.touches[0].clientX; };
+  const handleSlideTouchEnd = e => {
+    if(slideStartX.current===null || !images || images.length<=1) return;
+    const dx = e.changedTouches[0].clientX - slideStartX.current;
+    if(Math.abs(dx) > 40){
+      if(dx<0) setSlideIndex(i=>Math.min(images.length-1,i+1));
+      else setSlideIndex(i=>Math.max(0,i-1));
+    }
+    slideStartX.current = null;
+  };
 
-  // Helper: download/save post media
+  // Helper: download/save post media (current slide for multi-image posts)
   const handleDownloadPost = async () => {
-    if (!video?.videoUrl) { showToast?.('No media to download', 'error'); return; }
+    const target = images ? images[slideIndex] : video?.videoUrl;
+    if (!target) { showToast?.('No media to download', 'error'); return; }
     try {
-      const response = await fetch(video.videoUrl);
+      const response = await fetch(target);
       const blob = await response.blob();
-      const isImage = /\.(jpg|jpeg|png|gif|webp)/i.test(video.videoUrl) || video.mediaType?.startsWith('image');
+      const isImage = !!images || /\.(jpg|jpeg|png|gif|webp)/i.test(target) || video.mediaType?.startsWith('image');
       const ext = isImage ? 'jpg' : 'mp4';
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -2174,7 +2212,7 @@ const EnhancedVideoCard = memo(({ video, currentUser, isActive, onLike, onCommen
       showToast?.('Post downloaded! 📥', 'success');
     } catch (e) {
       // Fallback: open in new tab
-      window.open(video.videoUrl, '_blank');
+      window.open(target, '_blank');
       showToast?.('Opened in browser — long-press to save 📥', 'info');
     }
     setShowLongPressMenu(false);
@@ -2232,6 +2270,9 @@ const EnhancedVideoCard = memo(({ video, currentUser, isActive, onLike, onCommen
     el.pause();
   }
 },[isActive, isPlaying, video?.playbackRate]);
+useEffect(() => {
+  if (!isActive) { setShowFullText(false); setSlideIndex(0); }
+}, [isActive]);
 useEffect(() => {
   if (!isActive || !video?.description) return;
   setDisplayDesc(video.description);
@@ -2353,9 +2394,17 @@ const handleLongPressStart = () => {
       onTouchStart={handleLongPressStart}
       onTouchEnd={handleLongPressEnd}
       onMouseDown={handleLongPressStart}
-      onMouseUp={handleLongPressEnd}>
-      {video?.videoUrl?.match(/\.(jpg|jpeg|png|gif|webp)/i) || video?.mediaType?.startsWith('image') ?
-  <img src={video.videoUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', transition:'transform 0.3s ease', transform: showComments ? 'translateY(-18%)' : 'translateY(0)' }} /> :
+      onMouseUp={handleLongPressEnd}
+      onTouchStartCapture={handleSlideTouchStart}
+      onTouchEndCapture={handleSlideTouchEnd}>
+      {images ?
+        <div style={{ position:'absolute', inset:0, display:'flex', width:`${images.length*100}%`, height:'100%', transform:`translateX(-${slideIndex*(100/images.length)}%)`, transition:'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)' }}>
+          {images.map((img,i)=>(
+            <div key={i} style={{ width:`${100/images.length}%`, height:'100%', flexShrink:0 }}>
+              <img src={img} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', transition:'transform 0.3s ease', transform: showComments ? 'translateY(-18%)' : 'translateY(0)' }} />
+            </div>
+          ))}
+        </div> :
   <video
     src={video?.videoUrl}
     style={{ width:'100%', height:'100%', objectFit:'cover', transition:'transform 0.3s ease', transform: showComments ? 'translateY(-18%)' : 'translateY(0)' }}
@@ -2378,44 +2427,28 @@ const handleLongPressStart = () => {
   />
 }
       <div style={{ position:'absolute', inset:0, background:'linear-gradient(to top,rgba(0,0,0,0.85) 0%,rgba(0,0,0,0.1) 40%,rgba(0,0,0,0.3) 100%)' }} />
+
+      {images && images.length>1 && (
+        <div style={{ position:'absolute', top:10, left:0, right:0, zIndex:9, display:'flex', justifyContent:'center', gap:5, pointerEvents:'none' }}>
+          {images.map((_,i)=>(
+            <div key={i} style={{ flex:1, maxWidth:36, height:3, borderRadius:2, background: i===slideIndex ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.3)', transition:'background 0.2s' }} />
+          ))}
+        </div>
+      )}
       
-      {!isPlaying && (video?.videoUrl && !video.videoUrl.match(/\.(jpg|jpeg|png|gif|webp)/i)) && !video?.mediaType?.startsWith('image') && <div style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',zIndex:15,pointerEvents:'none'}}><div style={{width:72,height:72,borderRadius:'50%',background:'rgba(0,0,0,0.55)',display:'flex',alignItems:'center',justifyContent:'center'}}><svg width="32" height="32" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg></div></div>}
-      <VideoProgressBar videoRef={videoRef} isActive={isActive} isImage={!!(video?.videoUrl?.match(/\.(jpg|jpeg|png|gif|webp)/i) || video?.mediaType?.startsWith('image'))} />
+      {!isPlaying && !images && <div style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',zIndex:15,pointerEvents:'none'}}><div style={{width:72,height:72,borderRadius:'50%',background:'rgba(0,0,0,0.55)',display:'flex',alignItems:'center',justifyContent:'center'}}><svg width="32" height="32" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg></div></div>}
+      <VideoProgressBar videoRef={videoRef} isActive={isActive} isImage={!!images} />
       {heartAnim && (
         <div style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', zIndex:50, pointerEvents:'none' }}>
           <div style={{ fontSize:80, animation:'heartBurst 0.9s ease forwards' }}>❤️</div>
         </div>
       )}
-      {/* Facebook-style: if long text, show text block above video in a semi-opaque bar; otherwise overlay at bottom */}
+      {/* TikTok-style bottom overlay: avatar, username, follow, truncated caption with See more */}
       {(() => {
         const desc = (translatedDesc && !showOriginalDesc) ? translatedDesc : displayDesc;
-        const isLongText = desc && desc.length > 80;
-        const isVideo = !(video?.videoUrl?.match(/\.(jpg|jpeg|png|gif|webp)/i) || video?.mediaType?.startsWith('image'));
-        if (isLongText && isVideo) {
-          return (
-            <div data-notap='1' style={{ position:'absolute', top:56, left:0, right:0, zIndex:9, background:'rgba(0,0,0,0.82)', backdropFilter:'blur(8px)', padding:'10px 14px 8px', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
-              <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6 }}>
-                <button onClick={()=>onViewProfile?.(video.userId)} style={{ position:'relative', background:'none', border:'none', cursor:'pointer', padding:0, flexShrink:0 }}>
-                  <div style={{ width:34, height:34, borderRadius:'50%', background:video.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:14, border:'2px solid rgba(255,255,255,0.5)', overflow:'hidden' }}>
-                    {video.avatarUrl ? <img src={video.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : video.avatar}
-                  </div>
-                  {video.verified && <div style={{ position:'absolute', bottom:-2, right:-2, width:13, height:13, background:'#1d9bf0', borderRadius:'50%', fontSize:8, display:'flex', alignItems:'center', justifyContent:'center', color:'white' }}>✓</div>}
-                </button>
-                <span onClick={e=>{e.stopPropagation();onViewProfile?.(video.userId);}} style={{ color:'white', fontWeight:700, fontSize:14, cursor:'pointer', flex:1, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{video.username}</span>
-                <button data-notap='1' onClick={e=>{e.stopPropagation();onFollow?.(video.userId);}} style={{ padding:'4px 12px', borderRadius:20, background:followed?.includes(video.userId)?'rgba(255,255,255,0.08)':'rgba(255,45,85,0.9)', border:followed?.includes(video.userId)?'1px solid rgba(255,255,255,0.4)':'none', color:'white', fontSize:11, fontWeight:700, cursor:'pointer' }}>{followed?.includes(video.userId)?'Unfollow':'+ Follow'}</button>
-              </div>
-              <p style={{ color:'rgba(255,255,255,0.92)', fontSize:13, lineHeight:1.45, margin:0 }}>{desc}</p>
-              {translatedDesc && (
-                <button data-notap='1' onClick={e=>{e.stopPropagation(); setShowOriginalDesc(s=>!s);}} style={{ background:'rgba(0,122,255,0.15)', border:'1px solid rgba(0,122,255,0.3)', borderRadius:12, padding:'3px 10px', color:'#5ab2ff', fontSize:11, cursor:'pointer', marginTop:5, display:'inline-flex', alignItems:'center', gap:4 }}>
-                  🌐 {showOriginalDesc ? 'See translation' : 'See original'}
-                </button>
-              )}
-              {!translatedDesc && currentUser?.language && currentUser.language !== 'en' && desc && desc.length > 4 && (
-                <TranslateButton text={desc} targetLang={currentUser.language} onTranslated={t=>{ setTranslatedDesc(t); setShowOriginalDesc(false); }} />
-              )}
-            </div>
-          );
-        }
+        const CHAR_LIMIT = 90;
+        const isLong = desc && desc.length > CHAR_LIMIT;
+        const shownText = isLong && !showFullText ? desc.slice(0, CHAR_LIMIT).trimEnd() + '…' : desc;
         return (
           <div style={{ position:'absolute', bottom:0, left:14, right:70, zIndex:8, paddingBottom:12 }}>
             <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
@@ -2428,7 +2461,14 @@ const handleLongPressStart = () => {
               <span onClick={e=>{e.stopPropagation();onViewProfile?.(video.userId);}} style={{ color:'white', fontWeight:700, fontSize:15, cursor:'pointer', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{video.username}</span>
               <button data-notap='1' onClick={e=>{e.stopPropagation();onFollow?.(video.userId);}} style={{ padding:'5px 14px', borderRadius:20, background:followed?.includes(video.userId)?'rgba(255,255,255,0.08)':'rgba(255,45,85,0.9)', border:followed?.includes(video.userId)?'1px solid rgba(255,255,255,0.4)':'none', color:'white', fontSize:12, fontWeight:700, cursor:'pointer', backdropFilter:'blur(4px)' }}>{followed?.includes(video.userId)?'Unfollow':'+ Follow'}</button>
             </div>
-            <p style={{ color:'rgba(255,255,255,0.9)', fontSize:13, marginBottom:4, lineHeight:1.5 }}>{desc}</p>
+            {desc && (
+              <p style={{ color:'rgba(255,255,255,0.9)', fontSize:13, marginBottom:4, lineHeight:1.5, whiteSpace:'pre-wrap', wordBreak:'break-word' }}>
+                {shownText}
+                {isLong && !showFullText && (
+                  <span data-notap='1' onClick={e=>{e.stopPropagation(); setShowFullText(true);}} style={{ color:'rgba(255,255,255,0.55)', fontWeight:700, cursor:'pointer', marginLeft:4 }}>See more</span>
+                )}
+              </p>
+            )}
             {translatedDesc && (
               <button data-notap='1' onClick={e=>{e.stopPropagation(); setShowOriginalDesc(s=>!s);}} style={{ background:'rgba(0,122,255,0.15)', border:'1px solid rgba(0,122,255,0.3)', borderRadius:12, padding:'3px 10px', color:'#5ab2ff', fontSize:11, cursor:'pointer', marginBottom:8, display:'inline-flex', alignItems:'center', gap:4 }}>
                 🌐 {showOriginalDesc ? 'See translation' : 'See original'}
@@ -2445,6 +2485,28 @@ const handleLongPressStart = () => {
           </div>
         );
       })()}
+
+      {/* Full caption sheet — TikTok "See more" expanded view */}
+      {showFullText && (
+        <div data-notap='1' onClick={e=>{e.stopPropagation(); setShowFullText(false);}} style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.75)', zIndex:60, display:'flex', alignItems:'flex-end' }}>
+          <div onClick={e=>e.stopPropagation()} style={{ width:'100%', maxHeight:'60%', background:'#121214', borderTopLeftRadius:24, borderTopRightRadius:24, padding:'16px 18px 28px', display:'flex', flexDirection:'column', animation:'slideUp 0.25s ease' }}>
+            <div style={{ width:36, height:4, background:'rgba(255,255,255,0.15)', borderRadius:2, margin:'0 auto 14px' }} />
+            <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
+              <div style={{ width:36, height:36, borderRadius:'50%', background:video.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:14, overflow:'hidden', flexShrink:0 }}>
+                {video.avatarUrl ? <img src={video.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : video.avatar}
+              </div>
+              <span style={{ color:'white', fontWeight:700, fontSize:14 }}>@{video.username}</span>
+              <button onClick={()=>setShowFullText(false)} style={{ marginLeft:'auto', background:'rgba(255,255,255,0.07)', border:'none', borderRadius:'50%', width:30, height:30, color:'white', fontSize:16, cursor:'pointer' }}>✕</button>
+            </div>
+            <div style={{ overflowY:'auto', flex:1 }}>
+              <p style={{ color:'rgba(255,255,255,0.92)', fontSize:14, lineHeight:1.6, whiteSpace:'pre-wrap', wordBreak:'break-word', margin:0 }}>
+                {(translatedDesc && !showOriginalDesc) ? translatedDesc : displayDesc}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {showActionMenu && (
         <div onClick={e=>{e.stopPropagation();setShowActionMenu(false);}} style={{ position:'fixed', inset:0, zIndex:9990 }}>
@@ -2493,8 +2555,8 @@ const handleLongPressStart = () => {
             <div style={{ padding:'0 20px 12px', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
               <div style={{ display:'flex', alignItems:'center', gap:10 }}>
                 <div style={{ width:40, height:40, borderRadius:10, overflow:'hidden', background:'#333', flexShrink:0 }}>
-                  {video?.videoUrl?.match(/\.(jpg|jpeg|png|gif|webp)/i) || video?.mediaType?.startsWith('image')
-                    ? <img src={video.videoUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+                  {images
+                    ? <img src={images[0]} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
                     : <video src={video?.videoUrl} style={{ width:'100%', height:'100%', objectFit:'cover' }} muted />}
                 </div>
                 <div>
@@ -2619,7 +2681,7 @@ const NotifBellButton = ({ onOpenNotifications, currentUser }) => {
       
 /* ─────────────── JOBS & SKILLS PAGE ─────────────── */
 const JobsMarketPage = ({ currentUser, showToast, mode, onViewProfile }) => {
-  const [tab, setTab] = useState(mode === 'market' ? 'market' : 'jobs');
+  const [tab, setTab] = useState(mode === 'skills' || mode === 'market' ? 'market' : 'jobs');
   const [showPost, setShowPost] = useState(false);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -2628,6 +2690,7 @@ const JobsMarketPage = ({ currentUser, showToast, mode, onViewProfile }) => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [applicants, setApplicants] = useState([]);
   const [showApplicants, setShowApplicants] = useState(false);
+  const [showReviewQueue, setShowReviewQueue] = useState(false);
   const [myPermissions, setMyPermissions] = useState(null); // null=loading, {}=loaded
   const [hasPostPerm, setHasPostPerm] = useState(false);
   const [requestSent, setRequestSent] = useState(false);
@@ -2712,11 +2775,20 @@ const JobsMarketPage = ({ currentUser, showToast, mode, onViewProfile }) => {
   const postJob = async () => {
     if (!jobForm.title.trim() || !jobForm.company.trim()) { showToast?.('Title and company required', 'error'); return; }
     if (!canPost()) { showToast?.('You need permission to post jobs', 'error'); return; }
+    const flagged = isLikelyFakePost(jobForm);
     const ref = await addDoc(collection(db, 'jobs'), {
       ...jobForm, userId: currentUser?.id, username: currentUser?.username,
       avatarUrl: currentUser?.avatarUrl || null, avatarColor: currentUser?.avatarColor || '#ff2d55',
-      createdAt: serverTimestamp(), applicantCount: 0, saved: [], status: 'active'
+      createdAt: serverTimestamp(), applicantCount: 0, saved: [], status: 'active',
+      reviewFlag: flagged ? 'pending' : null
     });
+    if (flagged) {
+      await addDoc(collection(db, 'notifications'), {
+        toUserId: APP_CREATOR_UID, fromUserId: currentUser?.id, type: 'reviewFlag',
+        message: `⚠️ New job post by @${currentUser?.username} was auto-flagged for review: "${jobForm.title}"`,
+        itemType: 'jobs', itemId: ref.id, read: false, createdAt: serverTimestamp()
+      });
+    }
     showToast?.('Job posted! 🎉', 'success');
     setShowPost(false);
     setJobForm({ title:'', company:'', location:'', type:'Full-time', salary:'', description:'', skills:'', contactEmail:'' });
@@ -2725,15 +2797,42 @@ const JobsMarketPage = ({ currentUser, showToast, mode, onViewProfile }) => {
   const postMarket = async () => {
     if (!mktForm.title.trim() || !mktForm.price.trim()) { showToast?.('Title and price required', 'error'); return; }
     if (!canPost()) { showToast?.('You need permission to post in market', 'error'); return; }
-    await addDoc(collection(db, 'marketItems'), {
+    const flagged = isLikelyFakePost(mktForm);
+    const ref = await addDoc(collection(db, 'marketItems'), {
       ...mktForm, userId: currentUser?.id, username: currentUser?.username,
       avatarUrl: currentUser?.avatarUrl || null, avatarColor: currentUser?.avatarColor || '#ff2d55',
-      createdAt: serverTimestamp(), saved: [], status: 'available'
+      createdAt: serverTimestamp(), saved: [], status: 'available',
+      reviewFlag: flagged ? 'pending' : null
     });
+    if (flagged) {
+      await addDoc(collection(db, 'notifications'), {
+        toUserId: APP_CREATOR_UID, fromUserId: currentUser?.id, type: 'reviewFlag',
+        message: `⚠️ New market listing by @${currentUser?.username} was auto-flagged for review: "${mktForm.title}"`,
+        itemType: 'marketItems', itemId: ref.id, read: false, createdAt: serverTimestamp()
+      });
+    }
     showToast?.('Listed in market! 🛒', 'success');
     setShowPost(false);
     setMktForm({ title:'', category:'', price:'', description:'', tags:'', condition:'New', contactEmail:'' });
   };
+
+  // Report a Job/Market listing as fake/suspicious — sends to creator review queue
+  const reportListing = async (item) => {
+    if (!currentUser?.id) return;
+    const col = tab === 'jobs' ? 'jobs' : 'marketItems';
+    await updateDoc(doc(db, col, item.id), { reviewFlag: 'pending' }).catch(()=>{});
+    await addDoc(collection(db, 'reports'), {
+      itemType: col, itemId: item.id, itemTitle: item.title,
+      reportedBy: currentUser.id, reason: 'Reported as possibly fake', createdAt: serverTimestamp()
+    });
+    await addDoc(collection(db, 'notifications'), {
+      toUserId: APP_CREATOR_UID, fromUserId: currentUser.id, type: 'reviewFlag',
+      message: `🚩 @${currentUser.username} reported a ${tab==='jobs'?'job':'listing'} as possibly fake: "${item.title}"`,
+      itemType: col, itemId: item.id, read: false, createdAt: serverTimestamp()
+    });
+    showToast?.('Reported for review ✅', 'success');
+  };
+
 
   const applyJob = async (item) => {
     if (!currentUser?.id) return;
@@ -2797,7 +2896,10 @@ const JobsMarketPage = ({ currentUser, showToast, mode, onViewProfile }) => {
   };
 
   const filters = tab === 'jobs' ? jobFilters : mktFilters;
+  const isCreator = currentUser?.id === APP_CREATOR_UID;
   const displayItems = items.filter(it => {
+    // Pending-review items only visible to their owner and the app creator
+    if (it.reviewFlag === 'pending' && it.userId !== currentUser?.id && !isCreator) return false;
     const matchFilter = filter === 'all' || (tab === 'jobs' ? it.type === filter : it.category === filter);
     const matchSearch = !search || it.title?.toLowerCase().includes(search.toLowerCase()) || it.company?.toLowerCase().includes(search.toLowerCase()) || it.description?.toLowerCase().includes(search.toLowerCase());
     return matchFilter && matchSearch;
@@ -2847,6 +2949,53 @@ const JobsMarketPage = ({ currentUser, showToast, mode, onViewProfile }) => {
       </div>
     </div>
   );
+
+  // Review Queue Modal — creator-only, lists flagged jobs & market items
+  if (showReviewQueue) {
+    const pending = items.filter(it => it.reviewFlag === 'pending');
+    const col = tab === 'jobs' ? 'jobs' : 'marketItems';
+    const approveItem = async (item) => {
+      await updateDoc(doc(db, col, item.id), { reviewFlag: null }).catch(()=>{});
+      showToast?.('Post approved ✅', 'success');
+    };
+    const removeItem = async (item) => {
+      await deleteDoc(doc(db, col, item.id)).catch(()=>{});
+      await addDoc(collection(db, 'notifications'), {
+        toUserId: item.userId, fromUserId: currentUser.id, type: 'postRemoved',
+        message: `Your ${tab==='jobs'?'job post':'market listing'} "${item.title}" was removed for violating posting guidelines.`,
+        read: false, createdAt: serverTimestamp()
+      });
+      showToast?.('Post removed', 'info');
+    };
+    return (
+      <div style={{ height:'100%', display:'flex', flexDirection:'column', background:'#0a0a0a' }}>
+        <div style={{ padding:'14px 16px', borderBottom:'1px solid rgba(255,255,255,0.08)', display:'flex', alignItems:'center', gap:12 }}>
+          <button onClick={()=>setShowReviewQueue(false)} style={{ background:'none', border:'none', color:'white', fontSize:20, cursor:'pointer' }}>←</button>
+          <div style={{ color:'white', fontWeight:800, fontSize:16 }}>Review Queue — {tab==='jobs'?'Jobs':'Market'}</div>
+        </div>
+        <div style={{ flex:1, overflowY:'auto', padding:14 }}>
+          {pending.length === 0 && (
+            <div style={{ textAlign:'center', padding:60, color:'rgba(255,255,255,0.3)' }}>
+              <div style={{ fontSize:40, marginBottom:12 }}>✅</div>
+              <div>Nothing pending review</div>
+            </div>
+          )}
+          {pending.map(item => (
+            <div key={item.id} style={{ background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,149,0,0.25)', borderRadius:18, padding:14, marginBottom:12 }}>
+              <div style={{ color:'white', fontWeight:800, fontSize:15, marginBottom:4 }}>{item.title}</div>
+              <div style={{ color:'rgba(255,255,255,0.5)', fontSize:12, marginBottom:8 }}>by @{item.username}{item.company ? ' · '+item.company : ''}</div>
+              {item.description && <div style={{ color:'rgba(255,255,255,0.5)', fontSize:12, lineHeight:1.5, marginBottom:10 }}>{item.description.length>200?item.description.slice(0,200)+'...':item.description}</div>}
+              <div style={{ display:'flex', gap:8 }}>
+                <button onClick={()=>approveItem(item)} style={{ flex:1, background:'rgba(52,199,89,0.12)', border:'1px solid rgba(52,199,89,0.3)', borderRadius:14, padding:'9px 0', color:'#34c759', fontSize:12, fontWeight:700, cursor:'pointer' }}>✅ Approve</button>
+                <button onClick={()=>removeItem(item)} style={{ flex:1, background:'rgba(255,59,48,0.1)', border:'1px solid rgba(255,59,48,0.2)', borderRadius:14, padding:'9px 0', color:'#ff3b30', fontSize:12, fontWeight:700, cursor:'pointer' }}>🗑️ Remove</button>
+                <button onClick={()=>onViewProfile?.(item.userId)} style={{ width:38, height:38, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, color:'rgba(255,255,255,0.4)', fontSize:16, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>👤</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   // Post Form Modal
   if (showPost) return (
@@ -2901,6 +3050,11 @@ const JobsMarketPage = ({ currentUser, showToast, mode, onViewProfile }) => {
                 : <button onClick={requestPermission} style={{ background:'rgba(255,255,255,0.07)', border:'1px solid rgba(255,255,255,0.15)', borderRadius:20, padding:'8px 14px', color:'rgba(255,255,255,0.7)', fontWeight:600, fontSize:12, cursor:'pointer' }}>Request to Post</button>
             )
           )}
+          {isCreator && (
+            <button onClick={()=>setShowReviewQueue(true)} style={{ marginLeft:8, background:'rgba(255,149,0,0.12)', border:'1px solid rgba(255,149,0,0.3)', borderRadius:20, padding:'8px 14px', color:'#ff9500', fontWeight:700, fontSize:12, cursor:'pointer', display:'flex', alignItems:'center', gap:6 }}>
+              🔍 Review{items.some(it=>it.reviewFlag==='pending') ? ` (${items.filter(it=>it.reviewFlag==='pending').length})` : ''}
+            </button>
+          )}
         </div>
         {/* Search */}
         <div style={{ background:'rgba(255,255,255,0.06)', borderRadius:22, display:'flex', alignItems:'center', padding:'9px 14px', gap:8, marginBottom:10 }}>
@@ -2929,7 +3083,12 @@ const JobsMarketPage = ({ currentUser, showToast, mode, onViewProfile }) => {
           const isOwner = item.userId === currentUser?.id;
           const isSaved = (item.saved||[]).includes(currentUser?.id);
           return (
-            <div key={item.id} style={{ background:'rgba(255,255,255,0.03)', borderRadius:20, padding:16, marginBottom:12, border:'1px solid rgba(255,255,255,0.07)' }}>
+            <div key={item.id} style={{ background:'rgba(255,255,255,0.03)', borderRadius:20, padding:16, marginBottom:12, border: item.reviewFlag==='pending' ? '1px solid rgba(255,149,0,0.35)' : '1px solid rgba(255,255,255,0.07)' }}>
+              {item.reviewFlag === 'pending' && (
+                <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:10, background:'rgba(255,149,0,0.1)', border:'1px solid rgba(255,149,0,0.25)', borderRadius:12, padding:'6px 10px', color:'#ff9500', fontSize:11, fontWeight:700 }}>
+                  ⏳ {isOwner ? 'Pending review — only visible to you until cleared' : 'Under review by moderators'}
+                </div>
+              )}
               <div style={{ display:'flex', alignItems:'flex-start', gap:12 }}>
                 <div onClick={()=>onViewProfile?.(item.userId)} style={{ width:44, height:44, borderRadius:14, background:item.avatarColor||'#ff2d55', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:18, flexShrink:0, overflow:'hidden', cursor:'pointer' }}>
                   {item.avatarUrl ? <img src={item.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/> : (item.username||'?')[0].toUpperCase()}
@@ -2979,6 +3138,9 @@ const JobsMarketPage = ({ currentUser, showToast, mode, onViewProfile }) => {
                     )}
                     <button onClick={()=>saveItem(item)} style={{ width:38, height:38, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, color:isSaved?'#ffd700':'rgba(255,255,255,0.4)', fontSize:16, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>{isSaved?'🔖':'📌'}</button>
                     <button onClick={()=>onViewProfile?.(item.userId)} style={{ width:38, height:38, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, color:'rgba(255,255,255,0.4)', fontSize:16, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>👤</button>
+                    {!isOwner && item.reviewFlag !== 'pending' && (
+                      <button onClick={()=>reportListing(item)} title="Report as fake" style={{ width:38, height:38, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, color:'rgba(255,255,255,0.4)', fontSize:16, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>🚩</button>
+                    )}
                   </div>
                   {item.contactEmail && !isOwner && tab==='jobs' && <div style={{ color:'rgba(255,255,255,0.3)', fontSize:11, marginTop:6 }}>📧 {item.contactEmail}</div>}
                 </div>
@@ -3025,6 +3187,51 @@ const SuggestedUsers = ({ currentUser, users, followed, onFollow, onViewProfile 
     </div>
   );
 };
+/* ─────────────── FEATURED JOBS & MARKET CAROUSEL (For You) ─────────────── */
+const FeaturedJobsMarket = ({ onOpenCategory }) => {
+  const [jobs, setJobs] = useState([]);
+  const [market, setMarket] = useState([]);
+
+  useEffect(() => {
+    const qJobs = query(collection(db, 'jobs'), orderBy('createdAt','desc'), limit(20));
+    const unsubJobs = onSnapshot(qJobs, snap => {
+      setJobs(snap.docs.map(d=>({id:d.id,...d.data()})).filter(it=>it.status==='active' && it.reviewFlag!=='pending').slice(0,5));
+    }, ()=>{});
+    const qMkt = query(collection(db, 'marketItems'), orderBy('createdAt','desc'), limit(20));
+    const unsubMkt = onSnapshot(qMkt, snap => {
+      setMarket(snap.docs.map(d=>({id:d.id,...d.data()})).filter(it=>it.status==='available' && it.reviewFlag!=='pending').slice(0,5));
+    }, ()=>{});
+    return () => { unsubJobs(); unsubMkt(); };
+  }, []);
+
+  const items = useMemo(()=>[
+    ...jobs.map(j=>({...j, _kind:'jobs'})),
+    ...market.map(m=>({...m, _kind:'skills'})),
+  ], [jobs, market]);
+
+  if (!items.length) return null;
+
+  return (
+    <div data-notap='1' style={{ position:'absolute', top:54, left:0, right:0, zIndex:9, padding:'0 0 4px' }}>
+      <div style={{ display:'flex', overflowX:'auto', gap:8, padding:'0 12px', WebkitOverflowScrolling:'touch' }}>
+        {items.map(item=>(
+          <button key={item._kind+item.id} data-notap='1' onClick={e=>{e.stopPropagation(); onOpenCategory?.(item._kind);}}
+            style={{ flexShrink:0, display:'flex', alignItems:'center', gap:8, background:'rgba(0,0,0,0.55)', backdropFilter:'blur(10px)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:18, padding:'7px 12px 7px 8px', cursor:'pointer', maxWidth:220 }}>
+            <span style={{ fontSize:16 }}>{item._kind==='jobs'?'💼':'🛒'}</span>
+            <div style={{ textAlign:'left', minWidth:0 }}>
+              <div style={{ color:'white', fontSize:11.5, fontWeight:700, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{item.title}</div>
+              <div style={{ color:'rgba(255,255,255,0.55)', fontSize:10, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                {item._kind==='jobs' ? (item.company||'Hiring') : (item.price||'For sale')}
+              </div>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+
 const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, onVoiceCall, onVideoCall, onDuet, onStitch, onSaveSound, followed, showToast, onLive, currentUser, onViewProfile, onOpenSearch, onOpenNotifications, blockedUsers, onBlock, users }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [activeCategory, setActiveCategory] = useState('foryou');
@@ -3120,7 +3327,7 @@ const handlePullEnd = async () => {
   };
   if(!filteredVideos.length && activeCategory === 'foryou') return <div style={{ height:'100%', display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:12 }}><div style={{ fontSize:48 }}>📭</div><div style={{ color:'rgba(255,255,255,0.3)' }}>{t?.noVideos||'No videos yet. Be the first to post!'}</div></div>;
 
-  if (activeCategory === 'market' || activeCategory === 'job' || activeCategory === 'jobs') {
+  if (activeCategory === 'jobs' || activeCategory === 'skills') {
     return (
       <div style={{ height:'100%', position:'relative', overflow:'hidden' }}>
         {/* Top header with category tabs */}
@@ -3128,7 +3335,7 @@ const handlePullEnd = async () => {
           <div style={{ flex:1, display:'flex', justifyContent:'center', gap:24 }}>
             {TOP_CATEGORIES.map(cat=>(
               <button key={cat.id} onClick={()=>{setActiveCategory(cat.id); setCurrentIndex(0);}} style={{ background:'none', border:'none', color:activeCategory===cat.id?'white':'rgba(255,255,255,0.45)', fontWeight:activeCategory===cat.id?800:500, fontSize:15, cursor:'pointer', paddingBottom:6, borderBottom:activeCategory===cat.id?'2.5px solid white':'2.5px solid transparent', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", transition:'all 0.2s' }}>
-                {cat.id==='foryou'?(t?.foryou||cat.label):cat.id==='market'?(t?.skills||'Market'):(t?.jobs||cat.label)}
+                {cat.id==='foryou'?(t?.foryou||cat.label):cat.id==='jobs'?(t?.jobs||'Jobs'):cat.id==='skills'?(t?.skills||'Skills'):(t?.foryou||cat.label)}
               </button>
             ))}
           </div>
@@ -3152,7 +3359,7 @@ const handlePullEnd = async () => {
         <div style={{ flex:1, display:'flex', justifyContent:'center', gap:24 }}>
           {TOP_CATEGORIES.map(cat=>(
             <button key={cat.id} onClick={()=>{setActiveCategory(cat.id); setCurrentIndex(0);}} style={{ background:'none', border:'none', color:activeCategory===cat.id?'white':'rgba(255,255,255,0.45)', fontWeight:activeCategory===cat.id?800:500, fontSize:15, cursor:'pointer', paddingBottom:6, borderBottom:activeCategory===cat.id?'2.5px solid white':'2.5px solid transparent', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", transition:'all 0.2s' }}>
-              {cat.id==='foryou'?(t?.foryou||cat.label):cat.id==='market'?(t?.skills||'Market'):(t?.jobs||cat.label)}
+              {cat.id==='foryou'?(t?.foryou||cat.label):cat.id==='jobs'?(t?.jobs||'Jobs'):cat.id==='skills'?(t?.skills||'Skills'):(t?.foryou||cat.label)}
             </button>
           ))}
         </div>
@@ -3163,6 +3370,7 @@ const handlePullEnd = async () => {
           <NotifBellButton onOpenNotifications={onOpenNotifications} currentUser={currentUser} />
         </div>
       </div>
+      {activeCategory==='foryou' && <FeaturedJobsMarket onOpenCategory={(cat)=>{setActiveCategory(cat); setCurrentIndex(0);}} />}
       {filteredVideos.map((video,idx)=>(
   Math.abs(idx-currentIndex) > 1 ? null :
   <div key={video.id} style={{ position:'absolute', inset:0, opacity:idx===currentIndex?1:0, transform:`translateY(${(idx-currentIndex)*100}%)`, transition:'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)', pointerEvents:idx===currentIndex?'auto':'none' }}>
@@ -5117,35 +5325,76 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
   };
 
   const handleFileSelect = e => {
-    const f = e.target.files[0];
-    if(f) setSelectedFile({ file:f, url:URL.createObjectURL(f), type:f.type });
+    const files = Array.from(e.target.files || []);
+    if(!files.length) return;
+    // If multiple images chosen, prepare a multi-image (TikTok-style slide) post
+    const allImages = files.every(f=>f.type.startsWith('image/'));
+    if(allImages && files.length > 1){
+      setSelectedFile({
+        files,
+        urls: files.map(f=>URL.createObjectURL(f)),
+        type: 'image/multi'
+      });
+    } else {
+      const f = files[0];
+      setSelectedFile({ file:f, url:URL.createObjectURL(f), type:f.type });
+    }
   };
 
   const handleUpload = async () => {
     if(!selectedFile){ showToast?.('Capture or select media first','error'); return; }
     setUploading(true); setUploadProgress(0);
     try {
-      const mediaUrl = await uploadToCloudinary(selectedFile.file, setUploadProgress);
-      const videoData = {
-        userId: currentUser.id,
-        username: currentUser.username || '',
-        avatar: currentUser.avatar || (currentUser.username||'U')[0].toUpperCase(),
-        avatarColor: currentUser.avatarColor || '#ff2d55',
-        avatarUrl: currentUser.avatarUrl || null,
-        verified: currentUser.verified || false,
-        description: description,
-        videoUrl: mediaUrl,
-        mediaType: selectedFile.type,
-        song: 'Original sound',
-        likes: 0, comments: 0, shares: 0, views: 0,
-        hashtags: (description||'').match(/#\w+/g) || [],
-        category: 'foryou',
-        filter: FILTERS[activeFilter].name,
-        playbackRate: selectedFile.type.startsWith('video/') ? recordSpeed : 1,
-        createdAt: serverTimestamp(),
-      };
+      let videoData;
+      if(selectedFile.type === 'image/multi'){
+        // Multi-image post: upload each image, store as `images` array for horizontal slide
+        const urls = [];
+        for(let i=0;i<selectedFile.files.length;i++){
+          const u = await uploadToCloudinary(selectedFile.files[i], (p)=>setUploadProgress(Math.round(((i + p/100) / selectedFile.files.length) * 100)));
+          urls.push(u);
+        }
+        videoData = {
+          userId: currentUser.id,
+          username: currentUser.username || '',
+          avatar: currentUser.avatar || (currentUser.username||'U')[0].toUpperCase(),
+          avatarColor: currentUser.avatarColor || '#ff2d55',
+          avatarUrl: currentUser.avatarUrl || null,
+          verified: currentUser.verified || false,
+          description: description,
+          videoUrl: urls[0],
+          images: urls,
+          mediaType: 'image/multi',
+          song: 'Original sound',
+          likes: 0, comments: 0, shares: 0, views: 0,
+          hashtags: (description||'').match(/#\w+/g) || [],
+          category: 'foryou',
+          filter: FILTERS[activeFilter].name,
+          playbackRate: 1,
+          createdAt: serverTimestamp(),
+        };
+      } else {
+        const mediaUrl = await uploadToCloudinary(selectedFile.file, setUploadProgress);
+        videoData = {
+          userId: currentUser.id,
+          username: currentUser.username || '',
+          avatar: currentUser.avatar || (currentUser.username||'U')[0].toUpperCase(),
+          avatarColor: currentUser.avatarColor || '#ff2d55',
+          avatarUrl: currentUser.avatarUrl || null,
+          verified: currentUser.verified || false,
+          description: description,
+          videoUrl: mediaUrl,
+          mediaType: selectedFile.type,
+          song: 'Original sound',
+          likes: 0, comments: 0, shares: 0, views: 0,
+          hashtags: (description||'').match(/#\w+/g) || [],
+          category: 'foryou',
+          filter: FILTERS[activeFilter].name,
+          playbackRate: selectedFile.type.startsWith('video/') ? recordSpeed : 1,
+          createdAt: serverTimestamp(),
+        };
+      }
       const ref = await addDoc(collection(db,'videos'), videoData);
-      onUpload?.({ id:ref.id, ...videoData, videoUrl:mediaUrl, createdAt:{ toDate: ()=>new Date() } });
+      onUpload?.({ id:ref.id, ...videoData, createdAt:{ toDate: ()=>new Date() } });
       showToast?.('Posted! 🚀','success');
       onClose?.();
     } catch(e) {
@@ -5168,17 +5417,32 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
       </div>
       {uploading && <div style={{ height:3, background:'rgba(255,255,255,0.1)' }}><div style={{ height:'100%', background:'linear-gradient(90deg,#ff2d55,#af52de)', width:`${uploadProgress}%`, transition:'width 0.3s' }} /></div>}
       <div style={{ flex:1, position:'relative', overflow:'hidden' }}>
-        {selectedFile.type.startsWith('image/') 
+        {selectedFile.type === 'image/multi' ? (
+          <div style={{ display:'flex', width:'100%', height:'100%', overflowX:'auto', scrollSnapType:'x mandatory' }}>
+            {selectedFile.urls.map((u,i)=>(
+              <div key={i} style={{ flex:'0 0 100%', height:'100%', scrollSnapAlign:'center' }}>
+                <img src={u} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', ...filterStyle }} />
+              </div>
+            ))}
+          </div>
+        ) : selectedFile.type.startsWith('image/') 
           ? <img src={selectedFile.url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', ...filterStyle }} />
           : <video src={selectedFile.url} style={{ width:'100%', height:'100%', objectFit:'cover' }} controls autoPlay loop ref={el=>{ if(el) el.playbackRate = recordSpeed; }} />
         }
+        {selectedFile.type === 'image/multi' && (
+          <div style={{ position:'absolute', top:10, left:0, right:0, display:'flex', justifyContent:'center', gap:5, pointerEvents:'none' }}>
+            {selectedFile.urls.map((_,i)=>(
+              <div key={i} style={{ flex:1, maxWidth:36, height:3, borderRadius:2, background:'rgba(255,255,255,0.6)' }} />
+            ))}
+          </div>
+        )}
       </div>
       {/* Filter strip on preview */}
       <div style={{ padding:'10px 0', background:'rgba(0,0,0,0.8)', overflowX:'auto', display:'flex', gap:10, paddingLeft:16 }}>
         {FILTERS.map((f,i)=>(
           <div key={f.name} onClick={()=>setActiveFilter(i)} style={{ flexShrink:0, textAlign:'center', cursor:'pointer' }}>
             <div style={{ width:56, height:56, borderRadius:14, overflow:'hidden', border: i===activeFilter?'2px solid #ff2d55':'2px solid transparent' }}>
-              <img src={selectedFile.type.startsWith('image/')?selectedFile.url:'https://picsum.photos/56'} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', filter: f.css||'none' }} />
+              <img src={selectedFile.type==='image/multi' ? selectedFile.urls[0] : selectedFile.type.startsWith('image/')?selectedFile.url:'https://picsum.photos/56'} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', filter: f.css||'none' }} />
             </div>
             <div style={{ color: i===activeFilter?'#ff2d55':'rgba(255,255,255,0.5)', fontSize:9, marginTop:4, fontWeight:700 }}>{f.name}</div>
           </div>
@@ -5270,7 +5534,7 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', paddingLeft:60, paddingRight:60 }}>
           {/* Gallery */}
           <button onClick={()=>fileInputRef.current?.click()} style={{ width:48, height:48, borderRadius:14, background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', fontSize:22 }}>🖼️</button>
-          <input ref={fileInputRef} type="file" accept="video/*,image/*" onChange={handleFileSelect} style={{ display:'none' }} />
+          <input ref={fileInputRef} type="file" accept="video/*,image/*" multiple onChange={handleFileSelect} style={{ display:'none' }} />
 
           {/* Shutter / Record */}
           {cameraMode==='photo' ? (
