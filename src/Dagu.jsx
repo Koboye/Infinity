@@ -54,6 +54,8 @@ const EMAILJS_TEMPLATE = 'template_1k7wiqa';
 const EMAILJS_PUBLIC_KEY = 'U9fs25Bcx5oQ6A2ru';
 // Recipient for in-app "Report a Problem" submissions. Change in one place if the support inbox changes.
 const SUPPORT_EMAIL = 'getachewshambel11@gmail.com';
+// App creator UID — only this user can grant posting permissions for Jobs & Market
+const APP_CREATOR_UID = 'REPLACE_WITH_CREATOR_UID'; // Set this to the actual Firebase UID of the app creator
 
 /* ─────────────── CONSTANTS ─────────────── */
 const LOGIN_METHODS = [
@@ -82,7 +84,7 @@ const SOUND_LIBRARY = [
 
 const TOP_CATEGORIES = [
   { id: 'foryou', label: 'For You' },
-  { id: 'skill', label: 'Skills' },
+  { id: 'market', label: 'Market' },
   { id: 'job', label: 'Jobs' },
 ];
 
@@ -424,15 +426,22 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack }) => {
               </div>
               <div style={{ color:'rgba(255,255,255,0.5)', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:12 }}>Members ({groupMembers.length})</div>
               {groupMembers.map(u=>(
-                <div key={u.id} style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 0', borderBottom:'1px solid rgba(255,255,255,0.04)' }}>
-                  <div style={{ width:38, height:38, borderRadius:'50%', background:u.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:15, overflow:'hidden', flexShrink:0 }}>
+                <div key={u.id} style={{ display:'flex', alignItems:'center', gap:12, padding:'11px 0', borderBottom:'1px solid rgba(255,255,255,0.05)' }}>
+                  <div style={{ width:44, height:44, borderRadius:'50%', background:u.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:18, overflow:'hidden', flexShrink:0 }}>
                     {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : u.avatar}
                   </div>
-                  <div>
-                    <div style={{ color:'white', fontSize:14, fontWeight:600 }}>@{u.username}</div>
-                    {u.displayName && <div style={{ color:'rgba(255,255,255,0.4)', fontSize:11 }}>{u.displayName}</div>}
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ color:'white', fontSize:14, fontWeight:700, display:'flex', alignItems:'center', gap:6, flexWrap:'wrap' }}>
+                      @{u.username}
+                      {u.id===currentUser?.id && <span style={{ color:'#34c759', fontSize:10 }}>You</span>}
+                      {activeGroup.admin===u.id && <span style={{ background:'rgba(255,204,0,0.15)', border:'1px solid rgba(255,204,0,0.3)', borderRadius:10, padding:'1px 7px', color:'#ffcc00', fontSize:9, fontWeight:800 }}>ADMIN</span>}
+                    </div>
+                    {u.bio && <div style={{ color:'rgba(255,255,255,0.4)', fontSize:11, marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{u.bio}</div>}
+                    <div style={{ color:'rgba(255,255,255,0.25)', fontSize:10, marginTop:1 }}>{u.followers?.length||0} followers</div>
                   </div>
-                  {activeGroup.admin === u.id && <div style={{ marginLeft:'auto', background:'rgba(255,45,85,0.15)', border:'1px solid rgba(255,45,85,0.3)', borderRadius:10, padding:'2px 8px', color:'#ff2d55', fontSize:10, fontWeight:700 }}>Admin</div>}
+                  {currentUser?.id===activeGroup?.admin && u.id!==currentUser?.id && (
+                    <button onClick={e=>{e.stopPropagation(); const nm=(activeGroup.members||[]).filter(id=>id!==u.id); updateDoc(doc(db,'groups',activeGroup.id),{members:nm}).then(()=>{setActiveGroup(g=>({...g,members:nm})); showToast?.('Member removed','info');}).catch(()=>{});}} style={{ background:'rgba(255,59,48,0.1)', border:'1px solid rgba(255,59,48,0.2)', borderRadius:10, padding:'5px 10px', color:'#ff3b30', fontSize:11, cursor:'pointer', flexShrink:0 }}>Remove</button>
+                  )}
                 </div>
               ))}
             </div>
@@ -445,14 +454,15 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack }) => {
               <div style={{ color:'white', fontWeight:800, fontSize:18 }}>{groupCallOpen==='video'?'📹':'📞'} Group {groupCallOpen==='video'?'Video':'Voice'} Call</div>
               <button onClick={()=>setGroupCallOpen(null)} style={{ background:'rgba(255,45,85,0.15)', border:'1px solid rgba(255,45,85,0.3)', borderRadius:'50%', width:36, height:36, color:'#ff2d55', cursor:'pointer', fontSize:18 }}>✕</button>
             </div>
-            <div style={{ flex:1, overflowY:'auto', padding:16, display:'flex', flexWrap:'wrap', gap:10, alignContent:'flex-start' }}>
+            <div style={{ flex:1, overflowY:'auto', padding:16, display:'flex', flexWrap:'wrap', gap:12, alignContent:'flex-start', justifyContent:'center' }}>
               {groupMembers.map(u=>(
-                <div key={u.id} style={{ width:'calc(50% - 5px)', aspectRatio:'4/3', background:'rgba(255,255,255,0.05)', borderRadius:16, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:8, border:'1px solid rgba(255,255,255,0.08)' }}>
-                  <div style={{ width:52, height:52, borderRadius:'50%', background:u.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:20, overflow:'hidden' }}>
+                <div key={u.id} style={{ width:'calc(50% - 6px)', background:'rgba(255,255,255,0.06)', borderRadius:20, padding:'18px 12px', display:'flex', flexDirection:'column', alignItems:'center', gap:8, border:'1px solid rgba(255,255,255,0.08)' }}>
+                  <div style={{ width:56, height:56, borderRadius:'50%', background:u.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:22, overflow:'hidden', border:'2px solid rgba(52,199,89,0.4)' }}>
                     {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : u.avatar}
                   </div>
-                  <div style={{ color:'white', fontSize:12, fontWeight:600 }}>@{u.username}</div>
+                  <div style={{ color:'white', fontSize:12, fontWeight:700 }}>@{u.username}</div>
                   {u.id===currentUser?.id && <div style={{ color:'#34c759', fontSize:10 }}>You</div>}
+                  <div style={{ width:8, height:8, borderRadius:'50%', background:'#34c759', animation:'pulse 1.5s ease infinite' }} />
                 </div>
               ))}
             </div>
@@ -2608,26 +2618,58 @@ const NotifBellButton = ({ onOpenNotifications, currentUser }) => {
 
       
 /* ─────────────── JOBS & SKILLS PAGE ─────────────── */
-const JobsSkillsPage = ({ currentUser, showToast, mode }) => {
-  const [tab, setTab] = useState(mode === 'skill' ? 'skills' : 'jobs');
+const JobsMarketPage = ({ currentUser, showToast, mode, onViewProfile }) => {
+  const [tab, setTab] = useState(mode === 'market' ? 'market' : 'jobs');
   const [showPost, setShowPost] = useState(false);
-  const [postType, setPostType] = useState('job');
-  const [form, setForm] = useState({ title:'', company:'', location:'', type:'Full-time', salary:'', description:'', skills:'' });
-  const [skillForm, setSkillForm] = useState({ title:'', category:'', level:'Beginner', description:'', price:'', tags:'' });
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
-  const jobTypes = ['Full-time','Part-time','Contract','Freelance','Internship','Remote'];
-  const skillCategories = ['Design','Development','Marketing','Writing','Video','Music','Business','Languages','Teaching','Other'];
-  const skillLevels = ['Beginner','Intermediate','Expert'];
-  const jobFilters = [['all','All'],['Full-time','Full-time'],['Part-time','Part-time'],['Remote','Remote'],['Freelance','Freelance']];
-  const skillFilters = [['all','All'],['Development','Dev'],['Design','Design'],['Marketing','Marketing'],['Writing','Writing']];
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [applicants, setApplicants] = useState([]);
+  const [showApplicants, setShowApplicants] = useState(false);
+  const [myPermissions, setMyPermissions] = useState(null); // null=loading, {}=loaded
+  const [hasPostPerm, setHasPostPerm] = useState(false);
+  const [requestSent, setRequestSent] = useState(false);
 
+  // Job form
+  const [jobForm, setJobForm] = useState({ title:'', company:'', location:'', type:'Full-time', salary:'', description:'', skills:'', contactEmail:'' });
+  // Market form
+  const [mktForm, setMktForm] = useState({ title:'', category:'', price:'', description:'', tags:'', condition:'New', contactEmail:'' });
+
+  const jobTypes = ['Full-time','Part-time','Contract','Freelance','Internship','Remote'];
+  const mktCategories = ['Electronics','Clothing','Books','Services','Food','Vehicles','Furniture','Art','Health','Other'];
+  const jobFilters = [['all','All'],['Full-time','Full-time'],['Part-time','Part-time'],['Remote','Remote'],['Freelance','Freelance'],['Internship','Intern']];
+  const mktFilters = [['all','All'],['Electronics','📱'],['Clothing','👕'],['Books','📚'],['Services','🛠️'],['Food','🍔'],['Vehicles','🚗']];
+
+  // Load permissions for current user
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    if (currentUser.id === APP_CREATOR_UID) { setHasPostPerm(true); setMyPermissions({}); return; }
+    const unsub = onSnapshot(doc(db, 'postPermissions', currentUser.id), snap => {
+      if (snap.exists()) {
+        const d = snap.data();
+        setMyPermissions(d);
+        setHasPostPerm(d.canPostJobs === true || d.canPostMarket === true);
+      } else {
+        setMyPermissions({});
+        setHasPostPerm(false);
+      }
+    }, () => { setMyPermissions({}); setHasPostPerm(false); });
+    return () => unsub();
+  }, [currentUser?.id]);
+
+  // Check if request already sent
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    getDoc(doc(db, 'permissionRequests', currentUser.id)).then(snap => setRequestSent(snap.exists())).catch(() => {});
+  }, [currentUser?.id]);
+
+  // Load items
   useEffect(() => {
     setLoading(true);
-    const col = tab === 'jobs' ? 'jobs' : 'skills';
-    const q = query(collection(db, col), orderBy('createdAt','desc'), limit(30));
+    const col = tab === 'jobs' ? 'jobs' : 'marketItems';
+    const q = query(collection(db, col), orderBy('createdAt', 'desc'), limit(50));
     const unsub = onSnapshot(q, snap => {
       setItems(snap.docs.map(d => ({ id: d.id, ...d.data() })));
       setLoading(false);
@@ -2635,35 +2677,126 @@ const JobsSkillsPage = ({ currentUser, showToast, mode }) => {
     return () => unsub();
   }, [tab]);
 
-  const postJob = async () => {
-    if (!form.title.trim() || !form.company.trim()) { showToast?.('Title and company required', 'error'); return; }
-    await addDoc(collection(db, 'jobs'), { ...form, userId: currentUser?.id, username: currentUser?.username, avatarUrl: currentUser?.avatarUrl || null, avatarColor: currentUser?.avatarColor || '#ff2d55', createdAt: serverTimestamp(), applicants: 0, saved: [] });
-    showToast?.('Job posted! 🎉', 'success');
-    setShowPost(false);
-    setForm({ title:'', company:'', location:'', type:'Full-time', salary:'', description:'', skills:'' });
+  const canPost = () => {
+    if (currentUser?.id === APP_CREATOR_UID) return true;
+    if (tab === 'jobs') return myPermissions?.canPostJobs === true;
+    if (tab === 'market') return myPermissions?.canPostMarket === true;
+    return false;
   };
 
-  const postSkill = async () => {
-    if (!skillForm.title.trim()) { showToast?.('Skill title required', 'error'); return; }
-    await addDoc(collection(db, 'skills'), { ...skillForm, userId: currentUser?.id, username: currentUser?.username, avatarUrl: currentUser?.avatarUrl || null, avatarColor: currentUser?.avatarColor || '#ff2d55', createdAt: serverTimestamp(), rating: 0, reviews: 0, saved: [] });
-    showToast?.('Skill posted! ✨', 'success');
+  const requestPermission = async () => {
+    if (!currentUser?.id) return;
+    await setDoc(doc(db, 'permissionRequests', currentUser.id), {
+      userId: currentUser.id,
+      username: currentUser.username,
+      avatarUrl: currentUser.avatarUrl || null,
+      avatarColor: currentUser.avatarColor || '#ff2d55',
+      requestedAt: serverTimestamp(),
+      type: tab,
+      status: 'pending'
+    });
+    // Notify app creator
+    await addDoc(collection(db, 'notifications'), {
+      toUserId: APP_CREATOR_UID,
+      fromUserId: currentUser.id,
+      type: 'permissionRequest',
+      message: `@${currentUser.username} requested permission to post in ${tab}`,
+      requestType: tab,
+      read: false,
+      createdAt: serverTimestamp()
+    });
+    setRequestSent(true);
+    showToast?.('Permission request sent! ✅', 'success');
+  };
+
+  const postJob = async () => {
+    if (!jobForm.title.trim() || !jobForm.company.trim()) { showToast?.('Title and company required', 'error'); return; }
+    if (!canPost()) { showToast?.('You need permission to post jobs', 'error'); return; }
+    const ref = await addDoc(collection(db, 'jobs'), {
+      ...jobForm, userId: currentUser?.id, username: currentUser?.username,
+      avatarUrl: currentUser?.avatarUrl || null, avatarColor: currentUser?.avatarColor || '#ff2d55',
+      createdAt: serverTimestamp(), applicantCount: 0, saved: [], status: 'active'
+    });
+    showToast?.('Job posted! 🎉', 'success');
     setShowPost(false);
-    setSkillForm({ title:'', category:'', level:'Beginner', description:'', price:'', tags:'' });
+    setJobForm({ title:'', company:'', location:'', type:'Full-time', salary:'', description:'', skills:'', contactEmail:'' });
+  };
+
+  const postMarket = async () => {
+    if (!mktForm.title.trim() || !mktForm.price.trim()) { showToast?.('Title and price required', 'error'); return; }
+    if (!canPost()) { showToast?.('You need permission to post in market', 'error'); return; }
+    await addDoc(collection(db, 'marketItems'), {
+      ...mktForm, userId: currentUser?.id, username: currentUser?.username,
+      avatarUrl: currentUser?.avatarUrl || null, avatarColor: currentUser?.avatarColor || '#ff2d55',
+      createdAt: serverTimestamp(), saved: [], status: 'available'
+    });
+    showToast?.('Listed in market! 🛒', 'success');
+    setShowPost(false);
+    setMktForm({ title:'', category:'', price:'', description:'', tags:'', condition:'New', contactEmail:'' });
   };
 
   const applyJob = async (item) => {
-    await updateDoc(doc(db, 'jobs', item.id), { applicants: increment(1) }).catch(() => {});
-    showToast?.('Application sent! ✅', 'success');
+    if (!currentUser?.id) return;
+    const appId = `${item.id}_${currentUser.id}`;
+    const exists = await getDoc(doc(db, 'jobApplications', appId));
+    if (exists.exists()) { showToast?.('Already applied!', 'info'); return; }
+    // Save application with full user profile snapshot
+    await setDoc(doc(db, 'jobApplications', appId), {
+      jobId: item.id, jobTitle: item.title, company: item.company,
+      applicantId: currentUser.id, applicantUsername: currentUser.username,
+      applicantAvatarUrl: currentUser.avatarUrl || null, applicantAvatarColor: currentUser.avatarColor || '#ff2d55',
+      applicantBio: currentUser.bio || '', applicantFollowers: (currentUser.followers||[]).length,
+      applicantJoinedAt: currentUser.createdAt || null,
+      appliedAt: serverTimestamp(), status: 'pending'
+    });
+    // Increment counter on job
+    await updateDoc(doc(db, 'jobs', item.id), { applicantCount: increment(1) }).catch(() => {});
+    // Notify job poster
+    await addDoc(collection(db, 'notifications'), {
+      toUserId: item.userId, fromUserId: currentUser.id, type: 'jobApplication',
+      message: `applied for your job: ${item.title}`, jobId: item.id,
+      read: false, createdAt: serverTimestamp()
+    });
+    // Notify applicant of next steps
+    await addDoc(collection(db, 'notifications'), {
+      toUserId: currentUser.id, fromUserId: item.userId, type: 'applicationReceived',
+      message: `Your application for "${item.title}" at ${item.company} was received. The employer will review and contact you.`,
+      jobId: item.id, read: false, createdAt: serverTimestamp()
+    });
+    showToast?.('Applied! ✅ You will be notified of next steps.', 'success');
   };
+
+  const loadApplicants = async (item) => {
+    setSelectedItem(item);
+    setShowApplicants(true);
+    const q = query(collection(db, 'jobApplications'), where('jobId', '==', item.id));
+    const snap = await getDocs(q);
+    setApplicants(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+  };
+
+  const updateApplicantStatus = async (appId, status, applicantId, jobTitle) => {
+    await updateDoc(doc(db, 'jobApplications', appId), { status });
+    // Notify applicant of status update
+    const msgs = { shortlisted: `🎉 Great news! You've been shortlisted for "${jobTitle}". Expect a follow-up soon.`, rejected: `Your application for "${jobTitle}" was not selected this time. Keep applying!`, hired: `🎊 Congratulations! You've been selected for "${jobTitle}". Please check your contact email.` };
+    if (msgs[status]) {
+      await addDoc(collection(db, 'notifications'), {
+        toUserId: applicantId, fromUserId: currentUser.id, type: 'applicationUpdate',
+        message: msgs[status], read: false, createdAt: serverTimestamp()
+      });
+    }
+    showToast?.(`Marked as ${status} ✅`, 'success');
+    // Refresh list
+    setApplicants(prev => prev.map(a => a.id === appId ? { ...a, status } : a));
+  };
+
   const saveItem = async (item) => {
-    const col = tab === 'jobs' ? 'jobs' : 'skills';
-    const saved = item.saved || [];
-    const isSaved = saved.includes(currentUser?.id);
+    const col = tab === 'jobs' ? 'jobs' : 'marketItems';
+    const isSaved = (item.saved || []).includes(currentUser?.id);
     await updateDoc(doc(db, col, item.id), { saved: isSaved ? arrayRemove(currentUser?.id) : arrayUnion(currentUser?.id) }).catch(() => {});
     showToast?.(isSaved ? 'Removed' : 'Saved! 🔖', isSaved ? 'info' : 'success');
   };
 
-  const filters = tab === 'jobs' ? jobFilters : skillFilters;
+  const filters = tab === 'jobs' ? jobFilters : mktFilters;
   const displayItems = items.filter(it => {
     const matchFilter = filter === 'all' || (tab === 'jobs' ? it.type === filter : it.category === filter);
     const matchSearch = !search || it.title?.toLowerCase().includes(search.toLowerCase()) || it.company?.toLowerCase().includes(search.toLowerCase()) || it.description?.toLowerCase().includes(search.toLowerCase());
@@ -2673,22 +2806,106 @@ const JobsSkillsPage = ({ currentUser, showToast, mode }) => {
   const inputStyle = { width:'100%', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:'12px 14px', color:'white', outline:'none', fontSize:13, boxSizing:'border-box', fontFamily:"'Inter',-apple-system,sans-serif" };
   const labelStyle = { color:'rgba(255,255,255,0.5)', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:0.5, marginBottom:6, display:'block' };
 
+  // Applicants Modal
+  if (showApplicants && selectedItem) return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column', background:'#0a0a0a' }}>
+      <div style={{ padding:'14px 16px', borderBottom:'1px solid rgba(255,255,255,0.08)', display:'flex', alignItems:'center', gap:12 }}>
+        <button onClick={()=>{ setShowApplicants(false); setApplicants([]); }} style={{ background:'none', border:'none', color:'white', fontSize:20, cursor:'pointer' }}>←</button>
+        <div>
+          <div style={{ color:'white', fontWeight:800, fontSize:16 }}>{selectedItem.title}</div>
+          <div style={{ color:'rgba(255,255,255,0.4)', fontSize:12 }}>{applicants.length} applicant{applicants.length!==1?'s':''}</div>
+        </div>
+      </div>
+      <div style={{ flex:1, overflowY:'auto', padding:14 }}>
+        {applicants.length === 0 && <div style={{ textAlign:'center', padding:60, color:'rgba(255,255,255,0.3)' }}><div style={{ fontSize:40, marginBottom:12 }}>📋</div><div>No applicants yet</div></div>}
+        {applicants.map(app => (
+          <div key={app.id} style={{ background:'rgba(255,255,255,0.03)', borderRadius:18, padding:16, marginBottom:12, border:'1px solid rgba(255,255,255,0.07)' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:12 }}>
+              <div onClick={()=>{ setShowApplicants(false); onViewProfile?.(app.applicantId); }} style={{ width:48, height:48, borderRadius:'50%', background:app.applicantAvatarColor||'#ff2d55', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:20, overflow:'hidden', cursor:'pointer', flexShrink:0 }}>
+                {app.applicantAvatarUrl ? <img src={app.applicantAvatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : (app.applicantUsername||'?')[0].toUpperCase()}
+              </div>
+              <div style={{ flex:1 }}>
+                <div style={{ color:'white', fontWeight:700, fontSize:15 }}>@{app.applicantUsername}</div>
+                <div style={{ color:'rgba(255,255,255,0.4)', fontSize:12 }}>{app.applicantFollowers||0} followers</div>
+                {app.applicantBio && <div style={{ color:'rgba(255,255,255,0.5)', fontSize:12, marginTop:2 }}>{app.applicantBio}</div>}
+              </div>
+              <div style={{ background: app.status==='hired'?'rgba(52,199,89,0.15)':app.status==='shortlisted'?'rgba(255,204,0,0.15)':app.status==='rejected'?'rgba(255,59,48,0.15)':'rgba(255,255,255,0.08)', border:`1px solid ${app.status==='hired'?'rgba(52,199,89,0.4)':app.status==='shortlisted'?'rgba(255,204,0,0.4)':app.status==='rejected'?'rgba(255,59,48,0.4)':'rgba(255,255,255,0.15)'}`, borderRadius:20, padding:'4px 10px', color:app.status==='hired'?'#34c759':app.status==='shortlisted'?'#ffcc00':app.status==='rejected'?'#ff3b30':'rgba(255,255,255,0.5)', fontSize:11, fontWeight:700 }}>{app.status||'pending'}</div>
+            </div>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:12 }}>
+              <span style={{ background:'rgba(255,255,255,0.05)', borderRadius:20, padding:'3px 10px', color:'rgba(255,255,255,0.4)', fontSize:11 }}>📅 {app.appliedAt?.toDate?.()?.toLocaleDateString?.() || 'N/A'}</span>
+              <span style={{ background:'rgba(255,255,255,0.05)', borderRadius:20, padding:'3px 10px', color:'rgba(255,255,255,0.4)', fontSize:11 }}>🕐 {app.appliedAt?.toDate?.()?.toLocaleTimeString?.([],{hour:'2-digit',minute:'2-digit'}) || ''}</span>
+            </div>
+            {currentUser?.id === selectedItem.userId && (
+              <div style={{ display:'flex', gap:8 }}>
+                <button onClick={()=>updateApplicantStatus(app.id,'shortlisted',app.applicantId,selectedItem.title)} style={{ flex:1, background:'rgba(255,204,0,0.12)', border:'1px solid rgba(255,204,0,0.3)', borderRadius:14, padding:'9px 0', color:'#ffcc00', fontSize:12, fontWeight:700, cursor:'pointer' }}>⭐ Shortlist</button>
+                <button onClick={()=>updateApplicantStatus(app.id,'hired',app.applicantId,selectedItem.title)} style={{ flex:1, background:'rgba(52,199,89,0.12)', border:'1px solid rgba(52,199,89,0.3)', borderRadius:14, padding:'9px 0', color:'#34c759', fontSize:12, fontWeight:700, cursor:'pointer' }}>✅ Hire</button>
+                <button onClick={()=>updateApplicantStatus(app.id,'rejected',app.applicantId,selectedItem.title)} style={{ flex:1, background:'rgba(255,59,48,0.1)', border:'1px solid rgba(255,59,48,0.2)', borderRadius:14, padding:'9px 0', color:'#ff3b30', fontSize:12, fontWeight:700, cursor:'pointer' }}>✕ Pass</button>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  // Post Form Modal
+  if (showPost) return (
+    <div style={{ height:'100%', overflow:'auto', background:'#0a0a0a', padding:16 }}>
+      <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:20 }}>
+        <button onClick={()=>setShowPost(false)} style={{ background:'rgba(255,255,255,0.05)', border:'none', borderRadius:20, padding:'8px 16px', color:'white', cursor:'pointer', fontSize:13 }}>← Back</button>
+        <div style={{ color:'white', fontWeight:800, fontSize:18 }}>{tab==='jobs'?'Post a Job':'List in Market'}</div>
+      </div>
+      {tab === 'jobs' ? (
+        <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+          <div><label style={labelStyle}>Job Title *</label><input value={jobForm.title} onChange={e=>setJobForm(f=>({...f,title:e.target.value}))} placeholder="e.g. Senior Designer" style={inputStyle} /></div>
+          <div><label style={labelStyle}>Company *</label><input value={jobForm.company} onChange={e=>setJobForm(f=>({...f,company:e.target.value}))} placeholder="Company name" style={inputStyle} /></div>
+          <div><label style={labelStyle}>Location</label><input value={jobForm.location} onChange={e=>setJobForm(f=>({...f,location:e.target.value}))} placeholder="City, Country or Remote" style={inputStyle} /></div>
+          <div><label style={labelStyle}>Type</label><div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>{jobTypes.map(t=><button key={t} onClick={()=>setJobForm(f=>({...f,type:t}))} style={{ background:jobForm.type===t?'rgba(255,45,85,0.15)':'rgba(255,255,255,0.04)', border:`1px solid ${jobForm.type===t?'rgba(255,45,85,0.4)':'rgba(255,255,255,0.08)'}`, borderRadius:20, padding:'7px 14px', color:jobForm.type===t?'#ff2d55':'rgba(255,255,255,0.5)', fontSize:12, fontWeight:jobForm.type===t?700:400, cursor:'pointer' }}>{t}</button>)}</div></div>
+          <div><label style={labelStyle}>Salary / Compensation</label><input value={jobForm.salary} onChange={e=>setJobForm(f=>({...f,salary:e.target.value}))} placeholder="e.g. $2,000/mo or Negotiable" style={inputStyle} /></div>
+          <div><label style={labelStyle}>Description</label><textarea value={jobForm.description} onChange={e=>setJobForm(f=>({...f,description:e.target.value}))} placeholder="Job description, requirements, responsibilities..." rows={4} style={{ ...inputStyle, resize:'none', lineHeight:1.5 }} /></div>
+          <div><label style={labelStyle}>Required Skills</label><input value={jobForm.skills} onChange={e=>setJobForm(f=>({...f,skills:e.target.value}))} placeholder="e.g. React, Figma, Python" style={inputStyle} /></div>
+          <div><label style={labelStyle}>Contact Email</label><input value={jobForm.contactEmail} onChange={e=>setJobForm(f=>({...f,contactEmail:e.target.value}))} placeholder="For applicants to reach you" style={inputStyle} /></div>
+          <button onClick={postJob} style={{ width:'100%', background:'linear-gradient(135deg,#ff2d55,#af52de)', border:'none', borderRadius:20, padding:'15px 0', color:'white', fontWeight:800, fontSize:15, cursor:'pointer', marginTop:8 }}>Post Job 💼</button>
+        </div>
+      ) : (
+        <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+          <div><label style={labelStyle}>Title *</label><input value={mktForm.title} onChange={e=>setMktForm(f=>({...f,title:e.target.value}))} placeholder="What are you selling?" style={inputStyle} /></div>
+          <div><label style={labelStyle}>Category</label><div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>{mktCategories.map(c=><button key={c} onClick={()=>setMktForm(f=>({...f,category:c}))} style={{ background:mktForm.category===c?'rgba(0,122,255,0.15)':'rgba(255,255,255,0.04)', border:`1px solid ${mktForm.category===c?'rgba(0,122,255,0.4)':'rgba(255,255,255,0.08)'}`, borderRadius:20, padding:'7px 14px', color:mktForm.category===c?'#007aff':'rgba(255,255,255,0.5)', fontSize:12, fontWeight:mktForm.category===c?700:400, cursor:'pointer' }}>{c}</button>)}</div></div>
+          <div><label style={labelStyle}>Condition</label><div style={{ display:'flex', gap:6 }}>{['New','Like New','Good','Fair'].map(c=><button key={c} onClick={()=>setMktForm(f=>({...f,condition:c}))} style={{ flex:1, background:mktForm.condition===c?'rgba(52,199,89,0.15)':'rgba(255,255,255,0.04)', border:`1px solid ${mktForm.condition===c?'rgba(52,199,89,0.4)':'rgba(255,255,255,0.08)'}`, borderRadius:14, padding:'8px 0', color:mktForm.condition===c?'#34c759':'rgba(255,255,255,0.5)', fontSize:12, fontWeight:mktForm.condition===c?700:400, cursor:'pointer' }}>{c}</button>)}</div></div>
+          <div><label style={labelStyle}>Price *</label><input value={mktForm.price} onChange={e=>setMktForm(f=>({...f,price:e.target.value}))} placeholder="e.g. $50 or Free" style={inputStyle} /></div>
+          <div><label style={labelStyle}>Description</label><textarea value={mktForm.description} onChange={e=>setMktForm(f=>({...f,description:e.target.value}))} placeholder="Describe the item, features, specs..." rows={3} style={{ ...inputStyle, resize:'none', lineHeight:1.5 }} /></div>
+          <div><label style={labelStyle}>Tags</label><input value={mktForm.tags} onChange={e=>setMktForm(f=>({...f,tags:e.target.value}))} placeholder="electronics, phone, apple..." style={inputStyle} /></div>
+          <div><label style={labelStyle}>Contact Email</label><input value={mktForm.contactEmail} onChange={e=>setMktForm(f=>({...f,contactEmail:e.target.value}))} placeholder="Buyers will contact you here" style={inputStyle} /></div>
+          <button onClick={postMarket} style={{ width:'100%', background:'linear-gradient(135deg,#007aff,#34c759)', border:'none', borderRadius:20, padding:'15px 0', color:'white', fontWeight:800, fontSize:15, cursor:'pointer', marginTop:8 }}>List Item 🛒</button>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div style={{ height:'100%', display:'flex', flexDirection:'column', background:'#0a0a0a', overflow:'hidden' }}>
       {/* Header */}
       <div style={{ padding:'14px 16px 0', background:'#0a0a0a', flexShrink:0 }}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
           <div style={{ display:'flex', gap:20 }}>
-            {[['jobs','💼 Jobs'],['skills','🛠️ Skills']].map(([id,label])=>(
+            {[['jobs','💼 Jobs'],['market','🛒 Market']].map(([id,label])=>(
               <button key={id} onClick={()=>{ setTab(id); setFilter('all'); setSearch(''); }} style={{ background:'none', border:'none', color:tab===id?'white':'rgba(255,255,255,0.4)', fontWeight:tab===id?800:500, fontSize:16, cursor:'pointer', paddingBottom:8, borderBottom:tab===id?'2.5px solid #ff2d55':'2.5px solid transparent', fontFamily:"'Inter',-apple-system,sans-serif", transition:'all 0.2s' }}>{label}</button>
             ))}
           </div>
-          <button onClick={()=>setShowPost(true)} style={{ background:'linear-gradient(135deg,#ff2d55,#af52de)', border:'none', borderRadius:20, padding:'8px 16px', color:'white', fontWeight:700, fontSize:12, cursor:'pointer' }}>+ Post</button>
+          {canPost() ? (
+            <button onClick={()=>setShowPost(true)} style={{ background:'linear-gradient(135deg,#ff2d55,#af52de)', border:'none', borderRadius:20, padding:'8px 16px', color:'white', fontWeight:700, fontSize:12, cursor:'pointer' }}>+ Post</button>
+          ) : (
+            myPermissions !== null && (
+              requestSent
+                ? <span style={{ color:'rgba(255,255,255,0.3)', fontSize:11 }}>Request pending...</span>
+                : <button onClick={requestPermission} style={{ background:'rgba(255,255,255,0.07)', border:'1px solid rgba(255,255,255,0.15)', borderRadius:20, padding:'8px 14px', color:'rgba(255,255,255,0.7)', fontWeight:600, fontSize:12, cursor:'pointer' }}>Request to Post</button>
+            )
+          )}
         </div>
         {/* Search */}
         <div style={{ background:'rgba(255,255,255,0.06)', borderRadius:22, display:'flex', alignItems:'center', padding:'9px 14px', gap:8, marginBottom:10 }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder={tab==='jobs'?'Search jobs...':'Search skills...'} style={{ flex:1, background:'none', border:'none', color:'white', outline:'none', fontSize:13 }} />
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder={tab==='jobs'?'Search jobs...':'Search market...'} style={{ flex:1, background:'none', border:'none', color:'white', outline:'none', fontSize:13 }} />
           {search && <button onClick={()=>setSearch('')} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.4)', cursor:'pointer', fontSize:14 }}>✕</button>}
         </div>
         {/* Filters */}
@@ -2698,112 +2915,84 @@ const JobsSkillsPage = ({ currentUser, showToast, mode }) => {
           ))}
         </div>
       </div>
-
       {/* List */}
       <div style={{ flex:1, overflowY:'auto', padding:'0 12px 16px' }}>
         {loading && <div style={{ textAlign:'center', padding:40 }}><div style={{ width:28, height:28, border:'3px solid rgba(255,45,85,0.3)', borderTop:'3px solid #ff2d55', borderRadius:'50%', animation:'spin 1s linear infinite', margin:'0 auto' }} /></div>}
         {!loading && displayItems.length === 0 && (
           <div style={{ textAlign:'center', padding:60, color:'rgba(255,255,255,0.2)' }}>
-            <div style={{ fontSize:48, marginBottom:12 }}>{tab==='jobs'?'💼':'🛠️'}</div>
-            <div style={{ fontSize:14 }}>No {tab} posted yet</div>
-            <div style={{ fontSize:12, marginTop:6 }}>Be the first to post!</div>
+            <div style={{ fontSize:48, marginBottom:12 }}>{tab==='jobs'?'💼':'🛒'}</div>
+            <div style={{ fontSize:14 }}>No {tab==='jobs'?'jobs':'listings'} yet</div>
+            {!canPost() && !requestSent && <button onClick={requestPermission} style={{ marginTop:16, background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.15)', borderRadius:20, padding:'10px 20px', color:'white', fontSize:13, cursor:'pointer' }}>Request to Post</button>}
           </div>
         )}
-        {displayItems.map(item => (
-          <div key={item.id} style={{ background:'rgba(255,255,255,0.03)', borderRadius:20, padding:16, marginBottom:12, border:'1px solid rgba(255,255,255,0.07)' }}>
-            <div style={{ display:'flex', alignItems:'flex-start', gap:12 }}>
-              <div style={{ width:44, height:44, borderRadius:14, background:item.avatarColor||'#ff2d55', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:18, flexShrink:0, overflow:'hidden' }}>
-                {item.avatarUrl ? <img src={item.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/> : (item.username||'?')[0].toUpperCase()}
-              </div>
-              <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ color:'white', fontWeight:800, fontSize:15, marginBottom:3 }}>{item.title}</div>
-                {tab==='jobs' ? (
-                  <>
-                    <div style={{ color:'rgba(255,255,255,0.6)', fontSize:13, marginBottom:4 }}>{item.company} · {item.location}</div>
-                    <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:6 }}>
-                      <span style={{ background:'rgba(255,45,85,0.12)', border:'1px solid rgba(255,45,85,0.25)', borderRadius:20, padding:'2px 10px', color:'#ff2d55', fontSize:11, fontWeight:700 }}>{item.type}</span>
-                      {item.salary && <span style={{ background:'rgba(52,199,89,0.1)', border:'1px solid rgba(52,199,89,0.25)', borderRadius:20, padding:'2px 10px', color:'#34c759', fontSize:11 }}>{item.salary}</span>}
-                    </div>
-                    {item.description && <div style={{ color:'rgba(255,255,255,0.55)', fontSize:12, lineHeight:1.5, marginBottom:6 }}>{item.description.substring(0,120)}{item.description.length>120?'...':''}</div>}
-                    {item.skills && <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11 }}>Skills: {item.skills}</div>}
-                  </>
-                ) : (
-                  <>
-                    <div style={{ color:'rgba(255,255,255,0.5)', fontSize:12, marginBottom:4 }}>@{item.username} · {item.category}</div>
-                    <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:6 }}>
-                      <span style={{ background:'rgba(175,82,222,0.12)', border:'1px solid rgba(175,82,222,0.25)', borderRadius:20, padding:'2px 10px', color:'#af52de', fontSize:11, fontWeight:700 }}>{item.level}</span>
-                      {item.price && <span style={{ background:'rgba(255,149,0,0.1)', border:'1px solid rgba(255,149,0,0.25)', borderRadius:20, padding:'2px 10px', color:'#ff9500', fontSize:11 }}>{item.price}</span>}
-                    </div>
-                    {item.description && <div style={{ color:'rgba(255,255,255,0.55)', fontSize:12, lineHeight:1.5, marginBottom:6 }}>{item.description.substring(0,120)}{item.description.length>120?'...':''}</div>}
-                  </>
-                )}
-                <div style={{ color:'rgba(255,255,255,0.25)', fontSize:11, marginTop:4 }}>{item.applicants||0} {tab==='jobs'?'applicants':'bookings'}</div>
+        {displayItems.map(item => {
+          const isOwner = item.userId === currentUser?.id;
+          const isSaved = (item.saved||[]).includes(currentUser?.id);
+          return (
+            <div key={item.id} style={{ background:'rgba(255,255,255,0.03)', borderRadius:20, padding:16, marginBottom:12, border:'1px solid rgba(255,255,255,0.07)' }}>
+              <div style={{ display:'flex', alignItems:'flex-start', gap:12 }}>
+                <div onClick={()=>onViewProfile?.(item.userId)} style={{ width:44, height:44, borderRadius:14, background:item.avatarColor||'#ff2d55', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:18, flexShrink:0, overflow:'hidden', cursor:'pointer' }}>
+                  {item.avatarUrl ? <img src={item.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/> : (item.username||'?')[0].toUpperCase()}
+                </div>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:2 }}>
+                    <div style={{ color:'white', fontWeight:800, fontSize:15 }}>{item.title}</div>
+                    {item.status === 'available' && tab==='market' && <span style={{ background:'rgba(52,199,89,0.12)', border:'1px solid rgba(52,199,89,0.25)', borderRadius:20, padding:'1px 8px', color:'#34c759', fontSize:10, fontWeight:700 }}>Available</span>}
+                    {item.status === 'active' && tab==='jobs' && <span style={{ background:'rgba(0,122,255,0.12)', border:'1px solid rgba(0,122,255,0.25)', borderRadius:20, padding:'1px 8px', color:'#007aff', fontSize:10, fontWeight:700 }}>Hiring</span>}
+                  </div>
+                  {tab==='jobs' ? (
+                    <>
+                      <div style={{ color:'rgba(255,255,255,0.6)', fontSize:13, marginBottom:4 }}>{item.company}{item.location?' · '+item.location:''}</div>
+                      <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:6 }}>
+                        <span style={{ background:'rgba(255,45,85,0.12)', border:'1px solid rgba(255,45,85,0.25)', borderRadius:20, padding:'2px 10px', color:'#ff2d55', fontSize:11, fontWeight:700 }}>{item.type}</span>
+                        {item.salary && <span style={{ background:'rgba(52,199,89,0.1)', border:'1px solid rgba(52,199,89,0.25)', borderRadius:20, padding:'2px 10px', color:'#34c759', fontSize:11 }}>{item.salary}</span>}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div style={{ color:'rgba(255,255,255,0.6)', fontSize:13, marginBottom:4 }}>by @{item.username}</div>
+                      <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:6 }}>
+                        <span style={{ background:'rgba(0,122,255,0.12)', border:'1px solid rgba(0,122,255,0.25)', borderRadius:20, padding:'2px 10px', color:'#007aff', fontSize:11, fontWeight:700 }}>{item.price}</span>
+                        {item.category && <span style={{ background:'rgba(255,255,255,0.07)', borderRadius:20, padding:'2px 10px', color:'rgba(255,255,255,0.5)', fontSize:11 }}>{item.category}</span>}
+                        {item.condition && <span style={{ background:'rgba(255,204,0,0.08)', border:'1px solid rgba(255,204,0,0.2)', borderRadius:20, padding:'2px 10px', color:'#ffcc00', fontSize:11 }}>{item.condition}</span>}
+                      </div>
+                    </>
+                  )}
+                  {item.description && <div style={{ color:'rgba(255,255,255,0.5)', fontSize:12, lineHeight:1.5, marginBottom:8 }}>{item.description.length>150?item.description.slice(0,150)+'...':item.description}</div>}
+                  {item.skills && tab==='jobs' && <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11, marginBottom:8 }}>🛠️ {item.skills}</div>}
+                  {item.tags && tab==='market' && <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11, marginBottom:8 }}>#{item.tags.split(',').map(t=>t.trim()).join(' #')}</div>}
+                  <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+                    {tab==='jobs' ? (
+                      isOwner ? (
+                        <button onClick={()=>loadApplicants(item)} style={{ flex:1, background:'rgba(255,45,85,0.12)', border:'1px solid rgba(255,45,85,0.3)', borderRadius:14, padding:'9px 0', color:'#ff2d55', fontSize:12, fontWeight:700, cursor:'pointer' }}>
+                          📋 {item.applicantCount||0} Applicants
+                        </button>
+                      ) : (
+                        <button onClick={()=>applyJob(item)} style={{ flex:1, background:'linear-gradient(135deg,#ff2d55,#af52de)', border:'none', borderRadius:14, padding:'9px 0', color:'white', fontSize:12, fontWeight:700, cursor:'pointer' }}>
+                          Apply Now
+                        </button>
+                      )
+                    ) : (
+                      <button onClick={()=>{ if(item.contactEmail) { navigator.clipboard?.writeText?.(item.contactEmail); showToast?.('Contact email copied!','success'); } else showToast?.('Contact via profile','info'); }} style={{ flex:1, background:'linear-gradient(135deg,#007aff,#34c759)', border:'none', borderRadius:14, padding:'9px 0', color:'white', fontSize:12, fontWeight:700, cursor:'pointer' }}>
+                        Contact Seller
+                      </button>
+                    )}
+                    <button onClick={()=>saveItem(item)} style={{ width:38, height:38, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, color:isSaved?'#ffd700':'rgba(255,255,255,0.4)', fontSize:16, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>{isSaved?'🔖':'📌'}</button>
+                    <button onClick={()=>onViewProfile?.(item.userId)} style={{ width:38, height:38, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, color:'rgba(255,255,255,0.4)', fontSize:16, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>👤</button>
+                  </div>
+                  {item.contactEmail && !isOwner && tab==='jobs' && <div style={{ color:'rgba(255,255,255,0.3)', fontSize:11, marginTop:6 }}>📧 {item.contactEmail}</div>}
+                </div>
               </div>
             </div>
-            <div style={{ display:'flex', gap:8, marginTop:12 }}>
-              {tab === 'jobs' ? (
-                <button onClick={()=>applyJob(item)} style={{ flex:1, background:'linear-gradient(135deg,#ff2d55,#af52de)', border:'none', borderRadius:14, padding:'11px 0', color:'white', fontWeight:700, fontSize:13, cursor:'pointer' }}>Apply Now</button>
-              ) : (
-                <button onClick={()=>showToast?.('Contact sent! 📩','success')} style={{ flex:1, background:'linear-gradient(135deg,#ff2d55,#af52de)', border:'none', borderRadius:14, padding:'11px 0', color:'white', fontWeight:700, fontSize:13, cursor:'pointer' }}>Contact</button>
-              )}
-              <button onClick={()=>saveItem(item)} style={{ background:( item.saved||[]).includes(currentUser?.id)?'rgba(255,45,85,0.15)':'rgba(255,255,255,0.05)', border:`1px solid ${(item.saved||[]).includes(currentUser?.id)?'rgba(255,45,85,0.4)':'rgba(255,255,255,0.1)'}`, borderRadius:14, padding:'11px 16px', color:(item.saved||[]).includes(currentUser?.id)?'#ff2d55':'rgba(255,255,255,0.6)', cursor:'pointer', fontSize:16 }}>🔖</button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
-
-      {/* Post Modal */}
-      {showPost && (
-        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.85)', zIndex:9000, display:'flex', alignItems:'flex-end' }} onClick={()=>setShowPost(false)}>
-          <div onClick={e=>e.stopPropagation()} style={{ width:'100%', background:'#111', borderTopLeftRadius:28, borderTopRightRadius:28, maxHeight:'90vh', overflowY:'auto', padding:'20px 20px 44px', border:'1px solid rgba(255,255,255,0.06)' }}>
-            <div style={{ width:36, height:4, background:'rgba(255,255,255,0.15)', borderRadius:2, margin:'0 auto 20px' }} />
-            <div style={{ display:'flex', gap:12, marginBottom:20 }}>
-              {[['job','💼 Post a Job'],['skill','🛠️ Offer a Skill']].map(([id,label])=>(
-                <button key={id} onClick={()=>setPostType(id)} style={{ flex:1, background:postType===id?'rgba(255,45,85,0.12)':'rgba(255,255,255,0.04)', border:`1px solid ${postType===id?'rgba(255,45,85,0.4)':'rgba(255,255,255,0.08)'}`, borderRadius:14, padding:'10px 0', color:postType===id?'#ff2d55':'rgba(255,255,255,0.5)', fontWeight:postType===id?700:500, cursor:'pointer', fontSize:13 }}>{label}</button>
-              ))}
-            </div>
-            {postType === 'job' ? (
-              <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
-                <div><label style={labelStyle}>Job Title *</label><input value={form.title} onChange={e=>setForm(f=>({...f,title:e.target.value}))} placeholder="e.g. Senior React Developer" style={inputStyle} /></div>
-                <div><label style={labelStyle}>Company *</label><input value={form.company} onChange={e=>setForm(f=>({...f,company:e.target.value}))} placeholder="Company name" style={inputStyle} /></div>
-                <div><label style={labelStyle}>Location</label><input value={form.location} onChange={e=>setForm(f=>({...f,location:e.target.value}))} placeholder="City, Country or Remote" style={inputStyle} /></div>
-                <div><label style={labelStyle}>Job Type</label>
-                  <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
-                    {jobTypes.map(jt=><button key={jt} onClick={()=>setForm(f=>({...f,type:jt}))} style={{ background:form.type===jt?'rgba(255,45,85,0.15)':'rgba(255,255,255,0.04)', border:`1px solid ${form.type===jt?'rgba(255,45,85,0.4)':'rgba(255,255,255,0.08)'}`, borderRadius:20, padding:'6px 13px', color:form.type===jt?'#ff2d55':'rgba(255,255,255,0.5)', fontSize:12, cursor:'pointer' }}>{jt}</button>)}
-                  </div>
-                </div>
-                <div><label style={labelStyle}>Salary Range</label><input value={form.salary} onChange={e=>setForm(f=>({...f,salary:e.target.value}))} placeholder="e.g. $50k-$80k / yr" style={inputStyle} /></div>
-                <div><label style={labelStyle}>Description</label><textarea value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))} placeholder="Job responsibilities, requirements..." rows={4} style={{ ...inputStyle, resize:'none', lineHeight:1.5 }} /></div>
-                <div><label style={labelStyle}>Required Skills</label><input value={form.skills} onChange={e=>setForm(f=>({...f,skills:e.target.value}))} placeholder="React, Node.js, Python..." style={inputStyle} /></div>
-                <button onClick={postJob} style={{ width:'100%', background:'linear-gradient(135deg,#ff2d55,#af52de)', border:'none', borderRadius:20, padding:'15px 0', color:'white', fontWeight:800, fontSize:15, cursor:'pointer', marginTop:8 }}>Post Job 💼</button>
-              </div>
-            ) : (
-              <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
-                <div><label style={labelStyle}>Skill Title *</label><input value={skillForm.title} onChange={e=>setSkillForm(f=>({...f,title:e.target.value}))} placeholder="e.g. Logo Design, Python Tutoring" style={inputStyle} /></div>
-                <div><label style={labelStyle}>Category</label>
-                  <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
-                    {skillCategories.map(c=><button key={c} onClick={()=>setSkillForm(f=>({...f,category:c}))} style={{ background:skillForm.category===c?'rgba(175,82,222,0.15)':'rgba(255,255,255,0.04)', border:`1px solid ${skillForm.category===c?'rgba(175,82,222,0.4)':'rgba(255,255,255,0.08)'}`, borderRadius:20, padding:'5px 11px', color:skillForm.category===c?'#af52de':'rgba(255,255,255,0.5)', fontSize:11, cursor:'pointer' }}>{c}</button>)}
-                  </div>
-                </div>
-                <div><label style={labelStyle}>Level</label>
-                  <div style={{ display:'flex', gap:6 }}>
-                    {skillLevels.map(l=><button key={l} onClick={()=>setSkillForm(f=>({...f,level:l}))} style={{ flex:1, background:skillForm.level===l?'rgba(0,122,255,0.15)':'rgba(255,255,255,0.04)', border:`1px solid ${skillForm.level===l?'rgba(0,122,255,0.4)':'rgba(255,255,255,0.08)'}`, borderRadius:14, padding:'8px 0', color:skillForm.level===l?'#007aff':'rgba(255,255,255,0.5)', fontSize:12, fontWeight:skillForm.level===l?700:400, cursor:'pointer' }}>{l}</button>)}
-                  </div>
-                </div>
-                <div><label style={labelStyle}>Description</label><textarea value={skillForm.description} onChange={e=>setSkillForm(f=>({...f,description:e.target.value}))} placeholder="Describe what you offer..." rows={3} style={{ ...inputStyle, resize:'none', lineHeight:1.5 }} /></div>
-                <div><label style={labelStyle}>Rate / Price</label><input value={skillForm.price} onChange={e=>setSkillForm(f=>({...f,price:e.target.value}))} placeholder="e.g. $25/hr, $100/project" style={inputStyle} /></div>
-                <div><label style={labelStyle}>Tags</label><input value={skillForm.tags} onChange={e=>setSkillForm(f=>({...f,tags:e.target.value}))} placeholder="logo, branding, illustrator..." style={inputStyle} /></div>
-                <button onClick={postSkill} style={{ width:'100%', background:'linear-gradient(135deg,#af52de,#007aff)', border:'none', borderRadius:20, padding:'15px 0', color:'white', fontWeight:800, fontSize:15, cursor:'pointer', marginTop:8 }}>Post Skill 🛠️</button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 };
 
 /* ─────────────── HOME FEED ─────────────── */
+
 const SuggestedUsers = ({ currentUser, users, followed, onFollow, onViewProfile }) => {
   const suggestions = useMemo(()=>
     users
@@ -2931,7 +3120,7 @@ const handlePullEnd = async () => {
   };
   if(!filteredVideos.length && activeCategory === 'foryou') return <div style={{ height:'100%', display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:12 }}><div style={{ fontSize:48 }}>📭</div><div style={{ color:'rgba(255,255,255,0.3)' }}>{t?.noVideos||'No videos yet. Be the first to post!'}</div></div>;
 
-  if (activeCategory === 'skill' || activeCategory === 'job') {
+  if (activeCategory === 'market' || activeCategory === 'job' || activeCategory === 'jobs') {
     return (
       <div style={{ height:'100%', position:'relative', overflow:'hidden' }}>
         {/* Top header with category tabs */}
@@ -2939,7 +3128,7 @@ const handlePullEnd = async () => {
           <div style={{ flex:1, display:'flex', justifyContent:'center', gap:24 }}>
             {TOP_CATEGORIES.map(cat=>(
               <button key={cat.id} onClick={()=>{setActiveCategory(cat.id); setCurrentIndex(0);}} style={{ background:'none', border:'none', color:activeCategory===cat.id?'white':'rgba(255,255,255,0.45)', fontWeight:activeCategory===cat.id?800:500, fontSize:15, cursor:'pointer', paddingBottom:6, borderBottom:activeCategory===cat.id?'2.5px solid white':'2.5px solid transparent', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", transition:'all 0.2s' }}>
-                {cat.id==='foryou'?(t?.foryou||cat.label):cat.id==='skill'?(t?.skills||cat.label):(t?.jobs||cat.label)}
+                {cat.id==='foryou'?(t?.foryou||cat.label):cat.id==='market'?(t?.skills||'Market'):(t?.jobs||cat.label)}
               </button>
             ))}
           </div>
@@ -2951,7 +3140,7 @@ const handlePullEnd = async () => {
           </div>
         </div>
         <div style={{ position:'absolute', inset:0, paddingTop:60, overflow:'hidden' }}>
-          <JobsSkillsPage currentUser={currentUser} showToast={showToast} mode={activeCategory} />
+          <JobsMarketPage currentUser={currentUser} showToast={showToast} mode={activeCategory} onViewProfile={onViewProfile} />
         </div>
       </div>
     );
@@ -2963,7 +3152,7 @@ const handlePullEnd = async () => {
         <div style={{ flex:1, display:'flex', justifyContent:'center', gap:24 }}>
           {TOP_CATEGORIES.map(cat=>(
             <button key={cat.id} onClick={()=>{setActiveCategory(cat.id); setCurrentIndex(0);}} style={{ background:'none', border:'none', color:activeCategory===cat.id?'white':'rgba(255,255,255,0.45)', fontWeight:activeCategory===cat.id?800:500, fontSize:15, cursor:'pointer', paddingBottom:6, borderBottom:activeCategory===cat.id?'2.5px solid white':'2.5px solid transparent', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", transition:'all 0.2s' }}>
-              {cat.id==='foryou'?(t?.foryou||cat.label):cat.id==='skill'?(t?.skills||cat.label):(t?.jobs||cat.label)}
+              {cat.id==='foryou'?(t?.foryou||cat.label):cat.id==='market'?(t?.skills||'Market'):(t?.jobs||cat.label)}
             </button>
           ))}
         </div>
@@ -5681,17 +5870,13 @@ return (
   );
 };
 /* ─────────────── NOTIFICATIONS ─────────────── */
-const NotificationsPage = ({ currentUser, users, videos, onClose, onViewProfile, t }) => {
+const NotificationsPage = ({ currentUser, users, videos, onClose, onViewProfile, t, onNavigate }) => {
   const [notifs, setNotifs] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(()=>{
     if(!currentUser?.id) return;
-    const q = query(
-      collection(db,'notifications'),
-      where('toUserId','==',currentUser.id),
-      orderBy('createdAt','desc')
-    );
+    const q = query(collection(db,'notifications'), where('toUserId','==',currentUser.id), orderBy('createdAt','desc'), limit(80));
     const unsub = onSnapshot(q, snap=>{
       const list = snap.docs.map(d=>({id:d.id,...d.data(),date:d.data().createdAt?.toDate?.()|| new Date()}));
       setNotifs(list);
@@ -5705,12 +5890,30 @@ const NotificationsPage = ({ currentUser, users, videos, onClose, onViewProfile,
     await Promise.all(unread.map(n=>updateDoc(doc(db,'notifications',n.id),{read:true})));
   };
 
-  const icons = { like:'❤️', comment:'💬', follow:'👤', mention:'@', gift:'🎁', live:'🔴', story:'📖', call:'📞' };
+  const handleNotifTap = async (n) => {
+    if(!n.read) await updateDoc(doc(db,'notifications',n.id),{read:true}).catch(()=>{});
+    if (n.type==='like' || n.type==='comment' || n.type==='mention') {
+      onClose(); onNavigate?.('home', { openVideoId: n.videoId, openComments: n.type!=='like' });
+    } else if (n.type==='follow') {
+      onClose(); onViewProfile?.(n.fromUserId);
+    } else if (n.type==='message') {
+      onClose(); onNavigate?.('inbox', { targetUserId: n.fromUserId });
+    } else if (n.type==='jobApplication') {
+      onClose(); onNavigate?.('jobs', { jobId: n.jobId });
+    } else if (n.type==='applicationReceived' || n.type==='applicationUpdate') {
+      onClose(); onNavigate?.('jobs');
+    } else {
+      onClose(); onViewProfile?.(n.fromUserId);
+    }
+  };
+
+  const icons = { like:'❤️', comment:'💬', follow:'👤', mention:'@', gift:'🎁', live:'🔴', story:'📖', call:'📞', message:'✉️', jobApplication:'💼', applicationReceived:'✅', applicationUpdate:'📋', permissionRequest:'🔑' };
+  const typeLabel = { like:'liked your post', comment:'commented', follow:'followed you', mention:'mentioned you', gift:'sent a gift', live:'went live', message:'sent a message', jobApplication:'applied to your job', applicationReceived:'application update', applicationUpdate:'application update' };
 
   return (
     <div style={{ position:'fixed', inset:0, background:'#0a0a0a', zIndex:300, display:'flex', flexDirection:'column' }}>
       <div style={{ padding:'16px 16px 12px', borderBottom:'1px solid rgba(255,255,255,0.06)', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-        <div style={{ color:'white', fontWeight:800, fontSize:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{t?.notifications||'Notifications'}</div>
+        <div style={{ color:'white', fontWeight:800, fontSize:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{t?.notifications||'Notifications'}</div>
         <div style={{ display:'flex', gap:10, alignItems:'center' }}>
           {unreadCount>0 && <button onClick={markAllRead} style={{ background:'rgba(255,45,85,0.1)', border:'1px solid rgba(255,45,85,0.2)', borderRadius:20, padding:'5px 12px', color:'#ff2d55', fontSize:11, fontWeight:700, cursor:'pointer' }}>Mark all read</button>}
           <button onClick={onClose} style={{ background:'rgba(255,255,255,0.07)', border:'none', borderRadius:'50%', width:32, height:32, color:'white', cursor:'pointer', fontSize:16 }}>✕</button>
@@ -5726,7 +5929,7 @@ const NotificationsPage = ({ currentUser, users, videos, onClose, onViewProfile,
         {notifs.map(n=>{
           const fromUser = users.find(u=>u.id===n.fromUserId);
           return (
-            <div key={n.id} onClick={async()=>{ await updateDoc(doc(db,'notifications',n.id),{read:true}); onViewProfile?.(n.fromUserId); }} style={{ display:'flex', alignItems:'center', gap:12, padding:'14px 16px', borderBottom:'1px solid rgba(255,255,255,0.04)', cursor:'pointer', background:n.read?'transparent':'rgba(255,45,85,0.04)' }}>
+            <div key={n.id} onClick={()=>handleNotifTap(n)} style={{ display:'flex', alignItems:'center', gap:12, padding:'14px 16px', borderBottom:'1px solid rgba(255,255,255,0.04)', cursor:'pointer', background:n.read?'transparent':'rgba(255,45,85,0.04)' }}>
               <div style={{ position:'relative', flexShrink:0 }}>
                 <div style={{ width:46, height:46, borderRadius:'50%', background:fromUser?.avatarColor||'#333', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:18, overflow:'hidden' }}>
                   {fromUser?.avatarUrl ? <img src={fromUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : (fromUser?.avatar||'?')}
@@ -5735,14 +5938,18 @@ const NotificationsPage = ({ currentUser, users, videos, onClose, onViewProfile,
               </div>
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ color:'white', fontSize:13, lineHeight:1.4 }}>
-                  <span style={{ fontWeight:700 }}>@{fromUser?.username||'someone'}</span>
-                  {' '}{n.message}
+                  {fromUser && <span style={{ fontWeight:700 }}>@{fromUser.username} </span>}
+                  {n.message}
                 </div>
-                <div style={{ color:'rgba(255,255,255,0.3)', fontSize:11, marginTop:3 }}>
-                  {n.date?.toLocaleDateString?.()}{n.date ? ' · ' : ''}{n.date?.toLocaleTimeString?.([],{hour:'2-digit',minute:'2-digit'})}
+                <div style={{ color:'rgba(255,255,255,0.3)', fontSize:11, marginTop:3, display:'flex', gap:6 }}>
+                  <span>{n.date?.toLocaleDateString?.()}{n.date?' · ':''}{n.date?.toLocaleTimeString?.([],{hour:'2-digit',minute:'2-digit'})}</span>
+                  {typeLabel[n.type] && <span style={{ color:'rgba(255,255,255,0.2)' }}>· {typeLabel[n.type]}</span>}
                 </div>
               </div>
-              {!n.read && <div style={{ width:8, height:8, borderRadius:'50%', background:'#ff2d55', flexShrink:0 }} />}
+              <div style={{ display:'flex', alignItems:'center', gap:6, flexShrink:0 }}>
+                {!n.read && <div style={{ width:8, height:8, borderRadius:'50%', background:'#ff2d55' }} />}
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
             </div>
           );
         })}
@@ -6114,7 +6321,7 @@ const handleMessage = uid => {
 
       {showSoundLibrary && <SoundLibraryPage onSelectSound={s=>{showToast?.(`Selected: ${s.name}`,'success'); setShowSoundLibrary(false);}} onClose={()=>setShowSoundLibrary(false)} />}
       {showQRCode && <QRCodePage user={currentUser} onClose={()=>setShowQRCode(false)} />}
-      {showNotifications && <NotificationsPage currentUser={currentUser} users={users} videos={videos} onClose={()=>setShowNotifications(false)} onViewProfile={uid=>{handleViewProfile(uid); setShowNotifications(false);}} t={t} />}
+      {showNotifications && <NotificationsPage currentUser={currentUser} users={users} videos={videos} onClose={()=>setShowNotifications(false)} onViewProfile={uid=>{handleViewProfile(uid); setShowNotifications(false);}} t={t} onNavigate={(tab, opts)=>{ setShowNotifications(false); if(tab==='inbox'){ setActiveTab('inbox'); if(opts?.targetUserId) setInboxTargetId(opts.targetUserId); } else if(tab==='jobs'){ setActiveTab('friends'); } else { setActiveTab(tab||'home'); } }} />}
       {showAnalytics && <CreatorAnalytics user={currentUser} videos={videos} onClose={()=>setShowAnalytics(false)} />}
       {showCreateStory && <CreateStoryModal currentUser={currentUser} onClose={()=>setShowCreateStory(false)} showToast={showToast} />}
       {/* ── v4 NEW OVERLAYS ── */}
