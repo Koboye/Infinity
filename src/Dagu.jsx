@@ -949,34 +949,15 @@ const getUserProfile = async (uid) => {
   return snap.exists() ? snap.data() : null;
 };
 
-/* ═══════════════════════════════════════════════════════
-   DAGU v5 — LIQUID AURORA DESIGN SYSTEM
-   Signature aesthetic: obsidian depth + iridescent light
-═══════════════════════════════════════════════════════ */
-const D = {
-  rose:'#FF2D6B', violet:'#8B5CF6', indigo:'#6366F1', cyan:'#06B6D4',
-  emerald:'#10B981', amber:'#F59E0B',
-  bg0:'#060608', bg1:'#0D0D12', bg2:'#131318', bg3:'#1A1A22',
-  t1:'#FFFFFF', t2:'rgba(255,255,255,0.70)', t3:'rgba(255,255,255,0.40)', t4:'rgba(255,255,255,0.18)',
-  b1:'rgba(255,255,255,0.07)', b2:'rgba(255,255,255,0.13)', b3:'rgba(255,255,255,0.22)',
-  aurora:'linear-gradient(135deg,#FF2D6B 0%,#8B5CF6 45%,#06B6D4 100%)',
-  font:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
-};
-
+/* ─────────────── GLOBAL STYLES ─────────────── */
 const GlobalStyles = () => (
   <style>{`
-    @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;0,14..32,900&display=swap');
-    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;scrollbar-width:none;-ms-overflow-style:none}
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html{scroll-behavior:smooth}
+    body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;overscroll-behavior:none;touch-action:manipulation}
     ::-webkit-scrollbar{display:none}
-    html{scroll-behavior:smooth;color-scheme:dark}
-    body{font-family:${D.font};background:${D.bg0};color:#fff;-webkit-font-smoothing:antialiased;overscroll-behavior:none;touch-action:manipulation}
-    input,textarea{font-family:${D.font}}
-    input:focus,textarea:focus{outline:none}
-    img{image-rendering:-webkit-optimize-contrast}
-    video{will-change:transform}
-
-    /* ── Animations ── */
-    @keyframes aurora-pulse{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+    *{scrollbar-width:none;-ms-overflow-style:none}
     @keyframes heartBurst{0%{transform:scale(0.4) translateY(0);opacity:1}100%{transform:scale(1.8) translateY(-80px);opacity:0}}
     @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
     @keyframes slideDown{from{transform:translateY(-20px);opacity:0}to{transform:translateY(0);opacity:1}}
@@ -985,6 +966,7 @@ const GlobalStyles = () => (
     @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
     @keyframes focusPulse{0%{transform:scale(1.3);opacity:0.3}50%{transform:scale(1);opacity:1}100%{transform:scale(1);opacity:0.7}}
     @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+    @keyframes shimmerLoad{0%{opacity:0.4}50%{opacity:0.8}100%{opacity:0.4}}
     @keyframes gradientShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
     @keyframes popIn{0%{transform:scale(0.8);opacity:0}70%{transform:scale(1.05)}100%{transform:scale(1);opacity:1}}
     @keyframes popInBounce{0%{transform:scale(0.5);opacity:0}60%{transform:scale(1.15)}80%{transform:scale(0.95)}100%{transform:scale(1);opacity:1}}
@@ -999,70 +981,21 @@ const GlobalStyles = () => (
     @keyframes progressBar{from{width:0%}to{width:100%}}
     @keyframes bounceIn{0%{transform:scale(0.3);opacity:0}50%{transform:scale(1.1)}70%{transform:scale(0.9)}100%{transform:scale(1);opacity:1}}
     @keyframes swipeHint{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-    @keyframes aiTyping{0%,80%,100%{transform:scale(0);opacity:.3}40%{transform:scale(1);opacity:1}}
-    @keyframes glowPulse{0%,100%{box-shadow:0 0 16px rgba(139,92,246,0.2)}50%{box-shadow:0 0 32px rgba(139,92,246,0.45)}}
-    @keyframes shimmerLoad{0%{opacity:0.4}50%{opacity:0.8}100%{opacity:0.4}}
-
-    /* ── Utility classes ── */
     button{touch-action:manipulation}
-    button:active{transform:scale(0.94)!important;transition:transform 0.08s!important}
+    button:active{transform:scale(0.94)!important;transition:transform 0.1s}
+    input,textarea{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif}
+    input:focus,textarea:focus{outline:none}
     .tab-active-indicator{animation:tabPop 0.25s ease}
-
-    /* Story ring — aurora version */
-    .story-avatar-ring{
-      background:conic-gradient(#FF2D6B,#8B5CF6,#06B6D4,#FF2D6B);
-      padding:2.5px;border-radius:50%;
-    }
-
-    /* Skeleton loader */
-    .skeleton{
-      background:linear-gradient(90deg,rgba(255,255,255,0.03) 25%,rgba(255,255,255,0.08) 50%,rgba(255,255,255,0.03) 75%);
-      background-size:200% 100%;animation:shimmer 1.6s infinite;
-    }
-
-    /* Ripple button */
+    .story-avatar-ring{background:conic-gradient(#ff2d55,#ff9500,#ffd700,#af52de,#ff2d55);padding:2.5px;border-radius:50%}
+    .skeleton{background:linear-gradient(90deg,rgba(255,255,255,0.04) 25%,rgba(255,255,255,0.1) 50%,rgba(255,255,255,0.04) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite}
     .ripple-btn{position:relative;overflow:hidden}
-    .ripple-btn::after{content:'';position:absolute;border-radius:50%;background:rgba(255,255,255,0.2);width:120px;height:120px;margin-top:-60px;margin-left:-60px;top:var(--y,50%);left:var(--x,50%);animation:ripple 0.65s linear;opacity:0}
-
-    /* Glass morphism card */
-    .glass{
-      background:rgba(255,255,255,0.03);
-      backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
-      border:1px solid rgba(255,255,255,0.07);
-    }
-
-    /* Aurora button */
-    .aurora-btn{
-      background:linear-gradient(135deg,#FF2D6B 0%,#8B5CF6 45%,#06B6D4 100%);
-      background-size:200% 200%;
-      animation:aurora-pulse 5s ease infinite;
-      border:none;color:white;font-weight:700;cursor:pointer;
-      font-family:${D.font};
-      transition:filter 0.2s,transform 0.15s,box-shadow 0.2s;
-    }
-    .aurora-btn:hover{filter:brightness(1.1);box-shadow:0 4px 28px rgba(139,92,246,0.4)}
-    .aurora-btn:active{transform:scale(0.96)!important;filter:brightness(0.95)}
-
-    /* AI glow for input fields */
-    .ai-glow{
-      transition:box-shadow 0.25s;
-    }
-    .ai-glow:focus-within{
-      box-shadow:0 0 0 2px rgba(139,92,246,0.5),0 0 32px rgba(139,92,246,0.15);
-      border-color:rgba(139,92,246,0.5)!important;
-    }
-
-    /* Tab pip dot */
-    .tab-pip{
-      position:absolute;bottom:-5px;left:50%;transform:translateX(-50%);
-      width:4px;height:4px;border-radius:50%;
-      background:linear-gradient(135deg,#FF2D6B,#8B5CF6);
-      animation:bounceIn 0.3s ease;
-    }
-
-    /* Notification bar animation */
+    .ripple-btn::after{content:'';position:absolute;border-radius:50%;background:rgba(255,255,255,0.3);width:100px;height:100px;margin-top:-50px;margin-left:-50px;top:var(--y,50%);left:var(--x,50%);animation:ripple 0.6s linear;opacity:0}
+    @media (prefers-reduced-motion: reduce){*{animation-duration:0.01ms!important;transition-duration:0.01ms!important}}
+    *{-webkit-tap-highlight-color:transparent;box-sizing:border-box}
+    ::-webkit-scrollbar{width:0;height:0;display:none}
+    img{image-rendering:-webkit-optimize-contrast}
+    video{will-change:transform}
     .smooth-scroll{-webkit-overflow-scrolling:touch;scroll-behavior:smooth}
-    @media (prefers-reduced-motion:reduce){*{animation-duration:0.01ms!important;transition-duration:0.01ms!important}}
   `}</style>
 );
 const SkeletonLoader = ({ count=3 }) => (
@@ -6330,84 +6263,38 @@ setStep('otp');
   );
 
   if(step==='method') return (
-    <div style={{ height:'100%', display:'flex', flexDirection:'column', background:D.bg0, overflow:'auto', position:'relative' }}>
-      {/* Aurora ambient background */}
-      <div style={{ position:'absolute', inset:0, pointerEvents:'none', overflow:'hidden' }}>
-        <div style={{ position:'absolute', top:'-20%', left:'-20%', width:'70%', height:'70%', borderRadius:'50%', background:'radial-gradient(ellipse,rgba(255,45,107,0.18) 0%,transparent 70%)', filter:'blur(40px)' }} />
-        <div style={{ position:'absolute', top:'10%', right:'-15%', width:'60%', height:'60%', borderRadius:'50%', background:'radial-gradient(ellipse,rgba(139,92,246,0.15) 0%,transparent 70%)', filter:'blur(40px)' }} />
-        <div style={{ position:'absolute', bottom:'5%', left:'10%', width:'50%', height:'50%', borderRadius:'50%', background:'radial-gradient(ellipse,rgba(6,182,212,0.12) 0%,transparent 70%)', filter:'blur(40px)' }} />
-      </div>
-
-      <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'48px 28px 24px', position:'relative' }}>
-        {/* Logo */}
-        <div style={{ textAlign:'center', marginBottom:44 }}>
-          <div style={{ position:'relative', display:'inline-block', marginBottom:20 }}>
-            <div style={{ position:'absolute', inset:-3, borderRadius:28, background:D.aurora, backgroundSize:'200% 200%', animation:'aurora-pulse 4s ease infinite' }} />
-            <img src="https://res.cloudinary.com/dotvhzjmc/image/upload/znfksngv27boh3c1kxpv.png"
-              style={{ width:84, height:84, borderRadius:26, objectFit:'cover', display:'block', position:'relative', border:'2px solid rgba(0,0,0,0.3)' }} />
-          </div>
-          <div style={{ color:D.t1, fontWeight:900, fontSize:32, letterSpacing:-1, fontFamily:D.font, lineHeight:1 }}>Dagu</div>
-          <div style={{ color:D.t3, fontSize:13, marginTop:6, fontWeight:400 }}>
-            {isLogin ? 'Welcome back — the feed missed you.' : 'Your voice, your world.'}
-          </div>
+    <div style={{ height:'100%', display:'flex', flexDirection:'column', background:'#0a0a0a', overflow:'auto' }}>
+      <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'40px 24px 20px', position:'relative' }}>
+        <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse at 50% 30%,rgba(255,45,85,0.2),rgba(175,82,222,0.1),transparent 65%)' }} />
+        <div style={{ position:'relative', textAlign:'center', marginBottom:40 }}>
+          <img src="https://res.cloudinary.com/dotvhzjmc/image/upload/znfksngv27boh3c1kxpv.png" style={{ width:80, height:80, borderRadius:24, objectFit:'cover', margin:'0 auto 20px', display:'block', boxShadow:'0 20px 60px rgba(255,45,85,0.4)' }} />
+          <p style={{ color:'rgba(255,255,255,0.4)', fontSize:14, marginTop:10 }}>{isLogin?'Welcome back! 👋':'Join the community 🎉'}</p>
         </div>
-
-        <div style={{ width:'100%', maxWidth:340, position:'relative' }}>
-          {error && error.trim().length > 1 && (
-            <div style={{ background:'rgba(255,45,107,0.1)', border:'1px solid rgba(255,45,107,0.3)', borderRadius:14, padding:'11px 14px', color:'#FF2D6B', fontSize:12.5, marginBottom:16, textAlign:'center', animation:'slideDown 0.3s ease' }}>
-              {error}
-            </div>
-          )}
-
-          {/* Sign-in methods */}
-          <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:20 }}>
-            {LOGIN_METHODS.map(m => (
-              <button key={m.id} onClick={()=>handleMethodSelect(m)} disabled={loading}
-                style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:10,
-                  background:D.bg2, border:`1px solid ${D.b2}`,
-                  borderRadius:16, padding:'14px 20px', cursor:'pointer', fontSize:15,
-                  color:D.t1, fontWeight:600, fontFamily:D.font,
-                  transition:'all 0.18s', opacity:loading?0.5:1,
-                  boxShadow:'0 2px 12px rgba(0,0,0,0.3)' }}
-                onMouseEnter={e=>{ e.currentTarget.style.borderColor=D.b3; e.currentTarget.style.background=D.bg3; }}
-                onMouseLeave={e=>{ e.currentTarget.style.borderColor=D.b2; e.currentTarget.style.background=D.bg2; }}>
-                <span style={{ fontSize:20 }}>{m.icon}</span>
-                <span>{isLogin ? `Sign in with ${m.name}` : `Continue with ${m.name}`}</span>
+        <div style={{ position:'relative', width:'100%', maxWidth:340 }}>
+          <div style={{ color:'rgba(255,255,255,0.3)', fontSize:11, marginBottom:14, textAlign:'center', fontWeight:700, textTransform:'uppercase', letterSpacing:1 }}>{isLogin?'Sign in with':'Sign up with'}</div>
+          {error && error.trim().length > 1 && <div style={{background:'rgba(255,45,85,0.1)',border:'1px solid rgba(255,45,85,0.3)',borderRadius:12,padding:'10px 14px',color:'#ff2d55',fontSize:12,marginBottom:12,textAlign:'center'}}>{error}</div>}
+          <div style={{ display:'flex', flexWrap:'wrap', gap:8, justifyContent:'center', marginBottom:24 }}>
+            {LOGIN_METHODS.map(m=>(
+              <button key={m.id} onClick={()=>handleMethodSelect(m)} disabled={loading} style={{ display:'inline-flex', alignItems:'center', gap:6, background:'rgba(255,255,255,0.05)', border:`1px solid rgba(255,255,255,0.1)`, borderRadius:30, padding:'8px 16px', cursor:'pointer', fontSize:13, color:'rgba(255,255,255,0.8)', transition:'all 0.15s', opacity:loading?0.5:1 }}>
+                <span style={{ fontSize:16 }}>{m.icon}</span>{m.name}
               </button>
             ))}
           </div>
-
-          {loading && (
-            <div style={{ textAlign:'center', color:D.t3, fontSize:13, marginBottom:14, display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
-              <div style={{ width:16, height:16, border:`2px solid rgba(255,255,255,0.1)`, borderTop:`2px solid ${D.violet}`, borderRadius:'50%', animation:'spin 0.8s linear infinite' }} />
-              Signing in...
-            </div>
-          )}
-
-          <button onClick={()=>setIsLogin(!isLogin)}
-            style={{ width:'100%', background:'none', border:'none', fontSize:14, cursor:'pointer', fontWeight:600, fontFamily:D.font, padding:'8px 0',
-              background:`linear-gradient(135deg,${D.rose},${D.violet})`,
-              WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>
-            {isLogin ? "New here? Create an account →" : "Already have an account? Sign in →"}
+          {loading && <div style={{textAlign:'center',color:'rgba(255,255,255,0.5)',fontSize:13,marginBottom:12}}>⏳ Signing in...</div>}
+          <button onClick={()=>setIsLogin(!isLogin)} style={{ width:'100%', background:'none', border:'none', color:'#ff2d55', fontSize:14, cursor:'pointer', fontWeight:600 }}>
+            {isLogin?"Don't have an account? Sign up →":"Already have an account? Sign in →"}
           </button>
-
           {isLogin && (
-            <button onClick={()=>setStep('resetpw')}
-              style={{ width:'100%', background:'none', border:'none', color:D.t4, fontSize:12.5, cursor:'pointer', marginTop:8, fontFamily:D.font, padding:'4px 0' }}>
-              Forgot your password?
+            <button onClick={()=>setStep('resetpw')} style={{ width:'100%', background:'none', border:'none', color:'rgba(255,255,255,0.35)', fontSize:13, cursor:'pointer', marginTop:10, textDecoration:'underline' }}>
+              Forgot password?
             </button>
           )}
-
-          <button onClick={()=>setStep('guest')}
-            style={{ width:'100%', background:'none', border:`1px solid ${D.b1}`, borderRadius:12, color:D.t3, fontSize:13, cursor:'pointer', marginTop:12, padding:'11px', fontFamily:D.font }}>
-            Browse without signing in
+          <button onClick={()=>setStep('guest')} style={{ width:'100%', background:'none', border:'none', color:'rgba(255,255,255,0.3)', fontSize:13, cursor:'pointer', marginTop:10 }}>
+            👁 Browse without account
           </button>
         </div>
       </div>
-
-      <div style={{ padding:'0 24px 36px', textAlign:'center', color:D.t4, fontSize:11 }}>
-        By continuing you agree to our Terms of Service & Privacy Policy
-      </div>
+      <div style={{ padding:'0 24px 40px', textAlign:'center', color:'rgba(255,255,255,0.2)', fontSize:11 }}>By continuing, you agree to our Terms of Service & Privacy Policy</div>
     </div>
   );
 if(step==='otp') return (
