@@ -60,7 +60,7 @@ const APP_CREATOR_UID = 'REPLACE_WITH_CREATOR_UID'; // Set this to the actual Fi
 /* ─────────────── CONSTANTS ─────────────── */
 const LOGIN_METHODS = [
   { id: 'google', name: 'Google', icon: '🌐', color: '#4285f4' },
-  { id: 'email', name: 'Email', icon: '📧', color: '#FF2156' },
+  { id: 'email', name: 'Email', icon: '📧', color: '#FFB100' },
 ];
 
 const VIRTUAL_GIFTS = [
@@ -326,7 +326,7 @@ const ShareSheet = ({ video, currentUser, onClose, showToast }) => {
           <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.08)', border: 'none', color: 'white', fontSize: 14, cursor: 'pointer', flexShrink: 0 }}>✕</button>
         </div>
 
-        <div style={{ margin: '0 20px 18px', padding: 1.5, borderRadius: 18, background: 'linear-gradient(135deg,#FF2156,#9D4EDD)' }}>
+        <div style={{ margin: '0 20px 18px', padding: 1.5, borderRadius: 18, background: 'linear-gradient(135deg,#FFB100,#00E6B4)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#1C1C24', borderRadius: 16.5, padding: 12 }}>
             <div style={{ width: 48, height: 64, borderRadius: 10, overflow: 'hidden', background: '#24242E', flexShrink: 0 }}>
               {video?.videoUrl?.match(/\.(jpg|jpeg|png|gif|webp)/i)
@@ -371,7 +371,7 @@ const ShareSheet = ({ video, currentUser, onClose, showToast }) => {
             </svg>
           </div>
           <span style={{ flex: 1, color: 'rgba(255,255,255,0.35)', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '14px 8px' }}>{shareUrl}</span>
-          <button onClick={copyLink} style={{ background: 'linear-gradient(135deg,#FF2156,#9D4EDD)', border: 'none', padding: '14px 20px', color: 'white', fontWeight: 700, fontSize: 13, cursor: 'pointer', flexShrink: 0, height: '100%' }}>
+          <button onClick={copyLink} style={{ background: 'linear-gradient(135deg,#FFB100,#00E6B4)', border: 'none', padding: '14px 20px', color: 'white', fontWeight: 700, fontSize: 13, cursor: 'pointer', flexShrink: 0, height: '100%' }}>
             Copy
           </button>
         </div>
@@ -1036,7 +1036,7 @@ const getUserProfile = async (uid) => {
 const GlobalStyles = () => (
   <style>{`
     /* ── DESIGN TOKENS (reference) ──────────────────────────────────────
-       Brand accent     #FF2156   |  Secondary/purple  #9D4EDD
+       Brand accent     #FFB100   |  Secondary/teal    #00E6B4
        Success          #2ED573   |  Warning            #FFB100
        Danger           #FF453A   |  Info               #0A84FF
        Indigo           #5E5CE6   |  Gold/coins          #FFD60A
@@ -1047,7 +1047,7 @@ const GlobalStyles = () => (
        update here first if the brand colors ever need to evolve.
     ──────────────────────────────────────────────────────────────────── */
     :root{
-      --accent:#FF2156; --accent-2:#9D4EDD;
+      --accent:#FFB100; --accent-2:#00E6B4;
       --success:#2ED573; --warning:#FFB100; --danger:#FF453A; --info:#0A84FF; --indigo:#5E5CE6;
       --gold:#FFD60A; --teal:#00E6B4; --teal-2:#00A9D6; --verified:#2F9BFF;
       --bg-base:#0B0B0F; --bg-elev-1:#15151C; --bg-elev-2:#1C1C24; --bg-elev-3:#24242E;
@@ -1059,7 +1059,7 @@ const GlobalStyles = () => (
     body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;overscroll-behavior:none;touch-action:manipulation;background:#0B0B0F}
     ::-webkit-scrollbar{display:none}
     *{scrollbar-width:none;-ms-overflow-style:none}
-    ::selection{background:rgba(255,33,86,0.35);color:#fff}
+    ::selection{background:rgba(255,177,0,0.35);color:#fff}
     @keyframes heartBurst{0%{transform:scale(0.4) translateY(0);opacity:1}100%{transform:scale(1.8) translateY(-80px);opacity:0}}
     @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
     @keyframes slideDown{from{transform:translateY(-20px);opacity:0}to{transform:translateY(0);opacity:1}}
@@ -1086,9 +1086,9 @@ const GlobalStyles = () => (
     button{touch-action:manipulation}
     button:active{transform:scale(0.94)!important;transition:transform 0.1s}
     input,textarea{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif}
-    input:focus,textarea:focus{outline:none;box-shadow:0 0 0 2px rgba(255,33,86,0.22);border-radius:inherit;transition:box-shadow 0.15s ease}
+    input:focus,textarea:focus{outline:none;box-shadow:0 0 0 2px rgba(255,177,0,0.22);border-radius:inherit;transition:box-shadow 0.15s ease}
     .tab-active-indicator{animation:tabPop 0.25s ease}
-    .story-avatar-ring{background:conic-gradient(#FF2156,#FFB100,#FFD60A,#9D4EDD,#FF2156);padding:2.5px;border-radius:50%}
+    .story-avatar-ring{background:conic-gradient(#FFB100,#FFD60A,#00E6B4,#00A9D6,#FFB100);padding:2.5px;border-radius:50%}
     .skeleton{background:linear-gradient(90deg,rgba(255,255,255,0.04) 25%,rgba(255,255,255,0.1) 50%,rgba(255,255,255,0.04) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite}
     .ripple-btn{position:relative;overflow:hidden}
     .ripple-btn::after{content:'';position:absolute;border-radius:50%;background:rgba(255,255,255,0.3);width:100px;height:100px;margin-top:-50px;margin-left:-50px;top:var(--y,50%);left:var(--x,50%);animation:ripple 0.6s linear;opacity:0}
@@ -2521,8 +2521,8 @@ const handleLongPressStart = () => {
         <div onClick={e=>{e.stopPropagation();setShowActionMenu(false);}} style={{ position:'fixed', inset:0, zIndex:9990 }}>
           <div onClick={e=>e.stopPropagation()} style={{ position:'fixed', bottom:10, right:14, background:'rgba(18,18,18,0.97)', backdropFilter:'blur(20px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:22, padding:6, zIndex:9991, minWidth:210, animation:'popIn 0.2s ease' }}>
             {[
-              {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>, label:t?.duet||'Duet', fn:()=>onDuet?.(video.id)},
-              {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M15 14l5-5-5-5"/><path d="M4 20v-7a4 4 0 014-4h12"/></svg>, label:t?.stitch||'Stitch', fn:()=>onStitch?.(video.id)},
+              {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFB100" strokeWidth="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>, label:'AI Caption', fn:()=>showToast?.('✨ AI Caption generated!','success')},
+              {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00E6B4" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg>, label:'AI Script', fn:()=>showToast?.('✨ AI Script ready!','success')},
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF2156" strokeWidth="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>, label:'Live', fn:()=>onLive?.()},
 {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>, label:t?.message||'Message', fn:()=>onMessage?.(video.userId)},
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-5.99-5.99 19.79 19.79 0 01-3.07-8.67A2 2 0 014 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>, label:t?.voiceCall||'Voice Call', fn:()=>onVoiceCall?.(video.userId)},
@@ -3562,18 +3562,18 @@ const handlePullEnd = async () => {
 const CreateScreen = ({ onOpenCamera, onShowSoundLibrary, showToast, t }) => (
   <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:24, gap:12, background:'#0B0B0F' }}>
     <div style={{ textAlign:'center', marginBottom:12 }}>
-      <div style={{ width:72, height:72, borderRadius:'50%', background:'linear-gradient(135deg,#FF2156,#9D4EDD)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px', fontSize:32 }}>🎬</div>
-      <div style={{ color:'white', fontWeight:800, fontSize:24, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{t?.createShare||'Create & Share'}</div>
-<div style={{ color:'rgba(255,255,255,0.35)', fontSize:14, marginTop:4 }}>{t?.expressYourself||'Express yourself'}</div>
+      <div style={{ width:72, height:72, borderRadius:'50%', background:'linear-gradient(135deg,#FFB100,#00E6B4)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px', fontSize:32 }}>✨</div>
+      <div style={{ color:'white', fontWeight:800, fontSize:24, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Create with Dagu</div>
+<div style={{ color:'rgba(255,255,255,0.35)', fontSize:14, marginTop:4 }}>Generate, record, and share your content</div>
     </div>
     {[
-      {icon:'📷',label:'Open Camera',sub:'Record or take photo',action:onOpenCamera,grad:true},
+      {icon:'📷',label:'Open Camera',sub:'Record video or take a photo',action:onOpenCamera,grad:true},
       {icon:'🖼️',label:'Upload from Gallery',sub:'Choose from your device',action:onOpenCamera,grad:false},
-      {icon:'✏️',label:'Write Text Story',sub:'Share a thought',action:onOpenCamera,grad:false},
-      {icon:'🎙️',label:'Record Audio',sub:'Voice post',action:onOpenCamera,grad:false},
+      {icon:'✏️',label:'Write Text Post',sub:'Share a thought or story',action:onOpenCamera,grad:false},
+      {icon:'🎙️',label:'Record Audio',sub:'Voice post or podcast clip',action:onOpenCamera,grad:false},
       {icon:'🎵',label:'Add Sound',sub:'Browse music library',action:onShowSoundLibrary,grad:false},
     ].map(btn=>(
-      <button key={btn.label} onClick={btn.action} style={{ width:'100%', maxWidth:320, background:btn.grad?'linear-gradient(135deg,#FF2156,#9D4EDD)':'rgba(255,255,255,0.04)', border:btn.grad?'none':'1px solid rgba(255,255,255,0.08)', borderRadius:20, padding:'16px 20px', color:'white', fontSize:14, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:14, textAlign:'left' }}>
+      <button key={btn.label} onClick={btn.action} style={{ width:'100%', maxWidth:320, background:btn.grad?'linear-gradient(135deg,#FFB100,#00E6B4)':'rgba(255,255,255,0.04)', border:btn.grad?'none':'1px solid rgba(255,255,255,0.08)', borderRadius:20, padding:'16px 20px', color:'white', fontSize:14, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:14, textAlign:'left' }}>
         <div style={{ width:44, height:44, borderRadius:14, background:btn.grad?'rgba(255,255,255,0.15)':'rgba(255,255,255,0.06)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22 }}>{btn.icon}</div>
         <div>
           <div style={{ fontWeight:700, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{btn.label}</div>
@@ -6248,14 +6248,15 @@ setStep('otp');
   if(step==='method') return (
     <div style={{ height:'100%', display:'flex', flexDirection:'column', background:'#0B0B0F', overflow:'auto' }}>
       <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'40px 24px 20px', position:'relative' }}>
-        <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse at 50% 30%,rgba(255,45,85,0.2),rgba(175,82,222,0.1),transparent 65%)' }} />
+        <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse at 50% 30%,rgba(255,177,0,0.2),rgba(0,230,180,0.08),transparent 65%)' }} />
         <div style={{ position:'relative', textAlign:'center', marginBottom:40 }}>
-          <img src="https://res.cloudinary.com/dotvhzjmc/image/upload/znfksngv27boh3c1kxpv.png" style={{ width:80, height:80, borderRadius:24, objectFit:'cover', margin:'0 auto 20px', display:'block', boxShadow:'0 20px 60px rgba(255,45,85,0.4)' }} />
-          <p style={{ color:'rgba(255,255,255,0.4)', fontSize:14, marginTop:10 }}>{isLogin?'Welcome back! 👋':'Join the community 🎉'}</p>
+          <img src="https://res.cloudinary.com/dotvhzjmc/image/upload/znfksngv27boh3c1kxpv.png" style={{ width:80, height:80, borderRadius:24, objectFit:'cover', margin:'0 auto 12px', display:'block', boxShadow:'0 20px 60px rgba(255,177,0,0.35)' }} />
+          <div style={{ color:'white', fontWeight:900, fontSize:28, letterSpacing:-0.5, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Dagu</div>
+          <p style={{ color:'rgba(255,255,255,0.4)', fontSize:13, marginTop:6 }}>{isLogin?'Welcome back 👋':'Create. Generate. Grow. 🚀'}</p>
         </div>
         <div style={{ position:'relative', width:'100%', maxWidth:340 }}>
           <div style={{ color:'rgba(255,255,255,0.3)', fontSize:11, marginBottom:14, textAlign:'center', fontWeight:700, textTransform:'uppercase', letterSpacing:1 }}>{isLogin?'Sign in with':'Sign up with'}</div>
-          {error && error.trim().length > 1 && <div style={{background:'rgba(255,45,85,0.1)',border:'1px solid rgba(255,45,85,0.3)',borderRadius:12,padding:'10px 14px',color:'#FF2156',fontSize:12,marginBottom:12,textAlign:'center'}}>{error}</div>}
+          {error && error.trim().length > 1 && <div style={{background:'rgba(255,177,0,0.1)',border:'1px solid rgba(255,177,0,0.3)',borderRadius:12,padding:'10px 14px',color:'#FFB100',fontSize:12,marginBottom:12,textAlign:'center'}}>{error}</div>}
           <div style={{ display:'flex', flexWrap:'wrap', gap:8, justifyContent:'center', marginBottom:24 }}>
             {LOGIN_METHODS.map(m=>(
               <button key={m.id} onClick={()=>handleMethodSelect(m)} disabled={loading} style={{ display:'inline-flex', alignItems:'center', gap:6, background:'rgba(255,255,255,0.05)', border:`1px solid rgba(255,255,255,0.1)`, borderRadius:30, padding:'8px 16px', cursor:'pointer', fontSize:13, color:'rgba(255,255,255,0.8)', transition:'all 0.15s', opacity:loading?0.5:1 }}>
@@ -6264,7 +6265,7 @@ setStep('otp');
             ))}
           </div>
           {loading && <div style={{textAlign:'center',color:'rgba(255,255,255,0.5)',fontSize:13,marginBottom:12}}>⏳ Signing in...</div>}
-          <button onClick={()=>setIsLogin(!isLogin)} style={{ width:'100%', background:'none', border:'none', color:'#FF2156', fontSize:14, cursor:'pointer', fontWeight:600 }}>
+          <button onClick={()=>setIsLogin(!isLogin)} style={{ width:'100%', background:'none', border:'none', color:'#FFB100', fontSize:14, cursor:'pointer', fontWeight:600 }}>
             {isLogin?"Don't have an account? Sign up →":"Already have an account? Sign in →"}
           </button>
           {isLogin && (
@@ -7048,11 +7049,11 @@ const handleMessage = uid => {
               <div style={{ position:'relative' }}>
                 <TabIcon id={tab.id} active={isActive} currentUser={currentUser} />
                 {isActive && tab.id!=='create' && (
-                  <div style={{ position:'absolute', bottom:-6, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#FF2156', animation:'bounceIn 0.3s ease' }} />
+                  <div style={{ position:'absolute', bottom:-6, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#FFB100', animation:'bounceIn 0.3s ease' }} />
                 )}
               </div>
               {tab.id !== 'create' && (
-                <span style={{ fontSize:9, color:isActive?'#FF2156':'rgba(255,255,255,0.28)', fontWeight:isActive?800:400, transition:'color 0.2s', letterSpacing:0.3 }}>
+                <span style={{ fontSize:9, color:isActive?'#FFB100':'rgba(255,255,255,0.28)', fontWeight:isActive?800:400, transition:'color 0.2s', letterSpacing:0.3 }}>
                   {tabLabels[tab.id]}
                 </span>
               )}
