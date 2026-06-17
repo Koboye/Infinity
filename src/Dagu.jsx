@@ -267,30 +267,113 @@ const BookmarkButton = ({ videoId, currentUser, showToast }) => {
   );
 };
 
-/* ─────────────── SHARE SHEET (v4 — like TikTok/WhatsApp share) ─────────────── */
+/* ─────────────── SHARE SHEET ─────────────── */
+/* One unified share sheet used everywhere in the app (video action rail + feed share button).
+   Deliberately NOT a TikTok-style horizontal row of solid brand-color circles —
+   instead: a gradient-framed preview card, pill-shaped quick actions, and a
+   soft tinted-squircle app grid that matches Dagu's own dark/gradient design language. */
 const ShareSheet = ({ video, currentUser, onClose, showToast }) => {
-  const shareUrl = `https://infinity-now.vercel.app/video/${video?.id}`;
-  const options = [
-    { icon: '📋', label: 'Copy Link', action: async () => { try { await navigator.clipboard.writeText(shareUrl); showToast?.('Link copied!', 'success'); } catch { showToast?.('Copy failed', 'error'); } onClose(); } },
-    { icon: '📲', label: 'Share', action: async () => { try { await navigator.share({ title: `@${video?.username} on Infinity`, text: video?.description, url: shareUrl }); } catch {} onClose(); } },
-    { icon: '💬', label: 'Send in Chat', action: () => { showToast?.('Open Messages tab to share', 'info'); onClose(); } },
-    { icon: '📸', label: 'Add to Story', action: () => { showToast?.('Open Create to add to story', 'info'); onClose(); } },
-    { icon: '🔗', label: 'WhatsApp', action: () => { window.open(`https://wa.me/?text=${encodeURIComponent(video?.description + ' ' + shareUrl)}`); onClose(); } },
-    { icon: '✈️', label: 'Telegram', action: () => { window.open(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(video?.description||'')}`); onClose(); } },
-    { icon: '🐦', label: 'X (Twitter)', action: () => { window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent((video?.description||'') + ' ' + shareUrl)}`); onClose(); } },
+  const shareUrl = `https://infinity-now.vercel.app/video/${video?.id || ''}`;
+  const shareText = `@${video?.username || 'someone'}: ${video?.description || 'Check this out on Dagu!'}`;
+
+  const trackShare = () => { if (video?.id) updateDoc(doc(db, 'videos', video.id), { shares: increment(1) }).catch(() => {}); };
+
+  const copyLink = async () => {
+    try { await navigator.clipboard.writeText(shareUrl); showToast?.('Link copied!', 'success'); }
+    catch { showToast?.('Copied!', 'success'); }
+    trackShare(); onClose();
+  };
+
+  const nativeShare = async () => {
+    if (navigator.share) {
+      try { await navigator.share({ title: 'Dagu', text: shareText, url: shareUrl }); trackShare(); onClose(); return; }
+      catch (e) { if (e.name === 'AbortError') { onClose(); return; } }
+    }
+    copyLink();
+  };
+
+  const quickActions = [
+    { icon: '📤', label: 'Share via…', fn: nativeShare },
+    { icon: '💬', label: 'Send in chat', fn: () => { showToast?.('Open Messages to send', 'info'); onClose(); } },
+    { icon: '➕', label: 'Add to story', fn: () => { showToast?.('Open Create to add to story', 'info'); onClose(); } },
+    { icon: '🔖', label: 'Save', fn: () => { showToast?.('Saved to collection ✨', 'success'); onClose(); } },
   ];
+
+  const apps = [
+    { name: 'WhatsApp', emoji: '💬', color: '#25D366', fn: () => { window.open(`https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`); trackShare(); onClose(); } },
+    { name: 'Telegram', emoji: '✈️', color: '#26A5E4', fn: () => { window.open(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`); trackShare(); onClose(); } },
+    { name: 'X', emoji: '𝕏', color: '#FFFFFF', fn: () => { window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`); trackShare(); onClose(); } },
+    { name: 'Facebook', emoji: 'f', color: '#1877F2', fn: () => { window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`); trackShare(); onClose(); } },
+    { name: 'Instagram', emoji: '📸', color: '#E1306C', fn: () => { copyLink(); showToast?.('Link copied — paste in Instagram!', 'info'); } },
+    { name: 'TikTok', emoji: '🎵', color: '#FFFFFF', fn: () => { copyLink(); showToast?.('Link copied — paste in TikTok!', 'info'); } },
+    { name: 'Copy Link', emoji: '🔗', color: '#9D4EDD', fn: copyLink },
+    { name: 'More', emoji: '⋯', color: '#5A5A66', fn: nativeShare },
+  ];
+
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 5000, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-end' }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ width: '100%', background: '#15151C', borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: '20px 16px max(34px, env(safe-area-inset-bottom))', border: '1px solid rgba(255,255,255,0.07)' }}>
-        <div style={{ width: 36, height: 4, background: 'rgba(255,255,255,0.15)', borderRadius: 2, margin: '0 auto 20px' }} />
-        <div style={{ color: 'white', fontWeight: 800, fontSize: 17, marginBottom: 18 }}>Share</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 16 }}>
-          {options.map(opt => (
-            <button key={opt.label} onClick={opt.action} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 18, padding: '14px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7, cursor: 'pointer' }}>
-              <span style={{ fontSize: 26 }}>{opt.icon}</span>
-              <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 10, fontWeight: 600, textAlign: 'center' }}>{opt.label}</span>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 5000, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(2px)', display: 'flex', alignItems: 'flex-end' }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 430, margin: '0 auto', background: '#15151C', borderTopLeftRadius: 28, borderTopRightRadius: 28, border: '1px solid rgba(255,255,255,0.07)', boxShadow: '0 -20px 60px rgba(0,0,0,0.5)', maxHeight: '85vh', overflowY: 'auto', paddingBottom: 'max(20px, env(safe-area-inset-bottom))', animation: 'slideUp 0.3s cubic-bezier(0.32,0.72,0,1)' }}>
+
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}>
+          <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.15)' }} />
+        </div>
+
+        <div style={{ padding: '8px 20px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ color: 'white', fontWeight: 800, fontSize: 18 }}>Share</div>
+            <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, marginTop: 2 }}>Send this post anywhere</div>
+          </div>
+          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.08)', border: 'none', color: 'white', fontSize: 14, cursor: 'pointer', flexShrink: 0 }}>✕</button>
+        </div>
+
+        <div style={{ margin: '0 20px 18px', padding: 1.5, borderRadius: 18, background: 'linear-gradient(135deg,#FF2156,#9D4EDD)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#1C1C24', borderRadius: 16.5, padding: 12 }}>
+            <div style={{ width: 48, height: 64, borderRadius: 10, overflow: 'hidden', background: '#24242E', flexShrink: 0 }}>
+              {video?.videoUrl?.match(/\.(jpg|jpeg|png|gif|webp)/i)
+                ? <img src={video.videoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                : <video src={video?.videoUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} muted />
+              }
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ color: 'white', fontSize: 13, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{video?.username || 'user'}</div>
+              <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 11.5, marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{video?.description || 'Check this out'}</div>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: 10, padding: '0 20px 20px', overflowX: 'auto' }}>
+          {quickActions.map(a => (
+            <button key={a.label} onClick={a.fn} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 18, padding: '14px 18px', cursor: 'pointer', flexShrink: 0, minWidth: 78 }}>
+              <span style={{ fontSize: 22 }}>{a.icon}</span>
+              <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: 10.5, fontWeight: 600, whiteSpace: 'nowrap' }}>{a.label}</span>
             </button>
           ))}
+        </div>
+
+        <div style={{ padding: '0 20px 10px', color: 'rgba(255,255,255,0.35)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.6 }}>Share to</div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, padding: '0 20px 20px' }}>
+          {apps.map(app => (
+            <button key={app.name} onClick={app.fn} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7, background: 'none', border: 'none', cursor: 'pointer' }}>
+              <div style={{ width: 52, height: 52, borderRadius: 16, background: `${app.color}1A`, border: `1px solid ${app.color}33`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, color: app.color, fontWeight: 800 }}>
+                {app.emoji}
+              </div>
+              <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: 10, fontWeight: 600, textAlign: 'center' }}>{app.name}</span>
+            </button>
+          ))}
+        </div>
+
+        <div style={{ margin: '4px 20px 4px', background: '#1C1C24', borderRadius: 14, display: 'flex', alignItems: 'center', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.07)' }}>
+          <div style={{ padding: '0 6px 0 14px', flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2">
+              <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
+              <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
+            </svg>
+          </div>
+          <span style={{ flex: 1, color: 'rgba(255,255,255,0.35)', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '14px 8px' }}>{shareUrl}</span>
+          <button onClick={copyLink} style={{ background: 'linear-gradient(135deg,#FF2156,#9D4EDD)', border: 'none', padding: '14px 20px', color: 'white', fontWeight: 700, fontSize: 13, cursor: 'pointer', flexShrink: 0, height: '100%' }}>
+            Copy
+          </button>
         </div>
       </div>
     </div>
@@ -1245,125 +1328,6 @@ const Toast = ({ message, type, onClose }) => {
     <div style={{ position:'fixed', bottom:110, left:'50%', transform:'translateX(-50%)', zIndex:9999, animation:'slideUp 0.3s ease', display:'flex', alignItems:'center', gap:10, background:'rgba(15,15,15,0.95)', backdropFilter:'blur(20px)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:40, padding:'10px 18px 10px 10px', boxShadow:'0 8px 32px rgba(0,0,0,0.5)', whiteSpace:'nowrap' }}>
       <div style={{ width:26, height:26, borderRadius:'50%', background:c.bg, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:800, fontSize:13, flexShrink:0 }}>{c.icon}</div>
       <span style={{ color:'white', fontSize:13, fontWeight:500, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{message}</span>
-    </div>
-  );
-};
-
-/* ─────────────── SHARE MODAL ─────────────── */
-const ShareModal = ({ video, onClose, showToast }) => {
-  const url = `https://infinity-now.vercel.app`;
-  const shareText = `@${video?.username}: ${video?.description || 'Check this out on Infinity!'}`;
-
-  const copyLink = () => {
-    navigator.clipboard.writeText(url)
-      .then(() => showToast?.('Link copied!', 'success'))
-      .catch(() => showToast?.('Copied!', 'success'));
-    updateDoc(doc(db, 'videos', video.id), { shares: increment(1) }).catch(() => {});
-    onClose();
-  };
-
-  const nativeShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: 'Infinity', text: shareText, url });
-        updateDoc(doc(db, 'videos', video.id), { shares: increment(1) }).catch(() => {});
-        onClose();
-        return;
-      } catch (e) {
-        if (e.name === 'AbortError') { onClose(); return; }
-      }
-    }
-    copyLink();
-  };
-
-  const shareApps = [
-    { name: 'More', emoji: '⬆️', color: '#5A5A66', fn: nativeShare },
-    { name: 'WhatsApp', emoji: '💬', color: '#25D366', fn: () => { window.open(`https://wa.me/?text=${encodeURIComponent(shareText + ' ' + url)}`); updateDoc(doc(db, 'videos', video.id), { shares: increment(1) }).catch(() => {}); onClose(); } },
-    { name: 'Telegram', emoji: '✈️', color: '#26A5E4', fn: () => { window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(shareText)}`); onClose(); } },
-    { name: 'X (Twitter)', emoji: '𝕏', color: '#000', fn: () => { window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(url)}`); onClose(); } },
-    { name: 'Facebook', emoji: 'f', color: '#1877F2', fn: () => { window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`); onClose(); } },
-    { name: 'Instagram', emoji: '📸', color: '#E1306C', fn: () => { copyLink(); showToast?.('Link copied — paste in Instagram!', 'info'); } },
-    { name: 'TikTok', emoji: '🎵', color: '#010101', fn: () => { copyLink(); showToast?.('Link copied — paste in TikTok!', 'info'); } },
-    { name: 'Copy Link', emoji: '🔗', color: '#34343E', fn: copyLink },
-  ];
-
-  return (
-    <div
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 4000, display: 'flex', alignItems: 'flex-end' }}
-      onClick={onClose}
-    >
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{ width: '100%', background: '#1C1C24', borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 36, animation: 'slideUp 0.3s ease' }}
-      >
-        {/* Handle bar */}
-        <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 12, paddingBottom: 8 }}>
-          <div style={{ width: 40, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.2)' }} />
-        </div>
-
-        {/* Header */}
-        <div style={{ padding: '4px 20px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ color: 'white', fontWeight: 700, fontSize: 16, fontFamily: "'Inter',sans-serif" }}>Share to</span>
-          <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '50%', width: 30, height: 30, color: 'white', cursor: 'pointer', fontSize: 14 }}>✕</button>
-        </div>
-
-        {/* Video preview strip */}
-        <div style={{ padding: '0 20px 16px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-          <div style={{ width: 52, height: 72, borderRadius: 10, overflow: 'hidden', background: '#34343E', flexShrink: 0 }}>
-            {video?.videoUrl?.match(/\.(jpg|jpeg|png|gif|webp)/i)
-              ? <img src={video.videoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              : <video src={video?.videoUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} muted />
-            }
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ color: 'white', fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{video?.username}</div>
-            <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12, marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{video?.description}</div>
-          </div>
-        </div>
-
-        {/* App icons — scrollable row */}
-        <div style={{ overflowX: 'auto', display: 'flex', gap: 0, padding: '18px 16px 8px', position: 'relative' }}>
-          <div style={{
-  position:'absolute', top:0, right:0, bottom:0, width:32,
-  background:'linear-gradient(to right, transparent, #1C1C24)',
-  pointerEvents:'none', borderRadius:'0 0 0 0'
-}} />
-          {shareApps.map(app => (
-            <button
-              key={app.name}
-              onClick={app.fn}
-              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0, padding: '0 10px' }}
-            >
-              <div style={{
-                width: 56, height: 56, borderRadius: 16,
-                background: app.color === '#000' || app.color === '#010101' ? '#1C1C24' : app.color + '22',
-                border: `1.5px solid ${app.color}55`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: app.name === 'X (Twitter)' || app.name === 'Facebook' ? 20 : 26,
-                color: app.color === '#000' || app.color === '#010101' ? '#fff' : app.color,
-                fontWeight: 900,
-              }}>
-                {app.emoji}
-              </div>
-              <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 10, textAlign: 'center', maxWidth: 60 }}>{app.name}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Copy link bar */}
-        <div style={{ margin: '12px 16px 0', background: '#24242E', borderRadius: 14, display: 'flex', alignItems: 'center', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.06)' }}>
-          <div style={{ padding: '6px 8px 6px 14px', flexShrink: 0 }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2">
-              <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
-              <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
-            </svg>
-          </div>
-          <span style={{ flex: 1, color: 'rgba(255,255,255,0.3)', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: 8 }}>{url}</span>
-          <button onClick={copyLink} style={{ background: '#FF2156', border: 'none', padding: '14px 20px', color: 'white', fontWeight: 700, fontSize: 13, cursor: 'pointer', flexShrink: 0 }}>
-            Copy
-          </button>
-        </div>
-      </div>
     </div>
   );
 };
@@ -2703,7 +2667,7 @@ const handleLongPressStart = () => {
         </div>
   </>
       )}
-      {showShare && <ShareModal video={video} onClose={()=>setShowShare(false)} showToast={showToast} />}
+      {showShare && <ShareSheet video={video} currentUser={currentUser} onClose={()=>setShowShare(false)} showToast={showToast} />}
     </div>
   );
 });
