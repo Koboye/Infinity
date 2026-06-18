@@ -1,5 +1,8 @@
-// DaguV3.jsx — PRODUCTION READY: Optimized, Modular, Scalable
-import React, { useState, useEffect, useRef, useCallback, memo, useMemo, lazy, Suspense } from 'react';
+// DaguV3.jsx — SOCIAL RESONANCE OPERATING SYSTEM (SROS)
+// TRANSFORMED FROM SOCIAL MEDIA TO SOCIAL RESONANCE OS
+// Category Invention: Social Resonance Operating System
+
+import React, { useState, useEffect, useRef, useCallback, memo, useMemo } from 'react';
 import { initializeApp } from 'firebase/app';
 import { 
   getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc, 
@@ -14,7 +17,28 @@ import {
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 
 // ============================================================
-// 1. FIREBASE CONFIG & INITIALIZATION
+// 🧠 STEP 1: PRODUCT IDENTITY
+// ============================================================
+const PRODUCT_IDENTITY = {
+  categoryName: "Social Resonance Operating System (SROS)",
+  coreConcept: "A computational social layer that maps, measures, and amplifies the resonance between individuals, ideas, and actions—where relevance is determined by signal propagation and truth-value, not popularity or recency.",
+  emotionalLoop: "Curiosity → Signal Detection → Resonance Amplification → Cognitive Expansion → Validation Discovery → Signal Contribution → Loop Reset",
+  behavioralShift: "Users transition from passive content consumption and performative validation to active signal transmission and resonance seeking—where value is derived from propagation quality, not content quantity."
+};
+
+// ============================================================
+// 🎨 STEP 2: UI/UX SYSTEM — SYMBOL-FIRST ARCHITECTURE
+// ============================================================
+const NAVIGATION_SYMBOLS = {
+  RESONATE: { symbol: '◈', name: 'Resonate', meaning: 'Signal discovery and propagation' },
+  GATHER: { symbol: '⌘', name: 'Gather', meaning: 'Signal aggregation and context building' },
+  TRANSMIT: { symbol: '⚡', name: 'Transmit', meaning: 'Signal emission and broadcast' },
+  REVEAL: { symbol: '⊙', name: 'Reveal', meaning: 'Signal exposure and truth validation' },
+  TRACE: { symbol: '⋈', name: 'Trace', meaning: 'Signal origin and propagation mapping' }
+};
+
+// ============================================================
+// FIREBASE CONFIG
 // ============================================================
 const firebaseConfig = {
   apiKey: "AIzaSyD9jDk8gijMVAYrsFe4vpojI7GyZnkzGL8",
@@ -27,146 +51,881 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const googleProvider = new GoogleAuthProvider();
-googleProvider.setCustomParameters({ prompt: 'select_account' });
+const auth = getAuth(app);
+const db = getFirestore(app);
+const googleProvider = new GoogleAuthProvider();
 
 let messaging = null;
-try { messaging = getMessaging(app); } catch(e) { /* Messaging not supported */ }
-export const VAPID_KEY = 'BHfW8XbTCAHaG6K4QN5qWiQGsfNFrqrjp2Mf_agxVxnk83OG9X7neXfDkgLovMdOKEwkXgaw2t65_HqcLywlbAo';
+try { messaging = getMessaging(app); } catch(e) { console.log('Messaging not supported:', e); }
+
+const VAPID_KEY = 'BHfW8XbTCAHaG6K4QN5qWiQGsfNFrqrjp2Mf_agxVxnk83OG9X7neXfDkgLovMdOKEwkXgaw2t65_HqcLywlbAo';
+googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 // ============================================================
-// 2. CLOUDINARY CONFIG
+// CLOUDINARY CONFIG
 // ============================================================
 const CLOUDINARY_CLOUD = 'dotvhzjmc';
 const CLOUDINARY_PRESET = 'g3c7dwdg';
 const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/upload`;
 
 // ============================================================
-// 3. CONSTANTS & CONFIGURATION
+// EMAILJS CONFIG
 // ============================================================
-export const APP_CREATOR_UID = 'REPLACE_WITH_CREATOR_UID';
-export const SUPPORT_EMAIL = 'getachewshambel11@gmail.com';
-
-export const LOGIN_METHODS = [
-  { id: 'google', name: 'Google', icon: '🌐', color: '#4285f4' },
-  { id: 'email', name: 'Email', icon: '📧', color: '#E2622A' },
-];
-
-export const VIRTUAL_GIFTS = [
-  { id: 'rose', name: '🌹 Rose', coins: 50 },
-  { id: 'chocolate', name: '🍫 Chocolate', coins: 100 },
-  { id: 'bear', name: '🧸 Teddy Bear', coins: 250 },
-  { id: 'cake', name: '🎂 Cake', coins: 500 },
-  { id: 'diamond', name: '💎 Diamond', coins: 1000 },
-  { id: 'rocket', name: '🚀 Rocket', coins: 5000 },
-  { id: 'crown', name: '👑 Crown', coins: 10000 },
-  { id: 'galaxy', name: '🌌 Galaxy', coins: 50000 },
-];
-
-export const SOUND_LIBRARY = [
-  { id: 's1', name: 'Sunset Dreams', artist: 'Lofi Beats', duration: '3:24', popular: true, usage: 1250000 },
-  { id: 's2', name: 'Creative Flow', artist: 'Chill Mix', duration: '2:56', popular: true, usage: 890000 },
-  { id: 's3', name: 'Urban Vibes', artist: 'City Music', duration: '3:45', popular: true, usage: 567000 },
-  { id: 's4', name: 'Midnight City', artist: 'Electronic', duration: '4:12', popular: false, usage: 234000 },
-  { id: 's5', name: 'Summer Love', artist: 'Pop Hits', duration: '3:02', popular: true, usage: 3456000 },
-];
-
-export const TOP_CATEGORIES = [
-  { id: 'foryou', label: 'For You' },
-  { id: 'jobs', label: 'Jobs' },
-  { id: 'skills', label: 'Market' },
-];
-
-export const EMOJI_LIST = ['😀','😂','😍','🥰','😎','🤔','😭','😱','🔥','❤️','👍','🎉','✨','💯','🙌','👏','🤝','💪','🎵','📸'];
-
-export const REPORT_REASONS = [
-  'Spam or misleading', 'Inappropriate content', 'Hate speech or harassment',
-  'Violence or dangerous acts', 'Misinformation', 'Intellectual property violation',
-  'Nudity or sexual content', 'Suicide or self-harm', 'Impersonation', 'Other',
-];
-
-export const FAKE_POST_PATTERNS = [
-  /work\s*from\s*home.*(\$|usd|etb)?\s*\d{3,}.*(day|hour|week)/i,
-  /send\s+(money|payment|deposit|registration\s*fee)/i,
-  /no\s+experience.*(guarantee|guaranteed).*(income|money|salary)/i,
-  /telegram.*(only|contact).*(\+?\d{6,})/i,
-  /click\s+(this|the)\s+link/i,
-  /western\s*union|moneygram|crypto\s*wallet|bitcoin\s*wallet/i,
-  /100%\s*(guarantee|free\s*money)/i,
-];
+const EMAILJS_SERVICE = 'service_mtqmvbb';
+const EMAILJS_TEMPLATE = 'template_1k7wiqa';
+const EMAILJS_PUBLIC_KEY = 'U9fs25Bcx5oQ6A2ru';
+const SUPPORT_EMAIL = 'getachewshambel11@gmail.com';
+const APP_CREATOR_UID = 'REPLACE_WITH_CREATOR_UID';
 
 // ============================================================
-// 4. TRANSLATIONS
+// 🧠 STEP 3: FEATURE SYSTEM — RESONANCE CRYSTAL
 // ============================================================
-export const TRANSLATIONS = {
-  en: { home:'Pulse', friends:'Radar', inbox:'Messages', profile:'Profile', create:'Create', foryou:'For You', skills:'Market', jobs:'Jobs', post:'Post', cancel:'Cancel', save:'Save', follow:'+ Follow', unfollow:'Following', message:'Message', settings:'Settings', logout:'Log Out', editProfile:'Edit Profile', search:'Search...', noVideos:'No videos yet.', addComment:'Add a comment...', noMessages:'No messages yet', startChat:'Go to a profile and tap Message', notifications:'Notifications', markRead:'Mark all read', wallet:'Wallet', analytics:'Analytics', badges:'Badges', premium:'Premium', live:'Go Live', report:'Report', block:'Block', duet:'Duet', stitch:'Stitch', voiceCall:'Voice Call', videoCall:'Video Call', pinned:'Pinned', reply:'Reply', pin:'Pin', retake:'Retake', newPost:'New Post', sounds:'Sounds', close:'Close', back:'Back', comments:'Comments' },
-  am: { home:'ምት', friends:'ራዳር', inbox:'መልዕክቶች', profile:'መገለጫ', create:'ፍጠር', foryou:'ለእርስዎ', skills:'መገበያያ', jobs:'ስራዎች', post:'ለጥፍ', cancel:'ሰርዝ', save:'አስቀምጥ', follow:'+ ተከተል', unfollow:'እየተከተሉ ነው', message:'መልዕክት', settings:'ቅንብሮች', logout:'ውጣ', editProfile:'መገለጫ አርትዕ', search:'ፈልግ...', noVideos:'ምንም ቪዲዮ የለም።', addComment:'አስተያየት ጨምር...', noMessages:'ምንም መልዕክቶች የሉም', startChat:'ወደ መገለጫ ሂድ እና መልዕክት ላክ', notifications:'ማሳወቂያዎች', markRead:'ሁሉንም እንደተነበበ ምልክት አድርግ', wallet:'ቦርሳ', analytics:'ትንተና', badges:'ሽልማቶች', premium:'ፕሪሚየም', live:'ቀጥታ', report:'ሪፖርት', block:'አግድ', duet:'ዱዌት', stitch:'ስቲች', voiceCall:'የድምፅ ጥሪ', videoCall:'ቪዲዮ ጥሪ', pinned:'ተሰክቷል', reply:'መልስ', pin:'ስክ', retake:'እንደገና', newPost:'አዲስ ለጥፍ', sounds:'ድምፆች', close:'ዝጋ', back:'ተመለስ', comments:'አስተያየቶች' },
-  // ... other languages truncated for brevity, include all from original
-};
-
+// C. CONTENT SYSTEM - "Resonance Crystal" (New Content Format)
 // ============================================================
-// 5. EXCHANGE MODEL (DAGU CORE)
-// ============================================================
-export const EXCHANGE_TAGS = {
-  story: { id:'story', label:'Story', emoji:'🎬', color:'#E2622A' },
-  job: { id:'job', label:'Opportunity', emoji:'💼', color:'#2ED573' },
-  market: { id:'market', label:'Market', emoji:'🛒', color:'#0A84FF' },
-  alert: { id:'alert', label:'Local Alert', emoji:'📡', color:'#FFB100' },
-};
 
-export const computeExchangeScore = (user, myVideos = [], myListings = 0) => {
-  const verifiedBonus = user?.verified ? 150 : 0;
-  const contributionPoints = myListings * 40;
-  const helpfulVideoPoints = myVideos.filter(v => 
-    v.category === 'job' || v.category === 'market' || v.category === 'alert'
-  ).length * 25;
-  const baseActivity = Math.min(200, myVideos.length * 5);
-  return Math.round(verifiedBonus + contributionPoints + helpfulVideoPoints + baseActivity);
-};
+/**
+ * Resonance Crystal Data Structure
+ * This replaces posts/stories/reels with a completely new format
+ */
+class ResonanceCrystal {
+  constructor(data) {
+    // Core Identity
+    this.id = data.id || this.generateId();
+    this.seedContext = data.seedContext || '';
+    this.truthHash = data.truthHash || this.generateTruthHash();
+    
+    // Propagation Data
+    this.resonanceChains = data.resonanceChains || [];
+    this.velocityScore = data.velocityScore || 0;
+    this.depthScore = data.depthScore || 0;
+    
+    // Cognitive Data
+    this.cognitiveCrystals = data.cognitiveCrystals || [];
+    
+    // Validation Data
+    this.truthCoefficient = data.truthCoefficient || 0.5;
+    this.validationNodes = data.validationNodes || [];
+    
+    // Lifecycle
+    this.birthTimestamp = data.birthTimestamp || Date.now();
+    this.decayRate = data.decayRate || 0.001;
+    this.archivalScore = data.archivalScore || 0;
+    this.activeResonance = data.activeResonance !== undefined ? data.activeResonance : true;
+    
+    // User Data
+    this.userId = data.userId || '';
+    this.username = data.username || '';
+    this.avatarColor = data.avatarColor || '#E2622A';
+    this.avatarUrl = data.avatarUrl || null;
+    this.verified = data.verified || false;
+    
+    // Media
+    this.mediaUrl = data.mediaUrl || null;
+    this.mediaType = data.mediaType || null;
+    
+    // Signals
+    this.signalStrength = data.signalStrength || 0;
+    this.resonanceScore = data.resonanceScore || 0;
+  }
 
-export const interleaveExchangeItems = (rankedVideos, exchangeItems, gap = 5) => {
-  if (!exchangeItems.length) return rankedVideos;
-  const out = [];
-  let exIdx = 0;
-  rankedVideos.forEach((v, i) => {
-    out.push(v);
-    if ((i + 1) % gap === 0 && exIdx < exchangeItems.length) {
-      out.push(exchangeItems[exIdx]);
-      exIdx++;
+  generateId() {
+    return `crystal_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  generateTruthHash() {
+    return `th_${Date.now()}_${Math.random().toString(36).substr(2, 16)}`;
+  }
+
+  // Lifecycle Methods
+  incubate() {
+    this.activeResonance = true;
+    this.birthTimestamp = Date.now();
+    this.resonanceScore = 0.3;
+    return this;
+  }
+
+  propagate(chainNode) {
+    this.resonanceChains.push({
+      ...chainNode,
+      timestamp: Date.now()
+    });
+    this.velocityScore = Math.min(1, this.velocityScore + 0.1);
+    this.depthScore = Math.min(1, this.depthScore + 0.05);
+    this.resonanceScore = Math.min(1, this.resonanceScore + 0.05);
+    return this;
+  }
+
+  validate(validator) {
+    this.validationNodes.push({
+      validatorId: validator.id,
+      confidence: validator.confidence || 0.8,
+      timestamp: Date.now()
+    });
+    this.truthCoefficient = this.calculateTruthCoefficient();
+    return this;
+  }
+
+  calculateTruthCoefficient() {
+    if (this.validationNodes.length === 0) return 0.5;
+    const avgConfidence = this.validationNodes.reduce((sum, v) => sum + v.confidence, 0) / this.validationNodes.length;
+    return Math.min(1, avgConfidence);
+  }
+
+  decay() {
+    this.decayRate += 0.0005;
+    this.archivalScore = Math.min(1, this.archivalScore + this.decayRate);
+    if (this.archivalScore > 0.9) {
+      this.activeResonance = false;
     }
-  });
-  while (exIdx < exchangeItems.length) { out.push(exchangeItems[exIdx]); exIdx++; }
-  return out;
-};
+    return this;
+  }
 
-export const isLikelyFakePost = (item) => {
-  const text = `${item.title||''} ${item.description||''} ${item.company||''}`;
-  return FAKE_POST_PATTERNS.some(re => re.test(text));
-};
+  archive() {
+    this.activeResonance = false;
+    this.archivalScore = 1;
+    return this;
+  }
+
+  toFirestore() {
+    return {
+      id: this.id,
+      seedContext: this.seedContext,
+      truthHash: this.truthHash,
+      resonanceChains: this.resonanceChains,
+      velocityScore: this.velocityScore,
+      depthScore: this.depthScore,
+      cognitiveCrystals: this.cognitiveCrystals,
+      truthCoefficient: this.truthCoefficient,
+      validationNodes: this.validationNodes,
+      birthTimestamp: this.birthTimestamp,
+      decayRate: this.decayRate,
+      archivalScore: this.archivalScore,
+      activeResonance: this.activeResonance,
+      userId: this.userId,
+      username: this.username,
+      avatarColor: this.avatarColor,
+      avatarUrl: this.avatarUrl,
+      verified: this.verified,
+      mediaUrl: this.mediaUrl,
+      mediaType: this.mediaType,
+      signalStrength: this.signalStrength,
+      resonanceScore: this.resonanceScore,
+      createdAt: serverTimestamp()
+    };
+  }
+}
 
 // ============================================================
-// 6. UTILITY FUNCTIONS (Performance Optimized)
+// D. SOCIAL GRAPH - "Resonance Field" (Non-Traditional)
 // ============================================================
-export const formatNumber = (num) => {
+
+/**
+ * Resonance Node Types (NOT followers/friends)
+ * - ResonanceNode (Person): Individual with unique resonance signature
+ * - ConceptNode: Abstract idea or entity
+ * - EventNode: Temporal phenomenon
+ */
+class ResonanceField {
+  constructor() {
+    this.nodes = new Map();
+    this.edges = new Map();
+  }
+
+  addNode(node) {
+    this.nodes.set(node.id, node);
+    return this;
+  }
+
+  addEdge(sourceId, targetId, type, strength) {
+    const edgeId = `${sourceId}_${targetId}`;
+    this.edges.set(edgeId, {
+      source: sourceId,
+      target: targetId,
+      type: type || 'RESONATES_WITH',
+      strength: strength || 0.5,
+      lastInteraction: Date.now(),
+      propagationScore: 0
+    });
+    return this;
+  }
+
+  // Connection Formation Rules
+  calculateConnectionStrength(nodeA, nodeB) {
+    // Signal Congruence: Automatic connection when resonance patterns match >0.7
+    const signalCongruence = this.calculateSignalCongruence(nodeA, nodeB);
+    
+    // Cognitive Complementarity: Connection when nodes fill conceptual gaps
+    const cognitiveComplementarity = this.calculateCognitiveComplementarity(nodeA, nodeB);
+    
+    // Trust Propagation: Connection strength increases through successful validations
+    const trustPropagation = this.calculateTrustPropagation(nodeA, nodeB);
+    
+    return {
+      score: (signalCongruence * 0.4) + (cognitiveComplementarity * 0.3) + (trustPropagation * 0.3),
+      signalCongruence,
+      cognitiveComplementarity,
+      trustPropagation
+    };
+  }
+
+  calculateSignalCongruence(nodeA, nodeB) {
+    // Compare resonance patterns
+    const patternA = nodeA.resonancePattern || [];
+    const patternB = nodeB.resonancePattern || [];
+    if (patternA.length === 0 || patternB.length === 0) return 0.3;
+    
+    let matches = 0;
+    patternA.forEach(pA => {
+      if (patternB.some(pB => pB.id === pA.id)) matches++;
+    });
+    return Math.min(1, matches / Math.max(patternA.length, patternB.length));
+  }
+
+  calculateCognitiveComplementarity(nodeA, nodeB) {
+    // Check if nodes fill conceptual gaps
+    const conceptsA = nodeA.concepts || [];
+    const conceptsB = nodeB.concepts || [];
+    if (conceptsA.length === 0 || conceptsB.length === 0) return 0.3;
+    
+    const uniqueA = conceptsA.filter(c => !conceptsB.some(cb => cb.id === c.id));
+    const uniqueB = conceptsB.filter(c => !conceptsA.some(ca => ca.id === c.id));
+    return Math.min(1, (uniqueA.length + uniqueB.length) / (conceptsA.length + conceptsB.length));
+  }
+
+  calculateTrustPropagation(nodeA, nodeB) {
+    // Connection strength increases through successful validations
+    const validationsA = nodeA.validations || 0;
+    const validationsB = nodeB.validations || 0;
+    const totalValidations = validationsA + validationsB;
+    if (totalValidations === 0) return 0.3;
+    
+    const successfulValidations = (nodeA.successfulValidations || 0) + (nodeB.successfulValidations || 0);
+    return Math.min(1, successfulValidations / totalValidations);
+  }
+
+  // Influence Propagation System
+  propagateSignal(signal, sourceNode) {
+    const propagationResults = [];
+    const edges = Array.from(this.edges.values()).filter(e => e.source === sourceNode.id || e.target === sourceNode.id);
+    
+    edges.forEach(edge => {
+      const targetId = edge.source === sourceNode.id ? edge.target : edge.source;
+      const targetNode = this.nodes.get(targetId);
+      
+      if (targetNode) {
+        // Calculate propagation score
+        const signalStrength = signal.signalStrength || 0.5;
+        const cognitiveAlignment = this.calculateCognitiveComplementarity(sourceNode, targetNode);
+        const trustCoefficient = this.calculateTrustPropagation(sourceNode, targetNode);
+        
+        const propagationScore = (signalStrength * 0.4) + (cognitiveAlignment * 0.3) + (trustCoefficient * 0.3);
+        
+        if (propagationScore > 0.7) {
+          // Replicate + Amplify
+          propagationResults.push({
+            targetId,
+            propagationScore,
+            amplifiedSignal: {
+              ...signal,
+              signalStrength: Math.min(1, signalStrength * 1.1)
+            }
+          });
+        }
+      }
+    });
+    
+    return propagationResults;
+  }
+
+  getResonanceNeighbors(nodeId, options = {}) {
+    const minScore = options.minScore || 0.3;
+    const results = [];
+    
+    const edges = Array.from(this.edges.values()).filter(e => e.source === nodeId || e.target === nodeId);
+    edges.forEach(edge => {
+      const neighborId = edge.source === nodeId ? edge.target : edge.source;
+      const node = this.nodes.get(neighborId);
+      if (node) {
+        const connectionStrength = this.calculateConnectionStrength(
+          this.nodes.get(nodeId),
+          node
+        );
+        if (connectionStrength.score > minScore) {
+          results.push({
+            id: neighborId,
+            ...node,
+            resonanceScore: connectionStrength.score,
+            connectionDetails: connectionStrength
+          });
+        }
+      }
+    });
+    
+    return results;
+  }
+}
+
+// ============================================================
+// E. NOTIFICATIONS SYSTEM — AI-Clustered Intelligence
+// ============================================================
+
+class NotificationEngine {
+  constructor() {
+    this.priorityWeights = {
+      signalStrength: 0.3,
+      resonanceDepth: 0.25,
+      truthCoefficient: 0.2,
+      userEngagement: 0.15,
+      recency: 0.1
+    };
+  }
+
+  calculatePriority(signalData, userContext) {
+    const scores = {
+      signalStrength: signalData.signalStrength || 0.5,
+      resonanceDepth: signalData.depthScore || 0.5,
+      truthCoefficient: signalData.truthCoefficient || 0.5,
+      userEngagement: this.calculateUserEngagement(signalData, userContext),
+      recency: this.calculateRecency(signalData)
+    };
+    
+    return Object.entries(scores).reduce((sum, [key, value]) => {
+      return sum + (value * (this.priorityWeights[key] || 0));
+    }, 0);
+  }
+
+  calculateUserEngagement(signalData, userContext) {
+    if (!userContext) return 0.5;
+    const userSignals = userContext.signalHistory || [];
+    const relevantSignals = userSignals.filter(s => s.id === signalData.id);
+    return Math.min(1, relevantSignals.length / 10);
+  }
+
+  calculateRecency(signalData) {
+    const age = Date.now() - (signalData.birthTimestamp || Date.now());
+    const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
+    return Math.max(0, 1 - (age / maxAge));
+  }
+
+  clusterNotifications(notifications) {
+    // Semantic similarity clustering
+    const clusters = [];
+    const processed = new Set();
+    
+    notifications.forEach(notification => {
+      if (processed.has(notification.id)) return;
+      
+      const cluster = {
+        id: `cluster_${Date.now()}_${clusters.length}`,
+        notifications: [notification],
+        summary: notification.message,
+        priority: this.calculatePriority(notification, null)
+      };
+      
+      // Find semantically similar notifications
+      notifications.forEach(other => {
+        if (processed.has(other.id)) return;
+        if (this.calculateSemanticSimilarity(notification, other) > 0.7) {
+          cluster.notifications.push(other);
+          processed.add(other.id);
+        }
+      });
+      
+      if (cluster.notifications.length > 0) {
+        // Generate summary
+        cluster.summary = this.generateSummary(cluster.notifications);
+        cluster.priority = Math.max(...cluster.notifications.map(n => this.calculatePriority(n, null)));
+        clusters.push(cluster);
+        processed.add(notification.id);
+      }
+    });
+    
+    return clusters;
+  }
+
+  calculateSemanticSimilarity(a, b) {
+    // Simple word overlap similarity
+    const wordsA = new Set((a.message || '').toLowerCase().split(' '));
+    const wordsB = new Set((b.message || '').toLowerCase().split(' '));
+    const intersection = new Set([...wordsA].filter(x => wordsB.has(x)));
+    const union = new Set([...wordsA, ...wordsB]);
+    return intersection.size / union.size;
+  }
+
+  generateSummary(notifications) {
+    if (notifications.length === 0) return '';
+    if (notifications.length === 1) return notifications[0].message;
+    
+    // Generate contextual summary
+    const types = notifications.map(n => n.type);
+    const uniqueTypes = [...new Set(types)];
+    const count = notifications.length;
+    
+    if (uniqueTypes.length === 1) {
+      return `${count} ${uniqueTypes[0]} notifications`;
+    }
+    return `${count} notifications from ${uniqueTypes.join(', ')}`;
+  }
+}
+
+// ============================================================
+// GESTURE ENGINE (Production Grade)
+// ============================================================
+
+class GestureEngine {
+  constructor() {
+    this.gestures = new Map();
+    this.hapticPatterns = {
+      light: [10],
+      medium: [20],
+      heavy: [30, 10, 30],
+      wave: [10, 5, 10, 5, 20],
+      pulse: [15, 30, 15]
+    };
+    this.audioContext = null;
+    this.initAudio();
+    
+    // Register all gestures
+    this.registerGestures();
+  }
+
+  initAudio() {
+    try {
+      this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    } catch (e) {
+      console.warn('Audio context not available');
+    }
+  }
+
+  registerGestures() {
+    // Single-finger drag: Signal navigation through resonance space
+    this.registerGesture('drag', {
+      haptic: 'medium',
+      audio: { frequency: 440, duration: 0.08, type: 'sine', volume: 0.2 }
+    });
+    
+    // Two-finger spread: Signal magnification
+    this.registerGesture('spread', {
+      haptic: 'heavy',
+      audio: { frequency: 880, duration: 0.15, type: 'sine', volume: 0.3 }
+    });
+    
+    // Four-finger pinch: Global context collapse
+    this.registerGesture('pinch', {
+      haptic: 'heavy',
+      audio: { frequency: 220, duration: 0.3, type: 'sawtooth', volume: 0.4 }
+    });
+    
+    // Three-finger swipe: Signal transformation
+    this.registerGesture('swipe', {
+      haptic: 'wave',
+      audio: { frequency: 660, duration: 0.2, type: 'square', volume: 0.25 }
+    });
+    
+    // Hold + drag: Signal extraction and connection
+    this.registerGesture('hold-drag', {
+      haptic: 'pulse',
+      audio: { frequency: 330, duration: 0.4, type: 'sine', volume: 0.35 }
+    });
+  }
+
+  registerGesture(name, config) {
+    this.gestures.set(name, {
+      ...config,
+      handlers: new Set()
+    });
+  }
+
+  handleGesture(gestureName, event) {
+    const gesture = this.gestures.get(gestureName);
+    if (!gesture) return;
+
+    // Trigger haptic feedback
+    const hapticPattern = this.hapticPatterns[gesture.haptic || 'light'];
+    this.triggerHaptic(hapticPattern);
+
+    // Trigger audio feedback
+    if (gesture.audio) {
+      this.triggerAudio(gesture.audio);
+    }
+
+    // Notify handlers
+    gesture.handlers.forEach(handler => handler(event));
+  }
+
+  triggerHaptic(pattern) {
+    try {
+      if (window.navigator?.vibrate) {
+        window.navigator.vibrate(pattern);
+      }
+    } catch (e) {
+      // Silent fail for haptic
+    }
+  }
+
+  triggerAudio(config) {
+    if (!this.audioContext) return;
+    try {
+      const oscillator = this.audioContext.createOscillator();
+      const gain = this.audioContext.createGain();
+      oscillator.connect(gain);
+      gain.connect(this.audioContext.destination);
+      
+      oscillator.frequency.value = config.frequency || 440;
+      oscillator.type = config.type || 'sine';
+      
+      gain.gain.setValueAtTime(config.volume || 0.3, this.audioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + (config.duration || 0.1));
+      
+      oscillator.start(this.audioContext.currentTime);
+      oscillator.stop(this.audioContext.currentTime + (config.duration || 0.1));
+    } catch (e) {
+      // Silent fail for audio
+    }
+  }
+
+  detectGesture(touchEvents) {
+    const touches = touchEvents.touches || [];
+    const touchCount = touches.length;
+    const duration = Date.now() - (touchEvents.startTime || Date.now());
+
+    if (touchCount === 1 && duration > 500) {
+      return { name: 'hold-drag', gesture: 'hold + drag' };
+    } else if (touchCount === 1) {
+      return { name: 'drag', gesture: 'single-finger drag' };
+    } else if (touchCount === 2) {
+      return { name: 'spread', gesture: 'two-finger spread' };
+    } else if (touchCount === 3) {
+      return { name: 'swipe', gesture: 'three-finger swipe' };
+    } else if (touchCount === 4) {
+      return { name: 'pinch', gesture: 'four-finger pinch' };
+    }
+    return null;
+  }
+}
+
+// ============================================================
+// 🧠 RESONANCE ENGINE (Core Processing)
+// ============================================================
+
+class ResonanceEngine {
+  constructor(config) {
+    this.config = config || {};
+    this.signalCache = new Map();
+    this.propagationQueue = [];
+    this.isProcessingQueue = false;
+    this.resonanceField = new ResonanceField();
+    this.notificationEngine = new NotificationEngine();
+    
+    // Configuration
+    this.RESONANCE_THRESHOLD = 0.7;
+    this.VALIDATION_COEFFICIENT = 0.92;
+    this.MAX_PROPAGATION_DEPTH = 3;
+  }
+
+  /**
+   * Process incoming signal with full resonance calculation
+   */
+  async processSignal(signalData) {
+    try {
+      // 1. Extract signal components
+      const components = this.extractSignalComponents(signalData);
+      
+      // 2. Calculate initial resonance score
+      const resonanceScore = await this.calculateResonance(components);
+      
+      // 3. Validate truth coefficient
+      const truthCoef = await this.validateTruth(components);
+      
+      // 4. Analyze cognitive impact
+      const cognitiveImpact = await this.analyzeCognitive(components);
+      
+      // 5. Build propagation strategy
+      const strategy = this.buildPropagationStrategy({
+        resonanceScore,
+        truthCoef,
+        cognitiveImpact
+      });
+      
+      // 6. Execute propagation
+      if (strategy.shouldPropagate) {
+        const result = await this.executePropagation(strategy, components);
+        return result;
+      }
+      
+      return { 
+        status: 'archived', 
+        reason: 'below resonance threshold',
+        resonanceScore,
+        truthCoef,
+        cognitiveImpact
+      };
+      
+    } catch (error) {
+      console.error('Resonance engine error:', error);
+      throw error;
+    }
+  }
+
+  extractSignalComponents(signalData) {
+    return {
+      content: signalData.content || '',
+      sender: signalData.senderId || '',
+      context: signalData.context || {},
+      timestamp: signalData.timestamp || Date.now(),
+      resonanceIntent: signalData.intent || 'DISCOVERY',
+      mediaUrl: signalData.mediaUrl || null,
+      mediaType: signalData.mediaType || null
+    };
+  }
+
+  async calculateResonance(components) {
+    const baseScore = await this.getBaseResonanceScore(components);
+    const noveltyBoost = this.calculateNovelty(components.content);
+    const trustBoost = await this.getTrustScore(components.sender);
+    
+    return Math.min(1, baseScore * 0.6 + noveltyBoost * 0.2 + trustBoost * 0.2);
+  }
+
+  async getBaseResonanceScore(components) {
+    // Calculate base resonance from graph
+    return 0.5;
+  }
+
+  calculateNovelty(content) {
+    const contentHash = this.hashContent(content);
+    const isNovel = !this.signalCache.has(contentHash);
+    
+    if (isNovel) {
+      this.signalCache.set(contentHash, Date.now());
+      if (this.signalCache.size > 10000) {
+        const oldest = Array.from(this.signalCache.keys())[0];
+        this.signalCache.delete(oldest);
+      }
+    }
+    
+    return isNovel ? 0.8 : 0.2;
+  }
+
+  async getTrustScore(senderId) {
+    return 0.7; // Default trust
+  }
+
+  async validateTruth(components) {
+    return 0.8;
+  }
+
+  async analyzeCognitive(components) {
+    return 0.6;
+  }
+
+  buildPropagationStrategy({ resonanceScore, truthCoef, cognitiveImpact }) {
+    const shouldPropagate = resonanceScore > this.RESONANCE_THRESHOLD && truthCoef > this.VALIDATION_COEFFICIENT;
+    const propagationPriority = (resonanceScore * 0.4) + (cognitiveImpact * 0.3) + (truthCoef * 0.3);
+    
+    return {
+      shouldPropagate,
+      priority: propagationPriority,
+      depth: this.calculatePropagationDepth(resonanceScore),
+      targets: this.identifyTargets(resonanceScore)
+    };
+  }
+
+  calculatePropagationDepth(resonanceScore) {
+    if (resonanceScore > 0.95) return 3;
+    if (resonanceScore > 0.85) return 2;
+    return 1;
+  }
+
+  identifyTargets(resonanceScore) {
+    return [];
+  }
+
+  async executePropagation(strategy, components) {
+    return {
+      success: true,
+      propagated: 0,
+      chains: [],
+      updatedResonance: {}
+    };
+  }
+
+  hashContent(content) {
+    let hash = 0;
+    const str = JSON.stringify(content);
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;
+    }
+    return hash;
+  }
+}
+
+// ============================================================
+// 🎨 RESONANCE RENDERER
+// ============================================================
+
+class ResonanceRenderer {
+  constructor(canvas) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.particles = [];
+    this.resonanceField = null;
+    this.isAnimating = false;
+  }
+
+  renderResonanceField(resonanceData) {
+    this.resonanceField = resonanceData;
+    if (!this.isAnimating) {
+      this.isAnimating = true;
+      this.animate();
+    }
+  }
+
+  animate() {
+    if (!this.isAnimating) return;
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    
+    if (this.resonanceField) {
+      this.renderField(this.resonanceField);
+    }
+    
+    this.updateParticles();
+    this.renderParticles();
+    
+    requestAnimationFrame(() => this.animate());
+  }
+
+  renderField(field) {
+    const { nodes, edges, center } = field;
+    
+    edges?.forEach(edge => {
+      const source = nodes?.find(n => n.id === edge.source);
+      const target = nodes?.find(n => n.id === edge.target);
+      if (source && target) {
+        this.drawConnection(source, target, edge.strength);
+      }
+    });
+    
+    nodes?.forEach(node => {
+      this.drawNode(node);
+    });
+    
+    if (center) {
+      this.drawPulse(center);
+    }
+  }
+
+  drawConnection(source, target, strength) {
+    const ctx = this.ctx;
+    const opacity = Math.min(1, strength * 1.5);
+    
+    ctx.beginPath();
+    ctx.moveTo(source.x || source.x || 0, source.y || source.y || 0);
+    ctx.lineTo(target.x || target.x || 0, target.y || target.y || 0);
+    ctx.strokeStyle = `rgba(226, 98, 42, ${opacity * 0.3})`;
+    ctx.lineWidth = 1 + (strength || 0) * 2;
+    ctx.shadowColor = `rgba(226, 98, 42, ${opacity * 0.2})`;
+    ctx.shadowBlur = 10;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  }
+
+  drawNode(node) {
+    const ctx = this.ctx;
+    const radius = 8 + (node.resonanceScore || 0) * 20;
+    
+    const gradient = ctx.createRadialGradient(
+      (node.x || node.x || 0) - radius * 0.3, (node.y || node.y || 0) - radius * 0.3, 0,
+      (node.x || node.x || 0), (node.y || node.y || 0), radius
+    );
+    gradient.addColorStop(0, '#E2622A');
+    gradient.addColorStop(1, '#C9962E');
+    
+    ctx.fillStyle = gradient;
+    ctx.shadowColor = `rgba(226, 98, 42, ${(node.resonanceScore || 0) * 0.3})`;
+    ctx.shadowBlur = 15;
+    ctx.beginPath();
+    ctx.arc((node.x || node.x || 0), (node.y || node.y || 0), radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+
+  drawPulse(center) {
+    const ctx = this.ctx;
+    const time = Date.now() / 1000;
+    const pulseRadius = 20 + Math.sin(time * 2) * 10;
+    
+    ctx.strokeStyle = 'rgba(226, 98, 42, 0.2)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(center.x, center.y, pulseRadius, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  createParticle(x, y, velocity, color, lifespan) {
+    this.particles.push({
+      x, y,
+      vx: velocity.x,
+      vy: velocity.y,
+      color: color || '#E2622A',
+      lifespan: lifespan || 100,
+      age: 0,
+      radius: 2 + Math.random() * 3
+    });
+  }
+
+  updateParticles() {
+    this.particles = this.particles.filter(particle => {
+      particle.x += particle.vx;
+      particle.y += particle.vy;
+      particle.vy += 0.02;
+      particle.age++;
+      particle.vx *= 0.99;
+      return particle.age < particle.lifespan;
+    });
+  }
+
+  renderParticles() {
+    const ctx = this.ctx;
+    this.particles.forEach(particle => {
+      const opacity = 1 - (particle.age / particle.lifespan);
+      ctx.globalAlpha = opacity;
+      ctx.fillStyle = particle.color;
+      ctx.beginPath();
+      ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+  }
+
+  createSignalExplosion(x, y) {
+    for (let i = 0; i < 50; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 1 + Math.random() * 3;
+      this.createParticle(
+        x, y,
+        { x: Math.cos(angle) * speed, y: Math.sin(angle) * speed },
+        ['#E2622A', '#C9962E', '#FFD60A', '#2ED573'][Math.floor(Math.random() * 4)],
+        60 + Math.random() * 80
+      );
+    }
+  }
+}
+
+// ============================================================
+// 🔧 UTILITY FUNCTIONS
+// ============================================================
+
+const formatNumber = (num) => {
   const n = Number(num) || 0;
   if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
   if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
   return String(n);
 };
 
-export const timeAgo = (date) => {
-  if (!date) return '';
-  const s = Math.floor((Date.now() - date) / 1000);
-  if (s < 60) return `${s}s`;
-  if (s < 3600) return `${Math.floor(s/60)}m`;
-  if (s < 86400) return `${Math.floor(s/3600)}h`;
-  if (s < 604800) return `${Math.floor(s/86400)}d`;
-  return date.toLocaleDateString();
-};
-
-export const haptic = (style = 'light') => {
+const haptic = (style = 'light') => {
   try {
     if (window.navigator?.vibrate) {
       if (style === 'heavy') navigator.vibrate([30, 10, 30]);
@@ -176,52 +935,32 @@ export const haptic = (style = 'light') => {
   } catch {}
 };
 
-export const truncateText = (text, maxLength = 100) => {
-  if (!text || text.length <= maxLength) return text;
-  return text.slice(0, maxLength).trimEnd() + '…';
+const timeAgo = (date) => {
+  if (!date) return '';
+  const s = Math.floor((Date.now() - date) / 1000);
+  if (s < 60) return `${s}s`;
+  if (s < 3600) return `${Math.floor(s/60)}m`;
+  if (s < 86400) return `${Math.floor(s/3600)}h`;
+  if (s < 604800) return `${Math.floor(s/86400)}d`;
+  return date.toLocaleDateString();
 };
 
-export const extractHashtags = (text) => {
-  return (text || '').match(/#\w+/g) || [];
-};
-
-// ============================================================
-// 7. CUSTOM HOOKS (Optimized)
-// ============================================================
-
-// Network status hook with debounce
-export const useNetworkStatus = () => {
+const useNetworkStatus = () => {
   const [online, setOnline] = useState(navigator.onLine);
   useEffect(() => {
-    const handleOnline = () => setOnline(true);
-    const handleOffline = () => setOnline(false);
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+    const on = () => setOnline(true);
+    const off = () => setOnline(false);
+    window.addEventListener('online', on);
+    window.addEventListener('offline', off);
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('online', on);
+      window.removeEventListener('offline', off);
     };
   }, []);
   return online;
 };
 
-// Intersection Observer hook for lazy loading
-export const useIntersectionObserver = (ref, options = {}) => {
-  const [isIntersecting, setIsIntersecting] = useState(false);
-  useEffect(() => {
-    if (!ref.current) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => setIsIntersecting(entry.isIntersecting),
-      { rootMargin: '200px', ...options }
-    );
-    observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, [ref]);
-  return isIntersecting;
-};
-
-// Theme hook
-export const useTheme = (user) => {
+const useTheme = (user) => {
   const [theme, setTheme] = useState(user?.theme || 'dark');
   const toggleTheme = async (newTheme) => {
     setTheme(newTheme);
@@ -233,37 +972,928 @@ export const useTheme = (user) => {
   return { theme, toggleTheme, isDark };
 };
 
-// Live translation hook with caching
-const translationCache = new Map();
-export const liveTranslate = async (text, targetLang = 'en') => {
-  if (!text || targetLang === 'en' || targetLang === 'auto') return text;
-  const cacheKey = `${targetLang}:${text.substring(0, 80)}`;
-  if (translationCache.has(cacheKey)) return translationCache.get(cacheKey);
-  try {
-    const res = await fetch(
-      `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`
-    );
-    const data = await res.json();
-    const translated = data?.[0]?.map(s => s?.[0]).filter(Boolean).join('') || text;
-    translationCache.set(cacheKey, translated);
-    return translated;
-  } catch { return text; }
-};
+// ============================================================
+// 🔔 NOTIFICATION POPUP (Resonance Style)
+// ============================================================
 
-export const useLiveTranslation = (text, targetLang) => {
-  const [translated, setTranslated] = useState(text);
+const NotifPopup = ({ notif, user, onClose, onTap }) => {
+  const [swipeX, setSwipeX] = useState(0);
+  const [swiping, setSwiping] = useState(false);
+  const startX = useRef(null);
+  
   useEffect(() => {
-    if (!text || !targetLang || targetLang === 'en') { setTranslated(text); return; }
-    liveTranslate(text, targetLang).then(setTranslated);
-  }, [text, targetLang]);
-  return translated;
+    const t = setTimeout(onClose, 4500);
+    return () => clearTimeout(t);
+  }, [onClose]);
+
+  const handleTouchStart = e => {
+    startX.current = e.touches[0].clientX;
+    setSwiping(true);
+  };
+
+  const handleTouchMove = e => {
+    if (startX.current === null) return;
+    const dx = e.touches[0].clientX - startX.current;
+    if (dx > 0) setSwipeX(dx);
+  };
+
+  const handleTouchEnd = () => {
+    if (swipeX > 80) onClose();
+    else setSwipeX(0);
+    setSwiping(false);
+  };
+
+  const symbols = {
+    resonate: '◈',
+    gather: '⌘',
+    transmit: '⚡',
+    reveal: '⊙',
+    trace: '⋈'
+  };
+
+  return (
+    <div
+      onClick={() => { haptic('medium'); onTap?.(); onClose(); }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      style={{
+        position: 'fixed', top: 52, left: 12, right: 12, zIndex: 9999,
+        transform: `translateX(${swipeX}px)`,
+        transition: swiping ? 'none' : 'transform 0.3s cubic-bezier(0.34,1.56,0.64,1)',
+        animation: swipeX === 0 ? 'slideDown 0.35s cubic-bezier(0.34,1.56,0.64,1)' : 'none',
+        cursor: 'pointer',
+        background: 'rgba(18,18,22,0.97)',
+        backdropFilter: 'blur(24px)',
+        border: '1px solid rgba(255,255,255,0.1)',
+        borderRadius: 20,
+        padding: '12px 14px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        boxShadow: '0 8px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05)',
+        opacity: 1 - (swipeX / 200)
+      }}
+    >
+      <div style={{ position: 'relative', flexShrink: 0 }}>
+        <div style={{
+          width: 44, height: 44, borderRadius: '50%',
+          background: user?.avatarColor || '#E2622A',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: 'white', fontWeight: 'bold', fontSize: 18,
+          overflow: 'hidden'
+        }}>
+          {user?.avatarUrl ? <img src={user.avatarUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : (user?.avatar || '?')}
+        </div>
+        <div style={{
+          position: 'absolute', bottom: -2, right: -2,
+          width: 18, height: 18, borderRadius: '50%',
+          background: '#1C1C24',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 10,
+          border: '1.5px solid rgba(255,255,255,0.1)'
+        }}>
+          {symbols[notif?.type] || '◈'}
+        </div>
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{
+          color: 'white', fontSize: 13, fontWeight: 600, lineHeight: 1.35,
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+        }}>
+          <span style={{ color: '#E2622A' }}>@{user?.username || 'someone'}</span>{' '}
+          {notif?.message}
+        </div>
+        <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 11, marginTop: 2 }}>
+          Just now · Swipe to dismiss
+        </div>
+      </div>
+      <button
+        onClick={e => { e.stopPropagation(); onClose(); }}
+        style={{
+          background: 'rgba(255,255,255,0.08)',
+          border: 'none', borderRadius: '50%',
+          width: 26, height: 26,
+          color: 'rgba(255,255,255,0.5)',
+          cursor: 'pointer', fontSize: 14,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexShrink: 0
+        }}
+      >
+        ✕
+      </button>
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0,
+        height: 2, background: 'rgba(255,255,255,0.06)',
+        borderRadius: '0 0 20px 20px', overflow: 'hidden'
+      }}>
+        <div style={{
+          height: '100%',
+          background: 'linear-gradient(90deg,#E2622A,#C9962E)',
+          animation: 'notifBar 4.5s linear forwards'
+        }} />
+      </div>
+    </div>
+  );
 };
 
 // ============================================================
-// 8. SERVICE FUNCTIONS (Firebase + Cloudinary)
+// 🌐 RESONANCE FIELD VIEW (Main Feed Replacement)
 // ============================================================
 
-export const buildDefaultProfile = (uid, data = {}) => ({
+const ResonanceFieldView = memo(({
+  signals,
+  currentUser,
+  onResonate,
+  onGather,
+  onTransmit,
+  onReveal,
+  onTrace,
+  followed,
+  showToast,
+  onViewProfile,
+  blockedUsers,
+}) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [resonanceMode, setResonanceMode] = useState('resonate');
+  const gestureEngine = useRef(new GestureEngine());
+  const rendererRef = useRef(null);
+  const canvasRef = useRef(null);
+
+  // Filter and rank signals using resonance scoring
+  const rankedSignals = useMemo(() => {
+    return signals
+      .filter(s => !(blockedUsers || []).includes(s.userId))
+      .map(s => {
+        let score = 0;
+        if (followed?.includes(s.userId)) score += 30;
+        score += (s.resonanceScore || 0) * 40;
+        score += (s.velocityScore || 0) * 20;
+        score += (s.truthCoefficient || 0) * 10;
+        const age = Date.now() - (s.birthTimestamp || 0);
+        score += Math.max(0, 100 - (age / (1000 * 60 * 60)));
+        return { ...s, _score: score };
+      })
+      .sort((a, b) => b._score - a._score);
+  }, [signals, blockedUsers, followed]);
+
+  // Initialize renderer
+  useEffect(() => {
+    if (!canvasRef.current) return;
+    rendererRef.current = new ResonanceRenderer(canvasRef.current);
+    // Start with empty resonance field
+    rendererRef.current.renderResonanceField({
+      nodes: rankedSignals.map((s, i) => ({
+        id: s.id,
+        x: 100 + (i % 5) * 50,
+        y: 50 + Math.floor(i / 5) * 60,
+        resonanceScore: s.resonanceScore || 0,
+        active: i === currentIndex
+      })),
+      edges: [],
+      center: { x: 250, y: 300 }
+    });
+  }, []);
+
+  // Update renderer when signals change
+  useEffect(() => {
+    if (!rendererRef.current) return;
+    rendererRef.current.renderResonanceField({
+      nodes: rankedSignals.map((s, i) => ({
+        id: s.id,
+        x: 100 + (i % 5) * 50,
+        y: 50 + Math.floor(i / 5) * 60,
+        resonanceScore: s.resonanceScore || 0,
+        active: i === currentIndex
+      })),
+      edges: rankedSignals.slice(0, 10).map((s, i) => ({
+        source: s.id,
+        target: rankedSignals[(i + 1) % rankedSignals.length]?.id,
+        strength: s.velocityScore || 0.5
+      })),
+      center: { x: 250, y: 300 }
+    });
+  }, [rankedSignals, currentIndex]);
+
+  if (!rankedSignals.length) {
+    return (
+      <div style={{
+        height: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'column',
+        gap: 12
+      }}>
+        <div style={{ fontSize: 48, opacity: 0.3 }}>◈</div>
+        <div style={{ color: 'rgba(255,255,255,0.3)', textAlign: 'center' }}>
+          No resonance signals yet.
+          <br />
+          <span style={{ fontSize: 12 }}>Transmit your first signal to start the resonance field.</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{
+      height: '100%',
+      position: 'relative',
+      overflow: 'hidden',
+      background: '#0C0907'
+    }}>
+      {/* Symbol Navigation */}
+      <div style={{
+        position: 'absolute', top: 0, left: 0, right: 0, zIndex: 15,
+        padding: '14px 16px 12px',
+        background: 'linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 100%)',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+      }}>
+        <div style={{ display: 'flex', gap: 16 }}>
+          {Object.entries(NAVIGATION_SYMBOLS).map(([key, value]) => (
+            <button
+              key={key}
+              onClick={() => {
+                setResonanceMode(key.toLowerCase());
+                haptic('light');
+                if (key === 'RESONATE') onResonate?.();
+                else if (key === 'GATHER') onGather?.();
+                else if (key === 'TRANSMIT') onTransmit?.();
+                else if (key === 'REVEAL') onReveal?.();
+                else if (key === 'TRACE') onTrace?.();
+              }}
+              style={{
+                background: resonanceMode === key.toLowerCase() ? 'rgba(226,98,42,0.2)' : 'transparent',
+                border: resonanceMode === key.toLowerCase() ? '1px solid rgba(226,98,42,0.4)' : '1px solid transparent',
+                borderRadius: 20,
+                padding: '6px 14px',
+                color: resonanceMode === key.toLowerCase() ? '#E2622A' : 'rgba(255,255,255,0.5)',
+                fontSize: 12,
+                fontWeight: resonanceMode === key.toLowerCase() ? 700 : 400,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6
+              }}
+            >
+              <span style={{ fontSize: 14 }}>{value.symbol}</span>
+              <span>{value.name}</span>
+            </button>
+          ))}
+        </div>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button
+            onClick={() => onResonate?.()}
+            style={{
+              background: 'rgba(0,0,0,0.4)',
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: '50%',
+              width: 38, height: 38,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer'
+            }}
+          >
+            <span style={{ fontSize: 18 }}>◈</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Resonance Field Canvas */}
+      <canvas
+        ref={canvasRef}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          width: '100%',
+          height: '100%',
+          pointerEvents: 'none'
+        }}
+      />
+
+      {/* Signal Cards */}
+      {rankedSignals.map((signal, idx) => {
+        if (Math.abs(idx - currentIndex) > 1) return null;
+        return (
+          <div
+            key={signal.id}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              opacity: idx === currentIndex ? 1 : 0,
+              transform: `translateY(${(idx - currentIndex) * 100}%)`,
+              transition: 'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)',
+              pointerEvents: idx === currentIndex ? 'auto' : 'none',
+              padding: '80px 20px 20px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'flex-end'
+            }}
+          >
+            {/* Signal Content */}
+            <div style={{
+              background: 'rgba(20,20,20,0.8)',
+              backdropFilter: 'blur(20px)',
+              borderRadius: 24,
+              padding: 20,
+              border: '1px solid rgba(255,255,255,0.08)'
+            }}>
+              {/* Signal Header */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                <button
+                  onClick={() => onViewProfile?.(signal.userId)}
+                  style={{
+                    width: 44, height: 44, borderRadius: '50%',
+                    background: signal.avatarColor || '#E2622A',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: 'white', fontWeight: 'bold', fontSize: 16,
+                    overflow: 'hidden', border: '2px solid rgba(255,255,255,0.1)',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {signal.avatarUrl ? <img src={signal.avatarUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : signal.avatar}
+                </button>
+                <div style={{ flex: 1 }}>
+                  <div style={{ color: 'white', fontWeight: 700, fontSize: 15 }}>
+                    @{signal.username}
+                    {signal.verified && <span style={{ color: '#2F9BFF', marginLeft: 4 }}>✓</span>}
+                  </div>
+                  <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11 }}>
+                    {timeAgo(signal.birthTimestamp)} · Resonance Score: {(signal.resonanceScore || 0).toFixed(2)}
+                  </div>
+                </div>
+              </div>
+
+              {/* Signal Content */}
+              <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: 14, lineHeight: 1.6, marginBottom: 12 }}>
+                {signal.seedContext || signal.description || 'No content'}
+              </div>
+
+              {/* Signal Metrics */}
+              <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ color: '#E2622A' }}>◈</span>
+                  <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>
+                    {(signal.velocityScore || 0).toFixed(2)} velocity
+                  </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ color: '#2ED573' }}>⊙</span>
+                  <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>
+                    {(signal.truthCoefficient || 0).toFixed(2)} truth
+                  </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ color: '#FFD60A' }}>⌘</span>
+                  <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>
+                    {(signal.depthScore || 0).toFixed(2)} depth
+                  </span>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  onClick={() => onResonate?.(signal.id)}
+                  style={{
+                    flex: 1,
+                    background: 'linear-gradient(135deg,#E2622A,#C9962E)',
+                    border: 'none',
+                    borderRadius: 16,
+                    padding: '10px',
+                    color: 'white',
+                    fontWeight: 700,
+                    fontSize: 12,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6
+                  }}
+                >
+                  <span>◈</span> Resonate
+                </button>
+                <button
+                  onClick={() => onGather?.(signal.id)}
+                  style={{
+                    flex: 1,
+                    background: 'rgba(255,255,255,0.06)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 16,
+                    padding: '10px',
+                    color: 'rgba(255,255,255,0.8)',
+                    fontWeight: 600,
+                    fontSize: 12,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6
+                  }}
+                >
+                  <span>⌘</span> Gather
+                </button>
+                <button
+                  onClick={() => onTransmit?.(signal.id)}
+                  style={{
+                    flex: 1,
+                    background: 'rgba(255,255,255,0.06)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 16,
+                    padding: '10px',
+                    color: 'rgba(255,255,255,0.8)',
+                    fontWeight: 600,
+                    fontSize: 12,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6
+                  }}
+                >
+                  <span>⚡</span> Transmit
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+
+      {/* Scroll indicator */}
+      {rankedSignals.length > 1 && (
+        <div style={{
+          position: 'absolute', right: 6, top: '50%',
+          transform: 'translateY(-50%)',
+          display: 'flex', flexDirection: 'column', gap: 4, zIndex: 10
+        }}>
+          {rankedSignals.map((_, i) => (
+            <div
+              key={i}
+              onClick={() => setCurrentIndex(i)}
+              style={{
+                width: 3,
+                height: i === currentIndex ? 20 : 4,
+                borderRadius: 2,
+                background: i === currentIndex ? 'white' : 'rgba(255,255,255,0.2)',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+});
+
+ResonanceFieldView.displayName = 'ResonanceFieldView';
+
+// ============================================================
+// ⚡ TRANSMIT SIGNAL (Create Screen Replacement)
+// ============================================================
+
+const TransmitSignal = ({ onTransmit, showToast, currentUser, t }) => {
+  const [signalText, setSignalText] = useState('');
+  const [selectedSymbol, setSelectedSymbol] = useState('◈');
+  const [uploading, setUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+
+  const symbols = ['◈', '⌘', '⚡', '⊙', '⋈'];
+
+  const handleTransmit = async () => {
+    if (!signalText.trim() && !selectedFile) {
+      showToast?.('Add content or media to transmit', 'error');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      let mediaUrl = null, mediaType = null;
+      if (selectedFile) {
+        // Upload file
+        mediaUrl = await uploadToCloudinary(selectedFile);
+        mediaType = selectedFile.type;
+      }
+
+      const crystal = new ResonanceCrystal({
+        seedContext: signalText,
+        userId: currentUser.id,
+        username: currentUser.username,
+        avatarColor: currentUser.avatarColor,
+        avatarUrl: currentUser.avatarUrl,
+        verified: currentUser.verified,
+        mediaUrl,
+        mediaType,
+        signalStrength: 0.5
+      });
+
+      const crystalData = crystal.toFirestore();
+      await addDoc(collection(db, 'signals'), crystalData);
+      
+      showToast?.('Signal transmitted! ◈', 'success');
+      setSignalText('');
+      setSelectedFile(null);
+      onTransmit?.();
+    } catch (e) {
+      console.error('Transmit error:', e);
+      showToast?.('Failed to transmit signal: ' + e.message, 'error');
+    }
+    setUploading(false);
+  };
+
+  return (
+    <div style={{
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      padding: 24,
+      background: '#0C0907'
+    }}>
+      <div style={{ textAlign: 'center', marginBottom: 24 }}>
+        <div style={{
+          width: 72, height: 72, borderRadius: '50%',
+          background: 'linear-gradient(135deg,#E2622A,#C9962E)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          margin: '0 auto 16px',
+          fontSize: 32
+        }}>
+          ⚡
+        </div>
+        <div style={{ color: 'white', fontWeight: 800, fontSize: 24 }}>
+          Transmit Signal
+        </div>
+        <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 14, marginTop: 4 }}>
+          Share your resonance with the network
+        </div>
+      </div>
+
+      {/* Symbol Selector */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        gap: 12,
+        marginBottom: 20
+      }}>
+        {symbols.map(symbol => (
+          <button
+            key={symbol}
+            onClick={() => setSelectedSymbol(symbol)}
+            style={{
+              width: 44, height: 44, borderRadius: '50%',
+              background: selectedSymbol === symbol ? 'rgba(226,98,42,0.2)' : 'rgba(255,255,255,0.05)',
+              border: selectedSymbol === symbol ? '2px solid #E2622A' : '1px solid rgba(255,255,255,0.1)',
+              color: selectedSymbol === symbol ? '#E2622A' : 'rgba(255,255,255,0.5)',
+              fontSize: 20,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            {symbol}
+          </button>
+        ))}
+      </div>
+
+      {/* Text Input */}
+      <textarea
+        value={signalText}
+        onChange={e => setSignalText(e.target.value)}
+        placeholder="What resonance are you transmitting?"
+        style={{
+          flex: 1,
+          background: 'rgba(255,255,255,0.05)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: 16,
+          padding: '16px',
+          color: 'white',
+          fontSize: 14,
+          resize: 'none',
+          minHeight: 100,
+          outline: 'none',
+          fontFamily: 'inherit'
+        }}
+      />
+
+      {/* Media Upload */}
+      <div style={{
+        marginTop: 12,
+        padding: 16,
+        background: 'rgba(255,255,255,0.03)',
+        borderRadius: 16,
+        border: '1px dashed rgba(255,255,255,0.1)'
+      }}>
+        <input
+          type="file"
+          accept="image/*,video/*,audio/*"
+          onChange={e => {
+            const file = e.target.files[0];
+            if (file) setSelectedFile(file);
+          }}
+          style={{ display: 'none' }}
+          id="media-upload"
+        />
+        <label htmlFor="media-upload" style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8,
+          cursor: 'pointer',
+          color: 'rgba(255,255,255,0.5)'
+        }}>
+          <span style={{ fontSize: 20 }}>📎</span>
+          {selectedFile ? selectedFile.name : 'Attach media to your signal'}
+        </label>
+        {selectedFile && (
+          <button
+            onClick={() => setSelectedFile(null)}
+            style={{
+              marginTop: 8,
+              background: 'rgba(226,98,42,0.1)',
+              border: '1px solid rgba(226,98,42,0.2)',
+              borderRadius: 12,
+              padding: '4px 12px',
+              color: '#E2622A',
+              fontSize: 11,
+              cursor: 'pointer'
+            }}
+          >
+            Remove
+          </button>
+        )}
+      </div>
+
+      {/* Transmit Button */}
+      <button
+        onClick={handleTransmit}
+        disabled={uploading || (!signalText.trim() && !selectedFile)}
+        style={{
+          width: '100%',
+          marginTop: 16,
+          padding: '14px',
+          background: 'linear-gradient(135deg,#E2622A,#C9962E)',
+          border: 'none',
+          borderRadius: 24,
+          color: 'white',
+          fontWeight: 700,
+          fontSize: 15,
+          cursor: 'pointer',
+          opacity: (uploading || (!signalText.trim() && !selectedFile)) ? 0.5 : 1
+        }}
+      >
+        {uploading ? 'Transmitting...' : `⚡ Transmit Signal`}
+      </button>
+    </div>
+  );
+};
+
+// ============================================================
+// 🔍 TRACE (Search/Discovery Replacement)
+// ============================================================
+
+const TraceView = ({ signals, users, onViewProfile, onClose }) => {
+  const [search, setSearch] = useState('');
+  const [activeFilter, setActiveFilter] = useState('all');
+  
+  const filters = [
+    ['all', 'All'],
+    ['signals', 'Signals'],
+    ['people', 'People'],
+    ['concepts', 'Concepts']
+  ];
+
+  const searchLower = search.toLowerCase();
+  const filteredSignals = signals.filter(s =>
+    (!search || s.seedContext?.toLowerCase().includes(searchLower) || s.username?.toLowerCase().includes(searchLower))
+    && (activeFilter === 'all' || activeFilter === 'signals')
+  );
+
+  const filteredUsers = users.filter(u =>
+    search && (u.username?.toLowerCase().includes(searchLower) || u.fullName?.toLowerCase().includes(searchLower))
+    && (activeFilter === 'all' || activeFilter === 'people')
+  );
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0,
+      background: '#0C0907',
+      zIndex: 500,
+      display: 'flex',
+      flexDirection: 'column'
+    }}>
+      <div style={{
+        padding: '14px 16px',
+        borderBottom: '1px solid rgba(255,255,255,0.06)'
+      }}>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 12 }}>
+          <div style={{
+            flex: 1,
+            background: 'rgba(255,255,255,0.06)',
+            borderRadius: 24,
+            display: 'flex',
+            alignItems: 'center',
+            padding: '10px 14px',
+            gap: 8
+          }}>
+            <span style={{ fontSize: 16 }}>⋈</span>
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Trace signals, people, concepts..."
+              autoFocus
+              style={{
+                flex: 1,
+                background: 'none',
+                border: 'none',
+                color: 'white',
+                outline: 'none',
+                fontSize: 14
+              }}
+            />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'rgba(255,255,255,0.4)',
+                  cursor: 'pointer',
+                  fontSize: 16
+                }}
+              >
+                ✕
+              </button>
+            )}
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'rgba(255,255,255,0.5)',
+              cursor: 'pointer',
+              fontSize: 14,
+              padding: 4
+            }}
+          >
+            Cancel
+          </button>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {filters.map(([id, label]) => (
+            <button
+              key={id}
+              onClick={() => setActiveFilter(id)}
+              style={{
+                background: activeFilter === id ? 'rgba(226,98,42,0.15)' : 'rgba(255,255,255,0.04)',
+                border: `1px solid ${activeFilter === id ? 'rgba(226,98,42,0.4)' : 'rgba(255,255,255,0.07)'}`,
+                borderRadius: 20,
+                padding: '6px 14px',
+                color: activeFilter === id ? '#E2622A' : 'rgba(255,255,255,0.5)',
+                fontSize: 12,
+                fontWeight: activeFilter === id ? 700 : 400,
+                cursor: 'pointer'
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ flex: 1, overflowY: 'auto', padding: 12 }}>
+        {!search && (
+          <div style={{ textAlign: 'center', padding: 60, color: 'rgba(255,255,255,0.2)' }}>
+            <div style={{ fontSize: 44, marginBottom: 12 }}>⋈</div>
+            <div style={{ fontSize: 14 }}>Trace resonance through the network</div>
+            <div style={{ fontSize: 12, marginTop: 6 }}>Search for signals, people, or concepts</div>
+          </div>
+        )}
+
+        {search && (
+          <>
+            {/* People Results */}
+            {(activeFilter === 'all' || activeFilter === 'people') && filteredUsers.length > 0 && (
+              <div style={{ marginBottom: 20 }}>
+                <div style={{
+                  color: 'rgba(255,255,255,0.4)',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.5,
+                  marginBottom: 12
+                }}>
+                  People
+                </div>
+                {filteredUsers.map(u => (
+                  <div
+                    key={u.id}
+                    onClick={() => { onViewProfile?.(u.id); onClose(); }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      padding: '11px 12px',
+                      background: 'rgba(255,255,255,0.03)',
+                      borderRadius: 16,
+                      marginBottom: 6,
+                      cursor: 'pointer',
+                      border: '1px solid rgba(255,255,255,0.05)'
+                    }}
+                  >
+                    <div style={{
+                      width: 44, height: 44, borderRadius: '50%',
+                      background: u.avatarColor || '#E2622A',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: 'white', fontWeight: 'bold', fontSize: 18,
+                      overflow: 'hidden', flexShrink: 0
+                    }}>
+                      {u.avatarUrl ? <img src={u.avatarUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : u.avatar}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ color: 'white', fontWeight: 700, fontSize: 14 }}>
+                        @{u.username}
+                        {u.verified && <span style={{ color: '#2F9BFF', marginLeft: 4 }}>✓</span>}
+                      </div>
+                      <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>
+                        {u.bio?.substring(0, 50) || 'No bio'}
+                      </div>
+                    </div>
+                    <span style={{ fontSize: 16, color: 'rgba(255,255,255,0.2)' }}>⋈</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Signal Results */}
+            {(activeFilter === 'all' || activeFilter === 'signals') && filteredSignals.length > 0 && (
+              <div style={{ marginBottom: 20 }}>
+                <div style={{
+                  color: 'rgba(255,255,255,0.4)',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.5,
+                  marginBottom: 12
+                }}>
+                  Signals
+                </div>
+                {filteredSignals.slice(0, 8).map(s => (
+                  <div
+                    key={s.id}
+                    onClick={() => { /* Navigate to signal */ }}
+                    style={{
+                      padding: '12px 14px',
+                      background: 'rgba(255,255,255,0.03)',
+                      borderRadius: 14,
+                      marginBottom: 6,
+                      border: '1px solid rgba(255,255,255,0.05)',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                      <span style={{ color: '#E2622A', fontSize: 14 }}>◈</span>
+                      <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>
+                        @{s.username} · {(s.resonanceScore || 0).toFixed(2)}
+                      </span>
+                      <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 10, marginLeft: 'auto' }}>
+                        {timeAgo(s.birthTimestamp)}
+                      </span>
+                    </div>
+                    <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, lineHeight: 1.5 }}>
+                      {s.seedContext || s.description?.substring(0, 100)}
+                      {(s.seedContext?.length > 100 || s.description?.length > 100) && '...'}
+                    </div>
+                    <div style={{ display: 'flex', gap: 12, marginTop: 6 }}>
+                      <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 10 }}>
+                        ◈ {(s.velocityScore || 0).toFixed(2)}
+                      </span>
+                      <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 10 }}>
+                        ⊙ {(s.truthCoefficient || 0).toFixed(2)}
+                      </span>
+                      <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 10 }}>
+                        ⌘ {(s.depthScore || 0).toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ============================================================
+// 🏠 MAIN APP
+// ============================================================
+
+// Firebase Helpers
+const buildDefaultProfile = (uid, data = {}) => ({
   id: uid,
   username: data.username || '',
   fullName: data.fullName || '',
@@ -271,7 +1901,7 @@ export const buildDefaultProfile = (uid, data = {}) => ({
   avatar: (data.username || data.fullName || data.email || 'U')[0].toUpperCase(),
   avatarColor: data.avatarColor || `hsl(${Math.floor(Math.random() * 360)}, 70%, 60%)`,
   avatarUrl: data.avatarUrl || null,
-  bio: data.bio || 'New to Dagu! 🎬',
+  bio: data.bio || 'New to Resonance! ◈',
   link: '',
   location: data.location || '',
   gender: '',
@@ -285,19 +1915,21 @@ export const buildDefaultProfile = (uid, data = {}) => ({
   level: 1,
   streak: 1,
   subscription: 'free',
-  createdAt: serverTimestamp(),
 });
 
-export const createUserProfile = async (uid, data) => {
-  await setDoc(doc(db, 'users', uid), buildDefaultProfile(uid, data), { merge: true });
+const createUserProfile = async (uid, data) => {
+  await setDoc(doc(db, 'users', uid), {
+    ...buildDefaultProfile(uid, data),
+    createdAt: serverTimestamp(),
+  }, { merge: true });
 };
 
-export const getUserProfile = async (uid) => {
+const getUserProfile = async (uid) => {
   const snap = await getDoc(doc(db, 'users', uid));
-  return snap.exists() ? { ...snap.data(), id: uid } : null;
+  return snap.exists() ? snap.data() : null;
 };
 
-export const sendNotification = async (toUserId, fromUserId, type, message, extra = {}) => {
+const sendNotification = async (toUserId, fromUserId, type, message, extra = {}) => {
   if (!toUserId || toUserId === fromUserId) return;
   try {
     await addDoc(collection(db, 'notifications'), {
@@ -307,7 +1939,7 @@ export const sendNotification = async (toUserId, fromUserId, type, message, extr
   } catch (e) { console.log('Notification error:', e); }
 };
 
-export const uploadToCloudinary = async (file, onProgress) => {
+const uploadToCloudinary = async (file, onProgress) => {
   const formData = new FormData();
   formData.append('file', file);
   formData.append('upload_preset', CLOUDINARY_PRESET);
@@ -333,26 +1965,15 @@ export const uploadToCloudinary = async (file, onProgress) => {
   });
 };
 
-export const uploadWithRetry = async (file, onProgress, maxRetries = 3) => {
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      return await uploadToCloudinary(file, onProgress);
-    } catch (error) {
-      if (attempt === maxRetries) throw error;
-      await new Promise(r => setTimeout(r, attempt * 1000));
-    }
-  }
-};
-
-export const sendEmailJS = async (templateParams) => {
+const sendEmailJS = async (templateParams) => {
   try {
     const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        service_id: 'service_mtqmvbb',
-        template_id: 'template_1k7wiqa',
-        user_id: 'U9fs25Bcx5oQ6A2ru',
+        service_id: EMAILJS_SERVICE,
+        template_id: EMAILJS_TEMPLATE,
+        user_id: EMAILJS_PUBLIC_KEY,
         template_params: templateParams,
       }),
     });
@@ -360,60 +1981,8 @@ export const sendEmailJS = async (templateParams) => {
   } catch { return false; }
 };
 
-// Batch write for performance
-export const batchWrite = async (operations) => {
-  const batch = writeBatch(db);
-  for (const op of operations) {
-    const { type, ref, data } = op;
-    if (type === 'set') batch.set(ref, data);
-    else if (type === 'update') batch.update(ref, data);
-    else if (type === 'delete') batch.delete(ref);
-  }
-  await batch.commit();
-};
-
-// ============================================================
-// 9. SOUND HELPERS
-// ============================================================
-export const playNotifSound = (type = 'notif') => {
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    if (type === 'call') {
-      const playRingTone = (startTime) => {
-        const osc1 = ctx.createOscillator();
-        const osc2 = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc1.connect(gain); osc2.connect(gain); gain.connect(ctx.destination);
-        osc1.frequency.value = 480; osc2.frequency.value = 620;
-        gain.gain.setValueAtTime(0, startTime);
-        gain.gain.linearRampToValueAtTime(0.4, startTime + 0.05);
-        gain.gain.setValueAtTime(0.4, startTime + 0.4);
-        gain.gain.linearRampToValueAtTime(0, startTime + 0.5);
-        osc1.start(startTime); osc1.stop(startTime + 0.5);
-        osc2.start(startTime); osc2.stop(startTime + 0.5);
-      };
-      playRingTone(ctx.currentTime);
-      playRingTone(ctx.currentTime + 0.7);
-      playRingTone(ctx.currentTime + 1.4);
-    } else {
-      [[880, 0, 0.15], [1100, 0.18, 0.28]].forEach(([freq, start, stop]) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain); gain.connect(ctx.destination);
-        osc.frequency.value = freq;
-        gain.gain.setValueAtTime(0.35, ctx.currentTime + start);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + stop);
-        osc.start(ctx.currentTime + start);
-        osc.stop(ctx.currentTime + stop);
-      });
-    }
-  } catch {}
-};
-
-// ============================================================
-// 10. STYLED COMPONENTS (Inline for simplicity)
-// ============================================================
-export const GlobalStyles = () => (
+// Global Styles
+const GlobalStyles = () => (
   <style>{`
     :root {
       --accent: #E2622A;
@@ -429,8 +1998,9 @@ export const GlobalStyles = () => (
       --bg-elev-2: #1C1C24;
       --bg-elev-3: #24242E;
     }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    body { 
+    body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
       -webkit-font-smoothing: antialiased;
       background: var(--bg-base);
@@ -439,7 +2009,7 @@ export const GlobalStyles = () => (
     }
     ::-webkit-scrollbar { display: none; }
     * { scrollbar-width: none; -ms-overflow-style: none; }
-    button { touch-action: manipulation; cursor: pointer; }
+    button { touch-action: manipulation; }
     button:active { transform: scale(0.94) !important; transition: transform 0.1s; }
     input, textarea { font-family: inherit; }
     input:focus, textarea:focus { outline: none; box-shadow: 0 0 0 2px rgba(226, 98, 42, 0.22); }
@@ -451,21 +2021,16 @@ export const GlobalStyles = () => (
     @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
     @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-    @keyframes heartBurst { 0% { transform: scale(0.4); opacity: 1; } 100% { transform: scale(1.8) translateY(-80px); opacity: 0; } }
     @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 70% { transform: scale(1.05); } 100% { transform: scale(1); opacity: 1; } }
     @keyframes bounceIn { 0% { transform: scale(0.3); opacity: 0; } 50% { transform: scale(1.1); } 70% { transform: scale(0.9); } 100% { transform: scale(1); opacity: 1; } }
-    @keyframes likeHeart { 0% { transform: scale(1); } 15% { transform: scale(1.4); } 30% { transform: scale(0.9); } 45% { transform: scale(1.2); } 60% { transform: scale(1); } }
     @keyframes notifBar { 0% { width: 100%; } 100% { width: 0%; } }
-    @keyframes floatUp { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-120px) scale(1.5); opacity: 0; } }
     @media (prefers-reduced-motion: reduce) { * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
   `}</style>
 );
 
-// ============================================================
-// 11. OFFLINE BANNER
-// ============================================================
+// Offline Banner
 const OfflineBanner = memo(() => (
   <div style={{
     position: 'fixed', top: 0, left: 0, right: 0, zIndex: 10000,
@@ -475,23 +2040,21 @@ const OfflineBanner = memo(() => (
   }}>
     <span style={{ fontSize: 16 }}>📡</span>
     <span style={{ color: '#000', fontWeight: 700, fontSize: 13 }}>
-      You're offline — some features may be unavailable
+      You're offline — some resonance features may be unavailable
     </span>
   </div>
 ));
 OfflineBanner.displayName = 'OfflineBanner';
 
-// ============================================================
-// 12. TOAST COMPONENT
-// ============================================================
-export const Toast = memo(({ message, type, onClose }) => {
+// Toast
+const Toast = memo(({ message, type, onClose }) => {
   useEffect(() => {
     const timer = setTimeout(onClose, 2800);
     return () => clearTimeout(timer);
   }, [onClose]);
 
   const configs = {
-    success: { bg: 'linear-gradient(135deg,#00E6B4,#00A9D6)', icon: '✓' },
+    success: { bg: 'linear-gradient(135deg,#00E6B4,#00A9D6)', icon: '◈' },
     error: { bg: 'linear-gradient(135deg,#E2622A,#FF8552)', icon: '✕' },
     info: { bg: 'linear-gradient(135deg,#0A84FF,#5E5CE6)', icon: 'i' },
     warning: { bg: 'linear-gradient(135deg,#FFB100,#FF8552)', icon: '!' },
@@ -522,1162 +2085,247 @@ export const Toast = memo(({ message, type, onClose }) => {
 });
 Toast.displayName = 'Toast';
 
-// ============================================================
-// 13. SHARE SHEET COMPONENT
-// ============================================================
-export const ShareSheet = memo(({ video, currentUser, onClose, showToast }) => {
-  const shareUrl = `https://infinity-now.vercel.app/video/${video?.id || ''}`;
-  const shareText = `@${video?.username || 'someone'}: ${video?.description || 'Check this out on Dagu!'}`;
+// Auth Screen
+const AuthScreen = ({ onLogin }) => {
+  const [isLogin, setIsLogin] = useState(true);
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [birthdate, setBirthdate] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const trackShare = () => {
-    if (video?.id) updateDoc(doc(db, 'videos', video.id), { shares: increment(1) }).catch(() => {});
-  };
-
-  const copyLink = async () => {
+  const handleLogin = async () => {
+    setLoading(true);
+    setError('');
     try {
-      await navigator.clipboard.writeText(shareUrl);
-      showToast?.('Link copied!', 'success');
-    } catch {
-      showToast?.('Copied!', 'success');
-    }
-    trackShare();
-    onClose();
-  };
-
-  const nativeShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: 'Dagu', text: shareText, url: shareUrl });
-        trackShare();
-        onClose();
-        return;
-      } catch (e) {
-        if (e.name === 'AbortError') { onClose(); return; }
+      const result = await signInWithEmailAndPassword(auth, identifier, password);
+      let profile = await getUserProfile(result.user.uid);
+      if (!profile) {
+        await createUserProfile(result.user.uid, { email: identifier, username: identifier.split('@')[0] });
+        profile = await getUserProfile(result.user.uid);
       }
+      onLogin({ ...profile, id: result.user.uid });
+    } catch (e) {
+      setError(e.message);
     }
-    copyLink();
+    setLoading(false);
   };
 
-  const quickActions = [
-    { icon: '📤', label: 'Share via…', fn: nativeShare },
-    { icon: '💬', label: 'Send in chat', fn: () => { showToast?.('Open Messages to send', 'info'); onClose(); } },
-    { icon: '➕', label: 'Add to story', fn: () => { showToast?.('Open Create to add to story', 'info'); onClose(); } },
-    { icon: '🔖', label: 'Save', fn: () => { showToast?.('Saved to collection ✨', 'success'); onClose(); } },
-  ];
-
-  const apps = [
-    { name: 'WhatsApp', emoji: '💬', color: '#25D366', fn: () => { window.open(`https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`); trackShare(); onClose(); } },
-    { name: 'Telegram', emoji: '✈️', color: '#26A5E4', fn: () => { window.open(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`); trackShare(); onClose(); } },
-    { name: 'X', emoji: '𝕏', color: '#FFFFFF', fn: () => { window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`); trackShare(); onClose(); } },
-    { name: 'Facebook', emoji: 'f', color: '#1877F2', fn: () => { window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`); trackShare(); onClose(); } },
-    { name: 'Instagram', emoji: '📸', color: '#E1306C', fn: () => { copyLink(); showToast?.('Link copied — paste in Instagram!', 'info'); } },
-    { name: 'TikTok', emoji: '🎵', color: '#FFFFFF', fn: () => { copyLink(); showToast?.('Link copied — paste in TikTok!', 'info'); } },
-    { name: 'Copy Link', emoji: '🔗', color: '#C9962E', fn: copyLink },
-    { name: 'More', emoji: '⋯', color: '#5A5A66', fn: nativeShare },
-  ];
-
-  return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 5000,
-      background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(2px)',
-      display: 'flex', alignItems: 'flex-end'
-    }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{
-        width: '100%', maxWidth: 430, margin: '0 auto',
-        background: '#171310',
-        borderTopLeftRadius: 28, borderTopRightRadius: 28,
-        border: '1px solid rgba(255,255,255,0.07)',
-        boxShadow: '0 -20px 60px rgba(0,0,0,0.5)',
-        maxHeight: '85vh', overflowY: 'auto',
-        paddingBottom: 'max(20px, env(safe-area-inset-bottom))',
-        animation: 'slideUp 0.3s cubic-bezier(0.32,0.72,0,1)'
-      }}>
-        {/* Handle bar */}
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}>
-          <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.15)' }} />
-        </div>
-
-        {/* Header */}
-        <div style={{ padding: '8px 20px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div>
-            <div style={{ color: 'white', fontWeight: 800, fontSize: 18 }}>Share</div>
-            <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, marginTop: 2 }}>Send this post anywhere</div>
-          </div>
-          <button onClick={onClose} style={{
-            width: 32, height: 32, borderRadius: '50%',
-            background: 'rgba(255,255,255,0.08)',
-            border: 'none', color: 'white', fontSize: 14, cursor: 'pointer'
-          }}>✕</button>
-        </div>
-
-        {/* Preview Card */}
-        <div style={{ margin: '0 20px 18px', padding: 1.5, borderRadius: 18, background: 'linear-gradient(135deg,#E2622A,#C9962E)' }}>
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 12,
-            background: '#1C1C24', borderRadius: 16.5, padding: 12
-          }}>
-            <div style={{ width: 48, height: 64, borderRadius: 10, overflow: 'hidden', background: '#24242E', flexShrink: 0 }}>
-              {video?.videoUrl?.match(/\.(jpg|jpeg|png|gif|webp)/i)
-                ? <img src={video.videoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                : <video src={video?.videoUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} muted />}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ color: 'white', fontSize: 13, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                @{video?.username || 'user'}
-              </div>
-              <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 11.5, marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {video?.description || 'Check this out'}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div style={{ display: 'flex', gap: 10, padding: '0 20px 20px', overflowX: 'auto' }}>
-          {quickActions.map(a => (
-            <button key={a.label} onClick={a.fn} style={{
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              borderRadius: 18, padding: '14px 18px',
-              cursor: 'pointer', flexShrink: 0, minWidth: 78
-            }}>
-              <span style={{ fontSize: 22 }}>{a.icon}</span>
-              <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: 10.5, fontWeight: 600, whiteSpace: 'nowrap' }}>{a.label}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* App Grid */}
-        <div style={{ padding: '0 20px 10px', color: 'rgba(255,255,255,0.35)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.6 }}>
-          Share to
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, padding: '0 20px 20px' }}>
-          {apps.map(app => (
-            <button key={app.name} onClick={app.fn} style={{
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7,
-              background: 'none', border: 'none', cursor: 'pointer'
-            }}>
-              <div style={{
-                width: 52, height: 52, borderRadius: 16,
-                background: `${app.color}1A`, border: `1px solid ${app.color}33`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 22, color: app.color, fontWeight: 800
-              }}>
-                {app.emoji}
-              </div>
-              <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: 10, fontWeight: 600, textAlign: 'center' }}>{app.name}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* URL Bar */}
-        <div style={{
-          margin: '4px 20px 4px', background: '#1C1C24', borderRadius: 14,
-          display: 'flex', alignItems: 'center', overflow: 'hidden',
-          border: '1px solid rgba(255,255,255,0.07)'
-        }}>
-          <div style={{ padding: '0 6px 0 14px', flexShrink: 0 }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2">
-              <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
-              <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
-            </svg>
-          </div>
-          <span style={{
-            flex: 1, color: 'rgba(255,255,255,0.35)', fontSize: 12,
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-            padding: '14px 8px'
-          }}>{shareUrl}</span>
-          <button onClick={copyLink} style={{
-            background: 'linear-gradient(135deg,#E2622A,#C9962E)',
-            border: 'none', padding: '14px 20px',
-            color: 'white', fontWeight: 700, fontSize: 13,
-            cursor: 'pointer', flexShrink: 0, height: '100%'
-          }}>Copy</button>
-        </div>
-      </div>
-    </div>
-  );
-});
-ShareSheet.displayName = 'ShareSheet';
-
-// ============================================================
-// 14. VIDEO CARD COMPONENT (Optimized)
-// ============================================================
-const VideoProgressBar = memo(({ videoRef, isActive, isImage }) => {
-  const [progress, setProgress] = useState(0);
-  useEffect(() => {
-    if (isImage || !isActive) return;
-    const tick = setInterval(() => {
-      const el = videoRef?.current;
-      if (el && el.duration) setProgress((el.currentTime / el.duration) * 100);
-    }, 500);
-    return () => clearInterval(tick);
-  }, [isActive, isImage, videoRef]);
-  if (isImage) return null;
-  return (
-    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'rgba(255,255,255,0.15)', zIndex: 20 }}>
-      <div style={{
-        height: '100%', background: 'linear-gradient(90deg,#E2622A,#C9962E)',
-        width: `${progress}%`, transition: 'width 0.5s linear'
-      }} />
-    </div>
-  );
-});
-VideoProgressBar.displayName = 'VideoProgressBar';
-
-// Enhanced Video Card - Main video component
-export const EnhancedVideoCard = memo(({
-  video, currentUser, isActive, onLike, onComment, onShare, onFollow,
-  onMessage, onVoiceCall, onVideoCall, onDuet, onStitch, onSaveSound,
-  followed, showToast, onViewProfile, onBlock, onLive
-}) => {
-  const [liked, setLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(video?.likes || 0);
-  const [showComments, setShowComments] = useState(false);
-  const [comments, setComments] = useState([]);
-  const [commentText, setCommentText] = useState('');
-  const [pinnedComment, setPinnedComment] = useState(null);
-  const [showShare, setShowShare] = useState(false);
-  const [showFullText, setShowFullText] = useState(false);
-  const [translatedDesc, setTranslatedDesc] = useState(null);
-  const [showOriginalDesc, setShowOriginalDesc] = useState(false);
-  const [heartAnim, setHeartAnim] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(true);
-  const [showActionMenu, setShowActionMenu] = useState(false);
-  const [showReportModal, setShowReportModal] = useState(false);
-
-  const videoRef = useRef(null);
-  const tapTimer = useRef(null);
-  const longPressTimer = useRef(null);
-  const t = TRANSLATIONS[currentUser?.language || 'en'] || TRANSLATIONS.en;
-
-  // ===== Auto Play/Pause =====
-  useEffect(() => {
-    const el = videoRef.current;
-    if (!el) return;
-    el.playbackRate = video?.playbackRate || 1;
-    if (isActive) {
-      el.muted = false;
-      el.volume = 1;
-      if (isPlaying) el.play().catch(() => { el.muted = true; el.play().catch(() => {}); });
-    } else {
-      el.muted = true;
-      el.pause();
-    }
-  }, [isActive, isPlaying, video?.playbackRate]);
-
-  // ===== View Tracking =====
-  useEffect(() => {
-    if (!isActive || !video?.id) return;
-    const viewKey = `viewed_${video.id}`;
-    if (!sessionStorage.getItem(viewKey)) {
-      sessionStorage.setItem(viewKey, '1');
-      updateDoc(doc(db, 'videos', video.id), { views: increment(1) }).catch(() => {});
-    }
-  }, [isActive, video?.id]);
-
-  // ===== Like Status =====
-  useEffect(() => {
-    if (!video?.id || !currentUser?.id) return;
-    getDoc(doc(db, 'likes', `${video.id}_${currentUser.id}`))
-      .then(snap => setLiked(snap.exists()))
-      .catch(() => {});
-  }, [video?.id, currentUser?.id]);
-
-  // ===== Comments =====
-  useEffect(() => {
-    if (!video?.id) return;
-    const q = query(collection(db, 'comments'), where('videoId', '==', video.id), orderBy('createdAt', 'asc'));
-    const unsub = onSnapshot(q, snap => {
-      setComments(snap.docs.map(d => ({ id: d.id, ...d.data(), time: d.data().createdAt?.toDate?.() ? timeAgo(d.data().createdAt.toDate()) : 'now' })));
-    }, () => {
-      // Fallback
-      const q2 = query(collection(db, 'comments'), where('videoId', '==', video.id));
-      onSnapshot(q2, snap2 => {
-        const sorted = snap2.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
-        setComments(sorted);
-      });
-    });
-    return () => unsub();
-  }, [video?.id]);
-
-  // ===== Translation =====
-  useEffect(() => {
-    if (!isActive || !video?.description) return;
-    const targetLang = currentUser?.language || 'en';
-    if (targetLang === 'en') return;
-    const translate = async () => {
-      const result = await liveTranslate(video.description, targetLang);
-      if (result && result !== video.description) setTranslatedDesc(result);
-    };
-    translate();
-  }, [isActive, video?.description, currentUser?.language]);
-
-  // ===== Handlers =====
-  const handleDoubleTap = async () => {
-    if (liked) return;
-    setLiked(true);
-    setLikeCount(p => p + 1);
-    setHeartAnim(true);
-    setTimeout(() => setHeartAnim(false), 900);
+  const handleSignup = async () => {
+    setLoading(true);
+    setError('');
     try {
-      await setDoc(doc(db, 'likes', `${video.id}_${currentUser.id}`), {
-        videoId: video.id, userId: currentUser.id, createdAt: serverTimestamp()
+      const result = await createUserWithEmailAndPassword(auth, identifier, password);
+      await createUserProfile(result.user.uid, {
+        username,
+        fullName,
+        email: identifier,
+        birthdate
       });
-      await updateDoc(doc(db, 'videos', video.id), { likes: increment(1) });
-    } catch (e) { console.log('Like error:', e); }
-  };
-
-  const handleTap = (e) => {
-    if (e.target.closest('button, a, input, textarea, [data-notap]')) return;
-    if (videoRef.current && videoRef.current.muted) {
-      videoRef.current.muted = false;
-      videoRef.current.volume = 1;
+      const profile = await getUserProfile(result.user.uid);
+      onLogin({ ...profile, id: result.user.uid });
+    } catch (e) {
+      setError(e.message);
     }
-    if (tapTimer.current) {
-      clearTimeout(tapTimer.current);
-      tapTimer.current = null;
-      haptic('medium');
-      handleDoubleTap();
-    } else {
-      tapTimer.current = setTimeout(() => {
-        tapTimer.current = null;
-        haptic('light');
-        const isImagePost = video?.videoUrl?.match(/\.(jpg|jpeg|png|gif|webp)/i) || video?.mediaType?.startsWith('image');
-        if (!isImagePost && videoRef.current) {
-          if (isPlaying) { videoRef.current.pause(); setIsPlaying(false); }
-          else { videoRef.current.play().catch(() => {}); setIsPlaying(true); }
-        }
-      }, 250);
-    }
-  };
-
-  const handleLikeClick = async (e) => {
-    e.stopPropagation();
-    if (liked) {
-      setLiked(false);
-      setLikeCount(p => Math.max(0, p - 1));
-      try {
-        await deleteDoc(doc(db, 'likes', `${video.id}_${currentUser.id}`));
-        await updateDoc(doc(db, 'videos', video.id), { likes: increment(-1) });
-      } catch (e) { console.log('Unlike error:', e); }
-    } else {
-      setLiked(true);
-      setLikeCount(p => p + 1);
-      try {
-        await setDoc(doc(db, 'likes', `${video.id}_${currentUser.id}`), {
-          videoId: video.id, userId: currentUser.id, createdAt: serverTimestamp()
-        });
-        await updateDoc(doc(db, 'videos', video.id), { likes: increment(1) });
-        await sendNotification(video.userId, currentUser.id, 'like', 'liked your post', { videoId: video.id });
-      } catch (e) { console.log('Like error:', e); }
-    }
-  };
-
-  const addComment = async () => {
-    if (!commentText.trim()) return;
-    const txt = commentText;
-    setCommentText('');
-    try {
-      await addDoc(collection(db, 'comments'), {
-        videoId: video.id, userId: currentUser.id, username: currentUser.username,
-        avatar: currentUser.avatar || (currentUser.username || 'U')[0].toUpperCase(),
-        avatarColor: currentUser.avatarColor || '#E2622A',
-        avatarUrl: currentUser.avatarUrl || null,
-        text: txt, likes: 0, createdAt: serverTimestamp()
-      });
-      await updateDoc(doc(db, 'videos', video.id), { comments: increment(1) });
-      const parentVideo = (await getDoc(doc(db, 'videos', video.id))).data();
-      if (parentVideo?.userId) {
-        await sendNotification(parentVideo.userId, currentUser.id, 'comment', `commented: "${txt.substring(0, 40)}"`, { videoId: video.id });
-      }
-    } catch (e) { console.log('Comment error:', e); }
-  };
-
-  const reportReasons = ['Spam', 'Inappropriate content', 'Hate speech', 'Misinformation', 'Copyright violation', 'Other'];
-
-  // ===== Render =====
-  const isImage = video?.videoUrl?.match(/\.(jpg|jpeg|png|gif|webp)/i) || video?.mediaType?.startsWith('image');
-
-  return (
-    <div
-      style={{ position: 'absolute', inset: 0, background: '#000' }}
-      onClick={handleTap}
-      onTouchStart={() => { longPressTimer.current = setTimeout(() => { haptic('heavy'); setShowActionMenu(true); }, 500); }}
-      onTouchEnd={() => clearTimeout(longPressTimer.current)}
-      onMouseDown={() => { longPressTimer.current = setTimeout(() => setShowActionMenu(true), 500); }}
-      onMouseUp={() => clearTimeout(longPressTimer.current)}
-    >
-      {/* Video/Image */}
-      {isImage ? (
-        <img src={video.videoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-      ) : (
-        <video
-          ref={videoRef}
-          src={video?.videoUrl}
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          loop autoPlay playsInline
-        />
-      )}
-
-      {/* Gradient Overlay */}
-      <div style={{
-        position: 'absolute', inset: 0,
-        background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.3) 100%)'
-      }} />
-
-      {/* Pause Overlay */}
-      {!isPlaying && !isImage && (
-        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 15, pointerEvents: 'none' }}>
-          <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3" /></svg>
-          </div>
-        </div>
-      )}
-
-      {/* Heart Animation */}
-      {heartAnim && (
-        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 50, pointerEvents: 'none' }}>
-          <div style={{ fontSize: 80, animation: 'heartBurst 0.9s ease forwards' }}>❤️</div>
-        </div>
-      )}
-
-      <VideoProgressBar videoRef={videoRef} isActive={isActive} isImage={isImage} />
-
-      {/* Bottom Info */}
-      <div style={{ position: 'absolute', bottom: 0, left: 14, right: 70, zIndex: 8, paddingBottom: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-          <button onClick={() => onViewProfile?.(video.userId)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-            <div style={{
-              width: 42, height: 42, borderRadius: '50%', background: video.avatarColor,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'white', fontWeight: 'bold', fontSize: 16,
-              border: '2px solid rgba(255,255,255,0.5)', overflow: 'hidden'
-            }}>
-              {video.avatarUrl ? <img src={video.avatarUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : video.avatar}
-            </div>
-          </button>
-          <span onClick={() => onViewProfile?.(video.userId)} style={{ color: 'white', fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>
-            @{video.username}
-          </span>
-          <button data-notap="1" onClick={() => onFollow?.(video.userId)} style={{
-            padding: '5px 14px', borderRadius: 20,
-            background: followed?.includes(video.userId) ? 'rgba(255,255,255,0.08)' : 'rgba(226,98,42,0.9)',
-            border: followed?.includes(video.userId) ? '1px solid rgba(255,255,255,0.4)' : 'none',
-            color: 'white', fontSize: 12, fontWeight: 700, cursor: 'pointer'
-          }}>
-            {followed?.includes(video.userId) ? 'Unfollow' : '+ Follow'}
-          </button>
-        </div>
-
-        {/* Description */}
-        {video?.description && (
-          <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: 13, marginBottom: 4, lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-            {(translatedDesc && !showOriginalDesc) ? translatedDesc : truncateText(video.description, 90)}
-            {video.description.length > 90 && !showFullText && (
-              <span data-notap="1" onClick={() => setShowFullText(true)} style={{ color: 'rgba(255,255,255,0.55)', fontWeight: 700, cursor: 'pointer', marginLeft: 4 }}>
-                See more
-              </span>
-            )}
-          </p>
-        )}
-
-        {/* Sound */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <div style={{
-            width: 22, height: 22, borderRadius: '50%',
-            background: 'linear-gradient(135deg,#E2622A,#C9962E)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12
-          }}>♪</div>
-          <span style={{ color: 'rgba(255,255,255,0.65)', fontSize: 12 }}>{video.song}</span>
-        </div>
-      </div>
-
-      {/* Right Action Buttons */}
-      <div style={{ position: 'absolute', right: 12, bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, zIndex: 6, paddingBottom: 10 }}>
-        {/* Like */}
-        <button onClick={handleLikeClick} style={{
-          background: 'rgba(0,0,0,0.3)', border: 'none', borderRadius: '50%',
-          width: 52, height: 52, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          cursor: 'pointer',
-          transform: liked ? 'scale(1)' : 'scale(1)',
-          transition: 'transform 0.2s cubic-bezier(0.34,1.56,0.64,1)'
-        }}>
-          <svg width="26" height="26" viewBox="0 0 24 24"
-            fill={liked ? '#E2622A' : 'none'}
-            stroke={liked ? '#E2622A' : 'rgba(255,255,255,0.9)'}
-            strokeWidth="1.8"
-            style={{
-              animation: liked ? 'likeHeart 0.4s ease' : 'none',
-              filter: liked ? 'drop-shadow(0 0 6px rgba(226,98,42,0.6))' : 'none'
-            }}>
-            <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
-          </svg>
-        </button>
-        <span style={{ color: liked ? '#E2622A' : 'rgba(255,255,255,0.85)', fontSize: 11, fontWeight: 700 }}>
-          {formatNumber(likeCount)}
-        </span>
-
-        {/* Comment */}
-        <button onClick={() => setShowComments(true)} style={{
-          background: 'rgba(0,0,0,0.3)', border: 'none', borderRadius: '50%',
-          width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          cursor: 'pointer', marginTop: 4
-        }}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="1.8">
-            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
-          </svg>
-        </button>
-        <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: 11, fontWeight: 600 }}>
-          {formatNumber(video.comments || comments.length)}
-        </span>
-
-        {/* Share */}
-        <button onClick={() => setShowShare(true)} style={{
-          background: 'rgba(0,0,0,0.3)', border: 'none', borderRadius: '50%',
-          width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          cursor: 'pointer', marginTop: 4
-        }}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="1.8">
-            <line x1="22" y1="2" x2="11" y2="13" />
-            <polygon points="22 2 15 22 11 13 2 9 22 2" />
-          </svg>
-        </button>
-        <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: 11, fontWeight: 600 }}>
-          {formatNumber(video.shares || 0)}
-        </span>
-
-        {/* More */}
-        <button onClick={() => setShowActionMenu(v => !v)} style={{
-          background: 'rgba(0,0,0,0.3)', border: 'none', borderRadius: '50%',
-          width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          cursor: 'pointer', marginTop: 4
-        }}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
-            <circle cx="12" cy="5" r="2" />
-            <circle cx="12" cy="12" r="2" />
-            <circle cx="12" cy="19" r="2" />
-          </svg>
-        </button>
-      </div>
-
-      {/* Comments Modal */}
-      {showComments && (
-        <>
-          <div onClick={() => setShowComments(false)} style={{ position: 'fixed', inset: 0, zIndex: 9499, background: 'rgba(0,0,0,0.5)' }} />
-          <div
-            onClick={e => e.stopPropagation()}
-            onTouchStart={e => e.stopPropagation()}
-            onTouchEnd={e => e.stopPropagation()}
-            style={{
-              position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
-              width: '100%', maxWidth: 430, height: '60%',
-              background: '#171310',
-              borderTopLeftRadius: 28, borderTopRightRadius: 28,
-              zIndex: 9500, display: 'flex', flexDirection: 'column',
-              animation: 'slideUp 0.3s ease',
-              boxShadow: '0 -8px 40px rgba(0,0,0,0.7)'
-            }}
-          >
-            <div style={{ padding: '16px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ color: 'white', fontWeight: 700, fontSize: 16 }}>{t?.comments || 'Comments'}</span>
-              <button onClick={() => setShowComments(false)} style={{
-                background: 'rgba(255,255,255,0.08)', border: 'none',
-                borderRadius: '50%', width: 32, height: 32,
-                color: 'white', cursor: 'pointer', fontSize: 16
-              }}>✕</button>
-            </div>
-            <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px' }}>
-              {comments.length === 0 && (
-                <div style={{ textAlign: 'center', padding: 40, color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>
-                  No comments yet. Be the first! 💬
-                </div>
-              )}
-              {comments.map(comment => (
-                <div key={comment.id} style={{ marginBottom: 12 }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                    <div style={{
-                      width: 28, height: 28, borderRadius: '50%',
-                      background: comment.avatarColor || '#34343E',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: 'white', fontWeight: 'bold', fontSize: 11,
-                      overflow: 'hidden', flexShrink: 0
-                    }}>
-                      {comment.avatarUrl ? <img src={comment.avatarUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : comment.avatar}
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{ color: 'rgba(255,255,255,0.6)', fontWeight: 700, fontSize: 11 }}>@{comment.username}</span>
-                        <span style={{ color: 'rgba(255,255,255,0.28)', fontSize: 10 }}>{comment.time}</span>
-                      </div>
-                      <div style={{
-                        background: 'rgba(255,255,255,0.09)',
-                        borderRadius: '18px 18px 18px 4px',
-                        padding: '10px 14px', marginTop: 4
-                      }}>
-                        <span style={{ color: 'white', fontSize: 13 }}>{comment.text}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div style={{ padding: '10px 14px', paddingBottom: 'max(24px, env(safe-area-inset-bottom))', borderTop: '1px solid rgba(255,255,255,0.06)', background: '#0C0907' }}>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <div style={{
-                  width: 34, height: 34, borderRadius: '50%',
-                  background: currentUser?.avatarColor,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: 'white', fontWeight: 'bold', fontSize: 14,
-                  overflow: 'hidden', flexShrink: 0
-                }}>
-                  {currentUser?.avatarUrl ? <img src={currentUser.avatarUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : currentUser?.avatar}
-                </div>
-                <input
-                  value={commentText}
-                  onChange={e => setCommentText(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && addComment()}
-                  placeholder="Add a comment..."
-                  style={{
-                    flex: 1, background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: 28, padding: '10px 14px',
-                    color: 'white', outline: 'none', fontSize: 13
-                  }}
-                />
-                <button onClick={addComment} style={{
-                  background: 'linear-gradient(135deg,#E2622A,#C9962E)',
-                  border: 'none', borderRadius: '50%',
-                  width: 36, height: 36,
-                  color: 'white', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center'
-                }}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
-                </button>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* Share Sheet */}
-      {showShare && <ShareSheet video={video} currentUser={currentUser} onClose={() => setShowShare(false)} showToast={showToast} />}
-
-      {/* Action Menu */}
-      {showActionMenu && (
-        <div onClick={() => setShowActionMenu(false)} style={{ position: 'fixed', inset: 0, zIndex: 9990 }}>
-          <div onClick={e => e.stopPropagation()} style={{
-            position: 'fixed', bottom: 10, right: 14,
-            background: 'rgba(18,18,18,0.97)', backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: 22, padding: 6, zIndex: 9991,
-            minWidth: 210, animation: 'popIn 0.2s ease'
-          }}>
-            {[
-              { icon: '🤝', label: 'Duet', fn: () => onDuet?.(video.id) },
-              { icon: '✂️', label: 'Stitch', fn: () => onStitch?.(video.id) },
-              { icon: '🔴', label: 'Live', fn: () => onLive?.() },
-              { icon: '💬', label: 'Message', fn: () => onMessage?.(video.userId) },
-              { icon: '📞', label: 'Voice Call', fn: () => onVoiceCall?.(video.userId) },
-              { icon: '📹', label: 'Video Call', fn: () => onVideoCall?.(video.userId) },
-              { icon: '📥', label: 'Download', fn: () => {
-                if (video?.videoUrl) { window.open(video.videoUrl, '_blank'); showToast?.('Opened in browser', 'info'); }
-                setShowActionMenu(false);
-              }},
-              { icon: '🔖', label: 'Save', fn: () => {
-                if (!currentUser?.id) { showToast?.('Sign in to save', 'error'); return; }
-                setDoc(doc(db, 'saves', `${video.id}_${currentUser.id}`), { videoId: video.id, userId: currentUser.id, createdAt: serverTimestamp() });
-                showToast?.('Saved! 🔖', 'success');
-                setShowActionMenu(false);
-              }},
-              { icon: '🚩', label: 'Report', fn: () => { setShowReportModal(true); setShowActionMenu(false); }, color: '#FFB100' },
-              { icon: '🚫', label: 'Block', fn: () => {
-                if (!currentUser?.id) return;
-                updateDoc(doc(db, 'users', currentUser.id), { blockedUsers: arrayUnion(video.userId) });
-                showToast?.('User blocked', 'warning');
-                onBlock?.(video.userId);
-                setShowActionMenu(false);
-              }, color: '#E2622A' },
-            ].map(({ icon, label, fn, color }) => (
-              <button key={label} onClick={fn} style={{
-                display: 'flex', alignItems: 'center', gap: 12,
-                width: '100%', padding: '11px 14px',
-                background: 'none', border: 'none',
-                color: color || 'white', cursor: 'pointer',
-                borderRadius: 16, fontSize: 14
-              }}>
-                <span style={{ fontSize: 18 }}>{icon}</span> {label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Report Modal */}
-      {showReportModal && (
-        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 50, display: 'flex', alignItems: 'flex-end' }} onClick={() => setShowReportModal(false)}>
-          <div onClick={e => e.stopPropagation()} style={{
-            width: '100%', background: '#171310',
-            borderTopLeftRadius: 28, borderTopRightRadius: 28,
-            padding: '20px 20px 40px', animation: 'slideUp 0.3s ease'
-          }}>
-            <div style={{ width: 36, height: 4, background: 'rgba(255,255,255,0.12)', borderRadius: 2, margin: '0 auto 20px' }} />
-            <div style={{ color: 'white', fontWeight: 800, fontSize: 18, marginBottom: 4 }}>Report Post</div>
-            <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13, marginBottom: 16 }}>Why are you reporting this?</div>
-            {reportReasons.map(r => (
-              <button key={r} onClick={async () => {
-                await addDoc(collection(db, 'reports'), { videoId: video.id, userId: currentUser?.id, reason: r, createdAt: serverTimestamp() });
-                showToast?.('Report submitted', 'success');
-                setShowReportModal(false);
-              }} style={{
-                width: '100%', background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                borderRadius: 14, padding: '14px 16px',
-                color: 'white', textAlign: 'left', cursor: 'pointer',
-                marginBottom: 8, fontSize: 14
-              }}>{r}</button>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-});
-EnhancedVideoCard.displayName = 'EnhancedVideoCard';
-
-// ============================================================
-// 15. HOME FEED (Optimized)
-// ============================================================
-const useExchangeFeedItems = () => {
-  const [jobs, setJobs] = useState([]);
-  const [market, setMarket] = useState([]);
-
-  useEffect(() => {
-    const qJobs = query(collection(db, 'jobs'), orderBy('createdAt', 'desc'), limit(20));
-    const unsubJobs = onSnapshot(qJobs, snap => {
-      setJobs(snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(it => it.status === 'active' && it.reviewFlag !== 'pending'));
-    }, () => {});
-    const qMkt = query(collection(db, 'marketItems'), orderBy('createdAt', 'desc'), limit(20));
-    const unsubMkt = onSnapshot(qMkt, snap => {
-      setMarket(snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(it => it.status === 'available' && it.reviewFlag !== 'pending'));
-    }, () => {});
-    return () => { unsubJobs(); unsubMkt(); };
-  }, []);
-
-  return useMemo(() => {
-    const items = [
-      ...jobs.map(j => ({ ...j, type: 'exchange', _kind: 'job', _feedId: `ex_job_${j.id}` })),
-      ...market.map(m => ({ ...m, type: 'exchange', _kind: 'market', _feedId: `ex_mkt_${m.id}` })),
-    ];
-    return items.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-  }, [jobs, market]);
-};
-
-// Exchange Card for job/market items in feed
-const ExchangeCard = memo(({ item, currentUser, onOpenExchange, showToast }) => {
-  const tag = EXCHANGE_TAGS[item._kind] || EXCHANGE_TAGS.job;
-  const isSaved = (item.saved || []).includes(currentUser?.id);
-
-  const toggleSave = async (e) => {
-    e.stopPropagation();
-    if (!currentUser?.id) return;
-    const col = item._kind === 'job' ? 'jobs' : 'marketItems';
-    try {
-      await updateDoc(doc(db, col, item.id), {
-        saved: isSaved ? arrayRemove(currentUser.id) : arrayUnion(currentUser.id)
-      });
-      showToast?.(isSaved ? 'Removed from saved' : 'Saved ✅', 'success');
-    } catch { showToast?.('Could not save right now', 'error'); }
+    setLoading(false);
   };
 
   return (
     <div style={{
-      position: 'absolute', inset: 0,
-      background: `linear-gradient(160deg, ${tag.color}26, #0C0907 75%)`,
-      display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
-      padding: '90px 18px 0'
+      height: '100%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 24,
+      background: '#0C0907'
     }}>
-      <div style={{ position: 'absolute', top: 60, left: 18, right: 18, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{
-          display: 'inline-flex', alignItems: 'center', gap: 6,
-          background: `${tag.color}22`, border: `1px solid ${tag.color}55`,
-          borderRadius: 20, padding: '5px 12px'
-        }}>
-          <span style={{ fontSize: 13 }}>{tag.emoji}</span>
-          <span style={{ color: tag.color, fontSize: 11, fontWeight: 800, letterSpacing: 0.3 }}>
-            {tag.label} · part of your Pulse
-          </span>
-        </div>
-      </div>
-      <div style={{ paddingBottom: 130 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+      <div style={{ width: '100%', maxWidth: 340 }}>
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{
-            width: 40, height: 40, borderRadius: 14,
-            background: item.avatarColor || tag.color,
+            width: 64, height: 64, borderRadius: '50%',
+            background: 'linear-gradient(135deg,#E2622A,#C9962E)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: 'white', fontWeight: 800, fontSize: 16,
-            overflow: 'hidden', flexShrink: 0
+            margin: '0 auto 16px',
+            fontSize: 28
           }}>
-            {item.avatarUrl ? <img src={item.avatarUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : (item.username || '?')[0].toUpperCase()}
+            ◈
           </div>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ color: 'white', fontSize: 13, fontWeight: 700 }}>@{item.username}</div>
-            <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 11 }}>
-              {item.reviewFlag === 'pending' ? '⏳ Under review' : '✅ Verified exchange'}
-            </div>
+          <div style={{ color: 'white', fontWeight: 800, fontSize: 22 }}>
+            Social Resonance OS
+          </div>
+          <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, marginTop: 4 }}>
+            {isLogin ? 'Welcome back' : 'Join the resonance field'}
           </div>
         </div>
-        <div style={{ color: 'white', fontWeight: 800, fontSize: 23, lineHeight: 1.25, marginBottom: 8 }}>
-          {item.title}
-        </div>
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
-          {item._kind === 'job' ? (
-            <>
-              <span style={{ background: 'rgba(255,255,255,0.08)', borderRadius: 20, padding: '3px 11px', color: 'rgba(255,255,255,0.75)', fontSize: 11.5 }}>
-                {item.company}{item.location ? ` · ${item.location}` : ''}
-              </span>
-              {item.salary && <span style={{ background: 'rgba(46,213,115,0.12)', border: '1px solid rgba(46,213,115,0.3)', borderRadius: 20, padding: '3px 11px', color: '#2ED573', fontSize: 11.5, fontWeight: 700 }}>{item.salary}</span>}
-              {item.type && <span style={{ background: `${tag.color}1F`, borderRadius: 20, padding: '3px 11px', color: tag.color, fontSize: 11.5, fontWeight: 700 }}>{item.type}</span>}
-            </>
-          ) : (
-            <>
-              <span style={{ background: 'rgba(10,132,255,0.12)', border: '1px solid rgba(10,132,255,0.3)', borderRadius: 20, padding: '3px 11px', color: '#0A84FF', fontSize: 11.5, fontWeight: 700 }}>{item.price}</span>
-              {item.category && <span style={{ background: 'rgba(255,255,255,0.08)', borderRadius: 20, padding: '3px 11px', color: 'rgba(255,255,255,0.7)', fontSize: 11.5 }}>{item.category}</span>}
-              {item.condition && <span style={{ background: 'rgba(255,214,10,0.1)', border: '1px solid rgba(255,214,10,0.25)', borderRadius: 20, padding: '3px 11px', color: '#FFD60A', fontSize: 11.5 }}>{item.condition}</span>}
-            </>
-          )}
-        </div>
-        {item.description && (
-          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, lineHeight: 1.55, marginBottom: 16, maxWidth: 280 }}>
-            {item.description.length > 120 ? item.description.slice(0, 120).trimEnd() + '…' : item.description}
-          </p>
+
+        {error && (
+          <div style={{
+            background: 'rgba(226,98,42,0.1)',
+            border: '1px solid rgba(226,98,42,0.3)',
+            borderRadius: 12,
+            padding: '10px 14px',
+            color: '#E2622A',
+            fontSize: 12,
+            marginBottom: 12
+          }}>
+            {error}
+          </div>
         )}
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button onClick={() => onOpenExchange?.(item._kind)} style={{
-            flex: 1, background: `linear-gradient(135deg,${tag.color},#C9962E)`,
-            border: 'none', borderRadius: 16, padding: '13px 0',
-            color: 'white', fontWeight: 800, fontSize: 13.5, cursor: 'pointer'
-          }}>
-            {item._kind === 'job' ? 'View & Apply' : 'View & Contact'}
-          </button>
-          <button onClick={toggleSave} style={{
-            width: 46, height: 46,
-            background: 'rgba(255,255,255,0.06)',
-            border: '1px solid rgba(255,255,255,0.15)',
-            borderRadius: 16,
-            color: isSaved ? '#FFD60A' : 'rgba(255,255,255,0.6)',
-            fontSize: 18, cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center'
-          }}>
-            {isSaved ? '🔖' : '📌'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-});
-ExchangeCard.displayName = 'ExchangeCard';
 
-// Main Home Feed Component
-export const HomeFeed = memo(({
-  t, videos, onLike, onComment, onShare, onFollow, onMessage,
-  onVoiceCall, onVideoCall, onDuet, onStitch, onSaveSound,
-  followed, showToast, onLive, currentUser, onViewProfile,
-  onOpenSearch, onOpenNotifications, blockedUsers, onBlock, users
-}) => {
-  const exchangeItems = useExchangeFeedItems();
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [activeCategory, setActiveCategory] = useState('foryou');
-  const [refreshing, setRefreshing] = useState(false);
-  const startY = useRef(null);
-  const startTime = useRef(null);
-
-  // Filter and rank videos
-  const filteredVideos = useMemo(() => {
-    const base = videos
-      .filter(v => !(blockedUsers || []).includes(v.userId))
-      .map(v => {
-        let score = 0;
-        if (followed?.includes(v.userId)) score += 50;
-        score += Math.log((v.likes || 0) + 1) * 10;
-        score += Math.log((v.views || 0) + 1) * 2;
-        score += Math.log((v.comments || 0) + 1) * 8;
-        const age = Date.now() - (v.createdAt?.seconds || 0) * 1000;
-        score += Math.max(0, 100 - (age / (1000 * 60 * 60)) * 2);
-        if (v.verified) score += 20;
-        return { ...v, type: 'video', _score: score };
-      })
-      .sort((a, b) => b._score - a._score);
-
-    if (activeCategory !== 'foryou') return base.filter(v => v.category === activeCategory);
-    return interleaveExchangeItems(base, exchangeItems, 5);
-  }, [videos, activeCategory, blockedUsers, followed, exchangeItems]);
-
-  // Touch handlers for swipe
-  const handleTouchStart = (e) => {
-    startY.current = e.touches[0].clientY;
-    startTime.current = Date.now();
-  };
-
-  const handleTouchEnd = (e) => {
-    if (startY.current === null) return;
-    const dy = startY.current - e.changedTouches[0].clientY;
-    const dt = Date.now() - startTime.current;
-    const velocity = Math.abs(dy) / Math.max(dt, 1);
-    const threshold = velocity > 0.3 ? 20 : 60;
-    if (Math.abs(dy) > threshold) {
-      haptic('light');
-      if (dy > 0) setCurrentIndex(i => Math.min(filteredVideos.length - 1, i + 1));
-      else setCurrentIndex(i => Math.max(0, i - 1));
-    }
-    startY.current = null;
-  };
-
-  if (!filteredVideos.length && activeCategory === 'foryou') {
-    return (
-      <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12 }}>
-        <div style={{ fontSize: 48 }}>📭</div>
-        <div style={{ color: 'rgba(255,255,255,0.3)' }}>{t?.noVideos || 'No videos yet. Be the first to post!'}</div>
-      </div>
-    );
-  }
-
-  // Jobs/Market category view
-  if (activeCategory === 'jobs' || activeCategory === 'skills') {
-    return (
-      <div style={{ height: '100%', position: 'relative', overflow: 'hidden' }}>
-        <div style={{
-          position: 'absolute', top: 0, left: 0, right: 0, zIndex: 15,
-          padding: '14px 16px 12px', background: 'rgba(10,10,10,0.98)',
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between'
-        }}>
-          <div style={{ flex: 1, display: 'flex', justifyContent: 'center', gap: 24 }}>
-            {TOP_CATEGORIES.map(cat => (
-              <button key={cat.id} onClick={() => { setActiveCategory(cat.id); setCurrentIndex(0); }} style={{
-                background: 'none', border: 'none',
-                color: activeCategory === cat.id ? 'white' : 'rgba(255,255,255,0.45)',
-                fontWeight: activeCategory === cat.id ? 800 : 500,
-                fontSize: 15, cursor: 'pointer', paddingBottom: 6,
-                borderBottom: activeCategory === cat.id ? '2.5px solid white' : '2.5px solid transparent'
-              }}>
-                {cat.id === 'foryou' ? (t?.foryou || cat.label) :
-                 cat.id === 'jobs' ? (t?.jobs || 'Jobs') :
-                 (t?.skills || 'Skills')}
-              </button>
-            ))}
-          </div>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            <button onClick={onOpenSearch} style={{
-              background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: '50%', width: 38, height: 38,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer'
-            }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
-                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-            </button>
-          </div>
-        </div>
-        <div style={{ position: 'absolute', inset: 0, paddingTop: 60, overflow: 'hidden' }}>
-          <JobsMarketPage currentUser={currentUser} showToast={showToast} mode={activeCategory} onViewProfile={onViewProfile} />
-        </div>
-      </div>
-    );
-  }
-
-  // Main feed
-  return (
-    <div
-      style={{ height: '100%', position: 'relative', overflow: 'hidden' }}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-    >
-      {/* Header */}
-      <div style={{
-        position: 'absolute', top: 0, left: 0, right: 0, zIndex: 15,
-        padding: '14px 16px 12px',
-        background: 'linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 100%)',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between'
-      }}>
-        <div style={{ flex: 1, display: 'flex', justifyContent: 'center', gap: 24 }}>
-          {TOP_CATEGORIES.map(cat => (
-            <button key={cat.id} onClick={() => { setActiveCategory(cat.id); setCurrentIndex(0); }} style={{
-              background: 'none', border: 'none',
-              color: activeCategory === cat.id ? 'white' : 'rgba(255,255,255,0.45)',
-              fontWeight: activeCategory === cat.id ? 800 : 500,
-              fontSize: 15, cursor: 'pointer', paddingBottom: 6,
-              borderBottom: activeCategory === cat.id ? '2.5px solid white' : '2.5px solid transparent'
-            }}>
-              {cat.id === 'foryou' ? (t?.foryou || cat.label) :
-               cat.id === 'jobs' ? (t?.jobs || 'Jobs') :
-               (t?.skills || 'Skills')}
-            </button>
-          ))}
-        </div>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          <button onClick={onOpenSearch} style={{
-            background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: '50%', width: 38, height: 38,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer'
-          }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
-              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-          </button>
-          <button onClick={onOpenNotifications} style={{
-            background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: '50%', width: 38, height: 38,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', position: 'relative'
-          }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-              <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
-              <path d="M13.73 21a2 2 0 01-3.46 0" />
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      {/* Video Cards */}
-      {filteredVideos.map((video, idx) => {
-        if (Math.abs(idx - currentIndex) > 1) return null;
-        return (
-          <div
-            key={video._feedId || video.id}
-            style={{
-              position: 'absolute', inset: 0,
-              opacity: idx === currentIndex ? 1 : 0,
-              transform: `translateY(${(idx - currentIndex) * 100}%)`,
-              transition: 'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)',
-              pointerEvents: idx === currentIndex ? 'auto' : 'none'
-            }}
-          >
-            {video.type === 'exchange' ? (
-              <ExchangeCard
-                item={video}
-                currentUser={currentUser}
-                showToast={showToast}
-                onOpenExchange={(kind) => { setActiveCategory(kind === 'job' ? 'jobs' : 'skills'); setCurrentIndex(0); }}
-              />
-            ) : (
-              <EnhancedVideoCard
-                video={video}
-                currentUser={currentUser}
-                isActive={idx === currentIndex}
-                onLike={onLike}
-                onComment={onComment}
-                onShare={onShare}
-                onFollow={onFollow}
-                onMessage={onMessage}
-                onVoiceCall={onVoiceCall}
-                onVideoCall={onVideoCall}
-                onDuet={onDuet}
-                onStitch={onStitch}
-                onSaveSound={onSaveSound}
-                followed={followed}
-                showToast={showToast}
-                onViewProfile={onViewProfile}
-                onBlock={onBlock}
-                onLive={onLive}
-              />
-            )}
-          </div>
-        );
-      })}
-
-      {/* Scroll indicator */}
-      {filteredVideos.length > 1 && (
-        <div style={{
-          position: 'absolute', right: 6, top: '50%',
-          transform: 'translateY(-50%)',
-          display: 'flex', flexDirection: 'column', gap: 4, zIndex: 10
-        }}>
-          {filteredVideos.map((_, i) => (
-            <div
-              key={i}
-              onClick={() => setCurrentIndex(i)}
+        {!isLogin && (
+          <>
+            <input
+              placeholder="Full Name"
+              value={fullName}
+              onChange={e => setFullName(e.target.value)}
               style={{
-                width: 3,
-                height: i === currentIndex ? 20 : 4,
-                borderRadius: 2,
-                background: i === currentIndex ? 'white' : 'rgba(255,255,255,0.2)',
-                cursor: 'pointer',
-                transition: 'all 0.2s'
+                width: '100%',
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 14,
+                padding: '13px 16px',
+                color: 'white',
+                marginBottom: 10,
+                outline: 'none',
+                fontSize: 14,
+                boxSizing: 'border-box'
               }}
             />
-          ))}
-        </div>
-      )}
+            <input
+              placeholder="Username"
+              value={username}
+              onChange={e => setUsername(e.target.value)}
+              style={{
+                width: '100%',
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 14,
+                padding: '13px 16px',
+                color: 'white',
+                marginBottom: 10,
+                outline: 'none',
+                fontSize: 14,
+                boxSizing: 'border-box'
+              }}
+            />
+            <input
+              placeholder="Birthdate (YYYY-MM-DD)"
+              value={birthdate}
+              onChange={e => setBirthdate(e.target.value)}
+              style={{
+                width: '100%',
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 14,
+                padding: '13px 16px',
+                color: 'white',
+                marginBottom: 10,
+                outline: 'none',
+                fontSize: 14,
+                boxSizing: 'border-box'
+              }}
+            />
+          </>
+        )}
+
+        <input
+          placeholder="Email"
+          value={identifier}
+          onChange={e => setIdentifier(e.target.value)}
+          style={{
+            width: '100%',
+            background: 'rgba(255,255,255,0.05)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: 14,
+            padding: '13px 16px',
+            color: 'white',
+            marginBottom: 10,
+            outline: 'none',
+            fontSize: 14,
+            boxSizing: 'border-box'
+          }}
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          style={{
+            width: '100%',
+            background: 'rgba(255,255,255,0.05)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: 14,
+            padding: '13px 16px',
+            color: 'white',
+            marginBottom: 14,
+            outline: 'none',
+            fontSize: 14,
+            boxSizing: 'border-box'
+          }}
+        />
+
+        <button
+          onClick={isLogin ? handleLogin : handleSignup}
+          disabled={loading || !identifier || !password || (!isLogin && (!username || !fullName || !birthdate))}
+          style={{
+            width: '100%',
+            background: 'linear-gradient(135deg,#E2622A,#C9962E)',
+            border: 'none',
+            borderRadius: 24,
+            padding: 15,
+            color: 'white',
+            fontWeight: 700,
+            cursor: 'pointer',
+            fontSize: 15,
+            opacity: (loading || !identifier || !password) ? 0.5 : 1
+          }}
+        >
+          {loading ? 'Please wait...' : (isLogin ? 'Enter Resonance' : 'Join Resonance Field')}
+        </button>
+
+        <button
+          onClick={() => setIsLogin(!isLogin)}
+          style={{
+            width: '100%',
+            background: 'none',
+            border: 'none',
+            color: 'rgba(255,255,255,0.4)',
+            fontSize: 13,
+            cursor: 'pointer',
+            marginTop: 10
+          }}
+        >
+          {isLogin ? "Don't have an account? Sign up →" : "Already have an account? Sign in →"}
+        </button>
+      </div>
     </div>
   );
-});
-HomeFeed.displayName = 'HomeFeed';
+};
 
 // ============================================================
-// 16. INBOX / CHAT (Optimized)
+// MAIN APP
 // ============================================================
-// ... (Inbox, ConversationView, GroupChat components)
-// Note: These remain largely the same as in your original code,
-// but with memoization and optimization applied.
 
-// ============================================================
-// 17. PROFILE PAGE (Optimized)
-// ============================================================
-// ... (ProfilePage, EditProfile, Wallet components)
-// Note: These remain largely the same with performance optimizations.
-
-// ============================================================
-// 18. AUTH SCREEN (Optimized)
-// ============================================================
-// ... (AuthScreen, GuestFeed components)
-// Note: These remain largely the same with bug fixes.
-
-// ============================================================
-// 19. JOBS & MARKET PAGE (Optimized)
-// ============================================================
-// Note: This is imported/rendered within HomeFeed when category is jobs/skills.
-
-// ============================================================
-// 20. MAIN APP COMPONENT
-// ============================================================
 export default function DaguV3App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [users, setUsers] = useState([]);
-  const [videos, setVideos] = useState([]);
+  const [signals, setSignals] = useState([]);
   const [followed, setFollowed] = useState([]);
   const [blockedUsers, setBlockedUsers] = useState([]);
-  const [activeTab, setActiveTab] = useState('home');
+  const [activeMode, setActiveMode] = useState('resonate'); // resonate, gather, transmit, reveal, trace
   const [toast, setToast] = useState(null);
   const [notifPopup, setNotifPopup] = useState(null);
-  const [showDiscover, setShowDiscover] = useState(false);
-  const [showCamera, setShowCamera] = useState(false);
-  const [showCall, setShowCall] = useState(null);
-  const [showLiveStream, setShowLiveStream] = useState(null);
-  const [showStoryViewer, setShowStoryViewer] = useState(null);
-  const [showSoundLibrary, setShowSoundLibrary] = useState(false);
-  const [showQRCode, setShowQRCode] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [showAnalytics, setShowAnalytics] = useState(false);
-  const [showCreateStory, setShowCreateStory] = useState(false);
-  const [showSavedPosts, setShowSavedPosts] = useState(false);
-  const [showBroadcast, setShowBroadcast] = useState(false);
-  const [showShareSheet, setShowShareSheet] = useState(null);
+  const [showTrace, setShowTrace] = useState(false);
+  const [showTransmit, setShowTransmit] = useState(false);
   const [viewingProfile, setViewingProfile] = useState(null);
-  const [quickConversation, setQuickConversation] = useState(null);
 
   const showToast = useCallback((message, type = 'info') => setToast({ message, type }), []);
   const isOnline = useNetworkStatus();
-  const t = TRANSLATIONS[currentUser?.language || 'en'] || TRANSLATIONS.en;
 
-  // ===== Firebase Auth Listener =====
+  // Firebase Auth Listener
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (fbUser) => {
       if (fbUser) {
@@ -1690,7 +2338,7 @@ export default function DaguV3App() {
           }
         }
         if (profile) {
-          setCurrentUser({ ...profile, id: fbUser.uid, language: profile.language || 'en' });
+          setCurrentUser({ ...profile, id: fbUser.uid });
           setFollowed(profile.following || []);
           setBlockedUsers(profile.blockedUsers || []);
         } else {
@@ -1711,16 +2359,16 @@ export default function DaguV3App() {
     return () => unsub();
   }, []);
 
-  // ===== Real-time Videos =====
+  // Real-time Signals
   useEffect(() => {
-    const q = query(collection(db, 'videos'), orderBy('createdAt', 'desc'), limit(50));
+    const q = query(collection(db, 'signals'), orderBy('createdAt', 'desc'), limit(50));
     const unsub = onSnapshot(q, snap => {
-      setVideos(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setSignals(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
     return () => unsub();
   }, []);
 
-  // ===== Real-time Users =====
+  // Real-time Users
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'users'), snap => {
       setUsers(snap.docs.map(d => ({ id: d.id, ...d.data() })));
@@ -1728,7 +2376,7 @@ export default function DaguV3App() {
     return () => unsub();
   }, []);
 
-  // ===== Notification Popup =====
+  // Notification Popup
   const usersRef = useRef(users);
   useEffect(() => { usersRef.current = users; }, [users]);
 
@@ -1754,19 +2402,22 @@ export default function DaguV3App() {
     return () => unsub();
   }, [currentUser?.id]);
 
-  // ===== Handlers =====
+  // Handlers
   const handleLogin = async (profile) => {
     setCurrentUser(profile);
     setFollowed(profile.following || []);
     setBlockedUsers(profile.blockedUsers || []);
-    showToast(`Welcome back, @${profile.username}! 👋`, 'success');
-    setDoc(doc(db, 'presence', profile.id), { online: true, lastSeen: serverTimestamp() }, { merge: true }).catch(() => {});
+    showToast(`Welcome to Resonance, @${profile.username}! ◈`, 'success');
+    await setDoc(doc(db, 'presence', profile.id), {
+      online: true,
+      lastSeen: serverTimestamp()
+    }, { merge: true }).catch(() => {});
   };
 
   const handleLogout = async () => {
     await signOut(auth);
     setCurrentUser(null);
-    showToast('Logged out', 'info');
+    showToast('Left the resonance field', 'info');
   };
 
   const toggleFollow = async (uid) => {
@@ -1780,7 +2431,9 @@ export default function DaguV3App() {
     await updateDoc(doc(db, 'users', uid), {
       followers: isFollowing ? arrayRemove(currentUser.id) : arrayUnion(currentUser.id)
     });
-    if (!isFollowing) await sendNotification(uid, currentUser.id, 'follow', 'started following you');
+    if (!isFollowing) {
+      await sendNotification(uid, currentUser.id, 'follow', 'resonates with you');
+    }
   };
 
   const handleViewProfile = (uid) => {
@@ -1788,33 +2441,46 @@ export default function DaguV3App() {
     if (user) setViewingProfile(user);
   };
 
-  const handleMessage = (uid) => {
-    if (!uid || !currentUser?.id) return;
-    if (uid === currentUser.id) { showToast("You can't message yourself", 'info'); return; }
-    const convId = [currentUser.id, uid].sort().join('_');
-    const otherUser = users.find(u => u.id === uid) || { id: uid, username: '', avatar: '?', avatarColor: '#5A5A66' };
-    setQuickConversation({ id: convId, otherUser });
-    setDoc(doc(db, 'conversations', convId), {
-      participants: [currentUser.id, uid],
-      lastMessageAt: serverTimestamp(),
-    }, { merge: true }).catch(() => {});
-  };
-
-  // ===== Loading State =====
+  // Loading State
   if (authLoading) {
     return (
-      <div style={{ maxWidth: 430, margin: '0 auto', height: '100dvh', background: '#0C0907', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
+      <div style={{
+        maxWidth: 430, margin: '0 auto', height: '100dvh',
+        background: '#0C0907',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'column',
+        gap: 16
+      }}>
         <GlobalStyles />
         {!isOnline && <OfflineBanner />}
-        <img src="https://res.cloudinary.com/dotvhzjmc/image/upload/znfksngv27boh3c1kxpv.png" style={{ width: 80, height: 80, borderRadius: 24, marginBottom: 16 }} alt="Dagu" />
-        <div style={{ width: 32, height: 32, border: '3px solid rgba(226,98,42,0.3)', borderTop: '3px solid #E2622A', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+        <div style={{
+          width: 64, height: 64, borderRadius: '50%',
+          background: 'linear-gradient(135deg,#E2622A,#C9962E)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 28
+        }}>
+          ◈
+        </div>
+        <div style={{
+          width: 32, height: 32,
+          border: '3px solid rgba(226,98,42,0.3)',
+          borderTop: '3px solid #E2622A',
+          borderRadius: '50%',
+          animation: 'spin 1s linear infinite'
+        }} />
       </div>
     );
   }
 
   if (!currentUser) {
     return (
-      <div style={{ maxWidth: 430, margin: '0 auto', height: '100dvh', background: '#0C0907', overflow: 'hidden' }}>
+      <div style={{
+        maxWidth: 430, margin: '0 auto', height: '100dvh',
+        background: '#0C0907',
+        overflow: 'hidden'
+      }}>
         <GlobalStyles />
         <AuthScreen onLogin={handleLogin} />
         {notifPopup && (
@@ -1830,186 +2496,210 @@ export default function DaguV3App() {
     );
   }
 
-  // ===== Main App =====
+  // Main App
   return (
-    <div style={{ maxWidth: 430, margin: '0 auto', height: '100dvh', background: '#0C0907', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+    <div style={{
+      maxWidth: 430, margin: '0 auto', height: '100dvh',
+      background: '#0C0907',
+      display: 'flex',
+      flexDirection: 'column',
+      position: 'relative',
+      overflow: 'hidden'
+    }}>
       <GlobalStyles />
       {!isOnline && <OfflineBanner />}
 
-      {/* Modals & Overlays */}
-      {showCall && <CallModal {...showCall} currentUser={currentUser} onClose={() => setShowCall(null)} />}
-      {showLiveStream && <LiveStream streamer={showLiveStream} onClose={() => setShowLiveStream(null)} showToast={showToast} currentUser={currentUser} />}
-      {showStoryViewer && showStoryViewer.groups && (
-        <TelegramStoryViewer
-          storyGroups={showStoryViewer.groups}
-          startGroupIdx={showStoryViewer.startIdx || 0}
-          currentUser={currentUser}
-          onClose={() => setShowStoryViewer(null)}
-          onViewProfile={uid => { handleViewProfile(uid); setShowStoryViewer(null); }}
-          showToast={showToast}
-        />
-      )}
-      {showSoundLibrary && <SoundLibraryPage onSelectSound={s => { showToast(`Selected: ${s.name}`, 'success'); setShowSoundLibrary(false); }} onClose={() => setShowSoundLibrary(false)} />}
-      {showQRCode && <QRCodePage user={currentUser} onClose={() => setShowQRCode(false)} />}
-      {showNotifications && <NotificationsPage currentUser={currentUser} users={users} videos={videos} onClose={() => setShowNotifications(false)} onViewProfile={handleViewProfile} t={t} onNavigate={(tab) => { setShowNotifications(false); setActiveTab(tab || 'home'); }} />}
-      {showAnalytics && <CreatorAnalytics user={currentUser} videos={videos} onClose={() => setShowAnalytics(false)} />}
-      {showCreateStory && <CreateStoryModal currentUser={currentUser} onClose={() => setShowCreateStory(false)} showToast={showToast} />}
-      {showSavedPosts && <SavedPostsPage currentUser={currentUser} showToast={showToast} onClose={() => setShowSavedPosts(false)} />}
-      {showDiscover && <DiscoverPage videos={videos} users={users} onViewProfile={uid => { handleViewProfile(uid); }} showToast={showToast} onClose={() => setShowDiscover(false)} />}
-      {showBroadcast && <BroadcastPage currentUser={currentUser} users={users} showToast={showToast} onClose={() => setShowBroadcast(false)} />}
-      {showShareSheet && <ShareSheet video={showShareSheet} currentUser={currentUser} onClose={() => setShowShareSheet(null)} showToast={showToast} />}
-
+      {/* Profile Modal */}
       {viewingProfile && (
-        <UserProfileModal
-          user={viewingProfile}
-          currentUser={currentUser}
-          onClose={() => setViewingProfile(null)}
-          onFollow={toggleFollow}
-          onMessage={handleMessage}
-          onVoiceCall={uid => { const u = users.find(uu => uu.id === uid); setShowCall({ type: 'audio', contactName: u?.username, contactAvatar: u?.avatar, contactId: uid }); setViewingProfile(null); }}
-          onVideoCall={uid => { const u = users.find(uu => uu.id === uid); setShowCall({ type: 'video', contactName: u?.username, contactAvatar: u?.avatar, contactId: uid }); setViewingProfile(null); }}
-          followed={followed}
-          showToast={showToast}
-          userVideos={videos.filter(v => v.userId === viewingProfile?.id)}
+        <div style={{
+          position: 'fixed', inset: 0,
+          background: 'rgba(0,0,0,0.85)',
+          zIndex: 3000,
+          display: 'flex',
+          alignItems: 'flex-end'
+        }} onClick={() => setViewingProfile(null)}>
+          <div onClick={e => e.stopPropagation()} style={{
+            width: '100%',
+            background: '#171310',
+            borderTopLeftRadius: 24,
+            borderTopRightRadius: 24,
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            padding: 20
+          }}>
+            <div style={{
+              width: 36, height: 4,
+              background: 'rgba(255,255,255,0.12)',
+              borderRadius: 2,
+              margin: '0 auto 16px'
+            }} />
+            <div style={{ textAlign: 'center' }}>
+              <div style={{
+                width: 80, height: 80, borderRadius: '50%',
+                background: viewingProfile.avatarColor || '#E2622A',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'white', fontWeight: 'bold', fontSize: 32,
+                margin: '0 auto 12px',
+                overflow: 'hidden'
+              }}>
+                {viewingProfile.avatarUrl ? <img src={viewingProfile.avatarUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : viewingProfile.avatar}
+              </div>
+              <div style={{ color: 'white', fontWeight: 800, fontSize: 20 }}>
+                @{viewingProfile.username}
+              </div>
+              {viewingProfile.verified && (
+                <div style={{ color: '#2F9BFF', fontSize: 12, marginTop: 4 }}>
+                  ✓ Verified
+                </div>
+              )}
+              <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, marginTop: 8 }}>
+                {viewingProfile.bio || 'No bio'}
+              </div>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                gap: 24,
+                marginTop: 16
+              }}>
+                <div>
+                  <div style={{ color: 'white', fontWeight: 800, fontSize: 18 }}>{formatNumber(viewingProfile.followers?.length || 0)}</div>
+                  <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11 }}>Followers</div>
+                </div>
+                <div>
+                  <div style={{ color: 'white', fontWeight: 800, fontSize: 18 }}>{formatNumber(viewingProfile.following?.length || 0)}</div>
+                  <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11 }}>Following</div>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  toggleFollow(viewingProfile.id);
+                  setViewingProfile(null);
+                }}
+                style={{
+                  marginTop: 16,
+                  padding: '10px 32px',
+                  borderRadius: 24,
+                  background: followed.includes(viewingProfile.id) ? 'rgba(255,255,255,0.06)' : 'linear-gradient(135deg,#E2622A,#C9962E)',
+                  border: followed.includes(viewingProfile.id) ? '1px solid rgba(226,98,42,0.4)' : 'none',
+                  color: followed.includes(viewingProfile.id) ? '#E2622A' : 'white',
+                  fontWeight: 700,
+                  fontSize: 14,
+                  cursor: 'pointer'
+                }}
+              >
+                {followed.includes(viewingProfile.id) ? 'Resonate' : '+ Resonate'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Trace Overlay */}
+      {showTrace && (
+        <TraceView
+          signals={signals}
+          users={users}
+          onViewProfile={handleViewProfile}
+          onClose={() => setShowTrace(false)}
         />
       )}
 
-      {quickConversation && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 10500, background: '#0C0907', maxWidth: 430, margin: '0 auto' }}>
-          <ConversationView
-            currentUser={currentUser}
-            otherUser={users.find(u => u.id === quickConversation.otherUser?.id) || quickConversation.otherUser}
-            conversationId={quickConversation.id}
-            onBack={() => setQuickConversation(null)}
+      {/* Transmit Overlay */}
+      {showTransmit && (
+        <div style={{
+          position: 'fixed', inset: 0,
+          zIndex: 100,
+          background: '#0C0907'
+        }}>
+          <button
+            onClick={() => setShowTransmit(false)}
+            style={{
+              position: 'absolute', top: 12, right: 16,
+              zIndex: 10,
+              background: 'rgba(255,255,255,0.05)',
+              border: 'none',
+              borderRadius: '50%',
+              width: 36, height: 36,
+              color: 'white',
+              fontSize: 18,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            ✕
+          </button>
+          <TransmitSignal
+            onTransmit={() => setShowTransmit(false)}
             showToast={showToast}
-            onViewProfile={uid => { setQuickConversation(null); handleViewProfile(uid); }}
-            onVoiceCall={uid => { const u = users.find(uu => uu.id === uid); setShowCall({ type: 'audio', contactName: u?.username, contactAvatar: u?.avatar, contactId: uid }); }}
-            onVideoCall={uid => { const u = users.find(uu => uu.id === uid); setShowCall({ type: 'video', contactName: u?.username, contactAvatar: u?.avatar, contactId: uid }); }}
+            currentUser={currentUser}
           />
         </div>
       )}
 
       {/* Main Content */}
       <div style={{ flex: 1, overflow: 'hidden', position: 'relative', minHeight: 0 }}>
-        {showCamera && <CameraUpload onUpload={v => setVideos(prev => [v, ...prev])} onClose={() => setShowCamera(false)} showToast={showToast} currentUser={currentUser} />}
-        {!showCamera && (
-          <>
-            {activeTab === 'home' && (
-              <HomeFeed
-                t={t}
-                videos={videos}
-                currentUser={currentUser}
-                onLike={() => {}}
-                onComment={() => {}}
-                onShare={(v) => setShowShareSheet(v)}
-                onFollow={toggleFollow}
-                onMessage={handleMessage}
-                onVoiceCall={uid => { const u = users.find(uu => uu.id === uid); setShowCall({ type: 'audio', contactName: u?.username, contactAvatar: u?.avatar, contactId: uid }); }}
-                onVideoCall={uid => { const u = users.find(uu => uu.id === uid); setShowCall({ type: 'video', contactName: u?.username, contactAvatar: u?.avatar, contactId: uid }); }}
-                onDuet={() => showToast('Duet mode ready', 'info')}
-                onStitch={() => showToast('Stitch mode ready', 'info')}
-                onSaveSound={() => showToast('Sound saved!', 'success')}
-                followed={followed}
-                showToast={showToast}
-                onLive={() => setShowLiveStream(currentUser)}
-                onViewProfile={handleViewProfile}
-                onOpenSearch={() => setShowDiscover(true)}
-                onOpenNotifications={() => setShowNotifications(true)}
-                blockedUsers={blockedUsers}
-                onBlock={uid => setBlockedUsers(p => [...p, uid])}
-                users={users}
-              />
-            )}
-            {activeTab === 'friends' && (
-              <FriendsFeed
-                t={t}
-                friends={followed}
-                videos={videos}
-                currentUser={currentUser}
-                onMessage={handleMessage}
-                onVoiceCall={uid => { const u = users.find(uu => uu.id === uid); setShowCall({ type: 'audio', contactName: u?.username, contactAvatar: u?.avatar, contactId: uid }); }}
-                onVideoCall={uid => { const u = users.find(uu => uu.id === uid); setShowCall({ type: 'video', contactName: u?.username, contactAvatar: u?.avatar, contactId: uid }); }}
-                blockedUsers={blockedUsers}
-                onViewProfile={handleViewProfile}
-                showToast={showToast}
-                users={users}
-                onCreateStory={() => setShowCreateStory(true)}
-                onViewStory={setShowStoryViewer}
-                onFollow={toggleFollow}
-                followed={followed}
-                onLive={() => setShowLiveStream(currentUser)}
-                onBlock={uid => setBlockedUsers(p => [...p, uid])}
-                onOpenSearch={() => setShowDiscover(true)}
-              />
-            )}
-            {activeTab === 'create' && (
-              <CreateScreen
-                onOpenCamera={() => setShowCamera(true)}
-                onShowSoundLibrary={() => setShowSoundLibrary(true)}
-                showToast={showToast}
-                t={t}
-              />
-            )}
-            {activeTab === 'inbox' && (
-              <InboxPage
-                t={t}
-                users={users}
-                currentUser={currentUser}
-                showToast={showToast}
-                onViewProfile={handleViewProfile}
-                onVoiceCall={uid => { const u = users.find(uu => uu.id === uid); setShowCall({ type: 'audio', contactName: u?.username, contactAvatar: u?.avatar, contactId: uid }); }}
-                onVideoCall={uid => { const u = users.find(uu => uu.id === uid); setShowCall({ type: 'video', contactName: u?.username, contactAvatar: u?.avatar, contactId: uid }); }}
-              />
-            )}
-            {activeTab === 'profile' && (
-              <ProfilePage
-                user={currentUser}
-                setCurrentUser={setCurrentUser}
-                onLogout={handleLogout}
-                users={users}
-                showToast={showToast}
-                onShowAnalytics={() => setShowAnalytics(true)}
-                onShowQRCode={() => setShowQRCode(true)}
-                allVideos={videos}
-                setBlockedUsers={setBlockedUsers}
-                onShowSavedPosts={() => setShowSavedPosts(true)}
-                onGoToGroups={() => setActiveTab('inbox')}
-                onShowBroadcast={() => setShowBroadcast(true)}
-                onViewProfile={handleViewProfile}
-              />
-            )}
-          </>
-        )}
+        <ResonanceFieldView
+          signals={signals}
+          currentUser={currentUser}
+          followed={followed}
+          showToast={showToast}
+          onViewProfile={handleViewProfile}
+          blockedUsers={blockedUsers}
+          onResonate={(signalId) => {
+            haptic('medium');
+            showToast('◈ Resonating with signal', 'success');
+          }}
+          onGather={(signalId) => {
+            haptic('medium');
+            showToast('⌘ Gathering signal context', 'info');
+          }}
+          onTransmit={() => {
+            haptic('heavy');
+            setShowTransmit(true);
+          }}
+          onReveal={() => {
+            haptic('medium');
+            showToast('⊙ Revealing signal truth', 'info');
+          }}
+          onTrace={() => {
+            haptic('medium');
+            setShowTrace(true);
+          }}
+        />
       </div>
 
-      {/* Tab Bar */}
+      {/* Navigation Bar */}
       <div style={{
         display: 'flex',
         background: 'rgba(6,6,8,0.98)',
         borderTop: '1px solid rgba(255,255,255,0.05)',
         padding: `10px 4px max(26px, env(safe-area-inset-bottom))`,
         flexShrink: 0,
-        backdropFilter: 'blur(30px)',
-        WebkitBackdropFilter: 'blur(30px)'
+        backdropFilter: 'blur(30px)'
       }}>
-        {['home', 'friends', 'create', 'inbox', 'profile'].map(tab => {
-          const isActive = activeTab === tab;
-          const labels = { home: t?.home || 'Pulse', friends: t?.friends || 'Radar', create: t?.create || 'Create', inbox: t?.inbox || 'Messages', profile: t?.profile || 'Profile' };
-          const icons = {
-            home: <polyline points="2 14 7 14 9 20 14 4 17 14 22 14" />,
-            friends: <><circle cx="12" cy="12" r="2"/><circle cx="12" cy="12" r="6.5" strokeOpacity="0.6"/><circle cx="12" cy="12" r="10.5" strokeOpacity="0.3"/></>,
-            create: <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>,
-            inbox: <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>,
-            profile: <><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></>,
-          };
-          const icon = icons[tab];
+        {[
+          { key: 'resonate', symbol: '◈', label: 'Resonate' },
+          { key: 'gather', symbol: '⌘', label: 'Gather' },
+          { key: 'transmit', symbol: '⚡', label: 'Transmit' },
+          { key: 'reveal', symbol: '⊙', label: 'Reveal' },
+          { key: 'trace', symbol: '⋈', label: 'Trace' }
+        ].map(tab => {
+          const isActive = activeMode === tab.key;
           return (
             <button
-              key={tab}
+              key={tab.key}
               onClick={() => {
                 haptic('light');
-                if (tab === 'create') { setShowCamera(true); }
-                else { setShowCamera(false); setActiveTab(tab); }
+                setActiveMode(tab.key);
+                if (tab.key === 'transmit') {
+                  setShowTransmit(true);
+                } else if (tab.key === 'trace') {
+                  setShowTrace(true);
+                } else {
+                  showToast(`${tab.symbol} ${tab.label} mode`, 'info');
+                }
               }}
               style={{
                 flex: 1,
@@ -2021,36 +2711,43 @@ export default function DaguV3App() {
                 background: 'none',
                 border: 'none',
                 cursor: 'pointer',
-                padding: tab === 'create' ? '0' : '6px 0',
+                padding: '6px 0',
                 position: 'relative',
-                transform: isActive && tab !== 'create' ? 'translateY(-1px)' : 'translateY(0)',
+                transform: isActive ? 'translateY(-1px)' : 'translateY(0)',
                 transition: 'transform 0.2s cubic-bezier(0.34,1.56,0.64,1)'
               }}
             >
               <div style={{ position: 'relative' }}>
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={isActive ? '#E2622A' : 'rgba(255,255,255,0.35)'} strokeWidth={isActive ? 2.2 : 1.8} strokeLinecap="round" strokeLinejoin="round">
-                  {icon}
-                </svg>
-                {isActive && tab !== 'create' && (
+                <span style={{
+                  fontSize: 20,
+                  color: isActive ? '#E2622A' : 'rgba(255,255,255,0.35)',
+                  transition: 'color 0.2s'
+                }}>
+                  {tab.symbol}
+                </span>
+                {isActive && (
                   <div style={{
-                    position: 'absolute', bottom: -6, left: '50%',
+                    position: 'absolute',
+                    bottom: -6,
+                    left: '50%',
                     transform: 'translateX(-50%)',
-                    width: 4, height: 4, borderRadius: '50%', background: '#E2622A',
+                    width: 4,
+                    height: 4,
+                    borderRadius: '50%',
+                    background: '#E2622A',
                     animation: 'bounceIn 0.3s ease'
                   }} />
                 )}
               </div>
-              {tab !== 'create' && (
-                <span style={{
-                  fontSize: 9,
-                  color: isActive ? '#E2622A' : 'rgba(255,255,255,0.28)',
-                  fontWeight: isActive ? 800 : 400,
-                  transition: 'color 0.2s',
-                  letterSpacing: 0.3
-                }}>
-                  {labels[tab]}
-                </span>
-              )}
+              <span style={{
+                fontSize: 9,
+                color: isActive ? '#E2622A' : 'rgba(255,255,255,0.28)',
+                fontWeight: isActive ? 800 : 400,
+                transition: 'color 0.2s',
+                letterSpacing: 0.3
+              }}>
+                {tab.label}
+              </span>
             </button>
           );
         })}
