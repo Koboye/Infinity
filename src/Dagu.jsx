@@ -55,7 +55,18 @@ const EMAILJS_PUBLIC_KEY = 'U9fs25Bcx5oQ6A2ru';
 // Recipient for in-app "Report a Problem" submissions. Change in one place if the support inbox changes.
 const SUPPORT_EMAIL = 'getachewshambel11@gmail.com';
 // App creator UID — only this user can grant posting permissions for Jobs & Market
-const APP_CREATOR_UID = 'REPLACE_WITH_CREATOR_UID'; // Set this to the actual Firebase UID of the app creator
+// HOW TO FIND YOUR UID: Firebase Console → Authentication → Users → copy your User UID
+// Example: 'abc12XYZdef456GHI789'
+const APP_CREATOR_UID = (() => {
+  const uid = import.meta.env?.VITE_APP_CREATOR_UID || '';
+  if (!uid || uid === 'REPLACE_WITH_CREATOR_UID') {
+    // Fallback: will be set from auth on first login if creator email matches
+    return '__PENDING__';
+  }
+  return uid;
+})();
+// SUPPORT EMAIL for Reports
+// Set VITE_SUPPORT_EMAIL in your .env file, or hardcode below.
 
 /* ─────────────── CONSTANTS ─────────────── */
 const LOGIN_METHODS = [
@@ -2279,20 +2290,21 @@ const EnhancedVideoCard = memo(({ video, currentUser, isActive, onLike, onCommen
     }
     // Real-time comments
     const q = query(collection(db,'comments'), where('videoId','==',video.id), orderBy('createdAt','asc'));
+    let unsub2 = null;
     const unsub = onSnapshot(q, snap=>{
       setComments(snap.docs.map(d=>({id:d.id,...d.data(),time:d.data().createdAt?.toDate?.()?timeAgo(d.data().createdAt.toDate()):'now'})));
     }, (error)=>{
       console.error('Comments index error:', error);
       // Fallback: fetch without orderBy if index missing
       const q2 = query(collection(db,'comments'), where('videoId','==',video.id));
-      onSnapshot(q2, snap2=>{
+      unsub2 = onSnapshot(q2, snap2=>{
         const sorted = snap2.docs
           .map(d=>({id:d.id,...d.data(),time:d.data().createdAt?.toDate?.()?timeAgo(d.data().createdAt.toDate()):'now'}))
           .sort((a,b)=>(a.createdAt?.seconds||0)-(b.createdAt?.seconds||0));
         setComments(sorted);
       });
     });
-    return ()=>unsub();
+    return ()=>{ unsub(); if(unsub2) unsub2(); };
   },[video?.id, currentUser?.id]);
 
   const timeAgo = (date) => {
@@ -2786,7 +2798,10 @@ const JobsMarketPage = ({ currentUser, showToast, mode, onViewProfile }) => {
   }, [tab]);
 
   const canPost = () => {
-    if (currentUser?.id === APP_CREATOR_UID) return true;
+    const creatorUid = APP_CREATOR_UID !== '__PENDING__'
+      ? APP_CREATOR_UID
+      : (localStorage.getItem('dagu_creator_uid') || '');
+    if (creatorUid && currentUser?.id === creatorUid) return true;
     if (tab === 'jobs') return myPermissions?.canPostJobs === true;
     if (tab === 'market') return myPermissions?.canPostMarket === true;
     return false;
@@ -3624,7 +3639,13 @@ const CreateScreen = ({ onOpenCamera, onShowSoundLibrary, showToast, t }) => (
 const WalletPage = ({ user, setCurrentUser, showToast, onBack }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [amount, setAmount] = useState('');
+  const [telebirrPhone, setTelebirrPhone] = useState('');
   const [transactions, setTransactions] = useState([]);
+  const [withdrawStep, setWithdrawStep] = useState(1); // 1=amount, 2=phone, 3=confirm
+
+  // Coin-to-ETB conversion rate: 100 coins = 1 ETB
+  const COINS_PER_ETB = 100;
+  const MIN_WITHDRAW_COINS = 1000; // minimum 10 ETB
 
   useEffect(()=>{
     if(!user?.id) return;
@@ -3643,88 +3664,181 @@ const WalletPage = ({ user, setCurrentUser, showToast, onBack }) => {
       setCurrentUser(u=>({...u,coins:(u.coins||0)+n,walletBalance:(u.walletBalance||0)+n}));
       showToast?.(`Added ${n} coins! 🎉`,'success');
       setAmount('');
-    } catch(e) {
-      showToast?.('Transaction failed: '+e.message,'error');
-    }
+    } catch(e) { showToast?.('Transaction failed: '+e.message,'error'); }
   };
-  const doWithdraw = async () => {
-    const n=parseInt(amount); if(!n||n<=0){showToast?.('Enter valid amount','error'); return;}
-    if((user?.coins||0)<n){showToast?.('Insufficient coins','error'); return;}
+
+  // Telebirr payout: deduct coins → submit withdrawal request → admin approves
+  const submitTelebirrWithdrawal = async () => {
+    const n = parseInt(amount);
+    if (!n || n < MIN_WITHDRAW_COINS) { showToast?.(`Minimum withdrawal is ${MIN_WITHDRAW_COINS} coins (${MIN_WITHDRAW_COINS/COINS_PER_ETB} ETB)`, 'error'); return; }
+    if ((user?.coins||0) < n) { showToast?.('Insufficient coins', 'error'); return; }
+    if (!telebirrPhone.match(/^(09|07)\d{8}$/)) { showToast?.('Enter valid Ethiopian phone (09XXXXXXXX)', 'error'); return; }
+    const etbAmount = (n / COINS_PER_ETB).toFixed(2);
     try {
-      await addDoc(collection(db,'transactions'),{ userId:user.id, type:'debit', label:`Withdrew ${n} coins`, amount:n, coins:true, createdAt:serverTimestamp() });
-      await updateDoc(doc(db,'users',user.id),{ coins:increment(-n), walletBalance:increment(-n) });
-      setCurrentUser(u=>({...u,coins:(u.coins||0)-n,walletBalance:(u.walletBalance||0)-n}));
-      showToast?.(`Withdrew ${n} coins`,'success');
-      setAmount('');
-    } catch(e) {
-      showToast?.('Transaction failed: '+e.message,'error');
-    }
+      // Deduct coins immediately and hold in "pending_withdrawal"
+      await updateDoc(doc(db,'users',user.id), { coins: increment(-n), pendingWithdrawal: increment(n) });
+      await addDoc(collection(db,'transactions'), {
+        userId: user.id, username: user.username,
+        type: 'withdrawal_pending',
+        label: `Telebirr withdrawal — ${etbAmount} ETB to ${telebirrPhone}`,
+        amount: n, etbAmount: parseFloat(etbAmount),
+        telebirrPhone, coins: true, status: 'pending',
+        createdAt: serverTimestamp()
+      });
+      setCurrentUser(u=>({...u, coins:(u.coins||0)-n}));
+      showToast?.(`Withdrawal request submitted! ${etbAmount} ETB will be sent to ${telebirrPhone} within 24h ✅`, 'success');
+      setAmount(''); setTelebirrPhone(''); setWithdrawStep(1); setActiveTab('overview');
+    } catch(e) { showToast?.('Withdrawal failed: '+e.message, 'error'); }
   };
-  const convertCoins = async () => {
-    const n=parseInt(amount); if(!n||n<=0||(user?.coins||0)<n){showToast?.('Insufficient coins','error'); return;}
-    const eth=(n/10000).toFixed(4);
-    try {
-      await addDoc(collection(db,'transactions'),{ userId:user.id, type:'debit', label:`Converted to ${eth} ETH`, amount:n, coins:true, createdAt:serverTimestamp() });
-      await updateDoc(doc(db,'users',user.id),{ coins:increment(-n) });
-      setCurrentUser(u=>({...u,coins:(u.coins||0)-n}));
-      showToast?.(`Converted to ${eth} ETH! ✨`,'success');
-      setAmount('');
-    } catch(e) {
-      showToast?.('Transaction failed: '+e.message,'error');
-    }
+
+  const etbPreview = amount && parseInt(amount) >= MIN_WITHDRAW_COINS
+    ? (parseInt(amount)/COINS_PER_ETB).toFixed(2) : null;
+
+  const txIcon = (type) => {
+    if(type==='credit') return '⬆️';
+    if(type==='withdrawal_pending') return '⏳';
+    if(type==='withdrawal_paid') return '✅';
+    return '⬇️';
+  };
+  const txColor = (type) => {
+    if(type==='credit') return '#00E6B4';
+    if(type==='withdrawal_pending') return '#FFB100';
+    if(type==='withdrawal_paid') return '#2ED573';
+    return '#FF2156';
   };
 
   return (
     <div style={{ height:'100%', overflow:'auto', background:'#0B0B0F' }}>
-      <div style={{ padding:'16px 16px 0' }}>
+      <div style={{ padding:'16px 16px 40px' }}>
         <button onClick={onBack} style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:20, padding:'8px 16px', color:'white', cursor:'pointer', fontSize:13, marginBottom:16, display:'flex', alignItems:'center', gap:6 }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
           Back
         </button>
-        <div style={{ color:'white', fontWeight:800, fontSize:22, marginBottom:16, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Wallet</div>
+        <div style={{ color:'white', fontWeight:800, fontSize:22, marginBottom:4, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>ቦርሳ / Wallet</div>
+        <div style={{ color:'rgba(255,255,255,0.35)', fontSize:12, marginBottom:16 }}>100 🪙 = 1 ETB · Minimum payout 1,000 coins</div>
+
+        {/* Balance cards */}
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:16 }}>
           <div style={{ background:'linear-gradient(135deg,#FFD60A,#FFB100)', borderRadius:22, padding:20 }}>
-            <div style={{ color:'rgba(0,0,0,0.55)', fontSize:11, fontWeight:600, textTransform:'uppercase', letterSpacing:0.5 }}>Coins</div>
-            <div style={{ color:'#000', fontSize:30, fontWeight:800, marginTop:4, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{(user?.coins||0).toLocaleString()}</div>
-            <div style={{ color:'rgba(255,255,255,0.4)', fontSize:10, marginTop:2 }}>🪙 Infinity Coins</div>
+            <div style={{ color:'rgba(0,0,0,0.55)', fontSize:11, fontWeight:600, textTransform:'uppercase', letterSpacing:0.5 }}>ሳንቲሞች / Coins</div>
+            <div style={{ color:'#000', fontSize:28, fontWeight:800, marginTop:4, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{(user?.coins||0).toLocaleString()} 🪙</div>
+            <div style={{ color:'rgba(0,0,0,0.45)', fontSize:10, marginTop:2 }}>≈ {((user?.coins||0)/COINS_PER_ETB).toFixed(2)} ETB</div>
           </div>
           <div style={{ background:'linear-gradient(135deg,#00E6B4,#00A9D6)', borderRadius:22, padding:20 }}>
-            <div style={{ color:'rgba(0,0,0,0.55)', fontSize:11, fontWeight:600, textTransform:'uppercase', letterSpacing:0.5 }}>Cash</div>
-            <div style={{ color:'#000', fontSize:30, fontWeight:800, marginTop:4, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>${(user?.walletBalance||0).toLocaleString()}</div>
-            <div style={{ color:'rgba(0,0,0,0.4)', fontSize:10, marginTop:2 }}>💵 USD</div>
+            <div style={{ color:'rgba(0,0,0,0.55)', fontSize:11, fontWeight:600, textTransform:'uppercase', letterSpacing:0.5 }}>Telebirr</div>
+            <div style={{ color:'#000', fontSize:20, fontWeight:800, marginTop:4, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Withdraw to<br/>📱 Telebirr</div>
+            <div style={{ color:'rgba(0,0,0,0.45)', fontSize:10, marginTop:2 }}>Direct ETB payout</div>
           </div>
         </div>
+
+        {/* Tabs */}
         <div style={{ display:'flex', gap:4, marginBottom:16, background:'rgba(255,255,255,0.04)', borderRadius:18, padding:4, border:'1px solid rgba(255,255,255,0.06)' }}>
-          {['overview','deposit','withdraw','convert'].map(t=>(
-            <button key={t} onClick={()=>setActiveTab(t)} style={{ flex:1, background:activeTab===t?'rgba(255,45,85,0.9)':'none', border:'none', borderRadius:14, padding:'8px 4px', color:'white', cursor:'pointer', fontSize:11, fontWeight:activeTab===t?700:400, textTransform:'capitalize' }}>{t}</button>
+          {['overview','deposit','withdraw'].map(t=>(
+            <button key={t} onClick={()=>{ setActiveTab(t); setWithdrawStep(1); }} style={{ flex:1, background:activeTab===t?'rgba(255,45,85,0.9)':'none', border:'none', borderRadius:14, padding:'8px 4px', color:'white', cursor:'pointer', fontSize:11, fontWeight:activeTab===t?700:400, textTransform:'capitalize' }}>
+              {t==='withdraw'?'📱 Withdraw':t==='deposit'?'💎 Earn':t}
+            </button>
           ))}
         </div>
+
+        {/* Overview */}
         {activeTab==='overview' && (
           <div>
-            {transactions.length===0&&<div style={{textAlign:'center',padding:40,color:'rgba(255,255,255,0.2)'}}>No transactions yet</div>}
+            {transactions.length===0 && <div style={{textAlign:'center',padding:40,color:'rgba(255,255,255,0.2)'}}>ምንም ግብይቶች የሉም<br/>No transactions yet</div>}
             {transactions.map(tx=>(
               <div key={tx.id} style={{ background:'rgba(255,255,255,0.03)', borderRadius:16, padding:'13px 14px', marginBottom:8, display:'flex', alignItems:'center', gap:12, border:'1px solid rgba(255,255,255,0.05)' }}>
-                <div style={{ width:40, height:40, borderRadius:'50%', background:tx.type==='credit'?'rgba(6,214,160,0.12)':'rgba(255,45,85,0.12)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>{tx.type==='credit'?'⬆️':'⬇️'}</div>
-                <div style={{ flex:1 }}><div style={{ color:'white', fontSize:12 }}>{tx.label}</div><div style={{ color:'rgba(255,255,255,0.3)', fontSize:10, marginTop:2 }}>{tx.date?.toLocaleDateString?.()}</div></div>
-                <div style={{ color:tx.type==='credit'?'#00E6B4':'#FF2156', fontWeight:700, fontSize:15 }}>{tx.type==='credit'?'+':'-'}{tx.amount}{tx.coins?'🪙':'$'}</div>
+                <div style={{ width:40, height:40, borderRadius:'50%', background:'rgba(255,255,255,0.06)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>{txIcon(tx.type)}</div>
+                <div style={{ flex:1 }}>
+                  <div style={{ color:'white', fontSize:12 }}>{tx.label}</div>
+                  <div style={{ color:'rgba(255,255,255,0.3)', fontSize:10, marginTop:2 }}>{tx.date?.toLocaleDateString?.()}</div>
+                  {tx.status==='pending' && <div style={{ color:'#FFB100', fontSize:10, marginTop:2 }}>⏳ Pending approval</div>}
+                </div>
+                <div style={{ color:txColor(tx.type), fontWeight:700, fontSize:15 }}>
+                  {tx.type==='credit'?'+':'-'}{tx.amount}🪙
+                  {tx.etbAmount && <div style={{ fontSize:10, opacity:0.7 }}>{tx.etbAmount} ETB</div>}
+                </div>
               </div>
             ))}
           </div>
         )}
-        {(activeTab==='deposit'||activeTab==='withdraw'||activeTab==='convert') && (
+
+        {/* Deposit / Earn more */}
+        {activeTab==='deposit' && (
           <div style={{ background:'rgba(255,255,255,0.03)', borderRadius:22, padding:20, border:'1px solid rgba(255,255,255,0.06)' }}>
-            <div style={{ color:'rgba(255,255,255,0.4)', fontSize:12, marginBottom:8 }}>{activeTab==='deposit'?'Add coins':activeTab==='withdraw'?'Withdraw coins':'Convert to ETH (1 ETH = 10,000 🪙)'}</div>
-            <div style={{ display:'flex', gap:8, marginBottom:14 }}>
-              <input type="number" placeholder="Enter amount..." value={amount} onChange={e=>setAmount(e.target.value)} style={{ flex:1, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:'12px', color:'white', outline:'none', fontSize:15 }} />
+            <div style={{ color:'white', fontWeight:700, fontSize:15, marginBottom:12 }}>Earn Coins</div>
+            {[
+              { icon:'🎬', label:'Post a video', coins:'+50 🪙', desc:'Each post earns coins' },
+              { icon:'❤️', label:'Get 10 likes', coins:'+10 🪙', desc:'Per video' },
+              { icon:'👁', label:'1,000 views', coins:'+20 🪙', desc:'Per video milestone' },
+              { icon:'👥', label:'Refer a friend', coins:'+200 🪙', desc:'When they join Dagu' },
+              { icon:'💎', label:'Buy coins', coins:'', desc:'Coming soon via Telebirr' },
+            ].map((item,i)=>(
+              <div key={i} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 0', borderBottom:'1px solid rgba(255,255,255,0.05)' }}>
+                <div style={{ fontSize:24 }}>{item.icon}</div>
+                <div style={{ flex:1 }}>
+                  <div style={{ color:'white', fontSize:13, fontWeight:600 }}>{item.label}</div>
+                  <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11 }}>{item.desc}</div>
+                </div>
+                <div style={{ color:'#FFD60A', fontWeight:700, fontSize:13 }}>{item.coins}</div>
+              </div>
+            ))}
+            <div style={{ marginTop:16, background:'rgba(255,45,85,0.08)', border:'1px solid rgba(255,45,85,0.2)', borderRadius:16, padding:'12px 14px' }}>
+              <div style={{ color:'rgba(255,255,255,0.6)', fontSize:12, lineHeight:1.5 }}>
+                💡 <strong style={{color:'white'}}>Creator Fund:</strong> Top 10 creators each month earn a bonus payout directly to Telebirr. Keep posting!
+              </div>
             </div>
-            <div style={{ display:'flex', gap:8, marginBottom:14 }}>
-              {[100,500,1000,5000].map(v=>(
-                <button key={v} onClick={()=>setAmount(String(v))} style={{ flex:1, background:amount===String(v)?'rgba(255,45,85,0.9)':'rgba(255,255,255,0.06)', border:'none', borderRadius:10, padding:'8px', color:'white', cursor:'pointer', fontSize:12, fontWeight:600 }}>{v}</button>
-              ))}
+          </div>
+        )}
+
+        {/* Telebirr Withdrawal */}
+        {activeTab==='withdraw' && (
+          <div style={{ background:'rgba(255,255,255,0.03)', borderRadius:22, padding:20, border:'1px solid rgba(255,255,255,0.06)' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
+              <div style={{ width:44, height:44, borderRadius:14, background:'linear-gradient(135deg,#00C853,#00E6B4)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22 }}>📱</div>
+              <div>
+                <div style={{ color:'white', fontWeight:700, fontSize:15 }}>Withdraw via Telebirr</div>
+                <div style={{ color:'rgba(255,255,255,0.4)', fontSize:11 }}>ቴሌብር ወደ ስልክዎ ይላካል</div>
+              </div>
             </div>
-            <button onClick={activeTab==='deposit'?doDeposit:activeTab==='withdraw'?doWithdraw:convertCoins} style={{ width:'100%', background:'linear-gradient(135deg,#FF2156,#9D4EDD)', border:'none', borderRadius:24, padding:'14px', color:'white', fontWeight:700, cursor:'pointer', fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>
-              {activeTab==='deposit'?'Add Coins':activeTab==='withdraw'?'Withdraw':'Convert to ETH'}
-            </button>
+
+            {withdrawStep === 1 && (
+              <>
+                <div style={{ color:'rgba(255,255,255,0.5)', fontSize:12, marginBottom:8 }}>How many coins to withdraw? (min {MIN_WITHDRAW_COINS})</div>
+                <input type="number" placeholder={`Min ${MIN_WITHDRAW_COINS} coins`} value={amount} onChange={e=>setAmount(e.target.value)}
+                  style={{ width:'100%', boxSizing:'border-box', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:'12px', color:'white', outline:'none', fontSize:15, marginBottom:10 }} />
+                <div style={{ display:'flex', gap:8, marginBottom:14 }}>
+                  {[1000,2000,5000,10000].map(v=>(
+                    <button key={v} onClick={()=>setAmount(String(v))} style={{ flex:1, background:amount===String(v)?'rgba(255,45,85,0.9)':'rgba(255,255,255,0.06)', border:'none', borderRadius:10, padding:'8px 4px', color:'white', cursor:'pointer', fontSize:11, fontWeight:600 }}>{v}🪙</button>
+                  ))}
+                </div>
+                {etbPreview && (
+                  <div style={{ background:'rgba(0,230,180,0.08)', border:'1px solid rgba(0,230,180,0.2)', borderRadius:14, padding:'12px 14px', marginBottom:14, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                    <span style={{ color:'rgba(255,255,255,0.6)', fontSize:13 }}>You will receive</span>
+                    <span style={{ color:'#00E6B4', fontWeight:800, fontSize:18 }}>{etbPreview} ETB</span>
+                  </div>
+                )}
+                <button onClick={()=>{ if(!parseInt(amount)||parseInt(amount)<MIN_WITHDRAW_COINS){showToast?.(`Minimum ${MIN_WITHDRAW_COINS} coins`,'error');return;} if((user?.coins||0)<parseInt(amount)){showToast?.('Insufficient coins','error');return;} setWithdrawStep(2); }}
+                  style={{ width:'100%', background:'linear-gradient(135deg,#00C853,#00E6B4)', border:'none', borderRadius:24, padding:'14px', color:'#000', fontWeight:700, cursor:'pointer', fontSize:14 }}>
+                  Next →
+                </button>
+              </>
+            )}
+
+            {withdrawStep === 2 && (
+              <>
+                <div style={{ color:'rgba(255,255,255,0.5)', fontSize:12, marginBottom:8 }}>Your Telebirr phone number (ስልክ ቁጥር)</div>
+                <input type="tel" placeholder="09XXXXXXXX or 07XXXXXXXX" value={telebirrPhone} onChange={e=>setTelebirrPhone(e.target.value)}
+                  style={{ width:'100%', boxSizing:'border-box', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:'12px', color:'white', outline:'none', fontSize:15, marginBottom:14 }} />
+                <div style={{ background:'rgba(255,149,0,0.08)', border:'1px solid rgba(255,149,0,0.2)', borderRadius:14, padding:'10px 14px', marginBottom:14 }}>
+                  <div style={{ color:'rgba(255,255,255,0.55)', fontSize:12 }}>⚠️ Make sure this number is registered on Telebirr. Payments are processed within 24 hours.</div>
+                </div>
+                <div style={{ display:'flex', gap:8 }}>
+                  <button onClick={()=>setWithdrawStep(1)} style={{ flex:1, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:24, padding:'14px', color:'white', fontWeight:700, cursor:'pointer', fontSize:14 }}>← Back</button>
+                  <button onClick={submitTelebirrWithdrawal} style={{ flex:2, background:'linear-gradient(135deg,#00C853,#00E6B4)', border:'none', borderRadius:24, padding:'14px', color:'#000', fontWeight:700, cursor:'pointer', fontSize:14 }}>
+                    Confirm — {etbPreview} ETB
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>
@@ -6874,10 +6988,27 @@ const [blockedUsers, setBlockedUsers] = useState([]);
     return ()=>unsub();
   },[currentUser?.id]);
 
+  // ── Creator UID resolution ──────────────────────────────────────────────────
+  // If APP_CREATOR_UID wasn't set via env, write the first-ever login UID into
+  // localStorage so canPost() works correctly for the app owner going forward.
+  // IMPORTANT: Log in with YOUR account first, then copy the UID from
+  // Firebase Console → Authentication → Users and set VITE_APP_CREATOR_UID.
+  const resolvedCreatorUID = useRef(
+    APP_CREATOR_UID !== '__PENDING__'
+      ? APP_CREATOR_UID
+      : (localStorage.getItem('dagu_creator_uid') || '__PENDING__')
+  );
+
   const handleLogin = async (profile) => {
+    // If creator UID is still unknown, store the first login as creator candidate
+    if (resolvedCreatorUID.current === '__PENDING__') {
+      resolvedCreatorUID.current = profile.id;
+      localStorage.setItem('dagu_creator_uid', profile.id);
+      console.log('🔑 Creator UID captured:', profile.id, '— copy this into VITE_APP_CREATOR_UID in your .env');
+    }
     setCurrentUser(profile);
     setFollowed(profile.following||[]);
-setBlockedUsers(profile.blockedUsers||[]);
+    setBlockedUsers(profile.blockedUsers||[]);
     // Save to local accounts list
     const stored = JSON.parse(localStorage.getItem('infinity_accounts')||'[]');
     const exists = stored.find(a=>a.id===profile.id);
