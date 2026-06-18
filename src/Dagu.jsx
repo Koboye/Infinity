@@ -57,14 +57,7 @@ const SUPPORT_EMAIL = 'getachewshambel11@gmail.com';
 // App creator UID — only this user can grant posting permissions for Jobs & Market
 // HOW TO FIND YOUR UID: Firebase Console → Authentication → Users → copy your User UID
 // Example: 'abc12XYZdef456GHI789'
-const APP_CREATOR_UID = (() => {
-  const uid = import.meta.env?.VITE_APP_CREATOR_UID || '';
-  if (!uid || uid === 'REPLACE_WITH_CREATOR_UID') {
-    // Fallback: will be set from auth on first login if creator email matches
-    return '__PENDING__';
-  }
-  return uid;
-})();
+const S4AJz4MrAubI8vKvLLNEM24sgE33 = 'S4AJz4MrAubI8vKvLLNEM24sgE33';
 // SUPPORT EMAIL for Reports
 // Set VITE_SUPPORT_EMAIL in your .env file, or hardcode below.
 
@@ -2765,7 +2758,7 @@ const JobsMarketPage = ({ currentUser, showToast, mode, onViewProfile }) => {
   // Load permissions for current user
   useEffect(() => {
     if (!currentUser?.id) return;
-    if (currentUser.id === APP_CREATOR_UID) { setHasPostPerm(true); setMyPermissions({}); return; }
+    if (currentUser.id === S4AJz4MrAubI8vKvLLNEM24sgE33) { setHasPostPerm(true); setMyPermissions({}); return; }
     const unsub = onSnapshot(doc(db, 'postPermissions', currentUser.id), snap => {
       if (snap.exists()) {
         const d = snap.data();
@@ -2798,8 +2791,8 @@ const JobsMarketPage = ({ currentUser, showToast, mode, onViewProfile }) => {
   }, [tab]);
 
   const canPost = () => {
-    const creatorUid = APP_CREATOR_UID !== '__PENDING__'
-      ? APP_CREATOR_UID
+    const creatorUid = S4AJz4MrAubI8vKvLLNEM24sgE33 !== '__PENDING__'
+      ? S4AJz4MrAubI8vKvLLNEM24sgE33
       : (localStorage.getItem('dagu_creator_uid') || '');
     if (creatorUid && currentUser?.id === creatorUid) return true;
     if (tab === 'jobs') return myPermissions?.canPostJobs === true;
@@ -2820,7 +2813,7 @@ const JobsMarketPage = ({ currentUser, showToast, mode, onViewProfile }) => {
     });
     // Notify app creator
     await addDoc(collection(db, 'notifications'), {
-      toUserId: APP_CREATOR_UID,
+      toUserId: S4AJz4MrAubI8vKvLLNEM24sgE33,
       fromUserId: currentUser.id,
       type: 'permissionRequest',
       message: `@${currentUser.username} requested permission to post in ${tab}`,
@@ -2844,7 +2837,7 @@ const JobsMarketPage = ({ currentUser, showToast, mode, onViewProfile }) => {
     });
     if (flagged) {
       await addDoc(collection(db, 'notifications'), {
-        toUserId: APP_CREATOR_UID, fromUserId: currentUser?.id, type: 'reviewFlag',
+        toUserId: S4AJz4MrAubI8vKvLLNEM24sgE33, fromUserId: currentUser?.id, type: 'reviewFlag',
         message: `⚠️ New job post by @${currentUser?.username} was auto-flagged for review: "${jobForm.title}"`,
         itemType: 'jobs', itemId: ref.id, read: false, createdAt: serverTimestamp()
       });
@@ -2866,7 +2859,7 @@ const JobsMarketPage = ({ currentUser, showToast, mode, onViewProfile }) => {
     });
     if (flagged) {
       await addDoc(collection(db, 'notifications'), {
-        toUserId: APP_CREATOR_UID, fromUserId: currentUser?.id, type: 'reviewFlag',
+        toUserId: S4AJz4MrAubI8vKvLLNEM24sgE33, fromUserId: currentUser?.id, type: 'reviewFlag',
         message: `⚠️ New market listing by @${currentUser?.username} was auto-flagged for review: "${mktForm.title}"`,
         itemType: 'marketItems', itemId: ref.id, read: false, createdAt: serverTimestamp()
       });
@@ -2886,7 +2879,7 @@ const JobsMarketPage = ({ currentUser, showToast, mode, onViewProfile }) => {
       reportedBy: currentUser.id, reason: 'Reported as possibly fake', createdAt: serverTimestamp()
     });
     await addDoc(collection(db, 'notifications'), {
-      toUserId: APP_CREATOR_UID, fromUserId: currentUser.id, type: 'reviewFlag',
+      toUserId: S4AJz4MrAubI8vKvLLNEM24sgE33, fromUserId: currentUser.id, type: 'reviewFlag',
       message: `🚩 @${currentUser.username} reported a ${tab==='jobs'?'job':'listing'} as possibly fake: "${item.title}"`,
       itemType: col, itemId: item.id, read: false, createdAt: serverTimestamp()
     });
@@ -2956,7 +2949,7 @@ const JobsMarketPage = ({ currentUser, showToast, mode, onViewProfile }) => {
   };
 
   const filters = tab === 'jobs' ? jobFilters : mktFilters;
-  const isCreator = currentUser?.id === APP_CREATOR_UID;
+  const isCreator = currentUser?.id === S4AJz4MrAubI8vKvLLNEM24sgE33;
   const displayItems = items.filter(it => {
     // Pending-review items only visible to their owner and the app creator
     if (it.reviewFlag === 'pending' && it.userId !== currentUser?.id && !isCreator) return false;
@@ -6989,13 +6982,13 @@ const [blockedUsers, setBlockedUsers] = useState([]);
   },[currentUser?.id]);
 
   // ── Creator UID resolution ──────────────────────────────────────────────────
-  // If APP_CREATOR_UID wasn't set via env, write the first-ever login UID into
+  // If S4AJz4MrAubI8vKvLLNEM24sgE33 wasn't set via env, write the first-ever login UID into
   // localStorage so canPost() works correctly for the app owner going forward.
   // IMPORTANT: Log in with YOUR account first, then copy the UID from
-  // Firebase Console → Authentication → Users and set VITE_APP_CREATOR_UID.
+  // Firebase Console → Authentication → Users and set VITE_S4AJz4MrAubI8vKvLLNEM24sgE33.
   const resolvedCreatorUID = useRef(
-    APP_CREATOR_UID !== '__PENDING__'
-      ? APP_CREATOR_UID
+    S4AJz4MrAubI8vKvLLNEM24sgE33 !== '__PENDING__'
+      ? S4AJz4MrAubI8vKvLLNEM24sgE33
       : (localStorage.getItem('dagu_creator_uid') || '__PENDING__')
   );
 
@@ -7004,7 +6997,7 @@ const [blockedUsers, setBlockedUsers] = useState([]);
     if (resolvedCreatorUID.current === '__PENDING__') {
       resolvedCreatorUID.current = profile.id;
       localStorage.setItem('dagu_creator_uid', profile.id);
-      console.log('🔑 Creator UID captured:', profile.id, '— copy this into VITE_APP_CREATOR_UID in your .env');
+      console.log('🔑 Creator UID captured:', profile.id, '— copy this into VITE_S4AJz4MrAubI8vKvLLNEM24sgE33 in your .env');
     }
     setCurrentUser(profile);
     setFollowed(profile.following||[]);
