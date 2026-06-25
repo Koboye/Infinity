@@ -3,7 +3,7 @@ import './globals.css';
 import { Providers } from './providers';
 
 export const metadata: Metadata = {
-  title: 'DAGU — ዳጉ',
+  title: 'Infinity — የትየለሌ',
   description: "Ethiopia's social platform",
   manifest: '/manifest.json',
   icons: { icon: '/icon.svg' },
