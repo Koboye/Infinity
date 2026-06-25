@@ -50,8 +50,15 @@ export function AppShell() {
 
   useEffect(() => {
     if (!user) return;
-    const q = query(collection(firebaseDb(), 'messages'), where('senderId', '!=', user.id), where('read', '==', false));
-    const unsub = onSnapshot(q, snap => setUnreadMessages(snap.size));
+    // Listen to conversations where user is a participant and there are unread messages
+    const q = query(
+      collection(firebaseDb(), 'conversations'),
+      where('participants', 'array-contains', user.id)
+    );
+    const unsub = onSnapshot(q, snap => {
+      const total = snap.docs.reduce((sum, d) => sum + ((d.data().unreadCount as number) ?? 0), 0);
+      setUnreadMessages(total);
+    });
     return () => unsub();
   }, [user?.id]);
 
