@@ -24,29 +24,20 @@ export function CreatePost({ onClose, onCreated }: CreatePostProps) {
   const user = useAuthStore(s => s.user);
   const showToast = useUIStore(s => s.showToast);
 
-  const getVideoDuration = (file: File): Promise<number> => new Promise((resolve) => {
-  const video = document.createElement('video');
-  video.preload = 'metadata';
-  video.onloadedmetadata = () => { URL.revokeObjectURL(video.src); resolve(video.duration); };
-  video.src = URL.createObjectURL(file);
-});
+  const getVideoDuration = (f: File): Promise<number> => new Promise((resolve) => {
+    const video = document.createElement('video');
+    video.preload = 'metadata';
+    video.onloadedmetadata = () => { URL.revokeObjectURL(video.src); resolve(video.duration); };
+    video.src = URL.createObjectURL(f);
+  });
 
-const getVideoDuration = (file: File): Promise<number> => new Promise((resolve) => {
-  const video = document.createElement('video');
-  video.preload = 'metadata';
-  video.onloadedmetadata = () => { URL.revokeObjectURL(video.src); resolve(video.duration); };
-  video.src = URL.createObjectURL(file);
-});
-
-const pickFile = async (f: File) => {
-  if (!f.type.startsWith('video/') && !f.type.startsWith('image/')) { showToast('Pick a video or image', 'error'); return; }
-  if (f.size > 50 * 1024 * 1024) { showToast('File too large. Maximum is 50MB', 'error'); return; }
-  if (f.type.startsWith('video/')) {
-    const duration = await getVideoDuration(f);
-    if (duration > 180) { showToast('Video too long. Maximum is 3 minutes', 'error'); return; }
-  }
-  setFile(f); setPreview(URL.createObjectURL(f));
-};
+  const pickFile = async (f: File) => {
+    if (!f.type.startsWith('video/') && !f.type.startsWith('image/')) { showToast('Pick a video or image', 'error'); return; }
+    if (f.size > 50 * 1024 * 1024) { showToast('File too large. Maximum is 50MB', 'error'); return; }
+    if (f.type.startsWith('video/')) {
+      const duration = await getVideoDuration(f);
+      if (duration > 180) { showToast('Video too long. Maximum is 3 minutes', 'error'); return; }
+    }
     setFile(f); setPreview(URL.createObjectURL(f));
   };
 
