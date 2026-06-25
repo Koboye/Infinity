@@ -21,7 +21,9 @@ export function AuthScreen() {
     setBusy(true);
     try {
       if (mode === 'signup') { await signUpWithEmail({ email, password, username: username.toLowerCase() }); showToast('Welcome to Dagu! 🎉', 'success'); }
-      else await signInWithEmail(email, password);
+      else {
+  await signInWithEmail(email, password);
+}
     } catch (err) { showToast(err instanceof Error ? err.message.replace('Firebase: ','') : 'Auth failed', 'error'); }
     finally { setBusy(false); }
   };
