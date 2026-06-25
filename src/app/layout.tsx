@@ -3,9 +3,10 @@ import './globals.css';
 import { Providers } from './providers';
 
 export const metadata: Metadata = {
-  title: 'Dagu — Smart Social Video',
-  description: 'Smart-generation social video experience',
+  title: 'DAGU — ዳጉ',
+  description: "Ethiopia's social platform",
   manifest: '/manifest.json',
+  icons: { icon: '/icon.svg' },
 };
 
 export const viewport: Viewport = {
