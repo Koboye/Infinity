@@ -2,7 +2,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import { useUIStore } from '@/stores/uiStore';
-import { Avatar } from '@/components/Avatar';
 import {
   collection, addDoc, onSnapshot, orderBy, query,
   serverTimestamp, where, getDocs, doc, updateDoc, getDoc,
@@ -10,67 +9,81 @@ import {
 import { firebaseDb } from '@/lib/firebase/client';
 
 interface Message {
-  id: string;
-  text: string;
-  senderId: string;
-  senderUsername: string;
-  createdAt: string;
-  read: boolean;
+  id: string; text: string; senderId: string;
+  senderUsername: string; createdAt: any; read: boolean;
 }
-
 interface Conversation {
-  id: string;
-  participants: string[];
+  id: string; participants: string[];
   participantNames: Record<string, string>;
   participantAvatars: Record<string, string>;
   participantAvatarColors: Record<string, string>;
   participantAvatarUrls: Record<string, string | null>;
-  lastMessage: string;
-  lastMessageAt: string;
-  unreadCount: number;
+  lastMessage: string; lastMessageAt: any; unreadCount: number;
 }
-
 interface UserResult {
-  id: string;
-  username: string;
-  avatarColor: string;
-  avatarUrl: string | null;
-  bio: string;
-  verified: boolean;
+  id: string; username: string; avatarColor: string;
+  avatarUrl: string | null; bio: string; verified: boolean;
 }
 
-// ─── Safe accessor helpers ─────────────────────────────────────────────────
-function getOtherId(conv: Conversation, myId: string): string {
+function getOtherId(conv: Conversation, myId: string) {
   return conv.participants?.find(p => p !== myId) ?? '';
 }
 function getField<T>(map: Record<string, T> | undefined, key: string, fallback: T): T {
   if (!map || !key) return fallback;
   return map[key] ?? fallback;
 }
-
-// ─── Smart Reply suggestions ───────────────────────────────────────────────
 function getSmartReplies(lastMsg: string): string[] {
-  const lower = lastMsg.toLowerCase();
-  if (lower.includes('how are you') || lower.includes('how r u')) return ['Doing great! 😊', 'Pretty good, you?', 'All good! 🙌'];
-  if (lower.includes('hello') || lower.includes('hi') || lower.includes('hey')) return ['Hey! 👋', 'Hi there! 😄', 'Hello! 🙌'];
-  if (lower.includes('thank')) return ['You\'re welcome! 😊', 'Anytime! 🙌', 'Happy to help!'];
-  if (lower.includes('love') || lower.includes('❤') || lower.includes('🔥')) return ['❤️', '🔥🔥', 'Same! 😍'];
-  if (lower.includes('video') || lower.includes('post')) return ['Looks amazing! 🔥', 'Love your content! ❤️', 'Keep it up! 💪'];
-  if (lower.includes('follow')) return ['Thanks! Following back! 🙌', 'Appreciate it! ❤️', 'Welcome! 😊'];
-  return ['👍', '❤️', '😊', 'Sure!', 'Sounds good!'];
+  const l = lastMsg.toLowerCase();
+  if (l.includes('how are you') || l.includes('how r u')) return ['doing great 😊', 'pretty good u?', 'all good 🙌'];
+  if (l.includes('hello') || l.includes('hi') || l.includes('hey')) return ['hey 👋', 'hiiii 😄', 'heyy 🙌'];
+  if (l.includes('thank')) return ['ofc! 😊', 'anytime 🙌', 'always ❤️'];
+  if (l.includes('love') || l.includes('❤') || l.includes('🔥')) return ['❤️', '🔥🔥', 'same!! 😍'];
+  if (l.includes('video') || l.includes('post')) return ['omg so good 🔥', 'love ur content ❤️', 'keep going 💪'];
+  if (l.includes('follow')) return ['following back 🙌', 'appreciate it ❤️', 'welcome 😊'];
+  return ['👍', '❤️', 'lol 😭', 'no way 💀', 'fr fr'];
 }
 
-// ─── Chat View ─────────────────────────────────────────────────────────────
+// ─── Squircle Avatar ────────────────────────────────────────────────────────
+function SqAvatar({ name, color, src, size = 48, radius = 16 }: { name: string; color: string; src?: string | null; size?: number; radius?: number }) {
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: radius,
+      background: color, flexShrink: 0,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontWeight: 800, color: '#fff', fontSize: size * 0.35,
+      overflow: 'hidden', position: 'relative',
+    }}>
+      {src
+        ? <img src={src} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        : (name?.[0] ?? '?').toUpperCase()
+      }
+    </div>
+  );
+}
+
+// ─── Online ring ────────────────────────────────────────────────────────────
+function OnlineRing({ color, size = 52 }: { color: string; size?: number }) {
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: 18,
+      padding: 2, flexShrink: 0,
+      background: `linear-gradient(135deg, ${color}, #9B4FFF)`,
+    }} />
+  );
+}
+
+// ─── Chat View ──────────────────────────────────────────────────────────────
 function ChatView({ conv, onBack }: { conv: Conversation; onBack: () => void }) {
   const user = useAuthStore(s => s.user);
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const otherId = getOtherId(conv, user?.id ?? '');
-  const otherName = getField(conv.participantNames, otherId, 'User');
-  const otherColor = getField(conv.participantAvatarColors, otherId, '#888');
+  const otherName = getField(conv.participantNames, otherId, 'user');
+  const otherColor = getField(conv.participantAvatarColors, otherId, '#FF2D78');
   const otherUrl = getField<string | null>(conv.participantAvatarUrls, otherId, null);
 
   useEffect(() => {
@@ -79,18 +92,16 @@ function ChatView({ conv, onBack }: { conv: Conversation; onBack: () => void }) 
       where('conversationId', '==', conv.id),
       orderBy('createdAt', 'asc')
     );
-    const unsub = onSnapshot(q, snap => {
+    return onSnapshot(q, snap => {
       setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() } as Message)));
-      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 80);
     });
-    return () => unsub();
   }, [conv.id]);
 
   const send = async (msg?: string) => {
     const content = msg ?? text.trim();
     if (!content || !user) return;
-    setSending(true);
-    setText('');
+    setSending(true); setText('');
     try {
       await addDoc(collection(firebaseDb(), 'messages'), {
         conversationId: conv.id, text: content,
@@ -107,67 +118,100 @@ function ChatView({ conv, onBack }: { conv: Conversation; onBack: () => void }) 
   const smartReplies = lastOtherMsg ? getSmartReplies(lastOtherMsg) : [];
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: '#0B0B0F', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: '#0A0A0F', display: 'flex', flexDirection: 'column' }}>
+
       {/* Header */}
       <div style={{
-        display: 'flex', alignItems: 'center', gap: 14,
-        padding: '14px 16px',
-        background: 'rgba(11,11,15,0.98)',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
+        display: 'flex', alignItems: 'center', gap: 12,
+        padding: '14px 16px 12px',
+        background: 'rgba(10,10,15,0.98)',
+        borderBottom: '1px solid rgba(255,255,255,0.05)',
         backdropFilter: 'blur(20px)',
       }}>
         <button onClick={onBack} style={{
-          background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.08)',
-          color: 'white', borderRadius: 999, width: 38, height: 38,
-          cursor: 'pointer', fontSize: 18, flexShrink: 0,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          width: 36, height: 36, borderRadius: 12,
+          background: 'rgba(255,255,255,0.06)',
+          border: '1px solid rgba(255,255,255,0.07)',
+          color: '#fff', fontSize: 18, cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
         }}>←</button>
-        <Avatar name={otherName} color={otherColor} src={otherUrl} size="md" />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 800, fontSize: 15, letterSpacing: '-0.3px' }}>@{otherName}</div>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 1 }}>Active now</div>
+
+        <div style={{ position: 'relative', flexShrink: 0 }}>
+          <SqAvatar name={otherName} color={otherColor} src={otherUrl} size={38} radius={12} />
+          <div style={{
+            position: 'absolute', bottom: -2, right: -2,
+            width: 11, height: 11, borderRadius: 999,
+            background: '#22C55E', border: '2px solid #0A0A0F',
+          }} />
         </div>
-        <div style={{
-          width: 8, height: 8, borderRadius: 999,
-          background: '#22C55E',
-          boxShadow: '0 0 6px #22C55E',
-        }} />
+
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 800, fontSize: 15, color: '#fff', letterSpacing: '-0.3px' }}>@{otherName}</div>
+          <div style={{ fontSize: 11, color: '#22C55E', display: 'flex', alignItems: 'center', gap: 4, marginTop: 1 }}>
+            <div style={{ width: 5, height: 5, borderRadius: 999, background: '#22C55E' }} />
+            active now
+          </div>
+        </div>
+
+        <button style={{
+          width: 36, height: 36, borderRadius: 12,
+          background: 'rgba(255,255,255,0.06)',
+          border: '1px solid rgba(255,255,255,0.07)',
+          color: 'rgba(255,255,255,0.6)', fontSize: 18, cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>⋯</button>
       </div>
 
       {/* Messages */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '20px 14px 8px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '16px 14px 8px', display: 'flex', flexDirection: 'column', gap: 2 }}>
         {messages.length === 0 && (
-          <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: 14, marginTop: 60, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 12, paddingBottom: 60 }}>
             <div style={{
-              width: 72, height: 72, borderRadius: 999,
-              background: `linear-gradient(135deg, ${otherColor}33, ${otherColor}11)`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32,
+              width: 64, height: 64, borderRadius: 20,
+              background: otherColor,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 26, fontWeight: 800, color: '#fff',
             }}>
-              <Avatar name={otherName} color={otherColor} src={otherUrl} size="lg" />
+              {otherUrl ? <img src={otherUrl} alt={otherName} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 20 }} /> : otherName[0]?.toUpperCase()}
             </div>
-            <div style={{ fontWeight: 700, color: 'rgba(255,255,255,0.7)', fontSize: 16 }}>@{otherName}</div>
-            <div style={{ fontSize: 13 }}>No messages yet. Say hi! 👋</div>
+            <div style={{ fontWeight: 800, fontSize: 17, color: '#fff' }}>@{otherName}</div>
+            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>say something 👋</div>
           </div>
         )}
+
         {messages.map((m, i) => {
           const isMine = m.senderId === user?.id;
           const prevSame = i > 0 && messages[i - 1].senderId === m.senderId;
+          const nextSame = i < messages.length - 1 && messages[i + 1].senderId === m.senderId;
+          const isFirst = !prevSame;
+          const isLast = !nextSame;
+
+          let borderRadius = '18px';
+          if (isMine) {
+            if (isFirst && !isLast) borderRadius = '18px 4px 4px 18px';
+            else if (!isFirst && !isLast) borderRadius = '18px 4px 4px 18px';
+            else if (!isFirst && isLast) borderRadius = '18px 4px 18px 18px';
+            else borderRadius = '18px 4px 18px 18px';
+          } else {
+            if (isFirst && !isLast) borderRadius = '4px 18px 18px 18px';
+            else if (!isFirst && !isLast) borderRadius = '4px 18px 18px 4px';
+            else if (!isFirst && isLast) borderRadius = '4px 18px 18px 18px';
+            else borderRadius = '4px 18px 18px 18px';
+          }
+
           return (
             <div key={m.id} style={{
               display: 'flex', justifyContent: isMine ? 'flex-end' : 'flex-start',
               marginTop: prevSame ? 2 : 10,
             }}>
               <div style={{
-                maxWidth: '78%', padding: '10px 15px',
-                borderRadius: isMine
-                  ? (prevSame ? '18px 4px 4px 18px' : '18px 4px 18px 18px')
-                  : (prevSame ? '4px 18px 18px 18px' : '4px 18px 18px 18px'),
+                maxWidth: '76%', padding: '9px 14px',
+                borderRadius,
                 background: isMine
-                  ? 'linear-gradient(135deg,#FF2156,#9D4EDD)'
-                  : 'rgba(255,255,255,0.09)',
-                color: 'white', fontSize: 14, lineHeight: 1.45,
+                  ? 'linear-gradient(135deg,#FF2D78,#9B4FFF)'
+                  : 'rgba(255,255,255,0.08)',
+                color: '#fff', fontSize: 14, lineHeight: 1.45,
                 wordBreak: 'break-word',
-                boxShadow: isMine ? '0 4px 15px rgba(255,33,86,0.2)' : 'none',
               }}>
                 {m.text}
               </div>
@@ -179,16 +223,15 @@ function ChatView({ conv, onBack }: { conv: Conversation; onBack: () => void }) 
 
       {/* Smart replies */}
       {smartReplies.length > 0 && (
-        <div style={{ display: 'flex', gap: 8, padding: '10px 14px 6px', overflowX: 'auto', scrollbarWidth: 'none' }}>
+        <div style={{ display: 'flex', gap: 7, padding: '8px 14px 4px', overflowX: 'auto', scrollbarWidth: 'none' }}>
           {smartReplies.map(r => (
             <button key={r} onClick={() => send(r)} style={{
               whiteSpace: 'nowrap',
-              background: 'rgba(255,255,255,0.06)',
-              border: '1px solid rgba(255,255,255,0.12)',
-              color: 'rgba(255,255,255,0.85)',
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              color: 'rgba(255,255,255,0.7)',
               borderRadius: 999, padding: '7px 15px',
-              fontSize: 13, cursor: 'pointer',
-              transition: 'all 0.15s',
+              fontSize: 12.5, cursor: 'pointer', flexShrink: 0,
             }}>{r}</button>
           ))}
         </div>
@@ -196,40 +239,46 @@ function ChatView({ conv, onBack }: { conv: Conversation; onBack: () => void }) 
 
       {/* Input */}
       <div style={{
-        display: 'flex', gap: 10, padding: '10px 14px 28px',
+        display: 'flex', alignItems: 'center', gap: 9,
+        padding: '10px 14px 32px',
         borderTop: '1px solid rgba(255,255,255,0.05)',
-        background: 'rgba(11,11,15,0.97)',
+        background: 'rgba(10,10,15,0.98)',
       }}>
-        <input
-          value={text} onChange={e => setText(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()}
-          placeholder="Message…"
-          style={{
-            flex: 1,
-            background: 'rgba(255,255,255,0.07)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: 999, padding: '12px 18px',
-            color: 'white', fontSize: 14, outline: 'none',
-          }}
-        />
-        <button onClick={() => send()} disabled={!text.trim() || sending}
-          style={{
-            width: 46, height: 46, borderRadius: 999, flexShrink: 0,
-            background: text.trim() ? 'linear-gradient(135deg,#FF2156,#9D4EDD)' : 'rgba(255,255,255,0.07)',
-            border: 'none', color: 'white', fontSize: 18, cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: text.trim() ? '0 4px 15px rgba(255,33,86,0.3)' : 'none',
-            transition: 'all 0.2s',
-          }}>
-          ➤
-        </button>
+        <div style={{
+          flex: 1, display: 'flex', alignItems: 'center', gap: 10,
+          background: 'rgba(255,255,255,0.06)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: 14, padding: '10px 14px',
+        }}>
+          <span style={{ fontSize: 18 }}>😊</span>
+          <input
+            ref={inputRef}
+            value={text}
+            onChange={e => setText(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()}
+            placeholder="message…"
+            style={{
+              flex: 1, background: 'none', border: 'none', outline: 'none',
+              color: '#fff', fontSize: 14,
+            }}
+          />
+          <span style={{ fontSize: 18 }}>📷</span>
+        </div>
+        <button onClick={() => send()} disabled={!text.trim() || sending} style={{
+          width: 42, height: 42, borderRadius: 13, flexShrink: 0,
+          background: text.trim() ? 'linear-gradient(135deg,#FF2D78,#9B4FFF)' : 'rgba(255,255,255,0.06)',
+          border: '1px solid rgba(255,255,255,0.07)',
+          color: '#fff', fontSize: 17, cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          transition: 'all 0.15s',
+        }}>➤</button>
       </div>
     </div>
   );
 }
 
-// ─── New Message / User Search ─────────────────────────────────────────────
-function NewMessageModal({ onClose, onStart }: { onClose: () => void; onStart: (conv: Conversation) => void }) {
+// ─── New Message Modal ───────────────────────────────────────────────────────
+function NewMessageModal({ onClose, onStart }: { onClose: () => void; onStart: (c: Conversation) => void }) {
   const user = useAuthStore(s => s.user);
   const showToast = useUIStore(s => s.showToast);
   const [q, setQ] = useState('');
@@ -250,14 +299,8 @@ function NewMessageModal({ onClose, onStart }: { onClose: () => void; onStart: (
     if (!user) return;
     try {
       const snap = await getDocs(query(collection(firebaseDb(), 'conversations'), where('participants', 'array-contains', user.id)));
-      const existing = snap.docs.find(d => {
-        const p = d.data().participants as string[];
-        return p.includes(other.id);
-      });
-      if (existing) {
-        onStart({ id: existing.id, ...existing.data() } as Conversation);
-        return;
-      }
+      const existing = snap.docs.find(d => (d.data().participants as string[]).includes(other.id));
+      if (existing) { onStart({ id: existing.id, ...existing.data() } as Conversation); return; }
       const ref = await addDoc(collection(firebaseDb(), 'conversations'), {
         participants: [user.id, other.id],
         participantNames: { [user.id]: user.username, [other.id]: other.username },
@@ -272,46 +315,76 @@ function NewMessageModal({ onClose, onStart }: { onClose: () => void; onStart: (
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'flex-end' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'flex-end' }}>
       <div style={{
-        width: '100%', background: '#16161F',
-        borderRadius: '24px 24px 0 0',
-        padding: '20px 20px 36px',
-        maxHeight: '80vh', display: 'flex', flexDirection: 'column',
-        boxShadow: '0 -20px 60px rgba(0,0,0,0.5)',
+        width: '100%', background: '#13131A',
+        borderRadius: '28px 28px 0 0',
+        padding: '0 20px 40px',
+        maxHeight: '82vh', display: 'flex', flexDirection: 'column',
       }}>
-        {/* Drag handle */}
-        <div style={{ width: 40, height: 4, background: 'rgba(255,255,255,0.15)', borderRadius: 99, margin: '0 auto 20px' }} />
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
-          <span style={{ fontWeight: 800, fontSize: 17 }}>New Message</span>
-          <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.08)', border: 'none', color: 'rgba(255,255,255,0.6)', fontSize: 16, cursor: 'pointer', borderRadius: 999, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+        {/* drag handle */}
+        <div style={{ width: 36, height: 4, background: 'rgba(255,255,255,0.12)', borderRadius: 99, margin: '14px auto 20px' }} />
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <div>
+            <div style={{ fontWeight: 900, fontSize: 20, color: '#fff', letterSpacing: '-0.5px' }}>New message</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', marginTop: 2 }}>find someone to chat with</div>
+          </div>
+          <button onClick={onClose} style={{
+            width: 34, height: 34, borderRadius: 11,
+            background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.08)',
+            color: 'rgba(255,255,255,0.6)', fontSize: 16, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>✕</button>
         </div>
-        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-          <input value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => e.key === 'Enter' && search()} placeholder="Search username…"
-            style={{ flex: 1, background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 999, padding: '11px 18px', color: 'white', fontSize: 14, outline: 'none' }} />
-          <button onClick={search} style={{ background: 'linear-gradient(135deg,#FF2156,#9D4EDD)', border: 'none', color: 'white', borderRadius: 999, padding: '11px 20px', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
-            {searching ? '…' : 'Go'}
-          </button>
+
+        <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
+          <div style={{
+            flex: 1, display: 'flex', alignItems: 'center', gap: 10,
+            background: 'rgba(255,255,255,0.06)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 14, padding: '11px 16px',
+          }}>
+            <span style={{ fontSize: 16 }}>🔍</span>
+            <input
+              value={q}
+              onChange={e => setQ(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && search()}
+              placeholder="search username…"
+              style={{ flex: 1, background: 'none', border: 'none', outline: 'none', color: '#fff', fontSize: 14 }}
+              autoFocus
+            />
+          </div>
+          <button onClick={search} style={{
+            background: 'linear-gradient(135deg,#FF2D78,#9B4FFF)',
+            border: 'none', color: '#fff', borderRadius: 14,
+            padding: '0 20px', fontWeight: 800, cursor: 'pointer', fontSize: 14,
+            flexShrink: 0,
+          }}>{searching ? '…' : 'Go'}</button>
         </div>
+
         <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
           {results.length === 0 && q && !searching && (
-            <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.3)', padding: 30, fontSize: 14 }}>No users found for "{q}"</div>
+            <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.25)', padding: '32px 0', fontSize: 14 }}>
+              no one found for "{q}"
+            </div>
           )}
           {results.map(u => (
             <button key={u.id} onClick={() => startChat(u)} style={{
               display: 'flex', alignItems: 'center', gap: 13,
               background: 'rgba(255,255,255,0.04)',
               border: '1px solid rgba(255,255,255,0.06)',
-              borderRadius: 16, padding: '12px 14px',
-              cursor: 'pointer', color: 'white', textAlign: 'left',
-              transition: 'background 0.15s',
+              borderRadius: 16, padding: '13px 14px',
+              cursor: 'pointer', color: '#fff', textAlign: 'left',
             }}>
-              <Avatar name={u.username} color={u.avatarColor} src={u.avatarUrl} size="md" />
+              <SqAvatar name={u.username} color={u.avatarColor} src={u.avatarUrl} size={44} radius={14} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 700, fontSize: 14 }}>@{u.username}</div>
-                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.bio?.slice(0, 45)}</div>
+                <div style={{ fontWeight: 800, fontSize: 14 }}>@{u.username}</div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {u.bio?.slice(0, 45)}
+                </div>
               </div>
-              <div style={{ fontSize: 18, opacity: 0.4 }}>→</div>
+              <div style={{ fontSize: 20, opacity: 0.3 }}>→</div>
             </button>
           ))}
         </div>
@@ -320,147 +393,218 @@ function NewMessageModal({ onClose, onStart }: { onClose: () => void; onStart: (
   );
 }
 
-// ─── Main Inbox Screen ─────────────────────────────────────────────────────
+// ─── Active users strip ──────────────────────────────────────────────────────
+function ActiveStrip({ conversations, myId, onOpen }: { conversations: Conversation[]; myId: string; onOpen: (c: Conversation) => void }) {
+  if (conversations.length === 0) return null;
+  return (
+    <div style={{ display: 'flex', gap: 14, padding: '4px 16px 16px', overflowX: 'auto', scrollbarWidth: 'none' }}>
+      {conversations.slice(0, 6).map(conv => {
+        const otherId = getOtherId(conv, myId);
+        const name = getField(conv.participantNames, otherId, 'user');
+        const color = getField(conv.participantAvatarColors, otherId, '#FF2D78');
+        const url = getField<string | null>(conv.participantAvatarUrls, otherId, null);
+        return (
+          <button key={conv.id} onClick={() => onOpen(conv)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0 }}>
+            <div style={{
+              width: 54, height: 54, borderRadius: 18, padding: 2, flexShrink: 0,
+              background: 'linear-gradient(135deg, #FF2D78, #9B4FFF)',
+            }}>
+              <SqAvatar name={name} color={color} src={url} size={50} radius={15} />
+            </div>
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', maxWidth: 54, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{name}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Main Inbox ──────────────────────────────────────────────────────────────
 export function InboxScreen() {
   const user = useAuthStore(s => s.user);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConv, setActiveConv] = useState<Conversation | null>(null);
   const [showNew, setShowNew] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     if (!user) return;
     const q = query(collection(firebaseDb(), 'conversations'), where('participants', 'array-contains', user.id));
-    const unsub = onSnapshot(q, snap => {
+    return onSnapshot(q, snap => {
       const convs = snap.docs.map(d => ({ id: d.id, ...d.data() } as Conversation));
       convs.sort((a, b) => (b.lastMessageAt > a.lastMessageAt ? 1 : -1));
-      setConversations(convs);
-      setLoading(false);
+      setConversations(convs); setLoading(false);
     });
-    return () => unsub();
   }, [user]);
 
   if (activeConv) return <ChatView conv={activeConv} onBack={() => setActiveConv(null)} />;
 
+  const filtered = search.trim()
+    ? conversations.filter(c => {
+        const otherId = getOtherId(c, user?.id ?? '');
+        const name = getField(c.participantNames, otherId, '');
+        return name.toLowerCase().includes(search.toLowerCase());
+      })
+    : conversations;
+
+  const unreadCount = conversations.filter(c => (c.unreadCount ?? 0) > 0).length;
+
   return (
-    <div style={{ height: '100%', background: '#0B0B0F', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ height: '100%', background: '#0A0A0F', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+
       {/* Header */}
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '18px 16px 14px',
-        borderBottom: '1px solid rgba(255,255,255,0.05)',
-      }}>
-        <div>
-          <h1 style={{ fontSize: 24, fontWeight: 900, letterSpacing: '-0.5px', margin: 0 }}>Messages</h1>
-          {conversations.length > 0 && (
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>
-              {conversations.length} conversation{conversations.length !== 1 ? 's' : ''}
+      <div style={{ padding: '18px 16px 10px', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 }}>
+          <div>
+            <div style={{ fontSize: 28, fontWeight: 900, color: '#fff', letterSpacing: '-0.8px', lineHeight: 1 }}>DMs</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', marginTop: 4 }}>
+              {unreadCount > 0 ? `${unreadCount} unread` : conversations.length > 0 ? `${conversations.length} chats` : 'no messages yet'}
             </div>
-          )}
+          </div>
+          <button onClick={() => setShowNew(true)} style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            background: 'linear-gradient(135deg,#FF2D78,#9B4FFF)',
+            border: 'none', color: '#fff', borderRadius: 13,
+            padding: '9px 16px', fontWeight: 800, cursor: 'pointer', fontSize: 13,
+          }}>
+            <span style={{ fontSize: 16 }}>✏️</span> New
+          </button>
         </div>
-        <button onClick={() => setShowNew(true)} style={{
-          background: 'linear-gradient(135deg,#FF2156,#9D4EDD)',
-          border: 'none', color: 'white', borderRadius: 999,
-          padding: '9px 18px', fontWeight: 700, cursor: 'pointer', fontSize: 13,
-          boxShadow: '0 4px 15px rgba(255,33,86,0.3)',
-          display: 'flex', alignItems: 'center', gap: 6,
+
+        {/* Search bar */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          background: 'rgba(255,255,255,0.05)',
+          border: '1px solid rgba(255,255,255,0.07)',
+          borderRadius: 14, padding: '10px 14px',
         }}>
-          ✏️ New
-        </button>
+          <span style={{ fontSize: 15, opacity: 0.4 }}>🔍</span>
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="search messages…"
+            style={{ flex: 1, background: 'none', border: 'none', outline: 'none', color: '#fff', fontSize: 14 }}
+          />
+        </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto' }}>
-        {/* Loading skeletons */}
-        {loading && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 1, padding: '8px 0' }}>
-            {[1, 2, 3, 4].map(i => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px' }}>
-                <div style={{ width: 48, height: 48, borderRadius: 999, background: 'rgba(255,255,255,0.06)', flexShrink: 0 }} />
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <div style={{ height: 13, width: '40%', background: 'rgba(255,255,255,0.06)', borderRadius: 6 }} />
-                  <div style={{ height: 11, width: '65%', background: 'rgba(255,255,255,0.04)', borderRadius: 6 }} />
-                </div>
-              </div>
-            ))}
+      {/* Active strip */}
+      {!search && conversations.length > 0 && (
+        <ActiveStrip conversations={conversations} myId={user?.id ?? ''} onOpen={setActiveConv} />
+      )}
+
+      {/* Section label */}
+      {conversations.length > 0 && (
+        <div style={{ padding: '0 16px 8px', fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.22)', letterSpacing: '1px' }}>
+          RECENT
+        </div>
+      )}
+
+      {/* List */}
+      <div style={{ flex: 1, overflowY: 'auto', scrollbarWidth: 'none' }}>
+
+        {/* Skeletons */}
+        {loading && [1, 2, 3, 4].map(i => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '13px 16px' }}>
+            <div style={{ width: 50, height: 50, borderRadius: 16, background: 'rgba(255,255,255,0.05)', flexShrink: 0 }} />
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ height: 13, width: '35%', background: 'rgba(255,255,255,0.05)', borderRadius: 6 }} />
+              <div style={{ height: 11, width: '60%', background: 'rgba(255,255,255,0.03)', borderRadius: 6 }} />
+            </div>
           </div>
-        )}
+        ))}
 
         {/* Empty state */}
         {!loading && conversations.length === 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '70%', gap: 14, textAlign: 'center', padding: 32 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '65%', gap: 14, padding: 32 }}>
             <div style={{
-              width: 90, height: 90, borderRadius: 999,
-              background: 'linear-gradient(135deg, rgba(255,33,86,0.15), rgba(157,78,221,0.15))',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 42,
+              width: 80, height: 80, borderRadius: 26,
+              background: 'linear-gradient(135deg, rgba(255,45,120,0.15), rgba(155,79,255,0.15))',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36,
             }}>💬</div>
-            <h3 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>No messages yet</h3>
-            <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 14, maxWidth: 240, margin: 0, lineHeight: 1.5 }}>
-              Find someone to chat with and start a conversation!
-            </p>
+            <div style={{ fontWeight: 900, fontSize: 20, color: '#fff', letterSpacing: '-0.5px' }}>no dms yet</div>
+            <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.3)', textAlign: 'center', maxWidth: 220, lineHeight: 1.6 }}>
+              find someone and start chatting 🔥
+            </div>
             <button onClick={() => setShowNew(true)} style={{
-              background: 'linear-gradient(135deg,#FF2156,#9D4EDD)',
-              border: 'none', color: 'white', borderRadius: 999,
-              padding: '13px 28px', fontWeight: 700, cursor: 'pointer',
-              fontSize: 15, marginTop: 4,
-              boxShadow: '0 6px 20px rgba(255,33,86,0.3)',
-            }}>
-              Start a Chat
-            </button>
+              background: 'linear-gradient(135deg,#FF2D78,#9B4FFF)',
+              border: 'none', color: '#fff', borderRadius: 14,
+              padding: '13px 30px', fontWeight: 800, cursor: 'pointer',
+              fontSize: 15, marginTop: 6,
+            }}>start a chat</button>
           </div>
         )}
 
-        {/* Conversation list */}
-        {conversations.map(conv => {
+        {/* No search results */}
+        {!loading && search && filtered.length === 0 && (
+          <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.25)', padding: '40px 0', fontSize: 14 }}>
+            nothing found for "{search}"
+          </div>
+        )}
+
+        {/* Conversations */}
+        {filtered.map(conv => {
           const otherId = getOtherId(conv, user?.id ?? '');
-          const otherName = getField(conv.participantNames, otherId, 'User');
-          const otherColor = getField(conv.participantAvatarColors, otherId, '#888');
+          const otherName = getField(conv.participantNames, otherId, 'user');
+          const otherColor = getField(conv.participantAvatarColors, otherId, '#FF2D78');
           const otherUrl = getField<string | null>(conv.participantAvatarUrls, otherId, null);
           const hasUnread = (conv.unreadCount ?? 0) > 0;
 
+          const ts = conv.lastMessageAt;
+          let timeLabel = '';
+          if (ts) {
+            const d = ts.toDate ? ts.toDate() : new Date(ts);
+            const now = new Date();
+            const isToday = d.toDateString() === now.toDateString();
+            timeLabel = isToday
+              ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+              : d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+          }
+
           return (
             <button key={conv.id} onClick={() => setActiveConv(conv)} style={{
-              width: '100%', display: 'flex', alignItems: 'center', gap: 14,
-              padding: '14px 16px',
+              width: '100%', display: 'flex', alignItems: 'center', gap: 13,
+              padding: '12px 16px',
               background: 'none', border: 'none',
               borderBottom: '1px solid rgba(255,255,255,0.04)',
-              cursor: 'pointer', color: 'white', textAlign: 'left',
+              cursor: 'pointer', color: '#fff', textAlign: 'left',
             }}>
-              {/* Avatar with online dot */}
               <div style={{ position: 'relative', flexShrink: 0 }}>
-                <Avatar name={otherName} color={otherColor} src={otherUrl} size="md" />
+                <SqAvatar name={otherName} color={otherColor} src={otherUrl} size={50} radius={16} />
+                <div style={{
+                  position: 'absolute', bottom: -1, right: -1,
+                  width: 13, height: 13, borderRadius: 999,
+                  background: '#22C55E', border: '2.5px solid #0A0A0F',
+                }} />
               </div>
 
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
-                  <span style={{ fontWeight: hasUnread ? 800 : 600, fontSize: 14 }}>@{otherName}</span>
-                  {conv.lastMessageAt && (
-                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', flexShrink: 0, marginLeft: 8 }}>
-                      {new Date(conv.lastMessageAt).toLocaleDateString() === new Date().toLocaleDateString()
-                        ? new Date(conv.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                        : new Date(conv.lastMessageAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
-                    </span>
-                  )}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                  <span style={{ fontWeight: hasUnread ? 900 : 700, fontSize: 14, color: '#fff' }}>@{otherName}</span>
+                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', flexShrink: 0, marginLeft: 8 }}>{timeLabel}</span>
                 </div>
                 <div style={{
                   fontSize: 13,
-                  color: hasUnread ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.35)',
+                  color: hasUnread ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.3)',
                   overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   fontWeight: hasUnread ? 600 : 400,
                 }}>
-                  {conv.lastMessage || 'Say hello! 👋'}
+                  {conv.lastMessage || 'say hello 👋'}
                 </div>
               </div>
 
               {hasUnread && (
                 <div style={{
-                  width: 10, height: 10, borderRadius: 999,
-                  background: 'linear-gradient(135deg,#FF2156,#9D4EDD)',
-                  flexShrink: 0, boxShadow: '0 0 8px rgba(255,33,86,0.6)',
+                  width: 9, height: 9, borderRadius: 999, flexShrink: 0,
+                  background: 'linear-gradient(135deg,#FF2D78,#9B4FFF)',
                 }} />
               )}
             </button>
           );
         })}
+
+        <div style={{ height: 20 }} />
       </div>
 
       {showNew && (
