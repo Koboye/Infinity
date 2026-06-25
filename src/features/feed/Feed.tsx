@@ -33,16 +33,20 @@ export function Feed({ currentUserId, followedIds, onComment, onShare, onViewPro
     return () => unsub();
   }, [currentUserId]);
 
-  useEffect(() => {
+useEffect(() => {
     if (!containerRef.current) return;
     const cards = containerRef.current.querySelectorAll('[data-card]');
     const observer = new IntersectionObserver(entries => {
-      let best: { idx: number; ratio: number } | null = null;
+      let bestIdx = -1;
+      let bestRatio = 0;
       entries.forEach(e => {
         const idx = Number((e.target as HTMLElement).dataset.idx);
-        if (e.isIntersecting && (!best || e.intersectionRatio > best.ratio)) best = { idx, ratio: e.intersectionRatio };
+        if (e.isIntersecting && e.intersectionRatio > bestRatio) {
+          bestRatio = e.intersectionRatio;
+          bestIdx = idx;
+        }
       });
-      if (best) setActiveIdx(best.idx);
+      if (bestIdx >= 0) setActiveIdx(bestIdx);
     }, { threshold: [0.5, 0.8] });
     cards.forEach(c => observer.observe(c));
     return () => observer.disconnect();
