@@ -31,6 +31,13 @@ export function CreatePost({ onClose, onCreated }: CreatePostProps) {
   video.src = URL.createObjectURL(file);
 });
 
+const getVideoDuration = (file: File): Promise<number> => new Promise((resolve) => {
+  const video = document.createElement('video');
+  video.preload = 'metadata';
+  video.onloadedmetadata = () => { URL.revokeObjectURL(video.src); resolve(video.duration); };
+  video.src = URL.createObjectURL(file);
+});
+
 const pickFile = async (f: File) => {
   if (!f.type.startsWith('video/') && !f.type.startsWith('image/')) { showToast('Pick a video or image', 'error'); return; }
   if (f.size > 50 * 1024 * 1024) { showToast('File too large. Maximum is 50MB', 'error'); return; }
