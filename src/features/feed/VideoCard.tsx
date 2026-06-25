@@ -116,8 +116,8 @@ export function VideoCard({ post, isActive, currentUserId, onComment, onShare, o
     <article style={{ position: 'absolute', inset: 0, background: 'black' }} onClick={handleTap}>
       {/* Media */}
       {isImage
-  ? <img src={post.images?.[0] ?? post.media?.url ?? ''} alt={desc} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
-  : <video ref={videoRef} src={post.media?.url ?? ''} loop playsInline muted={muted} style={{ width: '100%', height: '100%', objectFit: 'cover' }} preload="metadata" />}
+  ? <img src={post.images?.[0] ?? post.media?.url ?? ''} alt={desc} style={{ width:'100%', height:'100%', objectFit:'cover' }} loading="lazy" />
+  : <video ref={videoRef} src={post.media?.url ?? ''} loop playsInline muted={muted} style={{ width:'100%', height:'100%', objectFit:'cover' }} preload="metadata" />}
 
       {/* Gradient overlay */}
       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.05) 40%, rgba(0,0,0,0.3) 100%)', pointerEvents: 'none' }} />
