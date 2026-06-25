@@ -23,13 +23,20 @@ const buildProfile = (uid: string, data: { email: string; username: string; full
 export async function signUpWithEmail(input: { email: string; password: string; username: string; fullName?: string }): Promise<UserProfile> {
   const cred = await createUserWithEmailAndPassword(firebaseAuth(), input.email, input.password);
   if (input.fullName) await fbUpdateProfile(cred.user, { displayName: input.fullName });
+  await cred.user.sendEmailVerification();
   const profile = buildProfile(cred.user.uid, input);
   await setDoc(doc(firebaseDb(), 'users', cred.user.uid), { ...profile, createdAt: serverTimestamp() });
+  await signOut(firebaseAuth());
   return profile;
 }
 
 export async function signInWithEmail(email: string, password: string): Promise<FirebaseUser> {
-  return (await signInWithEmailAndPassword(firebaseAuth(), email, password)).user;
+  const { user } = await signInWithEmailAndPassword(firebaseAuth(), email, password);
+  if (!user.emailVerified) {
+    await signOut(firebaseAuth());
+    throw new Error('Please verify your email first. Check your inbox.');
+  }
+  return user;
 }
 
 export async function signInWithGoogle(): Promise<FirebaseUser> {
