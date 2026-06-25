@@ -6,6 +6,9 @@ export type Language = 'en' | 'am' | 'ar' | 'fr' | 'es' | 'pt' | 'hi' | 'zh' | '
 export type Theme = 'dark' | 'light';
 export type AuthStatus = 'idle' | 'loading' | 'authenticated' | 'unauthenticated';
 
+// ← notifications added here
+export type AppPage = 'feed' | 'discover' | 'inbox' | 'notifications' | 'profile' | 'create';
+
 export interface UserProfile {
   id: UserId;
   username: string;
@@ -91,4 +94,3 @@ export interface TrendingTopic {
 
 export type ToastVariant = 'success' | 'error' | 'info' | 'warning';
 export interface ToastItem { id: string; message: string; variant: ToastVariant; }
-export type AppPage = 'feed' | 'discover' | 'inbox' | 'profile' | 'create';
