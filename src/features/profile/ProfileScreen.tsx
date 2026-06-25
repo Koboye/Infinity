@@ -36,7 +36,9 @@ export function ProfileScreen() {
       </div>
 
       <div style={{ padding:'24px 16px', textAlign:'center' }}>
-        <Avatar name={user.username} color={user.avatarColor} src={user.avatarUrl} size="xl" ring style={{ margin:'0 auto' }} />
+        <div style={{ margin:'0 auto', width:'fit-content' }}>
+  <Avatar name={user.username} color={user.avatarColor} src={user.avatarUrl} size="xl" ring />
+</div>
         <h2 style={{ fontSize:20, fontWeight:900, marginTop:12 }}>@{user.username}</h2>
         {user.fullName && <p style={{ color:'rgba(255,255,255,0.7)', marginTop:4 }}>{user.fullName}</p>}
         {user.bio && <p style={{ color:'rgba(255,255,255,0.5)', fontSize:14, marginTop:8 }}>{user.bio}</p>}
