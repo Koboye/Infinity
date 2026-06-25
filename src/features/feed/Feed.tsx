@@ -65,7 +65,7 @@ useEffect(() => {
         : posts.map((post, i) => (
             <div key={post.id} data-card data-idx={i} style={{ height:'100%', width:'100%', scrollSnapAlign:'start', position:'relative' }}>
               <VideoCard post={post} isActive={i===activeIdx} currentUserId={currentUserId}
-                onComment={onComment} onShare={onShare} onViewProfile={onViewProfile} onFollow={onFollow}
+                onComment={(id, ownerId, ownerUsername) => onComment(id)} onShare={onShare} onViewProfile={onViewProfile} onFollow={onFollow}
                 isFollowing={followedIds?.includes(post.userId)} />
             </div>
           ))}
