@@ -20,7 +20,7 @@ export function AuthScreen() {
     if (password.length < 6) { showToast('Password must be at least 6 characters', 'error'); return; }
     setBusy(true);
     try {
-      if (mode === 'signup') { await signUpWithEmail({ email, password, username: username.toLowerCase() }); showToast('Welcome to Dagu! 🎉', 'success'); }
+      if (mode === 'signup') { await signUpWithEmail({ email, password, username: username.toLowerCase() }); showToast('Account created! Check your email to verify before signing in. 📧', 'success'); setMode('login'); }
       else {
   await signInWithEmail(email, password);
 }
