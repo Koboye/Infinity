@@ -9,7 +9,7 @@ import { NotificationsScreen } from '@/features/notifications/NotificationsScree
 import { ProfileScreen } from '@/features/profile/ProfileScreen';
 import { CreatePost } from '@/features/create/CreatePost';
 import { BottomNav } from '@/components/BottomNav';
-import { Toast } from '@/components/Toast';
+import { ToastHost } from '@/components/Toast';
 import {
   doc, updateDoc, arrayUnion, arrayRemove,
   onSnapshot, collection, query, where, getDoc,
@@ -29,7 +29,6 @@ export function AppShell() {
   const [unreadNotifs, setUnreadNotifs] = useState(0);
   const [unreadMessages, setUnreadMessages] = useState(0);
 
-  // ── Sync following list from Firestore user doc ────────────────────────
   useEffect(() => {
     if (!user) return;
     const unsub = onSnapshot(doc(firebaseDb(), 'users', user.id), snap => {
@@ -42,7 +41,6 @@ export function AppShell() {
     return () => unsub();
   }, [user?.id]);
 
-  // ── Unread notifications badge ─────────────────────────────────────────
   useEffect(() => {
     if (!user) return;
     const q = query(collection(firebaseDb(), 'notifications'), where('userId', '==', user.id), where('read', '==', false));
@@ -50,7 +48,6 @@ export function AppShell() {
     return () => unsub();
   }, [user?.id]);
 
-  // ── Unread messages badge ──────────────────────────────────────────────
   useEffect(() => {
     if (!user) return;
     const q = query(collection(firebaseDb(), 'messages'), where('senderId', '!=', user.id), where('read', '==', false));
@@ -58,20 +55,16 @@ export function AppShell() {
     return () => unsub();
   }, [user?.id]);
 
-  // ── Real follow / unfollow with Firestore + notification ──────────────
   const toggleFollow = async (uid: string) => {
     if (!user) return;
     const isFollowing = following.includes(uid);
     try {
-      // Update current user's following list
       await updateDoc(doc(firebaseDb(), 'users', user.id), {
         following: isFollowing ? arrayRemove(uid) : arrayUnion(uid),
       });
-      // Update target user's followers list
       await updateDoc(doc(firebaseDb(), 'users', uid), {
         followers: isFollowing ? arrayRemove(user.id) : arrayUnion(user.id),
       });
-      // Send notification on follow
       if (!isFollowing) {
         await createNotification({
           userId: uid,
@@ -126,7 +119,7 @@ export function AppShell() {
         />
       )}
 
-      <Toast />
+      <ToastHost />
     </div>
   );
 }
