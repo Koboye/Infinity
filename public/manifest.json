@@ -1,0 +1,11 @@
+{
+  "name": "Dagu — Smart Social Video",
+  "short_name": "Dagu",
+  "description": "Smart-generation social video experience",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0B0B0F",
+  "theme_color": "#0B0B0F",
+  "orientation": "portrait",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
