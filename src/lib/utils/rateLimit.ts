@@ -3,7 +3,7 @@ import { Redis } from '@upstash/redis';
 
 const redis = new Redis({
   url: process.env.https://meet-perch-68631.upstash.io!,
-  token: process.env.********!,
+  token: process.env.gQAAAAAAAQwXAAIgcDE3ZmIyMTYwNGZiMGU0NmVhYjIzMDZhYTdjZTlkYTkyMg!,
 });
 
 const limiters = new Map<string, Ratelimit>();
