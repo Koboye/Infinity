@@ -76,7 +76,7 @@ export function VideoCard({ post, isActive, currentUserId, onComment, onShare, o
         videoId: post.id, videoUrl: post.media.url,
       }).catch(() => {});
     }
-    try { await toggleLike(post.id, currentUserId, liked); }
+    try { await toggleLike(post.id, currentUserId); }
     catch { setLiked(!next); setLikeCount(c => c + (next ? -1 : 1)); }
   }, [liked, currentUserId, post, user]);
 
