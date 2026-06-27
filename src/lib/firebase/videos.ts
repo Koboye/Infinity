@@ -69,12 +69,6 @@ export function subscribeToComments(videoId: VideoId, onData: (c: Comment[]) => 
   );
 }
 
-export async function postComment(input: {
-  videoId: VideoId; userId: UserId; username: string; avatar: string; avatarColor: string; avatarUrl: string | null; text: string;
-}): Promise<void> {
-  await addDoc(collection(firebaseDb(), 'comments'), { ...input, likes: 0, pinned: false, createdAt: serverTimestamp() });
-  await updateDoc(doc(firebaseDb(), 'videos', input.videoId), { comments: increment(1) });
-}
 
 /** Publishing goes through /api/videos for server-side moderation. */
 export async function publishVideo(input: {
