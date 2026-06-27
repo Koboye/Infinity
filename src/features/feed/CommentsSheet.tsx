@@ -36,15 +36,20 @@ export function CommentsSheet({ videoId, videoOwnerId, videoOwnerUsername, onClo
     setSending(true);
     const content = replyTo ? `@${replyTo.username} ${text.trim()}` : text.trim();
     try {
-      await postComment({
-        videoId,
-        userId: user.id,
-        username: user.username,
-        avatar: user.avatar,
-        avatarColor: user.avatarColor,
-        avatarUrl: user.avatarUrl,
-        text: content,
-      });
+      const token = await getIdToken();
+const res = await fetch('/api/comments', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+  body: JSON.stringify({
+    videoId,
+    username: user.username,
+    avatar: user.avatar,
+    avatarColor: user.avatarColor,
+    avatarUrl: user.avatarUrl,
+    text: content,
+  }),
+});
+if (!res.ok) throw new Error('Failed to post comment');
       await createNotification({
         userId: videoOwnerId,
         fromUserId: user.id,
