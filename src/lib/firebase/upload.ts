@@ -1,23 +1,11 @@
 import { getIdToken } from './auth';
-import { firebaseAuth } from './client';
 
 export interface UploadResult { url: string; publicId: string; }
-
-async function waitForUser(timeoutMs = 5000): Promise<void> {
-  if (firebaseAuth().currentUser) return;
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => { unsub(); reject(new Error('Not signed in')); }, timeoutMs);
-    const unsub = firebaseAuth().onAuthStateChanged(user => {
-      if (user) { clearTimeout(timer); unsub(); resolve(); }
-    });
-  });
-}
 
 export async function uploadFile(
   file: File,
   options: { onProgress?: (pct: number) => void } = {}
 ): Promise<UploadResult> {
-  await waitForUser();
   const token = await getIdToken();
   const sigRes = await fetch('/api/upload', {
     method: 'POST',
