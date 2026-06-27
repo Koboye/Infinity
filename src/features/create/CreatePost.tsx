@@ -2,7 +2,6 @@
 import { useState, useRef } from 'react';
 import { useUIStore } from '@/stores/uiStore';
 import { useAuthStore } from '@/stores/authStore';
-import { generateSmartCaption } from '@/lib/ai/captions';
 import { moderatePost } from '@/lib/ai/moderation';
 import { uploadFile } from '@/lib/firebase/upload';
 import { publishVideo } from '@/lib/firebase/videos';
@@ -44,7 +43,16 @@ export function CreatePost({ onClose, onCreated }: CreatePostProps) {
   const smartCaption = async () => {
     if (!description.trim()) { showToast('Write a draft caption first', 'info'); return; }
     setAiLoading(true);
-    try { const r = await generateSmartCaption(description); setDescription(r.caption); setHashtags(r.hashtags); showToast('Smart caption applied ✨', 'success'); }
+    try {
+      const res = await fetch('/api/smart-caption', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input: description }),
+      });
+      if (!res.ok) throw new Error('Smart caption request failed');
+      const r = await res.json() as { caption: string; hashtags: string[] };
+      setDescription(r.caption); setHashtags(r.hashtags); showToast('Smart caption applied ✨', 'success');
+    } catch { showToast('Could not generate a caption right now', 'error'); }
     finally { setAiLoading(false); }
   };
 
