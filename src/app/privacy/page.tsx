@@ -24,7 +24,7 @@ export default function PrivacyPage() {
 
       <h2 style={{ fontSize:18, fontWeight:700, marginBottom:8 }}>Contact</h2>
       <p style={{ color:'rgba(255,255,255,0.7)', lineHeight:1.7 }}>
-        For any privacy questions email us at getachewshambel11@gmail.com
+        For any privacy questions email us at infinityinfinityv1@gmail.com
       </p>
     </div>
   );
