@@ -96,8 +96,18 @@ service cloud.firestore {
       allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
 
-    match /{document=**} {
-      allow read, write: if false;
-    }
+    match /follows/{followId} {
+  allow read: if true;
+  allow create: if isSignedIn()
+    && request.resource.data.followerId == request.auth.uid
+    && followId == request.auth.uid + '_' + request.resource.data.followeeId;
+  allow delete: if isSignedIn()
+    && resource.data.followerId == request.auth.uid;
+  allow update: if false;
+}
+
+match /{document=**} {
+  allow read, write: if false;
+}
   }
 }
