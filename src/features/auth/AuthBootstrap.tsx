@@ -14,10 +14,19 @@ export function AuthBootstrap({ children }: { children: React.ReactNode }) {
     setStatus('loading');
     let profileUnsub: (() => void) | null = null;
     const authUnsub = onAuthChanged(async fbUser => {
-      if (!fbUser) { profileUnsub?.(); profileUnsub = null; setUser(null); return; }
+      if (!fbUser) {
+        profileUnsub?.();
+        profileUnsub = null;
+        setUser(null);
+        return;
+      }
       const ref = doc(firebaseDb(), 'users', fbUser.uid);
       const initial = await getDoc(ref);
-      if (initial.exists()) setUser({ ...(initial.data() as UserProfile), id: fbUser.uid });
+      if (initial.exists()) {
+        setUser({ ...(initial.data() as UserProfile), id: fbUser.uid });
+      } else {
+        setStatus('unauthenticated');
+      }
       profileUnsub?.();
       profileUnsub = onSnapshot(ref, snap => {
         if (snap.exists()) setUser({ ...(snap.data() as UserProfile), id: fbUser.uid });
