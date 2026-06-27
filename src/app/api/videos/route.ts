@@ -36,9 +36,9 @@ export async function POST(request: Request) {
     if (body.description.length > 500) {
       return NextResponse.json({ error: 'Description too long' }, { status: 400 });
     }
-    if (!/^https:\/\//.test(body.mediaUrl)) {
-      return NextResponse.json({ error: 'Invalid media URL' }, { status: 400 });
-    }
+    if (!body.mediaUrl.startsWith(`https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/`)) {
+  return NextResponse.json({ error: 'Invalid media URL' }, { status: 400 });
+}
 
     // Moderation runs here, server-side, and its verdict is what actually
     // gets persisted — the client's own moderation preview is informational
