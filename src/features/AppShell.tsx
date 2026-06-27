@@ -112,7 +112,6 @@ export function AppShell() {
         {page === 'inbox'         && <InboxScreen />}
         {page === 'notifications' && <NotificationsScreen />}
         {page === 'profile'       && <ProfileScreen />}
-        {page === 'create'        && <Feed {...feedProps} />}
       </div>
 
       <BottomNav
