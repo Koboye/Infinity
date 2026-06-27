@@ -20,7 +20,7 @@ function Gate() {
   if (status === 'loading' || status === 'idle') {
     return (
       <div style={{ display:'flex', height:'100vh', alignItems:'center', justifyContent:'center', background:'#0B0B0F', flexDirection:'column', gap:12 }}>
-        <div className="gradient-brand" style={{ width:56, height:56, borderRadius:16, display:'flex', alignItems:'center', justifyContent:'center', fontSize:24, fontWeight:900, color:'white' }}>D</div>
+        <div className="gradient-brand" style={{ width:56, height:56, borderRadius:16, display:'flex', alignItems:'center', justifyContent:'center', fontSize:24, fontWeight:900, color:'white' }}>I</div>
       </div>
     );
   }
