@@ -1,13 +1,33 @@
+// src/lib/firebase/upload.ts
+// Uses a signed Cloudinary upload so the API secret never touches the browser.
+import { getIdToken } from './auth';
+
 export interface UploadResult { url: string; publicId: string; }
 
-export async function uploadFile(file: File, options: { onProgress?: (pct: number) => void } = {}): Promise<UploadResult> {
-  const cloud = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD;
-  const preset = process.env.NEXT_PUBLIC_CLOUDINARY_PRESET;
-  if (!cloud || !preset) throw new Error('Cloudinary not configured');
+export async function uploadFile(
+  file: File,
+  options: { onProgress?: (pct: number) => void } = {}
+): Promise<UploadResult> {
+  // 1. Ask our server to sign the upload
+  const token = await getIdToken();
+  const sigRes = await fetch('/api/upload', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!sigRes.ok) {
+    const { error } = await sigRes.json().catch(() => ({ error: 'Upload sign failed' }));
+    throw new Error(error ?? 'Upload sign failed');
+  }
+  const { timestamp, signature, apiKey, cloudName, folder } =
+    await sigRes.json() as { timestamp: string; signature: string; apiKey: string; cloudName: string; folder: string };
 
+  // 2. Upload directly to Cloudinary with the server-issued signature
   const formData = new FormData();
   formData.append('file', file);
-  formData.append('upload_preset', preset);
+  formData.append('api_key', apiKey);
+  formData.append('timestamp', timestamp);
+  formData.append('signature', signature);
+  formData.append('folder', folder);
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -18,10 +38,12 @@ export async function uploadFile(file: File, options: { onProgress?: (pct: numbe
       if (xhr.status >= 200 && xhr.status < 300) {
         const data = JSON.parse(xhr.responseText);
         resolve({ url: data.secure_url, publicId: data.public_id });
-      } else reject(new Error(`Upload failed: ${xhr.status}`));
+      } else {
+        reject(new Error(`Upload failed: ${xhr.status}`));
+      }
     };
-    xhr.onerror = () => reject(new Error('Network error'));
-    xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloud}/auto/upload`);
+    xhr.onerror = () => reject(new Error('Network error during upload'));
+    xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`);
     xhr.send(formData);
   });
 }
