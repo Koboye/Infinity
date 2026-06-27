@@ -1,4 +1,7 @@
 'use client';
+// src/features/AppShell.tsx
+// Fixed: unreadMessages now reads per-user unreadCounts[uid] instead of a
+// global unreadCount field so each participant sees their own badge count.
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import { useUIStore } from '@/stores/uiStore';
@@ -31,34 +34,51 @@ export function AppShell() {
   const [unreadNotifs, setUnreadNotifs] = useState(0);
   const [unreadMessages, setUnreadMessages] = useState(0);
 
+  // Sync user profile + following list in real-time
   useEffect(() => {
     if (!user) return;
     const unsub = onSnapshot(doc(firebaseDb(), 'users', user.id), snap => {
-      if (snap.exists()) {
-        const data = snap.data();
-        setFollowing(data.following ?? []);
-        setUser({ ...user, following: data.following ?? [], followers: data.followers ?? [] });
+      if (!snap.exists()) return;
+      const data = snap.data();
+      const newFollowing = data.following ?? [];
+      const newFollowers = data.followers ?? [];
+      // Only update store when the arrays actually change (avoids reference-churn)
+      if (
+        JSON.stringify(newFollowing) !== JSON.stringify(user.following) ||
+        JSON.stringify(newFollowers) !== JSON.stringify(user.followers)
+      ) {
+        setFollowing(newFollowing);
+        setUser({ ...user, following: newFollowing, followers: newFollowers });
       }
     });
     return () => unsub();
   }, [user?.id]);
 
+  // Unread notifications badge
   useEffect(() => {
     if (!user) return;
-    const q = query(collection(firebaseDb(), 'notifications'), where('userId', '==', user.id), where('read', '==', false));
+    const q = query(
+      collection(firebaseDb(), 'notifications'),
+      where('userId', '==', user.id),
+      where('read', '==', false)
+    );
     const unsub = onSnapshot(q, snap => setUnreadNotifs(snap.size));
     return () => unsub();
   }, [user?.id]);
 
+  // Unread messages badge — reads per-user unreadCounts map, not a global field.
+  // Firestore document shape expected: { participants: string[], unreadCounts: { [uid]: number } }
   useEffect(() => {
     if (!user) return;
-    // Listen to conversations where user is a participant and there are unread messages
     const q = query(
       collection(firebaseDb(), 'conversations'),
       where('participants', 'array-contains', user.id)
     );
     const unsub = onSnapshot(q, snap => {
-      const total = snap.docs.reduce((sum, d) => sum + ((d.data().unreadCount as number) ?? 0), 0);
+      const total = snap.docs.reduce((sum, d) => {
+        const counts = (d.data().unreadCounts ?? {}) as Record<string, number>;
+        return sum + (counts[user.id] ?? 0);
+      }, 0);
       setUnreadMessages(total);
     });
     return () => unsub();
@@ -76,14 +96,9 @@ export function AppShell() {
       });
       if (!isFollowing) {
         await createNotification({
-          userId: uid,
-          fromUserId: user.id,
-          fromUsername: user.username,
-          fromAvatar: user.avatar,
-          fromAvatarColor: user.avatarColor,
-          fromAvatarUrl: user.avatarUrl,
-          type: 'follow',
-          message: 'started following you',
+          userId: uid, fromUserId: user.id, fromUsername: user.username,
+          fromAvatar: user.avatar, fromAvatarColor: user.avatarColor,
+          fromAvatarUrl: user.avatarUrl, type: 'follow', message: 'started following you',
         });
       }
       showToast(isFollowing ? 'Unfollowed' : 'Following! ✨', 'info');
@@ -95,7 +110,8 @@ export function AppShell() {
   const feedProps = {
     currentUserId: user?.id,
     followedIds: following,
-    onComment: (id: string, ownerId: string, ownerUsername: string) => setCommentTarget({ id, ownerId, ownerUsername }),
+    onComment: (id: string, ownerId: string, ownerUsername: string) =>
+      setCommentTarget({ id, ownerId, ownerUsername }),
     onShare: (p: VideoPost) => {
       navigator.clipboard?.writeText(window.location.href).catch(() => {});
       showToast('Link copied! 🔗', 'success');
@@ -112,6 +128,7 @@ export function AppShell() {
         {page === 'inbox'         && <InboxScreen />}
         {page === 'notifications' && <NotificationsScreen />}
         {page === 'profile'       && <ProfileScreen />}
+        {/* 'create' is a modal — no page component needed here */}
       </div>
 
       <BottomNav
