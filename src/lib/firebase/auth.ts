@@ -50,7 +50,7 @@ export async function signInWithGoogle(): Promise<FirebaseUser> {
     fullName: cred.user.displayName ?? '', avatarUrl: cred.user.photoURL ?? null,
     avatar: (cred.user.displayName ?? 'U')[0]!.toUpperCase(),
     avatarColor: `hsl(${Math.floor(Math.random() * 360)},70%,60%)`,
-    bio: 'New to Dagu! 🎬', createdAt: serverTimestamp(),
+    bio: 'New to Infinity! 🎬', createdAt: serverTimestamp(),
   }, { merge: true });
   return cred.user;
 }
@@ -70,7 +70,19 @@ export function onAuthChanged(handler: (user: FirebaseUser | null) => void): () 
 // ✅ FIXED: force:true ensures a fresh token is always fetched from Firebase,
 // preventing 401 errors caused by expired cached tokens after redeployments or long sessions.
 export async function getIdToken(): Promise<string> {
-  const user = firebaseAuth().currentUser;
+  // Wait up to 5 s for Firebase Auth to restore the persisted session.
+  // currentUser is null for a brief moment after page load even when the
+  // user is signed in — calling getIdToken too early causes a 401.
+  const auth = firebaseAuth();
+  if (!auth.currentUser) {
+    await new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(() => { unsub(); reject(new Error('Not signed in')); }, 5000);
+      const unsub = auth.onAuthStateChanged(u => {
+        if (u) { clearTimeout(timer); unsub(); resolve(); }
+      });
+    });
+  }
+  const user = auth.currentUser;
   if (!user) throw new Error('Not signed in');
   return user.getIdToken(true);
 }
