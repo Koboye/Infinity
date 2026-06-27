@@ -50,7 +50,7 @@ export async function signInWithGoogle(): Promise<FirebaseUser> {
     fullName: cred.user.displayName ?? '', avatarUrl: cred.user.photoURL ?? null,
     avatar: (cred.user.displayName ?? 'U')[0]!.toUpperCase(),
     avatarColor: `hsl(${Math.floor(Math.random() * 360)},70%,60%)`,
-    bio: 'New to Infinity! 🎬', createdAt: serverTimestamp(),
+    bio: 'New to Dagu! 🎬', createdAt: serverTimestamp(),
   }, { merge: true });
   return cred.user;
 }
