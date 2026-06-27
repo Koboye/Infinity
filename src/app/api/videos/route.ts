@@ -21,7 +21,7 @@ export async function POST(request: Request) {
   try {
     const { uid } = await requireUser(request);
 
-    const { ok, retryAfterMs } = rateLimit(`publish:${uid}`, 10, 10 * 60_000);
+    const { ok, retryAfterMs } = await rateLimit(`publish:${uid}`, 10, 10 * 60_000);
     if (!ok) {
       return NextResponse.json(
         { error: `Too many posts. Try again in ${Math.ceil(retryAfterMs / 60_000)} min.` },
