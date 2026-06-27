@@ -6,12 +6,9 @@ import { rateLimit } from '@/lib/utils/rateLimit';
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: videoId } = await params;
-
-    // Views don't require sign-in, so rate-limit by IP instead of uid.
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
-    const { ok } = rateLimit(`view:${ip}:${videoId}`, 1, 30_000);
+    const { ok } = await rateLimit(`view:${ip}:${videoId}`, 1, 30_000);
     if (!ok) return NextResponse.json({ counted: false });
-
     await adminDb().collection('videos').doc(videoId).update({ views: FieldValue.increment(1) });
     return NextResponse.json({ counted: true });
   } catch (err) {
