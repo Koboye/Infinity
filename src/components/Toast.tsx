@@ -10,7 +10,7 @@ const COLORS = {
 };
 
 export function ToastHost() {
-  const toast = useUIStore(s => s.toast);
+  const toast = useUIStore(s => s.toasts);
   const clearToast = useUIStore(s => s.clearToast);
 
   useEffect(() => {
