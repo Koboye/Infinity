@@ -1,6 +1,4 @@
 'use client';
-import { sendEmailVerification, signInWithEmailAndPassword } from 'firebase/auth';
-import { firebaseAuth } from '@/lib/firebase/client';
 import { useState } from 'react';
 import { signInWithEmail, signUpWithEmail, signInWithGoogle, sendResetEmail } from '@/lib/firebase/auth';
 import { useUIStore } from '@/stores/uiStore';
@@ -45,6 +43,19 @@ export function AuthScreen() {
     finally { setBusy(false); }
   };
 
+  const handleResendVerification = async () => {
+    if (!email.trim() || !password.trim()) { showToast('Enter your email and password first', 'info'); return; }
+    setBusy(true);
+    try {
+      const { user } = await signInWithEmailAndPassword(firebaseAuth(), email, password);
+      if (user.emailVerified) { showToast('Email already verified — sign in now ✅', 'success'); return; }
+      await sendEmailVerification(user);
+      showToast('Verification email sent 📧', 'success');
+    } catch (err) {
+      showToast(err instanceof Error ? err.message.replace('Firebase: ', '') : 'Could not resend', 'error');
+    } finally { setBusy(false); }
+  };
+
   const inp = (val: string, set: (v:string)=>void, placeholder: string, type='text') => (
     <input value={val} onChange={e=>set(e.target.value)} placeholder={placeholder} type={type}
       style={{ width:'100%', background:'rgba(0,0,0,0.06)', border:'1px solid rgba(0,0,0,0.08)', borderRadius:16, padding:'14px 16px', color:'#0D0D12', fontSize:15, boxSizing:'border-box', outline:'none' }} />
@@ -70,15 +81,10 @@ export function AuthScreen() {
         </form>
 
         {mode === 'login' && (
-  <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:6, marginTop:10 }}>
-    <button type="button" onClick={handleForgotPassword} disabled={busy} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.45)', fontSize:13, cursor:busy?'not-allowed':'pointer' }}>
-      Forgot password?
-    </button>
-    <button type="button" onClick={handleResendVerification} disabled={busy} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.35)', fontSize:12, cursor:busy?'not-allowed':'pointer' }}>
-      Resend verification email
-    </button>
-  </div>
-)}
+          <button type="button" onClick={handleForgotPassword} disabled={busy} style={{ display: 'block', margin: '10px auto 0', background: 'none', border: 'none', color: 'rgba(255,255,255,0.45)', fontSize: 13, cursor: busy ? 'not-allowed' : 'pointer' }}>
+            Forgot password?
+          </button>
+        )}
 
         <div style={{ display:'flex', alignItems:'center', gap:12, margin:'16px 0', color:'rgba(255,255,255,0.3)', fontSize:13 }}>
           <span style={{ flex:1, height:1, background:'rgba(0,0,0,0.08)' }} />or<span style={{ flex:1, height:1, background:'rgba(0,0,0,0.08)' }} />
