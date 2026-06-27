@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { signInWithEmail, signUpWithEmail, signInWithGoogle } from '@/lib/firebase/auth';
+import { signInWithEmail, signUpWithEmail, signInWithGoogle, sendResetEmail } from '@/lib/firebase/auth';
 import { useUIStore } from '@/stores/uiStore';
 import { isValidUsername } from '@/lib/utils/cn';
 
@@ -35,6 +35,14 @@ export function AuthScreen() {
     finally { setBusy(false); }
   };
 
+  const handleForgotPassword = async () => {
+    if (!email.trim()) { showToast('Enter your email above first', 'info'); return; }
+    setBusy(true);
+    try { await sendResetEmail(email.trim()); showToast('Password reset email sent 📧', 'success'); }
+    catch (err) { showToast(err instanceof Error ? err.message.replace('Firebase: ', '') : 'Could not send reset email', 'error'); }
+    finally { setBusy(false); }
+  };
+
   const inp = (val: string, set: (v:string)=>void, placeholder: string, type='text') => (
     <input value={val} onChange={e=>set(e.target.value)} placeholder={placeholder} type={type}
       style={{ width:'100%', background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:16, padding:'14px 16px', color:'white', fontSize:15, boxSizing:'border-box', outline:'none' }} />
@@ -58,6 +66,12 @@ export function AuthScreen() {
             {busy ? 'Please wait…' : mode === 'signup' ? 'Create account' : 'Sign in'}
           </button>
         </form>
+
+        {mode === 'login' && (
+          <button type="button" onClick={handleForgotPassword} disabled={busy} style={{ display: 'block', margin: '10px auto 0', background: 'none', border: 'none', color: 'rgba(255,255,255,0.45)', fontSize: 13, cursor: busy ? 'not-allowed' : 'pointer' }}>
+            Forgot password?
+          </button>
+        )}
 
         <div style={{ display:'flex', alignItems:'center', gap:12, margin:'16px 0', color:'rgba(255,255,255,0.3)', fontSize:13 }}>
           <span style={{ flex:1, height:1, background:'rgba(255,255,255,0.1)' }} />or<span style={{ flex:1, height:1, background:'rgba(255,255,255,0.1)' }} />
