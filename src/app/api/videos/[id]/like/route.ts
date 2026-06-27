@@ -8,7 +8,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const { uid } = await requireUser(request);
     const { id: videoId } = await params;
 
-    const { ok } = rateLimit(`like:${uid}`, 60, 60_000);
+    const { ok } = await rateLimit(`like:${uid}`, 60, 60_000);
     if (!ok) return NextResponse.json({ error: 'Slow down' }, { status: 429 });
 
     const db = adminDb();
