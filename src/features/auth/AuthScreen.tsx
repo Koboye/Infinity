@@ -68,10 +68,15 @@ export function AuthScreen() {
         </form>
 
         {mode === 'login' && (
-          <button type="button" onClick={handleForgotPassword} disabled={busy} style={{ display: 'block', margin: '10px auto 0', background: 'none', border: 'none', color: 'rgba(255,255,255,0.45)', fontSize: 13, cursor: busy ? 'not-allowed' : 'pointer' }}>
-            Forgot password?
-          </button>
-        )}
+  <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:6, marginTop:10 }}>
+    <button type="button" onClick={handleForgotPassword} disabled={busy} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.45)', fontSize:13, cursor:busy?'not-allowed':'pointer' }}>
+      Forgot password?
+    </button>
+    <button type="button" onClick={handleResendVerification} disabled={busy} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.35)', fontSize:12, cursor:busy?'not-allowed':'pointer' }}>
+      Resend verification email
+    </button>
+  </div>
+)}
 
         <div style={{ display:'flex', alignItems:'center', gap:12, margin:'16px 0', color:'rgba(255,255,255,0.3)', fontSize:13 }}>
           <span style={{ flex:1, height:1, background:'rgba(0,0,0,0.08)' }} />or<span style={{ flex:1, height:1, background:'rgba(0,0,0,0.08)' }} />
