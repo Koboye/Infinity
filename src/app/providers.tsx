@@ -1,9 +1,8 @@
 'use client';
-// src/app/providers.tsx
-// Added LocaleSync so the user's language preference is applied on the <html> element.
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
 import { LocaleSync } from '@/components/LocaleSync';
+import { AuthSync } from '@/components/AuthSync';  // ← ADD THIS
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient({
@@ -11,6 +10,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }));
   return (
     <QueryClientProvider client={queryClient}>
+      <AuthSync />        {/* ← ADD THIS */}
       <LocaleSync />
       {children}
     </QueryClientProvider>
