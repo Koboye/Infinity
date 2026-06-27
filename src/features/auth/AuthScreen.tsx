@@ -1,4 +1,6 @@
 'use client';
+import { sendEmailVerification, signInWithEmailAndPassword } from 'firebase/auth';
+import { firebaseAuth } from '@/lib/firebase/client';
 import { useState } from 'react';
 import { signInWithEmail, signUpWithEmail, signInWithGoogle, sendResetEmail } from '@/lib/firebase/auth';
 import { useUIStore } from '@/stores/uiStore';
