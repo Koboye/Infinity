@@ -15,7 +15,7 @@ import { CommentsSheet } from '@/features/feed/CommentsSheet';
 import { BottomNav } from '@/components/BottomNav';
 import { ToastHost } from '@/components/Toast';
 import {
-  doc, updateDoc, arrayUnion, arrayRemove,
+  doc, setDoc, deleteDoc, serverTimestamp,
   onSnapshot, collection, query, where,
 } from 'firebase/firestore';
 import { firebaseDb } from '@/lib/firebase/client';
