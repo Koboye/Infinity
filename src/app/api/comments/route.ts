@@ -17,7 +17,7 @@ export async function POST(request: Request) {
   try {
     const { uid } = await requireUser(request);
 
-    const { ok } = rateLimit(`comment:${uid}`, 20, 60_000);
+    const { ok } = await rateLimit(`comment:${uid}`, 20, 60_000);
     if (!ok) return NextResponse.json({ error: 'Slow down — try again shortly.' }, { status: 429 });
 
     const body = await request.json().catch(() => null) as CommentBody | null;
