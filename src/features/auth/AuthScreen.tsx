@@ -1,4 +1,6 @@
 'use client';
+import { sendEmailVerification, signInWithEmailAndPassword } from 'firebase/auth';
+import { firebaseAuth } from '@/lib/firebase/client';
 import { useState } from 'react';
 import { signInWithEmail, signUpWithEmail, signInWithGoogle, sendResetEmail } from '@/lib/firebase/auth';
 import { useUIStore } from '@/stores/uiStore';
@@ -21,9 +23,7 @@ export function AuthScreen() {
     setBusy(true);
     try {
       if (mode === 'signup') { await signUpWithEmail({ email, password, username: username.toLowerCase() }); showToast('Account created! Check your email to verify before signing in. 📧', 'success'); setMode('login'); }
-      else {
-  await signInWithEmail(email, password);
-}
+      else { await signInWithEmail(email, password); }
     } catch (err) { showToast(err instanceof Error ? err.message.replace('Firebase: ','') : 'Auth failed', 'error'); }
     finally { setBusy(false); }
   };
@@ -66,9 +66,9 @@ export function AuthScreen() {
       <div style={{ position:'absolute', top:0, left:0, right:0, bottom:0, background:'radial-gradient(ellipse at top, rgba(255,45,85,0.18), transparent 60%), radial-gradient(ellipse at bottom, rgba(157,78,221,0.18), transparent 60%)' }} />
       <div style={{ position:'relative', zIndex:1, width:'100%', maxWidth:360 }}>
         <div style={{ textAlign:'center', marginBottom:32 }}>
-          <div className="gradient-brand" style={{ width:64, height:64, borderRadius:18, display:'flex', alignItems:'center', justifyContent:'center', fontSize:28, fontWeight:900, color:'#0D0D12', margin:'0 auto 12px', boxShadow:'0 8px 32px rgba(255,33,86,0.35)' }}>D</div>
-          <h1 className="gradient-brand-text" style={{ fontSize:32, fontWeight:900, margin:0 }}>Dagu</h1>
-          <p style={{ color:'rgba(255,255,255,0.5)', fontSize:14, marginTop:4 }}>Smart social video experience</p>
+          <div className="gradient-brand" style={{ width:64, height:64, borderRadius:18, display:'flex', alignItems:'center', justifyContent:'center', fontSize:28, fontWeight:900, color:'#0D0D12', margin:'0 auto 12px', boxShadow:'0 8px 32px rgba(255,33,86,0.35)' }}>I</div>
+          <h1 className="gradient-brand-text" style={{ fontSize:32, fontWeight:900, margin:0 }}>Infinity</h1>
+          <p style={{ color:'rgba(255,255,255,0.5)', fontSize:14, marginTop:4 }}>Ethiopia's social video platform</p>
         </div>
 
         <form onSubmit={handleSubmit} style={{ display:'flex', flexDirection:'column', gap:12 }}>
@@ -81,9 +81,14 @@ export function AuthScreen() {
         </form>
 
         {mode === 'login' && (
-          <button type="button" onClick={handleForgotPassword} disabled={busy} style={{ display: 'block', margin: '10px auto 0', background: 'none', border: 'none', color: 'rgba(255,255,255,0.45)', fontSize: 13, cursor: busy ? 'not-allowed' : 'pointer' }}>
-            Forgot password?
-          </button>
+          <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:6, marginTop:10 }}>
+            <button type="button" onClick={handleForgotPassword} disabled={busy} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.45)', fontSize:13, cursor:busy?'not-allowed':'pointer' }}>
+              Forgot password?
+            </button>
+            <button type="button" onClick={handleResendVerification} disabled={busy} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.35)', fontSize:12, cursor:busy?'not-allowed':'pointer' }}>
+              Resend verification email
+            </button>
+          </div>
         )}
 
         <div style={{ display:'flex', alignItems:'center', gap:12, margin:'16px 0', color:'rgba(255,255,255,0.3)', fontSize:13 }}>
