@@ -1,3 +1,4 @@
+// src/lib/firebase/auth.ts
 import {
   GoogleAuthProvider, createUserWithEmailAndPassword, onAuthStateChanged,
   sendPasswordResetEmail, sendEmailVerification, signInWithEmailAndPassword, signInWithPopup,
@@ -6,18 +7,23 @@ import {
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { firebaseAuth, firebaseDb } from './client';
 import type { UserProfile } from '@/types';
+
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
+
 const buildProfile = (uid: string, data: { email: string; username: string; fullName?: string }): UserProfile => ({
   id: uid, username: data.username, fullName: data.fullName ?? '',
   email: data.email, avatar: (data.username || data.email)[0]!.toUpperCase(),
   avatarColor: `hsl(${Math.floor(Math.random() * 360)},70%,60%)`,
-  avatarUrl: null, bio: 'New to Dagu! 🎬', link: '', verified: false,
+  avatarUrl: null, bio: 'New to Infinity! 🎬', link: '', verified: false,
   followers: [], following: [], blockedUsers: [], coins: 500, walletBalance: 500,
   level: 1, streak: 1, subscription: 'free', language: 'en', theme: 'dark',
   createdAt: new Date().toISOString(),
 });
-export async function signUpWithEmail(input: { email: string; password: string; username: string; fullName?: string }): Promise<UserProfile> {
+
+export async function signUpWithEmail(input: {
+  email: string; password: string; username: string; fullName?: string;
+}): Promise<UserProfile> {
   const cred = await createUserWithEmailAndPassword(firebaseAuth(), input.email, input.password);
   if (input.fullName) await fbUpdateProfile(cred.user, { displayName: input.fullName });
   await sendEmailVerification(cred.user);
@@ -26,6 +32,7 @@ export async function signUpWithEmail(input: { email: string; password: string; 
   await signOut(firebaseAuth());
   return profile;
 }
+
 export async function signInWithEmail(email: string, password: string): Promise<FirebaseUser> {
   const { user } = await signInWithEmailAndPassword(firebaseAuth(), email, password);
   if (!user.emailVerified) {
@@ -34,6 +41,7 @@ export async function signInWithEmail(email: string, password: string): Promise<
   }
   return user;
 }
+
 export async function signInWithGoogle(): Promise<FirebaseUser> {
   const cred = await signInWithPopup(firebaseAuth(), googleProvider);
   await setDoc(doc(firebaseDb(), 'users', cred.user.uid), {
@@ -46,13 +54,23 @@ export async function signInWithGoogle(): Promise<FirebaseUser> {
   }, { merge: true });
   return cred.user;
 }
-export async function signOutCurrent(): Promise<void> { await signOut(firebaseAuth()); }
-export async function sendResetEmail(email: string): Promise<void> { await sendPasswordResetEmail(firebaseAuth(), email); }
+
+export async function signOutCurrent(): Promise<void> {
+  await signOut(firebaseAuth());
+}
+
+export async function sendResetEmail(email: string): Promise<void> {
+  await sendPasswordResetEmail(firebaseAuth(), email);
+}
+
 export function onAuthChanged(handler: (user: FirebaseUser | null) => void): () => void {
   return onAuthStateChanged(firebaseAuth(), handler);
 }
+
+// ✅ FIXED: force:true ensures a fresh token is always fetched from Firebase,
+// preventing 401 errors caused by expired cached tokens after redeployments or long sessions.
 export async function getIdToken(): Promise<string> {
   const user = firebaseAuth().currentUser;
   if (!user) throw new Error('Not signed in');
-  return user.getIdToken();
+  return user.getIdToken(true);
 }
