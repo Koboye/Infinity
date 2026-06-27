@@ -7,7 +7,7 @@ export default function PrivacyPage() {
       <h2 style={{ fontSize:18, fontWeight:700, marginBottom:8 }}>1. Who we are</h2>
       <p style={{ color:'rgba(255,255,255,0.7)', lineHeight:1.7, marginBottom:24 }}>
         Infinity (የትየለሌ) is a social video platform built for Ethiopia and the broader African community.
-        We are operated by Infinity team and can be reached at infinityinfinityv1@gmail.com.
+        We are operated by Infinity team and can be reached at getachewshambel11@gmail.com.
       </p>
 
       <h2 style={{ fontSize:18, fontWeight:700, marginBottom:8 }}>2. What we collect</h2>
@@ -62,8 +62,8 @@ export default function PrivacyPage() {
       <h2 style={{ fontSize:18, fontWeight:700, marginBottom:8 }}>9. Contact</h2>
       <p style={{ color:'rgba(255,255,255,0.7)', lineHeight:1.7 }}>
         For any privacy questions or data requests, email us at:{' '}
-        <a href="mailto:infinityinfinityv1@gmail.com" style={{ color:'#6B4EFF' }}>
-          infinityinfinityv1@gmail.com
+        <a href="mailto:getachewshambel11@gmail.com" style={{ color:'#6B4EFF' }}>
+          getachewshambel11@gmail.com
         </a>
       </p>
     </div>
