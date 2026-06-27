@@ -1,3 +1,13 @@
+'use client';
+import { useUIStore } from '@/stores/uiStore';
+
+const COLORS = {
+  success: { bg: '#ECFDF5', border: '#A7F3D0', text: '#065F46', dot: '#10B981' },
+  error:   { bg: '#FEF2F2', border: '#FECACA', text: '#991B1B', dot: '#EF4444' },
+  info:    { bg: '#EEE9FF', border: '#C4B5FD', text: '#4C1D95', dot: '#6B4EFF' },
+  warning: { bg: '#FFFBEB', border: '#FDE68A', text: '#92400E', dot: '#F59E0B' },
+};
+
 export function ToastHost() {
   const toasts = useUIStore(s => s.toasts);
   const dismissToast = useUIStore(s => s.dismissToast);
