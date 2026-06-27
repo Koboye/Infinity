@@ -4,7 +4,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useUIStore } from '@/stores/uiStore';
 import { Avatar } from '@/components/Avatar';
 import { timeAgo } from '@/lib/utils/cn';
-import { subscribeToComments, postComment } from '@/lib/firebase/videos';
+import { subscribeToComments } from '@/lib/firebase/videos';
 import { createNotification } from '@/lib/firebase/notifications';
 import { doc, updateDoc, increment } from 'firebase/firestore';
 import { firebaseDb } from '@/lib/firebase/client';
