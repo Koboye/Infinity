@@ -4,7 +4,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useUIStore } from '@/stores/uiStore';
 import {
   collection, addDoc, onSnapshot, orderBy, query,
-  serverTimestamp, where, getDocs, doc, updateDoc, getDoc,
+  serverTimestamp, where, getDocs, doc, updateDoc, getDoc, increment,
 } from 'firebase/firestore';
 import { firebaseDb } from '@/lib/firebase/client';
 
@@ -18,7 +18,9 @@ interface Conversation {
   participantAvatars: Record<string, string>;
   participantAvatarColors: Record<string, string>;
   participantAvatarUrls: Record<string, string | null>;
-  lastMessage: string; lastMessageAt: any; unreadCount: number;
+  lastMessage: string; lastMessageAt: any;
+  /** unread count PER participant uid, since each side reads at a different time */
+  unreadCount: Record<string, number>;
 }
 interface UserResult {
   id: string; username: string; avatarColor: string;
@@ -86,6 +88,14 @@ function ChatView({ conv, onBack }: { conv: Conversation; onBack: () => void }) 
   const otherColor = getField(conv.participantAvatarColors, otherId, '#FF2D78');
   const otherUrl = getField<string | null>(conv.participantAvatarUrls, otherId, null);
 
+  // Mark conversation as read for the viewer the moment they open it.
+  useEffect(() => {
+    if (!user) return;
+    updateDoc(doc(firebaseDb(), 'conversations', conv.id), {
+      [`unreadCount.${user.id}`]: 0,
+    }).catch(() => {});
+  }, [conv.id, user?.id]);
+
   useEffect(() => {
     const q = query(
       collection(firebaseDb(), 'messages'),
@@ -100,7 +110,7 @@ function ChatView({ conv, onBack }: { conv: Conversation; onBack: () => void }) 
 
   const send = async (msg?: string) => {
     const content = msg ?? text.trim();
-    if (!content || !user) return;
+    if (!content || !user || !otherId) return;
     setSending(true); setText('');
     try {
       await addDoc(collection(firebaseDb(), 'messages'), {
@@ -110,6 +120,7 @@ function ChatView({ conv, onBack }: { conv: Conversation; onBack: () => void }) 
       });
       await updateDoc(doc(firebaseDb(), 'conversations', conv.id), {
         lastMessage: content, lastMessageAt: serverTimestamp(),
+        [`unreadCount.${otherId}`]: increment(1),
       });
     } finally { setSending(false); }
   };
@@ -136,21 +147,12 @@ function ChatView({ conv, onBack }: { conv: Conversation; onBack: () => void }) 
           display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
         }}>←</button>
 
-        <div style={{ position: 'relative', flexShrink: 0 }}>
+        <div style={{ flexShrink: 0 }}>
           <SqAvatar name={otherName} color={otherColor} src={otherUrl} size={38} radius={12} />
-          <div style={{
-            position: 'absolute', bottom: -2, right: -2,
-            width: 11, height: 11, borderRadius: 999,
-            background: '#22C55E', border: '2px solid #0A0A0F',
-          }} />
         </div>
 
         <div style={{ flex: 1 }}>
           <div style={{ fontWeight: 800, fontSize: 15, color: '#fff', letterSpacing: '-0.3px' }}>@{otherName}</div>
-          <div style={{ fontSize: 11, color: '#22C55E', display: 'flex', alignItems: 'center', gap: 4, marginTop: 1 }}>
-            <div style={{ width: 5, height: 5, borderRadius: 999, background: '#22C55E' }} />
-            active now
-          </div>
         </div>
 
         <button style={{
@@ -307,7 +309,8 @@ function NewMessageModal({ onClose, onStart }: { onClose: () => void; onStart: (
         participantAvatars: { [user.id]: user.avatar, [other.id]: other.username[0].toUpperCase() },
         participantAvatarColors: { [user.id]: user.avatarColor, [other.id]: other.avatarColor },
         participantAvatarUrls: { [user.id]: user.avatarUrl, [other.id]: other.avatarUrl ?? null },
-        lastMessage: '', lastMessageAt: serverTimestamp(), unreadCount: 0,
+        lastMessage: '', lastMessageAt: serverTimestamp(),
+        unreadCount: { [user.id]: 0, [other.id]: 0 },
       });
       const newDoc = await getDoc(doc(firebaseDb(), 'conversations', ref.id));
       onStart({ id: ref.id, ...newDoc.data() } as Conversation);
@@ -448,7 +451,7 @@ export function InboxScreen() {
       })
     : conversations;
 
-  const unreadCount = conversations.filter(c => (c.unreadCount ?? 0) > 0).length;
+  const unreadCount = conversations.filter(c => (c.unreadCount?.[user?.id ?? ''] ?? 0) > 0).length;
 
   return (
     <div style={{ height: '100%', background: '#0A0A0F', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -549,7 +552,7 @@ export function InboxScreen() {
           const otherName = getField(conv.participantNames, otherId, 'user');
           const otherColor = getField(conv.participantAvatarColors, otherId, '#FF2D78');
           const otherUrl = getField<string | null>(conv.participantAvatarUrls, otherId, null);
-          const hasUnread = (conv.unreadCount ?? 0) > 0;
+          const hasUnread = (conv.unreadCount?.[user?.id ?? ''] ?? 0) > 0;
 
           const ts = conv.lastMessageAt;
           let timeLabel = '';
@@ -570,13 +573,8 @@ export function InboxScreen() {
               borderBottom: '1px solid rgba(255,255,255,0.04)',
               cursor: 'pointer', color: '#fff', textAlign: 'left',
             }}>
-              <div style={{ position: 'relative', flexShrink: 0 }}>
+              <div style={{ flexShrink: 0 }}>
                 <SqAvatar name={otherName} color={otherColor} src={otherUrl} size={50} radius={16} />
-                <div style={{
-                  position: 'absolute', bottom: -1, right: -1,
-                  width: 13, height: 13, borderRadius: 999,
-                  background: '#22C55E', border: '2.5px solid #0A0A0F',
-                }} />
               </div>
 
               <div style={{ flex: 1, minWidth: 0 }}>
