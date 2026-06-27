@@ -7,7 +7,7 @@ export async function POST(request: Request) {
   try {
     const { uid } = await requireUser(request);
 
-    const { ok } = rateLimit(`smart-caption:${uid}`, 10, 60_000);
+    const { ok } = await rateLimit(`smart-caption:${uid}`, 10, 60_000);
     if (!ok) return NextResponse.json({ error: 'Slow down — try again in a moment.' }, { status: 429 });
 
     const body = await request.json().catch(() => null) as { input?: string } | null;
