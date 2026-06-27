@@ -1,14 +1,23 @@
-// src/lib/firebase/upload.ts
-// Uses a signed Cloudinary upload so the API secret never touches the browser.
 import { getIdToken } from './auth';
+import { firebaseAuth } from './client';
 
 export interface UploadResult { url: string; publicId: string; }
+
+async function waitForUser(timeoutMs = 5000): Promise<void> {
+  if (firebaseAuth().currentUser) return;
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => { unsub(); reject(new Error('Not signed in')); }, timeoutMs);
+    const unsub = firebaseAuth().onAuthStateChanged(user => {
+      if (user) { clearTimeout(timer); unsub(); resolve(); }
+    });
+  });
+}
 
 export async function uploadFile(
   file: File,
   options: { onProgress?: (pct: number) => void } = {}
 ): Promise<UploadResult> {
-  // 1. Ask our server to sign the upload
+  await waitForUser();
   const token = await getIdToken();
   const sigRes = await fetch('/api/upload', {
     method: 'POST',
@@ -21,7 +30,6 @@ export async function uploadFile(
   const { timestamp, signature, apiKey, cloudName, folder } =
     await sigRes.json() as { timestamp: string; signature: string; apiKey: string; cloudName: string; folder: string };
 
-  // 2. Upload directly to Cloudinary with the server-issued signature
   const formData = new FormData();
   formData.append('file', file);
   formData.append('api_key', apiKey);
