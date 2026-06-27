@@ -88,12 +88,17 @@ export function AppShell() {
     if (!user) return;
     const isFollowing = following.includes(uid);
     try {
-      await updateDoc(doc(firebaseDb(), 'users', user.id), {
-        following: isFollowing ? arrayRemove(uid) : arrayUnion(uid),
-      });
-      await updateDoc(doc(firebaseDb(), 'users', uid), {
-        followers: isFollowing ? arrayRemove(user.id) : arrayUnion(user.id),
-      });
+      const followId = `${user.id}_${uid}`;
+const followRef = doc(firebaseDb(), 'follows', followId);
+if (isFollowing) {
+  await deleteDoc(followRef);
+} else {
+  await setDoc(followRef, {
+    followerId: user.id,
+    followeeId: uid,
+    createdAt: serverTimestamp(),
+  });
+}
       if (!isFollowing) {
         await createNotification({
           userId: uid, fromUserId: user.id, fromUsername: user.username,
