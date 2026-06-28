@@ -9,7 +9,7 @@ const nextConfig = {
     ],
   },
   env: {
-    NEXT_PUBLIC_APP_NAME: 'Dagu',
+    NEXT_PUBLIC_APP_NAME: 'Infinity',
     NEXT_PUBLIC_APP_VERSION: '5.0.0',
   },
 };
