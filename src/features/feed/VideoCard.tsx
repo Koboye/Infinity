@@ -3,7 +3,8 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import type { VideoPost } from '@/types';
 import { Avatar } from '@/components/Avatar';
 import { formatCount, timeAgo, haptic } from '@/lib/utils/cn';
-import { isLikedBy, registerView, toggleLike, toggleSave } from '@/lib/firebase/videos';
+import { isLikedBy, registerView, toggleSave } from '@/lib/firebase/videos';
+import { getIdToken } from '@/lib/firebase/auth';
 import { createNotification } from '@/lib/firebase/notifications';
 import { useAuthStore } from '@/stores/authStore';
 
@@ -64,7 +65,14 @@ export function VideoCard({ post, isActive, currentUserId, onComment, onShare, o
         type: 'like', message: 'liked your post', videoId: post.id, videoUrl: post.media.url,
       }).catch(() => {});
     }
-    try { await toggleLike(post.id, currentUserId); }
+    try {
+      const token = await getIdToken();
+      const res = await fetch(`/api/videos/${post.id}/like`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Like failed');
+    }
     catch { setLiked(!next); setLikeCount(c => c + (next ? -1 : 1)); }
   }, [liked, currentUserId, post, user]);
 
