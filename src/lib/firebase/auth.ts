@@ -27,10 +27,18 @@ export async function signUpWithEmail(input: {
   const cred = await createUserWithEmailAndPassword(firebaseAuth(), input.email, input.password);
   if (input.fullName) await fbUpdateProfile(cred.user, { displayName: input.fullName });
   await sendEmailVerification(cred.user);
-  const profile = buildProfile(cred.user.uid, input);
-  await setDoc(doc(firebaseDb(), 'users', cred.user.uid), { ...profile, createdAt: serverTimestamp() });
+
+  // Create the Firestore profile server-side so coins/walletBalance/verified
+  // are set authoritatively and cannot be tampered with by the client.
+  const token = await cred.user.getIdToken();
+  await fetch('/api/auth/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ username: input.username, fullName: input.fullName }),
+  });
+
   await signOut(firebaseAuth());
-  return profile;
+  return buildProfile(cred.user.uid, input);
 }
 
 export async function signInWithEmail(email: string, password: string): Promise<FirebaseUser> {
