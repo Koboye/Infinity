@@ -7,7 +7,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useUIStore } from '@/stores/uiStore';
 import { Feed } from '@/features/feed/Feed';
 import { DiscoverScreen } from '@/features/discover/DiscoverScreen';
-import { InboxScreen } from '@/features/inbox/InboxScreen';
+import { InboxScreen } from '@/features/Inbox/InboxScreen';
 import { NotificationsScreen } from '@/features/notifications/NotificationsScreen';
 import { ProfileScreen } from '@/features/profile/ProfileScreen';
 import { CreatePost } from '@/features/create/CreatePost';
