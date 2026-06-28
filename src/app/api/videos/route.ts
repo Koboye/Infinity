@@ -5,11 +5,6 @@ import { moderatePostServer } from '@/lib/ai/moderation';
 import { rateLimit } from '@/lib/utils/rateLimit';
 
 interface PublishBody {
-  username: string;
-  avatar: string;
-  avatarColor: string;
-  avatarUrl: string | null;
-  verified: boolean;
   description: string;
   hashtags: string[];
   mediaUrl: string;
@@ -30,28 +25,33 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json().catch(() => null) as PublishBody | null;
-    if (!body?.description?.trim() || !body.mediaUrl || !body.username) {
+    if (!body?.description?.trim() || !body.mediaUrl) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
     if (body.description.length > 500) {
       return NextResponse.json({ error: 'Description too long' }, { status: 400 });
     }
     if (!body.mediaUrl.startsWith(`https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/`)) {
-  return NextResponse.json({ error: 'Invalid media URL' }, { status: 400 });
-}
+      return NextResponse.json({ error: 'Invalid media URL' }, { status: 400 });
+    }
 
-    // Moderation runs here, server-side, and its verdict is what actually
-    // gets persisted — the client's own moderation preview is informational
-    // only and is never trusted for the real decision.
+    // Look up the user's profile server-side — never trust identity fields
+    // (username, verified, avatar) sent in the request body.
+    const userSnap = await adminDb().collection('users').doc(uid).get();
+    if (!userSnap.exists) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+    const profile = userSnap.data()!;
+
     const verdict = await moderatePostServer({ text: body.description });
 
     const ref = await adminDb().collection('videos').add({
       userId: uid,
-      username: body.username,
-      userAvatar: body.avatar,
-      userAvatarColor: body.avatarColor,
-      userAvatarUrl: body.avatarUrl ?? null,
-      userVerified: body.verified,
+      username:       profile.username,
+      userAvatar:     profile.avatar,
+      userAvatarColor: profile.avatarColor,
+      userAvatarUrl:  profile.avatarUrl ?? null,
+      userVerified:   profile.verified ?? false,   // server-authoritative
       description: body.description.trim(),
       hashtags: (body.hashtags ?? []).slice(0, 10),
       media: { kind: body.mediaType, url: body.mediaUrl },
