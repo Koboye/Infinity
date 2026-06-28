@@ -1,0 +1,113 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // ---------------------------------------------------------------
+    // users/{userId}
+    // Profiles are publicly readable, but only the owner can write —
+    // and only to a safe allowlist of fields. Sensitive/derived fields
+    // (coins, walletBalance, level, verified, subscription) can only be
+    // changed by trusted server code (Admin SDK bypasses these rules).
+    // ---------------------------------------------------------------
+    match /users/{userId} {
+      allow read: if true;
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          'coins', 'walletBalance', 'level', 'streak', 'verified',
+          'subscription', 'id', 'email', 'createdAt'
+        ]);
+      allow delete: if false;
+    }
+
+    // ---------------------------------------------------------------
+    // videos/{videoId}
+    // Public read. Direct client writes are restricted to creation by
+    // the owner with safe defaults; all counter increments (likes,
+    // comments, views, shares) and moderation decisions happen ONLY
+    // through server API routes using the Admin SDK, never directly
+    // from a browser.
+    // ---------------------------------------------------------------
+    match /videos/{videoId} {
+      allow read: if resource.data.visibility == 'public' || isSignedIn();
+
+      allow create: if isOwner(request.resource.data.userId) &&
+        request.resource.data.moderationStatus == 'pending' &&
+        request.resource.data.likes == 0 &&
+        request.resource.data.comments == 0 &&
+        request.resource.data.shares == 0 &&
+        request.resource.data.views == 0;
+
+      // Owner may edit their own caption/hashtags/visibility, but never
+      // the counters or moderation fields — those are server-only.
+      allow update: if isOwner(resource.data.userId) &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          'likes', 'comments', 'shares', 'views',
+          'moderationStatus', 'moderationFlags', 'userId', 'trendingScore'
+        ]);
+
+      allow delete: if isOwner(resource.data.userId);
+    }
+
+    // ---------------------------------------------------------------
+    // likes/{videoId_userId}
+    // A user may only create/delete their OWN like document. This is
+    // what lets server code trust "does this like doc exist" — but the
+    // companion video.likes counter is only ever mutated server-side.
+    // ---------------------------------------------------------------
+    match /likes/{likeId} {
+      allow read: if true;
+      allow create: if isSignedIn() &&
+        request.resource.data.userId == request.auth.uid &&
+        likeId == request.resource.data.videoId + '_' + request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow update: if false;
+    }
+
+    match /saves/{saveId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() &&
+        request.resource.data.userId == request.auth.uid &&
+        saveId == request.resource.data.videoId + '_' + request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow update: if false;
+    }
+
+    // ---------------------------------------------------------------
+    // comments/{commentId}
+    // Reads are public. Creation is blocked client-side entirely —
+    // comments go through the /api/comments route so text can be
+    // moderated server-side before it's ever persisted.
+    // ---------------------------------------------------------------
+    match /comments/{commentId} {
+      allow read: if true;
+      allow create: if false;
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text']);
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    match /follows/{followId} {
+  allow read: if true;
+  allow create: if isSignedIn()
+    && request.resource.data.followerId == request.auth.uid
+    && followId == request.auth.uid + '_' + request.resource.data.followeeId;
+  allow delete: if isSignedIn()
+    && resource.data.followerId == request.auth.uid;
+  allow update: if false;
+}
+
+match /{document=**} {
+  allow read, write: if false;
+}
+  }
+}
