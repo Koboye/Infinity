@@ -6,10 +6,6 @@ import { rateLimit } from '@/lib/utils/rateLimit';
 
 interface CommentBody {
   videoId: string;
-  username: string;
-  avatar: string;
-  avatarColor: string;
-  avatarUrl: string | null;
   text: string;
 }
 
@@ -30,6 +26,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Comment was blocked by moderation', flags: verdict.flags }, { status: 422 });
     }
 
+    // Fetch commenter profile server-side — never trust avatar/username from body.
+    const userSnap = await adminDb().collection('users').doc(uid).get();
+    if (!userSnap.exists) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    const profile = userSnap.data()!;
+
     const db = adminDb();
     const videoRef = db.collection('videos').doc(body.videoId);
     const commentRef = db.collection('comments').doc();
@@ -40,10 +41,10 @@ export async function POST(request: Request) {
       tx.set(commentRef, {
         videoId: body.videoId,
         userId: uid,
-        username: body.username,
-        avatar: body.avatar,
-        avatarColor: body.avatarColor,
-        avatarUrl: body.avatarUrl ?? null,
+        username:     profile.username,
+        avatar:       profile.avatar,
+        avatarColor:  profile.avatarColor,
+        avatarUrl:    profile.avatarUrl ?? null,
         text,
         likes: 0,
         pinned: false,
