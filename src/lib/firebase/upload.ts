@@ -18,10 +18,7 @@ async function getFreshToken(): Promise<string> {
     });
   }
 
-  if (!auth.currentUser) {
-    throw new Error('Not signed in — please sign in again');
-  }
-
+  if (!auth.currentUser) throw new Error('Not signed in — please sign in again');
   return auth.currentUser.getIdToken(true);
 }
 
@@ -30,15 +27,13 @@ export async function uploadFile(
   options: { onProgress?: (pct: number) => void } = {}
 ): Promise<UploadResult> {
 
-  // 1. Get fresh Firebase token
   let token: string;
   try {
     token = await getFreshToken();
-  } catch (err) {
+  } catch {
     throw new Error('Authentication failed — please sign out and sign in again');
   }
 
-  // 2. Get Cloudinary signature from our server
   const sigRes = await fetch('/api/upload', {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
@@ -46,37 +41,25 @@ export async function uploadFile(
 
   if (!sigRes.ok) {
     let detail = '';
-    try {
-      const body = await sigRes.json();
-      detail = body.detail ?? body.error ?? '';
-    } catch {}
+    try { const b = await sigRes.json(); detail = b.detail ?? b.error ?? ''; } catch {}
     throw new Error(`Upload failed (${sigRes.status})${detail ? ': ' + detail : ''}`);
   }
 
-  const { timestamp, signature, apiKey, cloudName, folder } =
-    await sigRes.json() as {
-      timestamp: string;
-      signature: string;
-      apiKey: string;
-      cloudName: string;
-      folder: string;
-    };
+  const { timestamp, signature, apiKey, cloudName, folder } = await sigRes.json();
 
-  // 3. Upload directly to Cloudinary using signed params
+  // FormData must contain EXACTLY the same params that were signed:
+  // folder + timestamp only. No resource_type here.
   const formData = new FormData();
   formData.append('file', file);
   formData.append('api_key', apiKey);
   formData.append('timestamp', timestamp);
   formData.append('signature', signature);
   formData.append('folder', folder);
-  formData.append('resource_type', 'auto');
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.upload.onprogress = e => {
-      if (e.lengthComputable) {
-        options.onProgress?.(Math.round((e.loaded / e.total) * 100));
-      }
+      if (e.lengthComputable) options.onProgress?.(Math.round((e.loaded / e.total) * 100));
     };
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) {
