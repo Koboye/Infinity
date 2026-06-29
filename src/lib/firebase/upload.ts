@@ -1,3 +1,31 @@
+// src/lib/firebase/upload.ts
+import { getAuth } from 'firebase/auth';
+import { getFirebaseApp } from './client';
+
+export interface UploadResult { 
+  url: string; 
+  publicId: string; 
+}
+
+async function getFreshToken(): Promise<string> {
+  const auth = getAuth(getFirebaseApp());
+
+  if (!auth.currentUser) {
+    await new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        unsub();
+        reject(new Error('Not signed in — please sign in again'));
+      }, 8000);
+      const unsub = auth.onAuthStateChanged(user => {
+        if (user) { clearTimeout(timer); unsub(); resolve(); }
+      });
+    });
+  }
+
+  if (!auth.currentUser) throw new Error('Not signed in — please sign in again');
+  return auth.currentUser.getIdToken(true);
+}
+
 export async function uploadFile(
   file: File,
   options: { onProgress?: (pct: number) => void } = {}
@@ -25,7 +53,13 @@ export async function uploadFile(
   
   if (!sigRes.ok) {
     let detail = '';
-    try { const b = await sigRes.json(); detail = b.detail ?? b.error ?? ''; console.log('📡 Error details:', b); } catch (e) { console.log('❌ Failed to parse error:', e); }
+    try { 
+      const b = await sigRes.json(); 
+      detail = b.detail ?? b.error ?? ''; 
+      console.log('📡 Error details:', b); 
+    } catch (e) { 
+      console.log('❌ Failed to parse error:', e); 
+    }
     throw new Error(`Upload failed (${sigRes.status})${detail ? ': ' + detail : ''}`);
   }
 
@@ -49,16 +83,23 @@ export async function uploadFile(
     xhr.onload = () => {
       console.log('📡 Cloudinary response status:', xhr.status);
       if (xhr.status >= 200 && xhr.status < 300) {
-        const data = JSON.parse(xhr.responseText);
-        console.log('✅ Cloudinary success:', data.secure_url);
-        resolve({ url: data.secure_url, publicId: data.public_id });
+        try {
+          const data = JSON.parse(xhr.responseText);
+          console.log('✅ Cloudinary success:', data.secure_url);
+          resolve({ url: data.secure_url, publicId: data.public_id });
+        } catch (e) {
+          console.error('❌ Failed to parse Cloudinary response:', e);
+          reject(new Error('Invalid response from Cloudinary'));
+        }
       } else {
         let msg = `Cloudinary upload failed: ${xhr.status}`;
         try { 
           const errData = JSON.parse(xhr.responseText);
           console.log('❌ Cloudinary error:', errData);
           msg = errData?.error?.message ?? msg;
-        } catch (e) { console.log('❌ Failed to parse Cloudinary error:', e); }
+        } catch (e) { 
+          console.log('❌ Failed to parse Cloudinary error:', e); 
+        }
         reject(new Error(msg));
       }
     };
