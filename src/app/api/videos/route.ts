@@ -1,6 +1,8 @@
+// src/app/api/videos/route.ts
 import { NextResponse } from 'next/server';
 import { FieldValue } from 'firebase-admin/firestore';
-import { adminDb, requireUser, AuthError } from '@/lib/firebase/admin';
+import { adminDb } from '@/lib/firebase/admin';
+import { requireUser, AuthError } from '@/lib/firebase/auth';  // ← FIXED
 import { moderatePostServer } from '@/lib/ai/moderation';
 import { rateLimit } from '@/lib/utils/rateLimit';
 
@@ -51,7 +53,7 @@ export async function POST(request: Request) {
       userAvatar:     profile.avatar,
       userAvatarColor: profile.avatarColor,
       userAvatarUrl:  profile.avatarUrl ?? null,
-      userVerified:   profile.verified ?? false,   // server-authoritative
+      userVerified:   profile.verified ?? false,
       description: body.description.trim(),
       hashtags: (body.hashtags ?? []).slice(0, 10),
       media: { kind: body.mediaType, url: body.mediaUrl },
@@ -67,7 +69,11 @@ export async function POST(request: Request) {
       createdAt: FieldValue.serverTimestamp(),
     });
 
-    return NextResponse.json({ id: ref.id, moderationStatus: verdict.safe ? 'approved' : 'flagged', flags: verdict.flags });
+    return NextResponse.json({ 
+      id: ref.id, 
+      moderationStatus: verdict.safe ? 'approved' : 'flagged', 
+      flags: verdict.flags 
+    });
   } catch (err) {
     if (err instanceof AuthError) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     console.error('publish video error', err);
