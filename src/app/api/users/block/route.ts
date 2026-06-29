@@ -1,5 +1,5 @@
-// src/app/api/users/block/route.ts
 import { NextResponse } from 'next/server';
+import { FieldValue } from 'firebase-admin/firestore';
 import { adminDb } from '@/lib/firebase/admin';
 import { requireUser, AuthError } from '@/lib/firebase/server-auth';
 
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     }
     
     await adminDb().collection('users').doc(uid).update({
-      blockedUsers: adminDb.FieldValue.arrayUnion(userId),
+      blockedUsers: FieldValue.arrayUnion(userId),
     });
     
     return NextResponse.json({ success: true });
