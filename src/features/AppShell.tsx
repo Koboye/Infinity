@@ -1,7 +1,5 @@
 'use client';
 // src/features/AppShell.tsx
-// Fixed: unreadMessages now reads per-user unreadCounts[uid] instead of a
-// global unreadCount field so each participant sees their own badge count.
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import { useUIStore } from '@/stores/uiStore';
@@ -19,7 +17,6 @@ import {
   onSnapshot, collection, query, where,
 } from 'firebase/firestore';
 import { firebaseDb } from '@/lib/firebase/client';
-import { createNotification } from '@/lib/firebase/notifications';
 import type { VideoPost } from '@/types';
 
 export function AppShell() {
@@ -42,7 +39,6 @@ export function AppShell() {
       const data = snap.data();
       const newFollowing = data.following ?? [];
       const newFollowers = data.followers ?? [];
-      // Only update store when the arrays actually change (avoids reference-churn)
       if (
         JSON.stringify(newFollowing) !== JSON.stringify(user.following) ||
         JSON.stringify(newFollowers) !== JSON.stringify(user.followers)
@@ -66,8 +62,8 @@ export function AppShell() {
     return () => unsub();
   }, [user?.id]);
 
-  // Unread messages badge — reads per-user unreadCounts map, not a global field.
-  // Firestore document shape expected: { participants: string[], unreadCounts: { [uid]: number } }
+  // Unread messages badge — reads per-user unreadCount map.
+  // Firestore document shape: { participants: string[], unreadCount: { [uid]: number } }
   useEffect(() => {
     if (!user) return;
     const q = query(
@@ -76,7 +72,7 @@ export function AppShell() {
     );
     const unsub = onSnapshot(q, snap => {
       const total = snap.docs.reduce((sum, d) => {
-        const counts = (d.data().unreadCounts ?? {}) as Record<string, number>;
+        const counts = (d.data().unreadCount ?? {}) as Record<string, number>;
         return sum + (counts[user.id] ?? 0);
       }, 0);
       setUnreadMessages(total);
@@ -88,26 +84,16 @@ export function AppShell() {
     if (!user || uid === user.id) return;
     const isFollowing = following.includes(uid);
     try {
-      const { arrayUnion, arrayRemove } = await import('firebase/firestore');
-      const myRef = doc(firebaseDb(), 'users', user.id);
-      const theirRef = doc(firebaseDb(), 'users', uid);
-      if (isFollowing) {
-        await Promise.all([
-          updateDoc(myRef, { following: arrayRemove(uid) }),
-          updateDoc(theirRef, { followers: arrayRemove(user.id) }),
-        ]);
-      } else {
-        await Promise.all([
-          updateDoc(myRef, { following: arrayUnion(uid) }),
-          updateDoc(theirRef, { followers: arrayUnion(user.id) }),
-        ]);
-        await createNotification({
-          userId: uid, fromUserId: user.id, fromUsername: user.username,
-          fromAvatar: user.avatar, fromAvatarColor: user.avatarColor,
-          fromAvatarUrl: user.avatarUrl, type: 'follow', message: 'started following you',
-        });
-      }
+      const { getIdToken } = await import('@/lib/firebase/auth');
+      const token = await getIdToken();
+      const res = await fetch('/api/users/follow', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ targetId: uid }),
+      });
+      if (!res.ok) throw new Error('failed');
       showToast(isFollowing ? 'Unfollowed' : 'Following! ✨', 'info');
+      // The onSnapshot listener on the user doc above syncs `following` for us.
     } catch {
       showToast('Could not update follow', 'error');
     }
@@ -122,7 +108,6 @@ export function AppShell() {
     onShare: async (p: VideoPost) => {
       navigator.clipboard?.writeText(`${window.location.origin}?post=${p.id}`).catch(() => {});
       showToast('Link copied! 🔗', 'success');
-      // Increment share count server-side
       try {
         const { doc: fsDoc, updateDoc: fsUpdate, increment: fsInc } = await import('firebase/firestore');
         await fsUpdate(fsDoc(firebaseDb(), 'videos', p.id), { shares: fsInc(1) });
@@ -133,39 +118,4 @@ export function AppShell() {
   };
 
   return (
-    <div style={{ position: 'relative', height: '100dvh', width: '100%', overflow: 'hidden', background: '#F8F7F4' }}>
-      <div style={{ position: 'absolute', inset: 0, bottom: 64 }}>
-        {page === 'feed'          && <Feed {...feedProps} />}
-        {page === 'discover'      && <DiscoverScreen />}
-        {page === 'inbox'         && <InboxScreen />}
-        {page === 'notifications' && <NotificationsScreen />}
-        {page === 'profile'       && <ProfileScreen />}
-        {/* 'create' is a modal — no page component needed here */}
-      </div>
-
-      <BottomNav
-        onCreateTap={() => setShowCreate(true)}
-        unreadNotifs={unreadNotifs}
-        unreadMessages={unreadMessages}
-      />
-
-      {showCreate && (
-        <CreatePost
-          onClose={() => { setShowCreate(false); setPage('feed'); }}
-          onCreated={(_id?: string) => { setShowCreate(false); setPage('feed'); }}
-        />
-      )}
-
-      {commentTarget && (
-        <CommentsSheet
-          videoId={commentTarget.id}
-          videoOwnerId={commentTarget.ownerId}
-          videoOwnerUsername={commentTarget.ownerUsername}
-          onClose={() => setCommentTarget(null)}
-        />
-      )}
-
-      <ToastHost />
-    </div>
-  );
-}
+    <div style={{ position: 'relative', height: '100dvh', width: '100%', overflow: 'hidden', background:
