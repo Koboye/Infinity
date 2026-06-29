@@ -1,6 +1,6 @@
 // src/app/api/conversations/route.ts
 import { NextResponse } from 'next/server';
-import { FieldValue } from 'firebase-admin/firestore';  // ← ADD THIS
+import { FieldValue } from 'firebase-admin/firestore';
 import { adminDb } from '@/lib/firebase/admin';
 import { requireUser, AuthError } from '@/lib/firebase/server-auth';
 
@@ -60,7 +60,7 @@ export async function POST(request: Request) {
         [otherId]: otherAvatarUrl || null
       },
       lastMessage: '',
-      lastMessageAt: FieldValue.serverTimestamp(),  // ← FIXED
+      lastMessageAt: FieldValue.serverTimestamp(),
       unreadCount: {
         [uid]: 0,
         [otherId]: 0
