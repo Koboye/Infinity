@@ -25,8 +25,16 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ timestamp, signature, apiKey, cloudName, folder });
   } catch (err) {
-    if (err instanceof AuthError) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    console.error('upload sign error', err);
-    return NextResponse.json({ error: 'Failed to sign upload' }, { status: 500 });
+    if (err instanceof AuthError) {
+      // Return the actual error message so we can see what's wrong
+      console.error('[upload] AuthError:', err.message);
+      return NextResponse.json(
+        { error: 'Unauthorized', detail: err.message },
+        { status: 401 }
+      );
+    }
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('[upload] Unexpected error:', msg);
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
