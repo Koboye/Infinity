@@ -11,25 +11,30 @@ export async function POST(request: Request) {
     const apiKey = process.env.CLOUDINARY_API_KEY;
     const apiSecret = process.env.CLOUDINARY_API_SECRET;
     
-    console.log('🔑 Cloudinary config:', { cloudName, apiKey: apiKey ? 'exists' : 'missing', apiSecret: apiSecret ? 'exists' : 'missing' });
+    console.log('🔑 Cloudinary config:', { 
+      cloudName: cloudName || 'MISSING', 
+      apiKey: apiKey ? 'EXISTS' : 'MISSING', 
+      apiSecret: apiSecret ? 'EXISTS' : 'MISSING' 
+    });
     
     if (!cloudName || !apiKey || !apiSecret) {
-      console.error('❌ Cloudinary not configured');
-      return NextResponse.json({ error: 'Cloudinary not configured' }, { status: 500 });
+      return NextResponse.json({ 
+        error: 'Cloudinary not configured - check env vars' 
+      }, { status: 500 });
     }
     
     const timestamp = Math.round(Date.now() / 1000);
     const folder = `users/${uid}`;
     const uploadPreset = 'infinity_uploads';
     
-    // Generate the signature - CORRECT ORDER
+    // ✅ CORRECT: Build params object
     const params = {
-      timestamp: timestamp.toString(),
+      timestamp: timestamp,
       folder: folder,
       upload_preset: uploadPreset,
     };
     
-    // Sort keys alphabetically
+    // ✅ CORRECT: Sort keys alphabetically (Cloudinary requirement)
     const sortedKeys = Object.keys(params).sort();
     const signatureString = sortedKeys
       .map(key => `${key}=${params[key as keyof typeof params]}`)
@@ -37,11 +42,13 @@ export async function POST(request: Request) {
     
     console.log('📝 Signature string:', signatureString);
     
+    // ✅ CORRECT: SHA-256 hash
     const signature = createHash('sha256')
       .update(signatureString)
       .digest('hex');
     
-    console.log('✅ Signature generated:', signature);
+    console.log('✅ Signature:', signature);
+    console.log('📤 Response:', { cloudName, folder, uploadPreset, timestamp });
     
     return NextResponse.json({
       apiKey,
@@ -55,7 +62,9 @@ export async function POST(request: Request) {
     if (err instanceof AuthError) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    console.error('Upload signature error:', err);
-    return NextResponse.json({ error: 'Failed to generate upload signature' }, { status: 500 });
+    console.error('❌ Upload error:', err);
+    return NextResponse.json({ 
+      error: 'Failed to generate upload signature' 
+    }, { status: 500 });
   }
 }
