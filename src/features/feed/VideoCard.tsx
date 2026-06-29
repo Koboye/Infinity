@@ -4,8 +4,6 @@ import type { VideoPost } from '@/types';
 import { Avatar } from '@/components/Avatar';
 import { formatCount, timeAgo, haptic } from '@/lib/utils/cn';
 import { isLikedBy, registerView, toggleSave } from '@/lib/firebase/videos';
-import { doc, updateDoc, arrayUnion, addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { firebaseDb } from '@/lib/firebase/client';
 import { getIdToken } from '@/lib/firebase/auth';
 import { useAuthStore } from '@/stores/authStore';
 import { useUIStore } from '@/stores/uiStore';
@@ -29,7 +27,7 @@ export function VideoCard({ post, isActive, currentUserId, onComment, onShare, o
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likes);
   const [saved, setSaved] = useState(false);
-  const [muted, setMuted] = useState(false); // ✅ CHANGED: Start with sound ON
+  const [muted, setMuted] = useState(false); // Start with sound ON
   const [showFull, setShowFull] = useState(false);
   const [heartAnim, setHeartAnim] = useState(false);
   const [paused, setPaused] = useState(false);
@@ -42,7 +40,7 @@ export function VideoCard({ post, isActive, currentUserId, onComment, onShare, o
     isLikedBy(post.id, currentUserId).then(setLiked).catch(() => {});
   }, [post.id, currentUserId]);
 
-  // ✅ FIXED: Auto-play with sound when active
+  // Auto-play with sound when active
   useEffect(() => {
     const el = videoRef.current;
     if (!el || cardStyle === 'card') return;
@@ -50,7 +48,6 @@ export function VideoCard({ post, isActive, currentUserId, onComment, onShare, o
     if (isActive && !paused) {
       el.muted = muted;
       el.play().catch(() => {
-        // If autoplay fails, try with muted
         el.muted = true;
         el.play().catch(() => {});
       });
@@ -133,8 +130,55 @@ export function VideoCard({ post, isActive, currentUserId, onComment, onShare, o
               <div style={{ position: 'absolute', right: 0, top: 24, background: '#FFFFFF', borderRadius: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.15)', border: '1px solid rgba(0,0,0,0.08)', zIndex: 50, minWidth: 160, overflow: 'hidden' }}>
                 {currentUserId !== post.userId ? (
                   <>
-                    <button onClick={async () => { setShowMenu(false); if (!currentUserId) return; try { await addDoc(collection(firebaseDb(), 'reports'), { postId: post.id, reportedBy: currentUserId, reason: 'inappropriate', createdAt: serverTimestamp() }); showToast('Reported. Thank you. 🚩', 'success'); } catch { showToast('Could not submit report', 'error'); } }} style={{ width: '100%', padding: '12px 16px', background: 'none', border: 'none', textAlign: 'left', fontSize: 14, cursor: 'pointer', color: '#1A1A1A', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>🚩 Report post</button>
-                    <button onClick={async () => { setShowMenu(false); if (!currentUserId) return; try { await updateDoc(doc(firebaseDb(), 'users', currentUserId), { blockedUsers: arrayUnion(post.userId) }); showToast(`@${post.username} has been blocked. 🚫`, 'info'); } catch { showToast('Could not block user', 'error'); } }} style={{ width: '100%', padding: '12px 16px', background: 'none', border: 'none', textAlign: 'left', fontSize: 14, cursor: 'pointer', color: '#EF4444' }}>🚫 Block @{post.username}</button>
+                    {/* ✅ FIXED: Report uses API */}
+                    <button onClick={async () => { 
+                      setShowMenu(false); 
+                      if (!currentUserId) return; 
+                      try { 
+                        const token = await getIdToken();
+                        const res = await fetch('/api/reports', {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: `Bearer ${token}`,
+                          },
+                          body: JSON.stringify({
+                            postId: post.id,
+                            reason: 'inappropriate',
+                          }),
+                        });
+                        if (!res.ok) throw new Error('Report failed');
+                        showToast('Reported. Thank you. 🚩', 'success'); 
+                      } catch { 
+                        showToast('Could not submit report', 'error'); 
+                      } 
+                    }} style={{ width: '100%', padding: '12px 16px', background: 'none', border: 'none', textAlign: 'left', fontSize: 14, cursor: 'pointer', color: '#1A1A1A', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
+                      🚩 Report post
+                    </button>
+                    {/* ✅ FIXED: Block uses API */}
+                    <button onClick={async () => { 
+                      setShowMenu(false); 
+                      if (!currentUserId) return; 
+                      try { 
+                        const token = await getIdToken();
+                        const res = await fetch('/api/users/block', {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: `Bearer ${token}`,
+                          },
+                          body: JSON.stringify({
+                            userId: post.userId,
+                          }),
+                        });
+                        if (!res.ok) throw new Error('Block failed');
+                        showToast(`@${post.username} has been blocked. 🚫`, 'info'); 
+                      } catch { 
+                        showToast('Could not block user', 'error'); 
+                      } 
+                    }} style={{ width: '100%', padding: '12px 16px', background: 'none', border: 'none', textAlign: 'left', fontSize: 14, cursor: 'pointer', color: '#EF4444' }}>
+                      🚫 Block @{post.username}
+                    </button>
                   </>
                 ) : (
                   <button onClick={() => setShowMenu(false)} style={{ width: '100%', padding: '12px 16px', background: 'none', border: 'none', textAlign: 'left', fontSize: 14, cursor: 'pointer', color: '#9CA3AF' }}>Close</button>
@@ -169,9 +213,9 @@ export function VideoCard({ post, isActive, currentUserId, onComment, onShare, o
                     loop 
                     playsInline 
                     muted={muted} 
-                    autoPlay  // ✅ ADDED autoPlay
+                    autoPlay
                     style={{ width:'100%', height:'100%', objectFit:'cover' }} 
-                    preload="auto"  // ✅ CHANGED to auto
+                    preload="auto"
                   />
                   <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', pointerEvents:'none' }}>
                     <div style={{ width:52, height:52, borderRadius:'50%', background:'rgba(0,0,0,0.45)', display:'flex', alignItems:'center', justifyContent:'center' }}>
@@ -227,9 +271,9 @@ export function VideoCard({ post, isActive, currentUserId, onComment, onShare, o
             loop 
             playsInline 
             muted={muted} 
-            autoPlay  // ✅ ADDED autoPlay
+            autoPlay
             style={{ width:'100%', height:'100%', objectFit:'cover' }} 
-            preload="auto"  // ✅ CHANGED to auto
+            preload="auto"
           />}
       <div style={{ position:'absolute', inset:0, background:'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.02) 45%, rgba(0,0,0,0.25) 100%)', pointerEvents:'none' }} />
       {paused && !isImage && (
