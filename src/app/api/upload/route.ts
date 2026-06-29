@@ -1,40 +1,54 @@
+// src/app/api/upload/route.ts
 import { NextResponse } from 'next/server';
-import { requireUser, AuthError } from '@/lib/firebase/admin';
-import { rateLimit } from '@/lib/utils/rateLimit';
-import crypto from 'crypto';
+import { createHash } from 'crypto';
+import { requireUser, AuthError } from '@/lib/firebase/server-auth';
 
 export async function POST(request: Request) {
   try {
+    // Only authenticated users can upload
     const { uid } = await requireUser(request);
-
-    const { ok } = await rateLimit(`upload:${uid}`, 20, 10 * 60_000);
-    if (!ok) return NextResponse.json({ error: 'Too many uploads' }, { status: 429 });
-
+    
     const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
-    const apiKey    = process.env.CLOUDINARY_API_KEY;
+    const apiKey = process.env.CLOUDINARY_API_KEY;
     const apiSecret = process.env.CLOUDINARY_API_SECRET;
-
+    
     if (!cloudName || !apiKey || !apiSecret) {
       return NextResponse.json({ error: 'Cloudinary not configured' }, { status: 500 });
     }
-
-    const timestamp   = Math.floor(Date.now() / 1000).toString();
-    const folder      = `infinity/users/${uid}`;
-    const upload_preset = 'infinity_uploads';
-
-    // Params MUST be sorted alphabetically
-    const paramsToSign = `folder=${folder}&timestamp=${timestamp}&upload_preset=${upload_preset}`;
-    const signature = crypto
-      .createHash('sha1')
-      .update(`${paramsToSign}${apiSecret}`)
+    
+    const timestamp = Math.round(Date.now() / 1000);
+    const folder = `users/${uid}`;
+    const uploadPreset = 'infinity_uploads';
+    
+    // Generate the signature
+    const params = {
+      timestamp,
+      folder,
+      upload_preset: uploadPreset,
+    };
+    
+    const signatureString = Object.keys(params)
+      .sort()
+      .map(key => `${key}=${params[key as keyof typeof params]}`)
+      .join('&') + apiSecret;
+    
+    const signature = createHash('sha256')
+      .update(signatureString)
       .digest('hex');
-
-    return NextResponse.json({ timestamp, signature, apiKey, cloudName, folder, upload_preset });
+    
+    return NextResponse.json({
+      apiKey,
+      cloudName,
+      folder,
+      timestamp,
+      upload_preset: uploadPreset,
+      signature,
+    });
   } catch (err) {
     if (err instanceof AuthError) {
-      return NextResponse.json({ error: 'Unauthorized', detail: err.message }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    const msg = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: msg }, { status: 500 });
+    console.error('Upload signature error:', err);
+    return NextResponse.json({ error: 'Failed to generate upload signature' }, { status: 500 });
   }
 }
