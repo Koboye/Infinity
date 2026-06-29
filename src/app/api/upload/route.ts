@@ -18,17 +18,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Cloudinary not configured' }, { status: 500 });
     }
 
-    const timestamp = Math.floor(Date.now() / 1000).toString();
-    const folder    = `infinity/users/${uid}`;
+    const timestamp   = Math.floor(Date.now() / 1000).toString();
+    const folder      = `infinity/users/${uid}`;
+    const upload_preset = 'infinity_uploads';
 
-    // ONLY sign folder + timestamp — nothing else
-    const paramsToSign = `folder=${folder}&timestamp=${timestamp}`;
+    // Params MUST be sorted alphabetically
+    const paramsToSign = `folder=${folder}&timestamp=${timestamp}&upload_preset=${upload_preset}`;
     const signature = crypto
       .createHash('sha1')
       .update(`${paramsToSign}${apiSecret}`)
       .digest('hex');
 
-    return NextResponse.json({ timestamp, signature, apiKey, cloudName, folder });
+    return NextResponse.json({ timestamp, signature, apiKey, cloudName, folder, upload_preset });
   } catch (err) {
     if (err instanceof AuthError) {
       return NextResponse.json({ error: 'Unauthorized', detail: err.message }, { status: 401 });
