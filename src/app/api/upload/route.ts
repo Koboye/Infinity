@@ -5,14 +5,16 @@ import { requireUser, AuthError } from '@/lib/firebase/server-auth';
 
 export async function POST(request: Request) {
   try {
-    // Only authenticated users can upload
     const { uid } = await requireUser(request);
     
     const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
     const apiKey = process.env.CLOUDINARY_API_KEY;
     const apiSecret = process.env.CLOUDINARY_API_SECRET;
     
+    console.log('🔑 Cloudinary config:', { cloudName, apiKey: apiKey ? 'exists' : 'missing', apiSecret: apiSecret ? 'exists' : 'missing' });
+    
     if (!cloudName || !apiKey || !apiSecret) {
+      console.error('❌ Cloudinary not configured');
       return NextResponse.json({ error: 'Cloudinary not configured' }, { status: 500 });
     }
     
@@ -20,21 +22,26 @@ export async function POST(request: Request) {
     const folder = `users/${uid}`;
     const uploadPreset = 'infinity_uploads';
     
-    // Generate the signature
+    // Generate the signature - CORRECT ORDER
     const params = {
-      timestamp,
-      folder,
+      timestamp: timestamp.toString(),
+      folder: folder,
       upload_preset: uploadPreset,
     };
     
-    const signatureString = Object.keys(params)
-      .sort()
+    // Sort keys alphabetically
+    const sortedKeys = Object.keys(params).sort();
+    const signatureString = sortedKeys
       .map(key => `${key}=${params[key as keyof typeof params]}`)
       .join('&') + apiSecret;
+    
+    console.log('📝 Signature string:', signatureString);
     
     const signature = createHash('sha256')
       .update(signatureString)
       .digest('hex');
+    
+    console.log('✅ Signature generated:', signature);
     
     return NextResponse.json({
       apiKey,
