@@ -45,16 +45,15 @@ export async function uploadFile(
     throw new Error(`Upload failed (${sigRes.status})${detail ? ': ' + detail : ''}`);
   }
 
-  const { timestamp, signature, apiKey, cloudName, folder } = await sigRes.json();
+  const { timestamp, signature, apiKey, cloudName, folder, upload_preset } = await sigRes.json();
 
-  // FormData must contain EXACTLY the same params that were signed:
-  // folder + timestamp only. No resource_type here.
   const formData = new FormData();
   formData.append('file', file);
   formData.append('api_key', apiKey);
   formData.append('timestamp', timestamp);
   formData.append('signature', signature);
   formData.append('folder', folder);
+  formData.append('upload_preset', upload_preset);
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
