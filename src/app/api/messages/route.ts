@@ -15,7 +15,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
     
-    // Add message
+    // Add message using Admin SDK (bypasses Firestore rules)
     const messageRef = await adminDb().collection('messages').add({
       conversationId,
       text: text.trim(),
