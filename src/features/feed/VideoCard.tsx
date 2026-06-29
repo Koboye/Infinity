@@ -29,7 +29,7 @@ export function VideoCard({ post, isActive, currentUserId, onComment, onShare, o
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likes);
   const [saved, setSaved] = useState(false);
-  const [muted, setMuted] = useState(true);
+  const [muted, setMuted] = useState(false); // ✅ CHANGED: Start with sound ON
   const [showFull, setShowFull] = useState(false);
   const [heartAnim, setHeartAnim] = useState(false);
   const [paused, setPaused] = useState(false);
@@ -42,10 +42,21 @@ export function VideoCard({ post, isActive, currentUserId, onComment, onShare, o
     isLikedBy(post.id, currentUserId).then(setLiked).catch(() => {});
   }, [post.id, currentUserId]);
 
+  // ✅ FIXED: Auto-play with sound when active
   useEffect(() => {
-    const el = videoRef.current; if (!el || cardStyle === 'card') return;
-    if (isActive && !paused) { el.muted = muted; el.play().catch(() => { el.muted = true; el.play().catch(() => {}); }); }
-    else el.pause();
+    const el = videoRef.current;
+    if (!el || cardStyle === 'card') return;
+    
+    if (isActive && !paused) {
+      el.muted = muted;
+      el.play().catch(() => {
+        // If autoplay fails, try with muted
+        el.muted = true;
+        el.play().catch(() => {});
+      });
+    } else {
+      el.pause();
+    }
   }, [isActive, muted, paused, cardStyle]);
 
   useEffect(() => {
@@ -76,14 +87,11 @@ export function VideoCard({ post, isActive, currentUserId, onComment, onShare, o
     if (cardStyle === 'card') return;
     const now = Date.now();
     if (now - lastTap.current < 300) {
-      // Double tap — like the post
-      lastTap.current = 0; // reset so next tap is treated fresh
+      lastTap.current = 0;
       triggerLike();
     } else {
-      // Possible single tap — wait briefly to see if a second tap arrives
       lastTap.current = now;
       setTimeout(() => {
-        // If lastTap hasn't been reset (i.e. no second tap came), toggle pause
         if (lastTap.current === now) {
           lastTap.current = 0;
           setPaused(p => !p);
@@ -155,8 +163,17 @@ export function VideoCard({ post, isActive, currentUserId, onComment, onShare, o
               ? <img src={post.images?.[0] ?? post.media?.url ?? ''} alt={desc} style={{ width:'100%', height:'100%', objectFit:'cover' }} loading="lazy" />
               : (
                 <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-                  <video ref={videoRef} src={post.media?.url ?? ''} loop playsInline muted style={{ width:'100%', height:'100%', objectFit:'cover' }} preload="metadata" />
-                  <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                  <video 
+                    ref={videoRef} 
+                    src={post.media?.url ?? ''} 
+                    loop 
+                    playsInline 
+                    muted={muted} 
+                    autoPlay  // ✅ ADDED autoPlay
+                    style={{ width:'100%', height:'100%', objectFit:'cover' }} 
+                    preload="auto"  // ✅ CHANGED to auto
+                  />
+                  <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', pointerEvents:'none' }}>
                     <div style={{ width:52, height:52, borderRadius:'50%', background:'rgba(0,0,0,0.45)', display:'flex', alignItems:'center', justifyContent:'center' }}>
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="white" style={{ marginLeft: 3 }}><polygon points="5 3 19 12 5 21 5 3"/></svg>
                     </div>
@@ -204,7 +221,16 @@ export function VideoCard({ post, isActive, currentUserId, onComment, onShare, o
     <article style={{ position: 'absolute', inset: 0, background: 'black' }} onClick={handleDoubleTap}>
       {isImage
         ? <img src={post.images?.[0] ?? post.media?.url ?? ''} alt={desc} style={{ width:'100%', height:'100%', objectFit:'cover' }} loading="lazy" />
-        : <video ref={videoRef} src={post.media?.url ?? ''} loop playsInline muted={muted} style={{ width:'100%', height:'100%', objectFit:'cover' }} preload="metadata" />}
+        : <video 
+            ref={videoRef} 
+            src={post.media?.url ?? ''} 
+            loop 
+            playsInline 
+            muted={muted} 
+            autoPlay  // ✅ ADDED autoPlay
+            style={{ width:'100%', height:'100%', objectFit:'cover' }} 
+            preload="auto"  // ✅ CHANGED to auto
+          />}
       <div style={{ position:'absolute', inset:0, background:'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.02) 45%, rgba(0,0,0,0.25) 100%)', pointerEvents:'none' }} />
       {paused && !isImage && (
         <div style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', width:60, height:60, borderRadius:'50%', background:'rgba(0,0,0,0.4)', display:'flex', alignItems:'center', justifyContent:'center', pointerEvents:'none' }}>
