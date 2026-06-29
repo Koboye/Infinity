@@ -11,15 +11,14 @@ export async function POST(request: Request) {
     const apiKey = process.env.CLOUDINARY_API_KEY;
     const apiSecret = process.env.CLOUDINARY_API_SECRET;
     
-    console.log('🔑 Cloudinary config:', { 
-      cloudName: cloudName || 'MISSING', 
-      apiKey: apiKey ? 'EXISTS' : 'MISSING', 
-      apiSecret: apiSecret ? 'EXISTS' : 'MISSING' 
-    });
+    console.log('🔑 Cloudinary config check:');
+    console.log('  cloudName:', cloudName || '❌ MISSING');
+    console.log('  apiKey:', apiKey ? '✅ EXISTS' : '❌ MISSING');
+    console.log('  apiSecret:', apiSecret ? '✅ EXISTS' : '❌ MISSING');
     
     if (!cloudName || !apiKey || !apiSecret) {
       return NextResponse.json({ 
-        error: 'Cloudinary not configured - check env vars' 
+        error: 'Cloudinary not configured - check FIREBASE env vars' 
       }, { status: 500 });
     }
     
@@ -27,28 +26,28 @@ export async function POST(request: Request) {
     const folder = `users/${uid}`;
     const uploadPreset = 'infinity_uploads';
     
-    // ✅ CORRECT: Build params object
+    // ✅ Build the params object
     const params = {
       timestamp: timestamp,
       folder: folder,
       upload_preset: uploadPreset,
     };
     
-    // ✅ CORRECT: Sort keys alphabetically (Cloudinary requirement)
+    // ✅ Cloudinary requires keys to be sorted alphabetically
     const sortedKeys = Object.keys(params).sort();
     const signatureString = sortedKeys
       .map(key => `${key}=${params[key as keyof typeof params]}`)
       .join('&') + apiSecret;
     
+    console.log('📝 Params:', params);
     console.log('📝 Signature string:', signatureString);
     
-    // ✅ CORRECT: SHA-256 hash
+    // ✅ Generate SHA-256 signature
     const signature = createHash('sha256')
       .update(signatureString)
       .digest('hex');
     
-    console.log('✅ Signature:', signature);
-    console.log('📤 Response:', { cloudName, folder, uploadPreset, timestamp });
+    console.log('✅ Generated signature:', signature);
     
     return NextResponse.json({
       apiKey,
