@@ -15,20 +15,14 @@ export async function POST(request: Request) {
     const apiSecret = process.env.CLOUDINARY_API_SECRET;
 
     if (!cloudName || !apiKey || !apiSecret) {
-      console.error('[upload] Missing Cloudinary env vars:', {
-        cloudName: !!cloudName,
-        apiKey: !!apiKey,
-        apiSecret: !!apiSecret,
-      });
       return NextResponse.json({ error: 'Cloudinary not configured' }, { status: 500 });
     }
 
     const timestamp = Math.floor(Date.now() / 1000).toString();
     const folder    = `infinity/users/${uid}`;
 
-    // Params must be sorted alphabetically, joined with &,
-    // then API secret appended with NO separator
-    const paramsToSign = `folder=${folder}&resource_type=auto&timestamp=${timestamp}`;
+    // ONLY sign folder + timestamp — nothing else
+    const paramsToSign = `folder=${folder}&timestamp=${timestamp}`;
     const signature = crypto
       .createHash('sha1')
       .update(`${paramsToSign}${apiSecret}`)
@@ -37,11 +31,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ timestamp, signature, apiKey, cloudName, folder });
   } catch (err) {
     if (err instanceof AuthError) {
-      console.error('[upload] AuthError:', err.message);
       return NextResponse.json({ error: 'Unauthorized', detail: err.message }, { status: 401 });
     }
     const msg = err instanceof Error ? err.message : String(err);
-    console.error('[upload] error:', msg);
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
