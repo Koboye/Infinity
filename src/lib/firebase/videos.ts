@@ -1,7 +1,8 @@
+// src/lib/firebase/videos.ts
 import {
-  addDoc, collection, deleteDoc, doc, getDoc, getDocs,
-  limit as fbLimit, onSnapshot, orderBy, query, serverTimestamp,
-  setDoc, where,
+  collection, doc, getDoc, getDocs,
+  limit as fbLimit, onSnapshot, orderBy, query,
+  where,
 } from 'firebase/firestore';
 import { firebaseDb } from './client';
 import type { VideoId, UserId, VideoPost, Comment } from '@/types';
@@ -32,12 +33,46 @@ export async function isLikedBy(videoId: VideoId, userId: UserId): Promise<boole
   return snap.exists();
 }
 
+/**
+ * Toggle save for a video - uses server API instead of direct Firestore write
+ * This fixes the "missing permissions (actions=['create'])" error
+ */
 export async function toggleSave(videoId: VideoId, userId: UserId, currentlySaved: boolean): Promise<void> {
-  const ref = doc(firebaseDb(), 'saves', `${videoId}_${userId}`);
-  if (currentlySaved) {
-    await deleteDoc(ref);
-  } else {
-    await setDoc(ref, { videoId, userId, createdAt: serverTimestamp() });
+  // Use the API instead of direct Firestore write
+  const response = await fetch('/api/saves', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      videoId,
+      currentlySaved,
+    }),
+  });
+  
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Failed to toggle save' }));
+    throw new Error(error.error || 'Failed to toggle save');
+  }
+}
+
+/**
+ * Toggle like for a video - uses server API
+ */
+export async function toggleLike(videoId: VideoId, currentlyLiked: boolean): Promise<void> {
+  const response = await fetch(`/api/videos/${videoId}/like`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      currentlyLiked,
+    }),
+  });
+  
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Failed to toggle like' }));
+    throw new Error(error.error || 'Failed to toggle like');
   }
 }
 
@@ -58,7 +93,6 @@ export function subscribeToComments(videoId: VideoId, onData: (c: Comment[]) => 
     () => {}
   );
 }
-
 
 // publishVideo removed: all video publishing goes through /api/videos
 // (server-side moderation, rate limiting, authoritative user fields).
