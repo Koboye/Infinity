@@ -26,14 +26,9 @@ export async function POST(request: Request) {
     const timestamp = Math.floor(Date.now() / 1000).toString();
     const folder    = `infinity/users/${uid}`;
 
-    // Cloudinary signed upload: params MUST be sorted alphabetically,
-    // joined with &, then the API secret is appended with NO separator.
-    // Only include params you will actually send in the FormData.
-    const paramsToSign = [
-      `folder=${folder}`,
-      `timestamp=${timestamp}`,
-    ].sort().join('&');          // sort() is a no-op here (f < t) but is required by spec
-
+    // Params must be sorted alphabetically, joined with &,
+    // then API secret appended with NO separator
+    const paramsToSign = `folder=${folder}&resource_type=auto&timestamp=${timestamp}`;
     const signature = crypto
       .createHash('sha1')
       .update(`${paramsToSign}${apiSecret}`)
