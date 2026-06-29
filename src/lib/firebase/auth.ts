@@ -7,6 +7,7 @@ import {
 import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
 import { firebaseAuth, firebaseDb } from './client';
 import type { UserProfile } from '@/types';
+import { adminAuth } from './admin'; // ← ADD THIS
 
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
@@ -28,19 +29,17 @@ export async function signUpWithEmail(input: {
   if (input.fullName) await fbUpdateProfile(cred.user, { displayName: input.fullName });
   await sendEmailVerification(cred.user);
 
-  // Create the Firestore profile server-side so coins/walletBalance/verified
-  // are set authoritatively and cannot be tampered with by the client.
   const token = await cred.user.getIdToken();
-const res = await fetch('/api/auth/register', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-  body: JSON.stringify({ username: input.username, fullName: input.fullName }),
-});
-if (!res.ok) {
-  const errBody = await res.text();
-  console.error('Register API failed:', res.status, errBody);
-  throw new Error('Account setup failed — please try again.');
-}
+  const res = await fetch('/api/auth/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ username: input.username, fullName: input.fullName }),
+  });
+  if (!res.ok) {
+    const errBody = await res.text();
+    console.error('Register API failed:', res.status, errBody);
+    throw new Error('Account setup failed — please try again.');
+  }
 
   await signOut(firebaseAuth());
   return buildProfile(cred.user.uid, input);
@@ -59,7 +58,6 @@ export async function signInWithGoogle(): Promise<FirebaseUser> {
   const cred = await signInWithPopup(firebaseAuth(), googleProvider);
   const userRef = doc(firebaseDb(), 'users', cred.user.uid);
 
-  // Check if profile already exists so we don't overwrite avatarColor on every login
   const existing = await getDoc(userRef);
   const baseFields = {
     id: cred.user.uid,
@@ -72,14 +70,12 @@ export async function signInWithGoogle(): Promise<FirebaseUser> {
   };
 
   if (existing.exists()) {
-    // Only update mutable identity fields — preserve avatarColor and all other profile data
     await updateDoc(userRef, {
       email: baseFields.email,
       avatarUrl: baseFields.avatarUrl,
       fullName: baseFields.fullName,
     });
   } else {
-    // New Google user — create full profile
     await setDoc(userRef, {
       ...baseFields,
       avatarColor: `hsl(${Math.floor(Math.random() * 360)},70%,60%)`,
@@ -106,12 +102,7 @@ export function onAuthChanged(handler: (user: FirebaseUser | null) => void): () 
   return onAuthStateChanged(firebaseAuth(), handler);
 }
 
-// ✅ FIXED: force:true ensures a fresh token is always fetched from Firebase,
-// preventing 401 errors caused by expired cached tokens after redeployments or long sessions.
 export async function getIdToken(): Promise<string> {
-  // Wait up to 5 s for Firebase Auth to restore the persisted session.
-  // currentUser is null for a brief moment after page load even when the
-  // user is signed in — calling getIdToken too early causes a 401.
   const auth = firebaseAuth();
   if (!auth.currentUser) {
     await new Promise<void>((resolve, reject) => {
@@ -124,4 +115,32 @@ export async function getIdToken(): Promise<string> {
   const user = auth.currentUser;
   if (!user) throw new Error('Not signed in');
   return user.getIdToken(true);
+}
+
+// ===== SERVER-SIDE AUTH FUNCTIONS =====
+export class AuthError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'AuthError';
+  }
+}
+
+export async function requireUser(request: Request): Promise<{ uid: string }> {
+  const authHeader = request.headers.get('Authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    throw new AuthError('Missing or invalid Authorization header');
+  }
+
+  const token = authHeader.split(' ')[1];
+  if (!token) {
+    throw new AuthError('Missing token');
+  }
+
+  try {
+    const decodedToken = await adminAuth().verifyIdToken(token);
+    return { uid: decodedToken.uid };
+  } catch (error) {
+    console.error('Token verification failed:', error);
+    throw new AuthError('Invalid or expired token');
+  }
 }
