@@ -37,9 +37,19 @@ interface FeedProps {
   onShare: (p: VideoPost) => void;
   onViewProfile: (uid: string) => void;
   onFollow: (uid: string) => void;
+  onStoryTap?: () => void;  // ✅ ADDED: For story creation
 }
 
-export function Feed({ currentUserId, followedIds, blockedIds = [], onComment, onShare, onViewProfile, onFollow }: FeedProps) {
+export function Feed({ 
+  currentUserId, 
+  followedIds, 
+  blockedIds = [], 
+  onComment, 
+  onShare, 
+  onViewProfile, 
+  onFollow,
+  onStoryTap  // ✅ ADDED
+}: FeedProps) {
   const user = useAuthStore(s => s.user);
   const [posts, setPosts] = useState<VideoPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,7 +59,7 @@ export function Feed({ currentUserId, followedIds, blockedIds = [], onComment, o
   const lastDocRef = useRef<QueryDocumentSnapshot | null>(null);
   const showToast = useUIStore(s => s.showToast);
   
-  // ✅ NEW: Track which video is currently visible/active
+  // ✅ Track which video is currently visible/active
   const [activeIndex, setActiveIndex] = useState(0);
   const feedRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<Map<number, HTMLDivElement>>(new Map());
@@ -96,7 +106,7 @@ export function Feed({ currentUserId, followedIds, blockedIds = [], onComment, o
     return () => unsub();
   }, [currentUserId]);
 
-  // ✅ NEW: Intersection Observer to detect which video is visible
+  // ✅ Intersection Observer to detect which video is visible
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -110,7 +120,7 @@ export function Feed({ currentUserId, followedIds, blockedIds = [], onComment, o
         });
       },
       { 
-        threshold: 0.5, // Video is 50% visible
+        threshold: 0.4,
         root: feedRef.current,
         rootMargin: '0px'
       }
@@ -185,10 +195,14 @@ export function Feed({ currentUserId, followedIds, blockedIds = [], onComment, o
             .filter(p => followed.has(p.userId) && !seen.has(p.userId) && !!seen.add(p.userId))
             .slice(0, 8)
             .map(p => ({ id: p.userId, name: p.username, color: p.userAvatarColor, src: p.userAvatarUrl }));
-          if (storyUsers.length === 0) return null;
+          
           return (
             <div style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 14 }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, flexShrink: 0, cursor: 'pointer' }}>
+              {/* ✅ Your story - NOW CLICKABLE */}
+              <div 
+                onClick={onStoryTap}
+                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, flexShrink: 0, cursor: 'pointer' }}
+              >
                 <div style={{ width: 54, height: 54, borderRadius: '50%', background: '#F0EDE8', border: '1.5px dashed rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
                   <div style={{ width: 38, height: 38, borderRadius: '50%', background: avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: '#fff', fontSize: 15 }}>{initials}</div>
                   <div style={{ position: 'absolute', bottom: 0, right: 0, width: 18, height: 18, background: ACCENT, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid white' }}>
@@ -197,6 +211,7 @@ export function Feed({ currentUserId, followedIds, blockedIds = [], onComment, o
                 </div>
                 <span style={{ fontSize: 11, color: '#6B7280', fontWeight: 500 }}>Your story</span>
               </div>
+              
               {storyUsers.map(s => (
                 <div key={s.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, flexShrink: 0, cursor: 'pointer' }}>
                   <div style={{ width: 54, height: 54, borderRadius: '50%', border: `2.5px solid ${ACCENT}`, padding: 2, background: '#fff' }}>
@@ -264,7 +279,7 @@ export function Feed({ currentUserId, followedIds, blockedIds = [], onComment, o
             >
               <VideoCard
                 post={post}
-                isActive={index === activeIndex}  // ✅ Only the visible video is active
+                isActive={index === activeIndex}
                 currentUserId={currentUserId}
                 onComment={onComment}
                 onShare={onShare}
