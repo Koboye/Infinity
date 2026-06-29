@@ -31,11 +31,16 @@ export async function signUpWithEmail(input: {
   // Create the Firestore profile server-side so coins/walletBalance/verified
   // are set authoritatively and cannot be tampered with by the client.
   const token = await cred.user.getIdToken();
-  await fetch('/api/auth/register', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ username: input.username, fullName: input.fullName }),
-  });
+const res = await fetch('/api/auth/register', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+  body: JSON.stringify({ username: input.username, fullName: input.fullName }),
+});
+if (!res.ok) {
+  const errBody = await res.text();
+  console.error('Register API failed:', res.status, errBody);
+  throw new Error('Account setup failed — please try again.');
+}
 
   await signOut(firebaseAuth());
   return buildProfile(cred.user.uid, input);
