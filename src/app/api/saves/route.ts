@@ -1,5 +1,6 @@
 // src/app/api/saves/route.ts
 import { NextResponse } from 'next/server';
+import { FieldValue } from 'firebase-admin/firestore';  // ← ADD THIS IMPORT
 import { adminDb } from '@/lib/firebase/admin';
 import { requireUser, AuthError } from '@/lib/firebase/server-auth';
 
@@ -24,7 +25,7 @@ export async function POST(request: Request) {
       await ref.set({
         videoId,
         userId: uid,
-        createdAt: adminDb.FieldValue.serverTimestamp(),
+        createdAt: FieldValue.serverTimestamp(),  // ← FIXED: Use FieldValue directly
       });
     }
     
