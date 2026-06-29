@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { FieldValue } from 'firebase-admin/firestore';
 import { adminDb } from '@/lib/firebase/admin';
+import { requireUser, AuthError } from '@/lib/firebase/server-auth';
 import { requireUser, AuthError } from '@/lib/firebase/auth';  // ← FIXED
 import { moderatePostServer } from '@/lib/ai/moderation';
 import { rateLimit } from '@/lib/utils/rateLimit';
