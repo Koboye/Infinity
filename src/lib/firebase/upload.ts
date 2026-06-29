@@ -5,7 +5,7 @@ export async function uploadFile(
   options: { onProgress?: (pct: number) => void } = {}
 ): Promise<UploadResult> {
   const cloudName = 'dotvhzjmc';
-  const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET ?? 'infinity_unsigned';
+  const uploadPreset = 'infinity_unsigned';
 
   const formData = new FormData();
   formData.append('file', file);
