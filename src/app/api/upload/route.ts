@@ -20,21 +20,21 @@ export async function POST(request: Request) {
 
     const timestamp = Math.floor(Date.now() / 1000).toString();
     const folder    = `infinity/users/${uid}`;
-    const toSign    = `folder=${folder}&timestamp=${timestamp}${apiSecret}`;
+
+    // Cloudinary signature: alphabetical params joined with &
+    // then append the API secret directly (no & before secret)
+    const paramsToSign = `folder=${folder}&timestamp=${timestamp}`;
+    const toSign = `${paramsToSign}${apiSecret}`;
     const signature = crypto.createHash('sha1').update(toSign).digest('hex');
 
     return NextResponse.json({ timestamp, signature, apiKey, cloudName, folder });
   } catch (err) {
     if (err instanceof AuthError) {
-      // Return the actual error message so we can see what's wrong
       console.error('[upload] AuthError:', err.message);
-      return NextResponse.json(
-        { error: 'Unauthorized', detail: err.message },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized', detail: err.message }, { status: 401 });
     }
     const msg = err instanceof Error ? err.message : String(err);
-    console.error('[upload] Unexpected error:', msg);
+    console.error('[upload] error:', msg);
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
