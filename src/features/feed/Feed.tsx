@@ -17,9 +17,6 @@ const PAGE_SIZE = 20;
 const TABS = ['For you', 'Following', 'Trending'];
 const ACCENT = '#3D6B4F';
 
-
-
-
 function LeafLogo() {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -51,6 +48,11 @@ export function Feed({ currentUserId, followedIds, blockedIds = [], onComment, o
   const [activeTab, setActiveTab] = useState(0);
   const lastDocRef = useRef<QueryDocumentSnapshot | null>(null);
   const showToast = useUIStore(s => s.showToast);
+  
+  // ✅ NEW: Track which video is currently visible/active
+  const [activeIndex, setActiveIndex] = useState(0);
+  const feedRef = useRef<HTMLDivElement>(null);
+  const videoRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 
   useEffect(() => {
     setLoading(true);
@@ -58,8 +60,6 @@ export function Feed({ currentUserId, followedIds, blockedIds = [], onComment, o
     lastDocRef.current = null;
     setHasMore(true);
 
-    // Try fetching with moderationStatus filter first (new posts).
-    // If that returns 0 results, also fetch without the filter (old posts).
     const q = query(
       collection(firebaseDb(), 'videos'),
       where('moderationStatus', '==', 'approved'),
@@ -75,8 +75,6 @@ export function Feed({ currentUserId, followedIds, blockedIds = [], onComment, o
 
     const unsub = onSnapshot(q, snap => {
       if (snap.docs.length === 0) {
-        // No approved posts — fetch ALL posts (includes old-format ones;
-        // the converter will default moderationStatus to 'approved').
         getDocs(qFallback).then(fallbackSnap => {
           const fresh = fallbackSnap.docs.map(d => snapshotTo<VideoPost>(d));
           lastDocRef.current = fallbackSnap.docs[fallbackSnap.docs.length - 1] ?? null;
@@ -97,6 +95,35 @@ export function Feed({ currentUserId, followedIds, blockedIds = [], onComment, o
     });
     return () => unsub();
   }, [currentUserId]);
+
+  // ✅ NEW: Intersection Observer to detect which video is visible
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const index = Number(entry.target.getAttribute('data-index'));
+            if (!isNaN(index)) {
+              setActiveIndex(index);
+            }
+          }
+        });
+      },
+      { 
+        threshold: 0.5, // Video is 50% visible
+        root: feedRef.current,
+        rootMargin: '0px'
+      }
+    );
+
+    videoRefs.current.forEach((el) => {
+      observer.observe(el);
+    });
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [posts]);
 
   const loadMore = useCallback(async () => {
     if (loadingMore || !hasMore || !lastDocRef.current) return;
@@ -127,8 +154,18 @@ export function Feed({ currentUserId, followedIds, blockedIds = [], onComment, o
   const initials = user?.username?.[0]?.toUpperCase() ?? 'Y';
   const avatarColor = user?.avatarColor ?? ACCENT;
 
+  const displayPosts = (() => {
+    const visiblePosts = posts.filter(p => !blockedIds.includes(p.userId));
+    if (activeTab === 1) return visiblePosts.filter(p => followedIds?.includes(p.userId));
+    if (activeTab === 2) return [...visiblePosts].sort((a, b) => (b.trendingScore ?? 0) - (a.trendingScore ?? 0));
+    return visiblePosts;
+  })();
+
   return (
-    <div style={{ height: '100%', overflowY: 'auto', background: '#F8F7F4' }}>
+    <div 
+      ref={feedRef}
+      style={{ height: '100%', overflowY: 'auto', background: '#F8F7F4' }}
+    >
       {/* Top bar */}
       <div style={{ background: '#FFFFFF', padding: '14px 18px 0', position: 'sticky', top: 0, zIndex: 20, borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
@@ -140,7 +177,7 @@ export function Feed({ currentUserId, followedIds, blockedIds = [], onComment, o
           </div>
         </div>
 
-        {/* Stories row — shows followed users who have recent posts */}
+        {/* Stories row */}
         {(() => {
           const followed = new Set(followedIds ?? []);
           const seen = new Set<string>();
@@ -207,37 +244,37 @@ export function Feed({ currentUserId, followedIds, blockedIds = [], onComment, o
             <p style={{ color: '#9CA3AF', fontSize: 14, maxWidth: 260 }}>Follow people and explore to fill your feed.</p>
           </div>
         )
-        : (() => {
-          const visiblePosts = posts.filter(p => !blockedIds.includes(p.userId));
-          const displayPosts = activeTab === 1
-            ? visiblePosts.filter(p => followedIds?.includes(p.userId))
-            : activeTab === 2
-            ? [...visiblePosts].sort((a, b) => (b.trendingScore ?? 0) - (a.trendingScore ?? 0))
-            : visiblePosts;
-          if (displayPosts.length === 0 && activeTab === 1) {
-            return (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, textAlign: 'center', padding: '60px 24px' }}>
-                <div style={{ fontSize: 36 }}>👥</div>
-                <h3 style={{ fontSize: 18, fontWeight: 700, color: '#1A1A1A' }}>Follow people to see their posts</h3>
-                <p style={{ color: '#9CA3AF', fontSize: 14 }}>Head to Explore to find people to follow.</p>
-              </div>
-            );
-          }
-          return displayPosts.map(post => (
-            <VideoCard
-              key={post.id}
-              post={post}
-              isActive={true}
-              currentUserId={currentUserId}
-              onComment={onComment}
-              onShare={onShare}
-              onViewProfile={onViewProfile}
-              onFollow={onFollow}
-              isFollowing={followedIds?.includes(post.userId)}
-              cardStyle="card"
-            />
-          ));
-        })()
+        : displayPosts.length === 0 && activeTab === 1
+        ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, textAlign: 'center', padding: '60px 24px' }}>
+            <div style={{ fontSize: 36 }}>👥</div>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: '#1A1A1A' }}>Follow people to see their posts</h3>
+            <p style={{ color: '#9CA3AF', fontSize: 14 }}>Head to Explore to find people to follow.</p>
+          </div>
+        )
+        : displayPosts.map((post, index) => (
+            <div 
+              key={post.id} 
+              ref={(el) => {
+                if (el) {
+                  videoRefs.current.set(index, el);
+                }
+              }}
+              data-index={index}
+            >
+              <VideoCard
+                post={post}
+                isActive={index === activeIndex}  // ✅ Only the visible video is active
+                currentUserId={currentUserId}
+                onComment={onComment}
+                onShare={onShare}
+                onViewProfile={onViewProfile}
+                onFollow={onFollow}
+                isFollowing={followedIds?.includes(post.userId)}
+                cardStyle="card"
+              />
+            </div>
+          ))
       }
 
       {posts.length > 0 && (
