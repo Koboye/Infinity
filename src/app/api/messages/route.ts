@@ -1,6 +1,6 @@
 // src/app/api/messages/route.ts
 import { NextResponse } from 'next/server';
-import { FieldValue } from 'firebase-admin/firestore';  // ← IMPORT FieldValue
+import { FieldValue } from 'firebase-admin/firestore';
 import { adminDb } from '@/lib/firebase/admin';
 import { requireUser, AuthError } from '@/lib/firebase/server-auth';
 
@@ -11,24 +11,24 @@ export async function POST(request: Request) {
     
     const { conversationId, text, otherId } = body;
     
-    if (!conversationId || !text || !otherId) {
+    if (!conversationId || !text?.trim() || !otherId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
     
-    // Add message using Admin SDK (bypasses Firestore rules)
+    // Add message
     const messageRef = await adminDb().collection('messages').add({
       conversationId,
-      text,
+      text: text.trim(),
       senderId: uid,
-      createdAt: FieldValue.serverTimestamp(),  // ← FIXED
+      createdAt: FieldValue.serverTimestamp(),
       read: false,
     });
     
     // Update conversation
     await adminDb().collection('conversations').doc(conversationId).update({
-      lastMessage: text,
-      lastMessageAt: FieldValue.serverTimestamp(),  // ← FIXED
-      [`unreadCount.${otherId}`]: FieldValue.increment(1),  // ← FIXED
+      lastMessage: text.trim(),
+      lastMessageAt: FieldValue.serverTimestamp(),
+      [`unreadCount.${otherId}`]: FieldValue.increment(1),
     });
     
     return NextResponse.json({ 
