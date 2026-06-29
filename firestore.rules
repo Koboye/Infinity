@@ -67,6 +67,14 @@ service cloud.firestore {
       allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
 
+    match /notifications/{notificationId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      // All notification writes happen server-side via the Admin SDK (which
+      // bypasses these rules), e.g. in /api/users/follow — never from the
+      // client directly, so there is no client-write rule here.
+      allow write: if false;
+    }
+
     match /follows/{followId} {
       allow read: if true;
       allow create: if isSignedIn()
