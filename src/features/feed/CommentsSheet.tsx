@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '@/stores/authStore';
-import { useUIStore } from '@/stores/uiStore';
+import { useUIStore } '@/stores/uiStore';
 import { Avatar } from '@/components/Avatar';
 import { timeAgo } from '@/lib/utils/cn';
 import { subscribeToComments } from '@/lib/firebase/videos';
@@ -25,33 +25,52 @@ export function CommentsSheet({ videoId, videoOwnerId, videoOwnerUsername, onClo
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const unsub = subscribeToComments(videoId, setComments);
+    console.log('📤 Subscribing to comments for video:', videoId);
+    const unsub = subscribeToComments(videoId, (comments) => {
+      console.log('📥 Comments received:', comments.length);
+      setComments(comments);
+    });
     return () => unsub();
   }, [videoId]);
 
   const send = async () => {
-    if (!user || !text.trim()) return;
+    if (!user || !text.trim()) {
+      console.log('❌ No user or empty text');
+      return;
+    }
+    console.log('📤 Sending comment:', { videoId, text: text.trim() });
     setSending(true);
     const content = replyTo ? `@${replyTo.username} ${text.trim()}` : text.trim();
     try {
       const token = await getIdToken();
+      console.log('✅ Got token');
+      
+      // ✅ FIXED: Don't send username/avatar - server gets it from Firebase
       const res = await fetch('/api/comments', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 
+          'Content-Type': 'application/json', 
+          Authorization: `Bearer ${token}` 
+        },
         body: JSON.stringify({
           videoId,
-          username: user.username,
-          avatar: user.avatar,
-          avatarColor: user.avatarColor,
-          avatarUrl: user.avatarUrl,
           text: content,
         }),
       });
-      if (!res.ok) throw new Error('Failed to post comment');
+      
+      console.log('📡 Response status:', res.status);
+      const data = await res.json().catch(() => ({}));
+      console.log('📡 Response data:', data);
+      
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to post comment');
+      }
       setText('');
       setReplyTo(null);
-    } catch {
-      showToast('Failed to post comment', 'error');
+      showToast('Comment posted! 💬', 'success');
+    } catch (err) {
+      console.error('❌ Comment error:', err);
+      showToast(err instanceof Error ? err.message : 'Failed to post comment', 'error');
     } finally {
       setSending(false);
     }
@@ -67,6 +86,7 @@ export function CommentsSheet({ videoId, videoOwnerId, videoOwnerUsername, onClo
         body: JSON.stringify({ commentId: c.id }),
       });
       if (!res.ok) throw new Error('Failed');
+      showToast('Liked! ❤️', 'success');
     } catch {
       showToast('Failed to like comment', 'error');
     }
