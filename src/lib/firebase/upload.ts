@@ -1,3 +1,4 @@
+// src/lib/firebase/upload.ts
 import { getAuth } from 'firebase/auth';
 import { getFirebaseApp } from './client';
 
@@ -34,6 +35,7 @@ export async function uploadFile(
     throw new Error('Authentication failed — please sign out and sign in again');
   }
 
+  // Get upload signature from server
   const sigRes = await fetch('/api/upload', {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
@@ -51,7 +53,7 @@ export async function uploadFile(
   formData.append('file', file);
   formData.append('api_key', apiKey);
   formData.append('timestamp', timestamp);
-  formData.append('signature', signature);
+  formData.append('signature', signature);        // ✅ SIGNED upload
   formData.append('folder', folder);
   formData.append('upload_preset', upload_preset);
 
