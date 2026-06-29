@@ -1,4 +1,4 @@
-// src/lib/firebase/auth.ts
+// src/lib/firebase/auth.ts - CLIENT-SIDE ONLY
 import {
   GoogleAuthProvider, createUserWithEmailAndPassword, onAuthStateChanged,
   sendPasswordResetEmail, sendEmailVerification, signInWithEmailAndPassword, signInWithPopup,
@@ -7,7 +7,6 @@ import {
 import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
 import { firebaseAuth, firebaseDb } from './client';
 import type { UserProfile } from '@/types';
-import { adminAuth } from './admin'; // ← ADD THIS
 
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
@@ -115,32 +114,4 @@ export async function getIdToken(): Promise<string> {
   const user = auth.currentUser;
   if (!user) throw new Error('Not signed in');
   return user.getIdToken(true);
-}
-
-// ===== SERVER-SIDE AUTH FUNCTIONS =====
-export class AuthError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'AuthError';
-  }
-}
-
-export async function requireUser(request: Request): Promise<{ uid: string }> {
-  const authHeader = request.headers.get('Authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    throw new AuthError('Missing or invalid Authorization header');
-  }
-
-  const token = authHeader.split(' ')[1];
-  if (!token) {
-    throw new AuthError('Missing token');
-  }
-
-  try {
-    const decodedToken = await adminAuth().verifyIdToken(token);
-    return { uid: decodedToken.uid };
-  } catch (error) {
-    console.error('Token verification failed:', error);
-    throw new AuthError('Invalid or expired token');
-  }
 }
