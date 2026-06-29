@@ -63,18 +63,18 @@ export async function uploadFile(
     throw new Error(`Upload failed (${sigRes.status})${detail ? ': ' + detail : ''}`);
   }
 
-  const { timestamp, signature, apiKey, cloudName, folder, upload_preset } = await sigRes.json();
-  console.log('✅ Got upload config:', { cloudName, folder, upload_preset, timestamp, signature: signature ? 'exists' : 'missing' });
+  const { timestamp, apiKey, cloudName, folder, upload_preset } = await sigRes.json();
+  console.log('✅ Got upload config (UNSIGNED):', { cloudName, folder, upload_preset, timestamp });
 
   const formData = new FormData();
   formData.append('file', file);
   formData.append('api_key', apiKey);
   formData.append('timestamp', timestamp);
-  formData.append('signature', signature);
+  // ❌ NO signature - UNSIGNED mode!
   formData.append('folder', folder);
   formData.append('upload_preset', upload_preset);
 
-  console.log('📤 Sending to Cloudinary...');
+  console.log('📤 Sending to Cloudinary (UNSIGNED)...');
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.upload.onprogress = e => {
