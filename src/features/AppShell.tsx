@@ -95,6 +95,11 @@ export function AppShell() {
     }
   };
 
+  // ✅ ADDED: onStoryTap opens Create Post
+  const handleStoryTap = () => {
+    setShowCreate(true);
+  };
+
   const feedProps = {
     currentUserId: user?.id,
     followedIds: following,
@@ -109,6 +114,7 @@ export function AppShell() {
     },
     onViewProfile: (_uid: string) => setPage('profile'),
     onFollow: toggleFollow,
+    onStoryTap: handleStoryTap, // ✅ ADDED
   };
 
   return (
