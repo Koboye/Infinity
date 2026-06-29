@@ -14,15 +14,26 @@ function getAdminApp(): App {
 
   const projectId = process.env.FIREBASE_PROJECT_ID;
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-  // Private keys are usually stored with literal "\n" sequences in env files —
-  // they need to be converted back to real newlines.
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+  let privateKey = process.env.FIREBASE_PRIVATE_KEY;
 
   if (!projectId || !clientEmail || !privateKey) {
     throw new Error(
-      'Missing Firebase Admin credentials. Set FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, ' +
-      'and FIREBASE_PRIVATE_KEY (server-only, no NEXT_PUBLIC_ prefix) in your environment.'
+      `Missing Firebase Admin credentials. ` +
+      `projectId=${!!projectId} clientEmail=${!!clientEmail} privateKey=${!!privateKey}`
     );
+  }
+
+  // Vercel sometimes strips the surrounding quotes — remove them if present
+  if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
+    privateKey = privateKey.slice(1, -1);
+  }
+
+  // Convert literal \n sequences to real newlines
+  privateKey = privateKey.replace(/\\n/g, '\n');
+
+  // Validate the key looks correct
+  if (!privateKey.includes('-----BEGIN')) {
+    throw new Error('FIREBASE_PRIVATE_KEY does not contain BEGIN marker — check Vercel env var');
   }
 
   _app = initializeApp({ credential: cert({ projectId, clientEmail, privateKey }) });
@@ -37,11 +48,6 @@ export function adminDb() {
   return getFirestore(getAdminApp());
 }
 
-/**
- * Verifies the Firebase ID token sent in an Authorization: Bearer <token>
- * header. Throws if missing/invalid. Use this at the top of every
- * authenticated API route — never trust a userId sent in the request body.
- */
 export async function requireUser(request: Request): Promise<{ uid: string }> {
   const header = request.headers.get('authorization') ?? request.headers.get('Authorization');
   const token = header?.startsWith('Bearer ') ? header.slice(7) : null;
@@ -49,7 +55,9 @@ export async function requireUser(request: Request): Promise<{ uid: string }> {
   try {
     const decoded = await adminAuth().verifyIdToken(token);
     return { uid: decoded.uid };
-  } catch {
+  } catch (err) {
+    // Log the real error so it appears in Vercel function logs
+    console.error('[requireUser] verifyIdToken failed:', err);
     throw new AuthError('Invalid or expired token');
   }
 }
