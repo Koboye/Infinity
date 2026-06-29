@@ -34,37 +34,52 @@ export function CreatePost({ onClose, onCreated }: CreatePostProps) {
   });
 
   const pickFile = async (f: File) => {
+    console.log('📁 File picked:', f.name, f.type, f.size);
     if (!f.type.startsWith('video/') && !f.type.startsWith('image/')) {
       showToast('Pick a video or image', 'error'); return;
     }
-    if (f.size > 50 * 1024 * 1024) { showToast('File too large. Maximum is 50MB', 'error'); return; }
+    if (f.size > 50 * 1024 * 1024) { 
+      showToast('File too large. Maximum is 50MB', 'error'); 
+      return; 
+    }
     if (f.type.startsWith('video/')) {
       const duration = await getVideoDuration(f);
-      if (duration > 180) { showToast('Video too long. Maximum is 3 minutes', 'error'); return; }
+      console.log('📁 Video duration:', duration);
+      if (duration > 180) { 
+        showToast('Video too long. Maximum is 3 minutes', 'error'); 
+        return; 
+      }
     }
-    setFile(f); setPreview(URL.createObjectURL(f));
+    setFile(f); 
+    setPreview(URL.createObjectURL(f));
+    console.log('✅ File accepted');
   };
 
   const smartCaption = async () => {
-  if (!description.trim()) { showToast('Write a draft caption first', 'info'); return; }
-  setAiLoading(true);
-  try {
-    const token = await getIdToken();
-    const res = await fetch('/api/smart-caption', {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ input: description }),
-    });
-    if (!res.ok) throw new Error('Smart caption request failed');
-    const r = await res.json() as { caption: string; hashtags: string[] };
-    setDescription(r.caption); setHashtags(r.hashtags);
-    showToast('Smart caption applied ✨', 'success');
-  } catch { showToast('Could not generate a caption right now', 'error'); }
-  finally { setAiLoading(false); }
-};
+    if (!description.trim()) { showToast('Write a draft caption first', 'info'); return; }
+    setAiLoading(true);
+    try {
+      const token = await getIdToken();
+      const res = await fetch('/api/smart-caption', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ input: description }),
+      });
+      if (!res.ok) throw new Error('Smart caption request failed');
+      const r = await res.json() as { caption: string; hashtags: string[] };
+      setDescription(r.caption); 
+      setHashtags(r.hashtags);
+      showToast('Smart caption applied ✨', 'success');
+    } catch (e) { 
+      console.error('Smart caption error:', e);
+      showToast('Could not generate a caption right now', 'error'); 
+    } finally { 
+      setAiLoading(false); 
+    }
+  };
 
   const checkSafety = async () => {
     const v = await moderatePost({ text: description });
@@ -73,43 +88,80 @@ export function CreatePost({ onClose, onCreated }: CreatePostProps) {
   };
 
   const submit = async () => {
-    if (!user || !file) { showToast('Pick a file first', 'error'); return; }
-    if (!description.trim()) { showToast('Add a caption', 'error'); return; }
+    console.log('🚀 === SUBMIT STARTED ===');
+    console.log('👤 User:', user?.username, user?.id);
+    console.log('📁 File:', file?.name, file?.type, file?.size);
+    console.log('📝 Description:', description);
+    console.log('🏷️ Hashtags:', hashtags);
+    
+    if (!user || !file) { 
+      console.log('❌ No user or file');
+      showToast('Pick a file first', 'error'); 
+      return; 
+    }
+    if (!description.trim()) { 
+      console.log('❌ No description');
+      showToast('Add a caption', 'error'); 
+      return; 
+    }
     setSubmitting(true);
+    
     try {
       // 1. Upload media (now signed — see upload.ts)
+      console.log('📤 STEP 1: Uploading file to Cloudinary...');
       const uploaded = await uploadFile(file, { onProgress: setProgress });
+      console.log('✅ Uploaded successfully:', uploaded);
 
-      // 2. Publish via server route — this is where real moderation happens.
-      //    The client moderatePost() above is preview-only and is NEVER trusted
-      //    for the actual decision. The server runs its own moderation check.
+      // 2. Publish via server route
+      console.log('📤 STEP 2: Getting auth token...');
       const token = await getIdToken();
+      console.log('✅ Got token:', token ? 'Token exists' : 'No token');
+
+      const postData = {
+        username: user.username,
+        avatar: user.avatar,
+        avatarColor: user.avatarColor,
+        avatarUrl: user.avatarUrl,
+        verified: user.verified,
+        description: description.trim(),
+        hashtags: hashtags || [],
+        mediaUrl: uploaded.url,
+        mediaType: file.type.startsWith('image/') ? 'image' : 'video',
+        song: 'Original sound',
+      };
+      console.log('📦 STEP 3: Post data:', JSON.stringify(postData, null, 2));
+
+      console.log('📤 STEP 4: Sending to /api/videos...');
       const res = await fetch('/api/videos', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          username: user.username,
-          avatar: user.avatar,
-          avatarColor: user.avatarColor,
-          avatarUrl: user.avatarUrl,
-          verified: user.verified,
-          description,
-          hashtags,
-          mediaUrl: uploaded.url,
-          mediaType: file.type.startsWith('image/') ? 'image' : 'video',
-          song: 'Original sound',
-        }),
+        body: JSON.stringify(postData),
       });
 
+      console.log('📡 Response status:', res.status);
+      console.log('📡 Response headers:', Object.fromEntries(res.headers.entries()));
+
+      let responseData;
+      try {
+        responseData = await res.json();
+      } catch (e) {
+        console.log('❌ Failed to parse JSON:', e);
+        const text = await res.text();
+        console.log('📡 Raw response:', text);
+        throw new Error(`Server returned ${res.status}: ${text}`);
+      }
+      console.log('📡 Response data:', responseData);
+
       if (!res.ok) {
-        const { error } = await res.json().catch(() => ({ error: 'Failed to post' }));
-        throw new Error(error ?? 'Failed to post');
+        throw new Error(responseData?.error || `Server error: ${res.status}`);
       }
 
-      const { id, moderationStatus } = await res.json() as { id: string; moderationStatus: string };
+      const { id, moderationStatus } = responseData;
+      console.log('✅ SUCCESS! Post created:', { id, moderationStatus });
+      
       onCreated?.(id);
       showToast(
         moderationStatus === 'approved' ? 'Posted! 🎉' : 'Posted — under review',
@@ -117,8 +169,12 @@ export function CreatePost({ onClose, onCreated }: CreatePostProps) {
       );
       onClose();
     } catch (err) {
+      console.error('❌❌❌ ERROR:', err);
+      console.error('Error message:', err instanceof Error ? err.message : 'Unknown error');
+      console.error('Error stack:', err instanceof Error ? err.stack : 'No stack');
       showToast(err instanceof Error ? err.message : 'Failed to post', 'error');
     } finally {
+      console.log('🏁 Submit finished');
       setSubmitting(false);
     }
   };
@@ -129,7 +185,19 @@ export function CreatePost({ onClose, onCreated }: CreatePostProps) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'rgba(245,245,247,0.97)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(0,0,0,0.06)', position: 'sticky', top: 0 }}>
         <button onClick={onClose} style={{ background: 'rgba(0,0,0,0.06)', border: 'none', color: '#1A1A1A', borderRadius: 999, padding: '6px 16px', cursor: 'pointer', fontWeight: 600 }}>Cancel</button>
         <span style={{ fontWeight: 800, color: '#1A1A1A', fontSize: 16 }}>New Post</span>
-        <button onClick={submit} disabled={submitting || !file} style={{ background: submitting || !file ? 'rgba(0,0,0,0.08)' : 'linear-gradient(135deg,#3D6B4F,#5A9A6F)', border: 'none', color: submitting || !file ? '#9CA3AF' : 'white', borderRadius: 999, padding: '6px 16px', fontWeight: 700, cursor: 'pointer' }}>
+        <button 
+          onClick={submit} 
+          disabled={submitting || !file} 
+          style={{ 
+            background: submitting || !file ? 'rgba(0,0,0,0.08)' : 'linear-gradient(135deg,#3D6B4F,#5A9A6F)', 
+            border: 'none', 
+            color: submitting || !file ? '#9CA3AF' : 'white', 
+            borderRadius: 999, 
+            padding: '6px 16px', 
+            fontWeight: 700, 
+            cursor: submitting || !file ? 'not-allowed' : 'pointer' 
+          }}
+        >
           {submitting ? 'Posting…' : 'Post'}
         </button>
       </div>
@@ -141,8 +209,11 @@ export function CreatePost({ onClose, onCreated }: CreatePostProps) {
             <Avatar name={user?.username ?? '?'} color={user?.avatarColor} src={user?.avatarUrl} size="md" />
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 700, marginBottom: 8, color: '#1A1A1A' }}>@{user?.username}</div>
-              <textarea value={description} onChange={e => setDescription(e.target.value)}
-                placeholder="What's on your mind?" rows={4}
+              <textarea 
+                value={description} 
+                onChange={e => setDescription(e.target.value)}
+                placeholder="What's on your mind?" 
+                rows={4}
                 style={{ width: '100%', background: 'transparent', border: 'none', color: '#1A1A1A', fontSize: 15, resize: 'none', outline: 'none', lineHeight: 1.5 }}
                 maxLength={500}
               />
@@ -155,7 +226,12 @@ export function CreatePost({ onClose, onCreated }: CreatePostProps) {
             {file?.type.startsWith('image/')
               ? <img src={preview} alt="" style={{ maxHeight: 280, width: '100%', objectFit: 'cover' }} />
               : <video src={preview} controls style={{ maxHeight: 280, width: '100%' }} />}
-            <button onClick={() => { setFile(null); setPreview(null); }} style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.5)', border: 'none', color: 'white', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', fontSize: 16 }}>✕</button>
+            <button 
+              onClick={() => { setFile(null); setPreview(null); }} 
+              style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.5)', border: 'none', color: 'white', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', fontSize: 16 }}
+            >
+              ✕
+            </button>
           </div>
         )}
 
@@ -166,10 +242,31 @@ export function CreatePost({ onClose, onCreated }: CreatePostProps) {
         )}
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
-          <button onClick={() => fileRef.current?.click()} style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.08)', color: '#1A1A1A', borderRadius: 14, padding: '12px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>📁 Pick File</button>
-          <button onClick={() => camRef.current?.click()} style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.08)', color: '#1A1A1A', borderRadius: 14, padding: '12px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>📷 Camera</button>
-          <button onClick={smartCaption} disabled={aiLoading} style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.08)', color: '#3D6B4F', borderRadius: 14, padding: '12px', cursor: 'pointer', fontSize: 13, fontWeight: 600, opacity: aiLoading ? 0.5 : 1 }}>✨ {aiLoading ? 'Generating…' : 'Smart Caption'}</button>
-          <button onClick={checkSafety} style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.08)', color: '#1A1A1A', borderRadius: 14, padding: '12px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>🛡️ Check Safety</button>
+          <button 
+            onClick={() => fileRef.current?.click()} 
+            style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.08)', color: '#1A1A1A', borderRadius: 14, padding: '12px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
+          >
+            📁 Pick File
+          </button>
+          <button 
+            onClick={() => camRef.current?.click()} 
+            style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.08)', color: '#1A1A1A', borderRadius: 14, padding: '12px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
+          >
+            📷 Camera
+          </button>
+          <button 
+            onClick={smartCaption} 
+            disabled={aiLoading} 
+            style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.08)', color: '#3D6B4F', borderRadius: 14, padding: '12px', cursor: 'pointer', fontSize: 13, fontWeight: 600, opacity: aiLoading ? 0.5 : 1 }}
+          >
+            ✨ {aiLoading ? 'Generating…' : 'Smart Caption'}
+          </button>
+          <button 
+            onClick={checkSafety} 
+            style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.08)', color: '#1A1A1A', borderRadius: 14, padding: '12px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
+          >
+            🛡️ Check Safety
+          </button>
         </div>
 
         {modResult && (
@@ -181,11 +278,18 @@ export function CreatePost({ onClose, onCreated }: CreatePostProps) {
         {submitting && progress > 0 && (
           <div style={{ padding: 12, borderRadius: 14, background: '#FFFFFF', marginBottom: 12, border: '1px solid rgba(0,0,0,0.06)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#6B7280', marginBottom: 8 }}>
-              <span>Uploading…</span><span>{progress}%</span>
+              <span>Uploading…</span>
+              <span>{progress}%</span>
             </div>
             <div style={{ height: 6, background: 'rgba(0,0,0,0.06)', borderRadius: 3 }}>
               <div style={{ height: '100%', borderRadius: 3, width: `${progress}%`, transition: 'width 0.3s', background: 'linear-gradient(135deg,#3D6B4F,#5A9A6F)' }} />
             </div>
+          </div>
+        )}
+        
+        {submitting && progress === 0 && (
+          <div style={{ padding: 12, borderRadius: 14, background: '#FFFFFF', marginBottom: 12, border: '1px solid rgba(0,0,0,0.06)', textAlign: 'center', color: '#6B7280', fontSize: 13 }}>
+            ⏳ Preparing upload...
           </div>
         )}
       </div>
