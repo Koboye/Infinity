@@ -2,7 +2,7 @@
 import { sendEmailVerification, signInWithEmailAndPassword } from 'firebase/auth';
 import { firebaseAuth } from '@/lib/firebase/client';
 import { useState } from 'react';
-import { signInWithEmail, signUpWithEmail, signInWithGoogle, sendResetEmail } from '@/lib/firebase/auth';
+import { signInWithEmail, signUpWithEmail, signInWithGoogle, sendResetEmail, signOutCurrent } from '@/lib/firebase/auth';
 import { useUIStore } from '@/stores/uiStore';
 
 type Mode = 'login' | 'signup';
@@ -69,9 +69,13 @@ export function AuthScreen() {
     setBusy(true);
     try {
       const { user } = await signInWithEmailAndPassword(firebaseAuth(), email, password);
-      if (user.emailVerified) { showToast('Email already verified — sign in now ✅', 'success'); return; }
-      await sendEmailVerification(user);
-      showToast('Verification email sent 📧', 'success');
+      if (user.emailVerified) {
+        showToast('Email already verified — sign in now ✅', 'success');
+      } else {
+        await sendEmailVerification(user);
+        showToast('Verification email sent 📧', 'success');
+      }
+      await signOutCurrent(); // never leave an unverified (or stray) session active
     } catch (err) {
       showToast(err instanceof Error ? err.message.replace('Firebase: ', '') : 'Could not resend', 'error');
     } finally { setBusy(false); }
