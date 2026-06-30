@@ -1,8 +1,0 @@
-# public/robots.txt
-User-agent: *
-Allow: /
-Disallow: /api/
-Disallow: /_next/
-Disallow: /admin/
-
-Sitemap: https://your-app.vercel.app/sitemap.xml
