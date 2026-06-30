@@ -90,7 +90,7 @@ export function subscribeToComments(videoId: VideoId, onData: (c: Comment[]) => 
   return onSnapshot(
     query(collection(firebaseDb(), 'comments'), where('videoId', '==', videoId), orderBy('createdAt', 'asc')),
     snap => onData(snap.docs.map(d => snapshotTo<Comment>(d))),
-    () => {}
+    err => console.error('subscribeToComments error', err)
   );
 }
 
