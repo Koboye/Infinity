@@ -11,28 +11,62 @@ import type { UserProfile } from '@/types';
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
-const buildProfile = (uid: string, data: { email: string; username: string; fullName?: string }): UserProfile => ({
-  id: uid, username: data.username, fullName: data.fullName ?? '',
-  email: data.email, avatar: (data.username || data.email)[0]!.toUpperCase(),
-  avatarColor: `hsl(${Math.floor(Math.random() * 360)},70%,60%)`,
-  avatarUrl: null, bio: 'New to Infinity! 🎬', link: '', verified: false,
-  followers: [], following: [], blockedUsers: [], coins: 500, walletBalance: 500,
-  level: 1, streak: 1, subscription: 'free', language: 'en', theme: 'dark',
-  createdAt: new Date().toISOString(),
-});
+const buildProfile = (uid: string, data: { email: string; username?: string; fullName?: string }): UserProfile => {
+  // Auto-generate username from email if not provided
+  let username = data.username;
+  if (!username || username.trim() === '') {
+    username = data.email.split('@')[0]
+      .toLowerCase()
+      .replace(/[^a-z0-9_]/g, '_')
+      .slice(0, 20);
+    if (username.length < 3) username = `user_${uid.slice(0, 8)}`;
+  }
+  return {
+    id: uid,
+    username,
+    fullName: data.fullName ?? '',
+    email: data.email,
+    avatar: (username || data.email)[0]!.toUpperCase(),
+    avatarColor: `hsl(${Math.floor(Math.random() * 360)},70%,60%)`,
+    avatarUrl: null,
+    bio: 'New to Infinity! 🎬',
+    link: '',
+    verified: false,
+    followers: [],
+    following: [],
+    blockedUsers: [],
+    coins: 500,
+    walletBalance: 500,
+    level: 1,
+    streak: 1,
+    subscription: 'free',
+    language: 'en',
+    theme: 'dark',
+    createdAt: new Date().toISOString(),
+  };
+};
 
 export async function signUpWithEmail(input: {
-  email: string; password: string; username: string; fullName?: string;
+  email: string; password: string; username?: string; fullName?: string;
 }): Promise<UserProfile> {
   const cred = await createUserWithEmailAndPassword(firebaseAuth(), input.email, input.password);
   if (input.fullName) await fbUpdateProfile(cred.user, { displayName: input.fullName });
   await sendEmailVerification(cred.user);
 
   const token = await cred.user.getIdToken();
+  
+  const username = input.username && input.username.trim() !== '' 
+    ? input.username 
+    : undefined;
+    
   const res = await fetch('/api/auth/register', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ username: input.username, fullName: input.fullName }),
+    body: JSON.stringify({ 
+      username, 
+      fullName: input.fullName,
+      email: input.email 
+    }),
   });
   if (!res.ok) {
     const errBody = await res.text();
@@ -58,10 +92,16 @@ export async function signInWithGoogle(): Promise<FirebaseUser> {
   const userRef = doc(firebaseDb(), 'users', cred.user.uid);
 
   const existing = await getDoc(userRef);
+  const email = cred.user.email ?? '';
+  let username = cred.user.displayName?.replace(/\s+/g, '_').toLowerCase() ?? '';
+  if (!username || username.trim() === '') {
+    username = email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '_').slice(0, 20);
+  }
+  
   const baseFields = {
     id: cred.user.uid,
-    email: cred.user.email ?? '',
-    username: cred.user.displayName?.replace(/\s+/g, '_').toLowerCase() ?? `user_${cred.user.uid.slice(0, 6)}`,
+    email,
+    username,
     fullName: cred.user.displayName ?? '',
     avatarUrl: cred.user.photoURL ?? null,
     avatar: (cred.user.displayName ?? 'U')[0]!.toUpperCase(),
