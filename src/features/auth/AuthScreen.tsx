@@ -1,4 +1,4 @@
-'src/features/auth/AuthScreen.tsx'
+'use client';
 import { sendEmailVerification, signInWithEmailAndPassword } from 'firebase/auth';
 import { firebaseAuth } from '@/lib/firebase/client';
 import { useState } from 'react';
@@ -35,7 +35,6 @@ export function AuthScreen() {
     setBusy(true);
     try {
       if (mode === 'signup') {
-        // Username will be auto-generated on the server from email
         await signUpWithEmail({ email, password, username: '' });
         showToast('Account created! Check your email to verify. 📧', 'success');
         setMode('login');
@@ -189,7 +188,7 @@ export function AuthScreen() {
             margin: '4px 0 0',
             fontWeight: 600,
           }}>
-            / የተደዳኢ ማህበረሰብ
+            / የትየለሌ
           </p>
           <p style={{
             color: '#9CA3AF',
