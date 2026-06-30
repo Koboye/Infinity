@@ -5,10 +5,8 @@ export type SubscriptionTier = 'free' | 'premium' | 'creator';
 export type Language = 'en' | 'am' | 'ar' | 'fr' | 'es' | 'pt' | 'hi' | 'zh' | 'sw' | 'de' | 'ru' | 'tr' | 'ja' | 'ko' | 'it';
 export type Theme = 'dark' | 'light';
 export type AuthStatus = 'idle' | 'loading' | 'authenticated' | 'unauthenticated';
-
 // ← notifications added here
 export type AppPage = 'feed' | 'discover' | 'inbox' | 'notifications' | 'profile' | 'create';
-
 export interface UserProfile {
   id: UserId;
   username: string;
@@ -32,7 +30,6 @@ export interface UserProfile {
   theme: Theme;
   createdAt: ISODateString;
 }
-
 export interface VideoPost {
   id: VideoId;
   userId: UserId;
@@ -56,7 +53,21 @@ export interface VideoPost {
   trendingScore: number;
   createdAt: ISODateString;
 }
-
+export interface Story {
+  id: string;
+  userId: UserId;
+  username: string;
+  userAvatar: string;
+  userAvatarColor: string;
+  userAvatarUrl: string | null;
+  userVerified: boolean;
+  media: { kind: 'video' | 'image'; url: string };
+  caption?: string;
+  moderationStatus: 'pending' | 'approved' | 'rejected' | 'flagged';
+  views: UserId[];
+  createdAt: ISODateString;
+  expiresAt: ISODateString;
+}
 export interface Comment {
   id: string;
   videoId: VideoId;
@@ -70,7 +81,6 @@ export interface Comment {
   pinned: boolean;
   createdAt: ISODateString;
 }
-
 export interface ModerationVerdict {
   safe: boolean;
   toxicityScore: number;
@@ -79,18 +89,15 @@ export interface ModerationVerdict {
   flags: string[];
   reason?: string;
 }
-
 export interface SmartCaptionResult {
   caption: string;
   hashtags: string[];
   detectedLanguage: Language;
 }
-
 export interface TrendingTopic {
   tag: string;
   growth: number;
   posts: number;
 }
-
 export type ToastVariant = 'success' | 'error' | 'info' | 'warning';
 export interface ToastItem { id: string; message: string; variant: ToastVariant; }
