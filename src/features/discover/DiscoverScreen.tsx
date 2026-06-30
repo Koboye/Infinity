@@ -23,7 +23,11 @@ interface UserResult {
   fullName?: string;
 }
 
-export function DiscoverScreen() {
+interface DiscoverScreenProps {
+  onViewProfile?: (uid: string) => void;
+}
+
+export function DiscoverScreen({ onViewProfile }: DiscoverScreenProps) {
   const user = useAuthStore(s => s.user);
   const showToast = useUIStore(s => s.showToast);
   const [search, setSearch] = useState('');
@@ -93,8 +97,6 @@ export function DiscoverScreen() {
         body: JSON.stringify({ targetId: target.id }),
       });
       if (!res.ok) throw new Error('follow failed');
-      // Optimistically update local state; the real-time Firestore listener in
-      // AuthBootstrap will sync the authoritative value shortly after.
       setFollowedIds(prev => {
         const next = new Set(prev);
         if (isFollowing) next.delete(target.id); else next.add(target.id);
@@ -197,26 +199,36 @@ export function DiscoverScreen() {
               background: '#FFFFFF', borderRadius: 14, padding: '12px 16px',
               display: 'flex', alignItems: 'center', gap: 12,
               border: '1px solid rgba(0,0,0,0.06)',
+              cursor: 'pointer',
             }}>
-              <div style={{ width: 44, height: 44, borderRadius: '50%', background: u.avatarColor || ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 800, color: '#fff', flexShrink: 0, overflow: 'hidden' }}>
-                {u.avatarUrl
-                  ? <img src={u.avatarUrl} alt={u.username} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  : u.username?.[0]?.toUpperCase() ?? '?'}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#1A1A1A' }}>
-                  {u.username}
-                  {u.verified && <span style={{ marginLeft: 4, color: ACCENT }}>✓</span>}
+              {/* ✅ Click on avatar/name goes to profile */}
+              <div 
+                onClick={() => onViewProfile?.(u.id)}
+                style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}
+              >
+                <div style={{ width: 44, height: 44, borderRadius: '50%', background: u.avatarColor || ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 800, color: '#fff', flexShrink: 0, overflow: 'hidden' }}>
+                  {u.avatarUrl
+                    ? <img src={u.avatarUrl} alt={u.username} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    : u.username?.[0]?.toUpperCase() ?? '?'}
                 </div>
-                {u.bio && <div style={{ fontSize: 12, color: '#9CA3AF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.bio}</div>}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#1A1A1A' }}>
+                    {u.username}
+                    {u.verified && <span style={{ marginLeft: 4, color: ACCENT }}>✓</span>}
+                  </div>
+                  {u.bio && <div style={{ fontSize: 12, color: '#9CA3AF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.bio}</div>}
+                </div>
               </div>
-              <button onClick={() => toggleFollow(u)} style={{
-                padding: '6px 16px', borderRadius: 20, fontSize: 12, fontWeight: 700,
-                border: followedIds.has(u.id) ? `1.5px solid ${ACCENT}` : 'none',
-                background: followedIds.has(u.id) ? 'transparent' : ACCENT,
-                color: followedIds.has(u.id) ? ACCENT : '#fff',
-                cursor: 'pointer', flexShrink: 0,
-              }}>
+              <button 
+                onClick={(e) => { e.stopPropagation(); toggleFollow(u); }} 
+                style={{
+                  padding: '6px 16px', borderRadius: 20, fontSize: 12, fontWeight: 700,
+                  border: followedIds.has(u.id) ? `1.5px solid ${ACCENT}` : 'none',
+                  background: followedIds.has(u.id) ? 'transparent' : ACCENT,
+                  color: followedIds.has(u.id) ? ACCENT : '#fff',
+                  cursor: 'pointer', flexShrink: 0,
+                }}
+              >
                 {followedIds.has(u.id) ? 'Following' : 'Follow'}
               </button>
             </div>
