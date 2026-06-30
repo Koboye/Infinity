@@ -2628,7 +2628,7 @@ const handleLongPressStart = () => {
         </div>
       )}
 
-     <div style={{ background:'#fff', borderTop:'1px solid #EEF0F3', padding:'10px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', zIndex:6 }}>
+     <div style={{ position:'absolute', left:0, right:0, bottom:0, background:'#fff', borderTop:'1px solid #EEF0F3', padding:'10px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', zIndex:6 }}>
 
         {/* 1. 💬 Comment */}
         <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();setShowComments(true);}}
