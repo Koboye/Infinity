@@ -32,7 +32,9 @@ const CLOUDINARY_CLOUD = 'dotvhzjmc';
 const CLOUDINARY_PRESET = 'g3c7dwdg';
 const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/upload`;
 const useNetworkStatus = () => {
-  const [online, setOnline] = useState(navigator.onLine);
+  const [online, setOnline] = useState(true);
+  useEffect(()=>{
+    setOnline(navigator.onLine);
   useEffect(()=>{
     const on = ()=>setOnline(true);
     const off = ()=>setOnline(false);
