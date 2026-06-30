@@ -12,6 +12,7 @@ import { rankVideos } from '@/lib/ai/trends';
 import { useUIStore } from '@/stores/uiStore';
 import { useAuthStore } from '@/stores/authStore';
 import { VideoCardSkeleton } from '@/components/Skeleton';
+import { subscribeActiveStories, type StoryGroup } from '@/lib/firebase/stories';
 
 const PAGE_SIZE = 20;
 const TABS = ['For you', 'Following', 'Trending'];
@@ -38,6 +39,7 @@ interface FeedProps {
   onViewProfile: (uid: string) => void;
   onFollow: (uid: string) => void;
   onStoryTap?: () => void;  // ✅ ADDED: For story creation
+  onStoryView?: (group: StoryGroup) => void;
 }
 
 export function Feed({ 
@@ -48,7 +50,8 @@ export function Feed({
   onShare, 
   onViewProfile, 
   onFollow,
-  onStoryTap  // ✅ ADDED
+  onStoryTap,  // ✅ ADDED
+  onStoryView,
 }: FeedProps) {
   const user = useAuthStore(s => s.user);
   const [posts, setPosts] = useState<VideoPost[]>([]);
@@ -56,6 +59,7 @@ export function Feed({
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [activeTab, setActiveTab] = useState(0);
+  const [storyGroups, setStoryGroups] = useState<StoryGroup[]>([]);
   const lastDocRef = useRef<QueryDocumentSnapshot | null>(null);
   const showToast = useUIStore(s => s.showToast);
   
@@ -105,6 +109,12 @@ export function Feed({
     });
     return () => unsub();
   }, [currentUserId]);
+
+  // ✅ Live subscription to active (non-expired) stories
+  useEffect(() => {
+    const unsub = subscribeActiveStories(setStoryGroups);
+    return () => unsub();
+  }, []);
 
   // ✅ Intersection Observer to detect which video is visible
   useEffect(() => {
@@ -190,37 +200,47 @@ export function Feed({
         {/* Stories row */}
         {(() => {
           const followed = new Set(followedIds ?? []);
-          const seen = new Set<string>();
-          const storyUsers = posts
-            .filter(p => followed.has(p.userId) && !seen.has(p.userId) && !!seen.add(p.userId))
-            .slice(0, 8)
-            .map(p => ({ id: p.userId, name: p.username, color: p.userAvatarColor, src: p.userAvatarUrl }));
-          
+          const myGroup = storyGroups.find(g => g.userId === currentUserId);
+          const otherGroups = storyGroups
+            .filter(g => g.userId !== currentUserId && followed.has(g.userId))
+            .slice(0, 8);
+
           return (
             <div style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 14 }}>
-              {/* ✅ Your story - NOW CLICKABLE */}
-              <div 
-                onClick={onStoryTap}
+              {/* ✅ Your story — tap to view if you have one, otherwise to post */}
+              <div
+                onClick={() => myGroup && onStoryView ? onStoryView(myGroup) : onStoryTap?.()}
                 style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, flexShrink: 0, cursor: 'pointer' }}
               >
-                <div style={{ width: 54, height: 54, borderRadius: '50%', background: '#F0EDE8', border: '1.5px dashed rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                  <div style={{ width: 38, height: 38, borderRadius: '50%', background: avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: '#fff', fontSize: 15 }}>{initials}</div>
-                  <div style={{ position: 'absolute', bottom: 0, right: 0, width: 18, height: 18, background: ACCENT, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid white' }}>
+                <div style={{ width: 54, height: 54, borderRadius: '50%', background: '#F0EDE8', border: myGroup ? `2.5px solid ${ACCENT}` : '1.5px dashed rgba(0,0,0,0.2)', padding: myGroup ? 2 : 0, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                  <div style={{ width: 38, height: 38, borderRadius: '50%', background: avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: '#fff', fontSize: 15, overflow: 'hidden' }}>
+                    {user?.avatarUrl
+                      ? <img src={user.avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      : initials}
+                  </div>
+                  <div
+                    onClick={(e) => { if (myGroup) { e.stopPropagation(); onStoryTap?.(); } }}
+                    style={{ position: 'absolute', bottom: 0, right: 0, width: 18, height: 18, background: ACCENT, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid white' }}
+                  >
                     <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                   </div>
                 </div>
                 <span style={{ fontSize: 11, color: '#6B7280', fontWeight: 500 }}>Your story</span>
               </div>
               
-              {storyUsers.map(s => (
-                <div key={s.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, flexShrink: 0, cursor: 'pointer' }}>
+              {otherGroups.map(g => (
+                <div
+                  key={g.userId}
+                  onClick={() => onStoryView?.(g)}
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, flexShrink: 0, cursor: 'pointer' }}
+                >
                   <div style={{ width: 54, height: 54, borderRadius: '50%', border: `2.5px solid ${ACCENT}`, padding: 2, background: '#fff' }}>
-                    {s.src
-                      ? <img src={s.src} alt={s.name} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
-                      : <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: s.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#fff', fontSize: 18 }}>{s.name[0]?.toUpperCase()}</div>
+                    {g.userAvatarUrl
+                      ? <img src={g.userAvatarUrl} alt={g.username} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                      : <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: g.userAvatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#fff', fontSize: 18 }}>{g.username[0]?.toUpperCase()}</div>
                     }
                   </div>
-                  <span style={{ fontSize: 11, color: '#6B7280', fontWeight: 500, maxWidth: 54, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</span>
+                  <span style={{ fontSize: 11, color: '#6B7280', fontWeight: 500, maxWidth: 54, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.username}</span>
                 </div>
               ))}
             </div>
