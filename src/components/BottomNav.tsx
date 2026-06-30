@@ -4,6 +4,7 @@ import type { AppPage } from '@/types';
 
 interface BottomNavProps {
   onCreateTap: () => void;
+  onProfileTap?: () => void;  // ✅ NEW
   unreadNotifs?: number;
   unreadMessages?: number;
 }
@@ -11,7 +12,6 @@ interface BottomNavProps {
 const ACCENT = '#3D6B4F';
 const MUTED = '#B0B0B8';
 
-// Leaf icon for the brand/create button - matches the design's leaf motif
 function LeafIcon({ size = 22, color = 'white' }: { size?: number; color?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill={color} stroke="none">
@@ -69,7 +69,7 @@ const TABS: { id: AppPage | 'create'; label: string; hasBadge?: 'notifs' | 'mess
   { id: 'profile', label: 'Me' },
 ];
 
-export function BottomNav({ onCreateTap, unreadNotifs = 0, unreadMessages = 0 }: BottomNavProps) {
+export function BottomNav({ onCreateTap, onProfileTap, unreadNotifs = 0, unreadMessages = 0 }: BottomNavProps) {
   const page = useUIStore(s => s.page);
   const setPage = useUIStore(s => s.setPage);
 
@@ -95,6 +95,7 @@ export function BottomNav({ onCreateTap, unreadNotifs = 0, unreadMessages = 0 }:
     }}>
       {TABS.map(tab => {
         const isCreate = tab.id === 'create';
+        const isProfile = tab.id === 'profile';
         const active = !isCreate && page === tab.id;
         const badgeCount = tab.hasBadge === 'notifs' ? unreadNotifs : tab.hasBadge === 'messages' ? unreadMessages : 0;
 
@@ -102,7 +103,15 @@ export function BottomNav({ onCreateTap, unreadNotifs = 0, unreadMessages = 0 }:
           <button
             key={tab.id}
             type="button"
-            onClick={() => isCreate ? onCreateTap() : setPage(tab.id as AppPage)}
+            onClick={() => {
+              if (isCreate) {
+                onCreateTap();
+              } else if (isProfile && onProfileTap) {
+                onProfileTap();  // ✅ Reset viewing state when tapping Profile tab
+              } else {
+                setPage(tab.id as AppPage);
+              }
+            }}
             style={{
               background: isCreate ? '#3D6B4F' : 'none',
               border: 'none',
