@@ -2628,31 +2628,39 @@ const handleLongPressStart = () => {
         </div>
       )}
 
-     <div style={{ position:'absolute', left:0, right:0, bottom:0, background:'#fff', borderTop:'1px solid #EEF0F3', padding:'10px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', zIndex:6 }}>
+     {/* Stat row: Likes · Comments · Shares — sits above the action bar */}
+      <div style={{ position:'absolute', left:0, right:0, bottom:48, background:'#fff', borderTop:'1px solid #EEF0F3', padding:'8px 16px', display:'flex', alignItems:'center', gap:16, zIndex:6 }}>
+        <span style={{ color:'#65676B', fontSize:12, fontWeight:600, fontFamily:"'Inter',sans-serif" }}>{formatNumber(likeCount)} Likes</span>
+        <span style={{ color:'#65676B', fontSize:12, fontWeight:600, fontFamily:"'Inter',sans-serif" }}>{formatNumber(video.comments||comments.length)} Comments</span>
+        <span style={{ color:'#65676B', fontSize:12, fontWeight:600, fontFamily:"'Inter',sans-serif" }}>{formatNumber(video.shares||0)} Shares</span>
+      </div>
 
-        {/* 1. 💬 Comment */}
-        <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();setShowComments(true);}}
-          style={{ background:'none', border:'none', display:'flex', alignItems:'center', gap:6, cursor:'pointer', padding:0 }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#65676B" strokeWidth="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-          <span style={{ color:'#65676B', fontSize:13, fontWeight:600, fontFamily:"'Inter',sans-serif" }}>{formatNumber(video.comments||comments.length)}</span>
-        </button>
+      {/* Action bar: icon-only buttons with labels, evenly spread */}
+      <div style={{ position:'absolute', left:0, right:0, bottom:0, background:'#fff', borderTop:'1px solid #EEF0F3', padding:'8px 10px', display:'flex', alignItems:'center', justifyContent:'space-between', zIndex:6 }}>
 
-        {/* 2. ❤️ Like */}
+        {/* 1. ❤️ Like */}
         <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();haptic('medium');handleLike();}}
-          style={{ background:'none', border:'none', display:'flex', alignItems:'center', gap:6, cursor:'pointer', padding:0 }}>
-          <svg width="20" height="20" viewBox="0 0 24 24"
+          style={{ background:'none', border:'none', display:'flex', flexDirection:'column', alignItems:'center', gap:3, cursor:'pointer', padding:0 }}>
+          <svg width="19" height="19" viewBox="0 0 24 24"
             fill={liked?'#FF3B5C':'none'} stroke={liked?'#FF3B5C':'#65676B'} strokeWidth="1.8"
             style={{ animation: liked ? 'likeHeart 0.4s ease' : 'none' }}>
             <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
           </svg>
-          <span style={{ color: liked?'#FF3B5C':'#65676B', fontSize:13, fontWeight:600, fontFamily:"'Inter',sans-serif" }}>{formatNumber(likeCount)}</span>
+          <span style={{ color: liked?'#FF3B5C':'#65676B', fontSize:10, fontWeight:600, fontFamily:"'Inter',sans-serif" }}>Like</span>
+        </button>
+
+        {/* 2. 💬 Comment */}
+        <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();setShowComments(true);}}
+          style={{ background:'none', border:'none', display:'flex', flexDirection:'column', alignItems:'center', gap:3, cursor:'pointer', padding:0 }}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#65676B" strokeWidth="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          <span style={{ color:'#65676B', fontSize:10, fontWeight:600, fontFamily:"'Inter',sans-serif" }}>Comment</span>
         </button>
 
         {/* 3. 🔄 Share */}
         <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();setShowShare(true);}}
-          style={{ background:'none', border:'none', display:'flex', alignItems:'center', gap:6, cursor:'pointer', padding:0 }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#65676B" strokeWidth="1.8"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-          <span style={{ color:'#65676B', fontSize:13, fontWeight:600, fontFamily:"'Inter',sans-serif" }}>{formatNumber(video.shares||0)}</span>
+          style={{ background:'none', border:'none', display:'flex', flexDirection:'column', alignItems:'center', gap:3, cursor:'pointer', padding:0 }}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#65676B" strokeWidth="1.8"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          <span style={{ color:'#65676B', fontSize:10, fontWeight:600, fontFamily:"'Inter',sans-serif" }}>Share</span>
         </button>
 
         {/* 4. 🔖 Save */}
@@ -2661,26 +2669,30 @@ const handleLongPressStart = () => {
           setDoc(doc(db,'saves',`${video.id}_${currentUser.id}`),{ videoId:video.id, userId:currentUser.id, createdAt:serverTimestamp() })
             .then(()=>showToast?.('Saved ✨','success')).catch(()=>{});
         }}
-          style={{ background:'none', border:'none', cursor:'pointer', padding:0, display:'flex' }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#65676B" strokeWidth="1.8"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+          style={{ background:'none', border:'none', display:'flex', flexDirection:'column', alignItems:'center', gap:3, cursor:'pointer', padding:0 }}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#65676B" strokeWidth="1.8"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+          <span style={{ color:'#65676B', fontSize:10, fontWeight:600, fontFamily:"'Inter',sans-serif" }}>Save</span>
         </button>
 
         {/* 5. ⬇️ Download */}
         <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();handleDownloadPost();}}
-          style={{ background:'none', border:'none', cursor:'pointer', padding:0, display:'flex' }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#65676B" strokeWidth="1.8"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          style={{ background:'none', border:'none', display:'flex', flexDirection:'column', alignItems:'center', gap:3, cursor:'pointer', padding:0 }}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#65676B" strokeWidth="1.8"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span style={{ color:'#65676B', fontSize:10, fontWeight:600, fontFamily:"'Inter',sans-serif" }}>Download</span>
         </button>
 
         {/* 6. ⚠️ Report */}
         <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();showToast?.('Report submitted','info');}}
-          style={{ background:'none', border:'none', cursor:'pointer', padding:0, display:'flex' }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#65676B" strokeWidth="1.8"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          style={{ background:'none', border:'none', display:'flex', flexDirection:'column', alignItems:'center', gap:3, cursor:'pointer', padding:0 }}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#65676B" strokeWidth="1.8"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span style={{ color:'#65676B', fontSize:10, fontWeight:600, fontFamily:"'Inter',sans-serif" }}>Report</span>
         </button>
 
         {/* 7. ⋯ More */}
         <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();setShowActionMenu(v=>!v);}}
-          style={{ background:'none', border:'none', cursor:'pointer', padding:0, display:'flex' }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="#65676B"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+          style={{ background:'none', border:'none', display:'flex', flexDirection:'column', alignItems:'center', gap:3, cursor:'pointer', padding:0 }}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="#65676B"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+          <span style={{ color:'#65676B', fontSize:10, fontWeight:600, fontFamily:"'Inter',sans-serif" }}>More</span>
         </button>
 
       </div>
