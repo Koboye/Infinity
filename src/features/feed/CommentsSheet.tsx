@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '@/stores/authStore';
-import { useUIStore } '@/stores/uiStore';
+import { useUIStore } from '@/stores/uiStore';
 import { Avatar } from '@/components/Avatar';
 import { timeAgo } from '@/lib/utils/cn';
 import { subscribeToComments } from '@/lib/firebase/videos';
