@@ -35,7 +35,6 @@ const useNetworkStatus = () => {
   const [online, setOnline] = useState(true);
   useEffect(()=>{
     setOnline(navigator.onLine);
-  useEffect(()=>{
     const on = ()=>setOnline(true);
     const off = ()=>setOnline(false);
     window.addEventListener('online', on);
