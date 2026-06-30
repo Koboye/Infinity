@@ -28,7 +28,7 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://widget.cloudinary.com",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://widget.cloudinary.com https://apis.google.com https://www.gstatic.com",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https://res.cloudinary.com https://lh3.googleusercontent.com https://firebasestorage.googleapis.com",
               "media-src 'self' blob: https://res.cloudinary.com",
