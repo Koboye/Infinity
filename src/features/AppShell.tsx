@@ -8,6 +8,8 @@ import { InboxScreen } from '@/features/inbox/InboxScreen';
 import { NotificationsScreen } from '@/features/notifications/NotificationsScreen';
 import { ProfileScreen } from '@/features/profile/ProfileScreen';
 import { CreatePost } from '@/features/create/CreatePost';
+import { CreateStory } from '@/features/story/CreateStory';
+import { StoryViewer } from '@/features/story/StoryViewer';
 import { CommentsSheet } from '@/features/feed/CommentsSheet';
 import { BottomNav } from '@/components/BottomNav';
 import { ToastHost } from '@/components/Toast';
@@ -16,6 +18,7 @@ import {
 } from 'firebase/firestore';
 import { firebaseDb } from '@/lib/firebase/client';
 import type { VideoPost } from '@/types';
+import type { StoryGroup } from '@/lib/firebase/stories';
 
 export function AppShell() {
   const user = useAuthStore(s => s.user);
@@ -24,6 +27,8 @@ export function AppShell() {
   const setPage = useUIStore(s => s.setPage);
   const showToast = useUIStore(s => s.showToast);
   const [showCreate, setShowCreate] = useState(false);
+  const [showCreateStory, setShowCreateStory] = useState(false);
+  const [viewingStoryGroup, setViewingStoryGroup] = useState<StoryGroup | null>(null);
   const [commentTarget, setCommentTarget] = useState<{ id: string; ownerId: string; ownerUsername: string } | null>(null);
   const [following, setFollowing] = useState<string[]>(user?.following ?? []);
   const [unreadNotifs, setUnreadNotifs] = useState(0);
@@ -95,9 +100,9 @@ export function AppShell() {
     }
   };
 
-  // ✅ ADDED: onStoryTap opens Create Post
+  // ✅ Opens the story composer
   const handleStoryTap = () => {
-    setShowCreate(true);
+    setShowCreateStory(true);
   };
 
   const feedProps = {
@@ -114,7 +119,8 @@ export function AppShell() {
     },
     onViewProfile: (_uid: string) => setPage('profile'),
     onFollow: toggleFollow,
-    onStoryTap: handleStoryTap, // ✅ ADDED
+    onStoryTap: handleStoryTap,
+    onStoryView: (group: StoryGroup) => setViewingStoryGroup(group),
   };
 
   return (
@@ -137,6 +143,17 @@ export function AppShell() {
         <CreatePost
           onClose={() => setShowCreate(false)}
           onCreated={() => { setShowCreate(false); showToast('Post published! 🎉', 'success'); }}
+        />
+      )}
+
+      {showCreateStory && (
+        <CreateStory onClose={() => setShowCreateStory(false)} />
+      )}
+
+      {viewingStoryGroup && (
+        <StoryViewer
+          stories={viewingStoryGroup.stories}
+          onClose={() => setViewingStoryGroup(null)}
         />
       )}
 
