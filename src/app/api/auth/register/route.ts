@@ -1,58 +1,83 @@
-import { NextResponse } from 'next/server';
-import { FieldValue } from 'firebase-admin/firestore';
-import { adminDb, requireUser, AuthError } from '@/lib/firebase/admin';
+import { NextRequest, NextResponse } from 'next/server';
+import { adminDb, requireUser } from '@/lib/firebase/admin';
+import { randomBytes } from 'crypto';
 
-interface RegisterBody {
-  username: string;
-  fullName?: string;
-}
-
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const { uid } = await requireUser(request);
+    const body = await request.json().catch(() => ({}));
+    const { username: requestedUsername, fullName, email } = body;
 
-    const body = await request.json().catch(() => null) as RegisterBody | null;
-    if (!body?.username?.trim()) {
-      return NextResponse.json({ error: 'Username required' }, { status: 400 });
+    const userRef = adminDb().collection('users').doc(uid);
+    const existing = await userRef.get();
+
+    // Generate username from email if not provided
+    let username = requestedUsername;
+    if (!username || username.trim() === '') {
+      if (email) {
+        username = email.split('@')[0]
+          .toLowerCase()
+          .replace(/[^a-z0-9_]/g, '_')
+          .slice(0, 20);
+      }
+      if (!username || username.length < 3) {
+        username = `user_${randomBytes(4).toString('hex')}`;
+      }
     }
 
-    const db = adminDb();
-    const userRef = db.collection('users').doc(uid);
-
-    const snap = await userRef.get();
-    if (snap.exists) {
-      return NextResponse.json({ ok: true, created: false });
+    username = username.toLowerCase().replace(/[^a-z0-9_]/g, '_').slice(0, 20);
+    if (username.length < 3) {
+      username = `user_${randomBytes(4).toString('hex')}`;
     }
 
-    const username = body.username.trim();
-    await userRef.set({
-      id: uid,
-      username,
-      fullName: body.fullName?.trim() ?? '',
-      email: '',
-      avatar: username[0]!.toUpperCase(),
-      avatarColor: `hsl(${Math.floor(Math.random() * 360)},70%,60%)`,
-      avatarUrl: null,
-      bio: 'New to Infinity! 🎬',
-      link: '',
-      verified: false,
-      coins: 500,
-      walletBalance: 500,
-      level: 1,
-      streak: 1,
-      subscription: 'free',
-      followers: [],
-      following: [],
-      blockedUsers: [],
-      language: 'en',
-      theme: 'dark',
-      createdAt: FieldValue.serverTimestamp(),
-    });
+    // Check if username is taken
+    const existingUsers = await adminDb()
+      .collection('users')
+      .where('username', '==', username)
+      .get();
+    
+    const taken = existingUsers.docs.some(d => d.id !== uid);
+    if (taken) {
+      username = `${username}_${randomBytes(3).toString('hex')}`;
+    }
 
-    return NextResponse.json({ ok: true, created: true });
-  } catch (err) {
-    if (err instanceof AuthError) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    console.error('register error', err);
-    return NextResponse.json({ error: 'Registration failed' }, { status: 500 });
+    if (existing.exists) {
+      await userRef.update({
+        username,
+        fullName: fullName ?? existing.data()?.fullName ?? '',
+        email: email ?? existing.data()?.email ?? '',
+      });
+    } else {
+      await userRef.set({
+        username,
+        fullName: fullName ?? '',
+        email: email ?? '',
+        avatar: username[0]?.toUpperCase() ?? 'U',
+        avatarColor: `hsl(${Math.floor(Math.random() * 360)},70%,60%)`,
+        avatarUrl: null,
+        bio: 'New to Infinity! 🎬',
+        link: '',
+        verified: false,
+        followers: [],
+        following: [],
+        blockedUsers: [],
+        coins: 500,
+        walletBalance: 500,
+        level: 1,
+        streak: 1,
+        subscription: 'free',
+        language: 'en',
+        theme: 'dark',
+        createdAt: new Date().toISOString(),
+      });
+    }
+
+    return NextResponse.json({ success: true, username });
+  } catch (error) {
+    console.error('Registration error:', error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Registration failed' },
+      { status: 400 }
+    );
   }
 }
