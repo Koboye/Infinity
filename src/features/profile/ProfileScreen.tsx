@@ -369,24 +369,16 @@ export function ProfileScreen({ viewingUserId, onBack, onViewProfile, onFollow, 
   const [showFollowing,setShowFollowing]= useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
-  // ✅ If viewingUserId is set and it's not the current user → show other profile
-  if (viewingUserId && viewingUserId !== user?.id && onBack && onFollow) {
-    return (
-      <OtherProfileScreen
-        userId={viewingUserId}
-        onBack={onBack}
-        onFollow={onFollow}
-        followingIds={followingIds}
-      />
-    );
-  }
+  const isOtherProfile = !!(viewingUserId && viewingUserId !== user?.id && onBack && onFollow);
 
-  // ── Own profile below ─────────────────────────────────────────────────────
+  // ── These hooks must always run, in the same order, on every render —
+  //    they're disabled (not skipped) when viewing someone else's profile,
+  //    so the hook count never changes and React error #300 can't happen.
 
   const { data: posts = [], refetch: refetchPosts } = useQuery<VideoPost[]>({
     queryKey: ['userVideos', user?.id],
     queryFn: () => user ? fetchUserVideos(user.id) : [],
-    enabled: !!user,
+    enabled: !!user && !isOtherProfile,
   });
 
   const { data: likedPosts = [] } = useQuery<VideoPost[]>({
@@ -401,7 +393,7 @@ export function ProfileScreen({ viewingUserId, onBack, onViewProfile, onFollow, 
       const results = await Promise.all(batches.map(batch => getDocs(query(collection(firebaseDb(), 'videos'), where('__name__', 'in', batch)))));
       return results.flatMap(s => s.docs.map(d => ({ id: d.id, ...d.data() } as VideoPost)));
     },
-    enabled: !!user,
+    enabled: !!user && !isOtherProfile,
   });
 
   const { data: savedPosts = [] } = useQuery<VideoPost[]>({
@@ -416,8 +408,23 @@ export function ProfileScreen({ viewingUserId, onBack, onViewProfile, onFollow, 
       const results = await Promise.all(batches.map(batch => getDocs(query(collection(firebaseDb(), 'videos'), where('__name__', 'in', batch)))));
       return results.flatMap(s => s.docs.map(d => ({ id: d.id, ...d.data() } as VideoPost)));
     },
-    enabled: !!user,
+    enabled: !!user && !isOtherProfile,
   });
+
+  // ✅ If viewingUserId is set and it's not the current user → show other profile.
+  // Placed AFTER all hooks above so hook order/count never changes between renders.
+  if (isOtherProfile) {
+    return (
+      <OtherProfileScreen
+        userId={viewingUserId as string}
+        onBack={onBack as () => void}
+        onFollow={onFollow as (uid: string) => void}
+        followingIds={followingIds}
+      />
+    );
+  }
+
+  // ── Own profile below ─────────────────────────────────────────────────────
 
   const handleDeletePost = async (postId: string) => {
     try {
