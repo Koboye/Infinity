@@ -127,7 +127,7 @@ export function AppShell() {
     <div style={{ position: 'relative', height: '100dvh', width: '100%', overflow: 'hidden', background: '#F8F7F4' }}>
       <div style={{ height: 'calc(100dvh - 72px)', overflowY: 'auto', overflowX: 'hidden' }}>
         {page === 'feed'          && <Feed {...feedProps} />}
-        {page === 'discover'      && <DiscoverScreen />}
+        {page === 'discover'      && <DiscoverScreen onViewProfile={feedProps.onViewProfile} />}
         {page === 'inbox'         && <InboxScreen />}
         {page === 'notifications' && <NotificationsScreen />}
         {page === 'profile'       && (
