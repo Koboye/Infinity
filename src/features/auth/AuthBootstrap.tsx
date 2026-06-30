@@ -22,7 +22,19 @@ export function AuthBootstrap({ children }: { children: React.ReactNode }) {
         setUser(null);
         return;
       }
-      
+
+      // Email/password accounts must be verified before we treat them as
+      // signed in — otherwise this listener can race ahead of the explicit
+      // verified-check in signInWithEmail() and briefly load the app for
+      // an unverified user, who then gets bounced straight back out.
+      const isPasswordAccount = fbUser.providerData.some(p => p.providerId === 'password');
+      if (isPasswordAccount && !fbUser.emailVerified) {
+        profileUnsub?.();
+        profileUnsub = null;
+        setUser(null);
+        return;
+      }
+
       const ref = doc(firebaseDb(), 'users', fbUser.uid);
       const initial = await getDoc(ref);
       
