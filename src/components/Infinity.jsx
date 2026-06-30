@@ -3522,7 +3522,7 @@ const handlePullEnd = async () => {
       <Stories users={users} currentUser={currentUser} onViewStory={onViewStory} onCreateStory={onCreateStory} followed={followed} />
       <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:12, color:'rgba(255,255,255,0.2)' }}>
         <div style={{ fontSize:44 }}>👥</div>
-        <div style={{ fontSize:14 }}>{search ? 'No results found' : 'Follow people to see their videos here'}</div>
+        <div style={{ fontSize:14 }}>Follow people to see their videos here</div>
       </div>
     </div>
   );
