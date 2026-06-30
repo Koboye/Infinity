@@ -2562,13 +2562,11 @@ const handleLongPressStart = () => {
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>, label:t?.duet||'Duet', fn:()=>onDuet?.(video.id)},
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M15 14l5-5-5-5"/><path d="M4 20v-7a4 4 0 014-4h12"/></svg>, label:t?.stitch||'Stitch', fn:()=>onStitch?.(video.id)},
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF2156" strokeWidth="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>, label:'Live', fn:()=>onLive?.()},
-{icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>, label:t?.message||'Message', fn:()=>onMessage?.(video.userId)},
+              {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>, label:t?.message||'Message', fn:()=>onMessage?.(video.userId)},
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-5.99-5.99 19.79 19.79 0 01-3.07-8.67A2 2 0 014 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>, label:t?.voiceCall||'Voice Call', fn:()=>onVoiceCall?.(video.userId)},
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>, label:t?.videoCall||'Video Call', fn:()=>onVideoCall?.(video.userId)},
-              {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2ED573" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>, label:'Download Post', fn:handleDownloadPost},
-              {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFD60A" strokeWidth="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>, label:'Save Post', fn:()=>{ /* bookmark */ document.querySelector(`[data-bookmark-${video.id}]`)?.click(); showToast?.('Post saved! 🔖','success'); setShowActionMenu(false); }},
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFB100" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>, label:t?.report||'Report', fn:()=>{ setShowReportModal(true); setShowActionMenu(false); }},
-             {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF2156" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>, label:t?.block||'Block', fn:async()=>{ if(!currentUser?.id) return; await updateDoc(doc(db,'users',currentUser.id),{ blockedUsers: arrayUnion(video.userId) }).catch(()=>{}); showToast?.('User blocked','warning'); onBlock?.(video.userId); }},
+              {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF2156" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>, label:t?.block||'Block', fn:async()=>{ if(!currentUser?.id) return; await updateDoc(doc(db,'users',currentUser.id),{ blockedUsers: arrayUnion(video.userId) }).catch(()=>{}); showToast?.('User blocked','warning'); onBlock?.(video.userId); }},
             ].map(({icon,label,fn})=>(
               <button key={label} onClick={e=>{e.stopPropagation();fn(); setShowActionMenu(false);}} style={{ display:'flex', alignItems:'center', gap:12, width:'100%', padding:'11px 14px', background:'none', border:'none', color:label==='Block'?'#FF2156':label==='Report'?'#FFB100':'white', cursor:'pointer', borderRadius:16, fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>
                 <span>{icon}</span>{label}
@@ -2577,7 +2575,6 @@ const handleLongPressStart = () => {
           </div>
         </div>
       )}
-
       {showReportModal && (
         <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.9)', zIndex:50, display:'flex', alignItems:'flex-end' }} onClick={()=>setShowReportModal(false)}>
           <div onClick={e=>e.stopPropagation()} style={{ width:'100%', background:'#15151C', borderTopLeftRadius:28, borderTopRightRadius:28, padding:'20px 20px 40px', animation:'slideUp 0.3s ease' }}>
@@ -2613,19 +2610,12 @@ const handleLongPressStart = () => {
               </div>
             </div>
             {[
-              { icon:'📥', label:'Download Post', color:'#2ED573', fn: handleDownloadPost },
-              { icon:'🔖', label:'Save Post', color:'#FFD60A', fn: async()=>{
-                  if(!currentUser?.id){ showToast?.('Sign in to save posts','error'); setShowLongPressMenu(false); return; }
-                  await setDoc(doc(db,'saves',`${video.id}_${currentUser.id}`),{ videoId:video.id, userId:currentUser.id, createdAt:serverTimestamp() });
-                  showToast?.('Saved to collection ✨','success');
-                  setShowLongPressMenu(false);
-                }
-              },
               { icon:'🔗', label:'Copy Link', color:'#0A84FF', fn:()=>{
                   navigator.clipboard.writeText(`https://infinity-now.vercel.app/?post=${video.id}`).then(()=>showToast?.('Link copied!','success')).catch(()=>showToast?.('Copied!','success'));
                   setShowLongPressMenu(false);
                 }
               },
+              { icon:'🔄', label:'Share', color:'#2ED573', fn:()=>{ setShowShare(true); setShowLongPressMenu(false); } },
               { icon:'🚩', label:'Report Post', color:'#FFB100', fn:()=>{ setShowReportModal(true); setShowLongPressMenu(false); } },
             ].map(({ icon, label, color, fn }) => (
               <button key={label} onClick={fn} style={{ width:'100%', padding:'15px 22px', background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:14, borderBottom:'1px solid rgba(255,255,255,0.04)' }}>
