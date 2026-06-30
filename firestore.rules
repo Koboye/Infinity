@@ -41,6 +41,14 @@ service cloud.firestore {
       allow delete: if isOwner(resource.data.userId);
     }
 
+    match /stories/{storyId} {
+      // Reads happen client-side via onSnapshot; writes (create/view-increment)
+      // always go through /api/stories, which uses the Admin SDK and bypasses
+      // these rules, so client-side writes are intentionally blocked.
+      allow read: if true;
+      allow write: if false;
+    }
+
     match /likes/{likeId} {
       allow read: if true;
       allow create: if isSignedIn() &&
@@ -138,12 +146,4 @@ service cloud.firestore {
     match /reports/{reportId} {
       allow create: if isSignedIn()
         && request.resource.data.reportedBy == request.auth.uid
-        && request.resource.data.keys().hasAll(['postId', 'reportedBy', 'reason', 'createdAt']);
-      allow read, update, delete: if false;
-    }
-
-    match /{document=**} {
-      allow read, write: if false;
-    }
-  }
-}
+        && request.resource.data.keys().hasAll(
