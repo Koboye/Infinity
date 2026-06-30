@@ -2628,71 +2628,75 @@ const handleLongPressStart = () => {
         </div>
       )}
 
-      <div style={{ position:'absolute', right:12, bottom:0, display:'flex', flexDirection:'column', alignItems:'center', gap:4, zIndex:6, paddingBottom:10 }}>
+      <div style={{ position:'absolute', left:0, right:0, bottom:0, zIndex:6, padding:'10px 14px', background:'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.55) 100%)', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
 
-        {/* 1. ❤️ Like */}
-        <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();haptic('medium');handleLike();}}
-          style={{ background:'rgba(0,0,0,0.3)', border:'none', borderRadius:'50%', width:52, height:52, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', transition:'transform 0.2s cubic-bezier(0.34,1.56,0.64,1)' }}>
-          <svg width="26" height="26" viewBox="0 0 24 24"
-            fill={liked?'#FF2156':'none'} stroke={liked?'#FF2156':'rgba(255,255,255,0.9)'} strokeWidth="1.8"
-            style={{ animation: liked ? 'likeHeart 0.4s ease' : 'none', filter: liked ? 'drop-shadow(0 0 6px rgba(255,45,85,0.6))' : 'none' }}>
-            <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
-          </svg>
-        </button>
-        <span style={{ color: liked?'#FF2156':'rgba(255,255,255,0.85)', fontSize:11, fontWeight:700, letterSpacing:0.2, transition:'color 0.2s' }}>{formatNumber(likeCount)}</span>
+        <div style={{ display:'flex', alignItems:'center', gap:18 }}>
 
-        {/* 2. 💬 Comment */}
-        <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();setShowComments(true);}}
-          style={{ background:'rgba(0,0,0,0.3)', border:'none', borderRadius:'50%', width:48, height:48, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', marginTop:4 }}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-        </button>
-        <span style={{ color:'rgba(255,255,255,0.85)', fontSize:11, fontWeight:600 }}>{formatNumber(video.comments||comments.length)}</span>
+          {/* 1. ❤️ Like */}
+          <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();haptic('medium');handleLike();}}
+            style={{ background:'none', border:'none', display:'flex', alignItems:'center', gap:5, cursor:'pointer', padding:0 }}>
+            <svg width="22" height="22" viewBox="0 0 24 24"
+              fill={liked?'#6C4CF1':'none'} stroke={liked?'#6C4CF1':'#fff'} strokeWidth="1.8"
+              style={{ animation: liked ? 'likeHeart 0.4s ease' : 'none' }}>
+              <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+            </svg>
+            <span style={{ color:'#fff', fontSize:13, fontWeight:700, fontFamily:"'Inter',sans-serif" }}>{formatNumber(likeCount)}</span>
+          </button>
 
-        {/* 3. 🔄 Share */}
-        <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();setShowShare(true);}}
-          style={{ background:'rgba(0,0,0,0.3)', border:'none', borderRadius:'50%', width:48, height:48, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', marginTop:4 }}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="1.8"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-        </button>
-        <span style={{ color:'rgba(255,255,255,0.85)', fontSize:11, fontWeight:600 }}>{formatNumber(video.shares||0)}</span>
+          {/* 2. 💬 Comment */}
+          <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();setShowComments(true);}}
+            style={{ background:'none', border:'none', display:'flex', alignItems:'center', gap:5, cursor:'pointer', padding:0 }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            <span style={{ color:'#fff', fontSize:13, fontWeight:700, fontFamily:"'Inter',sans-serif" }}>{formatNumber(video.comments||comments.length)}</span>
+          </button>
 
-        {/* 4. 🔖 Save */}
-        <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();
-          if(!currentUser?.id){ showToast?.('Sign in to save','error'); return; }
-          setDoc(doc(db,'saves',`${video.id}_${currentUser.id}`),{ videoId:video.id, userId:currentUser.id, createdAt:serverTimestamp() })
-            .then(()=>showToast?.('Saved ✨','success')).catch(()=>{});
-        }}
-          style={{ background:'rgba(0,0,0,0.3)', border:'none', borderRadius:'50%', width:48, height:48, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', marginTop:4 }}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="1.8"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
-        </button>
-        <span style={{ color:'rgba(255,255,255,0.85)', fontSize:11, fontWeight:600 }}>Save</span>
+          {/* 3. 🔄 Share */}
+          <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();setShowShare(true);}}
+            style={{ background:'none', border:'none', display:'flex', alignItems:'center', gap:5, cursor:'pointer', padding:0 }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            <span style={{ color:'#fff', fontSize:13, fontWeight:700, fontFamily:"'Inter',sans-serif" }}>{formatNumber(video.shares||0)}</span>
+          </button>
 
-        {/* 5. ⬇️ Download */}
-        <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();handleDownloadPost();}}
-          style={{ background:'rgba(0,0,0,0.3)', border:'none', borderRadius:'50%', width:48, height:48, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', marginTop:4 }}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="1.8"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        </button>
-        <span style={{ color:'rgba(255,255,255,0.85)', fontSize:11, fontWeight:600 }}>DL</span>
+        </div>
 
-        {/* 6. 📊 Views */}
-        <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();showToast?.(`👁 ${formatNumber(video.views||0)} views`,'info');}}
-          style={{ background:'rgba(0,0,0,0.3)', border:'none', borderRadius:'50%', width:48, height:48, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', marginTop:4 }}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="1.8"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-        </button>
-        <span style={{ color:'rgba(255,255,255,0.85)', fontSize:11, fontWeight:600 }}>{formatNumber(video.views||0)}</span>
+        <div style={{ display:'flex', alignItems:'center', gap:14 }}>
 
-        {/* 7. 👁 Read Mode */}
-        <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();showToast?.('📖 Read Mode coming soon','info');}}
-          style={{ background:'rgba(0,0,0,0.3)', border:'none', borderRadius:'50%', width:48, height:48, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', marginTop:4 }}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="1.8"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
-        </button>
-        <span style={{ color:'rgba(255,255,255,0.85)', fontSize:11, fontWeight:600 }}>Read</span>
+          {/* 4. 🔖 Save */}
+          <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();
+            if(!currentUser?.id){ showToast?.('Sign in to save','error'); return; }
+            setDoc(doc(db,'saves',`${video.id}_${currentUser.id}`),{ videoId:video.id, userId:currentUser.id, createdAt:serverTimestamp() })
+              .then(()=>showToast?.('Saved ✨','success')).catch(()=>{});
+          }}
+            style={{ background:'none', border:'none', cursor:'pointer', padding:0, display:'flex' }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+          </button>
 
-        {/* 8. ⋯ More */}
-        <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();setShowActionMenu(v=>!v);}}
-          style={{ background:'rgba(0,0,0,0.3)', border:'none', borderRadius:'50%', width:48, height:48, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', marginTop:4 }}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
-        </button>
-        <span style={{ color:'rgba(255,255,255,0.85)', fontSize:11, fontWeight:600 }}>More</span>
+          {/* 5. ⬇️ Download */}
+          <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();handleDownloadPost();}}
+            style={{ background:'none', border:'none', cursor:'pointer', padding:0, display:'flex' }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </button>
+
+          {/* 6. 📊 Views */}
+          <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();showToast?.(`👁 ${formatNumber(video.views||0)} views`,'info');}}
+            style={{ background:'none', border:'none', cursor:'pointer', padding:0, display:'flex', alignItems:'center', gap:4 }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <span style={{ color:'#fff', fontSize:12, fontWeight:700, fontFamily:"'Inter',sans-serif" }}>{formatNumber(video.views||0)}</span>
+          </button>
+
+          {/* 7. 👁 Read Mode */}
+          <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();showToast?.('📖 Read Mode coming soon','info');}}
+            style={{ background:'none', border:'none', cursor:'pointer', padding:0, display:'flex' }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+          </button>
+
+          {/* 8. ⋯ More */}
+          <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();setShowActionMenu(v=>!v);}}
+            style={{ background:'none', border:'none', cursor:'pointer', padding:0, display:'flex' }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+          </button>
+
+        </div>
 
       </div>
 
