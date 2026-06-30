@@ -30,6 +30,7 @@ export function AppShell() {
   const [showCreateStory, setShowCreateStory] = useState(false);
   const [viewingStoryGroup, setViewingStoryGroup] = useState<StoryGroup | null>(null);
   const [commentTarget, setCommentTarget] = useState<{ id: string; ownerId: string; ownerUsername: string } | null>(null);
+  const [viewingProfileId, setViewingProfileId] = useState<string | null>(null);
   const [following, setFollowing] = useState<string[]>(user?.following ?? []);
   const [unreadNotifs, setUnreadNotifs] = useState(0);
   const [unreadMessages, setUnreadMessages] = useState(0);
@@ -53,7 +54,7 @@ export function AppShell() {
     return () => unsub();
   }, [user?.id]);
 
-  // Unread notifications badge
+
   useEffect(() => {
     if (!user) return;
     const q = query(
@@ -112,12 +113,11 @@ export function AppShell() {
     onComment: (id: string, ownerId: string, ownerUsername: string) =>
       setCommentTarget({ id, ownerId, ownerUsername }),
     onShare: async (p: VideoPost) => {
-      navigator.clipboard?.writeText(`${window.location.origin}?post=${p.id}`).catch(() => {});
-      showToast('Link copied! 🔗', 'success');
-      // Increment share count server-side (client cannot write protected fields)
+      // Just register the share count server-side; copy/toast is handled
+      // by the caller (native share sheet vs. explicit "Copy link" tap)
       fetch(`/api/videos/${p.id}/share`, { method: 'POST' }).catch(() => {});
     },
-    onViewProfile: (_uid: string) => setPage('profile'),
+    onViewProfile: (uid: string) => { setViewingProfileId(uid); setPage('profile'); },
     onFollow: toggleFollow,
     onStoryTap: handleStoryTap,
     onStoryView: (group: StoryGroup) => setViewingStoryGroup(group),
@@ -130,11 +130,20 @@ export function AppShell() {
         {page === 'discover'      && <DiscoverScreen />}
         {page === 'inbox'         && <InboxScreen />}
         {page === 'notifications' && <NotificationsScreen />}
-        {page === 'profile'       && <ProfileScreen />}
+        {page === 'profile'       && (
+          <ProfileScreen
+            viewingUserId={viewingProfileId}
+            onBack={() => setViewingProfileId(null)}
+            onViewProfile={(uid: string) => setViewingProfileId(uid)}
+            onFollow={toggleFollow}
+            followingIds={following}
+          />
+        )}
       </div>
 
       <BottomNav
         onCreateTap={() => setShowCreate(true)}
+        onProfileTap={() => { setViewingProfileId(null); setPage('profile'); }}
         unreadNotifs={unreadNotifs}
         unreadMessages={unreadMessages}
       />
