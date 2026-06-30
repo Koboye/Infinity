@@ -6283,38 +6283,93 @@ setStep('otp');
   );
 
   if(step==='method') return (
-    <div style={{ height:'100%', display:'flex', flexDirection:'column', background:'#0B0B0F', overflow:'auto' }}>
-      <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'40px 24px 20px', position:'relative' }}>
-        <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse at 50% 30%,rgba(255,45,85,0.2),rgba(175,82,222,0.1),transparent 65%)' }} />
-        <div style={{ position:'relative', textAlign:'center', marginBottom:40 }}>
-          <img src="https://res.cloudinary.com/dotvhzjmc/image/upload/znfksngv27boh3c1kxpv.png" style={{ width:80, height:80, borderRadius:24, objectFit:'cover', margin:'0 auto 20px', display:'block', boxShadow:'0 20px 60px rgba(255,45,85,0.4)' }} />
-          <p style={{ color:'rgba(255,255,255,0.4)', fontSize:14, marginTop:10 }}>{isLogin?'Welcome back! 👋':'Join the community 🎉'}</p>
+    <div style={{ height:'100%', display:'flex', flexDirection:'column', background:'#0B0B0F', overflow:'auto', position:'relative' }}>
+      <div style={{ position:'fixed', inset:0, background:'radial-gradient(circle at 50% 0%,rgba(255,45,85,0.28),transparent 55%), radial-gradient(circle at 80% 80%,rgba(175,82,222,0.18),transparent 50%)', pointerEvents:'none' }} />
+
+      <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'32px 22px', position:'relative' }}>
+
+        <div style={{ textAlign:'center', marginBottom:36 }}>
+          <div style={{ width:84, height:84, borderRadius:26, margin:'0 auto 18px', position:'relative' }}>
+            <div style={{ position:'absolute', inset:-10, borderRadius:32, background:'linear-gradient(135deg,#FF2156,#AF52DE)', filter:'blur(18px)', opacity:0.55 }} />
+            <img src="https://res.cloudinary.com/dotvhzjmc/image/upload/znfksngv27boh3c1kxpv.png" style={{ width:84, height:84, borderRadius:26, objectFit:'cover', display:'block', position:'relative', boxShadow:'0 12px 40px rgba(0,0,0,0.5)' }} />
+          </div>
+          <div style={{ color:'white', fontWeight:900, fontSize:26, letterSpacing:-0.5, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>
+            {isLogin ? 'Welcome back 👋' : "Let's get you in 🎉"}
+          </div>
+          <p style={{ color:'rgba(255,255,255,0.4)', fontSize:14, marginTop:8, fontWeight:500 }}>
+            {isLogin ? 'Your feed missed you' : 'Takes like 20 seconds, promise'}
+          </p>
         </div>
-        <div style={{ position:'relative', width:'100%', maxWidth:340 }}>
-          <div style={{ color:'rgba(255,255,255,0.3)', fontSize:11, marginBottom:14, textAlign:'center', fontWeight:700, textTransform:'uppercase', letterSpacing:1 }}>{isLogin?'Sign in with':'Sign up with'}</div>
-          {error && error.trim().length > 1 && <div style={{background:'rgba(255,45,85,0.1)',border:'1px solid rgba(255,45,85,0.3)',borderRadius:12,padding:'10px 14px',color:'#FF2156',fontSize:12,marginBottom:12,textAlign:'center'}}>{error}</div>}
-          <div style={{ display:'flex', flexWrap:'wrap', gap:8, justifyContent:'center', marginBottom:24 }}>
+
+        <div style={{ width:'100%', maxWidth:360 }}>
+
+          {error && error.trim().length > 1 && (
+            <div style={{ background:'rgba(255,45,85,0.12)', border:'1px solid rgba(255,45,85,0.35)', borderRadius:14, padding:'12px 16px', color:'#FF6B8A', fontSize:13, marginBottom:16, textAlign:'center', fontWeight:600, display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+              <span>⚠️</span>{error}
+            </div>
+          )}
+
+          <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:22 }}>
             {LOGIN_METHODS.map(m=>(
-              <button key={m.id} onClick={()=>handleMethodSelect(m)} disabled={loading} style={{ display:'inline-flex', alignItems:'center', gap:6, background:'rgba(255,255,255,0.05)', border:`1px solid rgba(255,255,255,0.1)`, borderRadius:30, padding:'8px 16px', cursor:'pointer', fontSize:13, color:'rgba(255,255,255,0.8)', transition:'all 0.15s', opacity:loading?0.5:1 }}>
-                <span style={{ fontSize:16 }}>{m.icon}</span>{m.name}
+              <button
+                key={m.id}
+                onClick={()=>handleMethodSelect(m)}
+                disabled={loading}
+                style={{
+                  display:'flex', alignItems:'center', justifyContent:'center', gap:10,
+                  width:'100%', background: m.id==='google' ? 'white' : 'rgba(255,255,255,0.06)',
+                  border: m.id==='google' ? 'none' : '1px solid rgba(255,255,255,0.12)',
+                  borderRadius:16, padding:'15px 18px', cursor:'pointer',
+                  fontSize:15, fontWeight:700,
+                  color: m.id==='google' ? '#1A1A1A' : 'white',
+                  transition:'transform 0.12s ease, opacity 0.15s', opacity:loading?0.5:1,
+                }}
+                onMouseDown={e=>{ e.currentTarget.style.transform='scale(0.98)'; }}
+                onMouseUp={e=>{ e.currentTarget.style.transform='scale(1)'; }}
+              >
+                <span style={{ fontSize:18 }}>{m.icon}</span>
+                {isLogin ? `Continue with ${m.name}` : `Sign up with ${m.name}`}
               </button>
             ))}
           </div>
-          {loading && <div style={{textAlign:'center',color:'rgba(255,255,255,0.5)',fontSize:13,marginBottom:12}}>⏳ Signing in...</div>}
-          <button onClick={()=>setIsLogin(!isLogin)} style={{ width:'100%', background:'none', border:'none', color:'#FF2156', fontSize:14, cursor:'pointer', fontWeight:600 }}>
-            {isLogin?"Don't have an account? Sign up →":"Already have an account? Sign in →"}
-          </button>
-          {isLogin && (
-            <button onClick={()=>setStep('resetpw')} style={{ width:'100%', background:'none', border:'none', color:'rgba(255,255,255,0.35)', fontSize:13, cursor:'pointer', marginTop:10, textDecoration:'underline' }}>
-              Forgot password?
-            </button>
+
+          {loading && (
+            <div style={{ textAlign:'center', color:'rgba(255,255,255,0.5)', fontSize:13, marginBottom:16, fontWeight:600 }}>
+              ⏳ Hang tight...
+            </div>
           )}
-          <button onClick={()=>setStep('guest')} style={{ width:'100%', background:'none', border:'none', color:'rgba(255,255,255,0.3)', fontSize:13, cursor:'pointer', marginTop:10 }}>
-            👁 Browse without account
+
+          <div style={{ display:'flex', alignItems:'center', gap:10, color:'rgba(255,255,255,0.22)', fontSize:12, fontWeight:700, margin:'4px 0 18px' }}>
+            <div style={{ flex:1, height:1, background:'rgba(255,255,255,0.1)' }} />
+            <span>OR</span>
+            <div style={{ flex:1, height:1, background:'rgba(255,255,255,0.1)' }} />
+          </div>
+
+          <button
+            onClick={()=>setStep('guest')}
+            style={{ width:'100%', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:16, padding:'14px 18px', color:'rgba(255,255,255,0.65)', fontSize:14, fontWeight:600, cursor:'pointer', marginBottom:24, display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}
+          >
+            👁 Just browsing for now
           </button>
+
+          <div style={{ textAlign:'center' }}>
+            <button onClick={()=>setIsLogin(!isLogin)} style={{ background:'none', border:'none', color:'#FF2156', fontSize:14, cursor:'pointer', fontWeight:700 }}>
+              {isLogin ? "New here? Sign up" : 'Already have an account? Sign in'}
+            </button>
+            {isLogin && (
+              <div style={{ marginTop:10 }}>
+                <button onClick={()=>setStep('resetpw')} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.35)', fontSize:13, cursor:'pointer' }}>
+                  Forgot password?
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-      <div style={{ padding:'0 24px 40px', textAlign:'center', color:'rgba(255,255,255,0.2)', fontSize:11 }}>By continuing, you agree to our Terms of Service & Privacy Policy</div>
+
+      <div style={{ padding:'0 24px 36px', textAlign:'center', color:'rgba(255,255,255,0.2)', fontSize:11, position:'relative' }}>
+        By continuing, you agree to our Terms of Service & Privacy Policy
+      </div>
     </div>
   );
 if(step==='otp') return (
