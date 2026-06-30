@@ -3,14 +3,16 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import Script from 'next/script';
-import { AuthBootstrap } from '@/components/AuthBootstrap';
+// ✅ FIXED: Correct import path
+import { AuthBootstrap } from '@/features/auth/AuthBootstrap';
+// OR if you moved it:
+// import { AuthBootstrap } from '@/components/AuthBootstrap';
 import { LocaleSync } from '@/components/LocaleSync';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Providers } from '@/components/Providers';
 
 const inter = Inter({ subsets: ['latin'] });
 
-// ✅ SEO METADATA - ADD HERE
 export const metadata: Metadata = {
   title: 'Infinity - Ethiopia\'s Social Platform',
   description: 'Connect, share, and discover with the Ethiopian community on Infinity.',
@@ -74,13 +76,11 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // ✅ Google Analytics ID from environment variable
   const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
   return (
     <html lang="en">
       <head>
-        {/* ✅ Google Analytics - ADD HERE */}
         {gaId && (
           <>
             <Script
@@ -98,12 +98,10 @@ export default function RootLayout({
           </>
         )}
         
-        {/* ✅ Additional meta tags for better SEO */}
         <meta name="theme-color" content="#3D6B4F" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         
-        {/* ✅ Preconnect to external services */}
         <link rel="preconnect" href="https://res.cloudinary.com" />
         <link rel="preconnect" href="https://firebasestorage.googleapis.com" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
