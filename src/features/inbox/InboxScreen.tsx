@@ -94,11 +94,18 @@ function ChatView({ conv, onBack }: { conv: Conversation; onBack: () => void }) 
   // Mark conversation as read for the viewer the moment they open it.
   useEffect(() => {
     if (!user) return;
-    fetch('/api/conversations/read', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ conversationId: conv.id }),
-    }).catch(() => {});
+    (async () => {
+      try {
+        const token = await getIdToken();
+        await fetch('/api/conversations/read', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ conversationId: conv.id }),
+        });
+      } catch {
+        // best-effort — unread badge will just stay stale until next open
+      }
+    })();
   }, [conv.id, user?.id]);
 
   useEffect(() => {
