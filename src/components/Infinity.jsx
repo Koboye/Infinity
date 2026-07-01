@@ -4924,6 +4924,8 @@ const InboxPage = ({ t, users, currentUser, showToast, onViewProfile, initialTar
   const [conversations, setConversations] = useState([]);
   const [showGroupsView, setShowGroupsView] = useState(false);
   const [inboxSearch, setInboxSearch] = useState('');
+  const [showNewMessage, setShowNewMessage] = useState(false);
+  const [newMsgSearch, setNewMsgSearch] = useState('');
   useEffect(()=>{
     if(openGroupsSignal){ setShowGroupsView(true); }
   },[openGroupsSignal]);
@@ -5053,7 +5055,7 @@ snap.docs.forEach(async conv => {
   }
 
   return (
-    <div style={{ height:'100%', display:'flex', flexDirection:'column', background:'#0B0B0F' }}>
+    <div style={{ height:'100%', display:'flex', flexDirection:'column', background:'#0B0B0F', position:'relative' }}>
       <div style={{ padding:'14px 16px 10px', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
           <div style={{ color:'white', fontWeight:800, fontSize:24, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{t?.inbox||'Messages'}</div>
@@ -5102,11 +5104,49 @@ snap.docs.forEach(async conv => {
         });
         })()}
       </div>
+
+      {/* Telegram-style floating compose button */}
+      <button onClick={()=>{ haptic('light'); setShowNewMessage(true); }}
+        style={{ position:'absolute', right:16, bottom:20, zIndex:9, width:56, height:56, borderRadius:'50%',
+          background:'linear-gradient(135deg,#FF2156,#9D4EDD)', border:'none', cursor:'pointer',
+          display:'flex', alignItems:'center', justifyContent:'center',
+          boxShadow:'0 6px 20px rgba(255,33,86,0.45)' }}>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.4" strokeLinecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z"/></svg>
+      </button>
+
+      {/* New message picker — search + tap a user to start a chat, Telegram-style */}
+      {showNewMessage && (
+        <div onClick={()=>{ setShowNewMessage(false); setNewMsgSearch(''); }} style={{ position:'fixed', inset:0, zIndex:9600, background:'rgba(0,0,0,0.6)', display:'flex', alignItems:'flex-end' }}>
+          <div onClick={e=>e.stopPropagation()} style={{ width:'100%', maxWidth:430, margin:'0 auto', height:'75%', background:'#15151C', borderTopLeftRadius:28, borderTopRightRadius:28, display:'flex', flexDirection:'column', animation:'slideUp 0.25s ease' }}>
+            <div style={{ width:36, height:4, background:'rgba(255,255,255,0.15)', borderRadius:2, margin:'12px auto' }} />
+            <div style={{ padding:'0 16px 12px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+              <span style={{ color:'white', fontWeight:800, fontSize:TYPE.lg }}>New Message</span>
+              <button onClick={()=>{ setShowNewMessage(false); setNewMsgSearch(''); }} style={{ background:'rgba(255,255,255,0.08)', border:'none', borderRadius:'50%', width:32, height:32, color:'white', cursor:'pointer', fontSize:16 }}>✕</button>
+            </div>
+            <div style={{ padding:'0 16px 12px' }}>
+              <div style={{ display:'flex', alignItems:'center', background:'rgba(255,255,255,0.06)', borderRadius:14, padding:'9px 12px', gap:8, border:`1px solid ${COLORS.border}` }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input autoFocus placeholder="Search people..." value={newMsgSearch} onChange={e=>setNewMsgSearch(e.target.value)}
+                  style={{ flex:1, background:'none', border:'none', color:'white', outline:'none', fontSize:TYPE.md }} />
+              </div>
+            </div>
+            <div style={{ flex:1, overflowY:'auto', padding:'0 8px 20px' }}>
+              {users.filter(u=>u.id!==currentUser?.id && (!newMsgSearch || u.username?.toLowerCase().includes(newMsgSearch.toLowerCase()))).map(u=>(
+                <div key={u.id} onClick={()=>{ openConversation(u.id); setShowNewMessage(false); setNewMsgSearch(''); }}
+                  style={{ display:'flex', alignItems:'center', gap:14, padding:'10px 8px', borderRadius:14, cursor:'pointer' }}>
+                  <div style={{ width:44, height:44, borderRadius:'50%', background:u.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:TYPE.lg, overflow:'hidden', flexShrink:0 }}>
+                    {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : u.avatar}
+                  </div>
+                  <div style={{ color:'white', fontWeight:700, fontSize:TYPE.md }}>@{u.username}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
-
-/* ─────────────── CALL MODAL (REAL WebRTC) ─────────────── */
 const IncomingCallScreen = ({ callData, onAnswer, onDecline }) => {
   useEffect(() => {
     // Play ringtone on loop while incoming call screen is shown
