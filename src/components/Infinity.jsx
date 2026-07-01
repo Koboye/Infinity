@@ -3277,177 +3277,177 @@ const FeaturedJobsMarket = ({ onOpenCategory }) => {
 };
 
 
-const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, onVoiceCall, onVideoCall, onDuet, onStitch, onSaveSound, followed, showToast, onLive, currentUser, onViewProfile, onOpenSearch, onOpenNotifications, blockedUsers, onBlock, users }) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [activeCategory, setActiveCategory] = useState('foryou');
-  const [loadingMore, setLoadingMore] = useState(false);
-  const lastDocRef = useRef(null);
-
-  const loadMoreVideos = useCallback(async()=>{
-    if(loadingMore || !lastDocRef.current) return;
-    setLoadingMore(true);
-    try {
-      const q = query(
-        collection(db,'videos'),
-        orderBy('createdAt','desc'),
-        startAfter(lastDocRef.current),
-        limit(10)
-      );
-      const snap = await getDocs(q);
-      if(!snap.empty){
-        lastDocRef.current = snap.docs[snap.docs.length-1];
-        const newVids = snap.docs.map(d=>({id:d.id,...d.data()}));
-        // passed up via prop — for now just log
-        console.log('Loaded more:', newVids.length);
-      }
-    } catch(e){ console.error(e); }
-    setLoadingMore(false);
-  },[loadingMore]);
-  const filteredVideos = useMemo(()=>{
-    const base = videos
-      .filter(v=>!(blockedUsers||[]).includes(v.userId))
-      .map(v=>{
-        let score = 0;
-        if(followed?.includes(v.userId)) score += 50;
-        score += Math.log((v.likes||0) + 1) * 10;
-        score += Math.log((v.views||0) + 1) * 2;
-        score += Math.log((v.comments||0) + 1) * 8;
-        const age = Date.now() - (v.createdAt?.seconds||0)*1000;
-        const hoursOld = age / (1000*60*60);
-        score += Math.max(0, 100 - hoursOld * 2);
-        if(v.verified) score += 20;
-        return {...v, _score: score};
-      })
-      .sort((a,b)=>b._score - a._score);
-    if(activeCategory==='foryou') return base;
-    return base.filter(v=>v.category===activeCategory);
-  },[videos, activeCategory, blockedUsers, followed]);
-  const startY = useRef(null);
-  const [refreshing, setRefreshing] = useState(false);
-  // Load more when near end
-  useEffect(()=>{
-    if(filteredVideos.length > 0 && currentIndex >= filteredVideos.length - 3){
-      loadMoreVideos();
-    }
-  },[currentIndex]);
-const pullStartY = useRef(null);
-const [pullDist, setPullDist] = useState(0);
-const handlePullStart = e => { if(currentIndex===0) pullStartY.current = e.touches[0].clientY; };
-const handlePullMove = e => {
-  if(pullStartY.current===null || currentIndex!==0) return;
-  const dy = e.touches[0].clientY - pullStartY.current;
-  if(dy > 0 && dy < 100) setPullDist(dy);
-};
-const handlePullEnd = async () => {
-  if(pullDist > 60){
-    haptic('medium');
-    setRefreshing(true);
-    await new Promise(r=>setTimeout(r, 1200));
-    setRefreshing(false);
+/* ─────────────── HOME FEED (COUPLES ENHANCED) ─────────────── */
+const HomeFeedIcon = ({ type, color = '#666' }) => {
+  const common = { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: color, strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' };
+  switch (type) {
+    case 'photo':
+      return <svg {...common}><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>;
+    case 'video':
+      return <svg {...common}><rect x="2" y="6" width="14" height="12" rx="2"/><path d="M16 10l6-3v10l-6-3z"/></svg>;
+    case 'poll':
+      return <svg {...common}><path d="M4 20V10M12 20V4M20 20v-7"/></svg>;
+    case 'feeling':
+      return <svg {...common}><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>;
+    default:
+      return null;
   }
-  setPullDist(0);
-  pullStartY.current = null;
 };
-  const startTime = useRef(null);
-  const lastY = useRef(null);
-  
-  const handleTouchStart = e => {
-    startY.current = e.touches[0].clientY;
-    lastY.current = e.touches[0].clientY;
-    startTime.current = Date.now();
-  };
-  const handleTouchMove = e => { lastY.current = e.touches[0].clientY; };
-  const handleTouchEnd = e => {
-    if(startY.current===null) return;
-    const dy = startY.current - e.changedTouches[0].clientY;
-    const dt = Date.now() - startTime.current;
-    const velocity = Math.abs(dy) / dt;
-    const threshold = velocity > 0.3 ? 20 : 60;
-    if(Math.abs(dy) > threshold){
-      haptic('light');
-      if(dy>0) setCurrentIndex(i=>Math.min(filteredVideos.length-1,i+1));
-      else setCurrentIndex(i=>Math.max(0,i-1));
-    }
-    startY.current = null;
-  };
-  if(!filteredVideos.length && activeCategory === 'foryou') return <div style={{ height:'100%', display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:12 }}><div style={{ fontSize:48 }}>📭</div><div style={{ color:'rgba(255,255,255,0.3)' }}>{t?.noVideos||'No videos yet. Be the first to post!'}</div></div>;
 
-  if (activeCategory === 'jobs' || activeCategory === 'skills') {
-    return (
-      <div style={{ height:'100%', position:'relative', overflow:'hidden' }}>
-        {/* Top header with category tabs */}
-        <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:15, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 16px 12px', background:'rgba(10,10,10,0.98)', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
-          <div style={{ flex:1, display:'flex', justifyContent:'center', gap:24 }}>
-            {TOP_CATEGORIES.map(cat=>(
-              <button key={cat.id} onClick={()=>{setActiveCategory(cat.id); setCurrentIndex(0);}} style={{ background:'none', border:'none', color:activeCategory===cat.id?'white':'rgba(255,255,255,0.45)', fontWeight:activeCategory===cat.id?800:500, fontSize:15, cursor:'pointer', paddingBottom:6, borderBottom:activeCategory===cat.id?'2.5px solid white':'2.5px solid transparent', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", transition:'all 0.2s' }}>
-                {cat.id==='foryou'?(t?.foryou||cat.label):cat.id==='jobs'?(t?.jobs||'Jobs'):cat.id==='skills'?(t?.skills||'Skills'):(t?.foryou||cat.label)}
-              </button>
-            ))}
-          </div>
-          <div style={{ display:'flex', gap:10, alignItems:'center' }}>
-            <button onClick={onOpenSearch} style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(10px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            </button>
-            <NotifBellButton onOpenNotifications={onOpenNotifications} currentUser={currentUser} />
-          </div>
-        </div>
-        <div style={{ position:'absolute', inset:0, paddingTop:60, overflow:'hidden' }}>
-          <JobsMarketPage currentUser={currentUser} showToast={showToast} mode={activeCategory} onViewProfile={onViewProfile} />
+const HomeFeedHeart = ({ size = 18, filled = true, color = 'white' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? color : 'none'} stroke={color} strokeWidth="2">
+    <path d="M12 21s-6.7-4.35-9.3-8.1C.8 10.2 1.4 6.6 4.4 5.1c2.4-1.2 5 .1 6 2.3.9-2.2 3.6-3.5 6-2.3 3 1.5 3.6 5.1 1.7 7.8C18.7 16.65 12 21 12 21z" />
+  </svg>
+);
+
+const homeFeedTimeAgo = (val) => {
+  const d = val?.toDate ? val.toDate() : (val instanceof Date ? val : (val?.seconds ? new Date(val.seconds * 1000) : null));
+  if (!d) return '';
+  const diff = Math.max(0, Date.now() - d.getTime());
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return 'now';
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h`;
+  return `${Math.floor(h / 24)}d`;
+};
+
+const HomeFeedStoryAvatar = ({ label, src, isYou, hasRing, onClick }) => (
+  <div onClick={onClick} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, flexShrink: 0, cursor: 'pointer', width: 64 }}>
+    <div style={{ position: 'relative', width: 58, height: 58 }}>
+      <div style={{ width: 58, height: 58, borderRadius: '50%', padding: hasRing ? 2.5 : 0, background: hasRing ? 'linear-gradient(135deg,#FF8FB3,#7C6DFF)' : 'transparent', boxSizing: 'border-box' }}>
+        <div style={{ width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden', border: hasRing ? '2px solid white' : '2px solid #F0F0F0', background: '#eee' }}>
+          <ProgressiveImage src={src} alt={label} style={{ width: '100%', height: '100%' }} />
         </div>
       </div>
-    );
-  }
+      {isYou && (
+        <div style={{ position: 'absolute', bottom: -1, right: -1, width: 19, height: 19, borderRadius: '50%', background: '#FF4F7E', border: '2.5px solid white', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 13, fontWeight: 700, lineHeight: 1 }}>+</div>
+      )}
+    </div>
+    <span style={{ fontSize: 11.5, color: '#444', fontWeight: 500, maxWidth: 64, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
+  </div>
+);
+
+const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, onVoiceCall, onVideoCall, onDuet, onStitch, onSaveSound, followed, showToast, onLive, currentUser, onViewProfile, onOpenSearch, onOpenNotifications, blockedUsers, onBlock, users }) => {
+  const firstName = currentUser?.displayName?.split(' ')[0] || currentUser?.username || 'there';
+
+  const storyUsers = useMemo(() => (
+    (users || []).filter(u => u.id !== currentUser?.id && !(blockedUsers || []).includes(u.id)).slice(0, 6)
+  ), [users, currentUser, blockedUsers]);
+
+  const feedPosts = useMemo(() => (
+    (videos || []).filter(v => !(blockedUsers || []).includes(v.userId))
+  ), [videos, blockedUsers]);
 
   return (
-<div style={{ height:'100%', position:'relative', overflow:'hidden' }} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
-      <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:15, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 16px 12px', background:'linear-gradient(to bottom,rgba(0,0,0,0.7) 0%,transparent 100%)' }}>
-        <div style={{ flex:1, display:'flex', justifyContent:'center', gap:24 }}>
-          {TOP_CATEGORIES.map(cat=>(
-            <button key={cat.id} onClick={()=>{setActiveCategory(cat.id); setCurrentIndex(0);}} style={{ background:'none', border:'none', color:activeCategory===cat.id?'white':'rgba(255,255,255,0.45)', fontWeight:activeCategory===cat.id?800:500, fontSize:15, cursor:'pointer', paddingBottom:6, borderBottom:activeCategory===cat.id?'2.5px solid white':'2.5px solid transparent', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", transition:'all 0.2s' }}>
-              {cat.id==='foryou'?(t?.foryou||cat.label):cat.id==='jobs'?(t?.jobs||'Jobs'):cat.id==='skills'?(t?.skills||'Skills'):(t?.foryou||cat.label)}
+    <div style={{ height: '100%', overflowY: 'auto', WebkitOverflowScrolling: 'touch', background: '#fff', fontFamily: "'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>
+
+      {/* ── Search bar ── */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 16px 14px' }}>
+        <button onClick={onOpenSearch} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, background: '#F3F4F6', border: 'none', borderRadius: 22, padding: '10px 16px', cursor: 'pointer' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2.3"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.2" y2="16.2" /></svg>
+          <span style={{ color: '#9CA3AF', fontSize: 14 }}>{t?.search || 'Search'}</span>
+        </button>
+        <button onClick={onOpenNotifications} style={{ width: 40, height: 40, borderRadius: '50%', border: 'none', background: 'linear-gradient(135deg,#FF8FB3,#FF4F7E)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+          <HomeFeedHeart size={18} filled color="white" />
+        </button>
+      </div>
+
+      {/* ── Stories row ── */}
+      <div style={{ display: 'flex', gap: 14, padding: '2px 16px 20px', overflowX: 'auto' }}>
+        <HomeFeedStoryAvatar label={t?.yourStory || 'Your story'} src={currentUser?.avatar || currentUser?.photoURL} isYou />
+        {storyUsers.map(u => (
+          <HomeFeedStoryAvatar
+            key={u.id}
+            label={u.displayName || u.username}
+            src={u.avatar || u.photoURL}
+            hasRing={followed?.includes(u.id)}
+            onClick={() => onViewProfile?.(u.id)}
+          />
+        ))}
+      </div>
+
+      {/* ── Create post box ── */}
+      <div style={{ margin: '0 16px 18px', padding: '14px 16px', border: '1px solid #EFEFEF', borderRadius: 18, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+          <div style={{ width: 38, height: 38, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, background: '#eee' }}>
+            <ProgressiveImage src={currentUser?.avatar || currentUser?.photoURL} alt="me" style={{ width: '100%', height: '100%' }} />
+          </div>
+          <div style={{ flex: 1, color: '#9CA3AF', fontSize: 14.5 }}>
+            {(t?.whatsOnYourMind || "What's on your mind, {name}?").replace('{name}', firstName)}
+          </div>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #F5F5F5', paddingTop: 12 }}>
+          {[
+            { icon: 'photo', label: t?.photo || 'Photo', color: '#4FA6FF' },
+            { icon: 'video', label: t?.video || 'Video', color: '#FF4F7E' },
+            { icon: 'poll', label: t?.poll || 'Poll', color: '#FFB03A' },
+            { icon: 'feeling', label: t?.feeling || 'Feeling', color: '#FF7EB3' },
+          ].map(a => (
+            <button key={a.icon} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', color: '#666', fontSize: 13, fontWeight: 500 }}>
+              <HomeFeedIcon type={a.icon} color={a.color} />
+              {a.label}
             </button>
           ))}
         </div>
-        <div style={{ display:'flex', gap:10, alignItems:'center' }}>
-          <button onClick={onOpenSearch} style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(10px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          </button>
-          <NotifBellButton onOpenNotifications={onOpenNotifications} currentUser={currentUser} />
-        </div>
       </div>
-      {activeCategory==='foryou' && <FeaturedJobsMarket onOpenCategory={(cat)=>{setActiveCategory(cat); setCurrentIndex(0);}} />}
-      {filteredVideos.map((video,idx)=>(
-  Math.abs(idx-currentIndex) > 1 ? null :
-  <div key={video.id} style={{ position:'absolute', inset:0, opacity:idx===currentIndex?1:0, transform:`translateY(${(idx-currentIndex)*100}%)`, transition:'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)', pointerEvents:idx===currentIndex?'auto':'none' }}>
-      <EnhancedVideoCard
-      video={video}
-      currentUser={currentUser}
-      isActive={idx===currentIndex}
-      onLike={onLike}
-      onComment={onComment}
-      onShare={onShare}
-      onFollow={onFollow}
-      onMessage={onMessage}
-      onVoiceCall={onVoiceCall}
-      onVideoCall={onVideoCall}
-      onDuet={onDuet}
-      onStitch={onStitch}
-      onSaveSound={onSaveSound}
-      followed={followed}
-      showToast={showToast}
-      onViewProfile={onViewProfile}
-      onBlock={onBlock}
-onLive={onLive}
-    />
-  </div>
-))}
-  
-      {filteredVideos.length>1 && (
-        <div style={{ position:'absolute', right:6, top:'50%', transform:'translateY(-50%)', display:'flex', flexDirection:'column', gap:4, zIndex:10 }}>
-          {filteredVideos.map((_,i)=><div key={i} style={{ width:3, height:i===currentIndex?20:4, borderRadius:2, background:i===currentIndex?'white':'rgba(255,255,255,0.2)', cursor:'pointer', transition:'all 0.2s' }} onClick={()=>setCurrentIndex(i)} />)}
-        </div>
-      )}
 
+      {/* ── Feed posts ── */}
+      {feedPosts.length === 0 ? (
+        <div style={{ textAlign: 'center', color: '#B0B0B0', padding: '60px 20px' }}>
+          {t?.noVideos || 'No posts yet. Be the first to share!'}
+        </div>
+      ) : feedPosts.map(post => {
+        const author = (users || []).find(u => u.id === post.userId) || {};
+        const isLiked = (post.likedBy || []).includes(currentUser?.id);
+        return (
+          <div key={post.id} style={{ marginBottom: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', padding: '0 16px 10px', gap: 10 }}>
+              <div onClick={() => onViewProfile?.(author.id)} style={{ width: 40, height: 40, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, cursor: 'pointer', background: '#eee' }}>
+                <ProgressiveImage src={author.avatar || author.photoURL} alt={author.username} style={{ width: '100%', height: '100%' }} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 14, fontWeight: 700, color: '#111' }}>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{author.displayName || author.username || 'Someone'}</span>
+                  <span style={{ color: '#FF4F7E', fontSize: 13 }}>♥</span>
+                </div>
+                <div style={{ fontSize: 11.5, color: '#B0B0B0' }}>{homeFeedTimeAgo(post.createdAt) || 'now'}</div>
+              </div>
+              <button style={{ background: 'none', border: 'none', color: '#B0B0B0', cursor: 'pointer', fontSize: 20, padding: 4 }}>⋯</button>
+            </div>
+
+            {post.caption && (
+              <div style={{ padding: '0 16px 10px', fontSize: 14, color: '#333', lineHeight: 1.45 }}>{post.caption}</div>
+            )}
+
+            {(post.mediaUrl || post.thumbnail) && (
+              <div style={{ width: '100%', aspectRatio: '4 / 3', background: '#f2f2f2', overflow: 'hidden' }}>
+                <ProgressiveImage src={post.mediaUrl || post.thumbnail} alt="post" style={{ width: '100%', height: '100%' }} />
+              </div>
+            )}
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 20, padding: '12px 16px 0' }}>
+              <button onClick={() => onLike?.(post.id)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer' }}>
+                <HomeFeedHeart size={21} filled={isLiked} color={isLiked ? '#FF4F7E' : '#333'} />
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>{formatNumber(post.likes || 0)}</span>
+              </button>
+              <button onClick={() => onComment?.(post)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer' }}>
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z" /></svg>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>{formatNumber(post.comments || 0)}</span>
+              </button>
+              <button style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2"><path d="M19 21l-7-4-7 4V5a2 2 0 012-2h10a2 2 0 012 2z" /></svg>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>{formatNumber(post.saves || 0)}</span>
+              </button>
+              <button onClick={() => onShare?.(post)} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2"><path d="M12 5v13M6 11l6-6 6 6M5 21h14" /></svg>
+              </button>
+              <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#333', fontSize: 20, padding: '0 4px' }}>⋯</button>
+            </div>
+          </div>
+        );
+      })}
+      <div style={{ height: 12 }} />
     </div>
   );
 };
