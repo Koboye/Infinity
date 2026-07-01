@@ -6,6 +6,7 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot, increment, serverTimestamp, arrayUnion, arrayRemove, limit, startAfter } from 'firebase/firestore';
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, updateProfile, sendPasswordResetEmail, sendEmailVerification } from 'firebase/auth';
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
+import { COLORS, TYPE } from '@/lib/theme';
 
 /* ─────────────── FIREBASE CONFIG ─────────────── */
 const firebaseConfig = {
@@ -2567,6 +2568,7 @@ const handleLongPressStart = () => {
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>, label:t?.message||'Message', fn:()=>onMessage?.(video.userId)},
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-5.99-5.99 19.79 19.79 0 01-3.07-8.67A2 2 0 014 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>, label:t?.voiceCall||'Voice Call', fn:()=>onVoiceCall?.(video.userId)},
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>, label:t?.videoCall||'Video Call', fn:()=>onVideoCall?.(video.userId)},
+              {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>, label:t?.download||'Download', fn:()=>{ handleDownloadPost(); setShowActionMenu(false); }},
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFB100" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>, label:t?.report||'Report', fn:()=>{ setShowReportModal(true); setShowActionMenu(false); }},
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF2156" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>, label:t?.block||'Block', fn:async()=>{ if(!currentUser?.id) return; await updateDoc(doc(db,'users',currentUser.id),{ blockedUsers: arrayUnion(video.userId) }).catch(()=>{}); showToast?.('User blocked','warning'); onBlock?.(video.userId); }},
             ].map(({icon,label,fn})=>(
@@ -2630,71 +2632,61 @@ const handleLongPressStart = () => {
         </div>
       )}
 
-     {/* Stat row: Likes · Comments · Shares — sits above the action bar */}
-      <div style={{ position:'absolute', left:0, right:0, bottom:48, background:'#fff', borderTop:'1px solid #EEF0F3', padding:'8px 16px', display:'flex', alignItems:'center', gap:16, zIndex:6 }}>
-        <span style={{ color:'#65676B', fontSize:12, fontWeight:600, fontFamily:"'Inter',sans-serif" }}>{formatNumber(likeCount)} Likes</span>
-        <span style={{ color:'#65676B', fontSize:12, fontWeight:600, fontFamily:"'Inter',sans-serif" }}>{formatNumber(video.comments||comments.length)} Comments</span>
-        <span style={{ color:'#65676B', fontSize:12, fontWeight:600, fontFamily:"'Inter',sans-serif" }}>{formatNumber(video.shares||0)} Shares</span>
-      </div>
+     {/* Action rail: vertical, right-aligned, frosted-glass circular buttons —
+          matches the dark overlay language used everywhere else in the app
+          instead of a light Facebook-style bar sitting on top of a video. */}
+      <div style={{ position:'absolute', right:10, bottom:14, zIndex:8, display:'flex', flexDirection:'column', alignItems:'center', gap:16 }}>
 
-      {/* Action bar: icon-only buttons with labels, evenly spread */}
-      <div style={{ position:'absolute', left:0, right:0, bottom:0, background:'#fff', borderTop:'1px solid #EEF0F3', padding:'8px 10px', display:'flex', alignItems:'center', justifyContent:'space-between', zIndex:6 }}>
-
-        {/* 1. ❤️ Like */}
+        {/* Like */}
         <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();haptic('medium');handleLike();}}
-          style={{ background:'none', border:'none', display:'flex', flexDirection:'column', alignItems:'center', gap:3, cursor:'pointer', padding:0 }}>
-          <svg width="19" height="19" viewBox="0 0 24 24"
-            fill={liked?'#FF2156':'none'} stroke={liked?'#FF2156':'#65676B'} strokeWidth="1.8"
-            style={{ animation: liked ? 'likeHeart 0.4s ease' : 'none' }}>
-            <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
-          </svg>
-          <span style={{ color: liked?'#FF2156':'#65676B', fontSize:11, fontWeight:600, fontFamily:"'Inter',sans-serif" }}>Like</span>
+          style={{ background:'none', border:'none', display:'flex', flexDirection:'column', alignItems:'center', gap:4, cursor:'pointer', padding:0 }}>
+          <div style={{ width:42, height:42, borderRadius:'50%', background:'rgba(0,0,0,0.32)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.1)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <svg width="21" height="21" viewBox="0 0 24 24"
+              fill={liked?COLORS.brand:'none'} stroke={liked?COLORS.brand:'white'} strokeWidth="1.9"
+              style={{ animation: liked ? 'likeHeart 0.4s ease' : 'none' }}>
+              <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+            </svg>
+          </div>
+          <span style={{ color:'white', fontSize:TYPE.xs, fontWeight:700, textShadow:'0 1px 4px rgba(0,0,0,0.7)', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{formatNumber(likeCount)}</span>
         </button>
 
-        {/* 2. 💬 Comment */}
+        {/* Comment */}
         <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();setShowComments(true);}}
-          style={{ background:'none', border:'none', display:'flex', flexDirection:'column', alignItems:'center', gap:3, cursor:'pointer', padding:0 }}>
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#65676B" strokeWidth="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-          <span style={{ color:'#65676B', fontSize:11, fontWeight:600, fontFamily:"'Inter',sans-serif" }}>Comment</span>
+          style={{ background:'none', border:'none', display:'flex', flexDirection:'column', alignItems:'center', gap:4, cursor:'pointer', padding:0 }}>
+          <div style={{ width:42, height:42, borderRadius:'50%', background:'rgba(0,0,0,0.32)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.1)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.9"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          </div>
+          <span style={{ color:'white', fontSize:TYPE.xs, fontWeight:700, textShadow:'0 1px 4px rgba(0,0,0,0.7)', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{formatNumber(video.comments||comments.length)}</span>
         </button>
 
-        {/* 3. 🔄 Share */}
+        {/* Share */}
         <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();setShowShare(true);}}
-          style={{ background:'none', border:'none', display:'flex', flexDirection:'column', alignItems:'center', gap:3, cursor:'pointer', padding:0 }}>
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#65676B" strokeWidth="1.8"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-          <span style={{ color:'#65676B', fontSize:11, fontWeight:600, fontFamily:"'Inter',sans-serif" }}>Share</span>
+          style={{ background:'none', border:'none', display:'flex', flexDirection:'column', alignItems:'center', gap:4, cursor:'pointer', padding:0 }}>
+          <div style={{ width:42, height:42, borderRadius:'50%', background:'rgba(0,0,0,0.32)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.1)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.9"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </div>
+          <span style={{ color:'white', fontSize:TYPE.xs, fontWeight:700, textShadow:'0 1px 4px rgba(0,0,0,0.7)', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{formatNumber(video.shares||0)}</span>
         </button>
 
-        {/* 4. 🔖 Save */}
+        {/* Save */}
         <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();
           if(!currentUser?.id){ showToast?.('Sign in to save','error'); return; }
           setDoc(doc(db,'saves',`${video.id}_${currentUser.id}`),{ videoId:video.id, userId:currentUser.id, createdAt:serverTimestamp() })
             .then(()=>showToast?.('Saved ✨','success')).catch(()=>{});
         }}
-          style={{ background:'none', border:'none', display:'flex', flexDirection:'column', alignItems:'center', gap:3, cursor:'pointer', padding:0 }}>
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#65676B" strokeWidth="1.8"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
-          <span style={{ color:'#65676B', fontSize:11, fontWeight:600, fontFamily:"'Inter',sans-serif" }}>Save</span>
+          style={{ background:'none', border:'none', display:'flex', flexDirection:'column', alignItems:'center', gap:4, cursor:'pointer', padding:0 }}>
+          <div style={{ width:42, height:42, borderRadius:'50%', background:'rgba(0,0,0,0.32)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.1)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.9"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+          </div>
+          <span style={{ color:'white', fontSize:TYPE.xs, fontWeight:700, textShadow:'0 1px 4px rgba(0,0,0,0.7)', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Save</span>
         </button>
 
-        {/* 5. ⬇️ Download */}
-        <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();handleDownloadPost();}}
-          style={{ background:'none', border:'none', display:'flex', flexDirection:'column', alignItems:'center', gap:3, cursor:'pointer', padding:0 }}>
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#65676B" strokeWidth="1.8"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          <span style={{ color:'#65676B', fontSize:11, fontWeight:600, fontFamily:"'Inter',sans-serif" }}>Download</span>
-        </button>
-
-        {/* 6. ⚠️ Report */}
-        <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();showToast?.('Report submitted','info');}}
-          style={{ background:'none', border:'none', display:'flex', flexDirection:'column', alignItems:'center', gap:3, cursor:'pointer', padding:0 }}>
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#65676B" strokeWidth="1.8"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-          <span style={{ color:'#65676B', fontSize:11, fontWeight:600, fontFamily:"'Inter',sans-serif" }}>Report</span>
-        </button>
-
-        {/* 7. ⋯ More */}
+        {/* More — Download, Report, Duet, Stitch, Live, Message, Calls, Block already live here */}
         <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();setShowActionMenu(v=>!v);}}
-          style={{ background:'none', border:'none', display:'flex', flexDirection:'column', alignItems:'center', gap:3, cursor:'pointer', padding:0 }}>
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="#65676B"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
-          <span style={{ color:'#65676B', fontSize:11, fontWeight:600, fontFamily:"'Inter',sans-serif" }}>More</span>
+          style={{ background:'none', border:'none', display:'flex', flexDirection:'column', alignItems:'center', gap:4, cursor:'pointer', padding:0 }}>
+          <div style={{ width:42, height:42, borderRadius:'50%', background:'rgba(0,0,0,0.32)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.1)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="white"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+          </div>
         </button>
 
       </div>
@@ -6769,23 +6761,23 @@ const NotifDot = ({ currentUser }) => {
   return <div style={{ position:'absolute', top:-4, right:-4, minWidth:16, height:16, background:'#FF2156', borderRadius:8, border:'1.5px solid #FFFFFF', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, color:'white', fontWeight:800, padding:'0 3px' }}>{unread>9?'9+':unread}</div>;
 };
 const TabIcon = ({id, active, currentUser}) => {
-  const color = active ? '#0A84FF' : '#8E8E93';
+  const color = active ? COLORS.info : '#8E8E93';
   const sw = active ? 2.2 : 1.8;
   const s = {width:24,height:24,fill:'none',stroke:color,strokeWidth:sw,strokeLinecap:'round',strokeLinejoin:'round'};
   if(id==='home') return (
     <div style={{ position:'relative' }}>
       <svg viewBox="0 0 24 24" style={s}><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-      {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#0A84FF' }} />}
+      {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:COLORS.info }} />}
     </div>
   );
   if(id==='friends') return (
     <div style={{ position:'relative' }}>
       <svg viewBox="0 0 24 24" style={s}><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-      {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#0A84FF' }} />}
+      {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:COLORS.info }} />}
     </div>
   );
   if(id==='create') return (
-    <div style={{ width:48, height:32, background:'#0A84FF', borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 4px 14px rgba(10,132,255,0.35)' }}>
+    <div style={{ width:48, height:32, background:COLORS.info, borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 4px 14px rgba(10,132,255,0.35)' }}>
       <svg viewBox="0 0 24 24" style={{ width:20,height:20,stroke:'white',fill:'none',strokeWidth:2.5,strokeLinecap:'round' }}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
     </div>
   );
@@ -6793,20 +6785,20 @@ const TabIcon = ({id, active, currentUser}) => {
     <div style={{ position:'relative' }}>
       <svg viewBox="0 0 24 24" style={s}><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
       <NotifDot currentUser={currentUser} />
-      {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#0A84FF' }} />}
+      {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:COLORS.info }} />}
     </div>
   );
   if(id==='inbox') return (
     <div style={{ position:'relative' }}>
       <svg viewBox="0 0 24 24" style={s}><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
       <InboxBadge currentUser={currentUser} />
-      {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#0A84FF' }} />}
+      {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:COLORS.info }} />}
     </div>
   );
   if(id==='profile') return (
     <div style={{ position:'relative' }}>
       <svg viewBox="0 0 24 24" style={{...s,fill:active?'rgba(10,132,255,0.12)':''}}><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#0A84FF' }} />}
+      {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:COLORS.info }} />}
     </div>
   );
   return null;
@@ -7186,7 +7178,7 @@ const handleMessage = uid => {
         )}
       </div>
 
-      <div style={{ display:'flex', background:'rgba(255,255,255,0.98)', borderTop:'1px solid #EEF0F3', boxShadow:'0 -2px 12px rgba(0,0,0,0.04)', padding:`10px 4px max(26px, env(safe-area-inset-bottom))`, flexShrink:0, backdropFilter:'blur(30px)', WebkitBackdropFilter:'blur(30px)' }}>
+      <div style={{ display:'flex', background:'rgba(21,21,28,0.92)', borderTop:`1px solid ${COLORS.border}`, boxShadow:'0 -2px 20px rgba(0,0,0,0.35)', padding:`10px 4px max(26px, env(safe-area-inset-bottom))`, flexShrink:0, backdropFilter:'blur(30px)', WebkitBackdropFilter:'blur(30px)' }}>
         {tabs.map(tab=>{
           const isActive = tab.id==='notifications' ? !!showNotifications : activeTab===tab.id;
           const tabLabels = { home: t?.home||'Home', friends: t?.friends||'Friends', create: t?.create||'Create', notifications: t?.notifications||'Alerts', inbox: t?.inbox||'Chat', profile: t?.profile||'Profile' };
@@ -7199,11 +7191,11 @@ const handleMessage = uid => {
               <div style={{ position:'relative' }}>
                 <TabIcon id={tab.id} active={isActive} currentUser={currentUser} />
                 {isActive && tab.id!=='create' && (
-                  <div style={{ position:'absolute', bottom:-6, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#0A84FF', animation:'bounceIn 0.3s ease' }} />
+                  <div style={{ position:'absolute', bottom:-6, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:COLORS.info, animation:'bounceIn 0.3s ease' }} />
                 )}
               </div>
               {tab.id !== 'create' && (
-                <span style={{ fontSize:11, color:isActive?'#0A84FF':'#8E8E93', fontWeight:isActive?800:400, transition:'color 0.2s', letterSpacing:0.3 }}>
+                <span style={{ fontSize:TYPE.xs, color:isActive?COLORS.info:COLORS.textTertiary, fontWeight:isActive?800:400, transition:'color 0.2s', letterSpacing:0.3 }}>
                   {tabLabels[tab.id]}
                 </span>
               )}
