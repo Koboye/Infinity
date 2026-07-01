@@ -1018,6 +1018,7 @@ const GlobalStyles = () => (
     img{image-rendering:-webkit-optimize-contrast}
     video{will-change:transform}
     .smooth-scroll{-webkit-overflow-scrolling:touch;scroll-behavior:smooth}
+    .gen-mobile-nav{display:none !important;}
   `}</style>
 );
 const SkeletonLoader = ({ count=3 }) => (
@@ -7185,7 +7186,7 @@ const handleMessage = uid => {
         )}
       </div>
 
-      {!isGenHome && <div style={{ display:'flex', background:'rgba(255,255,255,0.98)', borderTop:'1px solid #EEF0F3', boxShadow:'0 -2px 12px rgba(0,0,0,0.04)', padding:`10px 4px max(26px, env(safe-area-inset-bottom))`, flexShrink:0, backdropFilter:'blur(30px)', WebkitBackdropFilter:'blur(30px)' }}>
+      <div style={{ display:'flex', background:'rgba(255,255,255,0.98)', borderTop:'1px solid #EEF0F3', boxShadow:'0 -2px 12px rgba(0,0,0,0.04)', padding:`10px 4px max(26px, env(safe-area-inset-bottom))`, flexShrink:0, backdropFilter:'blur(30px)', WebkitBackdropFilter:'blur(30px)' }}>
         {tabs.map(tab=>{
           const isActive = tab.id==='notifications' ? !!showNotifications : activeTab===tab.id;
           const tabLabels = { home: t?.home||'Home', friends: t?.friends||'Friends', create: t?.create||'Create', notifications: t?.notifications||'Alerts', inbox: t?.inbox||'Chat', profile: t?.profile||'Profile' };
@@ -7209,7 +7210,7 @@ const handleMessage = uid => {
             </button>
           );
         })}
-      </div>}
+      </div>
 
 {notifPopup && (
         <NotifPopup
