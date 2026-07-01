@@ -813,7 +813,7 @@ const DiscoverPage = ({ videos, users, onViewProfile, showToast, onClose }) => {
 
 /* ─────────────── DARK/LIGHT MODE TOGGLE HOOK (v4) ─────────────── */
 const useTheme = (user) => {
-  const [theme, setTheme] = useState(user?.theme || 'dark');
+  const [theme, setTheme] = useState(user?.theme || 'light');
   const toggleTheme = async (newTheme) => {
     setTheme(newTheme);
     if (user?.id) {
@@ -6754,40 +6754,58 @@ const InboxBadge = ({ currentUser }) => {
     return ()=>unsub();
   },[currentUser?.id]);
   if(!unread) return null;
-  return <div style={{ position:'absolute', top:-4, right:-4, minWidth:16, height:16, background:'#FF2156', borderRadius:8, border:'1.5px solid #0B0B0F', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, color:'white', fontWeight:800, padding:'0 3px' }}>{unread>9?'9+':unread}</div>;
+  return <div style={{ position:'absolute', top:-4, right:-4, minWidth:16, height:16, background:'#FF2156', borderRadius:8, border:'1.5px solid #FFFFFF', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, color:'white', fontWeight:800, padding:'0 3px' }}>{unread>9?'9+':unread}</div>;
+};
+const NotifDot = ({ currentUser }) => {
+  const [unread, setUnread] = useState(0);
+  useEffect(()=>{
+    if(!currentUser?.id) return;
+    const q = query(collection(db,'notifications'), where('toUserId','==',currentUser.id), where('read','==',false));
+    const unsub = onSnapshot(q, snap=>setUnread(snap.size), ()=>{});
+    return ()=>unsub();
+  },[currentUser?.id]);
+  if(!unread) return null;
+  return <div style={{ position:'absolute', top:-4, right:-4, minWidth:16, height:16, background:'#FF2156', borderRadius:8, border:'1.5px solid #FFFFFF', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, color:'white', fontWeight:800, padding:'0 3px' }}>{unread>9?'9+':unread}</div>;
 };
 const TabIcon = ({id, active, currentUser}) => {
-  const color = active ? '#FF2156' : 'rgba(255,255,255,0.35)';
+  const color = active ? '#0A84FF' : '#8E8E93';
   const sw = active ? 2.2 : 1.8;
-  const s = {width:26,height:26,fill:'none',stroke:color,strokeWidth:sw,strokeLinecap:'round',strokeLinejoin:'round'};
+  const s = {width:24,height:24,fill:'none',stroke:color,strokeWidth:sw,strokeLinecap:'round',strokeLinejoin:'round'};
   if(id==='home') return (
     <div style={{ position:'relative' }}>
       <svg viewBox="0 0 24 24" style={s}><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-      {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#FF2156' }} />}
+      {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#0A84FF' }} />}
     </div>
   );
   if(id==='friends') return (
     <div style={{ position:'relative' }}>
       <svg viewBox="0 0 24 24" style={s}><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-      {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#FF2156' }} />}
+      {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#0A84FF' }} />}
     </div>
   );
   if(id==='create') return (
-    <div style={{ width:52, height:34, background:'linear-gradient(135deg,#FF2156,#9D4EDD)', borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 4px 16px rgba(255,45,85,0.4)' }}>
-      <svg viewBox="0 0 24 24" style={{ width:22,height:22,stroke:'white',fill:'none',strokeWidth:2.5,strokeLinecap:'round' }}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    <div style={{ width:48, height:32, background:'#0A84FF', borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 4px 14px rgba(10,132,255,0.35)' }}>
+      <svg viewBox="0 0 24 24" style={{ width:20,height:20,stroke:'white',fill:'none',strokeWidth:2.5,strokeLinecap:'round' }}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </div>
+  );
+  if(id==='notifications') return (
+    <div style={{ position:'relative' }}>
+      <svg viewBox="0 0 24 24" style={s}><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+      <NotifDot currentUser={currentUser} />
+      {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#0A84FF' }} />}
     </div>
   );
   if(id==='inbox') return (
     <div style={{ position:'relative' }}>
       <svg viewBox="0 0 24 24" style={s}><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
       <InboxBadge currentUser={currentUser} />
-      {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#FF2156' }} />}
+      {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#0A84FF' }} />}
     </div>
   );
   if(id==='profile') return (
     <div style={{ position:'relative' }}>
-      <svg viewBox="0 0 24 24" style={{...s,fill:active?'rgba(255,45,85,0.15)':''}}><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#FF2156' }} />}
+      <svg viewBox="0 0 24 24" style={{...s,fill:active?'rgba(10,132,255,0.12)':''}}><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#0A84FF' }} />}
     </div>
   );
   return null;
@@ -6910,7 +6928,8 @@ const [blockedUsers, setBlockedUsers] = useState([]);
 
   // Real-time users from Firestore
   useEffect(()=>{
-    const unsub = onSnapshot(collection(db,'users'), snap=>{
+    const q = query(collection(db,'users'), orderBy('createdAt','desc'), limit(200));
+    const unsub = onSnapshot(q, snap=>{
       setUsers(snap.docs.map(d=>({id:d.id,...d.data()})));
     });
     return ()=>unsub();
@@ -7034,7 +7053,7 @@ const handleMessage = uid => {
 };
 
   const tabs = [
-    {id:'home'},{id:'friends'},{id:'create'},{id:'inbox'},{id:'profile'},
+    {id:'home'},{id:'friends'},{id:'create'},{id:'notifications'},{id:'inbox'},{id:'profile'},
   ];
 
   if(authLoading) return (
@@ -7168,24 +7187,24 @@ const handleMessage = uid => {
         )}
       </div>
 
-      {!isGenHome && <div style={{ display:'flex', background:'rgba(6,6,8,0.98)', borderTop:'1px solid rgba(255,255,255,0.05)', padding:`10px 4px max(26px, env(safe-area-inset-bottom))`, flexShrink:0, backdropFilter:'blur(30px)', WebkitBackdropFilter:'blur(30px)' }}>
+      {!isGenHome && <div style={{ display:'flex', background:'rgba(255,255,255,0.98)', borderTop:'1px solid #EEF0F3', boxShadow:'0 -2px 12px rgba(0,0,0,0.04)', padding:`10px 4px max(26px, env(safe-area-inset-bottom))`, flexShrink:0, backdropFilter:'blur(30px)', WebkitBackdropFilter:'blur(30px)' }}>
         {tabs.map(tab=>{
-          const isActive = activeTab===tab.id;
-          const tabLabels = { home: t?.home||'Home', friends: t?.friends||'Friends', create: t?.create||'Create', inbox: t?.inbox||'Inbox', profile: t?.profile||'Profile' };
+          const isActive = tab.id==='notifications' ? !!showNotifications : activeTab===tab.id;
+          const tabLabels = { home: t?.home||'Home', friends: t?.friends||'Friends', create: t?.create||'Create', notifications: t?.notifications||'Alerts', inbox: t?.inbox||'Chat', profile: t?.profile||'Profile' };
           return (
             <button key={tab.id}
-              onClick={()=>{ haptic('light'); if(tab.id==='create'){ setShowCamera(true); } else { setShowCamera(false); setShowSearch(false); setActiveTab(tab.id); } }}
+              onClick={()=>{ haptic('light'); if(tab.id==='create'){ setShowCamera(true); } else if(tab.id==='notifications'){ setShowNotifications(true); } else { setShowCamera(false); setShowSearch(false); setActiveTab(tab.id); } }}
               style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:2, background:'none', border:'none', cursor:'pointer', padding: tab.id==='create'?'0':'6px 0', position:'relative',
                 transform: isActive && tab.id!=='create' ? 'translateY(-1px)' : 'translateY(0)',
                 transition:'transform 0.2s cubic-bezier(0.34,1.56,0.64,1)' }}>
               <div style={{ position:'relative' }}>
                 <TabIcon id={tab.id} active={isActive} currentUser={currentUser} />
                 {isActive && tab.id!=='create' && (
-                  <div style={{ position:'absolute', bottom:-6, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#FF2156', animation:'bounceIn 0.3s ease' }} />
+                  <div style={{ position:'absolute', bottom:-6, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#0A84FF', animation:'bounceIn 0.3s ease' }} />
                 )}
               </div>
               {tab.id !== 'create' && (
-                <span style={{ fontSize:11, color:isActive?'#FF2156':'rgba(255,255,255,0.28)', fontWeight:isActive?800:400, transition:'color 0.2s', letterSpacing:0.3 }}>
+                <span style={{ fontSize:11, color:isActive?'#0A84FF':'#8E8E93', fontWeight:isActive?800:400, transition:'color 0.2s', letterSpacing:0.3 }}>
                   {tabLabels[tab.id]}
                 </span>
               )}
