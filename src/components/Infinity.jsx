@@ -4815,7 +4815,7 @@ unsub = onSnapshot(q, (snap) => {
                   ))}
                 </div>
               )}
-                {msg.mediaUrl&&msg.mediaType?.startsWith('image')&&<img src={msg.mediaUrl} alt="" style={{maxWidth:'100%',borderRadius:14,display:'block'}}/>}
+                {msg.mediaUrl&&msg.mediaType?.startsWith('image')&&<img src={msg.mediaUrl} alt="Shared image" style={{maxWidth:'100%',borderRadius:14,display:'block'}}/>}
                 {msg.mediaUrl&&msg.mediaType?.startsWith('video')&&<video src={msg.mediaUrl} controls style={{maxWidth:'100%',borderRadius:14,display:'block'}}/>}
                 {(msg.mediaUrl&&msg.mediaType?.startsWith('audio')) || msg.type==='voice'&&(msg.voiceUrl||msg.mediaUrl) ? (
                   <div style={{display:'flex',alignItems:'center',gap:10,background:isMine?'linear-gradient(135deg,#FF2156,#9D4EDD)':'rgba(255,255,255,0.09)',borderRadius:20,padding:'10px 14px',minWidth:200}}>
