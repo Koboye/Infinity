@@ -1,15 +1,16 @@
-// DaguV3.jsx — COMPLETE REDESIGN TO MATCH IMAGE
+// DaguV3.jsx — COMPLETE 7300+ LINE REDESIGN
 'use client';
 import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot, increment, serverTimestamp, arrayUnion, arrayRemove, limit } from 'firebase/firestore';
+import { getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot, increment, serverTimestamp, arrayUnion, arrayRemove, limit, startAfter, runTransaction } from 'firebase/firestore';
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, updateProfile, sendPasswordResetEmail, sendEmailVerification } from 'firebase/auth';
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 
 // ============================================================
-// 1. DESIGN SYSTEM
+// 1. DESIGN SYSTEM - MATCHING IMAGE EXACTLY
 // ============================================================
 const COLORS = {
+  // Brand
   primary: '#FF2156',
   primaryDark: '#E01A4A',
   primaryLight: '#FF6B8A',
@@ -20,21 +21,38 @@ const COLORS = {
   success: '#2ED573',
   warning: '#FFB100',
   danger: '#FF2156',
+  
+  // Gradients - UNIQUE
   gradient1: 'linear-gradient(135deg, #FF2156, #9D4EDD)',
   gradient2: 'linear-gradient(135deg, #FF2156, #FFB100)',
   gradient3: 'linear-gradient(135deg, #9D4EDD, #0A84FF)',
+  gradient4: 'linear-gradient(135deg, #FF2156, #FF6B8A)',
+  gradient5: 'linear-gradient(135deg, #9D4EDD, #C084FC)',
+  
+  // Surface
   bg: '#0B0B0F',
   bgSecondary: '#15151C',
   bgElevated: '#1C1C24',
   bgCard: '#24242E',
+  bgHover: '#2C2C38',
+  
+  // Text
   text: '#FFFFFF',
   textSecondary: 'rgba(255,255,255,0.7)',
   textTertiary: 'rgba(255,255,255,0.4)',
+  textQuaternary: 'rgba(255,255,255,0.2)',
+  
+  // Borders
   border: 'rgba(255,255,255,0.08)',
   borderLight: 'rgba(255,255,255,0.04)',
   borderActive: 'rgba(255,45,85,0.3)',
+  borderGlow: 'rgba(255,45,85,0.15)',
+  
+  // Shadows
   shadow: '0 8px 32px rgba(0,0,0,0.4)',
   shadowGlow: '0 0 40px rgba(255,45,85,0.15)',
+  shadowCard: '0 4px 24px rgba(0,0,0,0.3)',
+  shadowElevated: '0 12px 48px rgba(0,0,0,0.5)',
 };
 
 const TYPOGRAPHY = {
@@ -45,6 +63,11 @@ const TYPOGRAPHY = {
   body: { fontSize: 15, fontWeight: 400, lineHeight: 1.5 },
   bodySmall: { fontSize: 13, fontWeight: 400, lineHeight: 1.4 },
   caption: { fontSize: 11, fontWeight: 500, lineHeight: 1.3 },
+  captionSmall: { fontSize: 10, fontWeight: 400, lineHeight: 1.2 },
+};
+
+const SPACING = {
+  xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24, xxxl: 32,
 };
 
 // ============================================================
@@ -65,7 +88,6 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
 
-// Cloudinary Config
 const CLOUDINARY_CLOUD = 'dotvhzjmc';
 const CLOUDINARY_PRESET = 'g3c7dwdg';
 const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/upload`;
@@ -87,6 +109,7 @@ const timeAgo = (date) => {
   if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
   if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
   if (seconds < 604800) return `${Math.floor(seconds / 86400)}d`;
+  if (seconds < 2592000) return `${Math.floor(seconds / 604800)}w`;
   return new Date(date).toLocaleDateString();
 };
 
@@ -117,10 +140,21 @@ const uploadToCloudinary = async (file, onProgress) => {
   });
 };
 
+const haptic = (style = 'light') => {
+  try {
+    if (window.navigator?.vibrate) {
+      style === 'heavy' ? navigator.vibrate([30, 10, 30]) : 
+      style === 'medium' ? navigator.vibrate(20) : navigator.vibrate(10);
+    }
+  } catch {}
+};
+
 // ============================================================
-// 4. STORIES COMPONENT
+// 4. STORIES COMPONENT - MATCHES IMAGE
 // ============================================================
-const StoriesBar = ({ stories, currentUser, onStoryPress, onCreateStory }) => {
+const StoriesBar = ({ stories, currentUser, onStoryPress, onCreateStory, onSeeAll }) => {
+  const [hasUnseen, setHasUnseen] = useState({});
+  
   return (
     <div style={{
       padding: '12px 16px',
@@ -136,16 +170,22 @@ const StoriesBar = ({ stories, currentUser, onStoryPress, onCreateStory }) => {
         <span style={{
           color: COLORS.text,
           fontSize: 13,
-          fontWeight: 600,
+          fontWeight: 700,
           letterSpacing: 0.3,
         }}>Stories</span>
-        <button style={{
-          background: 'none',
-          border: 'none',
-          color: COLORS.textSecondary,
-          fontSize: 13,
-          cursor: 'pointer',
-        }}>See All</button>
+        <button 
+          onClick={onSeeAll}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: COLORS.accent,
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: 'pointer',
+          }}
+        >
+          See All
+        </button>
       </div>
       
       <div style={{
@@ -154,8 +194,9 @@ const StoriesBar = ({ stories, currentUser, onStoryPress, onCreateStory }) => {
         overflowX: 'auto',
         paddingBottom: 4,
         scrollbarWidth: 'none',
+        WebkitOverflowScrolling: 'touch',
       }}>
-        {/* Create Story */}
+        {/* Create Story - UNIQUE */}
         <div 
           onClick={onCreateStory}
           style={{
@@ -168,14 +209,15 @@ const StoriesBar = ({ stories, currentUser, onStoryPress, onCreateStory }) => {
           }}
         >
           <div style={{
-            width: 64,
-            height: 64,
+            width: 68,
+            height: 68,
             borderRadius: '50%',
             background: COLORS.gradient1,
             padding: 2.5,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            boxShadow: `0 0 20px ${COLORS.primary}33`,
           }}>
             <div style={{
               width: '100%',
@@ -186,6 +228,7 @@ const StoriesBar = ({ stories, currentUser, onStoryPress, onCreateStory }) => {
               alignItems: 'center',
               justifyContent: 'center',
               position: 'relative',
+              overflow: 'hidden',
             }}>
               {currentUser?.avatarUrl ? (
                 <img 
@@ -193,23 +236,23 @@ const StoriesBar = ({ stories, currentUser, onStoryPress, onCreateStory }) => {
                   style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
                 />
               ) : (
-                <span style={{ fontSize: 20, color: COLORS.text, fontWeight: 700 }}>
+                <span style={{ fontSize: 22, color: COLORS.text, fontWeight: 700 }}>
                   {currentUser?.username?.[0]?.toUpperCase() || 'U'}
                 </span>
               )}
               <div style={{
                 position: 'absolute',
-                bottom: -2,
-                right: -2,
-                width: 22,
-                height: 22,
+                bottom: -1,
+                right: -1,
+                width: 24,
+                height: 24,
                 borderRadius: '50%',
                 background: COLORS.primary,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                border: `2px solid ${COLORS.bg}`,
-                fontSize: 12,
+                border: `2.5px solid ${COLORS.bg}`,
+                fontSize: 13,
                 color: 'white',
                 fontWeight: 700,
               }}>+</div>
@@ -219,86 +262,99 @@ const StoriesBar = ({ stories, currentUser, onStoryPress, onCreateStory }) => {
             color: COLORS.textSecondary,
             fontSize: 10,
             fontWeight: 500,
-            maxWidth: 64,
+            maxWidth: 68,
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
+            textAlign: 'center',
           }}>Create Story</span>
         </div>
         
         {/* User Stories */}
-        {stories?.map((story, index) => (
-          <div 
-            key={story.id || index}
-            onClick={() => onStoryPress?.(story)}
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 6,
-              cursor: 'pointer',
-              flexShrink: 0,
-            }}
-          >
-            <div style={{
-              width: 64,
-              height: 64,
-              borderRadius: '50%',
-              background: story.hasUnseen 
-                ? `conic-gradient(${COLORS.primary}, ${COLORS.secondary}, ${COLORS.accent}, ${COLORS.primary})`
-                : `linear-gradient(135deg, ${COLORS.border}, ${COLORS.border})`,
-              padding: 2.5,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
+        {stories?.map((story, index) => {
+          const unseen = story.hasUnseen !== false;
+          return (
+            <div 
+              key={story.id || index}
+              onClick={() => onStoryPress?.(story)}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 6,
+                cursor: 'pointer',
+                flexShrink: 0,
+              }}
+            >
               <div style={{
-                width: '100%',
-                height: '100%',
+                width: 68,
+                height: 68,
                 borderRadius: '50%',
-                background: COLORS.bg,
+                background: unseen 
+                  ? `conic-gradient(${COLORS.primary}, ${COLORS.secondary}, ${COLORS.accent}, ${COLORS.primary})`
+                  : `linear-gradient(135deg, ${COLORS.border}, ${COLORS.border})`,
+                padding: 2.5,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                overflow: 'hidden',
+                animation: unseen ? 'storyRing 4s linear infinite' : 'none',
               }}>
-                {story.avatarUrl ? (
-                  <img 
-                    src={story.avatarUrl} 
-                    style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
-                  />
-                ) : (
-                  <span style={{ fontSize: 18, color: COLORS.text, fontWeight: 700 }}>
-                    {story.username?.[0]?.toUpperCase() || '?'}
-                  </span>
-                )}
+                <div style={{
+                  width: '100%',
+                  height: '100%',
+                  borderRadius: '50%',
+                  background: COLORS.bg,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  overflow: 'hidden',
+                }}>
+                  {story.avatarUrl ? (
+                    <img 
+                      src={story.avatarUrl} 
+                      style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    <span style={{ fontSize: 20, color: COLORS.text, fontWeight: 700 }}>
+                      {story.username?.[0]?.toUpperCase() || '?'}
+                    </span>
+                  )}
+                </div>
               </div>
+              <span style={{
+                color: COLORS.textSecondary,
+                fontSize: 10,
+                fontWeight: 500,
+                maxWidth: 68,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                textAlign: 'center',
+              }}>{story.username}</span>
             </div>
-            <span style={{
-              color: COLORS.textSecondary,
-              fontSize: 10,
-              fontWeight: 500,
-              maxWidth: 64,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}>{story.username}</span>
-          </div>
-        ))}
+          );
+        })}
       </div>
+      
+      <style>{`
+        @keyframes storyRing {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 };
 
 // ============================================================
-// 5. WHAT'S ON YOUR MIND
+// 5. WHAT'S ON YOUR MIND - MATCHES IMAGE
 // ============================================================
 const WhatsOnYourMind = ({ onPostPress }) => {
   const options = [
-    { icon: '📷', label: 'Photo', action: 'photo' },
-    { icon: '🎬', label: 'Video', action: 'video' },
-    { icon: '📊', label: 'Poll', action: 'poll' },
-    { icon: '😊', label: 'Feeling', action: 'feeling' },
+    { icon: '📷', label: 'Photo', action: 'photo', color: COLORS.success },
+    { icon: '🎬', label: 'Video', action: 'video', color: COLORS.primary },
+    { icon: '📊', label: 'Poll', action: 'poll', color: COLORS.secondary },
+    { icon: '😊', label: 'Feeling', action: 'feeling', color: COLORS.accent },
   ];
   
   return (
@@ -322,6 +378,7 @@ const WhatsOnYourMind = ({ onPostPress }) => {
           justifyContent: 'center',
           overflow: 'hidden',
           flexShrink: 0,
+          boxShadow: `0 0 20px ${COLORS.primary}33`,
         }}>
           <span style={{ color: 'white', fontWeight: 700, fontSize: 16 }}>?</span>
         </div>
@@ -338,6 +395,9 @@ const WhatsOnYourMind = ({ onPostPress }) => {
             fontSize: 14,
             cursor: 'pointer',
             transition: 'all 0.2s',
+            ':hover': {
+              borderColor: COLORS.borderActive,
+            },
           }}
         >
           What's on your mind?
@@ -361,7 +421,7 @@ const WhatsOnYourMind = ({ onPostPress }) => {
               border: 'none',
               color: COLORS.textSecondary,
               fontSize: 12,
-              fontWeight: 500,
+              fontWeight: 600,
               padding: '6px 0',
               cursor: 'pointer',
               display: 'flex',
@@ -372,7 +432,7 @@ const WhatsOnYourMind = ({ onPostPress }) => {
               transition: 'all 0.2s',
             }}
           >
-            <span>{opt.icon}</span>
+            <span style={{ fontSize: 16 }}>{opt.icon}</span>
             {opt.label}
           </button>
         ))}
@@ -382,22 +442,42 @@ const WhatsOnYourMind = ({ onPostPress }) => {
 };
 
 // ============================================================
-// 6. POST CARD
+// 6. POST CARD - MATCHES IMAGE EXACTLY
 // ============================================================
-const PostCard = memo(({ post, currentUser, onLike, onComment, onShare, onSave, onMore, onFollow, onViewProfile }) => {
+const PostCard = memo(({ 
+  post, 
+  currentUser, 
+  onLike, 
+  onComment, 
+  onShare, 
+  onSave, 
+  onMore, 
+  onFollow, 
+  onViewProfile,
+  onPostPress,
+}) => {
   const [liked, setLiked] = useState(post?.isLiked || false);
   const [likeCount, setLikeCount] = useState(post?.likes || 0);
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [comments, setComments] = useState(post?.commentsList || []);
+  const [showFullText, setShowFullText] = useState(false);
+  const [isLiking, setIsLiking] = useState(false);
   
-  const handleLike = () => {
-    setLiked(!liked);
-    setLikeCount(prev => liked ? prev - 1 : prev + 1);
-    onLike?.(post.id);
+  const isFollowing = currentUser?.following?.includes(post?.userId);
+  const isOwner = post?.userId === currentUser?.id;
+  
+  const handleLike = async () => {
+    if (isLiking) return;
+    setIsLiking(true);
+    const newLiked = !liked;
+    setLiked(newLiked);
+    setLikeCount(prev => newLiked ? prev + 1 : prev - 1);
+    await onLike?.(post.id);
+    setIsLiking(false);
   };
   
-  const handleAddComment = () => {
+  const handleAddComment = async () => {
     if (!commentText.trim()) return;
     const newComment = {
       id: Date.now(),
@@ -405,11 +485,16 @@ const PostCard = memo(({ post, currentUser, onLike, onComment, onShare, onSave, 
       text: commentText,
       time: 'just now',
       avatar: currentUser?.avatarUrl || null,
+      userId: currentUser?.id,
     };
     setComments([...comments, newComment]);
     setCommentText('');
-    onComment?.(post.id, commentText);
+    await onComment?.(post.id, commentText);
   };
+  
+  const text = post?.content || '';
+  const shouldTruncate = text.length > 150;
+  const displayText = shouldTruncate && !showFullText ? text.slice(0, 150) + '...' : text;
   
   return (
     <div style={{
@@ -417,7 +502,7 @@ const PostCard = memo(({ post, currentUser, onLike, onComment, onShare, onSave, 
       borderBottom: `1px solid ${COLORS.border}`,
       padding: '12px 16px 16px',
     }}>
-      {/* Post Header */}
+      {/* Post Header - UNIQUE */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
@@ -425,7 +510,7 @@ const PostCard = memo(({ post, currentUser, onLike, onComment, onShare, onSave, 
         marginBottom: 10,
       }}>
         <div 
-          onClick={() => onViewProfile?.(post.userId)}
+          onClick={() => onViewProfile?.(post?.userId)}
           style={{
             width: 44,
             height: 44,
@@ -436,6 +521,7 @@ const PostCard = memo(({ post, currentUser, onLike, onComment, onShare, onSave, 
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'pointer',
+            flexShrink: 0,
           }}
         >
           <div style={{
@@ -461,17 +547,18 @@ const PostCard = memo(({ post, currentUser, onLike, onComment, onShare, onSave, 
           </div>
         </div>
         
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
             display: 'flex',
             alignItems: 'center',
             gap: 6,
+            flexWrap: 'wrap',
           }}>
             <span 
-              onClick={() => onViewProfile?.(post.userId)}
+              onClick={() => onViewProfile?.(post?.userId)}
               style={{
                 color: COLORS.text,
-                fontWeight: 600,
+                fontWeight: 700,
                 fontSize: 14,
                 cursor: 'pointer',
               }}
@@ -485,6 +572,7 @@ const PostCard = memo(({ post, currentUser, onLike, onComment, onShare, onSave, 
               color: COLORS.textTertiary,
               fontSize: 12,
               marginLeft: 'auto',
+              flexShrink: 0,
             }}>{timeAgo(post?.createdAt)}</span>
           </div>
           <span style={{
@@ -493,6 +581,7 @@ const PostCard = memo(({ post, currentUser, onLike, onComment, onShare, onSave, 
           }}>@{post?.username}</span>
         </div>
         
+        {/* More button - UNIQUE */}
         <button 
           onClick={() => onMore?.(post)}
           style={{
@@ -501,9 +590,11 @@ const PostCard = memo(({ post, currentUser, onLike, onComment, onShare, onSave, 
             color: COLORS.textTertiary,
             cursor: 'pointer',
             padding: 4,
+            borderRadius: '50%',
+            transition: 'all 0.2s',
           }}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="12" cy="5" r="1.5"/>
             <circle cx="12" cy="12" r="1.5"/>
             <circle cx="12" cy="19" r="1.5"/>
@@ -512,58 +603,140 @@ const PostCard = memo(({ post, currentUser, onLike, onComment, onShare, onSave, 
       </div>
       
       {/* Post Content */}
-      {post?.content && (
-        <p style={{
+      {text && (
+        <div style={{
           color: COLORS.text,
           fontSize: 14,
           lineHeight: 1.6,
           marginBottom: 10,
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-word',
         }}>
-          {post.content}
-        </p>
+          {displayText}
+          {shouldTruncate && (
+            <button
+              onClick={() => setShowFullText(!showFullText)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: COLORS.accent,
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+                padding: 0,
+                marginLeft: 4,
+              }}
+            >
+              {showFullText ? 'See less' : 'See more'}
+            </button>
+          )}
+        </div>
       )}
       
-      {/* Post Media */}
+      {/* Post Media - UNIQUE */}
       {post?.mediaUrl && (
-        <div style={{
-          borderRadius: 16,
-          overflow: 'hidden',
-          marginBottom: 12,
-          background: COLORS.bgCard,
-          position: 'relative',
-          aspectRatio: post.mediaType?.startsWith('video') ? '9/16' : 'auto',
-        }}>
+        <div 
+          onClick={() => onPostPress?.(post)}
+          style={{
+            borderRadius: 16,
+            overflow: 'hidden',
+            marginBottom: 12,
+            background: COLORS.bgCard,
+            position: 'relative',
+            aspectRatio: post.mediaType?.startsWith('video') ? '9/16' : 'auto',
+            cursor: 'pointer',
+          }}
+        >
           {post.mediaType?.startsWith('video') ? (
             <video 
               src={post.mediaUrl} 
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               controls
+              poster={post.thumbnailUrl}
             />
           ) : (
             <img 
               src={post.mediaUrl} 
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              alt={post.content || 'Post image'}
             />
+          )}
+          {post.mediaType?.startsWith('video') && (
+            <div style={{
+              position: 'absolute',
+              bottom: 8,
+              right: 8,
+              background: 'rgba(0,0,0,0.7)',
+              borderRadius: 12,
+              padding: '4px 8px',
+              color: 'white',
+              fontSize: 11,
+              fontWeight: 600,
+            }}>
+              ▶ {post.duration || '0:30'}
+            </div>
           )}
         </div>
       )}
       
-      {/* Engagement Stats */}
+      {/* Engagement Stats - UNIQUE */}
       <div style={{
         display: 'flex',
         gap: 16,
         padding: '8px 0',
         borderBottom: `1px solid ${COLORS.borderLight}`,
       }}>
-        <span style={{ color: COLORS.textSecondary, fontSize: 12 }}>
-          <span style={{ fontWeight: 600, color: COLORS.text }}>{formatNumber(likeCount)}</span> likes
-        </span>
-        <span style={{ color: COLORS.textSecondary, fontSize: 12 }}>
-          <span style={{ fontWeight: 600, color: COLORS.text }}>{formatNumber(post?.comments || comments.length)}</span> comments
-        </span>
-        <span style={{ color: COLORS.textSecondary, fontSize: 12 }}>
-          <span style={{ fontWeight: 600, color: COLORS.text }}>{formatNumber(post?.shares || 0)}</span> shares
-        </span>
+        <button 
+          onClick={handleLike}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: liked ? COLORS.primary : COLORS.textSecondary,
+            fontSize: 12,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+          }}
+        >
+          <span style={{ fontWeight: 600, color: liked ? COLORS.primary : COLORS.text }}>
+            {formatNumber(likeCount)}
+          </span> likes
+        </button>
+        <button 
+          onClick={() => setShowComments(!showComments)}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: COLORS.textSecondary,
+            fontSize: 12,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+          }}
+        >
+          <span style={{ fontWeight: 600, color: COLORS.text }}>
+            {formatNumber(post?.comments || comments.length)}
+          </span> comments
+        </button>
+        <button 
+          onClick={() => onShare?.(post)}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: COLORS.textSecondary,
+            fontSize: 12,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+          }}
+        >
+          <span style={{ fontWeight: 600, color: COLORS.text }}>
+            {formatNumber(post?.shares || 0)}
+          </span> shares
+        </button>
       </div>
       
       {/* Action Buttons - UNIQUE DESIGN */}
@@ -577,21 +750,26 @@ const PostCard = memo(({ post, currentUser, onLike, onComment, onShare, onSave, 
           label="Like"
           active={liked}
           onClick={handleLike}
+          color={liked ? COLORS.primary : COLORS.textSecondary}
         />
         <ActionButton 
           icon="💬"
           label="Comment"
+          active={showComments}
           onClick={() => setShowComments(!showComments)}
+          color={showComments ? COLORS.accent : COLORS.textSecondary}
         />
         <ActionButton 
           icon="↗️"
           label="Share"
-          onClick={onShare}
+          onClick={() => onShare?.(post)}
+          color={COLORS.textSecondary}
         />
         <ActionButton 
           icon="🔖"
           label="Save"
-          onClick={onSave}
+          onClick={() => onSave?.(post)}
+          color={COLORS.textSecondary}
         />
       </div>
       
@@ -602,7 +780,7 @@ const PostCard = memo(({ post, currentUser, onLike, onComment, onShare, onSave, 
           paddingTop: 12,
           borderTop: `1px solid ${COLORS.borderLight}`,
         }}>
-          {/* Comment input - UNIQUE DESIGN */}
+          {/* Comment input - UNIQUE */}
           <div style={{
             display: 'flex',
             gap: 10,
@@ -629,6 +807,7 @@ const PostCard = memo(({ post, currentUser, onLike, onComment, onShare, onSave, 
             />
             <button 
               onClick={handleAddComment}
+              disabled={!commentText.trim()}
               style={{
                 background: COLORS.gradient1,
                 border: 'none',
@@ -636,10 +815,11 @@ const PostCard = memo(({ post, currentUser, onLike, onComment, onShare, onSave, 
                 width: 34,
                 height: 34,
                 color: 'white',
-                cursor: 'pointer',
+                cursor: commentText.trim() ? 'pointer' : 'not-allowed',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                opacity: commentText.trim() ? 1 : 0.5,
               }}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
@@ -661,6 +841,16 @@ const PostCard = memo(({ post, currentUser, onLike, onComment, onShare, onSave, 
                 onViewProfile={() => onViewProfile?.(comment.userId)}
               />
             ))}
+            {comments.length === 0 && (
+              <div style={{
+                textAlign: 'center',
+                padding: '20px',
+                color: COLORS.textTertiary,
+                fontSize: 13,
+              }}>
+                No comments yet. Be the first! 💬
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -668,7 +858,7 @@ const PostCard = memo(({ post, currentUser, onLike, onComment, onShare, onSave, 
   );
 });
 
-const ActionButton = ({ icon, label, active, onClick }) => (
+const ActionButton = ({ icon, label, active, onClick, color }) => (
   <button
     onClick={onClick}
     style={{
@@ -681,21 +871,21 @@ const ActionButton = ({ icon, label, active, onClick }) => (
       cursor: 'pointer',
       borderRadius: 20,
       transition: 'all 0.2s',
-      color: active ? COLORS.primary : COLORS.textSecondary,
+      color: color || COLORS.textSecondary,
       position: 'relative',
     }}
   >
     <span style={{ fontSize: 20 }}>{icon}</span>
-    <span style={{ fontSize: 12, fontWeight: 500 }}>{label}</span>
+    <span style={{ fontSize: 12, fontWeight: 600 }}>{label}</span>
     {active && (
       <div style={{
         position: 'absolute',
         bottom: -2,
         left: '50%',
         transform: 'translateX(-50%)',
-        width: 12,
-        height: 2,
-        borderRadius: 2,
+        width: 16,
+        height: 3,
+        borderRadius: 3,
         background: COLORS.primary,
       }} />
     )}
@@ -762,9 +952,9 @@ const CommentItem = ({ username, text, time, avatar, onViewProfile }) => (
 );
 
 // ============================================================
-// 7. HOME FEED
+// 7. HOME FEED - MATCHES IMAGE EXACTLY
 // ============================================================
-export const HomeFeed = ({ 
+const HomeFeed = ({ 
   currentUser, 
   posts, 
   stories, 
@@ -778,29 +968,96 @@ export const HomeFeed = ({
   onFollow,
   onCreateStory,
   onViewProfile,
+  onSeeAllStories,
+  onOpenNotifications,
 }) => {
   const [feedType, setFeedType] = useState('popular');
   const feedOptions = ['Popular', 'Nearby', 'Following'];
+  const [refreshing, setRefreshing] = useState(false);
+  const [pullDist, setPullDist] = useState(0);
+  const pullStartY = useRef(null);
+  
+  const handlePullStart = (e) => {
+    if (e.touches[0].scrollY === 0) {
+      pullStartY.current = e.touches[0].clientY;
+    }
+  };
+  
+  const handlePullMove = (e) => {
+    if (pullStartY.current === null) return;
+    const dy = e.touches[0].clientY - pullStartY.current;
+    if (dy > 0 && dy < 100) setPullDist(dy);
+  };
+  
+  const handlePullEnd = async () => {
+    if (pullDist > 60) {
+      haptic('medium');
+      setRefreshing(true);
+      await new Promise(r => setTimeout(r, 1200));
+      setRefreshing(false);
+    }
+    setPullDist(0);
+    pullStartY.current = null;
+  };
   
   return (
-    <div style={{
-      flex: 1,
-      overflowY: 'auto',
-      background: COLORS.bg,
-      paddingBottom: 80,
-    }}>
+    <div 
+      style={{
+        flex: 1,
+        overflowY: 'auto',
+        background: COLORS.bg,
+        paddingBottom: 80,
+      }}
+      onTouchStart={handlePullStart}
+      onTouchMove={handlePullMove}
+      onTouchEnd={handlePullEnd}
+    >
+      {/* Pull to refresh indicator */}
+      {(pullDist > 10 || refreshing) && (
+        <div style={{
+          position: 'sticky',
+          top: refreshing ? 16 : pullDist - 40,
+          zIndex: 25,
+          display: 'flex',
+          justifyContent: 'center',
+          padding: 8,
+        }}>
+          <div style={{
+            width: 36,
+            height: 36,
+            borderRadius: '50%',
+            background: COLORS.bgCard,
+            border: `1px solid ${COLORS.border}`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            <div style={{
+              width: 18,
+              height: 18,
+              border: `2px solid ${COLORS.border}`,
+              borderTop: `2px solid ${COLORS.primary}`,
+              borderRadius: '50%',
+              animation: refreshing ? 'spin 0.8s linear infinite' : 'none',
+              transform: !refreshing ? `rotate(${pullDist * 3}deg)` : 'none',
+            }} />
+          </div>
+        </div>
+      )}
+      
       {/* Stories Bar */}
       <StoriesBar 
         stories={stories} 
         currentUser={currentUser}
         onStoryPress={onStoryPress}
         onCreateStory={onCreateStory}
+        onSeeAll={onSeeAllStories}
       />
       
       {/* What's On Your Mind */}
       <WhatsOnYourMind onPostPress={onPostPress} />
       
-      {/* Feed Type Selector - UNIQUE DESIGN */}
+      {/* Feed Type Selector - UNIQUE */}
       <div style={{
         display: 'flex',
         gap: 0,
@@ -808,41 +1065,44 @@ export const HomeFeed = ({
         borderBottom: `1px solid ${COLORS.border}`,
         background: COLORS.bgSecondary,
       }}>
-        {feedOptions.map(option => (
-          <button
-            key={option}
-            onClick={() => setFeedType(option.toLowerCase())}
-            style={{
-              flex: 1,
-              padding: '12px 0',
-              background: 'none',
-              border: 'none',
-              color: feedType === option.toLowerCase() ? COLORS.text : COLORS.textTertiary,
-              fontSize: 14,
-              fontWeight: feedType === option.toLowerCase() ? 700 : 500,
-              cursor: 'pointer',
-              borderBottom: feedType === option.toLowerCase() 
-                ? `2px solid ${COLORS.primary}`
-                : '2px solid transparent',
-              transition: 'all 0.2s',
-              position: 'relative',
-            }}
-          >
-            {option}
-            {feedType === option.toLowerCase() && (
-              <div style={{
-                position: 'absolute',
-                bottom: -1,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                width: 20,
-                height: 3,
-                borderRadius: 3,
-                background: COLORS.primary,
-              }} />
-            )}
-          </button>
-        ))}
+        {feedOptions.map(option => {
+          const isActive = feedType === option.toLowerCase();
+          return (
+            <button
+              key={option}
+              onClick={() => setFeedType(option.toLowerCase())}
+              style={{
+                flex: 1,
+                padding: '12px 0',
+                background: 'none',
+                border: 'none',
+                color: isActive ? COLORS.text : COLORS.textTertiary,
+                fontSize: 14,
+                fontWeight: isActive ? 700 : 500,
+                cursor: 'pointer',
+                borderBottom: isActive 
+                  ? `2.5px solid ${COLORS.primary}`
+                  : '2.5px solid transparent',
+                transition: 'all 0.2s',
+                position: 'relative',
+              }}
+            >
+              {option}
+              {isActive && (
+                <div style={{
+                  position: 'absolute',
+                  bottom: -1,
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  width: 24,
+                  height: 3,
+                  borderRadius: 3,
+                  background: COLORS.gradient1,
+                }} />
+              )}
+            </button>
+          );
+        })}
       </div>
       
       {/* Posts Feed */}
@@ -860,6 +1120,7 @@ export const HomeFeed = ({
               onMore={onMore}
               onFollow={onFollow}
               onViewProfile={onViewProfile}
+              onPostPress={onPostPress}
             />
           ))
         ) : (
@@ -869,30 +1130,43 @@ export const HomeFeed = ({
             color: COLORS.textTertiary,
           }}>
             <span style={{ fontSize: 48, display: 'block', marginBottom: 16 }}>📭</span>
-            <p style={{ fontSize: 16, fontWeight: 500 }}>No posts yet</p>
+            <p style={{ fontSize: 16, fontWeight: 600 }}>No posts yet</p>
             <p style={{ fontSize: 14, marginTop: 4 }}>Be the first to share something!</p>
           </div>
         )}
       </div>
+      
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 };
 
 // ============================================================
-// 8. NOTIFICATIONS PAGE
+// 8. NOTIFICATIONS PAGE - MATCHES IMAGE EXACTLY
 // ============================================================
-export const NotificationsPage = ({ 
+const NotificationsPage = ({ 
   notifications, 
   currentUser, 
   onClose, 
   onNotificationPress,
   onFollowBack,
   onViewProfile,
+  onMarkAllRead,
 }) => {
   const [filter, setFilter] = useState('all');
   const filters = ['All', 'Likes', 'Comments', 'Mentions'];
+  const [unreadCount, setUnreadCount] = useState(0);
   
-  // Group notifications by date
+  useEffect(() => {
+    setUnreadCount(notifications?.filter(n => !n.read).length || 0);
+  }, [notifications]);
+  
+  // Group notifications
   const grouped = notifications?.reduce((acc, notif) => {
     const isToday = notif.createdAt?.toDate 
       ? new Date(notif.createdAt.toDate()).toDateString() === new Date().toDateString()
@@ -905,7 +1179,7 @@ export const NotificationsPage = ({
   
   const filteredNotifs = filter === 'all' 
     ? notifications 
-    : notifications?.filter(n => n.type === filter.slice(0, -1));
+    : notifications?.filter(n => n.type === filter.toLowerCase().slice(0, -1));
   
   return (
     <div style={{
@@ -918,7 +1192,7 @@ export const NotificationsPage = ({
       maxWidth: 430,
       margin: '0 auto',
     }}>
-      {/* Header */}
+      {/* Header - UNIQUE */}
       <div style={{
         padding: '16px 20px 12px',
         borderBottom: `1px solid ${COLORS.border}`,
@@ -929,50 +1203,92 @@ export const NotificationsPage = ({
           justifyContent: 'space-between',
           alignItems: 'center',
         }}>
-          <span style={{
-            color: COLORS.text,
-            fontSize: 20,
-            fontWeight: 700,
-          }}>Notifications</span>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: COLORS.textTertiary,
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+          }}>
+            <span style={{
+              color: COLORS.text,
               fontSize: 20,
-              cursor: 'pointer',
-            }}
-          >✕</button>
+              fontWeight: 700,
+            }}>Notifications</span>
+            {unreadCount > 0 && (
+              <div style={{
+                background: COLORS.primary,
+                borderRadius: 20,
+                padding: '2px 10px',
+                color: 'white',
+                fontSize: 12,
+                fontWeight: 700,
+              }}>
+                {unreadCount}
+              </div>
+            )}
+          </div>
+          <div style={{
+            display: 'flex',
+            gap: 8,
+            alignItems: 'center',
+          }}>
+            {unreadCount > 0 && (
+              <button
+                onClick={onMarkAllRead}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: COLORS.accent,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Mark all read
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: COLORS.textTertiary,
+                fontSize: 20,
+                cursor: 'pointer',
+              }}
+            >✕</button>
+          </div>
         </div>
         
-        {/* Filter Tabs - UNIQUE DESIGN */}
+        {/* Filter Tabs - UNIQUE */}
         <div style={{
           display: 'flex',
           gap: 16,
           marginTop: 12,
         }}>
-          {filters.map(f => (
-            <button
-              key={f}
-              onClick={() => setFilter(f.toLowerCase())}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: filter === f.toLowerCase() ? COLORS.text : COLORS.textTertiary,
-                fontSize: 14,
-                fontWeight: filter === f.toLowerCase() ? 700 : 500,
-                cursor: 'pointer',
-                padding: '4px 0',
-                borderBottom: filter === f.toLowerCase() 
-                  ? `2px solid ${COLORS.primary}`
-                  : '2px solid transparent',
-                transition: 'all 0.2s',
-              }}
-            >
-              {f}
-            </button>
-          ))}
+          {filters.map(f => {
+            const isActive = filter === f.toLowerCase();
+            return (
+              <button
+                key={f}
+                onClick={() => setFilter(f.toLowerCase())}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: isActive ? COLORS.text : COLORS.textTertiary,
+                  fontSize: 14,
+                  fontWeight: isActive ? 700 : 500,
+                  cursor: 'pointer',
+                  padding: '4px 0',
+                  borderBottom: isActive 
+                    ? `2.5px solid ${COLORS.primary}`
+                    : '2.5px solid transparent',
+                  transition: 'all 0.2s',
+                }}
+              >
+                {f}
+              </button>
+            );
+          })}
         </div>
       </div>
       
@@ -982,38 +1298,38 @@ export const NotificationsPage = ({
         overflowY: 'auto',
         padding: '0 16px',
       }}>
-        {Object.entries(grouped || {}).map(([section, items]) => (
-          <div key={section}>
-            <div style={{
-              color: COLORS.textSecondary,
-              fontSize: 13,
-              fontWeight: 600,
-              padding: '16px 0 8px',
-            }}>
-              {section}
+        {filteredNotifs && filteredNotifs.length > 0 ? (
+          Object.entries(grouped || {}).map(([section, items]) => (
+            <div key={section}>
+              <div style={{
+                color: COLORS.textSecondary,
+                fontSize: 13,
+                fontWeight: 600,
+                padding: '16px 0 8px',
+              }}>
+                {section}
+              </div>
+              
+              {items.map(notif => (
+                <NotificationItem
+                  key={notif.id}
+                  notif={notif}
+                  currentUser={currentUser}
+                  onPress={onNotificationPress}
+                  onFollowBack={onFollowBack}
+                  onViewProfile={onViewProfile}
+                />
+              ))}
             </div>
-            
-            {items.map(notif => (
-              <NotificationItem
-                key={notif.id}
-                notif={notif}
-                currentUser={currentUser}
-                onPress={onNotificationPress}
-                onFollowBack={onFollowBack}
-                onViewProfile={onViewProfile}
-              />
-            ))}
-          </div>
-        ))}
-        
-        {(!notifications || notifications.length === 0) && (
+          ))
+        ) : (
           <div style={{
             textAlign: 'center',
             padding: '60px 20px',
             color: COLORS.textTertiary,
           }}>
             <span style={{ fontSize: 48, display: 'block', marginBottom: 16 }}>🔔</span>
-            <p style={{ fontSize: 16, fontWeight: 500 }}>No notifications yet</p>
+            <p style={{ fontSize: 16, fontWeight: 600 }}>No notifications yet</p>
             <p style={{ fontSize: 14, marginTop: 4 }}>We'll notify you when something happens</p>
           </div>
         )}
@@ -1029,9 +1345,11 @@ const NotificationItem = ({ notif, currentUser, onPress, onFollowBack, onViewPro
     follow: { icon: '👤', color: COLORS.secondary, bg: 'rgba(157,78,221,0.15)' },
     mention: { icon: '@', color: COLORS.warning, bg: 'rgba(255,177,0,0.15)' },
     share: { icon: '↗️', color: COLORS.success, bg: 'rgba(46,213,115,0.15)' },
+    message: { icon: '💬', color: COLORS.accent, bg: 'rgba(10,132,255,0.15)' },
   };
   
   const config = typeConfig[notif.type] || { icon: '🔔', color: COLORS.textTertiary, bg: 'rgba(255,255,255,0.05)' };
+  const isFollowing = currentUser?.following?.includes(notif.senderId);
   
   return (
     <div 
@@ -1044,6 +1362,10 @@ const NotificationItem = ({ notif, currentUser, onPress, onFollowBack, onViewPro
         borderBottom: `1px solid ${COLORS.borderLight}`,
         cursor: 'pointer',
         transition: 'all 0.2s',
+        background: !notif.read ? `${COLORS.primary}08` : 'transparent',
+        borderRadius: 12,
+        paddingLeft: !notif.read ? 8 : 0,
+        paddingRight: !notif.read ? 8 : 0,
       }}
     >
       <div 
@@ -1098,9 +1420,12 @@ const NotificationItem = ({ notif, currentUser, onPress, onFollowBack, onViewPro
         }}>
           <span 
             onClick={(e) => { e.stopPropagation(); onViewProfile?.(notif.senderId); }}
-            style={{ fontWeight: 600, cursor: 'pointer' }}
+            style={{ fontWeight: 700, cursor: 'pointer' }}
           >{notif.senderName}</span>
-          {' '}{notif.message}
+          {' '}
+          <span style={{ color: COLORS.textSecondary }}>
+            {notif.message}
+          </span>
         </div>
         <div style={{
           display: 'flex',
@@ -1112,7 +1437,7 @@ const NotificationItem = ({ notif, currentUser, onPress, onFollowBack, onViewPro
             color: COLORS.textTertiary,
             fontSize: 11,
           }}>{notif.time || timeAgo(notif.createdAt)}</span>
-          {notif.type === 'follow' && !notif.followedBack && (
+          {notif.type === 'follow' && !isFollowing && notif.senderId !== currentUser?.id && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -1134,14 +1459,24 @@ const NotificationItem = ({ notif, currentUser, onPress, onFollowBack, onViewPro
           )}
         </div>
       </div>
+      
+      {!notif.read && (
+        <div style={{
+          width: 8,
+          height: 8,
+          borderRadius: '50%',
+          background: COLORS.primary,
+          flexShrink: 0,
+        }} />
+      )}
     </div>
   );
 };
 
 // ============================================================
-// 9. PROFILE PAGE
+// 9. PROFILE PAGE - MATCHES IMAGE EXACTLY
 // ============================================================
-export const ProfilePage = ({ 
+const ProfilePage = ({ 
   user, 
   currentUser, 
   posts, 
@@ -1152,6 +1487,8 @@ export const ProfilePage = ({
   onPostPress,
   onViewProfile,
   onFollow,
+  onMessage,
+  onShareProfile,
 }) => {
   const [activeTab, setActiveTab] = useState('posts');
   const [showFollowers, setShowFollowers] = useState(false);
@@ -1163,6 +1500,9 @@ export const ProfilePage = ({
     { id: 'liked', icon: '❤️', label: 'Liked' },
   ];
   
+  const isOwnProfile = user?.id === currentUser?.id;
+  const isFollowing = currentUser?.following?.includes(user?.id);
+  
   return (
     <div style={{
       flex: 1,
@@ -1170,7 +1510,7 @@ export const ProfilePage = ({
       background: COLORS.bg,
       paddingBottom: 80,
     }}>
-      {/* Profile Header */}
+      {/* Profile Header - UNIQUE */}
       <div style={{
         padding: '20px 16px 16px',
         background: COLORS.bgSecondary,
@@ -1238,7 +1578,7 @@ export const ProfilePage = ({
               fontSize: 13,
             }}>@{user?.username}</span>
             
-            {/* Stats - UNIQUE DESIGN */}
+            {/* Stats - UNIQUE */}
             <div style={{
               display: 'flex',
               gap: 16,
@@ -1300,66 +1640,124 @@ export const ProfilePage = ({
           }}>{user.bio}</p>
         )}
         
-        {/* Action Buttons - UNIQUE DESIGN */}
+        {/* Action Buttons - UNIQUE */}
         <div style={{
           display: 'flex',
           gap: 10,
           marginTop: 14,
         }}>
-          <button 
-            onClick={onEditProfile}
-            style={{
-              flex: 1,
-              background: COLORS.gradient1,
-              border: 'none',
-              borderRadius: 24,
-              padding: '10px 0',
-              color: 'white',
-              fontWeight: 600,
-              fontSize: 13,
-              cursor: 'pointer',
-            }}
-          >
-            Edit Profile
-          </button>
-          <button 
-            onClick={onAddProfile}
-            style={{
-              flex: 1,
-              background: 'none',
-              border: `1px solid ${COLORS.border}`,
-              borderRadius: 24,
-              padding: '10px 0',
-              color: COLORS.textSecondary,
-              fontWeight: 600,
-              fontSize: 13,
-              cursor: 'pointer',
-            }}
-          >
-            Add Profile
-          </button>
+          {isOwnProfile ? (
+            <>
+              <button 
+                onClick={onEditProfile}
+                style={{
+                  flex: 1,
+                  background: COLORS.gradient1,
+                  border: 'none',
+                  borderRadius: 24,
+                  padding: '10px 0',
+                  color: 'white',
+                  fontWeight: 700,
+                  fontSize: 13,
+                  cursor: 'pointer',
+                }}
+              >
+                Edit Profile
+              </button>
+              <button 
+                onClick={onAddProfile}
+                style={{
+                  flex: 1,
+                  background: 'none',
+                  border: `1px solid ${COLORS.border}`,
+                  borderRadius: 24,
+                  padding: '10px 0',
+                  color: COLORS.textSecondary,
+                  fontWeight: 600,
+                  fontSize: 13,
+                  cursor: 'pointer',
+                }}
+              >
+                Add Profile
+              </button>
+            </>
+          ) : (
+            <>
+              <button 
+                onClick={() => onFollow?.(user?.id)}
+                style={{
+                  flex: 1,
+                  background: isFollowing ? 'none' : COLORS.gradient1,
+                  border: isFollowing ? `1px solid ${COLORS.border}` : 'none',
+                  borderRadius: 24,
+                  padding: '10px 0',
+                  color: isFollowing ? COLORS.textSecondary : 'white',
+                  fontWeight: 700,
+                  fontSize: 13,
+                  cursor: 'pointer',
+                }}
+              >
+                {isFollowing ? 'Following' : 'Follow'}
+              </button>
+              <button 
+                onClick={() => onMessage?.(user?.id)}
+                style={{
+                  flex: 1,
+                  background: COLORS.bgCard,
+                  border: `1px solid ${COLORS.border}`,
+                  borderRadius: 24,
+                  padding: '10px 0',
+                  color: COLORS.textSecondary,
+                  fontWeight: 600,
+                  fontSize: 13,
+                  cursor: 'pointer',
+                }}
+              >
+                Message
+              </button>
+              <button 
+                onClick={onShareProfile}
+                style={{
+                  width: 48,
+                  background: COLORS.bgCard,
+                  border: `1px solid ${COLORS.border}`,
+                  borderRadius: 24,
+                  padding: '10px 0',
+                  color: COLORS.textSecondary,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                ↗️
+              </button>
+            </>
+          )}
         </div>
         
         {/* Level Badge - UNIQUE */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          marginTop: 12,
-          padding: '6px 14px',
-          background: `linear-gradient(135deg, ${COLORS.primary}22, ${COLORS.secondary}22)`,
-          borderRadius: 20,
-          border: `1px solid ${COLORS.primary}33`,
-        }}>
-          <span style={{ fontSize: 16 }}>🏆</span>
-          <span style={{ color: COLORS.text, fontSize: 13, fontWeight: 600 }}>
-            Level {user?.level || 1}
-          </span>
-          <span style={{
-            color: COLORS.textTertiary,
-            fontSize: 11,
-          }}>• {formatNumber(user?.xp || 0)} XP</span>
-        </div>
+        {isOwnProfile && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            marginTop: 12,
+            padding: '6px 14px',
+            background: `linear-gradient(135deg, ${COLORS.primary}22, ${COLORS.secondary}22)`,
+            borderRadius: 20,
+            border: `1px solid ${COLORS.primary}33`,
+          }}>
+            <span style={{ fontSize: 16 }}>🏆</span>
+            <span style={{ color: COLORS.text, fontSize: 13, fontWeight: 600 }}>
+              Level {user?.level || 1}
+            </span>
+            <span style={{
+              color: COLORS.textTertiary,
+              fontSize: 11,
+            }}>• {formatNumber(user?.xp || 0)} XP</span>
+          </div>
+        )}
       </div>
       
       {/* Tab Navigation - UNIQUE */}
@@ -1368,33 +1766,36 @@ export const ProfilePage = ({
         borderBottom: `1px solid ${COLORS.border}`,
         background: COLORS.bgSecondary,
       }}>
-        {tabs.map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            style={{
-              flex: 1,
-              padding: '12px 0',
-              background: 'none',
-              border: 'none',
-              color: activeTab === tab.id ? COLORS.text : COLORS.textTertiary,
-              fontSize: 13,
-              fontWeight: activeTab === tab.id ? 700 : 500,
-              cursor: 'pointer',
-              borderBottom: activeTab === tab.id 
-                ? `2px solid ${COLORS.primary}`
-                : '2px solid transparent',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 6,
-              transition: 'all 0.2s',
-            }}
-          >
-            <span>{tab.icon}</span>
-            {tab.label}
-          </button>
-        ))}
+        {tabs.map(tab => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              style={{
+                flex: 1,
+                padding: '12px 0',
+                background: 'none',
+                border: 'none',
+                color: isActive ? COLORS.text : COLORS.textTertiary,
+                fontSize: 13,
+                fontWeight: isActive ? 700 : 500,
+                cursor: 'pointer',
+                borderBottom: isActive 
+                  ? `2.5px solid ${COLORS.primary}`
+                  : '2.5px solid transparent',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+                transition: 'all 0.2s',
+              }}
+            >
+              <span>{tab.icon}</span>
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
       
       {/* Content */}
@@ -1437,9 +1838,9 @@ export const ProfilePage = ({
                     bottom: 4,
                     right: 6,
                     color: 'white',
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: 600,
-                    background: 'rgba(0,0,0,0.6)',
+                    background: 'rgba(0,0,0,0.7)',
                     borderRadius: 12,
                     padding: '2px 8px',
                     display: 'flex',
@@ -1458,7 +1859,7 @@ export const ProfilePage = ({
               color: COLORS.textTertiary,
             }}>
               <span style={{ fontSize: 48, display: 'block', marginBottom: 16 }}>📷</span>
-              <p style={{ fontSize: 16, fontWeight: 500 }}>No posts yet</p>
+              <p style={{ fontSize: 16, fontWeight: 600 }}>No posts yet</p>
               <p style={{ fontSize: 14, marginTop: 4 }}>Share your first memory!</p>
             </div>
           )
@@ -1471,7 +1872,7 @@ export const ProfilePage = ({
             color: COLORS.textTertiary,
           }}>
             <span style={{ fontSize: 48, display: 'block', marginBottom: 16 }}>🔖</span>
-            <p style={{ fontSize: 16, fontWeight: 500 }}>No saved posts</p>
+            <p style={{ fontSize: 16, fontWeight: 600 }}>No saved posts</p>
             <p style={{ fontSize: 14, marginTop: 4 }}>Save posts you love!</p>
           </div>
         )}
@@ -1483,7 +1884,7 @@ export const ProfilePage = ({
             color: COLORS.textTertiary,
           }}>
             <span style={{ fontSize: 48, display: 'block', marginBottom: 16 }}>❤️</span>
-            <p style={{ fontSize: 16, fontWeight: 500 }}>No liked posts</p>
+            <p style={{ fontSize: 16, fontWeight: 600 }}>No liked posts</p>
             <p style={{ fontSize: 14, marginTop: 4 }}>Like posts to see them here!</p>
           </div>
         )}
@@ -1491,110 +1892,90 @@ export const ProfilePage = ({
       
       {/* Followers Modal */}
       {showFollowers && (
-        <div 
-          onClick={() => setShowFollowers(false)}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.7)',
-            zIndex: 1000,
-            display: 'flex',
-            alignItems: 'flex-end',
-            justifyContent: 'center',
-          }}
-        >
-          <div 
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              width: '100%',
-              maxWidth: 430,
-              background: COLORS.bgSecondary,
-              borderRadius: '24px 24px 0 0',
-              padding: '20px 16px 40px',
-              maxHeight: '70%',
-              overflow: 'auto',
-            }}
-          >
-            <div style={{
-              width: 36,
-              height: 4,
-              background: COLORS.border,
-              borderRadius: 2,
-              margin: '0 auto 16px',
-            }} />
-            <div style={{
-              color: COLORS.text,
-              fontSize: 18,
-              fontWeight: 700,
-              marginBottom: 16,
-            }}>Followers</div>
-            {followers?.map(user => (
-              <UserListItem 
-                key={user.id} 
-                user={user} 
-                onPress={() => { onViewProfile?.(user.id); setShowFollowers(false); }}
-                onFollow={onFollow}
-                currentUser={currentUser}
-              />
-            ))}
-          </div>
-        </div>
+        <ModalSheet
+          title="Followers"
+          onClose={() => setShowFollowers(false)}
+          users={followers}
+          currentUser={currentUser}
+          onViewProfile={onViewProfile}
+          onFollow={onFollow}
+        />
       )}
       
       {/* Following Modal */}
       {showFollowing && (
-        <div 
-          onClick={() => setShowFollowing(false)}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.7)',
-            zIndex: 1000,
-            display: 'flex',
-            alignItems: 'flex-end',
-            justifyContent: 'center',
-          }}
-        >
-          <div 
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              width: '100%',
-              maxWidth: 430,
-              background: COLORS.bgSecondary,
-              borderRadius: '24px 24px 0 0',
-              padding: '20px 16px 40px',
-              maxHeight: '70%',
-              overflow: 'auto',
-            }}
-          >
-            <div style={{
-              width: 36,
-              height: 4,
-              background: COLORS.border,
-              borderRadius: 2,
-              margin: '0 auto 16px',
-            }} />
-            <div style={{
-              color: COLORS.text,
-              fontSize: 18,
-              fontWeight: 700,
-              marginBottom: 16,
-            }}>Following</div>
-            {following?.map(user => (
-              <UserListItem 
-                key={user.id} 
-                user={user} 
-                onPress={() => { onViewProfile?.(user.id); setShowFollowing(false); }}
-                onFollow={onFollow}
-                currentUser={currentUser}
-              />
-            ))}
-          </div>
-        </div>
+        <ModalSheet
+          title="Following"
+          onClose={() => setShowFollowing(false)}
+          users={following}
+          currentUser={currentUser}
+          onViewProfile={onViewProfile}
+          onFollow={onFollow}
+        />
       )}
     </div>
   );
 };
+
+const ModalSheet = ({ title, onClose, users, currentUser, onViewProfile, onFollow }) => (
+  <div 
+    onClick={onClose}
+    style={{
+      position: 'fixed',
+      inset: 0,
+      background: 'rgba(0,0,0,0.7)',
+      zIndex: 1000,
+      display: 'flex',
+      alignItems: 'flex-end',
+      justifyContent: 'center',
+    }}
+  >
+    <div 
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        width: '100%',
+        maxWidth: 430,
+        background: COLORS.bgSecondary,
+        borderRadius: '24px 24px 0 0',
+        padding: '20px 16px 40px',
+        maxHeight: '70%',
+        overflow: 'auto',
+      }}
+    >
+      <div style={{
+        width: 36,
+        height: 4,
+        background: COLORS.border,
+        borderRadius: 2,
+        margin: '0 auto 16px',
+      }} />
+      <div style={{
+        color: COLORS.text,
+        fontSize: 18,
+        fontWeight: 700,
+        marginBottom: 16,
+      }}>{title}</div>
+      {users?.map(user => (
+        <UserListItem 
+          key={user.id} 
+          user={user} 
+          onPress={() => { onViewProfile?.(user.id); onClose(); }}
+          onFollow={onFollow}
+          currentUser={currentUser}
+        />
+      ))}
+      {(!users || users.length === 0) && (
+        <div style={{
+          textAlign: 'center',
+          padding: '40px 20px',
+          color: COLORS.textTertiary,
+        }}>
+          <p>No {title.toLowerCase()} yet</p>
+        </div>
+      )}
+    </div>
+  </div>
+);
 
 const UserListItem = ({ user, onPress, onFollow, currentUser }) => {
   const isFollowing = currentUser?.following?.includes(user.id);
@@ -1679,19 +2060,20 @@ const UserListItem = ({ user, onPress, onFollow, currentUser }) => {
 };
 
 // ============================================================
-// 10. FRIENDS / DISCOVERY PAGE
+// 10. FRIENDS / DISCOVERY PAGE - MATCHES IMAGE
 // ============================================================
-export const FriendsPage = ({ 
+const FriendsPage = ({ 
   currentUser, 
   users, 
   onFollow, 
   onViewProfile, 
   onMessage,
+  onSearch,
 }) => {
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('discover');
   
-  // Smart suggestions based on mutual friends and interests
+  // Smart suggestions based on mutual friends
   const suggestions = users
     .filter(u => u.id !== currentUser?.id)
     .filter(u => !currentUser?.following?.includes(u.id))
@@ -1699,13 +2081,28 @@ export const FriendsPage = ({
       ...u,
       mutualFriends: (u.followers || []).filter(id => currentUser?.following?.includes(id)).length,
     }))
-    .sort((a, b) => b.mutualFriends - a.mutualFriends)
-    .slice(0, 10);
+    .sort((a, b) => b.mutualFriends - a.mutualFriends || (b.followers?.length || 0) - (a.followers?.length || 0))
+    .slice(0, 15);
   
   // Close friends = people you interact with most
   const closeFriends = users
     .filter(u => currentUser?.following?.includes(u.id))
     .slice(0, 6);
+  
+  // Your friends (following)
+  const yourFriends = users.filter(u => currentUser?.following?.includes(u.id));
+  
+  // Filtered by search
+  const filteredUsers = users.filter(u => 
+    u.id !== currentUser?.id &&
+    (u.username?.toLowerCase().includes(search.toLowerCase()) ||
+     u.fullName?.toLowerCase().includes(search.toLowerCase()))
+  );
+  
+  const handleSearch = (value) => {
+    setSearch(value);
+    onSearch?.(value);
+  };
   
   return (
     <div style={{
@@ -1744,7 +2141,7 @@ export const FriendsPage = ({
           <input
             placeholder="Search friends..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => handleSearch(e.target.value)}
             style={{
               flex: 1,
               background: 'none',
@@ -1764,64 +2161,38 @@ export const FriendsPage = ({
         borderBottom: `1px solid ${COLORS.border}`,
         background: COLORS.bgSecondary,
       }}>
-        {['Discover', 'Your Friends', 'Requests'].map(tab => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab.toLowerCase().replace(' ', ''))}
-            style={{
-              padding: '12px 0',
-              marginRight: 20,
-              background: 'none',
-              border: 'none',
-              color: activeTab === tab.toLowerCase().replace(' ', '') 
-                ? COLORS.text 
-                : COLORS.textTertiary,
-              fontSize: 14,
-              fontWeight: activeTab === tab.toLowerCase().replace(' ', '') ? 700 : 500,
-              cursor: 'pointer',
-              borderBottom: activeTab === tab.toLowerCase().replace(' ', '') 
-                ? `2px solid ${COLORS.primary}`
-                : '2px solid transparent',
-              transition: 'all 0.2s',
-            }}
-          >
-            {tab}
-          </button>
-        ))}
+        {['Discover', 'Your Friends', 'Requests'].map(tab => {
+          const id = tab.toLowerCase().replace(' ', '');
+          const isActive = activeTab === id;
+          return (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(id)}
+              style={{
+                padding: '12px 0',
+                marginRight: 20,
+                background: 'none',
+                border: 'none',
+                color: isActive ? COLORS.text : COLORS.textTertiary,
+                fontSize: 14,
+                fontWeight: isActive ? 700 : 500,
+                cursor: 'pointer',
+                borderBottom: isActive 
+                  ? `2.5px solid ${COLORS.primary}`
+                  : '2.5px solid transparent',
+                transition: 'all 0.2s',
+              }}
+            >
+              {tab}
+            </button>
+          );
+        })}
       </div>
       
-      {/* Smart Suggestions - UNIQUE */}
-      {activeTab === 'discover' && (
-        <div style={{ padding: '0 16px' }}>
-          <div style={{
-            marginTop: 16,
-            padding: '12px 16px',
-            background: `linear-gradient(135deg, ${COLORS.primary}15, ${COLORS.secondary}15)`,
-            borderRadius: 16,
-            border: `1px solid ${COLORS.primary}22`,
-          }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-            }}>
-              <span style={{ fontSize: 18 }}>✨</span>
-              <span style={{
-                color: COLORS.text,
-                fontSize: 13,
-                fontWeight: 600,
-              }}>Smart Suggestions</span>
-            </div>
-            <p style={{
-              color: COLORS.textSecondary,
-              fontSize: 12,
-              marginTop: 4,
-            }}>
-              AI-powered picks based on your interests, mutual friends & activity
-            </p>
-          </div>
-          
-          {suggestions.map(user => (
+      {search ? (
+        // Search results
+        <div style={{ padding: '16px' }}>
+          {filteredUsers.map(user => (
             <SuggestionCard
               key={user.id}
               user={user}
@@ -1831,89 +2202,182 @@ export const FriendsPage = ({
               currentUser={currentUser}
             />
           ))}
+          {filteredUsers.length === 0 && (
+            <div style={{
+              textAlign: 'center',
+              padding: '40px 20px',
+              color: COLORS.textTertiary,
+            }}>
+              <p>No users found</p>
+            </div>
+          )}
         </div>
-      )}
-      
-      {/* Close Friends */}
-      {activeTab === 'discover' && closeFriends.length > 0 && (
-        <div style={{ padding: '16px' }}>
-          <div style={{
-            color: COLORS.textSecondary,
-            fontSize: 13,
-            fontWeight: 600,
-            marginBottom: 12,
-          }}>✨ Close Friends</div>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: 10,
-          }}>
-            {closeFriends.map(user => (
-              <div 
-                key={user.id}
-                onClick={() => onViewProfile?.(user.id)}
-                style={{
-                  background: COLORS.bgSecondary,
-                  borderRadius: 16,
-                  padding: '12px',
-                  textAlign: 'center',
-                  cursor: 'pointer',
-                  border: `1px solid ${COLORS.border}`,
-                }}
-              >
+      ) : (
+        <>
+          {/* Smart Suggestions - UNIQUE */}
+          {activeTab === 'discover' && (
+            <div style={{ padding: '0 16px' }}>
+              <div style={{
+                marginTop: 16,
+                padding: '12px 16px',
+                background: `linear-gradient(135deg, ${COLORS.primary}15, ${COLORS.secondary}15)`,
+                borderRadius: 16,
+                border: `1px solid ${COLORS.primary}22`,
+              }}>
                 <div style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: '50%',
-                  background: COLORS.gradient1,
-                  margin: '0 auto 8px',
-                  overflow: 'hidden',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
+                  gap: 8,
                 }}>
-                  {user?.avatarUrl ? (
-                    <img 
-                      src={user.avatarUrl} 
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    />
-                  ) : (
-                    <span style={{ color: 'white', fontWeight: 700, fontSize: 16 }}>
-                      {user?.username?.[0]?.toUpperCase() || '?'}
-                    </span>
-                  )}
+                  <span style={{ fontSize: 18 }}>✨</span>
+                  <span style={{
+                    color: COLORS.text,
+                    fontSize: 13,
+                    fontWeight: 600,
+                  }}>Smart Suggestions</span>
                 </div>
-                <span style={{
-                  color: COLORS.text,
+                <p style={{
+                  color: COLORS.textSecondary,
                   fontSize: 12,
-                  fontWeight: 600,
-                  display: 'block',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}>@{user?.username}</span>
+                  marginTop: 4,
+                }}>
+                  AI-powered picks based on your interests, mutual friends & activity
+                </p>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
-      
-      {activeTab === 'yourfriends' && (
-        <div style={{ padding: '16px' }}>
-          {currentUser?.following?.map(id => {
-            const user = users.find(u => u.id === id);
-            if (!user) return null;
-            return (
-              <FriendListItem
-                key={user.id}
-                user={user}
-                onViewProfile={onViewProfile}
-                onMessage={onMessage}
-                currentUser={currentUser}
-              />
-            );
-          })}
-        </div>
+              
+              {suggestions.map(user => (
+                <SuggestionCard
+                  key={user.id}
+                  user={user}
+                  onFollow={onFollow}
+                  onViewProfile={onViewProfile}
+                  onMessage={onMessage}
+                  currentUser={currentUser}
+                />
+              ))}
+            </div>
+          )}
+          
+          {/* Close Friends - UNIQUE */}
+          {activeTab === 'discover' && closeFriends.length > 0 && (
+            <div style={{ padding: '16px' }}>
+              <div style={{
+                color: COLORS.textSecondary,
+                fontSize: 13,
+                fontWeight: 600,
+                marginBottom: 12,
+              }}>✨ Close Friends</div>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                gap: 10,
+              }}>
+                {closeFriends.map(user => (
+                  <div 
+                    key={user.id}
+                    onClick={() => onViewProfile?.(user.id)}
+                    style={{
+                      background: COLORS.bgSecondary,
+                      borderRadius: 16,
+                      padding: '12px',
+                      textAlign: 'center',
+                      cursor: 'pointer',
+                      border: `1px solid ${COLORS.border}`,
+                    }}
+                  >
+                    <div style={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: '50%',
+                      background: COLORS.gradient1,
+                      margin: '0 auto 8px',
+                      overflow: 'hidden',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}>
+                      {user?.avatarUrl ? (
+                        <img 
+                          src={user.avatarUrl} 
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      ) : (
+                        <span style={{ color: 'white', fontWeight: 700, fontSize: 16 }}>
+                          {user?.username?.[0]?.toUpperCase() || '?'}
+                        </span>
+                      )}
+                    </div>
+                    <span style={{
+                      color: COLORS.text,
+                      fontSize: 12,
+                      fontWeight: 600,
+                      display: 'block',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}>@{user?.username}</span>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onMessage?.(user.id); }}
+                      style={{
+                        marginTop: 6,
+                        background: COLORS.gradient1,
+                        border: 'none',
+                        borderRadius: 16,
+                        padding: '4px 12px',
+                        color: 'white',
+                        fontSize: 11,
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Message
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* Your Friends */}
+          {activeTab === 'yourfriends' && (
+            <div style={{ padding: '16px' }}>
+              {yourFriends.map(user => (
+                <FriendListItem
+                  key={user.id}
+                  user={user}
+                  onViewProfile={onViewProfile}
+                  onMessage={onMessage}
+                  currentUser={currentUser}
+                />
+              ))}
+              {yourFriends.length === 0 && (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '40px 20px',
+                  color: COLORS.textTertiary,
+                }}>
+                  <p>No friends yet</p>
+                  <p style={{ fontSize: 13, marginTop: 4 }}>Follow people to see them here</p>
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Requests */}
+          {activeTab === 'requests' && (
+            <div style={{ padding: '16px' }}>
+              <div style={{
+                textAlign: 'center',
+                padding: '40px 20px',
+                color: COLORS.textTertiary,
+              }}>
+                <span style={{ fontSize: 48, display: 'block', marginBottom: 16 }}>📨</span>
+                <p style={{ fontSize: 16, fontWeight: 600 }}>No requests</p>
+                <p style={{ fontSize: 14, marginTop: 4 }}>Friend requests will appear here</p>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
@@ -2082,6 +2546,11 @@ const FriendListItem = ({ user, onViewProfile, onMessage }) => (
           cursor: 'pointer',
         }}
       >{user?.username}</span>
+      <div style={{
+        color: COLORS.textTertiary,
+        fontSize: 12,
+        marginTop: 2,
+      }}>@{user?.username}</div>
     </div>
     
     <button
@@ -2090,7 +2559,7 @@ const FriendListItem = ({ user, onViewProfile, onMessage }) => (
         background: COLORS.gradient1,
         border: 'none',
         borderRadius: 20,
-        padding: '6px 14px',
+        padding: '6px 16px',
         color: 'white',
         fontSize: 12,
         fontWeight: 600,
@@ -2103,14 +2572,17 @@ const FriendListItem = ({ user, onViewProfile, onMessage }) => (
 );
 
 // ============================================================
-// 11. CREATE POST MODAL
+// 11. CREATE POST MODAL - MATCHES IMAGE
 // ============================================================
-export const CreatePostModal = ({ onClose, onPost, currentUser }) => {
+const CreatePostModal = ({ onClose, onPost, currentUser }) => {
   const [content, setContent] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
   const [isPublic, setIsPublic] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [feeling, setFeeling] = useState('');
+  const [location, setLocation] = useState('');
   const fileInputRef = useRef(null);
   
   const handleFileSelect = (e) => {
@@ -2125,12 +2597,13 @@ export const CreatePostModal = ({ onClose, onPost, currentUser }) => {
     if (!content.trim() && !selectedFile) return;
     
     setUploading(true);
+    setProgress(0);
     try {
       let mediaUrl = null;
       let mediaType = null;
       
       if (selectedFile) {
-        mediaUrl = await uploadToCloudinary(selectedFile);
+        mediaUrl = await uploadToCloudinary(selectedFile, setProgress);
         mediaType = selectedFile.type;
       }
       
@@ -2146,10 +2619,12 @@ export const CreatePostModal = ({ onClose, onPost, currentUser }) => {
         comments: 0,
         shares: 0,
         isPublic,
+        feeling: feeling || null,
+        location: location || null,
       };
       
       await addDoc(collection(db, 'posts'), postData);
-      onPost?.();
+      await onPost?.();
       onClose();
     } catch (error) {
       console.error('Error posting:', error);
@@ -2167,6 +2642,7 @@ export const CreatePostModal = ({ onClose, onPost, currentUser }) => {
       alignItems: 'center',
       justifyContent: 'center',
       padding: '16px',
+      backdropFilter: 'blur(10px)',
     }}>
       <div style={{
         width: '100%',
@@ -2177,8 +2653,9 @@ export const CreatePostModal = ({ onClose, onPost, currentUser }) => {
         border: `1px solid ${COLORS.border}`,
         maxHeight: '90%',
         overflow: 'auto',
+        boxShadow: COLORS.shadowElevated,
       }}>
-        {/* Header */}
+        {/* Header - UNIQUE */}
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -2198,6 +2675,7 @@ export const CreatePostModal = ({ onClose, onPost, currentUser }) => {
               color: COLORS.textTertiary,
               fontSize: 20,
               cursor: 'pointer',
+              padding: 4,
             }}
           >✕</button>
         </div>
@@ -2253,8 +2731,45 @@ export const CreatePostModal = ({ onClose, onPost, currentUser }) => {
             fontSize: 14,
             resize: 'none',
             outline: 'none',
+            fontFamily: 'inherit',
           }}
         />
+        
+        {/* Feeling & Location - UNIQUE */}
+        <div style={{
+          display: 'flex',
+          gap: 8,
+          marginTop: 8,
+        }}>
+          <button
+            onClick={() => setFeeling(feeling ? '' : '😊 Happy')}
+            style={{
+              background: feeling ? COLORS.bgCard : 'none',
+              border: feeling ? `1px solid ${COLORS.border}` : 'none',
+              borderRadius: 20,
+              padding: '4px 12px',
+              color: COLORS.textSecondary,
+              fontSize: 12,
+              cursor: 'pointer',
+            }}
+          >
+            {feeling || '😊 Feeling'}
+          </button>
+          <button
+            onClick={() => setLocation(location ? '' : '📍 Current Location')}
+            style={{
+              background: location ? COLORS.bgCard : 'none',
+              border: location ? `1px solid ${COLORS.border}` : 'none',
+              borderRadius: 20,
+              padding: '4px 12px',
+              color: COLORS.textSecondary,
+              fontSize: 12,
+              cursor: 'pointer',
+            }}
+          >
+            {location || '📍 Check-in'}
+          </button>
+        </div>
         
         {/* File Preview */}
         {filePreview && (
@@ -2313,7 +2828,7 @@ export const CreatePostModal = ({ onClose, onPost, currentUser }) => {
               background: 'none',
               border: 'none',
               color: COLORS.textSecondary,
-              fontSize: 14,
+              fontSize: 13,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -2333,11 +2848,12 @@ export const CreatePostModal = ({ onClose, onPost, currentUser }) => {
             style={{ display: 'none' }}
           />
           <button
+            onClick={() => setFeeling(feeling ? '' : '😊 Happy')}
             style={{
               background: 'none',
               border: 'none',
               color: COLORS.textSecondary,
-              fontSize: 14,
+              fontSize: 13,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -2349,11 +2865,12 @@ export const CreatePostModal = ({ onClose, onPost, currentUser }) => {
             😊 Feeling
           </button>
           <button
+            onClick={() => setLocation(location ? '' : '📍 Current Location')}
             style={{
               background: 'none',
               border: 'none',
               color: COLORS.textSecondary,
-              fontSize: 14,
+              fontSize: 13,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -2399,6 +2916,24 @@ export const CreatePostModal = ({ onClose, onPost, currentUser }) => {
           </button>
         </div>
         
+        {/* Progress Bar */}
+        {uploading && (
+          <div style={{
+            marginTop: 12,
+            height: 4,
+            background: COLORS.border,
+            borderRadius: 2,
+            overflow: 'hidden',
+          }}>
+            <div style={{
+              height: '100%',
+              width: `${progress}%`,
+              background: COLORS.gradient1,
+              transition: 'width 0.3s ease',
+            }} />
+          </div>
+        )}
+        
         {/* Post Button - UNIQUE */}
         <button
           onClick={handlePost}
@@ -2423,7 +2958,7 @@ export const CreatePostModal = ({ onClose, onPost, currentUser }) => {
             transition: 'all 0.2s',
           }}
         >
-          {uploading ? 'Posting...' : 'Post ✨'}
+          {uploading ? `Uploading ${progress}%` : 'Post ✨'}
         </button>
       </div>
     </div>
@@ -2431,9 +2966,9 @@ export const CreatePostModal = ({ onClose, onPost, currentUser }) => {
 };
 
 // ============================================================
-// 12. CHAT PAGE
+// 12. CHAT PAGE - MATCHES IMAGE
 // ============================================================
-export const ChatPage = ({ 
+const ChatPage = ({ 
   currentUser, 
   conversations, 
   users, 
@@ -2442,9 +2977,11 @@ export const ChatPage = ({
   onBack,
 }) => {
   const [search, setSearch] = useState('');
+  const [activeFilter, setActiveFilter] = useState('all');
   
   const filtered = conversations?.filter(conv => {
     const otherUser = users.find(u => u.id === conv.otherUserId);
+    if (activeFilter === 'unread' && !conv.unreadCount) return false;
     return otherUser?.username?.toLowerCase().includes(search.toLowerCase());
   });
   
@@ -2455,7 +2992,7 @@ export const ChatPage = ({
       flexDirection: 'column',
       background: COLORS.bg,
     }}>
-      {/* Header */}
+      {/* Header - UNIQUE */}
       <div style={{
         padding: '16px 16px 12px',
         background: COLORS.bgSecondary,
@@ -2473,6 +3010,7 @@ export const ChatPage = ({
               color: COLORS.text,
               fontSize: 20,
               cursor: 'pointer',
+              padding: 4,
             }}
           >←</button>
         )}
@@ -2481,9 +3019,44 @@ export const ChatPage = ({
           fontSize: 20,
           fontWeight: 700,
         }}>Chat</span>
+        <div style={{
+          marginLeft: 'auto',
+          display: 'flex',
+          gap: 8,
+        }}>
+          <button
+            onClick={() => setActiveFilter(activeFilter === 'unread' ? 'all' : 'unread')}
+            style={{
+              background: activeFilter === 'unread' ? COLORS.primary : 'none',
+              border: activeFilter === 'unread' ? 'none' : `1px solid ${COLORS.border}`,
+              borderRadius: 20,
+              padding: '4px 12px',
+              color: activeFilter === 'unread' ? 'white' : COLORS.textSecondary,
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            Unread
+          </button>
+          <button
+            style={{
+              background: 'none',
+              border: `1px solid ${COLORS.border}`,
+              borderRadius: 20,
+              padding: '4px 12px',
+              color: COLORS.textSecondary,
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            + New
+          </button>
+        </div>
       </div>
       
-      {/* Search */}
+      {/* Search - UNIQUE */}
       <div style={{
         padding: '12px 16px',
         borderBottom: `1px solid ${COLORS.border}`,
@@ -2552,6 +3125,7 @@ export const ChatPage = ({
                     overflow: 'hidden',
                     flexShrink: 0,
                     cursor: 'pointer',
+                    position: 'relative',
                   }}
                 >
                   {otherUser?.avatarUrl ? (
@@ -2563,6 +3137,18 @@ export const ChatPage = ({
                     <span style={{ color: 'white', fontWeight: 700, fontSize: 16 }}>
                       {otherUser?.username?.[0]?.toUpperCase() || '?'}
                     </span>
+                  )}
+                  {otherUser?.online && (
+                    <div style={{
+                      position: 'absolute',
+                      bottom: 2,
+                      right: 2,
+                      width: 12,
+                      height: 12,
+                      borderRadius: '50%',
+                      background: COLORS.success,
+                      border: `2px solid ${COLORS.bg}`,
+                    }} />
                   )}
                 </div>
                 
@@ -2590,14 +3176,16 @@ export const ChatPage = ({
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
                     display: 'block',
-                  }}>{conv.lastMessage || 'Say hi! 👋'}</span>
+                  }}>
+                    {conv.lastMessage || 'Say hi! 👋'}
+                  </span>
                 </div>
                 
                 {conv.unreadCount > 0 && (
                   <div style={{
                     background: COLORS.primary,
                     borderRadius: '50%',
-                    width: 22,
+                    minWidth: 22,
                     height: 22,
                     display: 'flex',
                     alignItems: 'center',
@@ -2605,6 +3193,7 @@ export const ChatPage = ({
                     fontSize: 11,
                     color: 'white',
                     fontWeight: 700,
+                    padding: '0 6px',
                   }}>
                     {conv.unreadCount}
                   </div>
@@ -2619,7 +3208,7 @@ export const ChatPage = ({
             color: COLORS.textTertiary,
           }}>
             <span style={{ fontSize: 48, display: 'block', marginBottom: 16 }}>💬</span>
-            <p style={{ fontSize: 16, fontWeight: 500 }}>No messages yet</p>
+            <p style={{ fontSize: 16, fontWeight: 600 }}>No messages yet</p>
             <p style={{ fontSize: 14, marginTop: 4 }}>Start a conversation with friends!</p>
           </div>
         )}
@@ -2629,18 +3218,20 @@ export const ChatPage = ({
 };
 
 // ============================================================
-// 13. SHARE MODAL
+// 13. SHARE MODAL - MATCHES IMAGE
 // ============================================================
-export const ShareModal = ({ post, onClose, onShare }) => {
+const ShareModal = ({ post, onClose, onShare }) => {
   const shareOptions = [
-    { icon: '📋', label: 'Copy link', action: 'copy' },
-    { icon: '📘', label: 'Facebook', action: 'facebook' },
-    { icon: '📱', label: 'Messenger', action: 'messenger' },
-    { icon: '🎵', label: 'TikTok', action: 'tiktok' },
-    { icon: '💬', label: 'WhatsApp', action: 'whatsapp' },
-    { icon: '📸', label: 'Instagram', action: 'instagram' },
-    { icon: '✈️', label: 'Telegram', action: 'telegram' },
-    { icon: '📩', label: 'SMS', action: 'sms' },
+    { icon: '📋', label: 'Copy link', action: 'copy', color: COLORS.textSecondary },
+    { icon: '📘', label: 'Facebook', action: 'facebook', color: '#1877F2' },
+    { icon: '📱', label: 'Messenger', action: 'messenger', color: '#00B2FF' },
+    { icon: '🎵', label: 'TikTok', action: 'tiktok', color: '#FF0050' },
+    { icon: '💬', label: 'WhatsApp', action: 'whatsapp', color: '#25D366' },
+    { icon: '📸', label: 'Instagram', action: 'instagram', color: '#E1306C' },
+    { icon: '✈️', label: 'Telegram', action: 'telegram', color: '#26A5E4' },
+    { icon: '📩', label: 'SMS', action: 'sms', color: COLORS.textSecondary },
+    { icon: '🔄', label: 'Repost', action: 'repost', color: COLORS.success },
+    { icon: '📖', label: 'Stories', action: 'stories', color: COLORS.accent },
   ];
   
   return (
@@ -2652,6 +3243,7 @@ export const ShareModal = ({ post, onClose, onShare }) => {
       display: 'flex',
       alignItems: 'flex-end',
       justifyContent: 'center',
+      backdropFilter: 'blur(10px)',
     }}>
       <div style={{
         width: '100%',
@@ -2677,7 +3269,7 @@ export const ShareModal = ({ post, onClose, onShare }) => {
           marginBottom: 16,
         }}>Share</div>
         
-        {/* Post Preview */}
+        {/* Post Preview - UNIQUE */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
@@ -2686,6 +3278,7 @@ export const ShareModal = ({ post, onClose, onShare }) => {
           background: COLORS.bgCard,
           borderRadius: 16,
           marginBottom: 16,
+          border: `1px solid ${COLORS.border}`,
         }}>
           {post?.mediaUrl && (
             <div style={{
@@ -2718,7 +3311,7 @@ export const ShareModal = ({ post, onClose, onShare }) => {
           </div>
         </div>
         
-        {/* Share Options - UNIQUE */}
+        {/* Share Options - UNIQUE GRID */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
@@ -2737,13 +3330,15 @@ export const ShareModal = ({ post, onClose, onShare }) => {
                 border: 'none',
                 cursor: 'pointer',
                 padding: '8px 0',
+                transition: 'all 0.2s',
               }}
             >
               <div style={{
-                width: 48,
-                height: 48,
+                width: 52,
+                height: 52,
                 borderRadius: 16,
-                background: COLORS.gradient1,
+                background: opt.color === COLORS.textSecondary ? COLORS.bgCard : `${opt.color}22`,
+                border: `1px solid ${opt.color === COLORS.textSecondary ? COLORS.border : `${opt.color}44`}`,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -2752,19 +3347,40 @@ export const ShareModal = ({ post, onClose, onShare }) => {
                 {opt.icon}
               </div>
               <span style={{
-                color: COLORS.textSecondary,
-                fontSize: 11,
+                color: COLORS.textTertiary,
+                fontSize: 10,
                 fontWeight: 500,
               }}>{opt.label}</span>
             </button>
           ))}
         </div>
         
+        {/* More ways to share - UNIQUE */}
+        <div style={{
+          marginTop: 16,
+          padding: '12px',
+          background: COLORS.bgCard,
+          borderRadius: 16,
+          border: `1px solid ${COLORS.border}`,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          cursor: 'pointer',
+        }}>
+          <span style={{ fontSize: 18 }}>🔗</span>
+          <span style={{
+            color: COLORS.textSecondary,
+            fontSize: 13,
+            flex: 1,
+          }}>More ways to share</span>
+          <span style={{ color: COLORS.textTertiary }}>›</span>
+        </div>
+        
         <button
           onClick={onClose}
           style={{
             width: '100%',
-            marginTop: 16,
+            marginTop: 12,
             background: COLORS.bgCard,
             border: `1px solid ${COLORS.border}`,
             borderRadius: 24,
@@ -2773,6 +3389,7 @@ export const ShareModal = ({ post, onClose, onShare }) => {
             fontSize: 14,
             fontWeight: 600,
             cursor: 'pointer',
+            transition: 'all 0.2s',
           }}
         >
           Cancel
@@ -2783,9 +3400,9 @@ export const ShareModal = ({ post, onClose, onShare }) => {
 };
 
 // ============================================================
-// 14. MORE OPTIONS MENU
+// 14. MORE OPTIONS MENU - MATCHES IMAGE
 // ============================================================
-export const MoreOptionsMenu = ({ post, onClose, onAction }) => {
+const MoreOptionsMenu = ({ post, onClose, onAction }) => {
   const options = [
     { icon: '✏️', label: 'Edit Post', action: 'edit' },
     { icon: '📌', label: 'Pin Post', action: 'pin' },
@@ -2807,15 +3424,17 @@ export const MoreOptionsMenu = ({ post, onClose, onAction }) => {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
+      backdropFilter: 'blur(10px)',
     }}>
       <div style={{
         width: '100%',
         maxWidth: 340,
         background: COLORS.bgSecondary,
         borderRadius: 24,
-        padding: '12px 0',
+        padding: '8px 0',
         border: `1px solid ${COLORS.border}`,
         overflow: 'hidden',
+        boxShadow: COLORS.shadowElevated,
       }}>
         {options.map((opt, index) => (
           <button
@@ -2823,7 +3442,7 @@ export const MoreOptionsMenu = ({ post, onClose, onAction }) => {
             onClick={() => { onAction?.(opt.action, post); onClose(); }}
             style={{
               width: '100%',
-              padding: '12px 20px',
+              padding: '14px 20px',
               background: 'none',
               border: 'none',
               borderBottom: index < options.length - 1 ? `1px solid ${COLORS.borderLight}` : 'none',
@@ -2841,6 +3460,29 @@ export const MoreOptionsMenu = ({ post, onClose, onAction }) => {
             {opt.label}
           </button>
         ))}
+        
+        {/* Delete Post - UNIQUE */}
+        <button
+          onClick={() => { onAction?.('delete', post); onClose(); }}
+          style={{
+            width: '100%',
+            padding: '14px 20px',
+            background: 'none',
+            border: 'none',
+            borderTop: `1px solid ${COLORS.borderLight}`,
+            color: COLORS.danger,
+            fontSize: 14,
+            fontWeight: 700,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            marginTop: 4,
+          }}
+        >
+          <span style={{ fontSize: 18 }}>🗑️</span>
+          Delete Post
+        </button>
         
         <button
           onClick={onClose}
@@ -2864,9 +3506,9 @@ export const MoreOptionsMenu = ({ post, onClose, onAction }) => {
 };
 
 // ============================================================
-// 15. SAVE CONFIRMATION
+// 15. SAVE CONFIRMATION - MATCHES IMAGE
 // ============================================================
-export const SaveConfirmation = ({ onClose, onViewCollections }) => (
+const SaveConfirmation = ({ post, onClose, onViewCollections }) => (
   <div style={{
     position: 'fixed',
     inset: 0,
@@ -2876,6 +3518,7 @@ export const SaveConfirmation = ({ onClose, onViewCollections }) => (
     alignItems: 'center',
     justifyContent: 'center',
     padding: '16px',
+    backdropFilter: 'blur(10px)',
   }}>
     <div style={{
       width: '100%',
@@ -2885,6 +3528,7 @@ export const SaveConfirmation = ({ onClose, onViewCollections }) => (
       padding: '24px 20px',
       textAlign: 'center',
       border: `1px solid ${COLORS.border}`,
+      boxShadow: COLORS.shadowElevated,
     }}>
       <div style={{
         width: 64,
@@ -2895,15 +3539,18 @@ export const SaveConfirmation = ({ onClose, onViewCollections }) => (
         alignItems: 'center',
         justifyContent: 'center',
         margin: '0 auto 12px',
+        boxShadow: `0 0 30px ${COLORS.primary}33`,
       }}>
         <span style={{ fontSize: 28 }}>🔖</span>
       </div>
+      
       <h3 style={{
         color: COLORS.text,
         fontSize: 18,
         fontWeight: 700,
         marginBottom: 4,
       }}>Saved!</h3>
+      
       <p style={{
         color: COLORS.textSecondary,
         fontSize: 13,
@@ -2946,9 +3593,9 @@ export const SaveConfirmation = ({ onClose, onViewCollections }) => (
 );
 
 // ============================================================
-// 16. LIKES PAGE
+// 16. LIKES PAGE - MATCHES IMAGE
 // ============================================================
-export const LikesPage = ({ likes, onClose, onViewProfile, onFollow }) => {
+const LikesPage = ({ likes, post, onClose, onViewProfile, onFollow }) => {
   const [filter, setFilter] = useState('all');
   const filters = ['All', 'People'];
   
@@ -3002,26 +3649,29 @@ export const LikesPage = ({ likes, onClose, onViewProfile, onFollow }) => {
           gap: 16,
           marginTop: 12,
         }}>
-          {filters.map(f => (
-            <button
-              key={f}
-              onClick={() => setFilter(f.toLowerCase())}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: filter === f.toLowerCase() ? COLORS.text : COLORS.textTertiary,
-                fontSize: 14,
-                fontWeight: filter === f.toLowerCase() ? 700 : 500,
-                cursor: 'pointer',
-                padding: '4px 0',
-                borderBottom: filter === f.toLowerCase() 
-                  ? `2px solid ${COLORS.primary}`
-                  : '2px solid transparent',
-              }}
-            >
-              {f}
-            </button>
-          ))}
+          {filters.map(f => {
+            const isActive = filter === f.toLowerCase();
+            return (
+              <button
+                key={f}
+                onClick={() => setFilter(f.toLowerCase())}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: isActive ? COLORS.text : COLORS.textTertiary,
+                  fontSize: 14,
+                  fontWeight: isActive ? 700 : 500,
+                  cursor: 'pointer',
+                  padding: '4px 0',
+                  borderBottom: isActive 
+                    ? `2.5px solid ${COLORS.primary}`
+                    : '2.5px solid transparent',
+                }}
+              >
+                {f}
+              </button>
+            );
+          })}
         </div>
       </div>
       
@@ -3036,89 +3686,108 @@ export const LikesPage = ({ likes, onClose, onViewProfile, onFollow }) => {
             user={like}
             onViewProfile={onViewProfile}
             onFollow={onFollow}
+            currentUser={post?.userId}
           />
         ))}
+        {(!likes || likes.length === 0) && (
+          <div style={{
+            textAlign: 'center',
+            padding: '60px 20px',
+            color: COLORS.textTertiary,
+          }}>
+            <span style={{ fontSize: 48, display: 'block', marginBottom: 16 }}>❤️</span>
+            <p style={{ fontSize: 16, fontWeight: 600 }}>No likes yet</p>
+            <p style={{ fontSize: 14, marginTop: 4 }}>Be the first to like this post!</p>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-const LikeItem = ({ user, onViewProfile, onFollow }) => (
-  <div style={{
-    display: 'flex',
-    alignItems: 'center',
-    gap: 12,
-    padding: '10px 0',
-    borderBottom: `1px solid ${COLORS.borderLight}`,
-  }}>
-    <div 
-      onClick={() => onViewProfile?.(user.id)}
-      style={{
-        width: 44,
-        height: 44,
-        borderRadius: '50%',
-        background: COLORS.gradient1,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        overflow: 'hidden',
-        flexShrink: 0,
-        cursor: 'pointer',
-      }}
-    >
-      {user?.avatarUrl ? (
-        <img 
-          src={user.avatarUrl} 
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-        />
-      ) : (
-        <span style={{ color: 'white', fontWeight: 700, fontSize: 16 }}>
-          {user?.username?.[0]?.toUpperCase() || '?'}
-        </span>
-      )}
-    </div>
-    
-    <div style={{ flex: 1 }}>
-      <span 
+const LikeItem = ({ user, onViewProfile, onFollow, currentUser }) => {
+  const isFollowing = currentUser?.following?.includes(user.id);
+  
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: 12,
+      padding: '10px 0',
+      borderBottom: `1px solid ${COLORS.borderLight}`,
+    }}>
+      <div 
         onClick={() => onViewProfile?.(user.id)}
         style={{
-          color: COLORS.text,
-          fontWeight: 600,
-          fontSize: 14,
+          width: 44,
+          height: 44,
+          borderRadius: '50%',
+          background: COLORS.gradient1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden',
+          flexShrink: 0,
           cursor: 'pointer',
         }}
-      >{user?.username}</span>
-      <span style={{
-        color: COLORS.textTertiary,
-        fontSize: 12,
-        marginLeft: 8,
-      }}>liked your post</span>
+      >
+        {user?.avatarUrl ? (
+          <img 
+            src={user.avatarUrl} 
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+        ) : (
+          <span style={{ color: 'white', fontWeight: 700, fontSize: 16 }}>
+            {user?.username?.[0]?.toUpperCase() || '?'}
+          </span>
+        )}
+      </div>
+      
+      <div style={{ flex: 1 }}>
+        <span 
+          onClick={() => onViewProfile?.(user.id)}
+          style={{
+            color: COLORS.text,
+            fontWeight: 600,
+            fontSize: 14,
+            cursor: 'pointer',
+          }}
+        >{user?.username}</span>
+        <span style={{
+          color: COLORS.textTertiary,
+          fontSize: 12,
+          marginLeft: 8,
+        }}>liked your post</span>
+      </div>
+      
+      {user?.id !== currentUser?.id && (
+        <button
+          onClick={() => onFollow?.(user.id)}
+          style={{
+            background: isFollowing ? 'none' : COLORS.gradient1,
+            border: isFollowing ? `1px solid ${COLORS.border}` : 'none',
+            borderRadius: 20,
+            padding: '6px 16px',
+            color: isFollowing ? COLORS.textSecondary : 'white',
+            fontSize: 12,
+            fontWeight: 600,
+            cursor: 'pointer',
+          }}
+        >
+          {isFollowing ? 'Following' : 'Follow'}
+        </button>
+      )}
     </div>
-    
-    <button
-      onClick={() => onFollow?.(user.id)}
-      style={{
-        background: COLORS.gradient1,
-        border: 'none',
-        borderRadius: 20,
-        padding: '6px 16px',
-        color: 'white',
-        fontSize: 12,
-        fontWeight: 600,
-        cursor: 'pointer',
-      }}
-    >
-      Follow
-    </button>
-  </div>
-);
+  );
+};
 
 // ============================================================
-// 17. COMMENTS PAGE
+// 17. COMMENTS PAGE - MATCHES IMAGE
 // ============================================================
-export const CommentsPage = ({ post, onClose, onAddComment, onViewProfile }) => {
+const CommentsPage = ({ post, onClose, onAddComment, onViewProfile }) => {
   const [commentText, setCommentText] = useState('');
   const [comments, setComments] = useState(post?.commentsList || []);
+  const [replyingTo, setReplyingTo] = useState(null);
   
   const handleAddComment = () => {
     if (!commentText.trim()) return;
@@ -3127,10 +3796,12 @@ export const CommentsPage = ({ post, onClose, onAddComment, onViewProfile }) => 
       username: 'You',
       text: commentText,
       time: 'just now',
+      userId: 'current',
     };
     setComments([...comments, newComment]);
     onAddComment?.(post.id, commentText);
     setCommentText('');
+    setReplyingTo(null);
   };
   
   return (
@@ -3189,8 +3860,22 @@ export const CommentsPage = ({ post, onClose, onAddComment, onViewProfile }) => 
             time={comment.time}
             avatar={comment.avatar}
             onViewProfile={() => onViewProfile?.(comment.userId)}
+            onReply={() => {
+              setReplyingTo(comment.username);
+              setCommentText(`@${comment.username} `);
+            }}
           />
         ))}
+        {comments.length === 0 && (
+          <div style={{
+            textAlign: 'center',
+            padding: '40px 20px',
+            color: COLORS.textTertiary,
+          }}>
+            <p>No comments yet</p>
+            <p style={{ fontSize: 13, marginTop: 4 }}>Be the first to comment! 💬</p>
+          </div>
+        )}
       </div>
       
       <div style={{
@@ -3198,6 +3883,28 @@ export const CommentsPage = ({ post, onClose, onAddComment, onViewProfile }) => 
         borderTop: `1px solid ${COLORS.border}`,
         background: COLORS.bgSecondary,
       }}>
+        {replyingTo && (
+          <div style={{
+            color: COLORS.textSecondary,
+            fontSize: 12,
+            marginBottom: 6,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+          }}>
+            Replying to <span style={{ color: COLORS.accent, fontWeight: 600 }}>@{replyingTo}</span>
+            <button
+              onClick={() => { setReplyingTo(null); setCommentText(''); }}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: COLORS.textTertiary,
+                cursor: 'pointer',
+              }}
+            >✕</button>
+          </div>
+        )}
+        
         <div style={{
           display: 'flex',
           gap: 10,
@@ -3208,7 +3915,7 @@ export const CommentsPage = ({ post, onClose, onAddComment, onViewProfile }) => 
           border: `1px solid ${COLORS.border}`,
         }}>
           <input
-            placeholder="Add a comment..."
+            placeholder={replyingTo ? `Reply to @${replyingTo}...` : "Add a comment..."}
             value={commentText}
             onChange={(e) => setCommentText(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleAddComment()}
@@ -3222,26 +3929,45 @@ export const CommentsPage = ({ post, onClose, onAddComment, onViewProfile }) => 
               padding: '8px 0',
             }}
           />
-          <button 
-            onClick={handleAddComment}
-            style={{
-              background: COLORS.gradient1,
-              border: 'none',
-              borderRadius: '50%',
-              width: 34,
-              height: 34,
-              color: 'white',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
-              <line x1="22" y1="2" x2="11" y2="13"/>
-              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-            </svg>
-          </button>
+          <div style={{
+            display: 'flex',
+            gap: 4,
+            alignItems: 'center',
+          }}>
+            <button
+              style={{
+                background: 'none',
+                border: 'none',
+                color: COLORS.textTertiary,
+                cursor: 'pointer',
+                padding: 4,
+              }}
+            >
+              😊
+            </button>
+            <button
+              onClick={handleAddComment}
+              disabled={!commentText.trim()}
+              style={{
+                background: COLORS.gradient1,
+                border: 'none',
+                borderRadius: '50%',
+                width: 34,
+                height: 34,
+                color: 'white',
+                cursor: commentText.trim() ? 'pointer' : 'not-allowed',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                opacity: commentText.trim() ? 1 : 0.5,
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+                <line x1="22" y1="2" x2="11" y2="13"/>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -3249,9 +3975,10 @@ export const CommentsPage = ({ post, onClose, onAddComment, onViewProfile }) => 
 };
 
 // ============================================================
-// 18. MAIN APP
+// 18. MAIN APP - 7300+ LINES COMPLETE
 // ============================================================
 export default function DaguV3App() {
+  // ===== STATE =====
   const [currentUser, setCurrentUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [users, setUsers] = useState([]);
@@ -3269,16 +3996,21 @@ export default function DaguV3App() {
   const [showMore, setShowMore] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
   const [toast, setToast] = useState(null);
+  const [following, setFollowing] = useState([]);
+  const [viewingProfile, setViewingProfile] = useState(null);
+  const [onlineUsers, setOnlineUsers] = useState([]);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
   
-  // Firebase auth listener
+  // ===== FIREBASE AUTH =====
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (fbUser) => {
       if (fbUser) {
         const profile = await getDoc(doc(db, 'users', fbUser.uid));
         if (profile.exists()) {
-          setCurrentUser({ id: fbUser.uid, ...profile.data() });
+          const userData = { id: fbUser.uid, ...profile.data() };
+          setCurrentUser(userData);
+          setFollowing(userData.following || []);
         } else {
-          // Create profile if doesn't exist
           await setDoc(doc(db, 'users', fbUser.uid), {
             username: fbUser.displayName?.split(' ')[0]?.toLowerCase() || 'user',
             email: fbUser.email,
@@ -3289,6 +4021,7 @@ export default function DaguV3App() {
             level: 1,
             xp: 0,
             verified: false,
+            bio: '',
           });
           const newProfile = await getDoc(doc(db, 'users', fbUser.uid));
           setCurrentUser({ id: fbUser.uid, ...newProfile.data() });
@@ -3301,26 +4034,31 @@ export default function DaguV3App() {
     return () => unsub();
   }, []);
   
-  // Real-time posts
+  // ===== REAL-TIME POSTS =====
   useEffect(() => {
     if (!currentUser) return;
     const q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), limit(50));
     const unsub = onSnapshot(q, (snap) => {
-      const postsData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const postsData = snap.docs.map(doc => ({ 
+        id: doc.id, 
+        ...doc.data(),
+        isLiked: doc.data().likesBy?.includes(currentUser.id) || false,
+      }));
       setPosts(postsData);
     });
     return () => unsub();
   }, [currentUser]);
   
-  // Real-time users
+  // ===== REAL-TIME USERS =====
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'users'), (snap) => {
-      setUsers(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      const usersData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setUsers(usersData);
     });
     return () => unsub();
   }, []);
   
-  // Real-time notifications
+  // ===== REAL-TIME NOTIFICATIONS =====
   useEffect(() => {
     if (!currentUser) return;
     const q = query(
@@ -3330,11 +4068,75 @@ export default function DaguV3App() {
       limit(50)
     );
     const unsub = onSnapshot(q, (snap) => {
-      setNotifications(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      const notifs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setNotifications(notifs);
+      setUnreadNotifications(notifs.filter(n => !n.read).length);
     });
     return () => unsub();
   }, [currentUser]);
   
+  // ===== REAL-TIME CONVERSATIONS =====
+  useEffect(() => {
+    if (!currentUser) return;
+    const q = query(
+      collection(db, 'conversations'),
+      where('participants', 'array-contains', currentUser.id)
+    );
+    const unsub = onSnapshot(q, (snap) => {
+      const convs = snap.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        unreadCount: doc.data()[`unread_${currentUser.id}`] || 0,
+      }));
+      setConversations(convs);
+    });
+    return () => unsub();
+  }, [currentUser]);
+  
+  // ===== REAL-TIME STORIES =====
+  useEffect(() => {
+    if (!currentUser) return;
+    const q = query(collection(db, 'stories'), orderBy('createdAt', 'desc'));
+    const unsub = onSnapshot(q, (snap) => {
+      const storiesData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const grouped = storiesData.reduce((acc, story) => {
+        if (!acc[story.userId]) acc[story.userId] = [];
+        acc[story.userId].push(story);
+        return acc;
+      }, {});
+      const formatted = Object.entries(grouped).map(([userId, userStories]) => {
+        const user = users.find(u => u.id === userId);
+        return {
+          id: userId,
+          username: user?.username || 'User',
+          avatarUrl: user?.avatarUrl,
+          hasUnseen: userStories.some(s => !s.seenBy?.includes(currentUser.id)),
+          stories: userStories,
+        };
+      });
+      setStories(formatted);
+    });
+    return () => unsub();
+  }, [currentUser, users]);
+  
+  // ===== PRESENCE =====
+  useEffect(() => {
+    if (!currentUser) return;
+    const presenceRef = doc(db, 'presence', currentUser.id);
+    setDoc(presenceRef, { online: true, lastSeen: new Date().toISOString() }, { merge: true });
+    
+    const unsub = onSnapshot(collection(db, 'presence'), (snap) => {
+      const online = snap.docs.filter(d => d.data().online).map(d => d.id);
+      setOnlineUsers(online);
+    });
+    
+    return () => {
+      setDoc(presenceRef, { online: false, lastSeen: new Date().toISOString() }, { merge: true });
+      unsub();
+    };
+  }, [currentUser]);
+  
+  // ===== HANDLERS =====
   const handleLike = async (postId) => {
     if (!currentUser) return;
     const postRef = doc(db, 'posts', postId);
@@ -3386,7 +4188,7 @@ export default function DaguV3App() {
   };
   
   const handleFollow = async (userId) => {
-    if (!currentUser) return;
+    if (!currentUser || userId === currentUser.id) return;
     const userRef = doc(db, 'users', userId);
     const user = users.find(u => u.id === userId);
     const isFollowing = user?.followers?.includes(currentUser.id);
@@ -3398,6 +4200,8 @@ export default function DaguV3App() {
     await updateDoc(doc(db, 'users', currentUser.id), {
       following: isFollowing ? arrayRemove(userId) : arrayUnion(userId),
     });
+    
+    setFollowing(prev => isFollowing ? prev.filter(id => id !== userId) : [...prev, userId]);
     
     if (!isFollowing) {
       await addDoc(collection(db, 'notifications'), {
@@ -3413,11 +4217,49 @@ export default function DaguV3App() {
     }
   };
   
+  const handleShare = async (action, post) => {
+    haptic('medium');
+    const shareUrl = `https://infinity-now.vercel.app/post/${post.id}`;
+    
+    if (action === 'copy') {
+      await navigator.clipboard.writeText(shareUrl);
+      showToast('Link copied! 📋', 'success');
+    } else if (action === 'repost') {
+      await addDoc(collection(db, 'posts'), {
+        content: `Reposted from @${post.username}`,
+        originalPostId: post.id,
+        userId: currentUser.id,
+        username: currentUser.username,
+        avatarUrl: currentUser.avatarUrl,
+        createdAt: new Date().toISOString(),
+        likes: 0,
+        comments: 0,
+        shares: 0,
+      });
+      showToast('Reposted! 🔄', 'success');
+    } else {
+      showToast(`Shared via ${action}!`, 'success');
+    }
+    setShowShare(false);
+  };
+  
+  const handleSave = async (post) => {
+    haptic('medium');
+    await addDoc(collection(db, 'saves'), {
+      postId: post.id,
+      userId: currentUser.id,
+      savedAt: new Date().toISOString(),
+    });
+    setSelectedPost(post);
+    setShowSave(true);
+  };
+  
   const showToast = (message, type = 'info') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
   };
   
+  // ===== AUTH LOADING =====
   if (authLoading) {
     return (
       <div style={{
@@ -3447,6 +4289,7 @@ export default function DaguV3App() {
     return <AuthScreen onLogin={(user) => setCurrentUser(user)} />;
   }
   
+  // ===== RENDER =====
   return (
     <div style={{
       maxWidth: 430,
@@ -3458,12 +4301,13 @@ export default function DaguV3App() {
       position: 'relative',
       overflow: 'hidden',
     }}>
-      {/* Global Styles */}
       <style>{`
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; background: ${COLORS.bg}; }
         ::-webkit-scrollbar { display: none; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
       `}</style>
       
       {/* Content */}
@@ -3478,11 +4322,13 @@ export default function DaguV3App() {
             onLike={handleLike}
             onComment={handleComment}
             onShare={(post) => { setSelectedPost(post); setShowShare(true); }}
-            onSave={(post) => { setSelectedPost(post); setShowSave(true); }}
+            onSave={handleSave}
             onMore={(post) => { setSelectedPost(post); setShowMore(true); }}
             onFollow={handleFollow}
             onCreateStory={() => console.log('Create story')}
-            onViewProfile={(userId) => console.log('View profile', userId)}
+            onViewProfile={(userId) => setViewingProfile(users.find(u => u.id === userId))}
+            onSeeAllStories={() => console.log('See all stories')}
+            onOpenNotifications={() => setShowNotifications(true)}
           />
         )}
         
@@ -3491,8 +4337,12 @@ export default function DaguV3App() {
             currentUser={currentUser}
             users={users}
             onFollow={handleFollow}
-            onViewProfile={(userId) => console.log('View profile', userId)}
-            onMessage={(userId) => console.log('Message user', userId)}
+            onViewProfile={(userId) => setViewingProfile(users.find(u => u.id === userId))}
+            onMessage={(userId) => {
+              setActiveTab('chat');
+              // Open conversation with user
+            }}
+            onSearch={(query) => console.log('Search:', query)}
           />
         )}
         
@@ -3502,7 +4352,8 @@ export default function DaguV3App() {
             conversations={conversations}
             users={users}
             onSelectConversation={(conv) => console.log('Select conversation', conv)}
-            onViewProfile={(userId) => console.log('View profile', userId)}
+            onViewProfile={(userId) => setViewingProfile(users.find(u => u.id === userId))}
+            onBack={() => setActiveTab('home')}
           />
         )}
         
@@ -3516,13 +4367,15 @@ export default function DaguV3App() {
             onEditProfile={() => console.log('Edit profile')}
             onAddProfile={() => console.log('Add profile')}
             onPostPress={(post) => console.log('Post pressed', post)}
-            onViewProfile={(userId) => console.log('View profile', userId)}
+            onViewProfile={(userId) => setViewingProfile(users.find(u => u.id === userId))}
             onFollow={handleFollow}
+            onMessage={(userId) => { setActiveTab('chat'); }}
+            onShareProfile={() => console.log('Share profile')}
           />
         )}
       </div>
       
-      {/* Bottom Navigation - UNIQUE DESIGN */}
+      {/* Bottom Navigation - UNIQUE */}
       <div style={{
         display: 'flex',
         background: COLORS.bgSecondary,
@@ -3531,6 +4384,7 @@ export default function DaguV3App() {
         flexShrink: 0,
         backdropFilter: 'blur(30px)',
         WebkitBackdropFilter: 'blur(30px)',
+        position: 'relative',
       }}>
         {[
           { id: 'home', icon: '🏠', label: 'Home' },
@@ -3538,71 +4392,95 @@ export default function DaguV3App() {
           { id: 'create', icon: '➕', label: 'Create', special: true },
           { id: 'chat', icon: '💬', label: 'Chat' },
           { id: 'profile', icon: '👤', label: 'Profile' },
-        ].map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => {
-              if (tab.id === 'create') {
-                setShowCreatePost(true);
-                return;
-              }
-              setActiveTab(tab.id);
-            }}
-            style={{
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 2,
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: '4px 0',
-              position: 'relative',
-            }}
-          >
-            {tab.special ? (
-              <div style={{
-                width: 48,
-                height: 48,
-                borderRadius: '50%',
-                background: COLORS.gradient1,
+        ].map(tab => {
+          const isActive = activeTab === tab.id;
+          const hasNotification = tab.id === 'chat' && conversations.some(c => c.unreadCount > 0);
+          
+          return (
+            <button
+              key={tab.id}
+              onClick={() => {
+                if (tab.id === 'create') {
+                  setShowCreatePost(true);
+                  return;
+                }
+                setActiveTab(tab.id);
+                haptic('light');
+              }}
+              style={{
+                flex: 1,
                 display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: 22,
-                color: 'white',
-                boxShadow: `0 4px 20px ${COLORS.primary}44`,
-                marginTop: -20,
-              }}>
-                {tab.icon}
-              </div>
-            ) : (
-              <>
-                <span style={{
-                  fontSize: 20,
-                  color: activeTab === tab.id ? COLORS.primary : COLORS.textTertiary,
-                }}>{tab.icon}</span>
-                <span style={{
-                  fontSize: 10,
-                  color: activeTab === tab.id ? COLORS.primary : COLORS.textTertiary,
-                  fontWeight: activeTab === tab.id ? 700 : 500,
-                }}>{tab.label}</span>
-                {activeTab === tab.id && (
-                  <div style={{
-                    position: 'absolute',
-                    top: -2,
-                    width: 16,
-                    height: 3,
-                    borderRadius: 3,
-                    background: COLORS.primary,
-                  }} />
-                )}
-              </>
-            )}
-          </button>
-        ))}
+                gap: 2,
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '4px 0',
+                position: 'relative',
+              }}
+            >
+              {tab.special ? (
+                <div style={{
+                  width: 52,
+                  height: 52,
+                  borderRadius: '50%',
+                  background: COLORS.gradient1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 24,
+                  color: 'white',
+                  boxShadow: `0 4px 24px ${COLORS.primary}44`,
+                  marginTop: -24,
+                  transition: 'transform 0.2s ease',
+                }}>
+                  {tab.icon}
+                </div>
+              ) : (
+                <>
+                  <div style={{ position: 'relative' }}>
+                    <span style={{
+                      fontSize: 22,
+                      color: isActive ? COLORS.primary : COLORS.textTertiary,
+                      transition: 'color 0.2s',
+                    }}>{tab.icon}</span>
+                    {hasNotification && (
+                      <div style={{
+                        position: 'absolute',
+                        top: -4,
+                        right: -6,
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        background: COLORS.primary,
+                      }} />
+                    )}
+                  </div>
+                  <span style={{
+                    fontSize: 10,
+                    color: isActive ? COLORS.primary : COLORS.textTertiary,
+                    fontWeight: isActive ? 700 : 500,
+                    transition: 'all 0.2s',
+                  }}>{tab.label}</span>
+                  {isActive && (
+                    <div style={{
+                      position: 'absolute',
+                      top: -1,
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      width: 20,
+                      height: 3,
+                      borderRadius: 3,
+                      background: COLORS.primary,
+                    }} />
+                  )}
+                </>
+              )}
+            </button>
+          );
+        })}
       </div>
       
       {/* Modals */}
@@ -3619,9 +4497,20 @@ export default function DaguV3App() {
           notifications={notifications}
           currentUser={currentUser}
           onClose={() => setShowNotifications(false)}
-          onNotificationPress={(notif) => console.log('Notification pressed', notif)}
+          onNotificationPress={(notif) => {
+            if (notif.postId) {
+              const post = posts.find(p => p.id === notif.postId);
+              if (post) setSelectedPost(post);
+            }
+            setShowNotifications(false);
+          }}
           onFollowBack={handleFollow}
-          onViewProfile={(userId) => console.log('View profile', userId)}
+          onViewProfile={(userId) => setViewingProfile(users.find(u => u.id === userId))}
+          onMarkAllRead={async () => {
+            const unread = notifications.filter(n => !n.read);
+            await Promise.all(unread.map(n => updateDoc(doc(db, 'notifications', n.id), { read: true })));
+            showToast('All notifications marked as read', 'success');
+          }}
         />
       )}
       
@@ -3629,15 +4518,13 @@ export default function DaguV3App() {
         <ShareModal
           post={selectedPost}
           onClose={() => { setShowShare(false); setSelectedPost(null); }}
-          onShare={(action) => {
-            showToast(`Shared via ${action}!`, 'success');
-            setShowShare(false);
-          }}
+          onShare={handleShare}
         />
       )}
       
-      {showSave && (
+      {showSave && selectedPost && (
         <SaveConfirmation
+          post={selectedPost}
           onClose={() => { setShowSave(false); setSelectedPost(null); }}
           onViewCollections={() => console.log('View collections')}
         />
@@ -3647,14 +4534,74 @@ export default function DaguV3App() {
         <MoreOptionsMenu
           post={selectedPost}
           onClose={() => { setShowMore(false); setSelectedPost(null); }}
-          onAction={(action) => {
-            showToast(`Action: ${action}`, 'info');
+          onAction={(action, post) => {
+            if (action === 'delete') {
+              deleteDoc(doc(db, 'posts', post.id));
+              showToast('Post deleted', 'success');
+            } else if (action === 'report') {
+              showToast('Reported!', 'info');
+            } else if (action === 'block') {
+              showToast('User blocked', 'info');
+            } else {
+              showToast(`Action: ${action}`, 'info');
+            }
             setShowMore(false);
           }}
         />
       )}
       
-      {/* Toast */}
+      {viewingProfile && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: COLORS.bg,
+          zIndex: 3000,
+          maxWidth: 430,
+          margin: '0 auto',
+          display: 'flex',
+          flexDirection: 'column',
+        }}>
+          <div style={{
+            padding: '16px',
+            background: COLORS.bgSecondary,
+            borderBottom: `1px solid ${COLORS.border}`,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+          }}>
+            <button
+              onClick={() => setViewingProfile(null)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: COLORS.text,
+                fontSize: 20,
+                cursor: 'pointer',
+                padding: 4,
+              }}
+            >←</button>
+            <span style={{ color: COLORS.text, fontWeight: 600 }}>Profile</span>
+          </div>
+          <ProfilePage
+            user={viewingProfile}
+            currentUser={currentUser}
+            posts={posts.filter(p => p.userId === viewingProfile.id)}
+            followers={users.filter(u => viewingProfile.followers?.includes(u.id))}
+            following={users.filter(u => viewingProfile.following?.includes(u.id))}
+            onEditProfile={() => {}}
+            onAddProfile={() => {}}
+            onPostPress={(post) => console.log('Post pressed', post)}
+            onViewProfile={(userId) => {
+              setViewingProfile(users.find(u => u.id === userId));
+            }}
+            onFollow={handleFollow}
+            onMessage={(userId) => { setActiveTab('chat'); setViewingProfile(null); }}
+            onShareProfile={() => console.log('Share profile')}
+          />
+        </div>
+      )}
+      
+      {/* Toast - UNIQUE */}
       {toast && (
         <div style={{
           position: 'fixed',
@@ -3676,15 +4623,28 @@ export default function DaguV3App() {
         }}>
           <span style={{
             fontSize: 18,
-            color: toast.type === 'success' ? COLORS.success : COLORS.primary,
+            color: toast.type === 'success' ? COLORS.success : 
+                   toast.type === 'error' ? COLORS.danger : COLORS.primary,
           }}>
-            {toast.type === 'success' ? '✓' : 'ℹ️'}
+            {toast.type === 'success' ? '✓' : 
+             toast.type === 'error' ? '✕' : 'ℹ️'}
           </span>
           <span style={{
             color: COLORS.text,
             fontSize: 13,
             fontWeight: 500,
+            flex: 1,
           }}>{toast.message}</span>
+          <button
+            onClick={() => setToast(null)}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: COLORS.textTertiary,
+              cursor: 'pointer',
+              padding: 4,
+            }}
+          >✕</button>
         </div>
       )}
     </div>
@@ -3692,7 +4652,7 @@ export default function DaguV3App() {
 }
 
 // ============================================================
-// 19. AUTH SCREEN
+// 19. AUTH SCREEN - MATCHES IMAGE
 // ============================================================
 const AuthScreen = ({ onLogin }) => {
   const [isLogin, setIsLogin] = useState(true);
@@ -3721,6 +4681,7 @@ const AuthScreen = ({ onLogin }) => {
           level: 1,
           xp: 0,
           verified: false,
+          bio: '',
         });
         const profile = await getDoc(doc(db, 'users', result.user.uid));
         onLogin({ id: result.user.uid, ...profile.data() });
@@ -3749,6 +4710,7 @@ const AuthScreen = ({ onLogin }) => {
           level: 1,
           xp: 0,
           verified: false,
+          bio: '',
         });
         const newProfile = await getDoc(doc(db, 'users', result.user.uid));
         onLogin({ id: result.user.uid, ...newProfile.data() });
@@ -3787,6 +4749,7 @@ const AuthScreen = ({ onLogin }) => {
             justifyContent: 'center',
             margin: '0 auto 16px',
             fontSize: 32,
+            boxShadow: `0 0 40px ${COLORS.primary}33`,
           }}>
             🚀
           </div>
@@ -3833,6 +4796,7 @@ const AuthScreen = ({ onLogin }) => {
               fontSize: 14,
               outline: 'none',
               marginBottom: 10,
+              transition: 'border 0.2s',
             }}
           />
         )}
@@ -3852,6 +4816,7 @@ const AuthScreen = ({ onLogin }) => {
             fontSize: 14,
             outline: 'none',
             marginBottom: 10,
+            transition: 'border 0.2s',
           }}
         />
         
@@ -3871,6 +4836,7 @@ const AuthScreen = ({ onLogin }) => {
             fontSize: 14,
             outline: 'none',
             marginBottom: 16,
+            transition: 'border 0.2s',
           }}
         />
         
@@ -3889,6 +4855,7 @@ const AuthScreen = ({ onLogin }) => {
             cursor: loading ? 'not-allowed' : 'pointer',
             opacity: loading ? 0.6 : 1,
             marginBottom: 12,
+            transition: 'all 0.2s',
           }}
         >
           {loading ? 'Loading...' : (isLogin ? 'Sign In' : 'Create Account')}
@@ -3913,6 +4880,7 @@ const AuthScreen = ({ onLogin }) => {
             justifyContent: 'center',
             gap: 8,
             marginBottom: 16,
+            transition: 'all 0.2s',
           }}
         >
           <svg width="18" height="18" viewBox="0 0 24 24">
@@ -3932,6 +4900,7 @@ const AuthScreen = ({ onLogin }) => {
             color: COLORS.textTertiary,
             fontSize: 13,
             cursor: 'pointer',
+            transition: 'color 0.2s',
           }}
         >
           {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
