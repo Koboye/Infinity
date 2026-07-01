@@ -3277,7 +3277,7 @@ const FeaturedJobsMarket = ({ onOpenCategory }) => {
 };
 
 
-const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, onVoiceCall, onVideoCall, onDuet, onStitch, onSaveSound, followed, showToast, onLive, currentUser, onViewProfile, onOpenSearch, onOpenNotifications, blockedUsers, onBlock, users }) => {
+const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, onVoiceCall, onVideoCall, onDuet, onStitch, onSaveSound, followed, showToast, onLive, currentUser, onViewProfile, onOpenSearch, onOpenNotifications, blockedUsers, onBlock, users, onSwipeNav }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [activeCategory, setActiveCategory] = useState('foryou');
   const [loadingMore, setLoadingMore] = useState(false);
@@ -3365,8 +3365,8 @@ const handlePullEnd = async () => {
     const threshold = velocity > 0.3 ? 20 : 60;
     if(Math.abs(dy) > threshold){
       haptic('light');
-      if(dy>0) setCurrentIndex(i=>Math.min(filteredVideos.length-1,i+1));
-      else setCurrentIndex(i=>Math.max(0,i-1));
+      if(dy>0){ setCurrentIndex(i=>Math.min(filteredVideos.length-1,i+1)); onSwipeNav?.(true); }
+      else { setCurrentIndex(i=>Math.max(0,i-1)); onSwipeNav?.(false); }
     }
     startY.current = null;
   };
@@ -3379,7 +3379,7 @@ const handlePullEnd = async () => {
         <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:15, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 16px 12px', background:'rgba(255,255,255,0.98)', borderBottom:'1px solid rgba(20,16,28,0.06)' }}>
           <div style={{ flex:1, display:'flex', justifyContent:'center', gap:24 }}>
             {TOP_CATEGORIES.map(cat=>(
-              <button key={cat.id} onClick={()=>{setActiveCategory(cat.id); setCurrentIndex(0);}} style={{ background:'none', border:'none', color:activeCategory===cat.id?'white':'rgba(20,16,28,0.45)', fontWeight:activeCategory===cat.id?800:500, fontSize:15, cursor:'pointer', paddingBottom:6, borderBottom:activeCategory===cat.id?'2.5px solid white':'2.5px solid transparent', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", transition:'all 0.2s' }}>
+              <button key={cat.id} onClick={()=>{setActiveCategory(cat.id); setCurrentIndex(0);}} style={{ background:'none', border:'none', color:activeCategory===cat.id?'#161221':'rgba(20,16,28,0.45)', fontWeight:activeCategory===cat.id?800:500, fontSize:15, cursor:'pointer', paddingBottom:6, borderBottom:activeCategory===cat.id?'2.5px solid #161221':'2.5px solid transparent', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", transition:'all 0.2s' }}>
                 {cat.id==='foryou'?(t?.foryou||cat.label):cat.id==='jobs'?(t?.jobs||'Jobs'):cat.id==='skills'?(t?.skills||'Skills'):(t?.foryou||cat.label)}
               </button>
             ))}
@@ -6945,6 +6945,29 @@ const handleMessage = uid => {
     {id:'home'},{id:'friends'},{id:'create'},{id:'inbox'},{id:'profile'},
   ];
 
+  // ── Floating bottom nav: hide on scroll-down, reveal on scroll-up (Telegram-style) ──
+  const [navHidden, setNavHidden] = useState(false);
+  const lastScrollTopRef = useRef(0);
+  useEffect(() => {
+    const handleScroll = (e) => {
+      const target = e.target;
+      if (!target || typeof target.scrollTop !== 'number') return;
+      const currentTop = target.scrollTop;
+      const delta = currentTop - lastScrollTopRef.current;
+      if (Math.abs(delta) < 8) return; // ignore tiny jitters/bounce
+      if (delta > 0 && currentTop > 48) {
+        setNavHidden(true); // scrolling down → hide
+      } else if (delta < 0) {
+        setNavHidden(false); // scrolling up → reveal
+      }
+      lastScrollTopRef.current = currentTop < 0 ? 0 : currentTop;
+    };
+    // capture:true lets this catch 'scroll' events fired on any nested scrollable
+    // element (scroll events don't bubble, but capture-phase dispatch still reaches us)
+    document.addEventListener('scroll', handleScroll, true);
+    return () => document.removeEventListener('scroll', handleScroll, true);
+  }, []);
+
   if(authLoading) return (
     <div style={{ maxWidth:430, margin:'0 auto', height:'100dvh', background:'#F5F4F7', display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:16 }}>
       <GlobalStyles />
@@ -7053,7 +7076,7 @@ const handleMessage = uid => {
   onDuet={()=>showToast?.('Duet mode ready','info')} onStitch={()=>showToast?.('Stitch mode ready','info')} onSaveSound={()=>showToast?.('Sound saved!','success')}
   followed={followed} showToast={showToast} onLive={()=>setShowLiveStream(currentUser)} onViewProfile={handleViewProfile}
   onOpenSearch={()=>setShowDiscover(true)} onOpenNotifications={()=>setShowNotifications(true)}
-  blockedUsers={blockedUsers} onBlock={uid=>setBlockedUsers(p=>[...p,uid])} users={users} />}
+  blockedUsers={blockedUsers} onBlock={uid=>setBlockedUsers(p=>[...p,uid])} users={users} onSwipeNav={setNavHidden} />}
             {activeTab==='friends' && <FriendsFeed t={t} friends={friends} videos={videos} currentUser={currentUser} onMessage={handleMessage}
   onVoiceCall={uid=>{ const u=users.find(uu=>uu.id===uid); const callDocId=[currentUser.id,uid].sort().join('_'); setShowCall({type:'audio',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
   onVideoCall={uid=>{ const u=users.find(uu=>uu.id===uid); const callDocId=[currentUser.id,uid].sort().join('_'); setShowCall({type:'video',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
@@ -7071,7 +7094,15 @@ const handleMessage = uid => {
         )}
       </div>
 
-      <div style={{ display:'flex', background:'rgba(255,255,255,0.98)', borderTop:'1px solid rgba(20,16,28,0.06)', padding:`10px 4px max(26px, env(safe-area-inset-bottom))`, flexShrink:0, backdropFilter:'blur(30px)', WebkitBackdropFilter:'blur(30px)', boxShadow:'0 -4px 20px rgba(20,16,28,0.06)' }}>
+      <div style={{
+        position:'fixed', left:0, right:0, bottom:0, maxWidth:430, margin:'0 auto', zIndex:200,
+        padding:'0 14px max(14px, env(safe-area-inset-bottom))',
+        pointerEvents: navHidden ? 'none' : 'auto',
+        transform: navHidden ? 'translateY(140%)' : 'translateY(0)',
+        opacity: navHidden ? 0 : 1,
+        transition:'transform 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.25s ease',
+      }}>
+        <div style={{ display:'flex', background:'rgba(255,255,255,0.98)', borderRadius:26, padding:'8px 6px', backdropFilter:'blur(30px)', WebkitBackdropFilter:'blur(30px)', border:'1px solid rgba(20,16,28,0.06)', boxShadow:'0 10px 34px rgba(20,16,28,0.16), 0 2px 10px rgba(20,16,28,0.08)' }}>
         {tabs.map(tab=>{
           const isActive = activeTab===tab.id;
           const tabLabels = { home: t?.home||'Home', friends: t?.friends||'Friends', create: t?.create||'Create', inbox: t?.inbox||'Inbox', profile: t?.profile||'Profile' };
@@ -7095,7 +7126,9 @@ const handleMessage = uid => {
             </button>
           );
         })}
+        </div>
       </div>
+
 
 {notifPopup && (
         <NotifPopup
