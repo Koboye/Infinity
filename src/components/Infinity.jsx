@@ -7083,9 +7083,7 @@ const handleMessage = uid => {
 
   const isGenHome = activeTab === 'home';
   return (
-    <div style={ isGenHome
-      ? { height:'100dvh', display:'flex', flexDirection:'column', position:'relative', overflow:'hidden' }
-      : { maxWidth:430, margin:'0 auto', height:'100dvh', background:'#0B0B0F', display:'flex', flexDirection:'column', position:'relative', overflow:'hidden' } }>
+    <div style={{ maxWidth:430, margin:'0 auto', height:'100dvh', background:'#0B0B0F', display:'flex', flexDirection:'column', position:'relative', overflow:'hidden' }}>
       <GlobalStyles />
       {!isOnline && <OfflineBanner />}
 {incomingCall && !showCall && (
