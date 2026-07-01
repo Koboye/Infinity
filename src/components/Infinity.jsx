@@ -441,7 +441,7 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack }) => {
             <div onClick={e=>e.stopPropagation()} style={{ width:'100%', background:'#15151C', borderTopLeftRadius:28, borderTopRightRadius:28, padding:'20px 20px 40px', maxHeight:'70%', overflowY:'auto' }}>
               <div style={{ width:36, height:4, background:'rgba(255,255,255,0.12)', borderRadius:2, margin:'0 auto 20px' }} />
               <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:20 }}>
-                <div style={{ width:52, height:52, borderRadius:'50%', background:activeGroup.avatarColor||'#FF2156', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:22 }}>{activeGroup.avatar||'👥'}</div>
+                <div style={{ width:52, height:52, borderRadius:'50%', background:activeGroup.avatarColor||'#FF2156', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:24 }}>{activeGroup.avatar||'👥'}</div>
                 <div>
                   <div style={{ color:'white', fontWeight:800, fontSize:18 }}>{activeGroup.name}</div>
                   <div style={{ color:'rgba(255,255,255,0.55)', fontSize:12 }}>Created by group admin</div>
@@ -480,7 +480,7 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack }) => {
             <div style={{ flex:1, overflowY:'auto', padding:16, display:'flex', flexWrap:'wrap', gap:12, alignContent:'flex-start', justifyContent:'center' }}>
               {groupMembers.map(u=>(
                 <div key={u.id} style={{ width:'calc(50% - 6px)', background:'rgba(255,255,255,0.06)', borderRadius:20, padding:'18px 12px', display:'flex', flexDirection:'column', alignItems:'center', gap:8, border:'1px solid rgba(255,255,255,0.08)' }}>
-                  <div style={{ width:56, height:56, borderRadius:'50%', background:u.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:22, overflow:'hidden', border:'2px solid rgba(52,199,89,0.4)' }}>
+                  <div style={{ width:56, height:56, borderRadius:'50%', background:u.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:24, overflow:'hidden', border:'2px solid rgba(52,199,89,0.4)' }}>
                     {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : u.avatar}
                   </div>
                   <div style={{ color:'white', fontSize:12, fontWeight:700 }}>@{u.username}</div>
@@ -490,9 +490,9 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack }) => {
               ))}
             </div>
             <div style={{ padding:'16px 20px 32px', display:'flex', justifyContent:'center', gap:20, borderTop:'1px solid rgba(255,255,255,0.06)' }}>
-              <button onClick={()=>showToast?.('Muted','info')} style={{ width:56, height:56, borderRadius:'50%', background:'rgba(255,255,255,0.1)', border:'none', color:'white', fontSize:22, cursor:'pointer' }}>🎤</button>
-              {groupCallOpen==='video' && <button onClick={()=>showToast?.('Camera toggled','info')} style={{ width:56, height:56, borderRadius:'50%', background:'rgba(255,255,255,0.1)', border:'none', color:'white', fontSize:22, cursor:'pointer' }}>📷</button>}
-              <button onClick={()=>setGroupCallOpen(null)} style={{ width:56, height:56, borderRadius:'50%', background:'#FF2156', border:'none', color:'white', fontSize:22, cursor:'pointer' }}>📵</button>
+              <button onClick={()=>showToast?.('Muted','info')} style={{ width:56, height:56, borderRadius:'50%', background:'rgba(255,255,255,0.1)', border:'none', color:'white', fontSize:24, cursor:'pointer' }}>🎤</button>
+              {groupCallOpen==='video' && <button onClick={()=>showToast?.('Camera toggled','info')} style={{ width:56, height:56, borderRadius:'50%', background:'rgba(255,255,255,0.1)', border:'none', color:'white', fontSize:24, cursor:'pointer' }}>📷</button>}
+              <button onClick={()=>setGroupCallOpen(null)} style={{ width:56, height:56, borderRadius:'50%', background:'#FF2156', border:'none', color:'white', fontSize:24, cursor:'pointer' }}>📵</button>
             </div>
           </div>
         )}
@@ -1486,7 +1486,7 @@ const TelegramStoryViewer = ({ storyGroups, startGroupIdx, currentUser, onClose,
         <div style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer' }}
           onClick={() => { if (currentGroup.userId) { onViewProfile?.(currentGroup.userId); onClose(); } }}>
           <div style={{ width:42, height:42, borderRadius:'50%', background:currentGroup.avatarColor||'#FF2156',
-            display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:17,
+            display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:16,
             overflow:'hidden', border:'2.5px solid white' }}>
             {currentGroup.avatarUrl
               ? <img src={currentGroup.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" />
@@ -1504,7 +1504,7 @@ const TelegramStoryViewer = ({ storyGroups, startGroupIdx, currentUser, onClose,
         </div>
         <div style={{ display:'flex', gap:8, alignItems:'center' }}>
           <button onPointerDown={()=>setPaused(true)} onPointerUp={()=>setPaused(false)}
-            style={{ background:'rgba(255,255,255,0.1)', border:'none', borderRadius:'50%', width:34, height:34, color:'white', cursor:'pointer', fontSize:15, display:'flex', alignItems:'center', justifyContent:'center' }}>
+            style={{ background:'rgba(255,255,255,0.1)', border:'none', borderRadius:'50%', width:34, height:34, color:'white', cursor:'pointer', fontSize:14, display:'flex', alignItems:'center', justifyContent:'center' }}>
             {paused ? '▶' : '⏸'}
           </button>
           <button onClick={onClose}
@@ -1574,7 +1574,7 @@ const TelegramStoryViewer = ({ storyGroups, startGroupIdx, currentUser, onClose,
           <div style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(12px)', borderRadius:20, padding:'12px 16px' }}>
             <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
               <span style={{ fontSize:18 }}>👁</span>
-              <span style={{ color:'white', fontWeight:700, fontSize:15 }}>{currentStory.seenBy?.length || 0} views</span>
+              <span style={{ color:'white', fontWeight:700, fontSize:14 }}>{currentStory.seenBy?.length || 0} views</span>
             </div>
             {(currentStory.seenBy?.length || 0) > 0 && (
               <div style={{ display:'flex', gap:-8 }}>
@@ -1771,7 +1771,7 @@ const CreateStoryModal = ({ currentUser, onClose, showToast }) => {
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
           {[{id:'camera',icon:'📷',label:'Camera',sub:'Photo or video',color:'#FF2156'},{id:'file',icon:'🖼️',label:'Gallery',sub:'From device',color:'#9D4EDD'},{id:'text',icon:'✏️',label:'Text',sub:'Write a story',color:'#0A84FF'},{id:'audio',icon:'🎙️',label:'Audio',sub:'Voice story',color:'#2ED573'}].map(opt=>(
             <button key={opt.id} onClick={()=>{if(opt.id==='file') fileInputRef.current?.click(); else setMode(opt.id);}} style={{ background:'rgba(255,255,255,0.04)', border:`1px solid ${opt.color}30`, borderRadius:22, padding:'18px 14px', display:'flex', flexDirection:'column', alignItems:'center', gap:8, cursor:'pointer' }}>
-              <div style={{ width:52, height:52, borderRadius:'50%', background:opt.color+'18', display:'flex', alignItems:'center', justifyContent:'center', fontSize:26 }}>{opt.icon}</div>
+              <div style={{ width:52, height:52, borderRadius:'50%', background:opt.color+'18', display:'flex', alignItems:'center', justifyContent:'center', fontSize:28 }}>{opt.icon}</div>
               <div style={{ color:'white', fontWeight:700, fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{opt.label}</div>
               <div style={{ color:'rgba(255,255,255,0.55)', fontSize:11 }}>{opt.sub}</div>
             </button>
@@ -1785,7 +1785,7 @@ const CreateStoryModal = ({ currentUser, onClose, showToast }) => {
     <div style={{ position:'fixed', inset:0, background:'#000', zIndex:3500, display:'flex', flexDirection:'column' }}>
       <div style={{ padding:'16px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
         <button onClick={()=>{stopCamera(); onClose();}} style={{ background:'rgba(255,255,255,0.1)', border:'none', borderRadius:20, padding:'8px 16px', color:'white', cursor:'pointer', fontSize:13 }}>Cancel</button>
-        <span style={{ color:'white', fontWeight:700, fontSize:15, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Story</span>
+        <span style={{ color:'white', fontWeight:700, fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Story</span>
         <button onClick={handlePost} disabled={uploading} style={{ background:'linear-gradient(135deg,#FF2156,#9D4EDD)', border:'none', borderRadius:20, padding:'8px 16px', color:'white', fontWeight:700, cursor:'pointer', fontSize:13, opacity:uploading?0.6:1 }}>{uploading?'Posting...':'Post'}</button>
       </div>
       <div style={{ flex:1, position:'relative', overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center' }}>
@@ -1809,7 +1809,7 @@ const CreateStoryModal = ({ currentUser, onClose, showToast }) => {
             {audioBlob ? (
               <><audio src={URL.createObjectURL(audioBlob)} controls style={{ width:'100%' }} /><button onClick={()=>setAudioBlob(null)} style={{ background:'#34343E', border:'none', borderRadius:20, padding:'10px 20px', color:'white', cursor:'pointer' }}>Re-record</button></>
             ) : (
-              <button onMouseDown={startAudio} onMouseUp={stopAudio} onTouchStart={startAudio} onTouchEnd={stopAudio} style={{ background:isRecording?'#FF2156':'#34343E', border:'none', borderRadius:'50%', width:90, height:90, fontSize:36, cursor:'pointer' }}>{isRecording?'⏹':'🎙️'}</button>
+              <button onMouseDown={startAudio} onMouseUp={stopAudio} onTouchStart={startAudio} onTouchEnd={stopAudio} style={{ background:isRecording?'#FF2156':'#34343E', border:'none', borderRadius:'50%', width:90, height:90, fontSize:40, cursor:'pointer' }}>{isRecording?'⏹':'🎙️'}</button>
             )}
             <p style={{ color:'#888', fontSize:13 }}>{isRecording?'Recording... release to stop':'Hold to record'}</p>
           </div>
@@ -2163,7 +2163,7 @@ const CommentInputBar = ({ currentUser, commentText, setCommentText, onSend, sho
       {showEmoji && (
         <div style={{display:'flex',flexWrap:'wrap',gap:6,padding:'10px 12px',background:'rgba(255,255,255,0.04)',borderRadius:16,marginBottom:8}}>
           {EMOJI_LIST.map(e=>(
-            <button key={e} onClick={()=>setCommentText(t=>t+e)} style={{background:'none',border:'none',fontSize:22,cursor:'pointer',padding:2}}>{e}</button>
+            <button key={e} onClick={()=>setCommentText(t=>t+e)} style={{background:'none',border:'none',fontSize:24,cursor:'pointer',padding:2}}>{e}</button>
           ))}
         </div>
       )}
@@ -2508,7 +2508,7 @@ const handleLongPressStart = () => {
                 </div>
                 {video.verified && <div style={{ position:'absolute', bottom:-2, right:-2, width:14, height:14, background:'#0A84FF', borderRadius:'50%', fontSize:11, display:'flex', alignItems:'center', justifyContent:'center', color:'white' }}>✓</div>}
               </button>
-              <span onClick={e=>{e.stopPropagation();onViewProfile?.(video.userId);}} style={{ color:'white', fontWeight:700, fontSize:15, cursor:'pointer', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{video.username}</span>
+              <span onClick={e=>{e.stopPropagation();onViewProfile?.(video.userId);}} style={{ color:'white', fontWeight:700, fontSize:14, cursor:'pointer', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{video.username}</span>
               <button data-notap='1' onClick={e=>{e.stopPropagation();onFollow?.(video.userId);}} style={{ padding:'5px 14px', borderRadius:20, background:followed?.includes(video.userId)?'rgba(255,255,255,0.08)':'rgba(255,45,85,0.9)', border:followed?.includes(video.userId)?'1px solid rgba(255,255,255,0.4)':'none', color:'white', fontSize:12, fontWeight:700, cursor:'pointer', backdropFilter:'blur(4px)' }}>{followed?.includes(video.userId)?'Unfollow':'+ Follow'}</button>
             </div>
             {desc && (
@@ -2623,8 +2623,8 @@ const handleLongPressStart = () => {
               { icon:'🚩', label:'Report Post', color:'#FFB100', fn:()=>{ setShowReportModal(true); setShowLongPressMenu(false); } },
             ].map(({ icon, label, color, fn }) => (
               <button key={label} onClick={fn} style={{ width:'100%', padding:'15px 22px', background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:14, borderBottom:'1px solid rgba(255,255,255,0.04)' }}>
-                <span style={{ fontSize:22, width:30, textAlign:'center' }}>{icon}</span>
-                <span style={{ color, fontSize:15, fontWeight:600, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{label}</span>
+                <span style={{ fontSize:24, width:30, textAlign:'center' }}>{icon}</span>
+                <span style={{ color, fontSize:14, fontWeight:600, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{label}</span>
               </button>
             ))}
             <button onClick={()=>setShowLongPressMenu(false)} style={{ width:'100%', padding:'15px 22px', background:'none', border:'none', cursor:'pointer', color:'rgba(255,255,255,0.55)', fontSize:14, fontWeight:500, textAlign:'center', marginTop:4 }}>Cancel</button>
@@ -2692,7 +2692,7 @@ const handleLongPressStart = () => {
       </div>
 
       {floatingReactions.map(r=>(
-        <div key={r.id} style={{ position:'absolute', bottom:200, left:`${r.x}%`, zIndex:60, pointerEvents:'none', fontSize:36, animation:'floatUp 1.5s ease forwards' }}>{r.emoji}</div>
+        <div key={r.id} style={{ position:'absolute', bottom:200, left:`${r.x}%`, zIndex:60, pointerEvents:'none', fontSize:40, animation:'floatUp 1.5s ease forwards' }}>{r.emoji}</div>
       ))}
       {showReactions && (
         <div onClick={e=>e.stopPropagation()} style={{ position:'absolute', bottom:160, left:'50%', transform:'translateX(-50%)', zIndex:55, background:'rgba(20,20,20,0.95)', backdropFilter:'blur(20px)', borderRadius:50, padding:'8px 12px', display:'flex', gap:4, border:'1px solid rgba(255,255,255,0.12)', animation:'popInBounce 0.3s ease' }}>
@@ -3002,7 +3002,7 @@ const JobsMarketPage = ({ currentUser, showToast, mode, onViewProfile }) => {
                 {app.applicantAvatarUrl ? <img src={app.applicantAvatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : (app.applicantUsername||'?')[0].toUpperCase()}
               </div>
               <div style={{ flex:1 }}>
-                <div style={{ color:'white', fontWeight:700, fontSize:15 }}>@{app.applicantUsername}</div>
+                <div style={{ color:'white', fontWeight:700, fontSize:14 }}>@{app.applicantUsername}</div>
                 <div style={{ color:'rgba(255,255,255,0.55)', fontSize:12 }}>{app.applicantFollowers||0} followers</div>
                 {app.applicantBio && <div style={{ color:'rgba(255,255,255,0.5)', fontSize:12, marginTop:2 }}>{app.applicantBio}</div>}
               </div>
@@ -3057,7 +3057,7 @@ const JobsMarketPage = ({ currentUser, showToast, mode, onViewProfile }) => {
           )}
           {pending.map(item => (
             <div key={item.id} style={{ background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,149,0,0.25)', borderRadius:18, padding:14, marginBottom:12 }}>
-              <div style={{ color:'white', fontWeight:800, fontSize:15, marginBottom:4 }}>{item.title}</div>
+              <div style={{ color:'white', fontWeight:800, fontSize:14, marginBottom:4 }}>{item.title}</div>
               <div style={{ color:'rgba(255,255,255,0.5)', fontSize:12, marginBottom:8 }}>by @{item.username}{item.company ? ' · '+item.company : ''}</div>
               {item.description && <div style={{ color:'rgba(255,255,255,0.5)', fontSize:12, lineHeight:1.5, marginBottom:10 }}>{item.description.length>200?item.description.slice(0,200)+'...':item.description}</div>}
               <div style={{ display:'flex', gap:8 }}>
@@ -3089,7 +3089,7 @@ const JobsMarketPage = ({ currentUser, showToast, mode, onViewProfile }) => {
           <div><label style={labelStyle}>Description</label><textarea value={jobForm.description} onChange={e=>setJobForm(f=>({...f,description:e.target.value}))} placeholder="Job description, requirements, responsibilities..." rows={4} style={{ ...inputStyle, resize:'none', lineHeight:1.5 }} /></div>
           <div><label style={labelStyle}>Required Skills</label><input value={jobForm.skills} onChange={e=>setJobForm(f=>({...f,skills:e.target.value}))} placeholder="e.g. React, Figma, Python" style={inputStyle} /></div>
           <div><label style={labelStyle}>Contact Email</label><input value={jobForm.contactEmail} onChange={e=>setJobForm(f=>({...f,contactEmail:e.target.value}))} placeholder="For applicants to reach you" style={inputStyle} /></div>
-          <button onClick={postJob} style={{ width:'100%', background:'linear-gradient(135deg,#FF2156,#9D4EDD)', border:'none', borderRadius:20, padding:'15px 0', color:'white', fontWeight:800, fontSize:15, cursor:'pointer', marginTop:8 }}>Post Job 💼</button>
+          <button onClick={postJob} style={{ width:'100%', background:'linear-gradient(135deg,#FF2156,#9D4EDD)', border:'none', borderRadius:20, padding:'15px 0', color:'white', fontWeight:800, fontSize:14, cursor:'pointer', marginTop:8 }}>Post Job 💼</button>
         </div>
       ) : (
         <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
@@ -3100,7 +3100,7 @@ const JobsMarketPage = ({ currentUser, showToast, mode, onViewProfile }) => {
           <div><label style={labelStyle}>Description</label><textarea value={mktForm.description} onChange={e=>setMktForm(f=>({...f,description:e.target.value}))} placeholder="Describe the item, features, specs..." rows={3} style={{ ...inputStyle, resize:'none', lineHeight:1.5 }} /></div>
           <div><label style={labelStyle}>Tags</label><input value={mktForm.tags} onChange={e=>setMktForm(f=>({...f,tags:e.target.value}))} placeholder="electronics, phone, apple..." style={inputStyle} /></div>
           <div><label style={labelStyle}>Contact Email</label><input value={mktForm.contactEmail} onChange={e=>setMktForm(f=>({...f,contactEmail:e.target.value}))} placeholder="Buyers will contact you here" style={inputStyle} /></div>
-          <button onClick={postMarket} style={{ width:'100%', background:'linear-gradient(135deg,#0A84FF,#2ED573)', border:'none', borderRadius:20, padding:'15px 0', color:'white', fontWeight:800, fontSize:15, cursor:'pointer', marginTop:8 }}>List Item 🛒</button>
+          <button onClick={postMarket} style={{ width:'100%', background:'linear-gradient(135deg,#0A84FF,#2ED573)', border:'none', borderRadius:20, padding:'15px 0', color:'white', fontWeight:800, fontSize:14, cursor:'pointer', marginTop:8 }}>List Item 🛒</button>
         </div>
       )}
     </div>
@@ -3170,7 +3170,7 @@ const JobsMarketPage = ({ currentUser, showToast, mode, onViewProfile }) => {
                 </div>
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:2 }}>
-                    <div style={{ color:'white', fontWeight:800, fontSize:15 }}>{item.title}</div>
+                    <div style={{ color:'white', fontWeight:800, fontSize:14 }}>{item.title}</div>
                     {item.status === 'available' && tab==='market' && <span style={{ background:'rgba(52,199,89,0.12)', border:'1px solid rgba(52,199,89,0.25)', borderRadius:20, padding:'1px 8px', color:'#2ED573', fontSize:11, fontWeight:700 }}>Available</span>}
                     {item.status === 'active' && tab==='jobs' && <span style={{ background:'rgba(0,122,255,0.12)', border:'1px solid rgba(0,122,255,0.25)', borderRadius:20, padding:'1px 8px', color:'#0A84FF', fontSize:11, fontWeight:700 }}>Hiring</span>}
                   </div>
@@ -3409,7 +3409,7 @@ const handlePullEnd = async () => {
         <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:15, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 16px 12px', background:'rgba(10,10,10,0.98)', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
           <div style={{ flex:1, display:'flex', justifyContent:'center', gap:24 }}>
             {TOP_CATEGORIES.map(cat=>(
-              <button key={cat.id} onClick={()=>{setActiveCategory(cat.id); setCurrentIndex(0);}} style={{ background:'none', border:'none', color:activeCategory===cat.id?'white':'rgba(255,255,255,0.45)', fontWeight:activeCategory===cat.id?800:500, fontSize:15, cursor:'pointer', paddingBottom:6, borderBottom:activeCategory===cat.id?'2.5px solid white':'2.5px solid transparent', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", transition:'all 0.2s' }}>
+              <button key={cat.id} onClick={()=>{setActiveCategory(cat.id); setCurrentIndex(0);}} style={{ background:'none', border:'none', color:activeCategory===cat.id?'white':'rgba(255,255,255,0.45)', fontWeight:activeCategory===cat.id?800:500, fontSize:14, cursor:'pointer', paddingBottom:6, borderBottom:activeCategory===cat.id?'2.5px solid white':'2.5px solid transparent', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", transition:'all 0.2s' }}>
                 {cat.id==='foryou'?(t?.foryou||cat.label):cat.id==='jobs'?(t?.jobs||'Jobs'):cat.id==='skills'?(t?.skills||'Skills'):(t?.foryou||cat.label)}
               </button>
             ))}
@@ -3433,7 +3433,7 @@ const handlePullEnd = async () => {
       <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:15, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 16px 12px', background:'linear-gradient(to bottom,rgba(0,0,0,0.7) 0%,transparent 100%)' }}>
         <div style={{ flex:1, display:'flex', justifyContent:'center', gap:24 }}>
           {TOP_CATEGORIES.map(cat=>(
-            <button key={cat.id} onClick={()=>{setActiveCategory(cat.id); setCurrentIndex(0);}} style={{ background:'none', border:'none', color:activeCategory===cat.id?'white':'rgba(255,255,255,0.45)', fontWeight:activeCategory===cat.id?800:500, fontSize:15, cursor:'pointer', paddingBottom:6, borderBottom:activeCategory===cat.id?'2.5px solid white':'2.5px solid transparent', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", transition:'all 0.2s' }}>
+            <button key={cat.id} onClick={()=>{setActiveCategory(cat.id); setCurrentIndex(0);}} style={{ background:'none', border:'none', color:activeCategory===cat.id?'white':'rgba(255,255,255,0.45)', fontWeight:activeCategory===cat.id?800:500, fontSize:14, cursor:'pointer', paddingBottom:6, borderBottom:activeCategory===cat.id?'2.5px solid white':'2.5px solid transparent', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", transition:'all 0.2s' }}>
               {cat.id==='foryou'?(t?.foryou||cat.label):cat.id==='jobs'?(t?.jobs||'Jobs'):cat.id==='skills'?(t?.skills||'Skills'):(t?.foryou||cat.label)}
             </button>
           ))}
@@ -3549,7 +3549,7 @@ const handlePullEnd = async () => {
       </div>
       <Stories users={users} currentUser={currentUser} onViewStory={onViewStory} onCreateStory={onCreateStory} followed={followed} />
       <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:12, color:'rgba(255,255,255,0.2)' }}>
-        <div style={{ fontSize:44 }}>👥</div>
+        <div style={{ fontSize:48 }}>👥</div>
         <div style={{ fontSize:14 }}>Follow people to see their videos here</div>
       </div>
     </div>
@@ -3640,7 +3640,7 @@ const CreateScreen = ({ onOpenCamera, onShowSoundLibrary, showToast, t }) => (
       {icon:'🎵',label:'Add Sound',sub:'Browse music library',action:onShowSoundLibrary,grad:false},
     ].map(btn=>(
       <button key={btn.label} onClick={btn.action} style={{ width:'100%', maxWidth:320, background:btn.grad?'linear-gradient(135deg,#FF2156,#9D4EDD)':'rgba(255,255,255,0.04)', border:btn.grad?'none':'1px solid rgba(255,255,255,0.08)', borderRadius:20, padding:'16px 20px', color:'white', fontSize:14, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:14, textAlign:'left' }}>
-        <div style={{ width:44, height:44, borderRadius:14, background:btn.grad?'rgba(255,255,255,0.15)':'rgba(255,255,255,0.06)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22 }}>{btn.icon}</div>
+        <div style={{ width:44, height:44, borderRadius:14, background:btn.grad?'rgba(255,255,255,0.15)':'rgba(255,255,255,0.06)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:24 }}>{btn.icon}</div>
         <div>
           <div style={{ fontWeight:700, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{btn.label}</div>
           <div style={{ color:btn.grad?'rgba(255,255,255,0.65)':'rgba(255,255,255,0.35)', fontSize:11, marginTop:2 }}>{btn.sub}</div>
@@ -3711,16 +3711,16 @@ const WalletPage = ({ user, setCurrentUser, showToast, onBack }) => {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
           Back
         </button>
-        <div style={{ color:'white', fontWeight:800, fontSize:22, marginBottom:16, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Wallet</div>
+        <div style={{ color:'white', fontWeight:800, fontSize:24, marginBottom:16, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Wallet</div>
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:16 }}>
           <div style={{ background:'linear-gradient(135deg,#FFD60A,#FFB100)', borderRadius:22, padding:20 }}>
             <div style={{ color:'rgba(0,0,0,0.55)', fontSize:11, fontWeight:600, textTransform:'uppercase', letterSpacing:0.5 }}>Coins</div>
-            <div style={{ color:'#000', fontSize:30, fontWeight:800, marginTop:4, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{(user?.coins||0).toLocaleString()}</div>
+            <div style={{ color:'#000', fontSize:32, fontWeight:800, marginTop:4, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{(user?.coins||0).toLocaleString()}</div>
             <div style={{ color:'rgba(255,255,255,0.55)', fontSize:11, marginTop:2 }}>🪙 Infinity Coins</div>
           </div>
           <div style={{ background:'linear-gradient(135deg,#2ED573,#0A84FF)', borderRadius:22, padding:20 }}>
             <div style={{ color:'rgba(0,0,0,0.55)', fontSize:11, fontWeight:600, textTransform:'uppercase', letterSpacing:0.5 }}>Cash</div>
-            <div style={{ color:'#000', fontSize:30, fontWeight:800, marginTop:4, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>${(user?.walletBalance||0).toLocaleString()}</div>
+            <div style={{ color:'#000', fontSize:32, fontWeight:800, marginTop:4, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>${(user?.walletBalance||0).toLocaleString()}</div>
             <div style={{ color:'rgba(0,0,0,0.4)', fontSize:11, marginTop:2 }}>💵 USD</div>
           </div>
         </div>
@@ -3736,7 +3736,7 @@ const WalletPage = ({ user, setCurrentUser, showToast, onBack }) => {
               <div key={tx.id} style={{ background:'rgba(255,255,255,0.03)', borderRadius:16, padding:'13px 14px', marginBottom:8, display:'flex', alignItems:'center', gap:12, border:'1px solid rgba(255,255,255,0.05)' }}>
                 <div style={{ width:40, height:40, borderRadius:'50%', background:tx.type==='credit'?'rgba(6,214,160,0.12)':'rgba(255,45,85,0.12)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>{tx.type==='credit'?'⬆️':'⬇️'}</div>
                 <div style={{ flex:1 }}><div style={{ color:'white', fontSize:12 }}>{tx.label}</div><div style={{ color:'rgba(255,255,255,0.55)', fontSize:11, marginTop:2 }}>{tx.date?.toLocaleDateString?.()}</div></div>
-                <div style={{ color:tx.type==='credit'?'#2ED573':'#FF2156', fontWeight:700, fontSize:15 }}>{tx.type==='credit'?'+':'-'}{tx.amount}{tx.coins?'🪙':'$'}</div>
+                <div style={{ color:tx.type==='credit'?'#2ED573':'#FF2156', fontWeight:700, fontSize:14 }}>{tx.type==='credit'?'+':'-'}{tx.amount}{tx.coins?'🪙':'$'}</div>
               </div>
             ))}
           </div>
@@ -3745,7 +3745,7 @@ const WalletPage = ({ user, setCurrentUser, showToast, onBack }) => {
           <div style={{ background:'rgba(255,255,255,0.03)', borderRadius:22, padding:20, border:'1px solid rgba(255,255,255,0.06)' }}>
             <div style={{ color:'rgba(255,255,255,0.55)', fontSize:12, marginBottom:8 }}>{activeTab==='deposit'?'Add coins':activeTab==='withdraw'?'Withdraw coins':'Convert to ETH (1 ETH = 10,000 🪙)'}</div>
             <div style={{ display:'flex', gap:8, marginBottom:14 }}>
-              <input type="number" placeholder="Enter amount..." value={amount} onChange={e=>setAmount(e.target.value)} style={{ flex:1, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:'12px', color:'white', outline:'none', fontSize:15 }} />
+              <input type="number" placeholder="Enter amount..." value={amount} onChange={e=>setAmount(e.target.value)} style={{ flex:1, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:'12px', color:'white', outline:'none', fontSize:14 }} />
             </div>
             <div style={{ display:'flex', gap:8, marginBottom:14 }}>
               {[100,500,1000,5000].map(v=>(
@@ -3813,7 +3813,7 @@ const EditProfileModal = ({ user, onClose, onSave, showToast }) => {
           <button onClick={handleSave} disabled={uploading} style={{ background:'linear-gradient(135deg,#FF2156,#9D4EDD)', border:'none', borderRadius:20, padding:'9px 20px', color:'white', fontWeight:700, cursor:'pointer', fontSize:14, opacity:uploading?0.6:1 }}>{uploading?'Saving...':'Save'}</button>
         </div>
         <div style={{ position:'relative', display:'inline-block' }}>
-            <div style={{ width:90, height:90, borderRadius:'50%', background:avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:36, margin:'0 auto', border:'3px solid rgba(255,255,255,0.1)', overflow:'hidden' }}>
+            <div style={{ width:90, height:90, borderRadius:'50%', background:avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:40, margin:'0 auto', border:'3px solid rgba(255,255,255,0.1)', overflow:'hidden' }}>
               {avatarPreview ? <img src={avatarPreview} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : user?.avatar}
             </div>
             <div onClick={()=>fileInputRef.current?.click()} style={{ position:'absolute', bottom:0, right:0, background:'rgba(255,255,255,0.1)', border:'2px solid #15151C', borderRadius:'50%', width:32, height:32, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', backdropFilter:'blur(8px)' }}>
@@ -3888,12 +3888,12 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
       <button onClick={()=>setActiveSubPage('settings')} style={{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:20,padding:'8px 16px',color:'white',cursor:'pointer',fontSize:13,marginBottom:20,display:'flex',alignItems:'center',gap:6}}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
       </button>
-      <div style={{color:'white',fontWeight:800,fontSize:22,marginBottom:8,fontFamily:"'Inter',sans-serif"}}>Change Password</div>
+      <div style={{color:'white',fontWeight:800,fontSize:24,marginBottom:8,fontFamily:"'Inter',sans-serif"}}>Change Password</div>
       <div style={{color:'rgba(255,255,255,0.55)',fontSize:13,marginBottom:24}}>A reset link will be sent to {user?.email}</div>
       <button onClick={async()=>{
         if(user?.email){ await sendPasswordResetEmail(auth,user.email); showToast?.('Reset link sent to '+user.email,'success'); setActiveSubPage('settings'); }
         else showToast?.('No email on account','error');
-      }} style={{width:'100%',background:'linear-gradient(135deg,#FF2156,#9D4EDD)',border:'none',borderRadius:24,padding:15,color:'white',fontWeight:700,cursor:'pointer',fontSize:15}}>
+      }} style={{width:'100%',background:'linear-gradient(135deg,#FF2156,#9D4EDD)',border:'none',borderRadius:24,padding:15,color:'white',fontWeight:700,cursor:'pointer',fontSize:14}}>
         Send Reset Link to {user?.email}
       </button>
     </div>
@@ -3904,7 +3904,7 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
       <button onClick={()=>setActiveSubPage('settings')} style={{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:20,padding:'8px 16px',color:'white',cursor:'pointer',fontSize:13,marginBottom:20,display:'flex',alignItems:'center',gap:6}}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
       </button>
-      <div style={{color:'white',fontWeight:800,fontSize:22,marginBottom:24,fontFamily:"'Inter',sans-serif"}}>Email & Phone</div>
+      <div style={{color:'white',fontWeight:800,fontSize:24,marginBottom:24,fontFamily:"'Inter',sans-serif"}}>Email & Phone</div>
       <div style={{background:'rgba(255,255,255,0.03)',borderRadius:20,overflow:'hidden',border:'1px solid rgba(255,255,255,0.06)'}}>
         <div style={{padding:'16px',borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
           <div style={{color:'rgba(255,255,255,0.55)',fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:0.5,marginBottom:6}}>Email Address</div>
@@ -3926,7 +3926,7 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
       <button onClick={()=>setActiveSubPage('settings')} style={{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:20,padding:'8px 16px',color:'white',cursor:'pointer',fontSize:13,marginBottom:20,display:'flex',alignItems:'center',gap:6}}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
       </button>
-      <div style={{color:'white',fontWeight:800,fontSize:22,marginBottom:24,fontFamily:"'Inter',sans-serif"}}>Language</div>
+      <div style={{color:'white',fontWeight:800,fontSize:24,marginBottom:24,fontFamily:"'Inter',sans-serif"}}>Language</div>
       <div style={{background:'rgba(255,255,255,0.03)',borderRadius:20,overflow:'hidden',border:'1px solid rgba(255,255,255,0.06)'}}>
         <div style={{background:'rgba(6,214,160,0.08)',border:'1px solid rgba(6,214,160,0.2)',borderRadius:14,padding:'10px 14px',marginBottom:16,color:'#2ED573',fontSize:12,lineHeight:1.5}}>
   ✓ Select your language. All app text will update immediately.
@@ -3954,7 +3954,7 @@ if(activeSubPage==='wallet') return <WalletPage user={user} setCurrentUser={setC
       <button onClick={()=>setActiveSubPage('settings')} style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:20, padding:'8px 16px', color:'white', cursor:'pointer', fontSize:13, marginBottom:20, display:'flex', alignItems:'center', gap:6 }}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
       </button>
-      <div style={{ color:'white', fontWeight:800, fontSize:22, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Blocked Users</div>
+      <div style={{ color:'white', fontWeight:800, fontSize:24, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Blocked Users</div>
       {(user?.blockedUsers||[]).length===0 && (
         <div style={{ textAlign:'center', padding:48, color:'rgba(255,255,255,0.25)' }}>
           <div style={{ fontSize:40, marginBottom:10 }}>🚫</div>
@@ -3990,7 +3990,7 @@ if(activeSubPage==='settings') return (
         <button onClick={()=>setActiveSubPage(null)} style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:20, padding:'8px 16px', color:'white', cursor:'pointer', fontSize:13, marginBottom:20, display:'flex', alignItems:'center', gap:6 }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
         </button>
-        <div style={{ color:'white', fontWeight:800, fontSize:22, marginBottom:24, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Settings</div>
+        <div style={{ color:'white', fontWeight:800, fontSize:24, marginBottom:24, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Settings</div>
         <div style={{ color:'rgba(255,255,255,0.55)', fontSize:11, fontWeight:700, marginBottom:8, textTransform:'uppercase', letterSpacing:1.2 }}>Account</div>
         <div style={{ background:'rgba(255,255,255,0.03)', borderRadius:20, overflow:'hidden', marginBottom:20, border:'1px solid rgba(255,255,255,0.06)' }}>
           {[
@@ -4107,7 +4107,7 @@ if(activeSubPage==='settings') return (
       <button onClick={()=>setActiveSubPage(null)} style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:20, padding:'8px 16px', color:'white', cursor:'pointer', fontSize:13, marginBottom:20, display:'flex', alignItems:'center', gap:6 }}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
       </button>
-      <div style={{ color:'white', fontWeight:800, fontSize:22, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Privacy</div>
+      <div style={{ color:'white', fontWeight:800, fontSize:24, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Privacy</div>
       <div style={{ background:'rgba(255,255,255,0.03)', borderRadius:20, overflow:'hidden', border:'1px solid rgba(255,255,255,0.06)' }}>
         {['Private Account','Show Activity','Allow Messages from Everyone','Allow Comments','Allow Duets','Show Liked Videos'].map((label,i,arr)=>(
           <div key={label} style={{ padding:'14px 16px', borderBottom:i<arr.length-1?'1px solid rgba(255,255,255,0.05)':'', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
@@ -4126,7 +4126,7 @@ if(activeSubPage==='settings') return (
       <button onClick={()=>setActiveSubPage(null)} style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:20, padding:'8px 16px', color:'white', cursor:'pointer', fontSize:13, marginBottom:20, display:'flex', alignItems:'center', gap:6 }}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
       </button>
-      <div style={{ color:'white', fontWeight:800, fontSize:22, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Switch Account</div>
+      <div style={{ color:'white', fontWeight:800, fontSize:24, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Switch Account</div>
       {JSON.parse(localStorage.getItem('infinity_accounts')||'[]').filter(u=>u.id===user?.id).map(u=>(
         <div key={u.id} style={{ background:'rgba(255,255,255,0.03)', borderRadius:18, padding:16, marginBottom:10, display:'flex', alignItems:'center', gap:14, cursor: u.id===user?.id?'default':'not-allowed', border:u.id===user?.id?'1px solid rgba(255,45,85,0.5)':'1px solid rgba(255,255,255,0.06)', opacity: u.id===user?.id?1:0.4 }} onClick={()=>{ if(u.id!==user?.id){ showToast?.('Sign in to switch accounts','info'); return; } }}>
           <div style={{ width:50, height:50, borderRadius:'50%', background:u.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:20, overflow:'hidden' }}>
@@ -4148,11 +4148,11 @@ if(activeSubPage==='settings') return (
       <button onClick={()=>setActiveSubPage(null)} style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:20, padding:'8px 16px', color:'white', cursor:'pointer', fontSize:13, marginBottom:20, display:'flex', alignItems:'center', gap:6 }}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
       </button>
-      <div style={{ color:'white', fontWeight:800, fontSize:22, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Badges</div>
+      <div style={{ color:'white', fontWeight:800, fontSize:24, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Badges</div>
       <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12 }}>
         {[['🌟','First Post',myVideos.length>0],['🔥','7 Day Streak',(user?.streak||0)>=7],['💎','Top Creator',(user?.followers?.length||0)>=100],['👑','100K Fans',(user?.followers?.length||0)>=100000],['🚀','Viral',myVideos.some(v=>v.views>=10000)],['🎯','Pro User',user?.subscription==='pro']].map(([icon,name,earned])=>(
           <div key={name} style={{ background:'rgba(255,255,255,0.03)', borderRadius:20, padding:18, textAlign:'center', opacity:earned?1:0.4, border:'1px solid rgba(255,255,255,0.06)' }}>
-            <div style={{ fontSize:38, marginBottom:8 }}>{icon}</div>
+            <div style={{ fontSize:40, marginBottom:8 }}>{icon}</div>
             <div style={{ color:'white', fontSize:12, fontWeight:700, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{name}</div>
             <div style={{ color:earned?'#2ED573':'rgba(255,255,255,0.3)', fontSize:11, marginTop:4 }}>{earned?'Earned':'Locked'}</div>
           </div>
@@ -4166,7 +4166,7 @@ if(activeSubPage==='settings') return (
       <button onClick={()=>setActiveSubPage(null)} style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:20, padding:'8px 16px', color:'white', cursor:'pointer', fontSize:13, marginBottom:20, display:'flex', alignItems:'center', gap:6 }}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
       </button>
-      <div style={{ color:'white', fontWeight:800, fontSize:22, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Premium</div>
+      <div style={{ color:'white', fontWeight:800, fontSize:24, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Premium</div>
       {[{name:'Plus',price:'$4.99/mo',color:'#9D4EDD',features:['Ad-free experience','500 coins/month','Custom profile badge','Priority in search']},{name:'Pro',price:'$9.99/mo',color:'#FFD60A',features:['All Plus features','2000 coins/month','Advanced analytics','Priority support','Custom username']}].map(plan=>(
         <div key={plan.name} style={{ background:'rgba(255,255,255,0.03)', border:`1px solid ${plan.color}40`, borderRadius:24, padding:22, marginBottom:14 }}>
           <div style={{ color:plan.color, fontWeight:800, fontSize:20, marginBottom:4, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{plan.name}</div>
@@ -4257,7 +4257,7 @@ if(activeSubPage==='settings') return (
                   })}
                   {((showFollowersList==='followers'?(user?.followers||[]):(user?.following||[])).length===0)&&(
                     <div style={{textAlign:'center',padding:40,color:'rgba(255,255,255,0.25)'}}>
-                      <div style={{fontSize:36,marginBottom:8}}>👥</div>
+                      <div style={{fontSize:40,marginBottom:8}}>👥</div>
                       <div>No {showFollowersList} yet</div>
                     </div>
                   )}
@@ -4269,7 +4269,7 @@ if(activeSubPage==='settings') return (
             <div onClick={()=>setShowAvatarViewer(true)} style={{cursor:'pointer'}}>
               <div style={{ width:96, height:96, borderRadius:'50%', padding:3, background:'conic-gradient(#FF2156,#FFB100,#9D4EDD,#FF2156)', margin:'0 auto', cursor:'pointer' }}>
                 <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:'#0B0B0F', padding:2, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                  <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:user?.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:36, overflow:'hidden' }}>
+                  <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:user?.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:40, overflow:'hidden' }}>
                     {user?.avatarUrl ? <img src={user.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : user?.avatar}
                   </div>
                 </div>
@@ -4279,7 +4279,7 @@ if(activeSubPage==='settings') return (
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </button>
           </div>
-          <div style={{ color:'white', fontWeight:800, fontSize:22, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{user?.username}</div>
+          <div style={{ color:'white', fontWeight:800, fontSize:24, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{user?.username}</div>
           {user?.verified && (
             <div style={{ display:'inline-flex', alignItems:'center', gap:4, color:'#0A84FF', fontSize:12, marginTop:4, background:'rgba(29,155,240,0.1)', borderRadius:20, padding:'3px 10px' }}>
               <svg width="11" height="11" viewBox="0 0 24 24" fill="#0A84FF"><path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -4341,7 +4341,7 @@ if(activeSubPage==='settings') return (
           myVideos.length===0 ? (
             <div style={{ textAlign:'center', padding:48, color:'rgba(255,255,255,0.2)' }}>
               <div style={{ fontSize:48, marginBottom:12 }}>🎬</div>
-              <div style={{ fontSize:15, fontWeight:600, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>No posts yet</div>
+              <div style={{ fontSize:14, fontWeight:600, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>No posts yet</div>
               <div style={{ fontSize:13, marginTop:4 }}>Create your first video!</div>
             </div>
           ) : (
@@ -4388,7 +4388,7 @@ if(activeSubPage==='settings') return (
         <div onClick={()=>setShowAvatarViewer(false)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.97)',zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:16}}>
           <div style={{position:'absolute',inset:0,background:user?.avatarUrl?'none':user?.avatarColor,backgroundImage:user?.avatarUrl?`url(${user.avatarUrl})`:'none',backgroundSize:'cover',backgroundPosition:'center',filter:'blur(28px) brightness(0.4)',transform:'scale(1.1)'}}/>
           <div style={{position:'relative',width:260,height:260,borderRadius:'50%',background:user?.avatarColor,display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden',border:'3px solid rgba(255,255,255,0.2)',boxShadow:'0 20px 80px rgba(0,0,0,0.8)'}}>
-            {user?.avatarUrl?<img src={user.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/>:<span style={{color:'white',fontSize:90,fontWeight:'bold'}}>{user?.avatar}</span>}
+            {user?.avatarUrl?<img src={user.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/>:<span style={{color:'white',fontSize:80,fontWeight:'bold'}}>{user?.avatar}</span>}
           </div>
           <span style={{position:'relative',color:'white',fontSize:16,fontWeight:700}}>@{user?.username}</span>
           <span style={{position:'relative',color:'rgba(255,255,255,0.55)',fontSize:12}}>Tap anywhere to close</span>
@@ -4877,7 +4877,7 @@ unsub = onSnapshot(q, (snap) => {
 {showEmoji && (
         <div style={{display:'flex',flexWrap:'wrap',gap:6,padding:'10px 14px',background:'rgba(255,255,255,0.04)',borderRadius:16,margin:'0 14px 4px'}}>
           {EMOJI_LIST.map(e=>(
-            <button key={e} onClick={()=>setText(t=>t+e)} style={{background:'none',border:'none',fontSize:22,cursor:'pointer',padding:2}}>{e}</button>
+            <button key={e} onClick={()=>setText(t=>t+e)} style={{background:'none',border:'none',fontSize:24,cursor:'pointer',padding:2}}>{e}</button>
           ))}
         </div>
       )}
@@ -5056,7 +5056,7 @@ snap.docs.forEach(async conv => {
     <div style={{ height:'100%', display:'flex', flexDirection:'column', background:'#0B0B0F' }}>
       <div style={{ padding:'14px 16px 10px', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
-          <div style={{ color:'white', fontWeight:800, fontSize:22, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{t?.inbox||'Messages'}</div>
+          <div style={{ color:'white', fontWeight:800, fontSize:24, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{t?.inbox||'Messages'}</div>
           <button onClick={()=>setShowGroupsView(true)} style={{ background:'rgba(255,45,85,0.1)', border:'1px solid rgba(255,45,85,0.2)', borderRadius:20, padding:'6px 14px', color:'#FF2156', fontSize:12, fontWeight:700, cursor:'pointer' }}>👥 Groups</button>
         </div>
         {/* Inline search — Telegram standard */}
@@ -5076,7 +5076,7 @@ snap.docs.forEach(async conv => {
             : convUsers;
           if (filteredConvUsers.length === 0) return (
             <div style={{textAlign:'center',padding:60,color:'rgba(255,255,255,0.2)'}}>
-              <div style={{fontSize:44,marginBottom:12}}>💬</div>
+              <div style={{fontSize:48,marginBottom:12}}>💬</div>
               <div style={{fontSize:14}}>{inboxSearch ? `No chats matching "${inboxSearch}"` : t?.noMessages||'No messages yet'}</div>
               {!inboxSearch && <div style={{fontSize:12,marginTop:6,color:'rgba(255,255,255,0.12)'}}>{t?.startChat||'Go to a profile and tap Message to start'}</div>}
             </div>
@@ -5087,7 +5087,7 @@ snap.docs.forEach(async conv => {
           return (
             <div key={u.id} onClick={()=>openConversation(u.id)} style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 16px', borderBottom:'1px solid rgba(255,255,255,0.04)', cursor:'pointer' }}>
               <div style={{ position:'relative' }}>
-                <div style={{ width:52, height:52, borderRadius:'50%', background:u.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:22, overflow:'hidden' }}>
+                <div style={{ width:52, height:52, borderRadius:'50%', background:u.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:24, overflow:'hidden' }}>
                   {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : u.avatar}
                 </div>
                 <div style={{ position:'absolute', bottom:1, right:1, width:13, height:13, background:'#2ED573', borderRadius:'50%', border:'2px solid #0B0B0F' }} />
@@ -5373,13 +5373,13 @@ cleanupCall();
         {type !== 'video' && (
           <div style={{ width:110, height:110, borderRadius:'50%', padding:3, background:'conic-gradient(#FF2156,#9D4EDD,#FF2156)', margin:'0 auto 20px', animation:status==='calling'?'storyRing 4s linear infinite':'' }}>
             <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:'#1a0a0a', padding:2, display:'flex', alignItems:'center', justifyContent:'center' }}>
-              <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:'#FF2156', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:42 }}>
+              <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:'#FF2156', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:48 }}>
                 {contactAvatar || '?'}
               </div>
             </div>
           </div>
         )}
-        <div style={{ color:'white', fontSize:22, fontWeight:800, fontFamily:"'Inter',sans-serif" }}>@{contactName}</div>
+        <div style={{ color:'white', fontSize:24, fontWeight:800, fontFamily:"'Inter',sans-serif" }}>@{contactName}</div>
         <div style={{ color:'rgba(255,255,255,0.5)', fontSize:13, marginTop:6 }}>{statusLabel}</div>
       </div>
       <div style={{ position:'absolute', bottom:60, left:0, right:0, zIndex:20, display:'flex', justifyContent:'center', gap:20 }}>
@@ -5463,7 +5463,7 @@ const SearchOverlay = ({ onClose, videos, users, onViewProfile }) => {
             onChange={e=>setQuery(e.target.value)}
             onKeyDown={e=>{ if(e.key==='Enter' && query.trim()) addRecentSearch(query.trim()); }}
             placeholder="Search users, posts, hashtags..."
-            style={{ flex:1, background:'none', border:'none', color:'white', outline:'none', fontSize:15, fontWeight:500 }} />
+            style={{ flex:1, background:'none', border:'none', color:'white', outline:'none', fontSize:14, fontWeight:500 }} />
           {query && <button onClick={()=>setQuery('')} style={{ background:'rgba(255,255,255,0.12)', border:'none', borderRadius:'50%', width:20, height:20, color:'rgba(255,255,255,0.7)', cursor:'pointer', fontSize:12, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>✕</button>}
         </div>
         <button onClick={onClose} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.55)', fontSize:14, cursor:'pointer', fontWeight:600, padding:'4px 8px' }}>Cancel</button>
@@ -5530,8 +5530,8 @@ const SearchOverlay = ({ onClose, videos, users, onViewProfile }) => {
           <div style={{ padding:'8px 14px' }}>
             {totalResults === 0 && (
               <div style={{ textAlign:'center', padding:'60px 20px', color:'rgba(255,255,255,0.25)' }}>
-                <div style={{ fontSize:44, marginBottom:12 }}>🔍</div>
-                <div style={{ fontSize:15, fontWeight:600 }}>No results for "{query}"</div>
+                <div style={{ fontSize:48, marginBottom:12 }}>🔍</div>
+                <div style={{ fontSize:14, fontWeight:600 }}>No results for "{query}"</div>
                 <div style={{ fontSize:13, marginTop:6 }}>Try different keywords</div>
               </div>
             )}
@@ -5955,7 +5955,7 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
         {/* Capture row */}
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', paddingLeft:60, paddingRight:60 }}>
           {/* Gallery */}
-          <button onClick={()=>fileInputRef.current?.click()} style={{ width:48, height:48, borderRadius:14, background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', fontSize:22 }}>🖼️</button>
+          <button onClick={()=>fileInputRef.current?.click()} style={{ width:48, height:48, borderRadius:14, background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', fontSize:24 }}>🖼️</button>
           <input ref={fileInputRef} type="file" accept="video/*,image/*" multiple onChange={handleFileSelect} style={{ display:'none' }} />
 
           {/* Shutter / Record */}
@@ -5982,7 +5982,7 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
           )}
 
           {/* Flip (right side placeholder for symmetry) */}
-          <button onClick={flipCamera} style={{ width:48, height:48, borderRadius:'50%', background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', fontSize:22 }}>🔄</button>
+          <button onClick={flipCamera} style={{ width:48, height:48, borderRadius:'50%', background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', fontSize:24 }}>🔄</button>
         </div>
       </div>
     </div>
@@ -6149,13 +6149,13 @@ const GuestFeed = ({ onSignIn }) => {
             </div>
           )}
           <div style={{ position:'absolute', bottom:100, left:14, right:14 }}>
-            <div style={{ color:'white', fontWeight:700, fontSize:15 }}>@{video.username}</div>
+            <div style={{ color:'white', fontWeight:700, fontSize:14 }}>@{video.username}</div>
             <div style={{ color:'rgba(255,255,255,0.8)', fontSize:13, marginTop:4 }}>{video.description}</div>
           </div>
         </div>
       ))}
       <div style={{ position:'absolute', bottom:28, left:0, right:0, display:'flex', justifyContent:'center', zIndex:20 }}>
-        <button onClick={onSignIn} style={{ background:'linear-gradient(135deg,#FF2156,#9D4EDD)', border:'none', borderRadius:28, padding:'14px 36px', color:'white', fontWeight:800, fontSize:15, cursor:'pointer', boxShadow:'0 4px 24px rgba(255,45,85,0.5)' }}>
+        <button onClick={onSignIn} style={{ background:'linear-gradient(135deg,#FF2156,#9D4EDD)', border:'none', borderRadius:28, padding:'14px 36px', color:'white', fontWeight:800, fontSize:14, cursor:'pointer', boxShadow:'0 4px 24px rgba(255,45,85,0.5)' }}>
           Sign in to interact 🚀
         </button>
       </div>
@@ -6322,7 +6322,7 @@ setStep('otp');
             <div style={{ position:'absolute', inset:-10, borderRadius:32, background:'linear-gradient(135deg,#FF2156,#AF52DE)', filter:'blur(18px)', opacity:0.55 }} />
             <img src="https://res.cloudinary.com/dotvhzjmc/image/upload/znfksngv27boh3c1kxpv.png" style={{ width:84, height:84, borderRadius:26, objectFit:'cover', display:'block', position:'relative', boxShadow:'0 12px 40px rgba(0,0,0,0.5)' }} />
           </div>
-          <div style={{ color:'white', fontWeight:900, fontSize:26, letterSpacing:-0.5, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>
+          <div style={{ color:'white', fontWeight:900, fontSize:28, letterSpacing:-0.5, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>
             {isLogin ? 'Welcome back 👋' : "Let's get you in 🎉"}
           </div>
           <p style={{ color:'rgba(255,255,255,0.55)', fontSize:14, marginTop:8, fontWeight:500 }}>
@@ -6349,7 +6349,7 @@ setStep('otp');
                   width:'100%', background: m.id==='google' ? 'white' : 'rgba(255,255,255,0.06)',
                   border: m.id==='google' ? 'none' : '1px solid rgba(255,255,255,0.12)',
                   borderRadius:16, padding:'15px 18px', cursor:'pointer',
-                  fontSize:15, fontWeight:700,
+                  fontSize:14, fontWeight:700,
                   color: m.id==='google' ? '#1A1A1A' : 'white',
                   transition:'transform 0.12s ease, opacity 0.15s', opacity:loading?0.5:1,
                 }}
@@ -6405,7 +6405,7 @@ if(step==='otp') return (
     <div style={{height:'100%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:24,background:'#0B0B0F'}}>
       <div style={{textAlign:'center',maxWidth:300,width:'100%'}}>
         <div style={{fontSize:64,marginBottom:16}}>📲</div>
-        <div style={{color:'white',fontWeight:800,fontSize:22,marginBottom:10,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>Enter OTP</div>
+        <div style={{color:'white',fontWeight:800,fontSize:24,marginBottom:10,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>Enter OTP</div>
         <div style={{color:'rgba(255,255,255,0.5)',fontSize:14,lineHeight:1.6,marginBottom:20}}>
           We sent a 6-digit code to <strong style={{color:'white'}}>{pendingCreds?.email}</strong>
         </div>
@@ -6463,7 +6463,7 @@ if(profile) {
             }
           }
           setLoading(false);
-        }} disabled={loading||otpInput.length!==6} style={{width:'100%',background:'linear-gradient(135deg,#FF2156,#9D4EDD)',border:'none',borderRadius:24,padding:15,color:'white',fontWeight:700,cursor:'pointer',fontSize:15,marginBottom:12,opacity:(loading||otpInput.length!==6)?0.5:1,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>
+        }} disabled={loading||otpInput.length!==6} style={{width:'100%',background:'linear-gradient(135deg,#FF2156,#9D4EDD)',border:'none',borderRadius:24,padding:15,color:'white',fontWeight:700,cursor:'pointer',fontSize:14,marginBottom:12,opacity:(loading||otpInput.length!==6)?0.5:1,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>
           {loading?'Verifying...':'Verify & Create Account'}
         </button>
         <button onClick={async()=>{
@@ -6495,7 +6495,7 @@ setLoading(false);
     <div style={{height:'100%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:24,background:'#0B0B0F'}}>
       <div style={{textAlign:'center',maxWidth:300,width:'100%'}}>
         <div style={{fontSize:64,marginBottom:16}}>🔑</div>
-        <div style={{color:'white',fontWeight:800,fontSize:22,marginBottom:10,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>Reset Password</div>
+        <div style={{color:'white',fontWeight:800,fontSize:24,marginBottom:10,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>Reset Password</div>
         <div style={{color:'rgba(255,255,255,0.5)',fontSize:14,lineHeight:1.6,marginBottom:20}}>Enter your email and we'll send a reset link.</div>
         {error && <div style={{background:'rgba(255,45,85,0.1)',border:'1px solid rgba(255,45,85,0.3)',borderRadius:12,padding:'10px 14px',color:'#FF2156',fontSize:12,marginBottom:12}}>{error}</div>}
         <input placeholder="Your email" value={identifier} onChange={e=>setIdentifier(e.target.value)} style={{width:'100%',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:14,padding:'13px 16px',color:'white',marginBottom:12,outline:'none',fontSize:14,boxSizing:'border-box'}}/>
@@ -6509,7 +6509,7 @@ setLoading(false);
             setError('Could not send reset email: '+(e.message||''));
           }
           setLoading(false);
-        }} disabled={loading} style={{width:'100%',background:'linear-gradient(135deg,#FF2156,#9D4EDD)',border:'none',borderRadius:24,padding:15,color:'white',fontWeight:700,cursor:'pointer',fontSize:15,marginBottom:12,opacity:loading?0.6:1,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>
+        }} disabled={loading} style={{width:'100%',background:'linear-gradient(135deg,#FF2156,#9D4EDD)',border:'none',borderRadius:24,padding:15,color:'white',fontWeight:700,cursor:'pointer',fontSize:14,marginBottom:12,opacity:loading?0.6:1,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>
           {loading?'Sending...':'Send Reset Link'}
         </button>
         <button onClick={()=>{setStep('method');setError('');}} style={{background:'none',border:'none',color:'rgba(255,255,255,0.55)',fontSize:13,cursor:'pointer',textDecoration:'underline'}}>Back to sign in</button>
@@ -6521,9 +6521,9 @@ setLoading(false);
     <div style={{height:'100%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:24,background:'#0B0B0F'}}>
       <div style={{textAlign:'center',maxWidth:300}}>
         <div style={{fontSize:64,marginBottom:16}}>📬</div>
-        <div style={{color:'white',fontWeight:800,fontSize:22,marginBottom:10,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>Check your inbox</div>
+        <div style={{color:'white',fontWeight:800,fontSize:24,marginBottom:10,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>Check your inbox</div>
         <div style={{color:'rgba(255,255,255,0.5)',fontSize:14,lineHeight:1.6,marginBottom:28}}>We sent a password reset link to <strong style={{color:'white'}}>{identifier}</strong>.</div>
-        <button onClick={()=>{setStep('method');setError('');}} style={{width:'100%',background:'linear-gradient(135deg,#FF2156,#9D4EDD)',border:'none',borderRadius:24,padding:15,color:'white',fontWeight:700,cursor:'pointer',fontSize:15,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>Back to Sign In →</button>
+        <button onClick={()=>{setStep('method');setError('');}} style={{width:'100%',background:'linear-gradient(135deg,#FF2156,#9D4EDD)',border:'none',borderRadius:24,padding:15,color:'white',fontWeight:700,cursor:'pointer',fontSize:14,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>Back to Sign In →</button>
       </div>
     </div>
   );
@@ -6532,9 +6532,9 @@ if(step==='verify') return (
     <div style={{height:'100%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:24,background:'#0B0B0F'}}>
       <div style={{textAlign:'center',maxWidth:300}}>
         <div style={{fontSize:64,marginBottom:16}}>📧</div>
-        <div style={{color:'white',fontWeight:800,fontSize:22,marginBottom:10,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>Verify your email</div>
+        <div style={{color:'white',fontWeight:800,fontSize:24,marginBottom:10,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>Verify your email</div>
         <div style={{color:'rgba(255,255,255,0.5)',fontSize:14,lineHeight:1.6,marginBottom:28}}>We sent a link to <strong style={{color:'white'}}>{identifier}</strong>. Click it then come back to sign in.</div>
-        <button onClick={()=>{setStep('method');setIsLogin(true);}} style={{width:'100%',background:'linear-gradient(135deg,#FF2156,#9D4EDD)',border:'none',borderRadius:24,padding:15,color:'white',fontWeight:700,cursor:'pointer',fontSize:15,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>Go to Sign In →</button>
+        <button onClick={()=>{setStep('method');setIsLogin(true);}} style={{width:'100%',background:'linear-gradient(135deg,#FF2156,#9D4EDD)',border:'none',borderRadius:24,padding:15,color:'white',fontWeight:700,cursor:'pointer',fontSize:14,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>Go to Sign In →</button>
       </div>
     </div>
   );
@@ -6581,7 +6581,7 @@ return (
           </>}
           <input placeholder="Email" value={identifier} onChange={e=>setIdentifier(e.target.value)} style={{ width:'100%', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:'13px 16px', color:'white', marginBottom:10, outline:'none', fontSize:14, boxSizing:'border-box' }} />
           <input type="password" placeholder="Password" value={password} onChange={e=>setPassword(e.target.value)} style={{ width:'100%', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:'13px 16px', color:'white', marginBottom:14, outline:'none', fontSize:14, boxSizing:'border-box' }} />
-          <button onClick={handleSubmit} disabled={loading||!identifier||!password||(!isLogin&&(!username||!fullName||!birthdate))} style={{ width:'100%', background:'linear-gradient(135deg,#FF2156,#9D4EDD)', border:'none', borderRadius:24, padding:15, color:'white', fontWeight:700, cursor:'pointer', fontSize:15, opacity:(loading||!identifier||!password)?0.5:1, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>
+          <button onClick={handleSubmit} disabled={loading||!identifier||!password||(!isLogin&&(!username||!fullName||!birthdate))} style={{ width:'100%', background:'linear-gradient(135deg,#FF2156,#9D4EDD)', border:'none', borderRadius:24, padding:15, color:'white', fontWeight:700, cursor:'pointer', fontSize:14, opacity:(loading||!identifier||!password)?0.5:1, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>
             {loading?'Please wait...':'Continue'}
           </button>
           {isLogin && (
@@ -6677,7 +6677,7 @@ const NotificationsPage = ({ currentUser, users, videos, onClose, onViewProfile,
       {/* Header */}
       <div style={{ padding:'16px 16px 0', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
-          <div style={{ color:'white', fontWeight:800, fontSize:22, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>
+          <div style={{ color:'white', fontWeight:800, fontSize:24, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>
             Notifications
             {unreadCount > 0 && <span style={{ marginLeft:8, background:'#FF2156', color:'white', fontSize:12, fontWeight:700, borderRadius:20, padding:'2px 8px' }}>{unreadCount}</span>}
           </div>
@@ -6697,8 +6697,8 @@ const NotificationsPage = ({ currentUser, users, videos, onClose, onViewProfile,
       <div style={{ flex:1, overflowY:'auto' }}>
         {filteredNotifs.length===0 && (
           <div style={{ textAlign:'center', padding:'60px 20px', color:'rgba(255,255,255,0.2)' }}>
-            <div style={{ fontSize:44, marginBottom:12 }}>🔔</div>
-            <div style={{ fontSize:15, fontWeight:600 }}>No notifications yet</div>
+            <div style={{ fontSize:48, marginBottom:12 }}>🔔</div>
+            <div style={{ fontSize:14, fontWeight:600 }}>No notifications yet</div>
             <div style={{ fontSize:13, marginTop:6 }}>{activeFilter==='all' ? 'Interact with others to receive notifications' : `No ${activeFilter} notifications`}</div>
           </div>
         )}
@@ -6709,7 +6709,7 @@ const NotificationsPage = ({ currentUser, users, videos, onClose, onViewProfile,
             <div key={n.id} onClick={()=>handleNotifTap(n)} style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 16px', borderBottom:'1px solid rgba(255,255,255,0.04)', cursor:'pointer', background:n.read?'transparent':'rgba(255,45,85,0.03)', transition:'background 0.1s' }}>
               {/* Avatar with type badge */}
               <div style={{ position:'relative', flexShrink:0 }}>
-                <div style={{ width:48, height:48, borderRadius:'50%', background:fromUser?.avatarColor||'#34343E', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:19, overflow:'hidden', border:!n.read?'2px solid rgba(255,45,85,0.4)':'2px solid transparent' }}>
+                <div style={{ width:48, height:48, borderRadius:'50%', background:fromUser?.avatarColor||'#34343E', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:18, overflow:'hidden', border:!n.read?'2px solid rgba(255,45,85,0.4)':'2px solid transparent' }}>
                   {fromUser?.avatarUrl ? <img src={fromUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : (fromUser?.avatar||'?')}
                 </div>
                 <div style={{ position:'absolute', bottom:-2, right:-2, width:22, height:22, borderRadius:'50%', background:iconBg, border:'2px solid #0B0B0F', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11 }}>{icons[n.type]||'🔔'}</div>
