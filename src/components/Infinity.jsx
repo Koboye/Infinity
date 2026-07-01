@@ -6908,9 +6908,10 @@ const [blockedUsers, setBlockedUsers] = useState([]);
     return ()=>unsub();
   },[]);
 
-  // Real-time users from Firestore
+  // Real-time users from Firestore (capped — do NOT stream the whole table)
   useEffect(()=>{
-    const unsub = onSnapshot(collection(db,'users'), snap=>{
+    const q = query(collection(db,'users'), orderBy('createdAt','desc'), limit(200));
+    const unsub = onSnapshot(q, snap=>{
       setUsers(snap.docs.map(d=>({id:d.id,...d.data()})));
     });
     return ()=>unsub();
