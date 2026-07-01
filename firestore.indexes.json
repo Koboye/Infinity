@@ -9,10 +9,11 @@
       ]
     },
     {
-      "collectionGroup": "videos",
+      "collectionGroup": "notifications",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "toUserId", "order": "ASCENDING" },
+        { "fieldPath": "read", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     },
@@ -21,7 +22,7 @@
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "toUserId", "order": "ASCENDING" },
-        { "fieldPath": "read", "order": "ASCENDING" }
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     },
     {
