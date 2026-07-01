@@ -60,7 +60,7 @@ const APP_CREATOR_UID = 'REPLACE_WITH_CREATOR_UID'; // Set this to the actual Fi
 /* ─────────────── CONSTANTS ─────────────── */
 const LOGIN_METHODS = [
   { id: 'google', name: 'Google', icon: '🌐', color: '#4285f4' },
-  { id: 'email', name: 'Email', icon: '📧', color: '#FF2156' },
+  { id: 'email', name: 'Email', icon: '📧', color: '#FE2C55' },
 ];
 
 const VIRTUAL_GIFTS = [
@@ -214,24 +214,24 @@ const PollWidget = ({ poll, currentUser, videoId, showToast }) => {
 
   if (!poll?.options) return null;
   return (
-    <div style={{ background: 'rgba(20,16,28,0.08)', borderRadius: 16, padding: 14, marginTop: 8 }}>
-      <div style={{ color: 'rgba(20,16,28,0.6)', fontSize: 11, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>📊 Poll</div>
-      <div style={{ color: '#161221', fontWeight: 700, fontSize: 14, marginBottom: 10 }}>{poll.question}</div>
+    <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: 16, padding: 14, marginTop: 8 }}>
+      <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>📊 Poll</div>
+      <div style={{ color: '#FFFFFF', fontWeight: 700, fontSize: 14, marginBottom: 10 }}>{poll.question}</div>
       {poll.options.map((opt, i) => {
         const pct = totalVotes > 0 ? Math.round(((localVotes[i] || 0) / totalVotes) * 100) : 0;
         return (
           <div key={i} onClick={() => handleVote(i)} style={{ marginBottom: 8, cursor: voted === null ? 'pointer' : 'default' }}>
-            <div style={{ position: 'relative', background: 'rgba(20,16,28,0.06)', borderRadius: 10, overflow: 'hidden', border: voted === i ? '1.5px solid #FF2156' : '1.5px solid rgba(20,16,28,0.1)' }}>
-              {voted !== null && <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${pct}%`, background: voted === i ? 'rgba(255,45,85,0.25)' : 'rgba(20,16,28,0.06)', transition: 'width 0.4s ease' }} />}
+            <div style={{ position: 'relative', background: 'rgba(255,255,255,0.06)', borderRadius: 10, overflow: 'hidden', border: voted === i ? '1.5px solid #FE2C55' : '1.5px solid rgba(255,255,255,0.1)' }}>
+              {voted !== null && <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${pct}%`, background: voted === i ? 'rgba(255,45,85,0.25)' : 'rgba(255,255,255,0.06)', transition: 'width 0.4s ease' }} />}
               <div style={{ position: 'relative', padding: '9px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ color: '#161221', fontSize: 13 }}>{opt}</span>
-                {voted !== null && <span style={{ color: 'rgba(20,16,28,0.5)', fontSize: 12, fontWeight: 700 }}>{pct}%</span>}
+                <span style={{ color: '#FFFFFF', fontSize: 13 }}>{opt}</span>
+                {voted !== null && <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: 700 }}>{pct}%</span>}
               </div>
             </div>
           </div>
         );
       })}
-      {voted !== null && <div style={{ color: 'rgba(20,16,28,0.3)', fontSize: 11, marginTop: 4 }}>{totalVotes} votes</div>}
+      {voted !== null && <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 11, marginTop: 4 }}>{totalVotes} votes</div>}
     </div>
   );
 };
@@ -262,7 +262,7 @@ const BookmarkButton = ({ videoId, currentUser, showToast }) => {
       <svg width="26" height="26" viewBox="0 0 24 24" fill={saved ? '#FFD60A' : 'none'} stroke={saved ? '#FFD60A' : 'white'} strokeWidth="2">
         <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
       </svg>
-      <span style={{ color: saved ? '#FFD60A' : 'rgba(20,16,28,0.6)', fontSize: 11 }}>Save</span>
+      <span style={{ color: saved ? '#FFD60A' : 'rgba(255,255,255,0.6)', fontSize: 11 }}>Save</span>
     </button>
   );
 };
@@ -281,14 +281,14 @@ const ShareSheet = ({ video, currentUser, onClose, showToast }) => {
   ];
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 5000, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-end' }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ width: '100%', background: '#FFFFFF', borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: '20px 16px max(34px, env(safe-area-inset-bottom))', border: '1px solid rgba(20,16,28,0.07)' }}>
-        <div style={{ width: 36, height: 4, background: 'rgba(20,16,28,0.15)', borderRadius: 2, margin: '0 auto 20px' }} />
-        <div style={{ color: '#161221', fontWeight: 800, fontSize: 17, marginBottom: 18 }}>Share</div>
+      <div onClick={e => e.stopPropagation()} style={{ width: '100%', background: '#121214', borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: '20px 16px max(34px, env(safe-area-inset-bottom))', border: '1px solid rgba(255,255,255,0.07)' }}>
+        <div style={{ width: 36, height: 4, background: 'rgba(255,255,255,0.15)', borderRadius: 2, margin: '0 auto 20px' }} />
+        <div style={{ color: '#FFFFFF', fontWeight: 800, fontSize: 17, marginBottom: 18 }}>Share</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 16 }}>
           {options.map(opt => (
-            <button key={opt.label} onClick={opt.action} style={{ background: 'rgba(20,16,28,0.04)', border: '1px solid rgba(20,16,28,0.07)', borderRadius: 18, padding: '14px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7, cursor: 'pointer' }}>
+            <button key={opt.label} onClick={opt.action} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 18, padding: '14px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7, cursor: 'pointer' }}>
               <span style={{ fontSize: 26 }}>{opt.icon}</span>
-              <span style={{ color: 'rgba(20,16,28,0.6)', fontSize: 10, fontWeight: 600, textAlign: 'center' }}>{opt.label}</span>
+              <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 10, fontWeight: 600, textAlign: 'center' }}>{opt.label}</span>
             </button>
           ))}
         </div>
@@ -301,10 +301,10 @@ const ShareSheet = ({ video, currentUser, onClose, showToast }) => {
 const StickerPicker = ({ onSelect, onClose }) => {
   const [activePack, setActivePack] = useState(0);
   return (
-    <div style={{ background: '#FAF9FC', borderRadius: 20, padding: 14, border: '1px solid rgba(20,16,28,0.08)' }}>
+    <div style={{ background: '#1A1A1D', borderRadius: 20, padding: 14, border: '1px solid rgba(255,255,255,0.08)' }}>
       <div style={{ display: 'flex', gap: 8, marginBottom: 10, overflowX: 'auto' }}>
         {STICKER_PACKS.map((pack, i) => (
-          <button key={pack.id} onClick={() => setActivePack(i)} style={{ background: i === activePack ? 'rgba(255,45,85,0.2)' : 'transparent', border: i === activePack ? '1px solid rgba(255,45,85,0.4)' : '1px solid transparent', borderRadius: 20, padding: '4px 12px', color: i === activePack ? '#FF2156' : 'rgba(20,16,28,0.4)', fontSize: 12, cursor: 'pointer', flexShrink: 0 }}>
+          <button key={pack.id} onClick={() => setActivePack(i)} style={{ background: i === activePack ? 'rgba(255,45,85,0.2)' : 'transparent', border: i === activePack ? '1px solid rgba(255,45,85,0.4)' : '1px solid transparent', borderRadius: 20, padding: '4px 12px', color: i === activePack ? '#FE2C55' : 'rgba(255,255,255,0.4)', fontSize: 12, cursor: 'pointer', flexShrink: 0 }}>
             {pack.name}
           </button>
         ))}
@@ -325,7 +325,7 @@ const StickerPicker = ({ onSelect, onClose }) => {
 const TrendingHashtags = ({ onSearch }) => (
   <div style={{ padding: '10px 0', overflowX: 'auto', display: 'flex', gap: 8 }}>
     {TRENDING_HASHTAGS.map(tag => (
-      <button key={tag} onClick={() => onSearch?.(tag)} style={{ background: 'rgba(255,45,85,0.1)', border: '1px solid rgba(255,45,85,0.2)', borderRadius: 20, padding: '6px 14px', color: '#FF2156', fontSize: 12, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>
+      <button key={tag} onClick={() => onSearch?.(tag)} style={{ background: 'rgba(255,45,85,0.1)', border: '1px solid rgba(255,45,85,0.2)', borderRadius: 20, padding: '6px 14px', color: '#FE2C55', fontSize: 12, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>
         {tag}
       </button>
     ))}
@@ -414,14 +414,14 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack }) => {
   if (activeGroup) {
     const groupMembers = users.filter(u => (activeGroup.members||[]).includes(u.id));
     return (
-      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#F5F4F7' }}>
-        <div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(20,16,28,0.06)', display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(20,16,28,0.02)' }}>
-          <button onClick={() => setActiveGroup(null)} style={{ background: 'none', border: 'none', color: '#161221', cursor: 'pointer', fontSize: 18 }}>←</button>
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#000000' }}>
+        <div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(255,255,255,0.02)' }}>
+          <button onClick={() => setActiveGroup(null)} style={{ background: 'none', border: 'none', color: '#FFFFFF', cursor: 'pointer', fontSize: 18 }}>←</button>
           <div onClick={()=>setShowGroupInfo(true)} style={{ display:'flex', alignItems:'center', gap:10, flex:1, cursor:'pointer' }}>
-            <div style={{ width: 38, height: 38, borderRadius: '50%', background: activeGroup.avatarColor || '#FF2156', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: 16 }}>{activeGroup.avatar || '👥'}</div>
+            <div style={{ width: 38, height: 38, borderRadius: '50%', background: activeGroup.avatarColor || '#FE2C55', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: 16 }}>{activeGroup.avatar || '👥'}</div>
             <div>
-              <div style={{ color: '#161221', fontWeight: 700, fontSize: 15 }}>{activeGroup.name}</div>
-              <div style={{ color: 'rgba(20,16,28,0.4)', fontSize: 11 }}>{(activeGroup.members || []).length} members · tap for info</div>
+              <div style={{ color: '#FFFFFF', fontWeight: 700, fontSize: 15 }}>{activeGroup.name}</div>
+              <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11 }}>{(activeGroup.members || []).length} members · tap for info</div>
             </div>
           </div>
           <button onClick={()=>setGroupCallOpen('audio')} style={{ background:'rgba(52,199,89,0.15)', border:'1px solid rgba(52,199,89,0.25)', borderRadius:'50%', width:36, height:36, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
@@ -434,29 +434,29 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack }) => {
         {/* Group Info Panel */}
         {showGroupInfo && (
           <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.85)', zIndex:50, display:'flex', alignItems:'flex-end' }} onClick={()=>setShowGroupInfo(false)}>
-            <div onClick={e=>e.stopPropagation()} style={{ width:'100%', background:'#FFFFFF', borderTopLeftRadius:28, borderTopRightRadius:28, padding:'20px 20px 40px', maxHeight:'70%', overflowY:'auto' }}>
-              <div style={{ width:36, height:4, background:'rgba(20,16,28,0.12)', borderRadius:2, margin:'0 auto 20px' }} />
+            <div onClick={e=>e.stopPropagation()} style={{ width:'100%', background:'#121214', borderTopLeftRadius:28, borderTopRightRadius:28, padding:'20px 20px 40px', maxHeight:'70%', overflowY:'auto' }}>
+              <div style={{ width:36, height:4, background:'rgba(255,255,255,0.12)', borderRadius:2, margin:'0 auto 20px' }} />
               <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:20 }}>
-                <div style={{ width:52, height:52, borderRadius:'50%', background:activeGroup.avatarColor||'#FF2156', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:'bold', fontSize:22 }}>{activeGroup.avatar||'👥'}</div>
+                <div style={{ width:52, height:52, borderRadius:'50%', background:activeGroup.avatarColor||'#FE2C55', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:'bold', fontSize:22 }}>{activeGroup.avatar||'👥'}</div>
                 <div>
-                  <div style={{ color:'#161221', fontWeight:800, fontSize:18 }}>{activeGroup.name}</div>
-                  <div style={{ color:'rgba(20,16,28,0.4)', fontSize:12 }}>Created by group admin</div>
+                  <div style={{ color:'#FFFFFF', fontWeight:800, fontSize:18 }}>{activeGroup.name}</div>
+                  <div style={{ color:'rgba(255,255,255,0.4)', fontSize:12 }}>Created by group admin</div>
                 </div>
               </div>
-              <div style={{ color:'rgba(20,16,28,0.5)', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:12 }}>Members ({groupMembers.length})</div>
+              <div style={{ color:'rgba(255,255,255,0.5)', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:12 }}>Members ({groupMembers.length})</div>
               {groupMembers.map(u=>(
-                <div key={u.id} style={{ display:'flex', alignItems:'center', gap:12, padding:'11px 0', borderBottom:'1px solid rgba(20,16,28,0.05)' }}>
+                <div key={u.id} style={{ display:'flex', alignItems:'center', gap:12, padding:'11px 0', borderBottom:'1px solid rgba(255,255,255,0.05)' }}>
                   <div style={{ width:44, height:44, borderRadius:'50%', background:u.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:'bold', fontSize:18, overflow:'hidden', flexShrink:0 }}>
                     {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : u.avatar}
                   </div>
                   <div style={{ flex:1, minWidth:0 }}>
-                    <div style={{ color:'#161221', fontSize:14, fontWeight:700, display:'flex', alignItems:'center', gap:6, flexWrap:'wrap' }}>
+                    <div style={{ color:'#FFFFFF', fontSize:14, fontWeight:700, display:'flex', alignItems:'center', gap:6, flexWrap:'wrap' }}>
                       @{u.username}
                       {u.id===currentUser?.id && <span style={{ color:'#2ED573', fontSize:10 }}>You</span>}
                       {activeGroup.admin===u.id && <span style={{ background:'rgba(255,204,0,0.15)', border:'1px solid rgba(255,204,0,0.3)', borderRadius:10, padding:'1px 7px', color:'#FFD60A', fontSize:9, fontWeight:800 }}>ADMIN</span>}
                     </div>
-                    {u.bio && <div style={{ color:'rgba(20,16,28,0.4)', fontSize:11, marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{u.bio}</div>}
-                    <div style={{ color:'rgba(20,16,28,0.25)', fontSize:10, marginTop:1 }}>{u.followers?.length||0} followers</div>
+                    {u.bio && <div style={{ color:'rgba(255,255,255,0.4)', fontSize:11, marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{u.bio}</div>}
+                    <div style={{ color:'rgba(255,255,255,0.25)', fontSize:10, marginTop:1 }}>{u.followers?.length||0} followers</div>
                   </div>
                   {currentUser?.id===activeGroup?.admin && u.id!==currentUser?.id && (
                     <button onClick={e=>{e.stopPropagation(); const nm=(activeGroup.members||[]).filter(id=>id!==u.id); updateDoc(doc(db,'groups',activeGroup.id),{members:nm}).then(()=>{setActiveGroup(g=>({...g,members:nm})); showToast?.('Member removed','info');}).catch(()=>{});}} style={{ background:'rgba(255,59,48,0.1)', border:'1px solid rgba(255,59,48,0.2)', borderRadius:10, padding:'5px 10px', color:'#FF453A', fontSize:11, cursor:'pointer', flexShrink:0 }}>Remove</button>
@@ -468,27 +468,27 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack }) => {
         )}
         {/* Group Call Overlay */}
         {groupCallOpen && (
-          <div style={{ position:'absolute', inset:0, background:'#F5F4F7', zIndex:60, display:'flex', flexDirection:'column' }}>
-            <div style={{ padding:'20px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', borderBottom:'1px solid rgba(20,16,28,0.06)' }}>
-              <div style={{ color:'#161221', fontWeight:800, fontSize:18 }}>{groupCallOpen==='video'?'📹':'📞'} Group {groupCallOpen==='video'?'Video':'Voice'} Call</div>
-              <button onClick={()=>setGroupCallOpen(null)} style={{ background:'rgba(255,45,85,0.15)', border:'1px solid rgba(255,45,85,0.3)', borderRadius:'50%', width:36, height:36, color:'#FF2156', cursor:'pointer', fontSize:18 }}>✕</button>
+          <div style={{ position:'absolute', inset:0, background:'#000000', zIndex:60, display:'flex', flexDirection:'column' }}>
+            <div style={{ padding:'20px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
+              <div style={{ color:'#FFFFFF', fontWeight:800, fontSize:18 }}>{groupCallOpen==='video'?'📹':'📞'} Group {groupCallOpen==='video'?'Video':'Voice'} Call</div>
+              <button onClick={()=>setGroupCallOpen(null)} style={{ background:'rgba(255,45,85,0.15)', border:'1px solid rgba(255,45,85,0.3)', borderRadius:'50%', width:36, height:36, color:'#FE2C55', cursor:'pointer', fontSize:18 }}>✕</button>
             </div>
             <div style={{ flex:1, overflowY:'auto', padding:16, display:'flex', flexWrap:'wrap', gap:12, alignContent:'flex-start', justifyContent:'center' }}>
               {groupMembers.map(u=>(
-                <div key={u.id} style={{ width:'calc(50% - 6px)', background:'rgba(20,16,28,0.06)', borderRadius:20, padding:'18px 12px', display:'flex', flexDirection:'column', alignItems:'center', gap:8, border:'1px solid rgba(20,16,28,0.08)' }}>
+                <div key={u.id} style={{ width:'calc(50% - 6px)', background:'rgba(255,255,255,0.06)', borderRadius:20, padding:'18px 12px', display:'flex', flexDirection:'column', alignItems:'center', gap:8, border:'1px solid rgba(255,255,255,0.08)' }}>
                   <div style={{ width:56, height:56, borderRadius:'50%', background:u.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:'bold', fontSize:22, overflow:'hidden', border:'2px solid rgba(52,199,89,0.4)' }}>
                     {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : u.avatar}
                   </div>
-                  <div style={{ color:'#161221', fontSize:12, fontWeight:700 }}>@{u.username}</div>
+                  <div style={{ color:'#FFFFFF', fontSize:12, fontWeight:700 }}>@{u.username}</div>
                   {u.id===currentUser?.id && <div style={{ color:'#2ED573', fontSize:10 }}>You</div>}
                   <div style={{ width:8, height:8, borderRadius:'50%', background:'#2ED573', animation:'pulse 1.5s ease infinite' }} />
                 </div>
               ))}
             </div>
-            <div style={{ padding:'16px 20px 32px', display:'flex', justifyContent:'center', gap:20, borderTop:'1px solid rgba(20,16,28,0.06)' }}>
-              <button onClick={()=>showToast?.('Muted','info')} style={{ width:56, height:56, borderRadius:'50%', background:'rgba(20,16,28,0.1)', border:'none', color:'#161221', fontSize:22, cursor:'pointer' }}>🎤</button>
-              {groupCallOpen==='video' && <button onClick={()=>showToast?.('Camera toggled','info')} style={{ width:56, height:56, borderRadius:'50%', background:'rgba(20,16,28,0.1)', border:'none', color:'#161221', fontSize:22, cursor:'pointer' }}>📷</button>}
-              <button onClick={()=>setGroupCallOpen(null)} style={{ width:56, height:56, borderRadius:'50%', background:'#FF2156', border:'none', color:'#fff', fontSize:22, cursor:'pointer' }}>📵</button>
+            <div style={{ padding:'16px 20px 32px', display:'flex', justifyContent:'center', gap:20, borderTop:'1px solid rgba(255,255,255,0.06)' }}>
+              <button onClick={()=>showToast?.('Muted','info')} style={{ width:56, height:56, borderRadius:'50%', background:'rgba(255,255,255,0.1)', border:'none', color:'#FFFFFF', fontSize:22, cursor:'pointer' }}>🎤</button>
+              {groupCallOpen==='video' && <button onClick={()=>showToast?.('Camera toggled','info')} style={{ width:56, height:56, borderRadius:'50%', background:'rgba(255,255,255,0.1)', border:'none', color:'#FFFFFF', fontSize:22, cursor:'pointer' }}>📷</button>}
+              <button onClick={()=>setGroupCallOpen(null)} style={{ width:56, height:56, borderRadius:'50%', background:'#FE2C55', border:'none', color:'#fff', fontSize:22, cursor:'pointer' }}>📵</button>
             </div>
           </div>
         )}
@@ -498,13 +498,13 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack }) => {
             return (
               <div key={msg.id} style={{ display: 'flex', justifyContent: isMine ? 'flex-end' : 'flex-start', marginBottom: 10 }}>
                 {!isMine && (
-                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: msg.senderAvatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#161221', fontSize: 11, fontWeight: 'bold', marginRight: 8, flexShrink: 0, overflow: 'hidden' }}>
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: msg.senderAvatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFFFFF', fontSize: 11, fontWeight: 'bold', marginRight: 8, flexShrink: 0, overflow: 'hidden' }}>
                     {msg.senderAvatarUrl ? <img src={msg.senderAvatarUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : msg.senderAvatar}
                   </div>
                 )}
                 <div style={{ maxWidth: '72%' }}>
-                  {!isMine && <div style={{ color: 'rgba(20,16,28,0.4)', fontSize: 10, marginBottom: 3 }}>@{msg.senderName}</div>}
-                  <div style={{ background: isMine ? 'linear-gradient(135deg,#FF2156,#9D4EDD)' : 'rgba(20,16,28,0.09)', borderRadius: isMine ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: '10px 14px', color: '#161221', fontSize: 14 }}>
+                  {!isMine && <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 10, marginBottom: 3 }}>@{msg.senderName}</div>}
+                  <div style={{ background: isMine ? 'linear-gradient(135deg,#FE2C55,#9D4EDD)' : 'rgba(255,255,255,0.09)', borderRadius: isMine ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: '10px 14px', color: '#FFFFFF', fontSize: 14 }}>
                     {msg.text}
                     {!isMine && <MessageTranslate text={msg.text} targetLang={currentUser?.language || 'en'} isMine={isMine} />}
                   </div>
@@ -514,9 +514,9 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack }) => {
           })}
           <div ref={bottomRef} />
         </div>
-        <div style={{ padding: '10px 14px', borderTop: '1px solid rgba(20,16,28,0.06)', display: 'flex', gap: 8 }}>
-          <input value={msgText} onChange={e => setMsgText(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendGroupMsg()} placeholder="Message group..." style={{ flex: 1, background: 'rgba(20,16,28,0.06)', border: '1px solid rgba(20,16,28,0.08)', borderRadius: 24, padding: '11px 16px', color: '#161221', outline: 'none', fontSize: 13 }} />
-          <button onClick={sendGroupMsg} style={{ background: 'linear-gradient(135deg,#FF2156,#9D4EDD)', border: 'none', borderRadius: '50%', width: 42, height: 42, color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <div style={{ padding: '10px 14px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', gap: 8 }}>
+          <input value={msgText} onChange={e => setMsgText(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendGroupMsg()} placeholder="Message group..." style={{ flex: 1, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 24, padding: '11px 16px', color: '#FFFFFF', outline: 'none', fontSize: 13 }} />
+          <button onClick={sendGroupMsg} style={{ background: 'linear-gradient(135deg,#FE2C55,#9D4EDD)', border: 'none', borderRadius: '50%', width: 42, height: 42, color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           </button>
         </div>
@@ -525,49 +525,49 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack }) => {
   }
 
   if (showCreate) return (
-    <div style={{ height: '100%', overflow: 'auto', background: '#F5F4F7', padding: 16 }}>
-      <button onClick={() => setShowCreate(false)} style={{ background: 'rgba(20,16,28,0.05)', border: 'none', borderRadius: 20, padding: '8px 16px', color: '#161221', cursor: 'pointer', fontSize: 13, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 6 }}>← Back</button>
-      <div style={{ color: '#161221', fontWeight: 800, fontSize: 22, marginBottom: 20 }}>New Group</div>
-      <input value={groupName} onChange={e => setGroupName(e.target.value)} placeholder="Group name" style={{ width: '100%', background: 'rgba(20,16,28,0.05)', border: '1px solid rgba(20,16,28,0.1)', borderRadius: 16, padding: '13px 16px', color: '#161221', outline: 'none', fontSize: 14, boxSizing: 'border-box', marginBottom: 16 }} />
-      <div style={{ color: 'rgba(20,16,28,0.5)', fontSize: 12, marginBottom: 10, fontWeight: 600, textTransform: 'uppercase' }}>Add Members</div>
+    <div style={{ height: '100%', overflow: 'auto', background: '#000000', padding: 16 }}>
+      <button onClick={() => setShowCreate(false)} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: 20, padding: '8px 16px', color: '#FFFFFF', cursor: 'pointer', fontSize: 13, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 6 }}>← Back</button>
+      <div style={{ color: '#FFFFFF', fontWeight: 800, fontSize: 22, marginBottom: 20 }}>New Group</div>
+      <input value={groupName} onChange={e => setGroupName(e.target.value)} placeholder="Group name" style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16, padding: '13px 16px', color: '#FFFFFF', outline: 'none', fontSize: 14, boxSizing: 'border-box', marginBottom: 16 }} />
+      <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, marginBottom: 10, fontWeight: 600, textTransform: 'uppercase' }}>Add Members</div>
       {users.filter(u => u.id !== currentUser?.id).map(u => (
-        <div key={u.id} onClick={() => setSelectedMembers(p => p.includes(u.id) ? p.filter(id => id !== u.id) : [...p, u.id])} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: '1px solid rgba(20,16,28,0.04)', cursor: 'pointer' }}>
+        <div key={u.id} onClick={() => setSelectedMembers(p => p.includes(u.id) ? p.filter(id => id !== u.id) : [...p, u.id])} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: 'pointer' }}>
           <div style={{ width: 40, height: 40, borderRadius: '50%', background: u.avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: 16, overflow: 'hidden', flexShrink: 0 }}>
             {u.avatarUrl ? <img src={u.avatarUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : u.avatar}
           </div>
-          <div style={{ flex: 1 }}><div style={{ color: '#161221', fontSize: 14, fontWeight: 600 }}>@{u.username}</div></div>
-          <div style={{ width: 22, height: 22, borderRadius: '50%', background: selectedMembers.includes(u.id) ? '#FF2156' : 'rgba(20,16,28,0.1)', border: selectedMembers.includes(u.id) ? 'none' : '2px solid rgba(20,16,28,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s' }}>
+          <div style={{ flex: 1 }}><div style={{ color: '#FFFFFF', fontSize: 14, fontWeight: 600 }}>@{u.username}</div></div>
+          <div style={{ width: 22, height: 22, borderRadius: '50%', background: selectedMembers.includes(u.id) ? '#FE2C55' : 'rgba(255,255,255,0.1)', border: selectedMembers.includes(u.id) ? 'none' : '2px solid rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s' }}>
             {selectedMembers.includes(u.id) && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><polyline points="20 6 9 17 4 12" /></svg>}
           </div>
         </div>
       ))}
-      <button onClick={createGroup} style={{ width: '100%', background: 'linear-gradient(135deg,#FF2156,#9D4EDD)', border: 'none', borderRadius: 24, padding: 15, color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: 15, marginTop: 20 }}>Create Group ({selectedMembers.length} members)</button>
+      <button onClick={createGroup} style={{ width: '100%', background: 'linear-gradient(135deg,#FE2C55,#9D4EDD)', border: 'none', borderRadius: 24, padding: 15, color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: 15, marginTop: 20 }}>Create Group ({selectedMembers.length} members)</button>
     </div>
   );
 
   return (
-    <div style={{ height: '100%', overflow: 'auto', background: '#F5F4F7' }}>
-      <div style={{ padding: '16px 16px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(20,16,28,0.06)' }}>
+    <div style={{ height: '100%', overflow: 'auto', background: '#000000' }}>
+      <div style={{ padding: '16px 16px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button onClick={onBack} style={{ background: 'none', border: 'none', color: '#161221', cursor: 'pointer', fontSize: 18 }}>←</button>
-          <div style={{ color: '#161221', fontWeight: 800, fontSize: 18 }}>Groups</div>
+          <button onClick={onBack} style={{ background: 'none', border: 'none', color: '#FFFFFF', cursor: 'pointer', fontSize: 18 }}>←</button>
+          <div style={{ color: '#FFFFFF', fontWeight: 800, fontSize: 18 }}>Groups</div>
         </div>
-        <button onClick={() => setShowCreate(true)} style={{ background: 'linear-gradient(135deg,#FF2156,#9D4EDD)', border: 'none', borderRadius: 20, padding: '8px 16px', color: 'white', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>+ New</button>
+        <button onClick={() => setShowCreate(true)} style={{ background: 'linear-gradient(135deg,#FE2C55,#9D4EDD)', border: 'none', borderRadius: 20, padding: '8px 16px', color: 'white', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>+ New</button>
       </div>
       <div style={{ padding: 12 }}>
         {groups.length === 0 && (
-          <div style={{ textAlign: 'center', padding: 60, color: 'rgba(20,16,28,0.2)' }}>
+          <div style={{ textAlign: 'center', padding: 60, color: 'rgba(255,255,255,0.2)' }}>
             <div style={{ fontSize: 44, marginBottom: 12 }}>👥</div>
             <div style={{ fontSize: 14, marginBottom: 8 }}>No groups yet</div>
             <div style={{ fontSize: 12 }}>Create a group to chat with multiple friends</div>
           </div>
         )}
         {groups.map(g => (
-          <div key={g.id} onClick={() => setActiveGroup(g)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: 'rgba(20,16,28,0.03)', borderRadius: 18, marginBottom: 8, cursor: 'pointer', border: '1px solid rgba(20,16,28,0.05)' }}>
-            <div style={{ width: 48, height: 48, borderRadius: '50%', background: g.avatarColor || '#FF2156', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: 20, flexShrink: 0 }}>{g.avatar || '👥'}</div>
+          <div key={g.id} onClick={() => setActiveGroup(g)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: 'rgba(255,255,255,0.03)', borderRadius: 18, marginBottom: 8, cursor: 'pointer', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ width: 48, height: 48, borderRadius: '50%', background: g.avatarColor || '#FE2C55', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: 20, flexShrink: 0 }}>{g.avatar || '👥'}</div>
             <div style={{ flex: 1 }}>
-              <div style={{ color: '#161221', fontWeight: 700, fontSize: 14 }}>{g.name}</div>
-              <div style={{ color: 'rgba(20,16,28,0.35)', fontSize: 12, marginTop: 2 }}>{g.lastMessage || 'No messages yet'} · {(g.members || []).length} members</div>
+              <div style={{ color: '#FFFFFF', fontWeight: 700, fontSize: 14 }}>{g.name}</div>
+              <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12, marginTop: 2 }}>{g.lastMessage || 'No messages yet'} · {(g.members || []).length} members</div>
             </div>
           </div>
         ))}
@@ -596,15 +596,15 @@ const SavedPostsPage = ({ currentUser, onClose, showToast }) => {
   }, [currentUser?.id]);
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: '#F5F4F7', zIndex: 300, display: 'flex', flexDirection: 'column' }}>
-      <div style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(20,16,28,0.06)' }}>
-        <div style={{ color: '#161221', fontWeight: 800, fontSize: 20 }}>Saved</div>
-        <button onClick={onClose} style={{ background: 'rgba(20,16,28,0.07)', border: 'none', borderRadius: '50%', width: 32, height: 32, color: '#161221', cursor: 'pointer', fontSize: 16 }}>✕</button>
+    <div style={{ position: 'fixed', inset: 0, background: '#000000', zIndex: 300, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ color: '#FFFFFF', fontWeight: 800, fontSize: 20 }}>Saved</div>
+        <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.07)', border: 'none', borderRadius: '50%', width: 32, height: 32, color: '#FFFFFF', cursor: 'pointer', fontSize: 16 }}>✕</button>
       </div>
       <div style={{ flex: 1, overflowY: 'auto', padding: 12 }}>
-        {loading && <div style={{ textAlign: 'center', padding: 40 }}><div style={{ width: 28, height: 28, border: '3px solid rgba(255,45,85,0.3)', borderTop: '3px solid #FF2156', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto' }} /></div>}
+        {loading && <div style={{ textAlign: 'center', padding: 40 }}><div style={{ width: 28, height: 28, border: '3px solid rgba(255,45,85,0.3)', borderTop: '3px solid #FE2C55', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto' }} /></div>}
         {!loading && saved.length === 0 && (
-          <div style={{ textAlign: 'center', padding: 60, color: 'rgba(20,16,28,0.25)' }}>
+          <div style={{ textAlign: 'center', padding: 60, color: 'rgba(255,255,255,0.25)' }}>
             <div style={{ fontSize: 44, marginBottom: 12 }}>🔖</div>
             <div style={{ fontSize: 14 }}>No saved posts yet</div>
             <div style={{ fontSize: 12, marginTop: 6 }}>Tap the bookmark icon on any post to save it</div>
@@ -616,7 +616,7 @@ const SavedPostsPage = ({ currentUser, onClose, showToast }) => {
               {v.videoUrl?.match(/\.(jpg|jpeg|png|gif|webp)/i) || v.mediaType?.startsWith('image')
                 ? <img src={v.videoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 : <video src={v.videoUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} muted />}
-              <div style={{ position: 'absolute', bottom: 4, left: 4, color: '#161221', fontSize: 10, fontWeight: 700, textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{v.likes || 0} ❤️</div>
+              <div style={{ position: 'absolute', bottom: 4, left: 4, color: '#FFFFFF', fontSize: 10, fontWeight: 700, textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{v.likes || 0} ❤️</div>
             </div>
           ))}
         </div>
@@ -661,7 +661,7 @@ const MessageTranslate = ({ text, targetLang, isMine }) => {
   return (
     <>
       {translated && !showOriginal && (
-        <div style={{ fontSize:13, lineHeight:1.4, color: isMine?'rgba(20,16,28,0.9)':'rgba(20,16,28,0.85)', marginTop:4, paddingTop:4, borderTop:'1px solid rgba(20,16,28,0.12)' }}>{translated}</div>
+        <div style={{ fontSize:13, lineHeight:1.4, color: isMine?'rgba(255,255,255,0.9)':'rgba(255,255,255,0.85)', marginTop:4, paddingTop:4, borderTop:'1px solid rgba(255,255,255,0.12)' }}>{translated}</div>
       )}
       <button onClick={toggle} disabled={loading} style={{ background:'none', border:'none', color:'#2F9BFF', fontSize:10, cursor:'pointer', padding:0, marginTop:4, display:'block' }}>
         {loading ? '...' : translated ? (showOriginal ? '🌐 See translation' : '🌐 See original') : '🌐 Translate'}
@@ -673,9 +673,9 @@ const MessageTranslate = ({ text, targetLang, isMine }) => {
 /* ─────────────── STATUS / BROADCAST (v4 — like WhatsApp Status) ─────────────── */
 const BroadcastPage = ({ currentUser, users, showToast, onClose }) => {
   const [text, setText] = useState('');
-  const [bgColor, setBgColor] = useState('#FF2156');
+  const [bgColor, setBgColor] = useState('#FE2C55');
   const [posting, setPosting] = useState(false);
-  const colors = ['#FF2156','#9D4EDD','#0A84FF','#FFB100','#2ED573','#00A9D6','#FF453A'];
+  const colors = ['#FE2C55','#9D4EDD','#0A84FF','#FFB100','#2ED573','#00A9D6','#FF453A'];
 
   const postStatus = async () => {
     if (!text.trim()) { showToast?.('Write something first', 'error'); return; }
@@ -693,12 +693,12 @@ const BroadcastPage = ({ currentUser, users, showToast, onClose }) => {
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 4000, background: bgColor, display: 'flex', flexDirection: 'column' }}>
       <div style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <button onClick={onClose} style={{ background: 'rgba(0,0,0,0.3)', border: 'none', borderRadius: 20, padding: '8px 16px', color: '#161221', cursor: 'pointer', fontSize: 13 }}>Cancel</button>
-        <span style={{ color: '#161221', fontWeight: 800, fontSize: 16 }}>Status</span>
-        <button onClick={postStatus} disabled={posting} style={{ background: 'rgba(20,16,28,0.2)', border: 'none', borderRadius: 20, padding: '8px 16px', color: '#161221', fontWeight: 700, cursor: 'pointer', fontSize: 13 }}>{posting ? '...' : 'Post'}</button>
+        <button onClick={onClose} style={{ background: 'rgba(0,0,0,0.3)', border: 'none', borderRadius: 20, padding: '8px 16px', color: '#FFFFFF', cursor: 'pointer', fontSize: 13 }}>Cancel</button>
+        <span style={{ color: '#FFFFFF', fontWeight: 800, fontSize: 16 }}>Status</span>
+        <button onClick={postStatus} disabled={posting} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 20, padding: '8px 16px', color: '#FFFFFF', fontWeight: 700, cursor: 'pointer', fontSize: 13 }}>{posting ? '...' : 'Post'}</button>
       </div>
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 32 }}>
-        <textarea value={text} onChange={e => setText(e.target.value)} placeholder="Write your status..." autoFocus style={{ background: 'transparent', border: 'none', outline: 'none', color: '#161221', fontSize: 28, fontWeight: 700, textAlign: 'center', width: '100%', resize: 'none', caretColor: 'white' }} rows={4} />
+        <textarea value={text} onChange={e => setText(e.target.value)} placeholder="Write your status..." autoFocus style={{ background: 'transparent', border: 'none', outline: 'none', color: '#FFFFFF', fontSize: 28, fontWeight: 700, textAlign: 'center', width: '100%', resize: 'none', caretColor: 'white' }} rows={4} />
       </div>
       <div style={{ padding: '0 20px 40px', display: 'flex', justifyContent: 'center', gap: 12 }}>
         {colors.map(c => <div key={c} onClick={() => setBgColor(c)} style={{ width: 32, height: 32, borderRadius: '50%', background: c, border: c === bgColor ? '3px solid white' : '3px solid transparent', cursor: 'pointer' }} />)}
@@ -727,36 +727,36 @@ const DiscoverPage = ({ videos, users, onViewProfile, showToast, onClose }) => {
   );
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: '#F5F4F7', zIndex: 500, display: 'flex', flexDirection: 'column' }}>
-      <div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(20,16,28,0.06)' }}>
+    <div style={{ position: 'fixed', inset: 0, background: '#000000', zIndex: 500, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 12 }}>
-          <div style={{ flex: 1, background: 'rgba(20,16,28,0.06)', borderRadius: 24, display: 'flex', alignItems: 'center', padding: '10px 14px', gap: 8 }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(20,16,28,0.4)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search Infinity..." autoFocus style={{ flex: 1, background: 'none', border: 'none', color: '#161221', outline: 'none', fontSize: 14 }} />
-            {search && <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', color: 'rgba(20,16,28,0.4)', cursor: 'pointer', fontSize: 16 }}>✕</button>}
+          <div style={{ flex: 1, background: 'rgba(255,255,255,0.06)', borderRadius: 24, display: 'flex', alignItems: 'center', padding: '10px 14px', gap: 8 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search Infinity..." autoFocus style={{ flex: 1, background: 'none', border: 'none', color: '#FFFFFF', outline: 'none', fontSize: 14 }} />
+            {search && <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: 16 }}>✕</button>}
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'rgba(20,16,28,0.5)', cursor: 'pointer', fontSize: 14, padding: 4 }}>Cancel</button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: 14, padding: 4 }}>Cancel</button>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           {filters.map(([id, label]) => (
-            <button key={id} onClick={() => setActiveFilter(id)} style={{ background: activeFilter === id ? 'rgba(255,45,85,0.15)' : 'rgba(20,16,28,0.04)', border: `1px solid ${activeFilter === id ? 'rgba(255,45,85,0.4)' : 'rgba(20,16,28,0.07)'}`, borderRadius: 20, padding: '6px 14px', color: activeFilter === id ? '#FF2156' : 'rgba(20,16,28,0.5)', fontSize: 12, fontWeight: activeFilter === id ? 700 : 400, cursor: 'pointer' }}>{label}</button>
+            <button key={id} onClick={() => setActiveFilter(id)} style={{ background: activeFilter === id ? 'rgba(255,45,85,0.15)' : 'rgba(255,255,255,0.04)', border: `1px solid ${activeFilter === id ? 'rgba(255,45,85,0.4)' : 'rgba(255,255,255,0.07)'}`, borderRadius: 20, padding: '6px 14px', color: activeFilter === id ? '#FE2C55' : 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: activeFilter === id ? 700 : 400, cursor: 'pointer' }}>{label}</button>
           ))}
         </div>
       </div>
       <div style={{ flex: 1, overflowY: 'auto', padding: 12 }}>
         {!search && (
           <>
-            <div style={{ color: 'rgba(20,16,28,0.4)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>Trending</div>
+            <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>Trending</div>
             <TrendingHashtags onSearch={t => setSearch(t)} />
-            <div style={{ color: 'rgba(20,16,28,0.4)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, margin: '20px 0 10px' }}>Suggested Creators</div>
+            <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, margin: '20px 0 10px' }}>Suggested Creators</div>
             {users.slice(0, 6).map(u => (
-              <div key={u.id} onClick={() => { onViewProfile?.(u.id); onClose(); }} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid rgba(20,16,28,0.04)', cursor: 'pointer' }}>
+              <div key={u.id} onClick={() => { onViewProfile?.(u.id); onClose(); }} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: 'pointer' }}>
                 <div style={{ width: 44, height: 44, borderRadius: '50%', background: u.avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: 18, overflow: 'hidden', flexShrink: 0 }}>
                   {u.avatarUrl ? <img src={u.avatarUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : u.avatar}
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ color: '#161221', fontWeight: 700, fontSize: 14 }}>@{u.username}</div>
-                  <div style={{ color: 'rgba(20,16,28,0.35)', fontSize: 12 }}>{formatNumber(u.followers?.length || 0)} followers</div>
+                  <div style={{ color: '#FFFFFF', fontWeight: 700, fontSize: 14 }}>@{u.username}</div>
+                  <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>{formatNumber(u.followers?.length || 0)} followers</div>
                 </div>
               </div>
             ))}
@@ -764,14 +764,14 @@ const DiscoverPage = ({ videos, users, onViewProfile, showToast, onClose }) => {
         )}
         {search && filteredUsers.length > 0 && (
           <>
-            <div style={{ color: 'rgba(20,16,28,0.4)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>People</div>
+            <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>People</div>
             {filteredUsers.map(u => (
-              <div key={u.id} onClick={() => { onViewProfile?.(u.id); onClose(); }} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid rgba(20,16,28,0.04)', cursor: 'pointer' }}>
+              <div key={u.id} onClick={() => { onViewProfile?.(u.id); onClose(); }} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: 'pointer' }}>
                 <div style={{ width: 44, height: 44, borderRadius: '50%', background: u.avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: 18, overflow: 'hidden', flexShrink: 0 }}>
                   {u.avatarUrl ? <img src={u.avatarUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : u.avatar}
                 </div>
                 <div>
-                  <div style={{ color: '#161221', fontWeight: 700, fontSize: 14 }}>@{u.username}</div>
+                  <div style={{ color: '#FFFFFF', fontWeight: 700, fontSize: 14 }}>@{u.username}</div>
                   {u.verified && <span style={{ color: '#2F9BFF', fontSize: 11 }}>✓ Verified</span>}
                 </div>
               </div>
@@ -780,15 +780,15 @@ const DiscoverPage = ({ videos, users, onViewProfile, showToast, onClose }) => {
         )}
         {search && filteredTags.length > 0 && (activeFilter === 'all' || activeFilter === 'hashtag') && (
           <>
-            <div style={{ color: 'rgba(20,16,28,0.4)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, margin: '16px 0 10px' }}>Hashtags</div>
+            <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, margin: '16px 0 10px' }}>Hashtags</div>
             {filteredTags.map(tag => (
-              <div key={tag} style={{ padding: '10px 14px', background: 'rgba(20,16,28,0.03)', borderRadius: 14, marginBottom: 6, cursor: 'pointer', color: '#FF2156', fontWeight: 700, fontSize: 14 }}>{tag}</div>
+              <div key={tag} style={{ padding: '10px 14px', background: 'rgba(255,255,255,0.03)', borderRadius: 14, marginBottom: 6, cursor: 'pointer', color: '#FE2C55', fontWeight: 700, fontSize: 14 }}>{tag}</div>
             ))}
           </>
         )}
         {search && (activeFilter === 'all' || activeFilter === 'video') && filteredVideos.length > 0 && (
           <>
-            <div style={{ color: 'rgba(20,16,28,0.4)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, margin: '16px 0 10px' }}>Videos</div>
+            <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, margin: '16px 0 10px' }}>Videos</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               {filteredVideos.slice(0, 8).map(v => (
                 <div key={v.id} style={{ aspectRatio: '9/16', position: 'relative', borderRadius: 14, overflow: 'hidden', background: '#24242E' }}>
@@ -796,7 +796,7 @@ const DiscoverPage = ({ videos, users, onViewProfile, showToast, onClose }) => {
                     ? <img src={v.videoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     : <video src={v.videoUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} muted />}
                   <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent,rgba(0,0,0,0.7))', padding: '20px 8px 8px' }}>
-                    <div style={{ color: '#161221', fontSize: 11, fontWeight: 600 }}>@{v.username}</div>
+                    <div style={{ color: '#FFFFFF', fontSize: 11, fontWeight: 600 }}>@{v.username}</div>
                   </div>
                 </div>
               ))}
@@ -809,6 +809,9 @@ const DiscoverPage = ({ videos, users, onViewProfile, showToast, onClose }) => {
 };
 
 /* ─────────────── DARK/LIGHT MODE TOGGLE HOOK (v4) ─────────────── */
+// TikTok-style palette: true-black base, elevated dark surfaces, white text.
+// isDark is now the default and primary experience — 'light' is kept as an
+// optional alt theme but the whole app is designed dark-first.
 const useTheme = (user) => {
   const [theme, setTheme] = useState(user?.theme || 'dark');
   const toggleTheme = async (newTheme) => {
@@ -817,14 +820,18 @@ const useTheme = (user) => {
       await updateDoc(doc(db, 'users', user.id), { theme: newTheme }).catch(() => {});
     }
   };
-  const isDark = theme === 'dark';
+  const isDark = true; // app is dark-first, TikTok-style, always
   const colors = {
-    bg: isDark ? '#F5F4F7' : '#f5f5f7',
-    surface: isDark ? 'rgba(20,16,28,0.04)' : 'rgba(0,0,0,0.05)',
-    text: isDark ? '#ffffff' : '#FAF9FC',
-    subtext: isDark ? 'rgba(20,16,28,0.4)' : 'rgba(0,0,0,0.4)',
-    border: isDark ? 'rgba(20,16,28,0.07)' : 'rgba(0,0,0,0.08)',
-    card: isDark ? '#FFFFFF' : '#ffffff',
+    bg: '#000000',
+    bgElev1: '#121214',
+    bgElev2: '#1A1A1D',
+    bgElev3: '#242428',
+    surface: 'rgba(255,255,255,0.06)',
+    text: '#FFFFFF',
+    subtext: 'rgba(255,255,255,0.5)',
+    subtext2: 'rgba(255,255,255,0.32)',
+    border: 'rgba(255,255,255,0.09)',
+    card: '#121214',
   };
   return { theme, toggleTheme, isDark, colors };
 };
@@ -953,30 +960,30 @@ const getUserProfile = async (uid) => {
 const GlobalStyles = () => (
   <style>{`
     /* ── DESIGN TOKENS (reference) ──────────────────────────────────────
-       Brand accent     #FF2156   |  Secondary/purple  #9D4EDD
+       Brand accent     #FE2C55   |  Secondary/purple  #9D4EDD
        Success          #2ED573   |  Warning            #FFB100
        Danger           #FF453A   |  Info               #0A84FF
        Indigo           #5E5CE6   |  Gold/coins          #FFD60A
        Teal (gradient)  #00E6B4 → #00A9D6   |  Verified check  #2F9BFF
-       Surface scale    base #F5F4F7 → elev-1 #FFFFFF → elev-2 #FAF9FC → elev-3 #24242E
+       Surface scale    base #000000 → elev-1 #FFFFFF → elev-2 #1A1A1D → elev-3 #24242E
        Borders/dividers #34343E   |  Muted text/icon    #5A5A66
        These values are the single source of truth for the app's palette —
        update here first if the brand colors ever need to evolve.
     ──────────────────────────────────────────────────────────────────── */
     :root{
-      --accent:#FF2156; --accent-2:#9D4EDD;
+      --accent:#FE2C55; --accent-2:#9D4EDD; --accent-cyan:#25F4EE;
       --success:#2ED573; --warning:#FFB100; --danger:#FF453A; --info:#0A84FF; --indigo:#5E5CE6;
-      --gold:#FFD60A; --teal:#00E6B4; --teal-2:#00A9D6; --verified:#2F9BFF;
-      --bg-base:#F5F4F7; --bg-elev-1:#FFFFFF; --bg-elev-2:#FAF9FC; --bg-elev-3:#24242E;
-      --border-strong:#34343E; --text-muted:#5A5A66;
+      --gold:#FFD60A; --teal:#00E6B4; --teal-2:#00A9D6; --verified:#20D5EC;
+      --bg-base:#000000; --bg-elev-1:#121214; --bg-elev-2:#1A1A1D; --bg-elev-3:#242428;
+      --border-strong:#2E2E33; --text-muted:#8A8A8E; --text:#FFFFFF;
     }
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
     *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-    html{scroll-behavior:smooth}
-    body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;overscroll-behavior:none;touch-action:manipulation;background:#F5F4F7}
+    html{scroll-behavior:smooth;background:#000}
+    body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;overscroll-behavior:none;touch-action:manipulation;background:#000;color:#fff}
     ::-webkit-scrollbar{display:none}
     *{scrollbar-width:none;-ms-overflow-style:none}
-    ::selection{background:rgba(255,33,86,0.35);color:#fff}
+    ::selection{background:rgba(254,44,85,0.35);color:#fff}
     @keyframes heartBurst{0%{transform:scale(0.4) translateY(0);opacity:1}100%{transform:scale(1.8) translateY(-80px);opacity:0}}
     @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
     @keyframes slideDown{from{transform:translateY(-20px);opacity:0}to{transform:translateY(0);opacity:1}}
@@ -1005,10 +1012,10 @@ const GlobalStyles = () => (
     input,textarea{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif}
     input:focus,textarea:focus{outline:none;box-shadow:0 0 0 2px rgba(255,33,86,0.22);border-radius:inherit;transition:box-shadow 0.15s ease}
     .tab-active-indicator{animation:tabPop 0.25s ease}
-    .story-avatar-ring{background:conic-gradient(#FF2156,#FFB100,#FFD60A,#9D4EDD,#FF2156);padding:2.5px;border-radius:50%}
-    .skeleton{background:linear-gradient(90deg,rgba(20,16,28,0.04) 25%,rgba(20,16,28,0.1) 50%,rgba(20,16,28,0.04) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite}
+    .story-avatar-ring{background:conic-gradient(#FE2C55,#FFB100,#FFD60A,#9D4EDD,#FE2C55);padding:2.5px;border-radius:50%}
+    .skeleton{background:linear-gradient(90deg,rgba(255,255,255,0.04) 25%,rgba(255,255,255,0.1) 50%,rgba(255,255,255,0.04) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite}
     .ripple-btn{position:relative;overflow:hidden}
-    .ripple-btn::after{content:'';position:absolute;border-radius:50%;background:rgba(20,16,28,0.3);width:100px;height:100px;margin-top:-50px;margin-left:-50px;top:var(--y,50%);left:var(--x,50%);animation:ripple 0.6s linear;opacity:0}
+    .ripple-btn::after{content:'';position:absolute;border-radius:50%;background:rgba(255,255,255,0.3);width:100px;height:100px;margin-top:-50px;margin-left:-50px;top:var(--y,50%);left:var(--x,50%);animation:ripple 0.6s linear;opacity:0}
     @media (prefers-reduced-motion: reduce){*{animation-duration:0.01ms!important;transition-duration:0.01ms!important}}
     *{-webkit-tap-highlight-color:transparent;box-sizing:border-box}
     ::-webkit-scrollbar{width:0;height:0;display:none}
@@ -1032,7 +1039,7 @@ const SkeletonLoader = ({ count=3 }) => (
 );
 
 const VideoSkeleton = () => (
-  <div style={{ position:'absolute', inset:0, background:'#FFFFFF', display:'flex', flexDirection:'column', justifyContent:'flex-end', padding:20 }}>
+  <div style={{ position:'absolute', inset:0, background:'#121214', display:'flex', flexDirection:'column', justifyContent:'flex-end', padding:20 }}>
     <div style={{ display:'flex', gap:12, alignItems:'center', marginBottom:14 }}>
       <div className="skeleton" style={{ width:44, height:44, borderRadius:'50%' }} />
       <div style={{ flex:1 }}>
@@ -1066,7 +1073,7 @@ const ProgressiveImage = ({ src, alt, style }) => {
     <div style={{ position:'relative', overflow:'hidden', ...style }}>
       {!loaded && !error && <div className="skeleton" style={{ position:'absolute', inset:0 }} />}
       {error
-        ? <div style={{ position:'absolute', inset:0, background:'#FAF9FC', display:'flex', alignItems:'center', justifyContent:'center', fontSize:32 }}>🖼️</div>
+        ? <div style={{ position:'absolute', inset:0, background:'#1A1A1D', display:'flex', alignItems:'center', justifyContent:'center', fontSize:32 }}>🖼️</div>
         : <img src={src} alt={alt||''} onLoad={()=>setLoaded(true)} onError={()=>setError(true)} style={{ width:'100%', height:'100%', objectFit:'cover', opacity: loaded?1:0, transition:'opacity 0.3s ease' }} />
       }
     </div>
@@ -1208,25 +1215,25 @@ const NotifPopup = ({ notif, user, onClose, onTap }) => {
         transition: swiping?'none':'transform 0.3s cubic-bezier(0.34,1.56,0.64,1)',
         animation: swipeX===0?'slideDown 0.35s cubic-bezier(0.34,1.56,0.64,1)':'none',
         cursor:'pointer', background:'rgba(255,255,255,0.97)', backdropFilter:'blur(24px)',
-        border:'1px solid rgba(20,16,28,0.1)', borderRadius:20, padding:'12px 14px',
+        border:'1px solid rgba(255,255,255,0.1)', borderRadius:20, padding:'12px 14px',
         display:'flex', alignItems:'center', gap:12,
-        boxShadow:'0 8px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(20,16,28,0.05)',
+        boxShadow:'0 8px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05)',
         opacity: 1 - (swipeX / 200) }}>
       <div style={{ position:'relative', flexShrink:0 }}>
-        <div style={{ width:44, height:44, borderRadius:'50%', background:user?.avatarColor||'#FF2156', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:'bold', fontSize:18, overflow:'hidden' }}>
+        <div style={{ width:44, height:44, borderRadius:'50%', background:user?.avatarColor||'#FE2C55', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:'bold', fontSize:18, overflow:'hidden' }}>
           {user?.avatarUrl ? <img src={user.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/> : (user?.avatar||'?')}
         </div>
-        <div style={{ position:'absolute', bottom:-2, right:-2, width:18, height:18, borderRadius:'50%', background:'#FAF9FC', display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, border:'1.5px solid rgba(20,16,28,0.1)' }}>{icons[notif?.type]||'🔔'}</div>
+        <div style={{ position:'absolute', bottom:-2, right:-2, width:18, height:18, borderRadius:'50%', background:'#1A1A1D', display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, border:'1.5px solid rgba(255,255,255,0.1)' }}>{icons[notif?.type]||'🔔'}</div>
       </div>
       <div style={{ flex:1, minWidth:0 }}>
-        <div style={{ color:'#161221', fontSize:13, fontWeight:600, lineHeight:1.35, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-          <span style={{ color:'#FF2156' }}>@{user?.username||'someone'}</span>{' '}{notif?.message}
+        <div style={{ color:'#FFFFFF', fontSize:13, fontWeight:600, lineHeight:1.35, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+          <span style={{ color:'#FE2C55' }}>@{user?.username||'someone'}</span>{' '}{notif?.message}
         </div>
-        <div style={{ color:'rgba(20,16,28,0.35)', fontSize:11, marginTop:2 }}>Just now · Swipe to dismiss</div>
+        <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11, marginTop:2 }}>Just now · Swipe to dismiss</div>
       </div>
-      <button onClick={e=>{e.stopPropagation();onClose();}} style={{ background:'rgba(20,16,28,0.08)', border:'none', borderRadius:'50%', width:26, height:26, color:'rgba(20,16,28,0.5)', cursor:'pointer', fontSize:14, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>✕</button>
-      <div style={{ position:'absolute', bottom:0, left:0, right:0, height:2, background:'rgba(20,16,28,0.06)', borderRadius:'0 0 20px 20px', overflow:'hidden' }}>
-        <div style={{ height:'100%', background:'linear-gradient(90deg,#FF2156,#9D4EDD)', animation:'notifBar 4.5s linear forwards' }}/>
+      <button onClick={e=>{e.stopPropagation();onClose();}} style={{ background:'rgba(255,255,255,0.08)', border:'none', borderRadius:'50%', width:26, height:26, color:'rgba(255,255,255,0.5)', cursor:'pointer', fontSize:14, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>✕</button>
+      <div style={{ position:'absolute', bottom:0, left:0, right:0, height:2, background:'rgba(255,255,255,0.06)', borderRadius:'0 0 20px 20px', overflow:'hidden' }}>
+        <div style={{ height:'100%', background:'linear-gradient(90deg,#FE2C55,#9D4EDD)', animation:'notifBar 4.5s linear forwards' }}/>
       </div>
     </div>
   );
@@ -1236,15 +1243,15 @@ const Toast = ({ message, type, onClose }) => {
   useEffect(() => { const t = setTimeout(onClose, 2800); return () => clearTimeout(t); }, [onClose]);
   const configs = {
     success: { bg: 'linear-gradient(135deg,#00E6B4,#00A9D6)', icon: '✓' },
-    error: { bg: 'linear-gradient(135deg,#FF2156,#FF8552)', icon: '✕' },
+    error: { bg: 'linear-gradient(135deg,#FE2C55,#FF8552)', icon: '✕' },
     info: { bg: 'linear-gradient(135deg,#0A84FF,#5E5CE6)', icon: 'i' },
     warning: { bg: 'linear-gradient(135deg,#FFB100,#FF8552)', icon: '!' },
   };
   const c = configs[type] || configs.info;
   return (
-    <div style={{ position:'fixed', bottom:110, left:'50%', transform:'translateX(-50%)', zIndex:9999, animation:'slideUp 0.3s ease', display:'flex', alignItems:'center', gap:10, background:'rgba(15,15,15,0.95)', backdropFilter:'blur(20px)', border:'1px solid rgba(20,16,28,0.08)', borderRadius:40, padding:'10px 18px 10px 10px', boxShadow:'0 8px 32px rgba(0,0,0,0.5)', whiteSpace:'nowrap' }}>
-      <div style={{ width:26, height:26, borderRadius:'50%', background:c.bg, display:'flex', alignItems:'center', justifyContent:'center', color:'#161221', fontWeight:800, fontSize:13, flexShrink:0 }}>{c.icon}</div>
-      <span style={{ color:'#161221', fontSize:13, fontWeight:500, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{message}</span>
+    <div style={{ position:'fixed', bottom:110, left:'50%', transform:'translateX(-50%)', zIndex:9999, animation:'slideUp 0.3s ease', display:'flex', alignItems:'center', gap:10, background:'rgba(15,15,15,0.95)', backdropFilter:'blur(20px)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:40, padding:'10px 18px 10px 10px', boxShadow:'0 8px 32px rgba(0,0,0,0.5)', whiteSpace:'nowrap' }}>
+      <div style={{ width:26, height:26, borderRadius:'50%', background:c.bg, display:'flex', alignItems:'center', justifyContent:'center', color:'#FFFFFF', fontWeight:800, fontSize:13, flexShrink:0 }}>{c.icon}</div>
+      <span style={{ color:'#FFFFFF', fontSize:13, fontWeight:500, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{message}</span>
     </div>
   );
 };
@@ -1294,21 +1301,21 @@ const ShareModal = ({ video, onClose, showToast }) => {
     >
       <div
         onClick={e => e.stopPropagation()}
-        style={{ width: '100%', background: '#FAF9FC', borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 36, animation: 'slideUp 0.3s ease' }}
+        style={{ width: '100%', background: '#1A1A1D', borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 36, animation: 'slideUp 0.3s ease' }}
       >
         {/* Handle bar */}
         <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 12, paddingBottom: 8 }}>
-          <div style={{ width: 40, height: 4, borderRadius: 2, background: 'rgba(20,16,28,0.2)' }} />
+          <div style={{ width: 40, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.2)' }} />
         </div>
 
         {/* Header */}
         <div style={{ padding: '4px 20px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ color: '#161221', fontWeight: 700, fontSize: 16, fontFamily: "'Inter',sans-serif" }}>Share to</span>
-          <button onClick={onClose} style={{ background: 'rgba(20,16,28,0.1)', border: 'none', borderRadius: '50%', width: 30, height: 30, color: '#161221', cursor: 'pointer', fontSize: 14 }}>✕</button>
+          <span style={{ color: '#FFFFFF', fontWeight: 700, fontSize: 16, fontFamily: "'Inter',sans-serif" }}>Share to</span>
+          <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '50%', width: 30, height: 30, color: '#FFFFFF', cursor: 'pointer', fontSize: 14 }}>✕</button>
         </div>
 
         {/* Video preview strip */}
-        <div style={{ padding: '0 20px 16px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid rgba(20,16,28,0.07)' }}>
+        <div style={{ padding: '0 20px 16px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
           <div style={{ width: 52, height: 72, borderRadius: 10, overflow: 'hidden', background: '#34343E', flexShrink: 0 }}>
             {video?.videoUrl?.match(/\.(jpg|jpeg|png|gif|webp)/i)
               ? <img src={video.videoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -1316,8 +1323,8 @@ const ShareModal = ({ video, onClose, showToast }) => {
             }
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ color: '#161221', fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{video?.username}</div>
-            <div style={{ color: 'rgba(20,16,28,0.45)', fontSize: 12, marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{video?.description}</div>
+            <div style={{ color: '#FFFFFF', fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{video?.username}</div>
+            <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12, marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{video?.description}</div>
           </div>
         </div>
 
@@ -1325,7 +1332,7 @@ const ShareModal = ({ video, onClose, showToast }) => {
         <div style={{ overflowX: 'auto', display: 'flex', gap: 0, padding: '18px 16px 8px', position: 'relative' }}>
           <div style={{
   position:'absolute', top:0, right:0, bottom:0, width:32,
-  background:'linear-gradient(to right, transparent, #FAF9FC)',
+  background:'linear-gradient(to right, transparent, #1A1A1D)',
   pointerEvents:'none', borderRadius:'0 0 0 0'
 }} />
           {shareApps.map(app => (
@@ -1336,7 +1343,7 @@ const ShareModal = ({ video, onClose, showToast }) => {
             >
               <div style={{
                 width: 56, height: 56, borderRadius: 16,
-                background: app.color === '#000' || app.color === '#010101' ? '#FAF9FC' : app.color + '22',
+                background: app.color === '#000' || app.color === '#010101' ? '#1A1A1D' : app.color + '22',
                 border: `1.5px solid ${app.color}55`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: app.name === 'X (Twitter)' || app.name === 'Facebook' ? 20 : 26,
@@ -1345,21 +1352,21 @@ const ShareModal = ({ video, onClose, showToast }) => {
               }}>
                 {app.emoji}
               </div>
-              <span style={{ color: 'rgba(20,16,28,0.5)', fontSize: 10, textAlign: 'center', maxWidth: 60 }}>{app.name}</span>
+              <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 10, textAlign: 'center', maxWidth: 60 }}>{app.name}</span>
             </button>
           ))}
         </div>
 
         {/* Copy link bar */}
-        <div style={{ margin: '12px 16px 0', background: '#24242E', borderRadius: 14, display: 'flex', alignItems: 'center', overflow: 'hidden', border: '1px solid rgba(20,16,28,0.06)' }}>
+        <div style={{ margin: '12px 16px 0', background: '#24242E', borderRadius: 14, display: 'flex', alignItems: 'center', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.06)' }}>
           <div style={{ padding: '6px 8px 6px 14px', flexShrink: 0 }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(20,16,28,0.4)" strokeWidth="2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2">
               <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
               <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
             </svg>
           </div>
-          <span style={{ flex: 1, color: 'rgba(20,16,28,0.3)', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: 8 }}>{url}</span>
-          <button onClick={copyLink} style={{ background: '#FF2156', border: 'none', padding: '14px 20px', color: 'white', fontWeight: 700, fontSize: 13, cursor: 'pointer', flexShrink: 0 }}>
+          <span style={{ flex: 1, color: 'rgba(255,255,255,0.3)', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: 8 }}>{url}</span>
+          <button onClick={copyLink} style={{ background: '#FE2C55', border: 'none', padding: '14px 20px', color: 'white', fontWeight: 700, fontSize: 13, cursor: 'pointer', flexShrink: 0 }}>
             Copy
           </button>
         </div>
@@ -1466,7 +1473,7 @@ const TelegramStoryViewer = ({ storyGroups, startGroupIdx, currentUser, onClose,
       {/* Progress bars */}
       <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:20, padding:'10px 10px 0', display:'flex', gap:3 }}>
         {stories.map((_, i) => (
-          <div key={i} style={{ flex:1, height:2.5, background:'rgba(20,16,28,0.3)', borderRadius:2, overflow:'hidden' }}>
+          <div key={i} style={{ flex:1, height:2.5, background:'rgba(255,255,255,0.3)', borderRadius:2, overflow:'hidden' }}>
             <div style={{
               height:'100%', background:'white', borderRadius:2,
               width: i < storyIdx ? '100%' : i === storyIdx ? `${progress}%` : '0%',
@@ -1480,16 +1487,16 @@ const TelegramStoryViewer = ({ storyGroups, startGroupIdx, currentUser, onClose,
       <div style={{ position:'absolute', top:20, left:0, right:0, zIndex:20, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 14px' }}>
         <div style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer' }}
           onClick={() => { if (currentGroup.userId) { onViewProfile?.(currentGroup.userId); onClose(); } }}>
-          <div style={{ width:42, height:42, borderRadius:'50%', background:currentGroup.avatarColor||'#FF2156',
-            display:'flex', alignItems:'center', justifyContent:'center', color:'#161221', fontWeight:'bold', fontSize:17,
+          <div style={{ width:42, height:42, borderRadius:'50%', background:currentGroup.avatarColor||'#FE2C55',
+            display:'flex', alignItems:'center', justifyContent:'center', color:'#FFFFFF', fontWeight:'bold', fontSize:17,
             overflow:'hidden', border:'2.5px solid white' }}>
             {currentGroup.avatarUrl
               ? <img src={currentGroup.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" />
               : (currentGroup.username||'?')[0].toUpperCase()}
           </div>
           <div>
-            <div style={{ color:'#161221', fontWeight:700, fontSize:14 }}>@{currentGroup.username}</div>
-            <div style={{ color:'rgba(20,16,28,0.6)', fontSize:11 }}>
+            <div style={{ color:'#FFFFFF', fontWeight:700, fontSize:14 }}>@{currentGroup.username}</div>
+            <div style={{ color:'rgba(255,255,255,0.6)', fontSize:11 }}>
               {currentStory.createdAt?.seconds
                 ? new Date(currentStory.createdAt.seconds * 1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
                 : 'Just now'}
@@ -1499,11 +1506,11 @@ const TelegramStoryViewer = ({ storyGroups, startGroupIdx, currentUser, onClose,
         </div>
         <div style={{ display:'flex', gap:8, alignItems:'center' }}>
           <button onPointerDown={()=>setPaused(true)} onPointerUp={()=>setPaused(false)}
-            style={{ background:'rgba(20,16,28,0.1)', border:'none', borderRadius:'50%', width:34, height:34, color:'#161221', cursor:'pointer', fontSize:15, display:'flex', alignItems:'center', justifyContent:'center' }}>
+            style={{ background:'rgba(255,255,255,0.1)', border:'none', borderRadius:'50%', width:34, height:34, color:'#FFFFFF', cursor:'pointer', fontSize:15, display:'flex', alignItems:'center', justifyContent:'center' }}>
             {paused ? '▶' : '⏸'}
           </button>
           <button onClick={onClose}
-            style={{ background:'rgba(20,16,28,0.1)', border:'none', borderRadius:'50%', width:34, height:34, color:'#161221', cursor:'pointer', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
+            style={{ background:'rgba(255,255,255,0.1)', border:'none', borderRadius:'50%', width:34, height:34, color:'#FFFFFF', cursor:'pointer', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
         </div>
       </div>
 
@@ -1519,13 +1526,13 @@ const TelegramStoryViewer = ({ storyGroups, startGroupIdx, currentUser, onClose,
           ? <video src={currentStory.mediaUrl} autoPlay loop playsInline style={{ width:'100%', height:'100%', objectFit:'cover' }} />
           : currentStory.mediaUrl
             ? <img src={currentStory.mediaUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
-            : <div style={{ width:'100%', height:'100%', background:currentStory.bgColor||'#FF2156', display:'flex', alignItems:'center', justifyContent:'center', padding:40 }}>
-                <div style={{ color:'#161221', fontSize:28, fontWeight:700, textAlign:'center', lineHeight:1.4 }}>{currentStory.text}</div>
+            : <div style={{ width:'100%', height:'100%', background:currentStory.bgColor||'#FE2C55', display:'flex', alignItems:'center', justifyContent:'center', padding:40 }}>
+                <div style={{ color:'#FFFFFF', fontSize:28, fontWeight:700, textAlign:'center', lineHeight:1.4 }}>{currentStory.text}</div>
               </div>}
         {/* Text overlay on media */}
         {currentStory.text && currentStory.mediaUrl && (
           <div style={{ position:'absolute', bottom:90, left:0, right:0, textAlign:'center', padding:'0 24px' }}>
-            <div style={{ color:'#161221', fontSize:18, fontWeight:700, textShadow:'0 2px 8px rgba(0,0,0,0.8)', lineHeight:1.4 }}>{currentStory.text}</div>
+            <div style={{ color:'#FFFFFF', fontSize:18, fontWeight:700, textShadow:'0 2px 8px rgba(0,0,0,0.8)', lineHeight:1.4 }}>{currentStory.text}</div>
           </div>
         )}
       </div>
@@ -1535,7 +1542,7 @@ const TelegramStoryViewer = ({ storyGroups, startGroupIdx, currentUser, onClose,
         <div style={{ position:'absolute', bottom:90, left:0, right:0, zIndex:15, display:'flex', justifyContent:'center', gap:6 }}>
           {storyGroups.map((_, i) => (
             <div key={i} onClick={e=>{e.stopPropagation(); setGroupIdx(i); setStoryIdx(0); setProgress(0);}}
-              style={{ width: i===groupIdx ? 22 : 6, height:6, borderRadius:3, background: i===groupIdx ? 'white' : 'rgba(20,16,28,0.35)', cursor:'pointer', transition:'all 0.25s' }} />
+              style={{ width: i===groupIdx ? 22 : 6, height:6, borderRadius:3, background: i===groupIdx ? 'white' : 'rgba(255,255,255,0.35)', cursor:'pointer', transition:'all 0.25s' }} />
           ))}
         </div>
       )}
@@ -1548,20 +1555,20 @@ const TelegramStoryViewer = ({ storyGroups, startGroupIdx, currentUser, onClose,
             <div style={{ display:'flex', gap:4 }}>
               {['❤️','😂','😮','🔥','👏'].map(emoji=>(
                 <button key={emoji} onClick={e=>{e.stopPropagation(); toggleLike(); showToast?.(emoji+' Reacted!','success');}}
-                  style={{ background:'rgba(20,16,28,0.1)', backdropFilter:'blur(12px)', border:'none', borderRadius:'50%', width:38, height:38, fontSize:18, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', transform: liked[currentStory?.id] && emoji==='❤️' ? 'scale(1.3)' : 'scale(1)', transition:'transform 0.15s' }}>
+                  style={{ background:'rgba(255,255,255,0.1)', backdropFilter:'blur(12px)', border:'none', borderRadius:'50%', width:38, height:38, fontSize:18, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', transform: liked[currentStory?.id] && emoji==='❤️' ? 'scale(1.3)' : 'scale(1)', transition:'transform 0.15s' }}>
                   {emoji}
                 </button>
               ))}
             </div>
-            <div style={{ flex:1, display:'flex', alignItems:'center', background:'rgba(20,16,28,0.1)', backdropFilter:'blur(12px)', borderRadius:28, border:'1px solid rgba(20,16,28,0.18)', paddingLeft:14, paddingRight:8 }}>
+            <div style={{ flex:1, display:'flex', alignItems:'center', background:'rgba(255,255,255,0.1)', backdropFilter:'blur(12px)', borderRadius:28, border:'1px solid rgba(255,255,255,0.18)', paddingLeft:14, paddingRight:8 }}>
               <input value={replyText} onChange={e=>setReplyText(e.target.value)}
                 onKeyDown={e=>{ if(e.key==='Enter') sendReply(); e.stopPropagation(); }}
                 onClick={e=>e.stopPropagation()}
                 placeholder={`Reply to @${currentGroup.username}…`}
-                style={{ flex:1, background:'none', border:'none', outline:'none', color:'#161221', fontSize:14, padding:'12px 0' }} />
+                style={{ flex:1, background:'none', border:'none', outline:'none', color:'#FFFFFF', fontSize:14, padding:'12px 0' }} />
               {replyText.trim() && (
                 <button onClick={e=>{e.stopPropagation(); sendReply();}}
-                  style={{ background:'#FF2156', border:'none', borderRadius:'50%', width:32, height:32, color:'#fff', cursor:'pointer', fontSize:16, display:'flex', alignItems:'center', justifyContent:'center' }}>➤</button>
+                  style={{ background:'#FE2C55', border:'none', borderRadius:'50%', width:32, height:32, color:'#fff', cursor:'pointer', fontSize:16, display:'flex', alignItems:'center', justifyContent:'center' }}>➤</button>
               )}
             </div>
           </div>
@@ -1569,22 +1576,22 @@ const TelegramStoryViewer = ({ storyGroups, startGroupIdx, currentUser, onClose,
           <div style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(12px)', borderRadius:20, padding:'12px 16px' }}>
             <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
               <span style={{ fontSize:18 }}>👁</span>
-              <span style={{ color:'#161221', fontWeight:700, fontSize:15 }}>{currentStory.seenBy?.length || 0} views</span>
+              <span style={{ color:'#FFFFFF', fontWeight:700, fontSize:15 }}>{currentStory.seenBy?.length || 0} views</span>
             </div>
             {(currentStory.seenBy?.length || 0) > 0 && (
               <div style={{ display:'flex', gap:-8 }}>
                 {(currentStory.seenBy || []).slice(0,6).map((uid,i)=>{
                   const viewer = [{ id: currentUser?.id }].find(u=>u.id===uid) || { id:uid };
                   return (
-                    <div key={uid} style={{ width:28, height:28, borderRadius:'50%', background:'#FF2156', border:'2px solid #000', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontSize:11, fontWeight:'bold', marginLeft: i>0?-8:0 }}>
+                    <div key={uid} style={{ width:28, height:28, borderRadius:'50%', background:'#FE2C55', border:'2px solid #000', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontSize:11, fontWeight:'bold', marginLeft: i>0?-8:0 }}>
                       {uid[0]?.toUpperCase()}
                     </div>
                   );
                 })}
-                {(currentStory.seenBy?.length || 0) > 6 && <div style={{ width:28, height:28, borderRadius:'50%', background:'rgba(20,16,28,0.15)', border:'2px solid #000', display:'flex', alignItems:'center', justifyContent:'center', color:'#161221', fontSize:10, marginLeft:-8 }}>+{currentStory.seenBy.length-6}</div>}
+                {(currentStory.seenBy?.length || 0) > 6 && <div style={{ width:28, height:28, borderRadius:'50%', background:'rgba(255,255,255,0.15)', border:'2px solid #000', display:'flex', alignItems:'center', justifyContent:'center', color:'#FFFFFF', fontSize:10, marginLeft:-8 }}>+{currentStory.seenBy.length-6}</div>}
               </div>
             )}
-            {!(currentStory.seenBy?.length) && <div style={{ color:'rgba(20,16,28,0.4)', fontSize:13 }}>No views yet — share it!</div>}
+            {!(currentStory.seenBy?.length) && <div style={{ color:'rgba(255,255,255,0.4)', fontSize:13 }}>No views yet — share it!</div>}
           </div>
         )}
       </div>
@@ -1646,25 +1653,25 @@ const Stories = ({ users, currentUser, onViewStory, onCreateStory, onLive, follo
   };
 
   return (
-    <div style={{ display:'flex', gap:14, padding:'14px 16px', overflowX:'auto', borderBottom:'1px solid rgba(20,16,28,0.06)', scrollbarWidth:'none' }}>
+    <div style={{ display:'flex', gap:14, padding:'14px 16px', overflowX:'auto', borderBottom:'1px solid rgba(255,255,255,0.06)', scrollbarWidth:'none' }}>
       {/* My Story */}
       <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5, flexShrink:0 }}>
         <button onClick={handleMyStory} style={{ width:66, height:66, borderRadius:'50%', padding:0, background:'none', border:'none', cursor:'pointer', position:'relative' }}>
           <div style={{ width:'100%', height:'100%', borderRadius:'50%',
-            background: myStories ? 'linear-gradient(135deg,#FF2156,#9D4EDD,#FFB100)' : 'rgba(20,16,28,0.05)',
+            background: myStories ? 'linear-gradient(135deg,#FE2C55,#9D4EDD,#FFB100)' : 'rgba(255,255,255,0.05)',
             padding: myStories ? 2 : 0,
             display:'flex', alignItems:'center', justifyContent:'center' }}>
-            <div style={{ width:'100%', height:'100%', borderRadius:'50%', background: myStories ? '#F5F4F7' : 'transparent', padding: myStories ? 2 : 0, display:'flex', alignItems:'center', justifyContent:'center' }}>
-              <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:currentUser?.avatarColor||'#FF2156',
-                border: !myStories ? '1.5px dashed rgba(20,16,28,0.3)' : 'none',
-                display:'flex', alignItems:'center', justifyContent:'center', color:'#161221', fontWeight:'bold', fontSize:20, overflow:'hidden' }}>
+            <div style={{ width:'100%', height:'100%', borderRadius:'50%', background: myStories ? '#000000' : 'transparent', padding: myStories ? 2 : 0, display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:currentUser?.avatarColor||'#FE2C55',
+                border: !myStories ? '1.5px dashed rgba(255,255,255,0.3)' : 'none',
+                display:'flex', alignItems:'center', justifyContent:'center', color:'#FFFFFF', fontWeight:'bold', fontSize:20, overflow:'hidden' }}>
                 {currentUser?.avatarUrl ? <img src={currentUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : currentUser?.avatar}
               </div>
             </div>
           </div>
-          <div onClick={e=>{e.stopPropagation(); onCreateStory?.();}} style={{ position:'absolute', bottom:0, right:0, width:20, height:20, background:'#FF2156', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', border:'2px solid #F5F4F7', fontSize:12, color:'#fff', fontWeight:800 }}>+</div>
+          <div onClick={e=>{e.stopPropagation(); onCreateStory?.();}} style={{ position:'absolute', bottom:0, right:0, width:20, height:20, background:'#FE2C55', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', border:'2px solid #000000', fontSize:12, color:'#fff', fontWeight:800 }}>+</div>
         </button>
-        <span style={{ color:'rgba(20,16,28,0.5)', fontSize:11 }}>Your story</span>
+        <span style={{ color:'rgba(255,255,255,0.5)', fontSize:11 }}>Your story</span>
       </div>
 
       {/* Other users' stories — ALL users, not just followed */}
@@ -1672,15 +1679,15 @@ const Stories = ({ users, currentUser, onViewStory, onCreateStory, onLive, follo
         <div key={group.userId} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5, flexShrink:0 }}>
           <button onClick={() => onViewStory?.({ groups: storyUsers, startIdx: storyUsers.findIndex(g => g.userId === group.userId) })}
             style={{ padding:0, background:'none', border:'none', cursor:'pointer' }}>
-            <div style={{ width:66, height:66, borderRadius:'50%', background:'linear-gradient(135deg,#FF2156,#9D4EDD,#FFB100)', padding:2, display:'flex', alignItems:'center', justifyContent:'center' }}>
-              <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:'#F5F4F7', padding:2, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:group.avatarColor||'#FF2156', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:'bold', fontSize:20, overflow:'hidden' }}>
+            <div style={{ width:66, height:66, borderRadius:'50%', background:'linear-gradient(135deg,#FE2C55,#9D4EDD,#FFB100)', padding:2, display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:'#000000', padding:2, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:group.avatarColor||'#FE2C55', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:'bold', fontSize:20, overflow:'hidden' }}>
                   {group.avatarUrl ? <img src={group.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : (group.username||'?')[0].toUpperCase()}
                 </div>
               </div>
             </div>
           </button>
-          <span style={{ color:'rgba(20,16,28,0.5)', fontSize:11, maxWidth:60, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', textAlign:'center' }}>{group.username.split('_')[0]}</span>
+          <span style={{ color:'rgba(255,255,255,0.5)', fontSize:11, maxWidth:60, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', textAlign:'center' }}>{group.username.split('_')[0]}</span>
         </div>
       ))}
     </div>
@@ -1691,7 +1698,7 @@ const Stories = ({ users, currentUser, onViewStory, onCreateStory, onLive, follo
 const CreateStoryModal = ({ currentUser, onClose, showToast }) => {
   const [mode, setMode] = useState(null);
   const [storyText, setStoryText] = useState('');
-  const [bgColor, setBgColor] = useState('#FF2156');
+  const [bgColor, setBgColor] = useState('#FE2C55');
   const [selectedFile, setSelectedFile] = useState(null);
   const [cameraActive, setCameraActive] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -1702,7 +1709,7 @@ const CreateStoryModal = ({ currentUser, onClose, showToast }) => {
   const recorderRef = useRef(null);
   const chunksRef = useRef([]);
   const fileInputRef = useRef(null);
-  const colors = ['#FF2156','#9D4EDD','#0A84FF','#FFB100','#2ED573','#00A9D6','#FF453A','#5E5CE6'];
+  const colors = ['#FE2C55','#9D4EDD','#0A84FF','#FFB100','#2ED573','#00A9D6','#FF453A','#5E5CE6'];
 
   const startCamera = async () => {
     try { const s = await navigator.mediaDevices.getUserMedia({video:true}); streamRef.current=s; if(videoRef.current) videoRef.current.srcObject=s; setCameraActive(true); }
@@ -1740,10 +1747,10 @@ const CreateStoryModal = ({ currentUser, onClose, showToast }) => {
       await addDoc(collection(db, 'stories'), {
         userId: currentUser.id,
         username: currentUser.username || '',
-        avatarColor: currentUser.avatarColor || '#FF2156',
+        avatarColor: currentUser.avatarColor || '#FE2C55',
         avatarUrl: currentUser.avatarUrl || null,
         text: storyText || '',
-        bgColor: bgColor || '#FF2156',
+        bgColor: bgColor || '#FE2C55',
         mediaUrl: mediaUrl || null,
         mediaType: mediaType || null,
         createdAt: serverTimestamp(),
@@ -1760,15 +1767,15 @@ const CreateStoryModal = ({ currentUser, onClose, showToast }) => {
 
   if (!mode) return (
     <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.9)', zIndex:3500, display:'flex', alignItems:'flex-end' }} onClick={onClose}>
-      <div onClick={e=>e.stopPropagation()} style={{ width:'100%', background:'#FFFFFF', borderTopLeftRadius:32, borderTopRightRadius:32, padding:'20px 20px 44px', border:'1px solid rgba(20,16,28,0.06)' }}>
-        <div style={{ width:36, height:4, background:'rgba(20,16,28,0.15)', borderRadius:2, margin:'0 auto 24px' }} />
-        <div style={{ color:'#161221', fontWeight:800, fontSize:20, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Create Story</div>
+      <div onClick={e=>e.stopPropagation()} style={{ width:'100%', background:'#121214', borderTopLeftRadius:32, borderTopRightRadius:32, padding:'20px 20px 44px', border:'1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ width:36, height:4, background:'rgba(255,255,255,0.15)', borderRadius:2, margin:'0 auto 24px' }} />
+        <div style={{ color:'#FFFFFF', fontWeight:800, fontSize:20, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Create Story</div>
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-          {[{id:'camera',icon:'📷',label:'Camera',sub:'Photo or video',color:'#FF2156'},{id:'file',icon:'🖼️',label:'Gallery',sub:'From device',color:'#9D4EDD'},{id:'text',icon:'✏️',label:'Text',sub:'Write a story',color:'#0A84FF'},{id:'audio',icon:'🎙️',label:'Audio',sub:'Voice story',color:'#2ED573'}].map(opt=>(
-            <button key={opt.id} onClick={()=>{if(opt.id==='file') fileInputRef.current?.click(); else setMode(opt.id);}} style={{ background:'rgba(20,16,28,0.04)', border:`1px solid ${opt.color}30`, borderRadius:22, padding:'18px 14px', display:'flex', flexDirection:'column', alignItems:'center', gap:8, cursor:'pointer' }}>
+          {[{id:'camera',icon:'📷',label:'Camera',sub:'Photo or video',color:'#FE2C55'},{id:'file',icon:'🖼️',label:'Gallery',sub:'From device',color:'#9D4EDD'},{id:'text',icon:'✏️',label:'Text',sub:'Write a story',color:'#0A84FF'},{id:'audio',icon:'🎙️',label:'Audio',sub:'Voice story',color:'#2ED573'}].map(opt=>(
+            <button key={opt.id} onClick={()=>{if(opt.id==='file') fileInputRef.current?.click(); else setMode(opt.id);}} style={{ background:'rgba(255,255,255,0.04)', border:`1px solid ${opt.color}30`, borderRadius:22, padding:'18px 14px', display:'flex', flexDirection:'column', alignItems:'center', gap:8, cursor:'pointer' }}>
               <div style={{ width:52, height:52, borderRadius:'50%', background:opt.color+'18', display:'flex', alignItems:'center', justifyContent:'center', fontSize:26 }}>{opt.icon}</div>
-              <div style={{ color:'#161221', fontWeight:700, fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{opt.label}</div>
-              <div style={{ color:'rgba(20,16,28,0.35)', fontSize:11 }}>{opt.sub}</div>
+              <div style={{ color:'#FFFFFF', fontWeight:700, fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{opt.label}</div>
+              <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11 }}>{opt.sub}</div>
             </button>
           ))}
         </div>
@@ -1779,20 +1786,20 @@ const CreateStoryModal = ({ currentUser, onClose, showToast }) => {
   return (
     <div style={{ position:'fixed', inset:0, background:'#000', zIndex:3500, display:'flex', flexDirection:'column' }}>
       <div style={{ padding:'16px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-        <button onClick={()=>{stopCamera(); onClose();}} style={{ background:'rgba(20,16,28,0.1)', border:'none', borderRadius:20, padding:'8px 16px', color:'#161221', cursor:'pointer', fontSize:13 }}>Cancel</button>
-        <span style={{ color:'#161221', fontWeight:700, fontSize:15, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Story</span>
-        <button onClick={handlePost} disabled={uploading} style={{ background:'linear-gradient(135deg,#FF2156,#9D4EDD)', border:'none', borderRadius:20, padding:'8px 16px', color:'#fff', fontWeight:700, cursor:'pointer', fontSize:13, opacity:uploading?0.6:1 }}>{uploading?'Posting...':'Post'}</button>
+        <button onClick={()=>{stopCamera(); onClose();}} style={{ background:'rgba(255,255,255,0.1)', border:'none', borderRadius:20, padding:'8px 16px', color:'#FFFFFF', cursor:'pointer', fontSize:13 }}>Cancel</button>
+        <span style={{ color:'#FFFFFF', fontWeight:700, fontSize:15, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Story</span>
+        <button onClick={handlePost} disabled={uploading} style={{ background:'linear-gradient(135deg,#FE2C55,#9D4EDD)', border:'none', borderRadius:20, padding:'8px 16px', color:'#fff', fontWeight:700, cursor:'pointer', fontSize:13, opacity:uploading?0.6:1 }}>{uploading?'Posting...':'Post'}</button>
       </div>
       <div style={{ flex:1, position:'relative', overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center' }}>
         {mode==='camera' && (
           <div style={{ width:'100%', height:'100%', position:'relative' }}>
             <video ref={videoRef} autoPlay playsInline style={{ width:'100%', height:'100%', objectFit:'cover' }} />
-            <button onClick={capturePhoto} style={{ position:'absolute', bottom:30, left:'50%', transform:'translateX(-50%)', background:'white', border:'4px solid rgba(20,16,28,0.4)', borderRadius:'50%', width:72, height:72, cursor:'pointer', fontSize:28 }}>📸</button>
+            <button onClick={capturePhoto} style={{ position:'absolute', bottom:30, left:'50%', transform:'translateX(-50%)', background:'white', border:'4px solid rgba(255,255,255,0.4)', borderRadius:'50%', width:72, height:72, cursor:'pointer', fontSize:28 }}>📸</button>
           </div>
         )}
         {mode==='text' && (
           <div style={{ width:'100%', height:'100%', background:bgColor, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:24 }}>
-            <textarea value={storyText} onChange={e=>setStoryText(e.target.value)} placeholder="Write something..." style={{ background:'transparent', border:'none', outline:'none', color:'#161221', fontSize:28, fontWeight:700, textAlign:'center', width:'100%', resize:'none', caretColor:'white', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }} rows={4} autoFocus />
+            <textarea value={storyText} onChange={e=>setStoryText(e.target.value)} placeholder="Write something..." style={{ background:'transparent', border:'none', outline:'none', color:'#FFFFFF', fontSize:28, fontWeight:700, textAlign:'center', width:'100%', resize:'none', caretColor:'white', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }} rows={4} autoFocus />
             <div style={{ position:'absolute', bottom:28, display:'flex', gap:10 }}>
               {colors.map(c=><div key={c} onClick={()=>setBgColor(c)} style={{ width:30, height:30, borderRadius:'50%', background:c, border:c===bgColor?'3px solid white':'3px solid transparent', cursor:'pointer' }} />)}
             </div>
@@ -1804,7 +1811,7 @@ const CreateStoryModal = ({ currentUser, onClose, showToast }) => {
             {audioBlob ? (
               <><audio src={URL.createObjectURL(audioBlob)} controls style={{ width:'100%' }} /><button onClick={()=>setAudioBlob(null)} style={{ background:'#34343E', border:'none', borderRadius:20, padding:'10px 20px', color:'#fff', cursor:'pointer' }}>Re-record</button></>
             ) : (
-              <button onMouseDown={startAudio} onMouseUp={stopAudio} onTouchStart={startAudio} onTouchEnd={stopAudio} style={{ background:isRecording?'#FF2156':'#34343E', border:'none', borderRadius:'50%', width:90, height:90, fontSize:36, cursor:'pointer' }}>{isRecording?'⏹':'🎙️'}</button>
+              <button onMouseDown={startAudio} onMouseUp={stopAudio} onTouchStart={startAudio} onTouchEnd={stopAudio} style={{ background:isRecording?'#FE2C55':'#34343E', border:'none', borderRadius:'50%', width:90, height:90, fontSize:36, cursor:'pointer' }}>{isRecording?'⏹':'🎙️'}</button>
             )}
             <p style={{ color:'#888', fontSize:13 }}>{isRecording?'Recording... release to stop':'Hold to record'}</p>
           </div>
@@ -1827,30 +1834,30 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
 
   return (
     <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.85)', zIndex:3000, display:'flex', alignItems:'flex-end' }} onClick={onClose}>
-      <div onClick={e=>e.stopPropagation()} style={{ width:'100%', background:'#FFFFFF', borderTopLeftRadius:24, borderTopRightRadius:24, maxHeight:'90vh', overflowY:'auto' }}>
-        <div style={{ width:36, height:4, background:'rgba(20,16,28,0.12)', borderRadius:2, margin:'16px auto 0' }} />
+      <div onClick={e=>e.stopPropagation()} style={{ width:'100%', background:'#121214', borderTopLeftRadius:24, borderTopRightRadius:24, maxHeight:'90vh', overflowY:'auto' }}>
+        <div style={{ width:36, height:4, background:'rgba(255,255,255,0.12)', borderRadius:2, margin:'16px auto 0' }} />
         <div style={{ display:'flex', justifyContent:'flex-end', padding:'10px 16px 0' }}>
-          <button onClick={onClose} style={{ background:'rgba(20,16,28,0.08)', border:'none', borderRadius:'50%', width:34, height:34, color:'#161221', cursor:'pointer', fontSize:16 }}>✕</button>
+          <button onClick={onClose} style={{ background:'rgba(255,255,255,0.08)', border:'none', borderRadius:'50%', width:34, height:34, color:'#FFFFFF', cursor:'pointer', fontSize:16 }}>✕</button>
         </div>
         <div style={{ textAlign:'center', padding:'4px 20px 20px' }}>
-          <div style={{ width:90, height:90, borderRadius:'50%', padding:2.5, margin:'0 auto 14px', background:'conic-gradient(#FF2156,#FFB100,#9D4EDD,#FF2156)' }}>
+          <div style={{ width:90, height:90, borderRadius:'50%', padding:2.5, margin:'0 auto 14px', background:'conic-gradient(#FE2C55,#FFB100,#9D4EDD,#FE2C55)' }}>
             <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:'#0d0d0d', padding:2 }}>
               <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:user?.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:'bold', fontSize:32, overflow:'hidden' }}>
                 {avatarSrc ? <img src={avatarSrc} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : user?.avatar}
               </div>
             </div>
           </div>
-          <div style={{ color:'#161221', fontWeight:800, fontSize:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{user?.username}</div>
+          <div style={{ color:'#FFFFFF', fontWeight:800, fontSize:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{user?.username}</div>
           {user?.verified && <div style={{ display:'inline-flex', alignItems:'center', gap:4, color:'#2F9BFF', fontSize:12, marginTop:4, background:'rgba(29,155,240,0.1)', borderRadius:20, padding:'3px 10px' }}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="#2F9BFF"><path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             Verified
           </div>}
-          <div style={{ color:'rgba(20,16,28,0.55)', fontSize:13, marginTop:8, lineHeight:1.5 }}>{user?.bio}</div>
-          <div style={{ display:'flex', justifyContent:'center', gap:0, marginTop:18, background:'rgba(20,16,28,0.03)', borderRadius:20, padding:'14px 0', border:'1px solid rgba(20,16,28,0.06)' }}>
+          <div style={{ color:'rgba(255,255,255,0.55)', fontSize:13, marginTop:8, lineHeight:1.5 }}>{user?.bio}</div>
+          <div style={{ display:'flex', justifyContent:'center', gap:0, marginTop:18, background:'rgba(255,255,255,0.03)', borderRadius:20, padding:'14px 0', border:'1px solid rgba(255,255,255,0.06)' }}>
             {[['Posts', mockVideos.length], ['Followers', user?.followers?.length||0], ['Following', user?.following?.length||0]].map(([label,val],i)=>(
-              <div key={label} style={{ flex:1, textAlign:'center', borderRight:i<2?'1px solid rgba(20,16,28,0.08)':'' }}>
-                <div style={{ color:'#161221', fontWeight:800, fontSize:18, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{formatNumber(val)}</div>
-                <div style={{ color:'rgba(20,16,28,0.4)', fontSize:11, marginTop:2 }}>{label}</div>
+              <div key={label} style={{ flex:1, textAlign:'center', borderRight:i<2?'1px solid rgba(255,255,255,0.08)':'' }}>
+                <div style={{ color:'#FFFFFF', fontWeight:800, fontSize:18, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{formatNumber(val)}</div>
+                <div style={{ color:'rgba(255,255,255,0.4)', fontSize:11, marginTop:2 }}>{label}</div>
               </div>
             ))}
           </div>
@@ -1858,7 +1865,7 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
         {!isOwn && (
           <div style={{ display:'flex', gap:8, padding:'0 16px 16px' }}>
             <button onClick={()=>{onFollow?.(user.id); onClose();}}
-  style={{ flex:1, background:isFollowing?'rgba(20,16,28,0.06)':'linear-gradient(135deg,#FF2156,#9D4EDD)', border:isFollowing?'1px solid rgba(255,45,85,0.4)':'none', borderRadius:14, padding:'12px', color:isFollowing?'#FF2156':'white', fontWeight:700, cursor:'pointer', fontSize:14 }}>
+  style={{ flex:1, background:isFollowing?'rgba(255,255,255,0.06)':'linear-gradient(135deg,#FE2C55,#9D4EDD)', border:isFollowing?'1px solid rgba(255,45,85,0.4)':'none', borderRadius:14, padding:'12px', color:isFollowing?'#FE2C55':'white', fontWeight:700, cursor:'pointer', fontSize:14 }}>
   {isFollowing ? 'Following' : '+ Follow'}
 </button>
 <button
@@ -1877,7 +1884,7 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
     fontWeight: 600, cursor: 'pointer', fontSize: 13
   }}
 >Report</button>
-            <button onClick={()=>{onMessage?.(user.id); onClose();}} style={{ flex:1, background:'rgba(20,16,28,0.06)', border:'1px solid rgba(20,16,28,0.1)', borderRadius:14, padding:'12px', color:'#161221', fontWeight:600, cursor:'pointer', fontSize:14 }}>Message</button>
+            <button onClick={()=>{onMessage?.(user.id); onClose();}} style={{ flex:1, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:'12px', color:'#FFFFFF', fontWeight:600, cursor:'pointer', fontSize:14 }}>Message</button>
             <button onClick={()=>{onVoiceCall?.(user.id); onClose();}} style={{ background:'rgba(52,199,89,0.12)', border:'1px solid rgba(52,199,89,0.2)', borderRadius:14, padding:'12px 14px', color:'#2ED573', cursor:'pointer', fontSize:18 }}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2ED573" strokeWidth="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8a19.79 19.79 0 01-3.07-8.67A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>
             </button>
@@ -1886,15 +1893,15 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
             </button>
           </div>
         )}
-        <div style={{ display:'flex', borderTop:'1px solid rgba(20,16,28,0.06)' }}>
+        <div style={{ display:'flex', borderTop:'1px solid rgba(255,255,255,0.06)' }}>
           {[{id:'posts',icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>},{id:'saved',icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>},{id:'drafts',icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>}].map(t=>(
-            <button key={t.id} onClick={()=>setTab(t.id)} style={{ flex:1, background:'none', border:'none', borderTop:tab===t.id?'2px solid #FF2156':'2px solid transparent', padding:'14px 0', color:tab===t.id?'white':'rgba(20,16,28,0.3)', cursor:'pointer', display:'flex', justifyContent:'center' }}>{t.icon}</button>
+            <button key={t.id} onClick={()=>setTab(t.id)} style={{ flex:1, background:'none', border:'none', borderTop:tab===t.id?'2px solid #FE2C55':'2px solid transparent', padding:'14px 0', color:tab===t.id?'white':'rgba(255,255,255,0.3)', cursor:'pointer', display:'flex', justifyContent:'center' }}>{t.icon}</button>
           ))}
         </div>
         <div style={{ padding:2 }}>
           {tab==='posts' && (
             mockVideos.length===0 ? (
-              <div style={{ textAlign:'center', padding:48, color:'rgba(20,16,28,0.25)' }}>
+              <div style={{ textAlign:'center', padding:48, color:'rgba(255,255,255,0.25)' }}>
                 <div style={{ fontSize:40, marginBottom:10 }}>🎬</div>
                 <div style={{ fontSize:14 }}>No posts yet</div>
               </div>
@@ -1903,20 +1910,20 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
                 {mockVideos.map(v => {
                   const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(v.videoUrl || '');
                   return (
-                    <div key={v.id} style={{ aspectRatio:'9/16', background:'#FAF9FC', position:'relative', overflow:'hidden' }}>
+                    <div key={v.id} style={{ aspectRatio:'9/16', background:'#1A1A1D', position:'relative', overflow:'hidden' }}>
                       {isImage
                         ? <img src={v.videoUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
                         : <video src={v.videoUrl} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
                       }
-                      <div style={{ position:'absolute', bottom:4, left:6, color:'#161221', fontSize:10, fontWeight:700, background:'rgba(0,0,0,0.6)', borderRadius:6, padding:'2px 6px' }}>{formatNumber(v.views)}</div>
+                      <div style={{ position:'absolute', bottom:4, left:6, color:'#FFFFFF', fontSize:10, fontWeight:700, background:'rgba(0,0,0,0.6)', borderRadius:6, padding:'2px 6px' }}>{formatNumber(v.views)}</div>
                     </div>
                   );
                 })}
               </div>
             )
           )}
-          {tab==='saved' && <div style={{ textAlign:'center', padding:48, color:'rgba(20,16,28,0.25)' }}><div style={{ fontSize:40, marginBottom:10 }}>🔖</div><div>No saved posts</div></div>}
-          {tab==='drafts' && <div style={{ textAlign:'center', padding:48, color:'rgba(20,16,28,0.25)' }}><div style={{ fontSize:40, marginBottom:10 }}>📝</div><div>No drafts</div></div>}
+          {tab==='saved' && <div style={{ textAlign:'center', padding:48, color:'rgba(255,255,255,0.25)' }}><div style={{ fontSize:40, marginBottom:10 }}>🔖</div><div>No saved posts</div></div>}
+          {tab==='drafts' && <div style={{ textAlign:'center', padding:48, color:'rgba(255,255,255,0.25)' }}><div style={{ fontSize:40, marginBottom:10 }}>📝</div><div>No drafts</div></div>}
         </div>
         <div style={{ height:30 }} />
       </div>
@@ -1956,8 +1963,8 @@ const LiveChatMessage = ({ msg, targetLang }) => {
   return (
     <div style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(10px)', borderRadius:20, padding:'6px 12px', display:'inline-flex', flexDirection:'column', gap:2, maxWidth:'85%', alignSelf:'flex-start' }}>
       <div style={{ display:'flex', gap:7, alignItems:'baseline' }}>
-        <span style={{ color:'#FF2156', fontSize:11, fontWeight:700 }}>@{msg.user}</span>
-        <span style={{ color:'#161221', fontSize:11 }}>{(translated && !showOriginal) ? translated : msg.text}</span>
+        <span style={{ color:'#FE2C55', fontSize:11, fontWeight:700 }}>@{msg.user}</span>
+        <span style={{ color:'#FFFFFF', fontSize:11 }}>{(translated && !showOriginal) ? translated : msg.text}</span>
       </div>
       {eligible && (
         <button onClick={toggle} disabled={loading} style={{ alignSelf:'flex-start', background:'none', border:'none', color:'#2F9BFF', fontSize:10, cursor:'pointer', padding:0, marginTop:1 }}>
@@ -2033,16 +2040,16 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
       <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse at 30% 40%,rgba(255,45,85,0.15),transparent 60%)' }} />
       <div style={{ padding:'14px 16px', display:'flex', justifyContent:'space-between', alignItems:'center', zIndex:10 }}>
         <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-          <div style={{ background:'#FF2156', borderRadius:20, padding:'4px 12px', display:'flex', alignItems:'center', gap:6 }}>
+          <div style={{ background:'#FE2C55', borderRadius:20, padding:'4px 12px', display:'flex', alignItems:'center', gap:6 }}>
             <div style={{ width:7, height:7, borderRadius:'50%', background:'white', animation:'pulse 1s infinite' }} />
-            <span style={{ color:'#161221', fontSize:13, fontWeight:700 }}>LIVE</span>
+            <span style={{ color:'#FFFFFF', fontSize:13, fontWeight:700 }}>LIVE</span>
           </div>
           <div style={{ background:'rgba(0,0,0,0.4)', borderRadius:20, padding:'4px 12px', display:'flex', alignItems:'center', gap:5 }}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="rgba(20,16,28,0.7)"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-            <span style={{ color:'rgba(20,16,28,0.7)', fontSize:12 }}>{formatNumber(viewers)}</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="rgba(255,255,255,0.7)"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <span style={{ color:'rgba(255,255,255,0.7)', fontSize:12 }}>{formatNumber(viewers)}</span>
           </div>
         </div>
-        <button onClick={onClose} style={{ background:'rgba(20,16,28,0.12)', border:'none', borderRadius:'50%', width:36, height:36, color:'#161221', cursor:'pointer', fontSize:16 }}>✕</button>
+        <button onClick={onClose} style={{ background:'rgba(255,255,255,0.12)', border:'none', borderRadius:'50%', width:36, height:36, color:'#FFFFFF', cursor:'pointer', fontSize:16 }}>✕</button>
       </div>
       <LiveCameraView />
       <div style={{ flex:1, display:'flex', alignItems:'flex-end', padding:'0 14px 10px', zIndex:10 }}>
@@ -2053,9 +2060,9 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
           })}
         </div>
       </div>
-      <div style={{ display:'flex', gap:10, padding:'10px 14px 28px', borderTop:'1px solid rgba(20,16,28,0.06)', zIndex:10 }}>
-        <input value={message} onChange={e=>setMessage(e.target.value)} onKeyDown={e=>e.key==='Enter'&&sendMessage()} placeholder="Say something..." style={{ flex:1, background:'rgba(20,16,28,0.08)', border:'1px solid rgba(20,16,28,0.1)', borderRadius:28, padding:'10px 16px', color:'#161221', outline:'none', fontSize:13 }} />
-        <button onClick={sendMessage} style={{ background:'linear-gradient(135deg,#FF2156,#9D4EDD)', border:'none', borderRadius:'50%', width:42, height:42, color:'#fff', cursor:'pointer', fontSize:16 }}>↑</button>
+      <div style={{ display:'flex', gap:10, padding:'10px 14px 28px', borderTop:'1px solid rgba(255,255,255,0.06)', zIndex:10 }}>
+        <input value={message} onChange={e=>setMessage(e.target.value)} onKeyDown={e=>e.key==='Enter'&&sendMessage()} placeholder="Say something..." style={{ flex:1, background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:28, padding:'10px 16px', color:'#FFFFFF', outline:'none', fontSize:13 }} />
+        <button onClick={sendMessage} style={{ background:'linear-gradient(135deg,#FE2C55,#9D4EDD)', border:'none', borderRadius:'50%', width:42, height:42, color:'#fff', cursor:'pointer', fontSize:16 }}>↑</button>
       </div>
     </div>
   );
@@ -2073,23 +2080,23 @@ const CommentItem = ({ comment, currentUser, onLike, onReply, onPin, onViewProfi
       <div style={{ maxWidth:'72%' }}>
         {!isMine && (
           <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:4 }}>
-            <span onClick={()=>onViewProfile?.(comment.userId)} style={{ color:'rgba(20,16,28,0.6)', fontWeight:700, fontSize:11, cursor:'pointer' }}>@{comment.username}</span>
-                        <span style={{ color:'rgba(20,16,28,0.28)',fontSize:10 }}>{comment.time||'just now'}</span>
+            <span onClick={()=>onViewProfile?.(comment.userId)} style={{ color:'rgba(255,255,255,0.6)', fontWeight:700, fontSize:11, cursor:'pointer' }}>@{comment.username}</span>
+                        <span style={{ color:'rgba(255,255,255,0.28)',fontSize:10 }}>{comment.time||'just now'}</span>
           </div>
         )}
-        <div style={{ background:isMine?'linear-gradient(135deg,#FF2156,#9D4EDD)':'rgba(20,16,28,0.09)', borderRadius:isMine?'20px 20px 4px 20px':'20px 20px 20px 4px', padding:'10px 14px' }}>
+        <div style={{ background:isMine?'linear-gradient(135deg,#FE2C55,#9D4EDD)':'rgba(255,255,255,0.09)', borderRadius:isMine?'20px 20px 4px 20px':'20px 20px 20px 4px', padding:'10px 14px' }}>
           {comment.mediaUrl && comment.mediaType?.startsWith('image') && <img src={comment.mediaUrl} alt="" style={{ maxWidth:'100%', borderRadius:10, display:'block', marginBottom:comment.text?6:0 }} />}
           {comment.mediaUrl && comment.mediaType?.startsWith('video') && <video src={comment.mediaUrl} controls style={{ maxWidth:'100%', borderRadius:10, display:'block', marginBottom:comment.text?6:0 }} />}
           {comment.mediaUrl && comment.mediaType?.startsWith('audio') && <audio src={comment.mediaUrl} controls style={{ width:'100%', marginBottom:comment.text?4:0 }} />}
-          {comment.text && <span style={{ color:'#161221', fontSize:13, lineHeight:1.4 }}>{comment.text}</span>}
+          {comment.text && <span style={{ color:'#FFFFFF', fontSize:13, lineHeight:1.4 }}>{comment.text}</span>}
         </div>
         <div style={{ display:'flex', gap:10, marginTop:4, justifyContent:isMine?'flex-end':'flex-start' }}>
-          <button onClick={()=>onLike?.(comment.id)} style={{ background:'none', border:'none', color:'rgba(20,16,28,0.35)', fontSize:11, cursor:'pointer', display:'flex', alignItems:'center', gap:3 }}>
+          <button onClick={()=>onLike?.(comment.id)} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.35)', fontSize:11, cursor:'pointer', display:'flex', alignItems:'center', gap:3 }}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
             {comment.likes||0}
           </button>
-          <button onClick={()=>onReply?.(comment)} style={{ background:'none', border:'none', color:'rgba(20,16,28,0.35)', fontSize:11, cursor:'pointer' }}>Reply</button>
-          <button onClick={()=>onPin?.(comment.id)} style={{ background:'none', border:'none', color:'rgba(20,16,28,0.25)', fontSize:10, cursor:'pointer' }}>Pin</button>
+          <button onClick={()=>onReply?.(comment)} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.35)', fontSize:11, cursor:'pointer' }}>Reply</button>
+          <button onClick={()=>onPin?.(comment.id)} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.25)', fontSize:10, cursor:'pointer' }}>Pin</button>
           {isMine && (
             <button onClick={()=>onDelete?.(comment.id)} title="Delete" style={{ background:'none', border:'none', color:'rgba(255,69,58,0.55)', fontSize:11, cursor:'pointer', display:'flex', alignItems:'center' }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
@@ -2098,7 +2105,7 @@ const CommentItem = ({ comment, currentUser, onLike, onReply, onPin, onViewProfi
         </div>
       </div>
       {isMine && (
-        <div style={{ width:28, height:28, borderRadius:'50%', background:currentUser?.avatarColor||'#FF2156', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:'bold', fontSize:11, flexShrink:0, overflow:'hidden' }}>
+        <div style={{ width:28, height:28, borderRadius:'50%', background:currentUser?.avatarColor||'#FE2C55', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:'bold', fontSize:11, flexShrink:0, overflow:'hidden' }}>
           {currentUser?.avatarUrl ? <img src={currentUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : (currentUser?.avatar||'U')}
         </div>
       )}
@@ -2138,7 +2145,7 @@ const CommentInputBar = ({ currentUser, commentText, setCommentText, onSend, sho
     if(previewFile?.file){ try{ mediaUrl=await uploadToCloudinary(previewFile.file); mediaType=previewFile.type; }catch{ showToast?.('Upload failed','error'); return; } }
     else if(audioBlob){ try{ mediaUrl=await uploadToCloudinary(audioBlob); mediaType='audio/webm'; }catch{ showToast?.('Upload failed','error'); return; } }
     if(!commentText.trim()&&!mediaUrl) return;
-    const commentRef = await addDoc(collection(db,'comments'),{ videoId, userId:currentUser.id, username:currentUser.username, avatar:currentUser.avatar||(currentUser.username||'U')[0].toUpperCase(), avatarColor:currentUser.avatarColor||'#FF2156', avatarUrl:currentUser.avatarUrl||null, text:commentText, mediaUrl, mediaType, likes:0, createdAt:serverTimestamp() });
+    const commentRef = await addDoc(collection(db,'comments'),{ videoId, userId:currentUser.id, username:currentUser.username, avatar:currentUser.avatar||(currentUser.username||'U')[0].toUpperCase(), avatarColor:currentUser.avatarColor||'#FE2C55', avatarUrl:currentUser.avatarUrl||null, text:commentText, mediaUrl, mediaType, likes:0, createdAt:serverTimestamp() });
     await updateDoc(doc(db,'videos',videoId),{comments:increment(1)});
     const parentVideo = (await getDoc(doc(db,'videos',videoId))).data();
     if(parentVideo?.userId) await sendNotification(parentVideo.userId, currentUser.id, 'comment', `commented: "${commentText.substring(0,40)}"`, {videoId});
@@ -2146,17 +2153,17 @@ const CommentInputBar = ({ currentUser, commentText, setCommentText, onSend, sho
   };
 
   return (
-    <div style={{padding:'10px 14px',paddingBottom:'max(24px, env(safe-area-inset-bottom))',borderTop:'1px solid rgba(20,16,28,0.06)',background:'#F5F4F7'}}>
+    <div style={{padding:'10px 14px',paddingBottom:'max(24px, env(safe-area-inset-bottom))',borderTop:'1px solid rgba(255,255,255,0.06)',background:'#000000'}}>
       {(previewFile||audioBlob)&&(
-        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:8,background:'rgba(20,16,28,0.05)',borderRadius:14,padding:'8px 12px'}}>
+        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:8,background:'rgba(255,255,255,0.05)',borderRadius:14,padding:'8px 12px'}}>
           {previewFile?.type?.startsWith('image')&&<img src={previewFile.url} alt="" style={{height:44,width:44,objectFit:'cover',borderRadius:8}}/>}
           {previewFile?.type?.startsWith('video')&&<video src={previewFile.url} style={{height:44,width:60,objectFit:'cover',borderRadius:8}}/>}
           {audioBlob&&!previewFile&&<audio src={URL.createObjectURL(audioBlob)} controls style={{height:28,flex:1}}/>}
-          <button onClick={clearAttach} style={{marginLeft:'auto',background:'rgba(255,45,85,0.2)',border:'none',borderRadius:'50%',width:22,height:22,color:'#FF2156',cursor:'pointer',fontSize:13}}>✕</button>
+          <button onClick={clearAttach} style={{marginLeft:'auto',background:'rgba(255,45,85,0.2)',border:'none',borderRadius:'50%',width:22,height:22,color:'#FE2C55',cursor:'pointer',fontSize:13}}>✕</button>
         </div>
       )}
       {showEmoji && (
-        <div style={{display:'flex',flexWrap:'wrap',gap:6,padding:'10px 12px',background:'rgba(20,16,28,0.04)',borderRadius:16,marginBottom:8}}>
+        <div style={{display:'flex',flexWrap:'wrap',gap:6,padding:'10px 12px',background:'rgba(255,255,255,0.04)',borderRadius:16,marginBottom:8}}>
           {EMOJI_LIST.map(e=>(
             <button key={e} onClick={()=>setCommentText(t=>t+e)} style={{background:'none',border:'none',fontSize:22,cursor:'pointer',padding:2}}>{e}</button>
           ))}
@@ -2165,16 +2172,16 @@ const CommentInputBar = ({ currentUser, commentText, setCommentText, onSend, sho
       <div style={{display:'flex',gap:8,alignItems:'center'}}>
      <div style={{width:34,height:34,borderRadius:'50%',background:currentUser?.avatarColor,display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:'bold',fontSize:14,flexShrink:0,overflow:'hidden'}}>          {currentUser?.avatarUrl?<img src={currentUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/>:currentUser?.avatar}
         </div>
-        <input value={commentText} onChange={e=>setCommentText(e.target.value)} onKeyDown={e=>e.key==='Enter'&&handleSend()} placeholder={isRecording?`🔴 ${fmt(recordSecs)}`:'Add a comment...'} style={{flex:1,background:'rgba(20,16,28,0.06)',border:'1px solid rgba(20,16,28,0.08)',borderRadius:28,padding:'10px 14px',color:'#161221',outline:'none',fontSize:13}}/>
-        <button onClick={()=>fileInputRef.current?.click()} style={{background:'rgba(20,16,28,0.07)',border:'none',borderRadius:'50%',width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0}}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(20,16,28,0.6)" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+        <input value={commentText} onChange={e=>setCommentText(e.target.value)} onKeyDown={e=>e.key==='Enter'&&handleSend()} placeholder={isRecording?`🔴 ${fmt(recordSecs)}`:'Add a comment...'} style={{flex:1,background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:28,padding:'10px 14px',color:'#FFFFFF',outline:'none',fontSize:13}}/>
+        <button onClick={()=>fileInputRef.current?.click()} style={{background:'rgba(255,255,255,0.07)',border:'none',borderRadius:'50%',width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0}}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
         </button>
         <input ref={fileInputRef} type="file" accept="image/*,video/*,audio/*" onChange={pickFile} style={{display:'none'}}/>
-        <button onMouseDown={startVoice} onMouseUp={stopVoice} onTouchStart={startVoice} onTouchEnd={stopVoice} style={{background:isRecording?'rgba(255,45,85,0.9)':'rgba(20,16,28,0.07)',border:'none',borderRadius:'50%',width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0,boxShadow:isRecording?'0 0 10px rgba(255,45,85,0.6)':'none'}}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={isRecording?'white':'rgba(20,16,28,0.6)'} strokeWidth="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        <button onMouseDown={startVoice} onMouseUp={stopVoice} onTouchStart={startVoice} onTouchEnd={stopVoice} style={{background:isRecording?'rgba(255,45,85,0.9)':'rgba(255,255,255,0.07)',border:'none',borderRadius:'50%',width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0,boxShadow:isRecording?'0 0 10px rgba(255,45,85,0.6)':'none'}}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={isRecording?'white':'rgba(255,255,255,0.6)'} strokeWidth="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
         </button>
-        <button onClick={()=>setShowEmoji(v=>!v)} style={{background:'rgba(20,16,28,0.07)',border:'none',borderRadius:'50%',width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0,fontSize:18}}>😊</button>
-        <button onClick={handleSend} style={{background:'linear-gradient(135deg,#FF2156,#9D4EDD)',border:'none',borderRadius:'50%',width:36,height:36,color:'#fff',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>          <svg width="15" height="15" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="1"><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        <button onClick={()=>setShowEmoji(v=>!v)} style={{background:'rgba(255,255,255,0.07)',border:'none',borderRadius:'50%',width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0,fontSize:18}}>😊</button>
+        <button onClick={handleSend} style={{background:'linear-gradient(135deg,#FE2C55,#9D4EDD)',border:'none',borderRadius:'50%',width:36,height:36,color:'#fff',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>          <svg width="15" height="15" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="1"><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
       </div>
     </div>
@@ -2192,8 +2199,8 @@ const VideoProgressBar = ({ videoRef, isActive, isImage }) => {
   },[isActive, isImage]);
   if(isImage) return null;
   return (
-    <div style={{ position:'absolute', top:0, left:0, right:0, height:2, background:'rgba(20,16,28,0.15)', zIndex:20 }}>
-      <div style={{ height:'100%', background:'linear-gradient(90deg,#FF2156,#9D4EDD)', width:`${progress}%`, transition:'width 0.5s linear' }} />
+    <div style={{ position:'absolute', top:0, left:0, right:0, height:2, background:'rgba(255,255,255,0.15)', zIndex:20 }}>
+      <div style={{ height:'100%', background:'linear-gradient(90deg,#FE2C55,#9D4EDD)', width:`${progress}%`, transition:'width 0.5s linear' }} />
     </div>
   );
 };
@@ -2420,7 +2427,7 @@ const handleLongPressStart = () => {
       userId: currentUser.id,
       username: currentUser.username,
      avatar: currentUser.avatar || (currentUser.username||'U')[0].toUpperCase(),
-      avatarColor: currentUser.avatarColor || '#FF2156',
+      avatarColor: currentUser.avatarColor || '#FE2C55',
       avatarUrl: currentUser.avatarUrl||null,
       text: txt,
       likes: 0,
@@ -2476,7 +2483,7 @@ const handleLongPressStart = () => {
       {images && images.length>1 && (
         <div style={{ position:'absolute', top:10, left:0, right:0, zIndex:9, display:'flex', justifyContent:'center', gap:5, pointerEvents:'none' }}>
           {images.map((_,i)=>(
-            <div key={i} style={{ flex:1, maxWidth:36, height:3, borderRadius:2, background: i===slideIndex ? 'rgba(20,16,28,0.95)' : 'rgba(20,16,28,0.3)', transition:'background 0.2s' }} />
+            <div key={i} style={{ flex:1, maxWidth:36, height:3, borderRadius:2, background: i===slideIndex ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.3)', transition:'background 0.2s' }} />
           ))}
         </div>
       )}
@@ -2498,19 +2505,19 @@ const handleLongPressStart = () => {
           <div style={{ position:'absolute', bottom:0, left:14, right:70, zIndex:8, paddingBottom:12 }}>
             <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
               <button onClick={()=>onViewProfile?.(video.userId)} style={{ position:'relative', background:'none', border:'none', cursor:'pointer', padding:0 }}>
-                <div style={{ width:42, height:42, borderRadius:'50%', background:video.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:'bold', fontSize:16, border:'2px solid rgba(20,16,28,0.5)', overflow:'hidden' }}>
+                <div style={{ width:42, height:42, borderRadius:'50%', background:video.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:'bold', fontSize:16, border:'2px solid rgba(255,255,255,0.5)', overflow:'hidden' }}>
                   {video.avatarUrl ? <img src={video.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : video.avatar}
                 </div>
                 {video.verified && <div style={{ position:'absolute', bottom:-2, right:-2, width:14, height:14, background:'#2F9BFF', borderRadius:'50%', fontSize:9, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff' }}>✓</div>}
               </button>
-              <span onClick={e=>{e.stopPropagation();onViewProfile?.(video.userId);}} style={{ color:'#161221', fontWeight:700, fontSize:15, cursor:'pointer', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{video.username}</span>
-              <button data-notap='1' onClick={e=>{e.stopPropagation();onFollow?.(video.userId);}} style={{ padding:'5px 14px', borderRadius:20, background:followed?.includes(video.userId)?'rgba(20,16,28,0.08)':'rgba(255,45,85,0.9)', border:followed?.includes(video.userId)?'1px solid rgba(20,16,28,0.4)':'none', color:'#161221', fontSize:12, fontWeight:700, cursor:'pointer', backdropFilter:'blur(4px)' }}>{followed?.includes(video.userId)?'Unfollow':'+ Follow'}</button>
+              <span onClick={e=>{e.stopPropagation();onViewProfile?.(video.userId);}} style={{ color:'#FFFFFF', fontWeight:700, fontSize:15, cursor:'pointer', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{video.username}</span>
+              <button data-notap='1' onClick={e=>{e.stopPropagation();onFollow?.(video.userId);}} style={{ padding:'5px 14px', borderRadius:20, background:followed?.includes(video.userId)?'rgba(255,255,255,0.08)':'rgba(255,45,85,0.9)', border:followed?.includes(video.userId)?'1px solid rgba(255,255,255,0.4)':'none', color:'#FFFFFF', fontSize:12, fontWeight:700, cursor:'pointer', backdropFilter:'blur(4px)' }}>{followed?.includes(video.userId)?'Unfollow':'+ Follow'}</button>
             </div>
             {desc && (
-              <p style={{ color:'rgba(20,16,28,0.9)', fontSize:13, marginBottom:4, lineHeight:1.5, whiteSpace:'pre-wrap', wordBreak:'break-word' }}>
+              <p style={{ color:'rgba(255,255,255,0.9)', fontSize:13, marginBottom:4, lineHeight:1.5, whiteSpace:'pre-wrap', wordBreak:'break-word' }}>
                 {shownText}
                 {isLong && !showFullText && (
-                  <span data-notap='1' onClick={e=>{e.stopPropagation(); setShowFullText(true);}} style={{ color:'rgba(20,16,28,0.55)', fontWeight:700, cursor:'pointer', marginLeft:4 }}>See more</span>
+                  <span data-notap='1' onClick={e=>{e.stopPropagation(); setShowFullText(true);}} style={{ color:'rgba(255,255,255,0.55)', fontWeight:700, cursor:'pointer', marginLeft:4 }}>See more</span>
                 )}
               </p>
             )}
@@ -2523,9 +2530,9 @@ const handleLongPressStart = () => {
               <TranslateButton text={desc} targetLang={currentUser.language} onTranslated={t=>{ setTranslatedDesc(t); setShowOriginalDesc(false); }} />
             )}
             <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-              <div style={{ width:22, height:22, borderRadius:'50%', background:'linear-gradient(135deg,#FF2156,#9D4EDD)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:12 }}>♪</div>
-              <span style={{ color:'rgba(20,16,28,0.65)', fontSize:12 }}>{video.song}</span>
-              <button onClick={()=>onSaveSound?.()} style={{ marginLeft:8, background:'rgba(20,16,28,0.1)', border:'none', borderRadius:10, padding:'3px 8px', color:'rgba(20,16,28,0.7)', fontSize:10, cursor:'pointer', backdropFilter:'blur(8px)' }}>Save</button>
+              <div style={{ width:22, height:22, borderRadius:'50%', background:'linear-gradient(135deg,#FE2C55,#9D4EDD)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:12 }}>♪</div>
+              <span style={{ color:'rgba(255,255,255,0.65)', fontSize:12 }}>{video.song}</span>
+              <button onClick={()=>onSaveSound?.()} style={{ marginLeft:8, background:'rgba(255,255,255,0.1)', border:'none', borderRadius:10, padding:'3px 8px', color:'rgba(255,255,255,0.7)', fontSize:10, cursor:'pointer', backdropFilter:'blur(8px)' }}>Save</button>
             </div>
           </div>
         );
@@ -2535,16 +2542,16 @@ const handleLongPressStart = () => {
       {showFullText && (
         <div data-notap='1' onClick={e=>{e.stopPropagation(); setShowFullText(false);}} style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.75)', zIndex:60, display:'flex', alignItems:'flex-end' }}>
           <div onClick={e=>e.stopPropagation()} style={{ width:'100%', maxHeight:'60%', background:'#121214', borderTopLeftRadius:24, borderTopRightRadius:24, padding:'16px 18px 28px', display:'flex', flexDirection:'column', animation:'slideUp 0.25s ease' }}>
-            <div style={{ width:36, height:4, background:'rgba(20,16,28,0.15)', borderRadius:2, margin:'0 auto 14px' }} />
+            <div style={{ width:36, height:4, background:'rgba(255,255,255,0.15)', borderRadius:2, margin:'0 auto 14px' }} />
             <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
               <div style={{ width:36, height:36, borderRadius:'50%', background:video.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:'bold', fontSize:14, overflow:'hidden', flexShrink:0 }}>
                 {video.avatarUrl ? <img src={video.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : video.avatar}
               </div>
-              <span style={{ color:'#161221', fontWeight:700, fontSize:14 }}>@{video.username}</span>
-              <button onClick={()=>setShowFullText(false)} style={{ marginLeft:'auto', background:'rgba(20,16,28,0.07)', border:'none', borderRadius:'50%', width:30, height:30, color:'#161221', fontSize:16, cursor:'pointer' }}>✕</button>
+              <span style={{ color:'#FFFFFF', fontWeight:700, fontSize:14 }}>@{video.username}</span>
+              <button onClick={()=>setShowFullText(false)} style={{ marginLeft:'auto', background:'rgba(255,255,255,0.07)', border:'none', borderRadius:'50%', width:30, height:30, color:'#FFFFFF', fontSize:16, cursor:'pointer' }}>✕</button>
             </div>
             <div style={{ overflowY:'auto', flex:1 }}>
-              <p style={{ color:'rgba(20,16,28,0.92)', fontSize:14, lineHeight:1.6, whiteSpace:'pre-wrap', wordBreak:'break-word', margin:0 }}>
+              <p style={{ color:'rgba(255,255,255,0.92)', fontSize:14, lineHeight:1.6, whiteSpace:'pre-wrap', wordBreak:'break-word', margin:0 }}>
                 {(translatedDesc && !showOriginalDesc) ? translatedDesc : displayDesc}
               </p>
             </div>
@@ -2555,20 +2562,20 @@ const handleLongPressStart = () => {
 
       {showActionMenu && (
         <div onClick={e=>{e.stopPropagation();setShowActionMenu(false);}} style={{ position:'fixed', inset:0, zIndex:9990 }}>
-          <div onClick={e=>e.stopPropagation()} style={{ position:'fixed', bottom:10, right:14, background:'rgba(255,255,255,0.97)', backdropFilter:'blur(20px)', border:'1px solid rgba(20,16,28,0.1)', borderRadius:22, padding:6, zIndex:9991, minWidth:210, animation:'popIn 0.2s ease' }}>
+          <div onClick={e=>e.stopPropagation()} style={{ position:'fixed', bottom:10, right:14, background:'rgba(255,255,255,0.97)', backdropFilter:'blur(20px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:22, padding:6, zIndex:9991, minWidth:210, animation:'popIn 0.2s ease' }}>
             {[
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>, label:t?.duet||'Duet', fn:()=>onDuet?.(video.id)},
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M15 14l5-5-5-5"/><path d="M4 20v-7a4 4 0 014-4h12"/></svg>, label:t?.stitch||'Stitch', fn:()=>onStitch?.(video.id)},
-              {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF2156" strokeWidth="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>, label:'Live', fn:()=>onLive?.()},
+              {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FE2C55" strokeWidth="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>, label:'Live', fn:()=>onLive?.()},
 {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>, label:t?.message||'Message', fn:()=>onMessage?.(video.userId)},
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-5.99-5.99 19.79 19.79 0 01-3.07-8.67A2 2 0 014 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>, label:t?.voiceCall||'Voice Call', fn:()=>onVoiceCall?.(video.userId)},
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>, label:t?.videoCall||'Video Call', fn:()=>onVideoCall?.(video.userId)},
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2ED573" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>, label:'Download Post', fn:handleDownloadPost},
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFD60A" strokeWidth="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>, label:'Save Post', fn:()=>{ /* bookmark */ document.querySelector(`[data-bookmark-${video.id}]`)?.click(); showToast?.('Post saved! 🔖','success'); setShowActionMenu(false); }},
               {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFB100" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>, label:t?.report||'Report', fn:()=>{ setShowReportModal(true); setShowActionMenu(false); }},
-             {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF2156" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>, label:t?.block||'Block', fn:async()=>{ if(!currentUser?.id) return; await updateDoc(doc(db,'users',currentUser.id),{ blockedUsers: arrayUnion(video.userId) }).catch(()=>{}); showToast?.('User blocked','warning'); onBlock?.(video.userId); }},
+             {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FE2C55" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>, label:t?.block||'Block', fn:async()=>{ if(!currentUser?.id) return; await updateDoc(doc(db,'users',currentUser.id),{ blockedUsers: arrayUnion(video.userId) }).catch(()=>{}); showToast?.('User blocked','warning'); onBlock?.(video.userId); }},
             ].map(({icon,label,fn})=>(
-              <button key={label} onClick={e=>{e.stopPropagation();fn(); setShowActionMenu(false);}} style={{ display:'flex', alignItems:'center', gap:12, width:'100%', padding:'11px 14px', background:'none', border:'none', color:label==='Block'?'#FF2156':label==='Report'?'#FFB100':'white', cursor:'pointer', borderRadius:16, fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>
+              <button key={label} onClick={e=>{e.stopPropagation();fn(); setShowActionMenu(false);}} style={{ display:'flex', alignItems:'center', gap:12, width:'100%', padding:'11px 14px', background:'none', border:'none', color:label==='Block'?'#FE2C55':label==='Report'?'#FFB100':'white', cursor:'pointer', borderRadius:16, fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>
                 <span>{icon}</span>{label}
               </button>
             ))}
@@ -2578,15 +2585,15 @@ const handleLongPressStart = () => {
 
       {showReportModal && (
         <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.9)', zIndex:50, display:'flex', alignItems:'flex-end' }} onClick={()=>setShowReportModal(false)}>
-          <div onClick={e=>e.stopPropagation()} style={{ width:'100%', background:'#FFFFFF', borderTopLeftRadius:28, borderTopRightRadius:28, padding:'20px 20px 40px', animation:'slideUp 0.3s ease' }}>
-            <div style={{ width:36, height:4, background:'rgba(20,16,28,0.12)', borderRadius:2, margin:'0 auto 20px' }} />
-            <div style={{ color:'#161221', fontWeight:800, fontSize:18, marginBottom:4, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Report Post</div>
-            <div style={{ color:'rgba(20,16,28,0.4)', fontSize:13, marginBottom:16 }}>Why are you reporting this?</div>
+          <div onClick={e=>e.stopPropagation()} style={{ width:'100%', background:'#121214', borderTopLeftRadius:28, borderTopRightRadius:28, padding:'20px 20px 40px', animation:'slideUp 0.3s ease' }}>
+            <div style={{ width:36, height:4, background:'rgba(255,255,255,0.12)', borderRadius:2, margin:'0 auto 20px' }} />
+            <div style={{ color:'#FFFFFF', fontWeight:800, fontSize:18, marginBottom:4, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Report Post</div>
+            <div style={{ color:'rgba(255,255,255,0.4)', fontSize:13, marginBottom:16 }}>Why are you reporting this?</div>
             {reportReasons.map(r=>(
               <button key={r} onClick={async ()=>{
                 await addDoc(collection(db,'reports'),{ videoId:video.id, userId:currentUser?.id, reason:r, createdAt:serverTimestamp() });
                 showToast?.('Report submitted','success'); setShowReportModal(false);
-              }} style={{ width:'100%', background:'rgba(20,16,28,0.04)', border:'1px solid rgba(20,16,28,0.06)', borderRadius:14, padding:'14px 16px', color:'#161221', textAlign:'left', cursor:'pointer', marginBottom:8, fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{r}</button>
+              }} style={{ width:'100%', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:14, padding:'14px 16px', color:'#FFFFFF', textAlign:'left', cursor:'pointer', marginBottom:8, fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{r}</button>
             ))}
           </div>
         </div>
@@ -2595,9 +2602,9 @@ const handleLongPressStart = () => {
       {/* Long-press: Download / Save Post sheet */}
       {showLongPressMenu && (
         <div onClick={e=>{e.stopPropagation();setShowLongPressMenu(false);}} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', zIndex:9995, display:'flex', alignItems:'flex-end' }}>
-          <div onClick={e=>e.stopPropagation()} style={{ width:'100%', maxWidth:430, margin:'0 auto', background:'#FFFFFF', borderTopLeftRadius:28, borderTopRightRadius:28, padding:'12px 0 40px', animation:'slideUp 0.3s cubic-bezier(0.34,1.56,0.64,1)', boxShadow:'0 -8px 40px rgba(20,16,28,0.15)' }}>
-            <div style={{ width:36, height:4, background:'rgba(20,16,28,0.15)', borderRadius:2, margin:'0 auto 16px' }} />
-            <div style={{ padding:'0 20px 12px', borderBottom:'1px solid rgba(20,16,28,0.06)' }}>
+          <div onClick={e=>e.stopPropagation()} style={{ width:'100%', maxWidth:430, margin:'0 auto', background:'#121214', borderTopLeftRadius:28, borderTopRightRadius:28, padding:'12px 0 40px', animation:'slideUp 0.3s cubic-bezier(0.34,1.56,0.64,1)', boxShadow:'0 -8px 40px rgba(255,255,255,0.15)' }}>
+            <div style={{ width:36, height:4, background:'rgba(255,255,255,0.15)', borderRadius:2, margin:'0 auto 16px' }} />
+            <div style={{ padding:'0 20px 12px', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
               <div style={{ display:'flex', alignItems:'center', gap:10 }}>
                 <div style={{ width:40, height:40, borderRadius:10, overflow:'hidden', background:'#34343E', flexShrink:0 }}>
                   {images
@@ -2605,8 +2612,8 @@ const handleLongPressStart = () => {
                     : <video src={video?.videoUrl} style={{ width:'100%', height:'100%', objectFit:'cover' }} muted />}
                 </div>
                 <div>
-                  <div style={{ color:'#161221', fontWeight:700, fontSize:13 }}>@{video?.username}</div>
-                  <div style={{ color:'rgba(20,16,28,0.4)', fontSize:11, marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:260 }}>{video?.description}</div>
+                  <div style={{ color:'#FFFFFF', fontWeight:700, fontSize:13 }}>@{video?.username}</div>
+                  <div style={{ color:'rgba(255,255,255,0.4)', fontSize:11, marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:260 }}>{video?.description}</div>
                 </div>
               </div>
             </div>
@@ -2626,12 +2633,12 @@ const handleLongPressStart = () => {
               },
               { icon:'🚩', label:'Report Post', color:'#FFB100', fn:()=>{ setShowReportModal(true); setShowLongPressMenu(false); } },
             ].map(({ icon, label, color, fn }) => (
-              <button key={label} onClick={fn} style={{ width:'100%', padding:'15px 22px', background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:14, borderBottom:'1px solid rgba(20,16,28,0.04)' }}>
+              <button key={label} onClick={fn} style={{ width:'100%', padding:'15px 22px', background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:14, borderBottom:'1px solid rgba(255,255,255,0.04)' }}>
                 <span style={{ fontSize:22, width:30, textAlign:'center' }}>{icon}</span>
                 <span style={{ color, fontSize:15, fontWeight:600, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{label}</span>
               </button>
             ))}
-            <button onClick={()=>setShowLongPressMenu(false)} style={{ width:'100%', padding:'15px 22px', background:'none', border:'none', cursor:'pointer', color:'rgba(20,16,28,0.4)', fontSize:14, fontWeight:500, textAlign:'center', marginTop:4 }}>Cancel</button>
+            <button onClick={()=>setShowLongPressMenu(false)} style={{ width:'100%', padding:'15px 22px', background:'none', border:'none', cursor:'pointer', color:'rgba(255,255,255,0.4)', fontSize:14, fontWeight:500, textAlign:'center', marginTop:4 }}>Cancel</button>
           </div>
         </div>
       )}
@@ -2642,20 +2649,20 @@ const handleLongPressStart = () => {
             transform: liked ? 'scale(1)' : 'scale(1)',
             transition:'transform 0.2s cubic-bezier(0.34,1.56,0.64,1)' }}>
           <svg width="26" height="26" viewBox="0 0 24 24"
-            fill={liked?'#FF2156':'none'} stroke={liked?'#FF2156':'rgba(20,16,28,0.9)'} strokeWidth="1.8"
+            fill={liked?'#FE2C55':'none'} stroke={liked?'#FE2C55':'rgba(255,255,255,0.9)'} strokeWidth="1.8"
             style={{ animation: liked ? 'likeHeart 0.4s ease' : 'none', filter: liked ? 'drop-shadow(0 0 6px rgba(255,45,85,0.6))' : 'none' }}>
             <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
           </svg>
         </button>
-        <span style={{ color: liked?'#FF2156':'rgba(20,16,28,0.85)', fontSize:11, fontWeight:700, letterSpacing:0.2, transition:'color 0.2s' }}>{formatNumber(likeCount)}</span>
+        <span style={{ color: liked?'#FE2C55':'rgba(255,255,255,0.85)', fontSize:11, fontWeight:700, letterSpacing:0.2, transition:'color 0.2s' }}>{formatNumber(likeCount)}</span>
         <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();setShowComments(true);}} style={{ background:'rgba(0,0,0,0.3)', border:'none', borderRadius:'50%', width:48, height:48, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', marginTop:4 }}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(20,16,28,0.9)" strokeWidth="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
         </button>
-        <span style={{ color:'rgba(20,16,28,0.85)', fontSize:11, fontWeight:600 }}>{formatNumber(video.comments||comments.length)}</span>
+        <span style={{ color:'rgba(255,255,255,0.85)', fontSize:11, fontWeight:600 }}>{formatNumber(video.comments||comments.length)}</span>
         <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();setShowShare(true);}} style={{ background:'rgba(0,0,0,0.3)', border:'none', borderRadius:'50%', width:48, height:48, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', marginTop:4 }}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(20,16,28,0.9)" strokeWidth="1.8"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="1.8"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
-        <span style={{ color:'rgba(20,16,28,0.85)', fontSize:11, fontWeight:600 }}>{formatNumber(video.shares||0)}</span>
+        <span style={{ color:'rgba(255,255,255,0.85)', fontSize:11, fontWeight:600 }}>{formatNumber(video.shares||0)}</span>
         <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();setShowActionMenu(v=>!v);}} style={{ background:'rgba(0,0,0,0.3)', border:'none', borderRadius:'50%', width:48, height:48, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', marginTop:4 }}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
         </button>
@@ -2665,7 +2672,7 @@ const handleLongPressStart = () => {
         <div key={r.id} style={{ position:'absolute', bottom:200, left:`${r.x}%`, zIndex:60, pointerEvents:'none', fontSize:36, animation:'floatUp 1.5s ease forwards' }}>{r.emoji}</div>
       ))}
       {showReactions && (
-        <div onClick={e=>e.stopPropagation()} style={{ position:'absolute', bottom:160, left:'50%', transform:'translateX(-50%)', zIndex:55, background:'rgba(255,255,255,0.95)', backdropFilter:'blur(20px)', borderRadius:50, padding:'8px 12px', display:'flex', gap:4, border:'1px solid rgba(20,16,28,0.12)', animation:'popInBounce 0.3s ease' }}>
+        <div onClick={e=>e.stopPropagation()} style={{ position:'absolute', bottom:160, left:'50%', transform:'translateX(-50%)', zIndex:55, background:'rgba(255,255,255,0.95)', backdropFilter:'blur(20px)', borderRadius:50, padding:'8px 12px', display:'flex', gap:4, border:'1px solid rgba(255,255,255,0.12)', animation:'popInBounce 0.3s ease' }}>
           {REACTIONS.map(emoji=>(
             <button key={emoji} onClick={()=>handleReact(emoji)} style={{ background:'none', border:'none', fontSize:28, cursor:'pointer', padding:'4px 6px', borderRadius:30, transition:'transform 0.15s' }}
               onMouseEnter={e=>e.currentTarget.style.transform='scale(1.4)'}
@@ -2682,19 +2689,19 @@ const handleLongPressStart = () => {
     onClick={e => e.stopPropagation()}
     onTouchStart={e => e.stopPropagation()}
     onTouchEnd={e => e.stopPropagation()}
-    style={{ position:'fixed', bottom:0, left:'50%', transform:'translateX(-50%)', width:'100%', maxWidth:430, height:'60%', background:'#FFFFFF', borderTopLeftRadius:28, borderTopRightRadius:28, zIndex:9500, display:'flex', flexDirection:'column', animation:'slideUp 0.3s ease', boxShadow:'0 -8px 40px rgba(0,0,0,0.7)' }}>
-          <div style={{ padding:'16px', borderBottom:'1px solid rgba(20,16,28,0.07)', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-            <span style={{ color:'#161221', fontWeight:700, fontSize:16, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{t?.comments||'Comments'}</span>
-            <button onClick={()=>setShowComments(false)} style={{ background:'rgba(20,16,28,0.08)', border:'none', borderRadius:'50%', width:32, height:32, color:'#161221', cursor:'pointer', fontSize:16 }}>✕</button>
+    style={{ position:'fixed', bottom:0, left:'50%', transform:'translateX(-50%)', width:'100%', maxWidth:430, height:'60%', background:'#121214', borderTopLeftRadius:28, borderTopRightRadius:28, zIndex:9500, display:'flex', flexDirection:'column', animation:'slideUp 0.3s ease', boxShadow:'0 -8px 40px rgba(0,0,0,0.7)' }}>
+          <div style={{ padding:'16px', borderBottom:'1px solid rgba(255,255,255,0.07)', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+            <span style={{ color:'#FFFFFF', fontWeight:700, fontSize:16, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{t?.comments||'Comments'}</span>
+            <button onClick={()=>setShowComments(false)} style={{ background:'rgba(255,255,255,0.08)', border:'none', borderRadius:'50%', width:32, height:32, color:'#FFFFFF', cursor:'pointer', fontSize:16 }}>✕</button>
           </div>
           <div style={{ flex:1, overflowY:'auto', padding:'14px 16px' }}>
             {pinnedComment && (
               <div style={{ background:'rgba(255,45,85,0.08)', borderRadius:14, padding:'10px 12px', marginBottom:16, border:'1px solid rgba(255,45,85,0.2)' }}>
-                <div style={{ color:'#FF2156', fontSize:11, fontWeight:700, marginBottom:8 }}>📌 Pinned</div>
+                <div style={{ color:'#FE2C55', fontSize:11, fontWeight:700, marginBottom:8 }}>📌 Pinned</div>
                 <CommentItem comment={pinnedComment} currentUser={currentUser} onLike={()=>{}} onReply={()=>{}} onPin={()=>{}} />
               </div>
             )}
-            {comments.length===0 && <div style={{textAlign:'center',padding:40,color:'rgba(20,16,28,0.3)',fontSize:13}}>No comments yet. Be the first! 💬</div>}
+            {comments.length===0 && <div style={{textAlign:'center',padding:40,color:'rgba(255,255,255,0.3)',fontSize:13}}>No comments yet. Be the first! 💬</div>}
             {comments.map(comment=>(
               <CommentItem key={comment.id} comment={comment} currentUser={currentUser} onLike={async id=>{await updateDoc(doc(db,'comments',id),{likes:increment(1)});}} onReply={(c)=>setCommentText(`@${c.username} `)} onPin={id=>{const c=comments.find(cc=>cc.id===id); if(c){setPinnedComment(c); showToast?.('Pinned!','success');}}} onViewProfile={onViewProfile} onDelete={async id=>{ await deleteDoc(doc(db,'comments',id)); await updateDoc(doc(db,'videos',video.id),{comments:increment(-1)}); showToast?.('Comment deleted','success'); }} />
             ))}
@@ -2716,9 +2723,9 @@ const NotifBellButton = ({ onOpenNotifications, currentUser }) => {
     return ()=>unsub();
   },[currentUser?.id]);
   return (
-    <button onClick={onOpenNotifications} style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(10px)', border:'1px solid rgba(20,16,28,0.1)', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', position:'relative' }}>
+    <button onClick={onOpenNotifications} style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(10px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', position:'relative' }}>
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
-      {unread>0 && <div style={{ position:'absolute', top:-4, right:-4, minWidth:18, height:18, background:'#FF2156', borderRadius:9, border:'1.5px solid #000', display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, color:'#fff', fontWeight:800, padding:'0 3px' }}>{unread>9?'9+':unread}</div>}
+      {unread>0 && <div style={{ position:'absolute', top:-4, right:-4, minWidth:18, height:18, background:'#FE2C55', borderRadius:9, border:'1.5px solid #000', display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, color:'#fff', fontWeight:800, padding:'0 3px' }}>{unread>9?'9+':unread}</div>}
     </button>
   );
 };
@@ -2798,7 +2805,7 @@ const JobsMarketPage = ({ currentUser, showToast, mode, onViewProfile }) => {
       userId: currentUser.id,
       username: currentUser.username,
       avatarUrl: currentUser.avatarUrl || null,
-      avatarColor: currentUser.avatarColor || '#FF2156',
+      avatarColor: currentUser.avatarColor || '#FE2C55',
       requestedAt: serverTimestamp(),
       type: tab,
       status: 'pending'
@@ -2823,7 +2830,7 @@ const JobsMarketPage = ({ currentUser, showToast, mode, onViewProfile }) => {
     const flagged = isLikelyFakePost(jobForm);
     const ref = await addDoc(collection(db, 'jobs'), {
       ...jobForm, userId: currentUser?.id, username: currentUser?.username,
-      avatarUrl: currentUser?.avatarUrl || null, avatarColor: currentUser?.avatarColor || '#FF2156',
+      avatarUrl: currentUser?.avatarUrl || null, avatarColor: currentUser?.avatarColor || '#FE2C55',
       createdAt: serverTimestamp(), applicantCount: 0, saved: [], status: 'active',
       reviewFlag: flagged ? 'pending' : null
     });
@@ -2845,7 +2852,7 @@ const JobsMarketPage = ({ currentUser, showToast, mode, onViewProfile }) => {
     const flagged = isLikelyFakePost(mktForm);
     const ref = await addDoc(collection(db, 'marketItems'), {
       ...mktForm, userId: currentUser?.id, username: currentUser?.username,
-      avatarUrl: currentUser?.avatarUrl || null, avatarColor: currentUser?.avatarColor || '#FF2156',
+      avatarUrl: currentUser?.avatarUrl || null, avatarColor: currentUser?.avatarColor || '#FE2C55',
       createdAt: serverTimestamp(), saved: [], status: 'available',
       reviewFlag: flagged ? 'pending' : null
     });
@@ -2888,7 +2895,7 @@ const JobsMarketPage = ({ currentUser, showToast, mode, onViewProfile }) => {
     await setDoc(doc(db, 'jobApplications', appId), {
       jobId: item.id, jobTitle: item.title, company: item.company,
       applicantId: currentUser.id, applicantUsername: currentUser.username,
-      applicantAvatarUrl: currentUser.avatarUrl || null, applicantAvatarColor: currentUser.avatarColor || '#FF2156',
+      applicantAvatarUrl: currentUser.avatarUrl || null, applicantAvatarColor: currentUser.avatarColor || '#FE2C55',
       applicantBio: currentUser.bio || '', applicantFollowers: (currentUser.followers||[]).length,
       applicantJoinedAt: currentUser.createdAt || null,
       appliedAt: serverTimestamp(), status: 'pending'
@@ -2950,37 +2957,37 @@ const JobsMarketPage = ({ currentUser, showToast, mode, onViewProfile }) => {
     return matchFilter && matchSearch;
   });
 
-  const inputStyle = { width:'100%', background:'rgba(20,16,28,0.05)', border:'1px solid rgba(20,16,28,0.1)', borderRadius:14, padding:'12px 14px', color:'#161221', outline:'none', fontSize:13, boxSizing:'border-box', fontFamily:"'Inter',-apple-system,sans-serif" };
-  const labelStyle = { color:'rgba(20,16,28,0.5)', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:0.5, marginBottom:6, display:'block' };
+  const inputStyle = { width:'100%', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:'12px 14px', color:'#FFFFFF', outline:'none', fontSize:13, boxSizing:'border-box', fontFamily:"'Inter',-apple-system,sans-serif" };
+  const labelStyle = { color:'rgba(255,255,255,0.5)', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:0.5, marginBottom:6, display:'block' };
 
   // Applicants Modal
   if (showApplicants && selectedItem) return (
-    <div style={{ height:'100%', display:'flex', flexDirection:'column', background:'#F5F4F7' }}>
-      <div style={{ padding:'14px 16px', borderBottom:'1px solid rgba(20,16,28,0.08)', display:'flex', alignItems:'center', gap:12 }}>
-        <button onClick={()=>{ setShowApplicants(false); setApplicants([]); }} style={{ background:'none', border:'none', color:'#161221', fontSize:20, cursor:'pointer' }}>←</button>
+    <div style={{ height:'100%', display:'flex', flexDirection:'column', background:'#000000' }}>
+      <div style={{ padding:'14px 16px', borderBottom:'1px solid rgba(255,255,255,0.08)', display:'flex', alignItems:'center', gap:12 }}>
+        <button onClick={()=>{ setShowApplicants(false); setApplicants([]); }} style={{ background:'none', border:'none', color:'#FFFFFF', fontSize:20, cursor:'pointer' }}>←</button>
         <div>
-          <div style={{ color:'#161221', fontWeight:800, fontSize:16 }}>{selectedItem.title}</div>
-          <div style={{ color:'rgba(20,16,28,0.4)', fontSize:12 }}>{applicants.length} applicant{applicants.length!==1?'s':''}</div>
+          <div style={{ color:'#FFFFFF', fontWeight:800, fontSize:16 }}>{selectedItem.title}</div>
+          <div style={{ color:'rgba(255,255,255,0.4)', fontSize:12 }}>{applicants.length} applicant{applicants.length!==1?'s':''}</div>
         </div>
       </div>
       <div style={{ flex:1, overflowY:'auto', padding:14 }}>
-        {applicants.length === 0 && <div style={{ textAlign:'center', padding:60, color:'rgba(20,16,28,0.3)' }}><div style={{ fontSize:40, marginBottom:12 }}>📋</div><div>No applicants yet</div></div>}
+        {applicants.length === 0 && <div style={{ textAlign:'center', padding:60, color:'rgba(255,255,255,0.3)' }}><div style={{ fontSize:40, marginBottom:12 }}>📋</div><div>No applicants yet</div></div>}
         {applicants.map(app => (
-          <div key={app.id} style={{ background:'rgba(20,16,28,0.03)', borderRadius:18, padding:16, marginBottom:12, border:'1px solid rgba(20,16,28,0.07)' }}>
+          <div key={app.id} style={{ background:'rgba(255,255,255,0.03)', borderRadius:18, padding:16, marginBottom:12, border:'1px solid rgba(255,255,255,0.07)' }}>
             <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:12 }}>
-              <div onClick={()=>{ setShowApplicants(false); onViewProfile?.(app.applicantId); }} style={{ width:48, height:48, borderRadius:'50%', background:app.applicantAvatarColor||'#FF2156', display:'flex', alignItems:'center', justifyContent:'center', color:'#161221', fontWeight:'bold', fontSize:20, overflow:'hidden', cursor:'pointer', flexShrink:0 }}>
+              <div onClick={()=>{ setShowApplicants(false); onViewProfile?.(app.applicantId); }} style={{ width:48, height:48, borderRadius:'50%', background:app.applicantAvatarColor||'#FE2C55', display:'flex', alignItems:'center', justifyContent:'center', color:'#FFFFFF', fontWeight:'bold', fontSize:20, overflow:'hidden', cursor:'pointer', flexShrink:0 }}>
                 {app.applicantAvatarUrl ? <img src={app.applicantAvatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : (app.applicantUsername||'?')[0].toUpperCase()}
               </div>
               <div style={{ flex:1 }}>
-                <div style={{ color:'#161221', fontWeight:700, fontSize:15 }}>@{app.applicantUsername}</div>
-                <div style={{ color:'rgba(20,16,28,0.4)', fontSize:12 }}>{app.applicantFollowers||0} followers</div>
-                {app.applicantBio && <div style={{ color:'rgba(20,16,28,0.5)', fontSize:12, marginTop:2 }}>{app.applicantBio}</div>}
+                <div style={{ color:'#FFFFFF', fontWeight:700, fontSize:15 }}>@{app.applicantUsername}</div>
+                <div style={{ color:'rgba(255,255,255,0.4)', fontSize:12 }}>{app.applicantFollowers||0} followers</div>
+                {app.applicantBio && <div style={{ color:'rgba(255,255,255,0.5)', fontSize:12, marginTop:2 }}>{app.applicantBio}</div>}
               </div>
-              <div style={{ background: app.status==='hired'?'rgba(52,199,89,0.15)':app.status==='shortlisted'?'rgba(255,204,0,0.15)':app.status==='rejected'?'rgba(255,59,48,0.15)':'rgba(20,16,28,0.08)', border:`1px solid ${app.status==='hired'?'rgba(52,199,89,0.4)':app.status==='shortlisted'?'rgba(255,204,0,0.4)':app.status==='rejected'?'rgba(255,59,48,0.4)':'rgba(20,16,28,0.15)'}`, borderRadius:20, padding:'4px 10px', color:app.status==='hired'?'#2ED573':app.status==='shortlisted'?'#FFD60A':app.status==='rejected'?'#FF453A':'rgba(20,16,28,0.5)', fontSize:11, fontWeight:700 }}>{app.status||'pending'}</div>
+              <div style={{ background: app.status==='hired'?'rgba(52,199,89,0.15)':app.status==='shortlisted'?'rgba(255,204,0,0.15)':app.status==='rejected'?'rgba(255,59,48,0.15)':'rgba(255,255,255,0.08)', border:`1px solid ${app.status==='hired'?'rgba(52,199,89,0.4)':app.status==='shortlisted'?'rgba(255,204,0,0.4)':app.status==='rejected'?'rgba(255,59,48,0.4)':'rgba(255,255,255,0.15)'}`, borderRadius:20, padding:'4px 10px', color:app.status==='hired'?'#2ED573':app.status==='shortlisted'?'#FFD60A':app.status==='rejected'?'#FF453A':'rgba(255,255,255,0.5)', fontSize:11, fontWeight:700 }}>{app.status||'pending'}</div>
             </div>
             <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:12 }}>
-              <span style={{ background:'rgba(20,16,28,0.05)', borderRadius:20, padding:'3px 10px', color:'rgba(20,16,28,0.4)', fontSize:11 }}>📅 {app.appliedAt?.toDate?.()?.toLocaleDateString?.() || 'N/A'}</span>
-              <span style={{ background:'rgba(20,16,28,0.05)', borderRadius:20, padding:'3px 10px', color:'rgba(20,16,28,0.4)', fontSize:11 }}>🕐 {app.appliedAt?.toDate?.()?.toLocaleTimeString?.([],{hour:'2-digit',minute:'2-digit'}) || ''}</span>
+              <span style={{ background:'rgba(255,255,255,0.05)', borderRadius:20, padding:'3px 10px', color:'rgba(255,255,255,0.4)', fontSize:11 }}>📅 {app.appliedAt?.toDate?.()?.toLocaleDateString?.() || 'N/A'}</span>
+              <span style={{ background:'rgba(255,255,255,0.05)', borderRadius:20, padding:'3px 10px', color:'rgba(255,255,255,0.4)', fontSize:11 }}>🕐 {app.appliedAt?.toDate?.()?.toLocaleTimeString?.([],{hour:'2-digit',minute:'2-digit'}) || ''}</span>
             </div>
             {currentUser?.id === selectedItem.userId && (
               <div style={{ display:'flex', gap:8 }}>
@@ -3013,27 +3020,27 @@ const JobsMarketPage = ({ currentUser, showToast, mode, onViewProfile }) => {
       showToast?.('Post removed', 'info');
     };
     return (
-      <div style={{ height:'100%', display:'flex', flexDirection:'column', background:'#F5F4F7' }}>
-        <div style={{ padding:'14px 16px', borderBottom:'1px solid rgba(20,16,28,0.08)', display:'flex', alignItems:'center', gap:12 }}>
-          <button onClick={()=>setShowReviewQueue(false)} style={{ background:'none', border:'none', color:'#161221', fontSize:20, cursor:'pointer' }}>←</button>
-          <div style={{ color:'#161221', fontWeight:800, fontSize:16 }}>Review Queue — {tab==='jobs'?'Jobs':'Market'}</div>
+      <div style={{ height:'100%', display:'flex', flexDirection:'column', background:'#000000' }}>
+        <div style={{ padding:'14px 16px', borderBottom:'1px solid rgba(255,255,255,0.08)', display:'flex', alignItems:'center', gap:12 }}>
+          <button onClick={()=>setShowReviewQueue(false)} style={{ background:'none', border:'none', color:'#FFFFFF', fontSize:20, cursor:'pointer' }}>←</button>
+          <div style={{ color:'#FFFFFF', fontWeight:800, fontSize:16 }}>Review Queue — {tab==='jobs'?'Jobs':'Market'}</div>
         </div>
         <div style={{ flex:1, overflowY:'auto', padding:14 }}>
           {pending.length === 0 && (
-            <div style={{ textAlign:'center', padding:60, color:'rgba(20,16,28,0.3)' }}>
+            <div style={{ textAlign:'center', padding:60, color:'rgba(255,255,255,0.3)' }}>
               <div style={{ fontSize:40, marginBottom:12 }}>✅</div>
               <div>Nothing pending review</div>
             </div>
           )}
           {pending.map(item => (
-            <div key={item.id} style={{ background:'rgba(20,16,28,0.03)', border:'1px solid rgba(255,149,0,0.25)', borderRadius:18, padding:14, marginBottom:12 }}>
-              <div style={{ color:'#161221', fontWeight:800, fontSize:15, marginBottom:4 }}>{item.title}</div>
-              <div style={{ color:'rgba(20,16,28,0.5)', fontSize:12, marginBottom:8 }}>by @{item.username}{item.company ? ' · '+item.company : ''}</div>
-              {item.description && <div style={{ color:'rgba(20,16,28,0.5)', fontSize:12, lineHeight:1.5, marginBottom:10 }}>{item.description.length>200?item.description.slice(0,200)+'...':item.description}</div>}
+            <div key={item.id} style={{ background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,149,0,0.25)', borderRadius:18, padding:14, marginBottom:12 }}>
+              <div style={{ color:'#FFFFFF', fontWeight:800, fontSize:15, marginBottom:4 }}>{item.title}</div>
+              <div style={{ color:'rgba(255,255,255,0.5)', fontSize:12, marginBottom:8 }}>by @{item.username}{item.company ? ' · '+item.company : ''}</div>
+              {item.description && <div style={{ color:'rgba(255,255,255,0.5)', fontSize:12, lineHeight:1.5, marginBottom:10 }}>{item.description.length>200?item.description.slice(0,200)+'...':item.description}</div>}
               <div style={{ display:'flex', gap:8 }}>
                 <button onClick={()=>approveItem(item)} style={{ flex:1, background:'rgba(52,199,89,0.12)', border:'1px solid rgba(52,199,89,0.3)', borderRadius:14, padding:'9px 0', color:'#2ED573', fontSize:12, fontWeight:700, cursor:'pointer' }}>✅ Approve</button>
                 <button onClick={()=>removeItem(item)} style={{ flex:1, background:'rgba(255,59,48,0.1)', border:'1px solid rgba(255,59,48,0.2)', borderRadius:14, padding:'9px 0', color:'#FF453A', fontSize:12, fontWeight:700, cursor:'pointer' }}>🗑️ Remove</button>
-                <button onClick={()=>onViewProfile?.(item.userId)} style={{ width:38, height:38, background:'rgba(20,16,28,0.05)', border:'1px solid rgba(20,16,28,0.1)', borderRadius:14, color:'rgba(20,16,28,0.4)', fontSize:16, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>👤</button>
+                <button onClick={()=>onViewProfile?.(item.userId)} style={{ width:38, height:38, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, color:'rgba(255,255,255,0.4)', fontSize:16, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>👤</button>
               </div>
             </div>
           ))}
@@ -3044,28 +3051,28 @@ const JobsMarketPage = ({ currentUser, showToast, mode, onViewProfile }) => {
 
   // Post Form Modal
   if (showPost) return (
-    <div style={{ height:'100%', overflow:'auto', background:'#F5F4F7', padding:16 }}>
+    <div style={{ height:'100%', overflow:'auto', background:'#000000', padding:16 }}>
       <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:20 }}>
-        <button onClick={()=>setShowPost(false)} style={{ background:'rgba(20,16,28,0.05)', border:'none', borderRadius:20, padding:'8px 16px', color:'#161221', cursor:'pointer', fontSize:13 }}>← Back</button>
-        <div style={{ color:'#161221', fontWeight:800, fontSize:18 }}>{tab==='jobs'?'Post a Job':'List in Market'}</div>
+        <button onClick={()=>setShowPost(false)} style={{ background:'rgba(255,255,255,0.05)', border:'none', borderRadius:20, padding:'8px 16px', color:'#FFFFFF', cursor:'pointer', fontSize:13 }}>← Back</button>
+        <div style={{ color:'#FFFFFF', fontWeight:800, fontSize:18 }}>{tab==='jobs'?'Post a Job':'List in Market'}</div>
       </div>
       {tab === 'jobs' ? (
         <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
           <div><label style={labelStyle}>Job Title *</label><input value={jobForm.title} onChange={e=>setJobForm(f=>({...f,title:e.target.value}))} placeholder="e.g. Senior Designer" style={inputStyle} /></div>
           <div><label style={labelStyle}>Company *</label><input value={jobForm.company} onChange={e=>setJobForm(f=>({...f,company:e.target.value}))} placeholder="Company name" style={inputStyle} /></div>
           <div><label style={labelStyle}>Location</label><input value={jobForm.location} onChange={e=>setJobForm(f=>({...f,location:e.target.value}))} placeholder="City, Country or Remote" style={inputStyle} /></div>
-          <div><label style={labelStyle}>Type</label><div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>{jobTypes.map(t=><button key={t} onClick={()=>setJobForm(f=>({...f,type:t}))} style={{ background:jobForm.type===t?'rgba(255,45,85,0.15)':'rgba(20,16,28,0.04)', border:`1px solid ${jobForm.type===t?'rgba(255,45,85,0.4)':'rgba(20,16,28,0.08)'}`, borderRadius:20, padding:'7px 14px', color:jobForm.type===t?'#FF2156':'rgba(20,16,28,0.5)', fontSize:12, fontWeight:jobForm.type===t?700:400, cursor:'pointer' }}>{t}</button>)}</div></div>
+          <div><label style={labelStyle}>Type</label><div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>{jobTypes.map(t=><button key={t} onClick={()=>setJobForm(f=>({...f,type:t}))} style={{ background:jobForm.type===t?'rgba(255,45,85,0.15)':'rgba(255,255,255,0.04)', border:`1px solid ${jobForm.type===t?'rgba(255,45,85,0.4)':'rgba(255,255,255,0.08)'}`, borderRadius:20, padding:'7px 14px', color:jobForm.type===t?'#FE2C55':'rgba(255,255,255,0.5)', fontSize:12, fontWeight:jobForm.type===t?700:400, cursor:'pointer' }}>{t}</button>)}</div></div>
           <div><label style={labelStyle}>Salary / Compensation</label><input value={jobForm.salary} onChange={e=>setJobForm(f=>({...f,salary:e.target.value}))} placeholder="e.g. $2,000/mo or Negotiable" style={inputStyle} /></div>
           <div><label style={labelStyle}>Description</label><textarea value={jobForm.description} onChange={e=>setJobForm(f=>({...f,description:e.target.value}))} placeholder="Job description, requirements, responsibilities..." rows={4} style={{ ...inputStyle, resize:'none', lineHeight:1.5 }} /></div>
           <div><label style={labelStyle}>Required Skills</label><input value={jobForm.skills} onChange={e=>setJobForm(f=>({...f,skills:e.target.value}))} placeholder="e.g. React, Figma, Python" style={inputStyle} /></div>
           <div><label style={labelStyle}>Contact Email</label><input value={jobForm.contactEmail} onChange={e=>setJobForm(f=>({...f,contactEmail:e.target.value}))} placeholder="For applicants to reach you" style={inputStyle} /></div>
-          <button onClick={postJob} style={{ width:'100%', background:'linear-gradient(135deg,#FF2156,#9D4EDD)', border:'none', borderRadius:20, padding:'15px 0', color:'#fff', fontWeight:800, fontSize:15, cursor:'pointer', marginTop:8 }}>Post Job 💼</button>
+          <button onClick={postJob} style={{ width:'100%', background:'linear-gradient(135deg,#FE2C55,#9D4EDD)', border:'none', borderRadius:20, padding:'15px 0', color:'#fff', fontWeight:800, fontSize:15, cursor:'pointer', marginTop:8 }}>Post Job 💼</button>
         </div>
       ) : (
         <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
           <div><label style={labelStyle}>Title *</label><input value={mktForm.title} onChange={e=>setMktForm(f=>({...f,title:e.target.value}))} placeholder="What are you selling?" style={inputStyle} /></div>
-          <div><label style={labelStyle}>Category</label><div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>{mktCategories.map(c=><button key={c} onClick={()=>setMktForm(f=>({...f,category:c}))} style={{ background:mktForm.category===c?'rgba(0,122,255,0.15)':'rgba(20,16,28,0.04)', border:`1px solid ${mktForm.category===c?'rgba(0,122,255,0.4)':'rgba(20,16,28,0.08)'}`, borderRadius:20, padding:'7px 14px', color:mktForm.category===c?'#0A84FF':'rgba(20,16,28,0.5)', fontSize:12, fontWeight:mktForm.category===c?700:400, cursor:'pointer' }}>{c}</button>)}</div></div>
-          <div><label style={labelStyle}>Condition</label><div style={{ display:'flex', gap:6 }}>{['New','Like New','Good','Fair'].map(c=><button key={c} onClick={()=>setMktForm(f=>({...f,condition:c}))} style={{ flex:1, background:mktForm.condition===c?'rgba(52,199,89,0.15)':'rgba(20,16,28,0.04)', border:`1px solid ${mktForm.condition===c?'rgba(52,199,89,0.4)':'rgba(20,16,28,0.08)'}`, borderRadius:14, padding:'8px 0', color:mktForm.condition===c?'#2ED573':'rgba(20,16,28,0.5)', fontSize:12, fontWeight:mktForm.condition===c?700:400, cursor:'pointer' }}>{c}</button>)}</div></div>
+          <div><label style={labelStyle}>Category</label><div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>{mktCategories.map(c=><button key={c} onClick={()=>setMktForm(f=>({...f,category:c}))} style={{ background:mktForm.category===c?'rgba(0,122,255,0.15)':'rgba(255,255,255,0.04)', border:`1px solid ${mktForm.category===c?'rgba(0,122,255,0.4)':'rgba(255,255,255,0.08)'}`, borderRadius:20, padding:'7px 14px', color:mktForm.category===c?'#0A84FF':'rgba(255,255,255,0.5)', fontSize:12, fontWeight:mktForm.category===c?700:400, cursor:'pointer' }}>{c}</button>)}</div></div>
+          <div><label style={labelStyle}>Condition</label><div style={{ display:'flex', gap:6 }}>{['New','Like New','Good','Fair'].map(c=><button key={c} onClick={()=>setMktForm(f=>({...f,condition:c}))} style={{ flex:1, background:mktForm.condition===c?'rgba(52,199,89,0.15)':'rgba(255,255,255,0.04)', border:`1px solid ${mktForm.condition===c?'rgba(52,199,89,0.4)':'rgba(255,255,255,0.08)'}`, borderRadius:14, padding:'8px 0', color:mktForm.condition===c?'#2ED573':'rgba(255,255,255,0.5)', fontSize:12, fontWeight:mktForm.condition===c?700:400, cursor:'pointer' }}>{c}</button>)}</div></div>
           <div><label style={labelStyle}>Price *</label><input value={mktForm.price} onChange={e=>setMktForm(f=>({...f,price:e.target.value}))} placeholder="e.g. $50 or Free" style={inputStyle} /></div>
           <div><label style={labelStyle}>Description</label><textarea value={mktForm.description} onChange={e=>setMktForm(f=>({...f,description:e.target.value}))} placeholder="Describe the item, features, specs..." rows={3} style={{ ...inputStyle, resize:'none', lineHeight:1.5 }} /></div>
           <div><label style={labelStyle}>Tags</label><input value={mktForm.tags} onChange={e=>setMktForm(f=>({...f,tags:e.target.value}))} placeholder="electronics, phone, apple..." style={inputStyle} /></div>
@@ -3077,22 +3084,22 @@ const JobsMarketPage = ({ currentUser, showToast, mode, onViewProfile }) => {
   );
 
   return (
-    <div style={{ height:'100%', display:'flex', flexDirection:'column', background:'#F5F4F7', overflow:'hidden' }}>
+    <div style={{ height:'100%', display:'flex', flexDirection:'column', background:'#000000', overflow:'hidden' }}>
       {/* Header */}
-      <div style={{ padding:'14px 16px 0', background:'#F5F4F7', flexShrink:0 }}>
+      <div style={{ padding:'14px 16px 0', background:'#000000', flexShrink:0 }}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
           <div style={{ display:'flex', gap:20 }}>
             {[['jobs','💼 Jobs'],['market','🛒 Market']].map(([id,label])=>(
-              <button key={id} onClick={()=>{ setTab(id); setFilter('all'); setSearch(''); }} style={{ background:'none', border:'none', color:tab===id?'white':'rgba(20,16,28,0.4)', fontWeight:tab===id?800:500, fontSize:16, cursor:'pointer', paddingBottom:8, borderBottom:tab===id?'2.5px solid #FF2156':'2.5px solid transparent', fontFamily:"'Inter',-apple-system,sans-serif", transition:'all 0.2s' }}>{label}</button>
+              <button key={id} onClick={()=>{ setTab(id); setFilter('all'); setSearch(''); }} style={{ background:'none', border:'none', color:tab===id?'white':'rgba(255,255,255,0.4)', fontWeight:tab===id?800:500, fontSize:16, cursor:'pointer', paddingBottom:8, borderBottom:tab===id?'2.5px solid #FE2C55':'2.5px solid transparent', fontFamily:"'Inter',-apple-system,sans-serif", transition:'all 0.2s' }}>{label}</button>
             ))}
           </div>
           {canPost() ? (
-            <button onClick={()=>setShowPost(true)} style={{ background:'linear-gradient(135deg,#FF2156,#9D4EDD)', border:'none', borderRadius:20, padding:'8px 16px', color:'#fff', fontWeight:700, fontSize:12, cursor:'pointer' }}>+ Post</button>
+            <button onClick={()=>setShowPost(true)} style={{ background:'linear-gradient(135deg,#FE2C55,#9D4EDD)', border:'none', borderRadius:20, padding:'8px 16px', color:'#fff', fontWeight:700, fontSize:12, cursor:'pointer' }}>+ Post</button>
           ) : (
             myPermissions !== null && (
               requestSent
-                ? <span style={{ color:'rgba(20,16,28,0.3)', fontSize:11 }}>Request pending...</span>
-                : <button onClick={requestPermission} style={{ background:'rgba(20,16,28,0.07)', border:'1px solid rgba(20,16,28,0.15)', borderRadius:20, padding:'8px 14px', color:'rgba(20,16,28,0.7)', fontWeight:600, fontSize:12, cursor:'pointer' }}>Request to Post</button>
+                ? <span style={{ color:'rgba(255,255,255,0.3)', fontSize:11 }}>Request pending...</span>
+                : <button onClick={requestPermission} style={{ background:'rgba(255,255,255,0.07)', border:'1px solid rgba(255,255,255,0.15)', borderRadius:20, padding:'8px 14px', color:'rgba(255,255,255,0.7)', fontWeight:600, fontSize:12, cursor:'pointer' }}>Request to Post</button>
             )
           )}
           {isCreator && (
@@ -3102,77 +3109,77 @@ const JobsMarketPage = ({ currentUser, showToast, mode, onViewProfile }) => {
           )}
         </div>
         {/* Search */}
-        <div style={{ background:'rgba(20,16,28,0.06)', borderRadius:22, display:'flex', alignItems:'center', padding:'9px 14px', gap:8, marginBottom:10 }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(20,16,28,0.4)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder={tab==='jobs'?'Search jobs...':'Search market...'} style={{ flex:1, background:'none', border:'none', color:'#161221', outline:'none', fontSize:13 }} />
-          {search && <button onClick={()=>setSearch('')} style={{ background:'none', border:'none', color:'rgba(20,16,28,0.4)', cursor:'pointer', fontSize:14 }}>✕</button>}
+        <div style={{ background:'rgba(255,255,255,0.06)', borderRadius:22, display:'flex', alignItems:'center', padding:'9px 14px', gap:8, marginBottom:10 }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder={tab==='jobs'?'Search jobs...':'Search market...'} style={{ flex:1, background:'none', border:'none', color:'#FFFFFF', outline:'none', fontSize:13 }} />
+          {search && <button onClick={()=>setSearch('')} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.4)', cursor:'pointer', fontSize:14 }}>✕</button>}
         </div>
         {/* Filters */}
         <div style={{ display:'flex', gap:7, overflowX:'auto', paddingBottom:10 }}>
           {filters.map(([id,label])=>(
-            <button key={id} onClick={()=>setFilter(id)} style={{ background:filter===id?'rgba(255,45,85,0.15)':'rgba(20,16,28,0.04)', border:`1px solid ${filter===id?'rgba(255,45,85,0.4)':'rgba(20,16,28,0.08)'}`, borderRadius:20, padding:'5px 13px', color:filter===id?'#FF2156':'rgba(20,16,28,0.5)', fontSize:12, fontWeight:filter===id?700:400, cursor:'pointer', whiteSpace:'nowrap', flexShrink:0 }}>{label}</button>
+            <button key={id} onClick={()=>setFilter(id)} style={{ background:filter===id?'rgba(255,45,85,0.15)':'rgba(255,255,255,0.04)', border:`1px solid ${filter===id?'rgba(255,45,85,0.4)':'rgba(255,255,255,0.08)'}`, borderRadius:20, padding:'5px 13px', color:filter===id?'#FE2C55':'rgba(255,255,255,0.5)', fontSize:12, fontWeight:filter===id?700:400, cursor:'pointer', whiteSpace:'nowrap', flexShrink:0 }}>{label}</button>
           ))}
         </div>
       </div>
       {/* List */}
       <div style={{ flex:1, overflowY:'auto', padding:'0 12px 16px' }}>
-        {loading && <div style={{ textAlign:'center', padding:40 }}><div style={{ width:28, height:28, border:'3px solid rgba(255,45,85,0.3)', borderTop:'3px solid #FF2156', borderRadius:'50%', animation:'spin 1s linear infinite', margin:'0 auto' }} /></div>}
+        {loading && <div style={{ textAlign:'center', padding:40 }}><div style={{ width:28, height:28, border:'3px solid rgba(255,45,85,0.3)', borderTop:'3px solid #FE2C55', borderRadius:'50%', animation:'spin 1s linear infinite', margin:'0 auto' }} /></div>}
         {!loading && displayItems.length === 0 && (
-          <div style={{ textAlign:'center', padding:60, color:'rgba(20,16,28,0.2)' }}>
+          <div style={{ textAlign:'center', padding:60, color:'rgba(255,255,255,0.2)' }}>
             <div style={{ fontSize:48, marginBottom:12 }}>{tab==='jobs'?'💼':'🛒'}</div>
             <div style={{ fontSize:14 }}>No {tab==='jobs'?'jobs':'listings'} yet</div>
-            {!canPost() && !requestSent && <button onClick={requestPermission} style={{ marginTop:16, background:'rgba(20,16,28,0.08)', border:'1px solid rgba(20,16,28,0.15)', borderRadius:20, padding:'10px 20px', color:'#161221', fontSize:13, cursor:'pointer' }}>Request to Post</button>}
+            {!canPost() && !requestSent && <button onClick={requestPermission} style={{ marginTop:16, background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.15)', borderRadius:20, padding:'10px 20px', color:'#FFFFFF', fontSize:13, cursor:'pointer' }}>Request to Post</button>}
           </div>
         )}
         {displayItems.map(item => {
           const isOwner = item.userId === currentUser?.id;
           const isSaved = (item.saved||[]).includes(currentUser?.id);
           return (
-            <div key={item.id} style={{ background:'rgba(20,16,28,0.03)', borderRadius:20, padding:16, marginBottom:12, border: item.reviewFlag==='pending' ? '1px solid rgba(255,149,0,0.35)' : '1px solid rgba(20,16,28,0.07)' }}>
+            <div key={item.id} style={{ background:'rgba(255,255,255,0.03)', borderRadius:20, padding:16, marginBottom:12, border: item.reviewFlag==='pending' ? '1px solid rgba(255,149,0,0.35)' : '1px solid rgba(255,255,255,0.07)' }}>
               {item.reviewFlag === 'pending' && (
                 <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:10, background:'rgba(255,149,0,0.1)', border:'1px solid rgba(255,149,0,0.25)', borderRadius:12, padding:'6px 10px', color:'#FFB100', fontSize:11, fontWeight:700 }}>
                   ⏳ {isOwner ? 'Pending review — only visible to you until cleared' : 'Under review by moderators'}
                 </div>
               )}
               <div style={{ display:'flex', alignItems:'flex-start', gap:12 }}>
-                <div onClick={()=>onViewProfile?.(item.userId)} style={{ width:44, height:44, borderRadius:14, background:item.avatarColor||'#FF2156', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:'bold', fontSize:18, flexShrink:0, overflow:'hidden', cursor:'pointer' }}>
+                <div onClick={()=>onViewProfile?.(item.userId)} style={{ width:44, height:44, borderRadius:14, background:item.avatarColor||'#FE2C55', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:'bold', fontSize:18, flexShrink:0, overflow:'hidden', cursor:'pointer' }}>
                   {item.avatarUrl ? <img src={item.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/> : (item.username||'?')[0].toUpperCase()}
                 </div>
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:2 }}>
-                    <div style={{ color:'#161221', fontWeight:800, fontSize:15 }}>{item.title}</div>
+                    <div style={{ color:'#FFFFFF', fontWeight:800, fontSize:15 }}>{item.title}</div>
                     {item.status === 'available' && tab==='market' && <span style={{ background:'rgba(52,199,89,0.12)', border:'1px solid rgba(52,199,89,0.25)', borderRadius:20, padding:'1px 8px', color:'#2ED573', fontSize:10, fontWeight:700 }}>Available</span>}
                     {item.status === 'active' && tab==='jobs' && <span style={{ background:'rgba(0,122,255,0.12)', border:'1px solid rgba(0,122,255,0.25)', borderRadius:20, padding:'1px 8px', color:'#0A84FF', fontSize:10, fontWeight:700 }}>Hiring</span>}
                   </div>
                   {tab==='jobs' ? (
                     <>
-                      <div style={{ color:'rgba(20,16,28,0.6)', fontSize:13, marginBottom:4 }}>{item.company}{item.location?' · '+item.location:''}</div>
+                      <div style={{ color:'rgba(255,255,255,0.6)', fontSize:13, marginBottom:4 }}>{item.company}{item.location?' · '+item.location:''}</div>
                       <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:6 }}>
-                        <span style={{ background:'rgba(255,45,85,0.12)', border:'1px solid rgba(255,45,85,0.25)', borderRadius:20, padding:'2px 10px', color:'#FF2156', fontSize:11, fontWeight:700 }}>{item.type}</span>
+                        <span style={{ background:'rgba(255,45,85,0.12)', border:'1px solid rgba(255,45,85,0.25)', borderRadius:20, padding:'2px 10px', color:'#FE2C55', fontSize:11, fontWeight:700 }}>{item.type}</span>
                         {item.salary && <span style={{ background:'rgba(52,199,89,0.1)', border:'1px solid rgba(52,199,89,0.25)', borderRadius:20, padding:'2px 10px', color:'#2ED573', fontSize:11 }}>{item.salary}</span>}
                       </div>
                     </>
                   ) : (
                     <>
-                      <div style={{ color:'rgba(20,16,28,0.6)', fontSize:13, marginBottom:4 }}>by @{item.username}</div>
+                      <div style={{ color:'rgba(255,255,255,0.6)', fontSize:13, marginBottom:4 }}>by @{item.username}</div>
                       <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:6 }}>
                         <span style={{ background:'rgba(0,122,255,0.12)', border:'1px solid rgba(0,122,255,0.25)', borderRadius:20, padding:'2px 10px', color:'#0A84FF', fontSize:11, fontWeight:700 }}>{item.price}</span>
-                        {item.category && <span style={{ background:'rgba(20,16,28,0.07)', borderRadius:20, padding:'2px 10px', color:'rgba(20,16,28,0.5)', fontSize:11 }}>{item.category}</span>}
+                        {item.category && <span style={{ background:'rgba(255,255,255,0.07)', borderRadius:20, padding:'2px 10px', color:'rgba(255,255,255,0.5)', fontSize:11 }}>{item.category}</span>}
                         {item.condition && <span style={{ background:'rgba(255,204,0,0.08)', border:'1px solid rgba(255,204,0,0.2)', borderRadius:20, padding:'2px 10px', color:'#FFD60A', fontSize:11 }}>{item.condition}</span>}
                       </div>
                     </>
                   )}
-                  {item.description && <div style={{ color:'rgba(20,16,28,0.5)', fontSize:12, lineHeight:1.5, marginBottom:8 }}>{item.description.length>150?item.description.slice(0,150)+'...':item.description}</div>}
-                  {item.skills && tab==='jobs' && <div style={{ color:'rgba(20,16,28,0.35)', fontSize:11, marginBottom:8 }}>🛠️ {item.skills}</div>}
-                  {item.tags && tab==='market' && <div style={{ color:'rgba(20,16,28,0.35)', fontSize:11, marginBottom:8 }}>#{item.tags.split(',').map(t=>t.trim()).join(' #')}</div>}
+                  {item.description && <div style={{ color:'rgba(255,255,255,0.5)', fontSize:12, lineHeight:1.5, marginBottom:8 }}>{item.description.length>150?item.description.slice(0,150)+'...':item.description}</div>}
+                  {item.skills && tab==='jobs' && <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11, marginBottom:8 }}>🛠️ {item.skills}</div>}
+                  {item.tags && tab==='market' && <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11, marginBottom:8 }}>#{item.tags.split(',').map(t=>t.trim()).join(' #')}</div>}
                   <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
                     {tab==='jobs' ? (
                       isOwner ? (
-                        <button onClick={()=>loadApplicants(item)} style={{ flex:1, background:'rgba(255,45,85,0.12)', border:'1px solid rgba(255,45,85,0.3)', borderRadius:14, padding:'9px 0', color:'#FF2156', fontSize:12, fontWeight:700, cursor:'pointer' }}>
+                        <button onClick={()=>loadApplicants(item)} style={{ flex:1, background:'rgba(255,45,85,0.12)', border:'1px solid rgba(255,45,85,0.3)', borderRadius:14, padding:'9px 0', color:'#FE2C55', fontSize:12, fontWeight:700, cursor:'pointer' }}>
                           📋 {item.applicantCount||0} Applicants
                         </button>
                       ) : (
-                        <button onClick={()=>applyJob(item)} style={{ flex:1, background:'linear-gradient(135deg,#FF2156,#9D4EDD)', border:'none', borderRadius:14, padding:'9px 0', color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer' }}>
+                        <button onClick={()=>applyJob(item)} style={{ flex:1, background:'linear-gradient(135deg,#FE2C55,#9D4EDD)', border:'none', borderRadius:14, padding:'9px 0', color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer' }}>
                           Apply Now
                         </button>
                       )
@@ -3181,13 +3188,13 @@ const JobsMarketPage = ({ currentUser, showToast, mode, onViewProfile }) => {
                         Contact Seller
                       </button>
                     )}
-                    <button onClick={()=>saveItem(item)} style={{ width:38, height:38, background:'rgba(20,16,28,0.05)', border:'1px solid rgba(20,16,28,0.1)', borderRadius:14, color:isSaved?'#FFD60A':'rgba(20,16,28,0.4)', fontSize:16, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>{isSaved?'🔖':'📌'}</button>
-                    <button onClick={()=>onViewProfile?.(item.userId)} style={{ width:38, height:38, background:'rgba(20,16,28,0.05)', border:'1px solid rgba(20,16,28,0.1)', borderRadius:14, color:'rgba(20,16,28,0.4)', fontSize:16, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>👤</button>
+                    <button onClick={()=>saveItem(item)} style={{ width:38, height:38, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, color:isSaved?'#FFD60A':'rgba(255,255,255,0.4)', fontSize:16, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>{isSaved?'🔖':'📌'}</button>
+                    <button onClick={()=>onViewProfile?.(item.userId)} style={{ width:38, height:38, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, color:'rgba(255,255,255,0.4)', fontSize:16, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>👤</button>
                     {!isOwner && item.reviewFlag !== 'pending' && (
-                      <button onClick={()=>reportListing(item)} title="Report as fake" style={{ width:38, height:38, background:'rgba(20,16,28,0.05)', border:'1px solid rgba(20,16,28,0.1)', borderRadius:14, color:'rgba(20,16,28,0.4)', fontSize:16, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>🚩</button>
+                      <button onClick={()=>reportListing(item)} title="Report as fake" style={{ width:38, height:38, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, color:'rgba(255,255,255,0.4)', fontSize:16, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>🚩</button>
                     )}
                   </div>
-                  {item.contactEmail && !isOwner && tab==='jobs' && <div style={{ color:'rgba(20,16,28,0.3)', fontSize:11, marginTop:6 }}>📧 {item.contactEmail}</div>}
+                  {item.contactEmail && !isOwner && tab==='jobs' && <div style={{ color:'rgba(255,255,255,0.3)', fontSize:11, marginTop:6 }}>📧 {item.contactEmail}</div>}
                 </div>
               </div>
             </div>
@@ -3212,18 +3219,18 @@ const SuggestedUsers = ({ currentUser, users, followed, onFollow, onViewProfile 
 
   return (
     <div style={{padding:'12px 0 8px'}}>
-      <div style={{color:'rgba(20,16,28,0.4)',fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:1,padding:'0 16px',marginBottom:10}}>
+      <div style={{color:'rgba(255,255,255,0.4)',fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:1,padding:'0 16px',marginBottom:10}}>
         Suggested for you
       </div>
       <div style={{display:'flex',gap:10,overflowX:'auto',padding:'0 16px 4px'}}>
         {suggestions.map(u=>(
-          <div key={u.id} style={{flexShrink:0,textAlign:'center',background:'rgba(20,16,28,0.04)',borderRadius:20,padding:'14px 10px',width:110,border:'1px solid rgba(20,16,28,0.06)'}}>
+          <div key={u.id} style={{flexShrink:0,textAlign:'center',background:'rgba(255,255,255,0.04)',borderRadius:20,padding:'14px 10px',width:110,border:'1px solid rgba(255,255,255,0.06)'}}>
             <div onClick={()=>onViewProfile?.(u.id)} style={{width:52,height:52,borderRadius:'50%',background:u.avatarColor,margin:'0 auto 8px',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:'bold',fontSize:20,overflow:'hidden',cursor:'pointer'}}>
               {u.avatarUrl?<img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/>:u.avatar}
             </div>
-            <div style={{color:'#161221',fontSize:11,fontWeight:700,marginBottom:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>@{u.username}</div>
-            <div style={{color:'rgba(20,16,28,0.3)',fontSize:10,marginBottom:8}}>{formatNumber(u.followers?.length||0)} followers</div>
-            <button onClick={()=>onFollow?.(u.id)} style={{background:'linear-gradient(135deg,#FF2156,#9D4EDD)',border:'none',borderRadius:20,padding:'5px 0',color:'#fff',fontSize:11,fontWeight:700,cursor:'pointer',width:'100%'}}>
+            <div style={{color:'#FFFFFF',fontSize:11,fontWeight:700,marginBottom:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>@{u.username}</div>
+            <div style={{color:'rgba(255,255,255,0.3)',fontSize:10,marginBottom:8}}>{formatNumber(u.followers?.length||0)} followers</div>
+            <button onClick={()=>onFollow?.(u.id)} style={{background:'linear-gradient(135deg,#FE2C55,#9D4EDD)',border:'none',borderRadius:20,padding:'5px 0',color:'#fff',fontSize:11,fontWeight:700,cursor:'pointer',width:'100%'}}>
               Follow
             </button>
           </div>
@@ -3261,11 +3268,11 @@ const FeaturedJobsMarket = ({ onOpenCategory }) => {
       <div style={{ display:'flex', overflowX:'auto', gap:8, padding:'0 12px', WebkitOverflowScrolling:'touch' }}>
         {items.map(item=>(
           <button key={item._kind+item.id} data-notap='1' onClick={e=>{e.stopPropagation(); onOpenCategory?.(item._kind);}}
-            style={{ flexShrink:0, display:'flex', alignItems:'center', gap:8, background:'rgba(0,0,0,0.55)', backdropFilter:'blur(10px)', border:'1px solid rgba(20,16,28,0.12)', borderRadius:18, padding:'7px 12px 7px 8px', cursor:'pointer', maxWidth:220 }}>
+            style={{ flexShrink:0, display:'flex', alignItems:'center', gap:8, background:'rgba(0,0,0,0.55)', backdropFilter:'blur(10px)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:18, padding:'7px 12px 7px 8px', cursor:'pointer', maxWidth:220 }}>
             <span style={{ fontSize:16 }}>{item._kind==='jobs'?'💼':'🛒'}</span>
             <div style={{ textAlign:'left', minWidth:0 }}>
-              <div style={{ color:'#161221', fontSize:11.5, fontWeight:700, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{item.title}</div>
-              <div style={{ color:'rgba(20,16,28,0.55)', fontSize:10, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+              <div style={{ color:'#FFFFFF', fontSize:11.5, fontWeight:700, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{item.title}</div>
+              <div style={{ color:'rgba(255,255,255,0.55)', fontSize:10, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
                 {item._kind==='jobs' ? (item.company||'Hiring') : (item.price||'For sale')}
               </div>
             </div>
@@ -3370,22 +3377,22 @@ const handlePullEnd = async () => {
     }
     startY.current = null;
   };
-  if(!filteredVideos.length && activeCategory === 'foryou') return <div style={{ height:'100%', display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:12 }}><div style={{ fontSize:48 }}>📭</div><div style={{ color:'rgba(20,16,28,0.3)' }}>{t?.noVideos||'No videos yet. Be the first to post!'}</div></div>;
+  if(!filteredVideos.length && activeCategory === 'foryou') return <div style={{ height:'100%', display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:12 }}><div style={{ fontSize:48 }}>📭</div><div style={{ color:'rgba(255,255,255,0.3)' }}>{t?.noVideos||'No videos yet. Be the first to post!'}</div></div>;
 
   if (activeCategory === 'jobs' || activeCategory === 'skills') {
     return (
       <div style={{ height:'100%', position:'relative', overflow:'hidden' }}>
         {/* Top header with category tabs */}
-        <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:15, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 16px 12px', background:'rgba(255,255,255,0.98)', borderBottom:'1px solid rgba(20,16,28,0.06)' }}>
+        <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:15, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 16px 12px', background:'rgba(255,255,255,0.98)', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
           <div style={{ flex:1, display:'flex', justifyContent:'center', gap:24 }}>
             {TOP_CATEGORIES.map(cat=>(
-              <button key={cat.id} onClick={()=>{setActiveCategory(cat.id); setCurrentIndex(0);}} style={{ background:'none', border:'none', color:activeCategory===cat.id?'#161221':'rgba(20,16,28,0.45)', fontWeight:activeCategory===cat.id?800:500, fontSize:15, cursor:'pointer', paddingBottom:6, borderBottom:activeCategory===cat.id?'2.5px solid #161221':'2.5px solid transparent', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", transition:'all 0.2s' }}>
+              <button key={cat.id} onClick={()=>{setActiveCategory(cat.id); setCurrentIndex(0);}} style={{ background:'none', border:'none', color:activeCategory===cat.id?'#FFFFFF':'rgba(255,255,255,0.45)', fontWeight:activeCategory===cat.id?800:500, fontSize:15, cursor:'pointer', paddingBottom:6, borderBottom:activeCategory===cat.id?'2.5px solid #FFFFFF':'2.5px solid transparent', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", transition:'all 0.2s' }}>
                 {cat.id==='foryou'?(t?.foryou||cat.label):cat.id==='jobs'?(t?.jobs||'Jobs'):cat.id==='skills'?(t?.skills||'Skills'):(t?.foryou||cat.label)}
               </button>
             ))}
           </div>
           <div style={{ display:'flex', gap:10, alignItems:'center' }}>
-            <button onClick={onOpenSearch} style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(10px)', border:'1px solid rgba(20,16,28,0.1)', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+            <button onClick={onOpenSearch} style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(10px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             </button>
             <NotifBellButton onOpenNotifications={onOpenNotifications} currentUser={currentUser} />
@@ -3403,13 +3410,13 @@ const handlePullEnd = async () => {
       <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:15, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 16px 12px', background:'linear-gradient(to bottom,rgba(0,0,0,0.7) 0%,transparent 100%)' }}>
         <div style={{ flex:1, display:'flex', justifyContent:'center', gap:24 }}>
           {TOP_CATEGORIES.map(cat=>(
-            <button key={cat.id} onClick={()=>{setActiveCategory(cat.id); setCurrentIndex(0);}} style={{ background:'none', border:'none', color:activeCategory===cat.id?'white':'rgba(20,16,28,0.45)', fontWeight:activeCategory===cat.id?800:500, fontSize:15, cursor:'pointer', paddingBottom:6, borderBottom:activeCategory===cat.id?'2.5px solid white':'2.5px solid transparent', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", transition:'all 0.2s' }}>
+            <button key={cat.id} onClick={()=>{setActiveCategory(cat.id); setCurrentIndex(0);}} style={{ background:'none', border:'none', color:activeCategory===cat.id?'white':'rgba(255,255,255,0.45)', fontWeight:activeCategory===cat.id?800:500, fontSize:15, cursor:'pointer', paddingBottom:6, borderBottom:activeCategory===cat.id?'2.5px solid white':'2.5px solid transparent', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", transition:'all 0.2s' }}>
               {cat.id==='foryou'?(t?.foryou||cat.label):cat.id==='jobs'?(t?.jobs||'Jobs'):cat.id==='skills'?(t?.skills||'Skills'):(t?.foryou||cat.label)}
             </button>
           ))}
         </div>
         <div style={{ display:'flex', gap:10, alignItems:'center' }}>
-          <button onClick={onOpenSearch} style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(10px)', border:'1px solid rgba(20,16,28,0.1)', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+          <button onClick={onOpenSearch} style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(10px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           </button>
           <NotifBellButton onOpenNotifications={onOpenNotifications} currentUser={currentUser} />
@@ -3444,7 +3451,7 @@ onLive={onLive}
   
       {filteredVideos.length>1 && (
         <div style={{ position:'absolute', right:6, top:'50%', transform:'translateY(-50%)', display:'flex', flexDirection:'column', gap:4, zIndex:10 }}>
-          {filteredVideos.map((_,i)=><div key={i} style={{ width:3, height:i===currentIndex?20:4, borderRadius:2, background:i===currentIndex?'white':'rgba(20,16,28,0.2)', cursor:'pointer', transition:'all 0.2s' }} onClick={()=>setCurrentIndex(i)} />)}
+          {filteredVideos.map((_,i)=><div key={i} style={{ width:3, height:i===currentIndex?20:4, borderRadius:2, background:i===currentIndex?'white':'rgba(255,255,255,0.2)', cursor:'pointer', transition:'all 0.2s' }} onClick={()=>setCurrentIndex(i)} />)}
         </div>
       )}
 
@@ -3506,19 +3513,19 @@ const handlePullEnd = async () => {
   };
 
   if(filtered.length===0) return (
-    <div style={{ height:'100%', display:'flex', flexDirection:'column', background:'#F5F4F7' }}>
+    <div style={{ height:'100%', display:'flex', flexDirection:'column', background:'#000000' }}>
       {/* Top bar */}
       <div style={{ position:'relative', zIndex:15, padding:'14px 16px 0', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-        <div style={{ color:'#161221', fontWeight:800, fontSize:18, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", textShadow:'0 1px 8px rgba(0,0,0,0.8)' }}>{t?.friends||'Friends'}</div>
+        <div style={{ color:'#FFFFFF', fontWeight:800, fontSize:18, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", textShadow:'0 1px 8px rgba(0,0,0,0.8)' }}>{t?.friends||'Friends'}</div>
         <div style={{ display:'flex', gap:10, alignItems:'center' }}>
-          <button onClick={onOpenSearch} style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(10px)', border:'1px solid rgba(20,16,28,0.1)', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+          <button onClick={onOpenSearch} style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(10px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           </button>
 
         </div>
       </div>
       <Stories users={users} currentUser={currentUser} onViewStory={onViewStory} onCreateStory={onCreateStory} followed={followed} />
-      <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:12, color:'rgba(20,16,28,0.2)' }}>
+      <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:12, color:'rgba(255,255,255,0.2)' }}>
         <div style={{ fontSize:44 }}>👥</div>
         <div style={{ fontSize:14 }}>{search ? 'No results found' : 'Follow people to see their videos here'}</div>
       </div>
@@ -3531,8 +3538,8 @@ const handlePullEnd = async () => {
       onTouchMove={e=>{ handleTouchMove(e); handlePullMove(e); }}
       onTouchEnd={e=>{ handleTouchEnd(e); handlePullEnd(); }}>
       {(pullDist > 10 || refreshing) && (
-        <div style={{ position:'absolute', top: refreshing ? 16 : pullDist - 40, left:'50%', transform:'translateX(-50%)', zIndex:25, width:36, height:36, borderRadius:'50%', background:'rgba(20,16,28,0.1)', border:'1px solid rgba(20,16,28,0.15)', display:'flex', alignItems:'center', justifyContent:'center', backdropFilter:'blur(10px)', transition: refreshing?'top 0.3s':'' }}>
-          <div style={{ width:18, height:18, border:'2px solid rgba(20,16,28,0.3)', borderTop:'2px solid #FF2156', borderRadius:'50%', animation: refreshing ? 'spin 0.8s linear infinite' : '', transform: !refreshing ? `rotate(${pullDist*3}deg)` : '' }} />
+        <div style={{ position:'absolute', top: refreshing ? 16 : pullDist - 40, left:'50%', transform:'translateX(-50%)', zIndex:25, width:36, height:36, borderRadius:'50%', background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', backdropFilter:'blur(10px)', transition: refreshing?'top 0.3s':'' }}>
+          <div style={{ width:18, height:18, border:'2px solid rgba(255,255,255,0.3)', borderTop:'2px solid #FE2C55', borderRadius:'50%', animation: refreshing ? 'spin 0.8s linear infinite' : '', transform: !refreshing ? `rotate(${pullDist*3}deg)` : '' }} />
         </div>
       )}
      
@@ -3566,9 +3573,9 @@ const handlePullEnd = async () => {
       {/* Top overlay: Friends label + icons — matches Home style */}
       <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:15, padding:'14px 16px 12px', background:'linear-gradient(to bottom,rgba(0,0,0,0.7) 0%,transparent 100%)' }}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-          <div style={{ color:'#161221', fontWeight:800, fontSize:18, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", textShadow:'0 1px 8px rgba(0,0,0,0.8)' }}>{t?.friends||'Friends'}</div>
+          <div style={{ color:'#FFFFFF', fontWeight:800, fontSize:18, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", textShadow:'0 1px 8px rgba(0,0,0,0.8)' }}>{t?.friends||'Friends'}</div>
           <div style={{ display:'flex', gap:10, alignItems:'center' }}>
-            <button onClick={onOpenSearch} style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(10px)', border:'1px solid rgba(20,16,28,0.1)', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+            <button onClick={onOpenSearch} style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(10px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             </button>
 
@@ -3585,7 +3592,7 @@ const handlePullEnd = async () => {
       {filtered.length>1 && (
         <div style={{ position:'absolute', right:6, top:'50%', transform:'translateY(-50%)', display:'flex', flexDirection:'column', gap:4, zIndex:10 }}>
           {filtered.map((_,i)=>(
-            <div key={i} onClick={()=>setCurrentIndex(i)} style={{ width:3, height:i===currentIndex?20:4, borderRadius:2, background:i===currentIndex?'white':'rgba(20,16,28,0.2)', cursor:'pointer', transition:'all 0.2s' }} />
+            <div key={i} onClick={()=>setCurrentIndex(i)} style={{ width:3, height:i===currentIndex?20:4, borderRadius:2, background:i===currentIndex?'white':'rgba(255,255,255,0.2)', cursor:'pointer', transition:'all 0.2s' }} />
           ))}
         </div>
       )}
@@ -3596,11 +3603,11 @@ const handlePullEnd = async () => {
 
 /* ─────────────── CREATE SCREEN ─────────────── */
 const CreateScreen = ({ onOpenCamera, onShowSoundLibrary, showToast, t }) => (
-  <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:24, gap:12, background:'#F5F4F7' }}>
+  <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:24, gap:12, background:'#000000' }}>
     <div style={{ textAlign:'center', marginBottom:12 }}>
-      <div style={{ width:72, height:72, borderRadius:'50%', background:'linear-gradient(135deg,#FF2156,#9D4EDD)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px', fontSize:32 }}>🎬</div>
-      <div style={{ color:'#161221', fontWeight:800, fontSize:24, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{t?.createShare||'Create & Share'}</div>
-<div style={{ color:'rgba(20,16,28,0.35)', fontSize:14, marginTop:4 }}>{t?.expressYourself||'Express yourself'}</div>
+      <div style={{ width:72, height:72, borderRadius:'50%', background:'linear-gradient(135deg,#FE2C55,#9D4EDD)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px', fontSize:32 }}>🎬</div>
+      <div style={{ color:'#FFFFFF', fontWeight:800, fontSize:24, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{t?.createShare||'Create & Share'}</div>
+<div style={{ color:'rgba(255,255,255,0.35)', fontSize:14, marginTop:4 }}>{t?.expressYourself||'Express yourself'}</div>
     </div>
     {[
       {icon:'📷',label:'Open Camera',sub:'Record or take photo',action:onOpenCamera,grad:true},
@@ -3609,11 +3616,11 @@ const CreateScreen = ({ onOpenCamera, onShowSoundLibrary, showToast, t }) => (
       {icon:'🎙️',label:'Record Audio',sub:'Voice post',action:onOpenCamera,grad:false},
       {icon:'🎵',label:'Add Sound',sub:'Browse music library',action:onShowSoundLibrary,grad:false},
     ].map(btn=>(
-      <button key={btn.label} onClick={btn.action} style={{ width:'100%', maxWidth:320, background:btn.grad?'linear-gradient(135deg,#FF2156,#9D4EDD)':'rgba(20,16,28,0.04)', border:btn.grad?'none':'1px solid rgba(20,16,28,0.08)', borderRadius:20, padding:'16px 20px', color:'#fff', fontSize:14, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:14, textAlign:'left' }}>
-        <div style={{ width:44, height:44, borderRadius:14, background:btn.grad?'rgba(20,16,28,0.15)':'rgba(20,16,28,0.06)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22 }}>{btn.icon}</div>
+      <button key={btn.label} onClick={btn.action} style={{ width:'100%', maxWidth:320, background:btn.grad?'linear-gradient(135deg,#FE2C55,#9D4EDD)':'rgba(255,255,255,0.04)', border:btn.grad?'none':'1px solid rgba(255,255,255,0.08)', borderRadius:20, padding:'16px 20px', color:'#fff', fontSize:14, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:14, textAlign:'left' }}>
+        <div style={{ width:44, height:44, borderRadius:14, background:btn.grad?'rgba(255,255,255,0.15)':'rgba(255,255,255,0.06)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22 }}>{btn.icon}</div>
         <div>
           <div style={{ fontWeight:700, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{btn.label}</div>
-          <div style={{ color:btn.grad?'rgba(20,16,28,0.65)':'rgba(20,16,28,0.35)', fontSize:11, marginTop:2 }}>{btn.sub}</div>
+          <div style={{ color:btn.grad?'rgba(255,255,255,0.65)':'rgba(255,255,255,0.35)', fontSize:11, marginTop:2 }}>{btn.sub}</div>
         </div>
       </button>
     ))}
@@ -3675,18 +3682,18 @@ const WalletPage = ({ user, setCurrentUser, showToast, onBack }) => {
   };
 
   return (
-    <div style={{ height:'100%', overflow:'auto', background:'#F5F4F7' }}>
+    <div style={{ height:'100%', overflow:'auto', background:'#000000' }}>
       <div style={{ padding:'16px 16px 0' }}>
-        <button onClick={onBack} style={{ background:'rgba(20,16,28,0.06)', border:'1px solid rgba(20,16,28,0.08)', borderRadius:20, padding:'8px 16px', color:'#161221', cursor:'pointer', fontSize:13, marginBottom:16, display:'flex', alignItems:'center', gap:6 }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#161221" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
+        <button onClick={onBack} style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:20, padding:'8px 16px', color:'#FFFFFF', cursor:'pointer', fontSize:13, marginBottom:16, display:'flex', alignItems:'center', gap:6 }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
           Back
         </button>
-        <div style={{ color:'#161221', fontWeight:800, fontSize:22, marginBottom:16, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Wallet</div>
+        <div style={{ color:'#FFFFFF', fontWeight:800, fontSize:22, marginBottom:16, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Wallet</div>
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:16 }}>
           <div style={{ background:'linear-gradient(135deg,#FFD60A,#FFB100)', borderRadius:22, padding:20 }}>
             <div style={{ color:'rgba(0,0,0,0.55)', fontSize:11, fontWeight:600, textTransform:'uppercase', letterSpacing:0.5 }}>Coins</div>
             <div style={{ color:'#000', fontSize:30, fontWeight:800, marginTop:4, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{(user?.coins||0).toLocaleString()}</div>
-            <div style={{ color:'rgba(20,16,28,0.4)', fontSize:10, marginTop:2 }}>🪙 Infinity Coins</div>
+            <div style={{ color:'rgba(255,255,255,0.4)', fontSize:10, marginTop:2 }}>🪙 Infinity Coins</div>
           </div>
           <div style={{ background:'linear-gradient(135deg,#00E6B4,#00A9D6)', borderRadius:22, padding:20 }}>
             <div style={{ color:'rgba(0,0,0,0.55)', fontSize:11, fontWeight:600, textTransform:'uppercase', letterSpacing:0.5 }}>Cash</div>
@@ -3694,35 +3701,35 @@ const WalletPage = ({ user, setCurrentUser, showToast, onBack }) => {
             <div style={{ color:'rgba(0,0,0,0.4)', fontSize:10, marginTop:2 }}>💵 USD</div>
           </div>
         </div>
-        <div style={{ display:'flex', gap:4, marginBottom:16, background:'rgba(20,16,28,0.04)', borderRadius:18, padding:4, border:'1px solid rgba(20,16,28,0.06)' }}>
+        <div style={{ display:'flex', gap:4, marginBottom:16, background:'rgba(255,255,255,0.04)', borderRadius:18, padding:4, border:'1px solid rgba(255,255,255,0.06)' }}>
           {['overview','deposit','withdraw','convert'].map(t=>(
-            <button key={t} onClick={()=>setActiveTab(t)} style={{ flex:1, background:activeTab===t?'rgba(255,45,85,0.9)':'none', border:'none', borderRadius:14, padding:'8px 4px', color:'#161221', cursor:'pointer', fontSize:11, fontWeight:activeTab===t?700:400, textTransform:'capitalize' }}>{t}</button>
+            <button key={t} onClick={()=>setActiveTab(t)} style={{ flex:1, background:activeTab===t?'rgba(255,45,85,0.9)':'none', border:'none', borderRadius:14, padding:'8px 4px', color:'#FFFFFF', cursor:'pointer', fontSize:11, fontWeight:activeTab===t?700:400, textTransform:'capitalize' }}>{t}</button>
           ))}
         </div>
         {activeTab==='overview' && (
           <div>
-            {transactions.length===0&&<div style={{textAlign:'center',padding:40,color:'rgba(20,16,28,0.2)'}}>No transactions yet</div>}
+            {transactions.length===0&&<div style={{textAlign:'center',padding:40,color:'rgba(255,255,255,0.2)'}}>No transactions yet</div>}
             {transactions.map(tx=>(
-              <div key={tx.id} style={{ background:'rgba(20,16,28,0.03)', borderRadius:16, padding:'13px 14px', marginBottom:8, display:'flex', alignItems:'center', gap:12, border:'1px solid rgba(20,16,28,0.05)' }}>
+              <div key={tx.id} style={{ background:'rgba(255,255,255,0.03)', borderRadius:16, padding:'13px 14px', marginBottom:8, display:'flex', alignItems:'center', gap:12, border:'1px solid rgba(255,255,255,0.05)' }}>
                 <div style={{ width:40, height:40, borderRadius:'50%', background:tx.type==='credit'?'rgba(6,214,160,0.12)':'rgba(255,45,85,0.12)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>{tx.type==='credit'?'⬆️':'⬇️'}</div>
-                <div style={{ flex:1 }}><div style={{ color:'#161221', fontSize:12 }}>{tx.label}</div><div style={{ color:'rgba(20,16,28,0.3)', fontSize:10, marginTop:2 }}>{tx.date?.toLocaleDateString?.()}</div></div>
-                <div style={{ color:tx.type==='credit'?'#00E6B4':'#FF2156', fontWeight:700, fontSize:15 }}>{tx.type==='credit'?'+':'-'}{tx.amount}{tx.coins?'🪙':'$'}</div>
+                <div style={{ flex:1 }}><div style={{ color:'#FFFFFF', fontSize:12 }}>{tx.label}</div><div style={{ color:'rgba(255,255,255,0.3)', fontSize:10, marginTop:2 }}>{tx.date?.toLocaleDateString?.()}</div></div>
+                <div style={{ color:tx.type==='credit'?'#00E6B4':'#FE2C55', fontWeight:700, fontSize:15 }}>{tx.type==='credit'?'+':'-'}{tx.amount}{tx.coins?'🪙':'$'}</div>
               </div>
             ))}
           </div>
         )}
         {(activeTab==='deposit'||activeTab==='withdraw'||activeTab==='convert') && (
-          <div style={{ background:'rgba(20,16,28,0.03)', borderRadius:22, padding:20, border:'1px solid rgba(20,16,28,0.06)' }}>
-            <div style={{ color:'rgba(20,16,28,0.4)', fontSize:12, marginBottom:8 }}>{activeTab==='deposit'?'Add coins':activeTab==='withdraw'?'Withdraw coins':'Convert to ETH (1 ETH = 10,000 🪙)'}</div>
+          <div style={{ background:'rgba(255,255,255,0.03)', borderRadius:22, padding:20, border:'1px solid rgba(255,255,255,0.06)' }}>
+            <div style={{ color:'rgba(255,255,255,0.4)', fontSize:12, marginBottom:8 }}>{activeTab==='deposit'?'Add coins':activeTab==='withdraw'?'Withdraw coins':'Convert to ETH (1 ETH = 10,000 🪙)'}</div>
             <div style={{ display:'flex', gap:8, marginBottom:14 }}>
-              <input type="number" placeholder="Enter amount..." value={amount} onChange={e=>setAmount(e.target.value)} style={{ flex:1, background:'rgba(20,16,28,0.05)', border:'1px solid rgba(20,16,28,0.1)', borderRadius:14, padding:'12px', color:'#161221', outline:'none', fontSize:15 }} />
+              <input type="number" placeholder="Enter amount..." value={amount} onChange={e=>setAmount(e.target.value)} style={{ flex:1, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:'12px', color:'#FFFFFF', outline:'none', fontSize:15 }} />
             </div>
             <div style={{ display:'flex', gap:8, marginBottom:14 }}>
               {[100,500,1000,5000].map(v=>(
-                <button key={v} onClick={()=>setAmount(String(v))} style={{ flex:1, background:amount===String(v)?'rgba(255,45,85,0.9)':'rgba(20,16,28,0.06)', border:'none', borderRadius:10, padding:'8px', color:'#161221', cursor:'pointer', fontSize:12, fontWeight:600 }}>{v}</button>
+                <button key={v} onClick={()=>setAmount(String(v))} style={{ flex:1, background:amount===String(v)?'rgba(255,45,85,0.9)':'rgba(255,255,255,0.06)', border:'none', borderRadius:10, padding:'8px', color:'#FFFFFF', cursor:'pointer', fontSize:12, fontWeight:600 }}>{v}</button>
               ))}
             </div>
-            <button onClick={activeTab==='deposit'?doDeposit:activeTab==='withdraw'?doWithdraw:convertCoins} style={{ width:'100%', background:'linear-gradient(135deg,#FF2156,#9D4EDD)', border:'none', borderRadius:24, padding:'14px', color:'#fff', fontWeight:700, cursor:'pointer', fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>
+            <button onClick={activeTab==='deposit'?doDeposit:activeTab==='withdraw'?doWithdraw:convertCoins} style={{ width:'100%', background:'linear-gradient(135deg,#FE2C55,#9D4EDD)', border:'none', borderRadius:24, padding:'14px', color:'#fff', fontWeight:700, cursor:'pointer', fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>
               {activeTab==='deposit'?'Add Coins':activeTab==='withdraw'?'Withdraw':'Convert to ETH'}
             </button>
           </div>
@@ -3738,12 +3745,12 @@ const EditProfileModal = ({ user, onClose, onSave, showToast }) => {
   const [bio, setBio] = useState(user?.bio||'');
   const [link, setLink] = useState(user?.link||'');
   const [gender, setGender] = useState(user?.gender||'');
-  const [avatarColor, setAvatarColor] = useState(user?.avatarColor||'#FF2156');
+  const [avatarColor, setAvatarColor] = useState(user?.avatarColor||'#FE2C55');
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(user?.avatarUrl||null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
-  const colors = ['#FF2156','#9D4EDD','#0A84FF','#FFB100','#2ED573','#00A9D6','#FF453A','#5E5CE6','#00A9D6','#FF7A6B'];
+  const colors = ['#FE2C55','#9D4EDD','#0A84FF','#FFB100','#2ED573','#00A9D6','#FF453A','#5E5CE6','#00A9D6','#FF7A6B'];
 
   const handleAvatarChange = (e) => {
     const f = e.target.files[0];
@@ -3776,22 +3783,22 @@ const EditProfileModal = ({ user, onClose, onSave, showToast }) => {
 
   return (
     <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.9)', zIndex:4000, display:'flex', alignItems:'flex-end' }} onClick={onClose}>
-      <div onClick={e=>e.stopPropagation()} style={{ width:'100%', background:'#FFFFFF', borderTopLeftRadius:32, borderTopRightRadius:32, padding:'20px 20px 44px', maxHeight:'92vh', overflowY:'auto', border:'1px solid rgba(20,16,28,0.07)' }}>
-        <div style={{ width:36, height:4, background:'rgba(20,16,28,0.12)', borderRadius:2, margin:'0 auto 20px' }} />
+      <div onClick={e=>e.stopPropagation()} style={{ width:'100%', background:'#121214', borderTopLeftRadius:32, borderTopRightRadius:32, padding:'20px 20px 44px', maxHeight:'92vh', overflowY:'auto', border:'1px solid rgba(255,255,255,0.07)' }}>
+        <div style={{ width:36, height:4, background:'rgba(255,255,255,0.12)', borderRadius:2, margin:'0 auto 20px' }} />
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24 }}>
-          <span style={{ color:'#161221', fontWeight:800, fontSize:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Edit Profile</span>
-          <button onClick={handleSave} disabled={uploading} style={{ background:'linear-gradient(135deg,#FF2156,#9D4EDD)', border:'none', borderRadius:20, padding:'9px 20px', color:'#fff', fontWeight:700, cursor:'pointer', fontSize:14, opacity:uploading?0.6:1 }}>{uploading?'Saving...':'Save'}</button>
+          <span style={{ color:'#FFFFFF', fontWeight:800, fontSize:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Edit Profile</span>
+          <button onClick={handleSave} disabled={uploading} style={{ background:'linear-gradient(135deg,#FE2C55,#9D4EDD)', border:'none', borderRadius:20, padding:'9px 20px', color:'#fff', fontWeight:700, cursor:'pointer', fontSize:14, opacity:uploading?0.6:1 }}>{uploading?'Saving...':'Save'}</button>
         </div>
         <div style={{ position:'relative', display:'inline-block' }}>
-            <div style={{ width:90, height:90, borderRadius:'50%', background:avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:'bold', fontSize:36, margin:'0 auto', border:'3px solid rgba(20,16,28,0.1)', overflow:'hidden' }}>
+            <div style={{ width:90, height:90, borderRadius:'50%', background:avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:'bold', fontSize:36, margin:'0 auto', border:'3px solid rgba(255,255,255,0.1)', overflow:'hidden' }}>
               {avatarPreview ? <img src={avatarPreview} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : user?.avatar}
             </div>
-            <div onClick={()=>fileInputRef.current?.click()} style={{ position:'absolute', bottom:0, right:0, background:'rgba(20,16,28,0.1)', border:'2px solid #FFFFFF', borderRadius:'50%', width:32, height:32, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', backdropFilter:'blur(8px)' }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#161221" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            <div onClick={()=>fileInputRef.current?.click()} style={{ position:'absolute', bottom:0, right:0, background:'rgba(255,255,255,0.1)', border:'2px solid #FFFFFF', borderRadius:'50%', width:32, height:32, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', backdropFilter:'blur(8px)' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </div>
           </div>
           <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarChange} style={{display:'none'}} />
-          <div style={{ color:'rgba(20,16,28,0.4)', fontSize:12, marginTop:12, marginBottom:12 }}>Profile color</div>
+          <div style={{ color:'rgba(255,255,255,0.4)', fontSize:12, marginTop:12, marginBottom:12 }}>Profile color</div>
           <div style={{ display:'flex', gap:10, justifyContent:'center', flexWrap:'wrap' }}>
             {colors.map(c=><div key={c} onClick={()=>setAvatarColor(c)} style={{ width:34, height:34, borderRadius:'50%', background:c, cursor:'pointer', border:c===avatarColor?'3px solid white':'3px solid transparent', transition:'all 0.15s' }} />)}
           </div>
@@ -3802,13 +3809,13 @@ const EditProfileModal = ({ user, onClose, onSave, showToast }) => {
           {label:'Gender',value:gender,set:setGender,placeholder:'e.g. Male, Female, Other'},
         ].map(field=>(
           <div key={field.label} style={{ marginBottom:16 }}>
-            <div style={{ color:'rgba(20,16,28,0.4)', fontSize:12, marginBottom:7, fontWeight:600, textTransform:'uppercase', letterSpacing:0.5 }}>{field.label}</div>
+            <div style={{ color:'rgba(255,255,255,0.4)', fontSize:12, marginBottom:7, fontWeight:600, textTransform:'uppercase', letterSpacing:0.5 }}>{field.label}</div>
             {field.multiline ? (
-              <textarea value={field.value} onChange={e=>field.set(e.target.value)} placeholder={field.placeholder} style={{ width:'100%', background:'rgba(20,16,28,0.05)', border:'1px solid rgba(20,16,28,0.1)', borderRadius:16, padding:'12px 14px', color:'#161221', outline:'none', fontSize:14, resize:'none', minHeight:80, boxSizing:'border-box' }} />
+              <textarea value={field.value} onChange={e=>field.set(e.target.value)} placeholder={field.placeholder} style={{ width:'100%', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:16, padding:'12px 14px', color:'#FFFFFF', outline:'none', fontSize:14, resize:'none', minHeight:80, boxSizing:'border-box' }} />
             ) : (
-              <div style={{ display:'flex', alignItems:'center', background:'rgba(20,16,28,0.05)', border:'1px solid rgba(20,16,28,0.1)', borderRadius:16, padding:'12px 14px' }}>
-                {field.prefix && <span style={{ color:'rgba(20,16,28,0.3)', marginRight:4, fontSize:14 }}>{field.prefix}</span>}
-                <input value={field.value} onChange={e=>field.set(e.target.value)} placeholder={field.placeholder} style={{ flex:1, background:'none', border:'none', color:'#161221', outline:'none', fontSize:14 }} />
+              <div style={{ display:'flex', alignItems:'center', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:16, padding:'12px 14px' }}>
+                {field.prefix && <span style={{ color:'rgba(255,255,255,0.3)', marginRight:4, fontSize:14 }}>{field.prefix}</span>}
+                <input value={field.value} onChange={e=>field.set(e.target.value)} placeholder={field.placeholder} style={{ flex:1, background:'none', border:'none', color:'#FFFFFF', outline:'none', fontSize:14 }} />
               </div>
             )}
           </div>
@@ -3827,11 +3834,11 @@ const PrivacyToggles = ({ user, showToast }) => {
     showToast?.('Saved','success');
   };
   return (
-    <div style={{ background:'rgba(20,16,28,0.03)', borderRadius:20, overflow:'hidden', marginBottom:20, border:'1px solid rgba(20,16,28,0.06)' }}>
+    <div style={{ background:'rgba(255,255,255,0.03)', borderRadius:20, overflow:'hidden', marginBottom:20, border:'1px solid rgba(255,255,255,0.06)' }}>
       {Object.entries(settings).map(([label,on],i,arr)=>(
-        <div key={label} onClick={()=>toggle(label)} style={{ padding:'14px 16px', borderBottom:i<arr.length-1?'1px solid rgba(20,16,28,0.05)':'', display:'flex', justifyContent:'space-between', alignItems:'center', cursor:'pointer' }}>
-          <span style={{ color:'#161221', fontSize:13 }}>{label}</span>
-          <div style={{ width:46, height:26, background:on?'#FF2156':'rgba(20,16,28,0.1)', borderRadius:13, position:'relative', transition:'background 0.2s' }}>
+        <div key={label} onClick={()=>toggle(label)} style={{ padding:'14px 16px', borderBottom:i<arr.length-1?'1px solid rgba(255,255,255,0.05)':'', display:'flex', justifyContent:'space-between', alignItems:'center', cursor:'pointer' }}>
+          <span style={{ color:'#FFFFFF', fontSize:13 }}>{label}</span>
+          <div style={{ width:46, height:26, background:on?'#FE2C55':'rgba(255,255,255,0.1)', borderRadius:13, position:'relative', transition:'background 0.2s' }}>
             <div style={{ width:20, height:20, background:'white', borderRadius:'50%', position:'absolute', top:3, left:on?23:3, transition:'left 0.2s' }} />
           </div>
         </div>
@@ -3854,62 +3861,62 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
   if(activeSubPage==='analytics'){onShowAnalytics?.(); setActiveSubPage(null); return null;}
   if(activeSubPage==='qrcode'){onShowQRCode?.(); setActiveSubPage(null); return null;}
   if(activeSubPage==='changepw') return (
-    <div style={{height:'100%',overflow:'auto',background:'#F5F4F7',padding:16}}>
-      <button onClick={()=>setActiveSubPage('settings')} style={{background:'rgba(20,16,28,0.05)',border:'1px solid rgba(20,16,28,0.08)',borderRadius:20,padding:'8px 16px',color:'#161221',cursor:'pointer',fontSize:13,marginBottom:20,display:'flex',alignItems:'center',gap:6}}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#161221" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
+    <div style={{height:'100%',overflow:'auto',background:'#000000',padding:16}}>
+      <button onClick={()=>setActiveSubPage('settings')} style={{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:20,padding:'8px 16px',color:'#FFFFFF',cursor:'pointer',fontSize:13,marginBottom:20,display:'flex',alignItems:'center',gap:6}}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
       </button>
-      <div style={{color:'#161221',fontWeight:800,fontSize:22,marginBottom:8,fontFamily:"'Inter',sans-serif"}}>Change Password</div>
-      <div style={{color:'rgba(20,16,28,0.4)',fontSize:13,marginBottom:24}}>A reset link will be sent to {user?.email}</div>
+      <div style={{color:'#FFFFFF',fontWeight:800,fontSize:22,marginBottom:8,fontFamily:"'Inter',sans-serif"}}>Change Password</div>
+      <div style={{color:'rgba(255,255,255,0.4)',fontSize:13,marginBottom:24}}>A reset link will be sent to {user?.email}</div>
       <button onClick={async()=>{
         if(user?.email){ await sendPasswordResetEmail(auth,user.email); showToast?.('Reset link sent to '+user.email,'success'); setActiveSubPage('settings'); }
         else showToast?.('No email on account','error');
-      }} style={{width:'100%',background:'linear-gradient(135deg,#FF2156,#9D4EDD)',border:'none',borderRadius:24,padding:15,color:'#fff',fontWeight:700,cursor:'pointer',fontSize:15}}>
+      }} style={{width:'100%',background:'linear-gradient(135deg,#FE2C55,#9D4EDD)',border:'none',borderRadius:24,padding:15,color:'#fff',fontWeight:700,cursor:'pointer',fontSize:15}}>
         Send Reset Link to {user?.email}
       </button>
     </div>
   );
 
   if(activeSubPage==='emailphone') return (
-    <div style={{height:'100%',overflow:'auto',background:'#F5F4F7',padding:16}}>
-      <button onClick={()=>setActiveSubPage('settings')} style={{background:'rgba(20,16,28,0.05)',border:'1px solid rgba(20,16,28,0.08)',borderRadius:20,padding:'8px 16px',color:'#161221',cursor:'pointer',fontSize:13,marginBottom:20,display:'flex',alignItems:'center',gap:6}}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#161221" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
+    <div style={{height:'100%',overflow:'auto',background:'#000000',padding:16}}>
+      <button onClick={()=>setActiveSubPage('settings')} style={{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:20,padding:'8px 16px',color:'#FFFFFF',cursor:'pointer',fontSize:13,marginBottom:20,display:'flex',alignItems:'center',gap:6}}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
       </button>
-      <div style={{color:'#161221',fontWeight:800,fontSize:22,marginBottom:24,fontFamily:"'Inter',sans-serif"}}>Email & Phone</div>
-      <div style={{background:'rgba(20,16,28,0.03)',borderRadius:20,overflow:'hidden',border:'1px solid rgba(20,16,28,0.06)'}}>
-        <div style={{padding:'16px',borderBottom:'1px solid rgba(20,16,28,0.05)'}}>
-          <div style={{color:'rgba(20,16,28,0.4)',fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:0.5,marginBottom:6}}>Email Address</div>
-          <div style={{color:'#161221',fontSize:14}}>{user?.email||'Not set'}</div>
+      <div style={{color:'#FFFFFF',fontWeight:800,fontSize:22,marginBottom:24,fontFamily:"'Inter',sans-serif"}}>Email & Phone</div>
+      <div style={{background:'rgba(255,255,255,0.03)',borderRadius:20,overflow:'hidden',border:'1px solid rgba(255,255,255,0.06)'}}>
+        <div style={{padding:'16px',borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
+          <div style={{color:'rgba(255,255,255,0.4)',fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:0.5,marginBottom:6}}>Email Address</div>
+          <div style={{color:'#FFFFFF',fontSize:14}}>{user?.email||'Not set'}</div>
         </div>
         <div style={{padding:'16px'}}>
-          <div style={{color:'rgba(20,16,28,0.4)',fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:0.5,marginBottom:6}}>Phone Number</div>
-          <div style={{color:'rgba(20,16,28,0.3)',fontSize:14}}>Not added</div>
+          <div style={{color:'rgba(255,255,255,0.4)',fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:0.5,marginBottom:6}}>Phone Number</div>
+          <div style={{color:'rgba(255,255,255,0.3)',fontSize:14}}>Not added</div>
         </div>
       </div>
-      <div style={{marginTop:16,color:'rgba(20,16,28,0.25)',fontSize:12,lineHeight:1.6}}>
+      <div style={{marginTop:16,color:'rgba(255,255,255,0.25)',fontSize:12,lineHeight:1.6}}>
         To change your email address, please contact support. Your email is used for login and notifications.
       </div>
     </div>
   );
 
   if(activeSubPage==='language') return (
-    <div style={{height:'100%',overflow:'auto',background:'#F5F4F7',padding:16}}>
-      <button onClick={()=>setActiveSubPage('settings')} style={{background:'rgba(20,16,28,0.05)',border:'1px solid rgba(20,16,28,0.08)',borderRadius:20,padding:'8px 16px',color:'#161221',cursor:'pointer',fontSize:13,marginBottom:20,display:'flex',alignItems:'center',gap:6}}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#161221" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
+    <div style={{height:'100%',overflow:'auto',background:'#000000',padding:16}}>
+      <button onClick={()=>setActiveSubPage('settings')} style={{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:20,padding:'8px 16px',color:'#FFFFFF',cursor:'pointer',fontSize:13,marginBottom:20,display:'flex',alignItems:'center',gap:6}}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
       </button>
-      <div style={{color:'#161221',fontWeight:800,fontSize:22,marginBottom:24,fontFamily:"'Inter',sans-serif"}}>Language</div>
-      <div style={{background:'rgba(20,16,28,0.03)',borderRadius:20,overflow:'hidden',border:'1px solid rgba(20,16,28,0.06)'}}>
+      <div style={{color:'#FFFFFF',fontWeight:800,fontSize:22,marginBottom:24,fontFamily:"'Inter',sans-serif"}}>Language</div>
+      <div style={{background:'rgba(255,255,255,0.03)',borderRadius:20,overflow:'hidden',border:'1px solid rgba(255,255,255,0.06)'}}>
         <div style={{background:'rgba(6,214,160,0.08)',border:'1px solid rgba(6,214,160,0.2)',borderRadius:14,padding:'10px 14px',marginBottom:16,color:'#00E6B4',fontSize:12,lineHeight:1.5}}>
   ✓ Select your language. All app text will update immediately.
           </div>
         {[['English','English','en'],['አማርኛ','Amharic','am'],['العربية','Arabic','ar'],['Français','French','fr'],['Español','Spanish','es'],['Português','Portuguese','pt'],['हिन्दी','Hindi','hi'],['中文','Chinese','zh'],['Kiswahili','Swahili','sw'],['Deutsch','German','de'],['Русский','Russian','ru'],['Türkçe','Turkish','tr'],['日本語','Japanese','ja'],['한국어','Korean','ko'],['Italiano','Italian','it']].map(([label,sub,code],i,arr)=>{
           const selected = (user?.language||'en')===code;
           return (
-            <div key={code} onClick={async()=>{ await updateDoc(doc(db,'users',user.id),{language:code}); setCurrentUser(u=>({...u,language:code})); showToast?.(`Language set to ${label}`,'success'); }} style={{padding:'15px 16px',borderBottom:i<arr.length-1?'1px solid rgba(20,16,28,0.05)':'',display:'flex',alignItems:'center',justifyContent:'space-between',cursor:'pointer'}}>
+            <div key={code} onClick={async()=>{ await updateDoc(doc(db,'users',user.id),{language:code}); setCurrentUser(u=>({...u,language:code})); showToast?.(`Language set to ${label}`,'success'); }} style={{padding:'15px 16px',borderBottom:i<arr.length-1?'1px solid rgba(255,255,255,0.05)':'',display:'flex',alignItems:'center',justifyContent:'space-between',cursor:'pointer'}}>
               <div>
-                <div style={{color:'#161221',fontSize:14,fontWeight:selected?700:400}}>{label}</div>
-                <div style={{color:'rgba(20,16,28,0.3)',fontSize:11,marginTop:2}}>{sub}</div>
+                <div style={{color:'#FFFFFF',fontSize:14,fontWeight:selected?700:400}}>{label}</div>
+                <div style={{color:'rgba(255,255,255,0.3)',fontSize:11,marginTop:2}}>{sub}</div>
               </div>
-              {selected && <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF2156" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>}
+              {selected && <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FE2C55" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>}
             </div>
           );
         })}
@@ -3920,13 +3927,13 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
 if(activeSubPage==='wallet') return <WalletPage user={user} setCurrentUser={setCurrentUser} showToast={showToast} onBack={()=>setActiveSubPage(null)} />;
 
   if(activeSubPage==='unblock') return (
-    <div style={{ height:'100%', overflow:'auto', background:'#F5F4F7', padding:16 }}>
-      <button onClick={()=>setActiveSubPage('settings')} style={{ background:'rgba(20,16,28,0.05)', border:'1px solid rgba(20,16,28,0.08)', borderRadius:20, padding:'8px 16px', color:'#161221', cursor:'pointer', fontSize:13, marginBottom:20, display:'flex', alignItems:'center', gap:6 }}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#161221" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
+    <div style={{ height:'100%', overflow:'auto', background:'#000000', padding:16 }}>
+      <button onClick={()=>setActiveSubPage('settings')} style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:20, padding:'8px 16px', color:'#FFFFFF', cursor:'pointer', fontSize:13, marginBottom:20, display:'flex', alignItems:'center', gap:6 }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
       </button>
-      <div style={{ color:'#161221', fontWeight:800, fontSize:22, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Blocked Users</div>
+      <div style={{ color:'#FFFFFF', fontWeight:800, fontSize:22, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Blocked Users</div>
       {(user?.blockedUsers||[]).length===0 && (
-        <div style={{ textAlign:'center', padding:48, color:'rgba(20,16,28,0.25)' }}>
+        <div style={{ textAlign:'center', padding:48, color:'rgba(255,255,255,0.25)' }}>
           <div style={{ fontSize:40, marginBottom:10 }}>🚫</div>
           <div>No blocked users</div>
         </div>
@@ -3934,20 +3941,20 @@ if(activeSubPage==='wallet') return <WalletPage user={user} setCurrentUser={setC
       {(user?.blockedUsers||[]).map(uid=>{
         const u = users.find(uu=>uu.id===uid);
         return (
-          <div key={uid} style={{ display:'flex', alignItems:'center', gap:12, background:'rgba(20,16,28,0.03)', borderRadius:18, padding:'14px 16px', marginBottom:10, border:'1px solid rgba(20,16,28,0.06)' }}>
+          <div key={uid} style={{ display:'flex', alignItems:'center', gap:12, background:'rgba(255,255,255,0.03)', borderRadius:18, padding:'14px 16px', marginBottom:10, border:'1px solid rgba(255,255,255,0.06)' }}>
             <div style={{ width:46, height:46, borderRadius:'50%', background:u?.avatarColor||'#34343E', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:'bold', fontSize:18, overflow:'hidden', flexShrink:0 }}>
               {u?.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : (u?.avatar||'?')}
             </div>
             <div style={{ flex:1 }}>
-              <div style={{ color:'#161221', fontWeight:700, fontSize:14 }}>@{u?.username||uid}</div>
-              <div style={{ color:'rgba(20,16,28,0.3)', fontSize:12, marginTop:2 }}>{u?.bio?.substring(0,40)||'Blocked user'}</div>
+              <div style={{ color:'#FFFFFF', fontWeight:700, fontSize:14 }}>@{u?.username||uid}</div>
+              <div style={{ color:'rgba(255,255,255,0.3)', fontSize:12, marginTop:2 }}>{u?.bio?.substring(0,40)||'Blocked user'}</div>
             </div>
             <button onClick={async()=>{
               await updateDoc(doc(db,'users',user.id),{ blockedUsers: arrayRemove(uid) });
               setCurrentUser(cu=>({...cu, blockedUsers:(cu.blockedUsers||[]).filter(id=>id!==uid)}));
               setBlockedUsers(p=>p.filter(id=>id!==uid));
               showToast?.('User unblocked','success');
-            }} style={{ background:'rgba(255,45,85,0.1)', border:'1px solid rgba(255,45,85,0.3)', borderRadius:20, padding:'8px 16px', color:'#FF2156', fontWeight:700, fontSize:13, cursor:'pointer', flexShrink:0 }}>Unblock</button>
+            }} style={{ background:'rgba(255,45,85,0.1)', border:'1px solid rgba(255,45,85,0.3)', borderRadius:20, padding:'8px 16px', color:'#FE2C55', fontWeight:700, fontSize:13, cursor:'pointer', flexShrink:0 }}>Unblock</button>
           </div>
         );
       })}
@@ -3955,53 +3962,53 @@ if(activeSubPage==='wallet') return <WalletPage user={user} setCurrentUser={setC
   );
 
 if(activeSubPage==='settings') return (
-    <div style={{ height:'100%', overflow:'auto', background:'#F5F4F7' }}>
+    <div style={{ height:'100%', overflow:'auto', background:'#000000' }}>
       <div style={{ padding:'16px' }}>
-        <button onClick={()=>setActiveSubPage(null)} style={{ background:'rgba(20,16,28,0.05)', border:'1px solid rgba(20,16,28,0.08)', borderRadius:20, padding:'8px 16px', color:'#161221', cursor:'pointer', fontSize:13, marginBottom:20, display:'flex', alignItems:'center', gap:6 }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#161221" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
+        <button onClick={()=>setActiveSubPage(null)} style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:20, padding:'8px 16px', color:'#FFFFFF', cursor:'pointer', fontSize:13, marginBottom:20, display:'flex', alignItems:'center', gap:6 }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
         </button>
-        <div style={{ color:'#161221', fontWeight:800, fontSize:22, marginBottom:24, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Settings</div>
-        <div style={{ color:'rgba(20,16,28,0.3)', fontSize:11, fontWeight:700, marginBottom:8, textTransform:'uppercase', letterSpacing:1.2 }}>Account</div>
-        <div style={{ background:'rgba(20,16,28,0.03)', borderRadius:20, overflow:'hidden', marginBottom:20, border:'1px solid rgba(20,16,28,0.06)' }}>
+        <div style={{ color:'#FFFFFF', fontWeight:800, fontSize:22, marginBottom:24, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Settings</div>
+        <div style={{ color:'rgba(255,255,255,0.3)', fontSize:11, fontWeight:700, marginBottom:8, textTransform:'uppercase', letterSpacing:1.2 }}>Account</div>
+        <div style={{ background:'rgba(255,255,255,0.03)', borderRadius:20, overflow:'hidden', marginBottom:20, border:'1px solid rgba(255,255,255,0.06)' }}>
           {[
-            {icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#161221" strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,label:'Edit Profile',action:()=>{setShowEditProfile(true); setActiveSubPage(null);}},
-            {icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#161221" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>,label:'Change Password',action:()=>setActiveSubPage('changepw')},
-            {icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#161221" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>,label:'Email & Phone',action:()=>setActiveSubPage('emailphone')},
-            {icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#161221" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>,label:'Language',action:()=>setActiveSubPage('language')},
-            {icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#161221" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>,label:'Switch Account',action:()=>setActiveSubPage('switch')},
+            {icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,label:'Edit Profile',action:()=>{setShowEditProfile(true); setActiveSubPage(null);}},
+            {icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>,label:'Change Password',action:()=>setActiveSubPage('changepw')},
+            {icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>,label:'Email & Phone',action:()=>setActiveSubPage('emailphone')},
+            {icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>,label:'Language',action:()=>setActiveSubPage('language')},
+            {icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>,label:'Switch Account',action:()=>setActiveSubPage('switch')},
           ].map((item,i,arr)=>(
-            <div key={item.label} onClick={item.action} style={{ padding:'15px 16px', borderBottom:i<arr.length-1?'1px solid rgba(20,16,28,0.05)':'', display:'flex', alignItems:'center', gap:14, cursor:'pointer' }}>
-              <div style={{ width:36, height:36, borderRadius:12, background:'rgba(20,16,28,0.06)', display:'flex', alignItems:'center', justifyContent:'center' }}>{item.icon}</div>
-              <span style={{ color:'#161221', flex:1, fontSize:14 }}>{item.label}</span>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(20,16,28,0.25)" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
+            <div key={item.label} onClick={item.action} style={{ padding:'15px 16px', borderBottom:i<arr.length-1?'1px solid rgba(255,255,255,0.05)':'', display:'flex', alignItems:'center', gap:14, cursor:'pointer' }}>
+              <div style={{ width:36, height:36, borderRadius:12, background:'rgba(255,255,255,0.06)', display:'flex', alignItems:'center', justifyContent:'center' }}>{item.icon}</div>
+              <span style={{ color:'#FFFFFF', flex:1, fontSize:14 }}>{item.label}</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
             </div>
           ))}
         </div>
-        <div style={{ color:'rgba(20,16,28,0.3)', fontSize:11, fontWeight:700, marginBottom:8, textTransform:'uppercase', letterSpacing:1.2 }}>Privacy</div>
+        <div style={{ color:'rgba(255,255,255,0.3)', fontSize:11, fontWeight:700, marginBottom:8, textTransform:'uppercase', letterSpacing:1.2 }}>Privacy</div>
         <PrivacyToggles user={user} showToast={showToast} />
         {/* ── v4 APPEARANCE SECTION ── */}
-        <div style={{ color:'rgba(20,16,28,0.3)', fontSize:11, fontWeight:700, marginBottom:8, textTransform:'uppercase', letterSpacing:1.2 }}>Appearance</div>
-        <div style={{ background:'rgba(20,16,28,0.03)', borderRadius:20, overflow:'hidden', marginBottom:20, border:'1px solid rgba(20,16,28,0.06)' }}>
+        <div style={{ color:'rgba(255,255,255,0.3)', fontSize:11, fontWeight:700, marginBottom:8, textTransform:'uppercase', letterSpacing:1.2 }}>Appearance</div>
+        <div style={{ background:'rgba(255,255,255,0.03)', borderRadius:20, overflow:'hidden', marginBottom:20, border:'1px solid rgba(255,255,255,0.06)' }}>
           <div style={{ padding:'15px 16px', display:'flex', alignItems:'center', gap:14 }}>
-            <div style={{ width:36, height:36, borderRadius:12, background:'rgba(20,16,28,0.06)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>🌙</div>
-            <span style={{ color:'#161221', flex:1, fontSize:14 }}>Dark Mode</span>
-            <div onClick={()=>{ /* theme stored locally */ showToast?.('Theme toggle coming soon','info'); }} style={{ width:46, height:26, background:'#FF2156', borderRadius:13, position:'relative', cursor:'pointer' }}>
+            <div style={{ width:36, height:36, borderRadius:12, background:'rgba(255,255,255,0.06)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>🌙</div>
+            <span style={{ color:'#FFFFFF', flex:1, fontSize:14 }}>Dark Mode</span>
+            <div onClick={()=>{ /* theme stored locally */ showToast?.('Theme toggle coming soon','info'); }} style={{ width:46, height:26, background:'#FE2C55', borderRadius:13, position:'relative', cursor:'pointer' }}>
               <div style={{ width:20, height:20, background:'white', borderRadius:'50%', position:'absolute', top:3, left:23, transition:'left 0.2s' }} />
             </div>
           </div>
-          <div style={{ padding:'15px 16px', borderTop:'1px solid rgba(20,16,28,0.05)', display:'flex', alignItems:'center', gap:14, cursor:'pointer' }} onClick={()=>setActiveSubPage('language')}>
-            <div style={{ width:36, height:36, borderRadius:12, background:'rgba(20,16,28,0.06)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>🌐</div>
-            <span style={{ color:'#161221', flex:1, fontSize:14 }}>Language & Translation</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(20,16,28,0.25)" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <div style={{ padding:'15px 16px', borderTop:'1px solid rgba(255,255,255,0.05)', display:'flex', alignItems:'center', gap:14, cursor:'pointer' }} onClick={()=>setActiveSubPage('language')}>
+            <div style={{ width:36, height:36, borderRadius:12, background:'rgba(255,255,255,0.06)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>🌐</div>
+            <span style={{ color:'#FFFFFF', flex:1, fontSize:14 }}>Language & Translation</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
           </div>
-          <div style={{ padding:'15px 16px', borderTop:'1px solid rgba(20,16,28,0.05)', display:'flex', alignItems:'center', gap:14, cursor:'pointer' }} onClick={()=>showToast?.('Notification settings','info')}>
-            <div style={{ width:36, height:36, borderRadius:12, background:'rgba(20,16,28,0.06)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>🔔</div>
-            <span style={{ color:'#161221', flex:1, fontSize:14 }}>Notification Preferences</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(20,16,28,0.25)" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <div style={{ padding:'15px 16px', borderTop:'1px solid rgba(255,255,255,0.05)', display:'flex', alignItems:'center', gap:14, cursor:'pointer' }} onClick={()=>showToast?.('Notification settings','info')}>
+            <div style={{ width:36, height:36, borderRadius:12, background:'rgba(255,255,255,0.06)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>🔔</div>
+            <span style={{ color:'#FFFFFF', flex:1, fontSize:14 }}>Notification Preferences</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
           </div>
         </div>
-        <div style={{ color:'rgba(20,16,28,0.3)', fontSize:11, fontWeight:700, marginBottom:8, textTransform:'uppercase', letterSpacing:1.2 }}>Support</div>
-        <div style={{ background:'rgba(20,16,28,0.03)', borderRadius:20, overflow:'hidden', marginBottom:20, border:'1px solid rgba(20,16,28,0.06)' }}>
+        <div style={{ color:'rgba(255,255,255,0.3)', fontSize:11, fontWeight:700, marginBottom:8, textTransform:'uppercase', letterSpacing:1.2 }}>Support</div>
+        <div style={{ background:'rgba(255,255,255,0.03)', borderRadius:20, overflow:'hidden', marginBottom:20, border:'1px solid rgba(255,255,255,0.06)' }}>
           {[
             {label:'Blocked Users',action:()=>setActiveSubPage('unblock')},
             {label:'Help Center',action:()=>showToast?.('Help center','info')},
@@ -4012,9 +4019,9 @@ if(activeSubPage==='settings') return (
             {label:'Terms of Service', action:()=>window.open('https://yoursite.com/terms','_blank')},
 {label:'Privacy Policy', action:()=>window.open('https://yoursite.com/privacy','_blank')},
           ].map((item,i,arr)=>(
-            <div key={item.label} onClick={item.action} style={{ padding:'14px 16px', borderBottom:i<arr.length-1?'1px solid rgba(20,16,28,0.05)':'', display:'flex', alignItems:'center', gap:12, cursor:'pointer' }}>
-              <span style={{ color:'#161221', flex:1, fontSize:14 }}>{item.label}</span>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(20,16,28,0.25)" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
+            <div key={item.label} onClick={item.action} style={{ padding:'14px 16px', borderBottom:i<arr.length-1?'1px solid rgba(255,255,255,0.05)':'', display:'flex', alignItems:'center', gap:12, cursor:'pointer' }}>
+              <span style={{ color:'#FFFFFF', flex:1, fontSize:14 }}>{item.label}</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
             </div>
           ))}
         </div>
@@ -4037,12 +4044,12 @@ if(activeSubPage==='settings') return (
       showToast?.('Reset failed: '+e.message,'error');
     }
   }
-}} style={{ padding:'14px 16px', borderBottom:'1px solid rgba(20,16,28,0.05)', display:'flex', alignItems:'center', gap:12, cursor:'pointer' }}>
+}} style={{ padding:'14px 16px', borderBottom:'1px solid rgba(255,255,255,0.05)', display:'flex', alignItems:'center', gap:12, cursor:'pointer' }}>
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFB100" strokeWidth="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
   <span style={{ color:'#FFB100', fontSize:14 }}>Reset Account</span>
 </div>
 
-<div onClick={onLogout} style={{ padding:'14px 16px', borderBottom:'1px solid rgba(20,16,28,0.05)', display:'flex', alignItems:'center', gap:12, cursor:'pointer' }}>
+<div onClick={onLogout} style={{ padding:'14px 16px', borderBottom:'1px solid rgba(255,255,255,0.05)', display:'flex', alignItems:'center', gap:12, cursor:'pointer' }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFB100" strokeWidth="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
           <span style={{ color:'#FFB100', fontSize:14 }}>Log Out</span>
         </div>
@@ -4064,25 +4071,25 @@ if(activeSubPage==='settings') return (
             }
           }
         }} style={{ padding:'14px 16px', display:'flex', alignItems:'center', gap:12, cursor:'pointer' }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF2156" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
-          <span style={{ color:'#FF2156', fontSize:14 }}>Delete Account</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FE2C55" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+          <span style={{ color:'#FE2C55', fontSize:14 }}>Delete Account</span>
         </div>
-        <div style={{ textAlign:'center', color:'rgba(20,16,28,0.15)', fontSize:11, marginBottom:16 }}>Infinity v3.0.0 • Made with ❤️</div>
+        <div style={{ textAlign:'center', color:'rgba(255,255,255,0.15)', fontSize:11, marginBottom:16 }}>Infinity v3.0.0 • Made with ❤️</div>
       </div>
     </div>
   );
 
   if(activeSubPage==='privacy') return (
-    <div style={{ height:'100%', overflow:'auto', background:'#F5F4F7', padding:16 }}>
-      <button onClick={()=>setActiveSubPage(null)} style={{ background:'rgba(20,16,28,0.05)', border:'1px solid rgba(20,16,28,0.08)', borderRadius:20, padding:'8px 16px', color:'#161221', cursor:'pointer', fontSize:13, marginBottom:20, display:'flex', alignItems:'center', gap:6 }}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#161221" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
+    <div style={{ height:'100%', overflow:'auto', background:'#000000', padding:16 }}>
+      <button onClick={()=>setActiveSubPage(null)} style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:20, padding:'8px 16px', color:'#FFFFFF', cursor:'pointer', fontSize:13, marginBottom:20, display:'flex', alignItems:'center', gap:6 }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
       </button>
-      <div style={{ color:'#161221', fontWeight:800, fontSize:22, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Privacy</div>
-      <div style={{ background:'rgba(20,16,28,0.03)', borderRadius:20, overflow:'hidden', border:'1px solid rgba(20,16,28,0.06)' }}>
+      <div style={{ color:'#FFFFFF', fontWeight:800, fontSize:22, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Privacy</div>
+      <div style={{ background:'rgba(255,255,255,0.03)', borderRadius:20, overflow:'hidden', border:'1px solid rgba(255,255,255,0.06)' }}>
         {['Private Account','Show Activity','Allow Messages from Everyone','Allow Comments','Allow Duets','Show Liked Videos'].map((label,i,arr)=>(
-          <div key={label} style={{ padding:'14px 16px', borderBottom:i<arr.length-1?'1px solid rgba(20,16,28,0.05)':'', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-            <span style={{ color:'#161221', fontSize:13 }}>{label}</span>
-            <div style={{ width:46, height:26, background:'#FF2156', borderRadius:13, position:'relative', cursor:'pointer' }}>
+          <div key={label} style={{ padding:'14px 16px', borderBottom:i<arr.length-1?'1px solid rgba(255,255,255,0.05)':'', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+            <span style={{ color:'#FFFFFF', fontSize:13 }}>{label}</span>
+            <div style={{ width:46, height:26, background:'#FE2C55', borderRadius:13, position:'relative', cursor:'pointer' }}>
               <div style={{ width:20, height:20, background:'white', borderRadius:'50%', position:'absolute', top:3, left:23 }} />
             </div>
           </div>
@@ -4092,39 +4099,39 @@ if(activeSubPage==='settings') return (
   );
 
   if(activeSubPage==='switch') return (
-    <div style={{ height:'100%', overflow:'auto', background:'#F5F4F7', padding:16 }}>
-      <button onClick={()=>setActiveSubPage(null)} style={{ background:'rgba(20,16,28,0.05)', border:'1px solid rgba(20,16,28,0.08)', borderRadius:20, padding:'8px 16px', color:'#161221', cursor:'pointer', fontSize:13, marginBottom:20, display:'flex', alignItems:'center', gap:6 }}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#161221" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
+    <div style={{ height:'100%', overflow:'auto', background:'#000000', padding:16 }}>
+      <button onClick={()=>setActiveSubPage(null)} style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:20, padding:'8px 16px', color:'#FFFFFF', cursor:'pointer', fontSize:13, marginBottom:20, display:'flex', alignItems:'center', gap:6 }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
       </button>
-      <div style={{ color:'#161221', fontWeight:800, fontSize:22, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Switch Account</div>
+      <div style={{ color:'#FFFFFF', fontWeight:800, fontSize:22, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Switch Account</div>
       {JSON.parse(localStorage.getItem('infinity_accounts')||'[]').filter(u=>u.id===user?.id).map(u=>(
-        <div key={u.id} style={{ background:'rgba(20,16,28,0.03)', borderRadius:18, padding:16, marginBottom:10, display:'flex', alignItems:'center', gap:14, cursor: u.id===user?.id?'default':'not-allowed', border:u.id===user?.id?'1px solid rgba(255,45,85,0.5)':'1px solid rgba(20,16,28,0.06)', opacity: u.id===user?.id?1:0.4 }} onClick={()=>{ if(u.id!==user?.id){ showToast?.('Sign in to switch accounts','info'); return; } }}>
+        <div key={u.id} style={{ background:'rgba(255,255,255,0.03)', borderRadius:18, padding:16, marginBottom:10, display:'flex', alignItems:'center', gap:14, cursor: u.id===user?.id?'default':'not-allowed', border:u.id===user?.id?'1px solid rgba(255,45,85,0.5)':'1px solid rgba(255,255,255,0.06)', opacity: u.id===user?.id?1:0.4 }} onClick={()=>{ if(u.id!==user?.id){ showToast?.('Sign in to switch accounts','info'); return; } }}>
           <div style={{ width:50, height:50, borderRadius:'50%', background:u.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:'bold', fontSize:20, overflow:'hidden' }}>
             {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : u.avatar}
           </div>
           <div style={{ flex:1 }}>
-            <div style={{ color:'#161221', fontWeight:700, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{u.username}</div>
-            <div style={{ color:'rgba(20,16,28,0.3)', fontSize:12, marginTop:2 }}>{u.subscription} plan</div>
+            <div style={{ color:'#FFFFFF', fontWeight:700, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{u.username}</div>
+            <div style={{ color:'rgba(255,255,255,0.3)', fontSize:12, marginTop:2 }}>{u.subscription} plan</div>
           </div>
-          {u.id===user?.id && <span style={{ color:'#FF2156', fontSize:12, fontWeight:700 }}>Active</span>}
+          {u.id===user?.id && <span style={{ color:'#FE2C55', fontSize:12, fontWeight:700 }}>Active</span>}
         </div>
       ))}
-      <button style={{ width:'100%', background:'rgba(20,16,28,0.04)', border:'1px dashed rgba(20,16,28,0.15)', borderRadius:18, padding:16, color:'rgba(20,16,28,0.4)', cursor:'pointer', fontSize:14, marginTop:4 }}>+ Add Account</button>
+      <button style={{ width:'100%', background:'rgba(255,255,255,0.04)', border:'1px dashed rgba(255,255,255,0.15)', borderRadius:18, padding:16, color:'rgba(255,255,255,0.4)', cursor:'pointer', fontSize:14, marginTop:4 }}>+ Add Account</button>
     </div>
   );
 
   if(activeSubPage==='badges') return (
-    <div style={{ height:'100%', overflow:'auto', background:'#F5F4F7', padding:16 }}>
-      <button onClick={()=>setActiveSubPage(null)} style={{ background:'rgba(20,16,28,0.05)', border:'1px solid rgba(20,16,28,0.08)', borderRadius:20, padding:'8px 16px', color:'#161221', cursor:'pointer', fontSize:13, marginBottom:20, display:'flex', alignItems:'center', gap:6 }}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#161221" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
+    <div style={{ height:'100%', overflow:'auto', background:'#000000', padding:16 }}>
+      <button onClick={()=>setActiveSubPage(null)} style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:20, padding:'8px 16px', color:'#FFFFFF', cursor:'pointer', fontSize:13, marginBottom:20, display:'flex', alignItems:'center', gap:6 }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
       </button>
-      <div style={{ color:'#161221', fontWeight:800, fontSize:22, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Badges</div>
+      <div style={{ color:'#FFFFFF', fontWeight:800, fontSize:22, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Badges</div>
       <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12 }}>
         {[['🌟','First Post',myVideos.length>0],['🔥','7 Day Streak',(user?.streak||0)>=7],['💎','Top Creator',(user?.followers?.length||0)>=100],['👑','100K Fans',(user?.followers?.length||0)>=100000],['🚀','Viral',myVideos.some(v=>v.views>=10000)],['🎯','Pro User',user?.subscription==='pro']].map(([icon,name,earned])=>(
-          <div key={name} style={{ background:'rgba(20,16,28,0.03)', borderRadius:20, padding:18, textAlign:'center', opacity:earned?1:0.4, border:'1px solid rgba(20,16,28,0.06)' }}>
+          <div key={name} style={{ background:'rgba(255,255,255,0.03)', borderRadius:20, padding:18, textAlign:'center', opacity:earned?1:0.4, border:'1px solid rgba(255,255,255,0.06)' }}>
             <div style={{ fontSize:38, marginBottom:8 }}>{icon}</div>
-            <div style={{ color:'#161221', fontSize:12, fontWeight:700, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{name}</div>
-            <div style={{ color:earned?'#00E6B4':'rgba(20,16,28,0.3)', fontSize:10, marginTop:4 }}>{earned?'Earned':'Locked'}</div>
+            <div style={{ color:'#FFFFFF', fontSize:12, fontWeight:700, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{name}</div>
+            <div style={{ color:earned?'#00E6B4':'rgba(255,255,255,0.3)', fontSize:10, marginTop:4 }}>{earned?'Earned':'Locked'}</div>
           </div>
         ))}
       </div>
@@ -4132,16 +4139,16 @@ if(activeSubPage==='settings') return (
   );
 
   if(activeSubPage==='premium') return (
-    <div style={{ height:'100%', overflow:'auto', background:'#F5F4F7', padding:16 }}>
-      <button onClick={()=>setActiveSubPage(null)} style={{ background:'rgba(20,16,28,0.05)', border:'1px solid rgba(20,16,28,0.08)', borderRadius:20, padding:'8px 16px', color:'#161221', cursor:'pointer', fontSize:13, marginBottom:20, display:'flex', alignItems:'center', gap:6 }}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#161221" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
+    <div style={{ height:'100%', overflow:'auto', background:'#000000', padding:16 }}>
+      <button onClick={()=>setActiveSubPage(null)} style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:20, padding:'8px 16px', color:'#FFFFFF', cursor:'pointer', fontSize:13, marginBottom:20, display:'flex', alignItems:'center', gap:6 }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
       </button>
-      <div style={{ color:'#161221', fontWeight:800, fontSize:22, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Premium</div>
+      <div style={{ color:'#FFFFFF', fontWeight:800, fontSize:22, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Premium</div>
       {[{name:'Plus',price:'$4.99/mo',color:'#9D4EDD',features:['Ad-free experience','500 coins/month','Custom profile badge','Priority in search']},{name:'Pro',price:'$9.99/mo',color:'#FFD60A',features:['All Plus features','2000 coins/month','Advanced analytics','Priority support','Custom username']}].map(plan=>(
-        <div key={plan.name} style={{ background:'rgba(20,16,28,0.03)', border:`1px solid ${plan.color}40`, borderRadius:24, padding:22, marginBottom:14 }}>
+        <div key={plan.name} style={{ background:'rgba(255,255,255,0.03)', border:`1px solid ${plan.color}40`, borderRadius:24, padding:22, marginBottom:14 }}>
           <div style={{ color:plan.color, fontWeight:800, fontSize:20, marginBottom:4, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{plan.name}</div>
-          <div style={{ color:'#161221', fontSize:28, fontWeight:800, marginBottom:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{plan.price}</div>
-          {plan.features.map(f=><div key={f} style={{ color:'rgba(20,16,28,0.7)', fontSize:13, marginBottom:8, display:'flex', alignItems:'center', gap:8 }}><span style={{ color:plan.color }}>✓</span>{f}</div>)}
+          <div style={{ color:'#FFFFFF', fontSize:28, fontWeight:800, marginBottom:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{plan.price}</div>
+          {plan.features.map(f=><div key={f} style={{ color:'rgba(255,255,255,0.7)', fontSize:13, marginBottom:8, display:'flex', alignItems:'center', gap:8 }}><span style={{ color:plan.color }}>✓</span>{f}</div>)}
           <button onClick={async()=>{
             await updateDoc(doc(db,'users',user.id),{subscription:plan.name.toLowerCase()});
             setCurrentUser(u=>({...u,subscription:plan.name.toLowerCase()}));
@@ -4158,28 +4165,28 @@ if(activeSubPage==='settings') return (
     {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9D4EDD" strokeWidth="1.8"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>,label:'Badges',page:'badges',color:'#9D4EDD'},
     {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFD60A" strokeWidth="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,label:'Premium',page:'premium',color:'#FFD60A'},
     {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00E6B4" strokeWidth="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,label:'Analytics',page:'analytics',color:'#00E6B4'},
-    {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#161221" strokeWidth="1.8"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>,label:'QR Code',page:'qrcode',color:'#161221'},
+    {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="1.8"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>,label:'QR Code',page:'qrcode',color:'#FFFFFF'},
   ];
 
   return (
-    <div style={{ height:'100%', overflow:'auto', background:'#F5F4F7' }}>
+    <div style={{ height:'100%', overflow:'auto', background:'#000000' }}>
       <div style={{ position:'relative', paddingBottom:20 }}>
         <div style={{ height:160, position:'absolute', top:0, left:0, right:0, overflow:'hidden' }}>
           {user?.avatarUrl
             ? <img src={user.avatarUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', filter:'blur(20px) brightness(0.6) saturate(1.6)', transform:'scale(1.2)' }} />
-            : <div style={{ width:'100%', height:'100%', background:`linear-gradient(135deg,${user?.avatarColor||'#FF2156'},rgba(175,82,222,0.8))` }} />
+            : <div style={{ width:'100%', height:'100%', background:`linear-gradient(135deg,${user?.avatarColor||'#FE2C55'},rgba(175,82,222,0.8))` }} />
           }
           <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom,rgba(10,10,10,0.1),rgba(10,10,10,0.7))' }} />
         </div>
         <div style={{ position:'relative', padding:'52px 20px 0', textAlign:'center' }}>
           <div style={{ position:'absolute', top:10, right:16, display:'flex', gap:8 }}>
-            <button onClick={()=>setShowHamburger(true)} style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(10px)', border:'1px solid rgba(20,16,28,0.1)', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+            <button onClick={()=>setShowHamburger(true)} style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(10px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
             </button>
           </div>
           {showHamburger && (
             <div onClick={()=>setShowHamburger(false)} style={{position:'fixed',inset:0,zIndex:5000,background:'rgba(0,0,0,0.6)',backdropFilter:'blur(4px)'}}>
-              <div onClick={e=>e.stopPropagation()} style={{position:'absolute',top:60,right:16,background:'#FAF9FC',borderRadius:20,padding:'8px 0',minWidth:220,border:'1px solid rgba(20,16,28,0.1)',boxShadow:'0 20px 60px rgba(0,0,0,0.8)',animation:'popIn 0.2s ease'}}>
+              <div onClick={e=>e.stopPropagation()} style={{position:'absolute',top:60,right:16,background:'#1A1A1D',borderRadius:20,padding:'8px 0',minWidth:220,border:'1px solid rgba(255,255,255,0.1)',boxShadow:'0 20px 60px rgba(0,0,0,0.8)',animation:'popIn 0.2s ease'}}>
                 {[
                   {icon:'⚙️',label:'Settings',action:()=>{setActiveSubPage('settings');setShowHamburger(false);}},
                   {icon:'🔒',label:'Privacy',action:()=>{setActiveSubPage('privacy');setShowHamburger(false);}},
@@ -4195,7 +4202,7 @@ if(activeSubPage==='settings') return (
                   {icon:'🚫',label:'Blocked Users',action:()=>{setActiveSubPage('unblock');setShowHamburger(false);}},
                   {icon:'🚪',label:'Log Out',action:()=>{setShowHamburger(false);onLogout?.();},danger:true},
                 ].map((item,i,arr)=>(
-                  <div key={item.label} onClick={item.action} style={{display:'flex',alignItems:'center',gap:14,padding:'13px 18px',borderBottom:i<arr.length-1?'1px solid rgba(20,16,28,0.05)':'',cursor:'pointer',color:item.danger?'#FF2156':'white',fontSize:14}}>
+                  <div key={item.label} onClick={item.action} style={{display:'flex',alignItems:'center',gap:14,padding:'13px 18px',borderBottom:i<arr.length-1?'1px solid rgba(255,255,255,0.05)':'',cursor:'pointer',color:item.danger?'#FE2C55':'white',fontSize:14}}>
                     <span style={{fontSize:18}}>{item.icon}</span>{item.label}
                   </div>
                 ))}
@@ -4204,29 +4211,29 @@ if(activeSubPage==='settings') return (
           )}
           {showFollowersList && (
             <div onClick={()=>setShowFollowersList(null)} style={{position:'fixed',inset:0,zIndex:5000,background:'rgba(0,0,0,0.7)',backdropFilter:'blur(4px)',display:'flex',alignItems:'flex-end'}}>
-              <div onClick={e=>e.stopPropagation()} style={{width:'100%',background:'#FFFFFF',borderTopLeftRadius:28,borderTopRightRadius:28,maxHeight:'70vh',display:'flex',flexDirection:'column',animation:'slideUp 0.3s ease'}}>
-                <div style={{padding:'16px 16px 12px',borderBottom:'1px solid rgba(20,16,28,0.07)',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                  <span style={{color:'#161221',fontWeight:800,fontSize:18}}>{showFollowersList==='followers'?'Followers':'Following'}</span>
-                  <button onClick={()=>setShowFollowersList(null)} style={{background:'rgba(20,16,28,0.08)',border:'none',borderRadius:'50%',width:32,height:32,color:'#161221',cursor:'pointer',fontSize:16}}>✕</button>
+              <div onClick={e=>e.stopPropagation()} style={{width:'100%',background:'#121214',borderTopLeftRadius:28,borderTopRightRadius:28,maxHeight:'70vh',display:'flex',flexDirection:'column',animation:'slideUp 0.3s ease'}}>
+                <div style={{padding:'16px 16px 12px',borderBottom:'1px solid rgba(255,255,255,0.07)',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                  <span style={{color:'#FFFFFF',fontWeight:800,fontSize:18}}>{showFollowersList==='followers'?'Followers':'Following'}</span>
+                  <button onClick={()=>setShowFollowersList(null)} style={{background:'rgba(255,255,255,0.08)',border:'none',borderRadius:'50%',width:32,height:32,color:'#FFFFFF',cursor:'pointer',fontSize:16}}>✕</button>
                 </div>
                 <div style={{overflowY:'auto',flex:1,padding:'8px 0'}}>
                   {(showFollowersList==='followers'?(user?.followers||[]):(user?.following||[])).map(uid=>{
                     const u=users.find(uu=>uu.id===uid);
                     if(!u) return null;
                     return (
-                      <div key={uid} onClick={()=>{ onViewProfile?.(uid); setShowFollowersList(null); }} style={{display:'flex',alignItems:'center',gap:14,padding:'12px 16px',borderBottom:'1px solid rgba(20,16,28,0.04)',cursor:'pointer'}}>
+                      <div key={uid} onClick={()=>{ onViewProfile?.(uid); setShowFollowersList(null); }} style={{display:'flex',alignItems:'center',gap:14,padding:'12px 16px',borderBottom:'1px solid rgba(255,255,255,0.04)',cursor:'pointer'}}>
                         <div style={{width:46,height:46,borderRadius:'50%',background:u.avatarColor,display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:'bold',fontSize:18,overflow:'hidden',flexShrink:0}}>
                           {u.avatarUrl?<img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/>:u.avatar}
                         </div>
                         <div style={{flex:1}}>
-                          <div style={{color:'#161221',fontWeight:700,fontSize:14}}>@{u.username}</div>
-                          <div style={{color:'rgba(20,16,28,0.35)',fontSize:12,marginTop:2}}>{u.bio?.substring(0,40)}</div>
+                          <div style={{color:'#FFFFFF',fontWeight:700,fontSize:14}}>@{u.username}</div>
+                          <div style={{color:'rgba(255,255,255,0.35)',fontSize:12,marginTop:2}}>{u.bio?.substring(0,40)}</div>
                         </div>
                       </div>
                     );
                   })}
                   {((showFollowersList==='followers'?(user?.followers||[]):(user?.following||[])).length===0)&&(
-                    <div style={{textAlign:'center',padding:40,color:'rgba(20,16,28,0.25)'}}>
+                    <div style={{textAlign:'center',padding:40,color:'rgba(255,255,255,0.25)'}}>
                       <div style={{fontSize:36,marginBottom:8}}>👥</div>
                       <div>No {showFollowersList} yet</div>
                     </div>
@@ -4237,33 +4244,33 @@ if(activeSubPage==='settings') return (
           )}
           <div style={{ position:'relative', display:'inline-block', marginBottom:14 }}>
             <div onClick={()=>setShowAvatarViewer(true)} style={{cursor:'pointer'}}>
-              <div style={{ width:96, height:96, borderRadius:'50%', padding:3, background:'conic-gradient(#FF2156,#FFB100,#9D4EDD,#FF2156)', margin:'0 auto', cursor:'pointer' }}>
-                <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:'#F5F4F7', padding:2, display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <div style={{ width:96, height:96, borderRadius:'50%', padding:3, background:'conic-gradient(#FE2C55,#FFB100,#9D4EDD,#FE2C55)', margin:'0 auto', cursor:'pointer' }}>
+                <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:'#000000', padding:2, display:'flex', alignItems:'center', justifyContent:'center' }}>
                   <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:user?.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:'bold', fontSize:36, overflow:'hidden' }}>
                     {user?.avatarUrl ? <img src={user.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : user?.avatar}
                   </div>
                 </div>
               </div>
             </div>
-            <button onClick={(e)=>{e.stopPropagation(); setShowEditProfile(true);}} style={{ position:'absolute', bottom:2, right:2, background:'linear-gradient(135deg,#FF2156,#9D4EDD)', border:'2px solid #F5F4F7', borderRadius:'50%', width:30, height:30, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+            <button onClick={(e)=>{e.stopPropagation(); setShowEditProfile(true);}} style={{ position:'absolute', bottom:2, right:2, background:'linear-gradient(135deg,#FE2C55,#9D4EDD)', border:'2px solid #000000', borderRadius:'50%', width:30, height:30, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </button>
           </div>
-          <div style={{ color:'#161221', fontWeight:800, fontSize:22, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{user?.username}</div>
+          <div style={{ color:'#FFFFFF', fontWeight:800, fontSize:22, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{user?.username}</div>
           {user?.verified && (
             <div style={{ display:'inline-flex', alignItems:'center', gap:4, color:'#2F9BFF', fontSize:12, marginTop:4, background:'rgba(29,155,240,0.1)', borderRadius:20, padding:'3px 10px' }}>
               <svg width="11" height="11" viewBox="0 0 24 24" fill="#2F9BFF"><path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
               Verified
             </div>
           )}
-          <div style={{ color:'rgba(20,16,28,0.5)', fontSize:13, marginTop:8, lineHeight:1.6, maxWidth:260, margin:'8px auto 0' }}>{user?.bio||'No bio yet'}</div>
+          <div style={{ color:'rgba(255,255,255,0.5)', fontSize:13, marginTop:8, lineHeight:1.6, maxWidth:260, margin:'8px auto 0' }}>{user?.bio||'No bio yet'}</div>
           {user?.link && <a href={user.link} target="_blank" rel="noopener noreferrer" style={{ color:'#0A84FF', fontSize:13, display:'block', marginTop:4 }}>{user.link}</a>}
-          <button onClick={(e)=>{e.stopPropagation(); setShowEditProfile(true);}} style={{ marginTop:16, background:'rgba(20,16,28,0.06)', border:'1px solid rgba(20,16,28,0.15)', borderRadius:14, padding:'10px 32px', color:'#161221', fontWeight:700, cursor:'pointer', fontSize:13, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Edit Profile</button>
-          <div style={{ display:'flex', justifyContent:'center', gap:0, marginTop:20, background:'rgba(20,16,28,0.03)', borderRadius:20, padding:'14px 0', border:'1px solid rgba(20,16,28,0.06)' }}>
+          <button onClick={(e)=>{e.stopPropagation(); setShowEditProfile(true);}} style={{ marginTop:16, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.15)', borderRadius:14, padding:'10px 32px', color:'#FFFFFF', fontWeight:700, cursor:'pointer', fontSize:13, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Edit Profile</button>
+          <div style={{ display:'flex', justifyContent:'center', gap:0, marginTop:20, background:'rgba(255,255,255,0.03)', borderRadius:20, padding:'14px 0', border:'1px solid rgba(255,255,255,0.06)' }}>
             {[['Posts',myVideos.length,null],['Followers',user?.followers?.length||0,'followers'],['Following',user?.following?.length||0,'following']].map(([label,val,listKey],i)=>(
-              <div key={label} onClick={()=>listKey&&setShowFollowersList(listKey)} style={{ flex:1, textAlign:'center', borderRight:i<2?'1px solid rgba(20,16,28,0.06)':'', cursor:listKey?'pointer':'default' }}>
-                <div style={{ color:'#161221', fontWeight:800, fontSize:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{formatNumber(val)}</div>
-                <div style={{ color:'rgba(20,16,28,0.35)', fontSize:11, marginTop:2 }}>{label}</div>
+              <div key={label} onClick={()=>listKey&&setShowFollowersList(listKey)} style={{ flex:1, textAlign:'center', borderRight:i<2?'1px solid rgba(255,255,255,0.06)':'', cursor:listKey?'pointer':'default' }}>
+                <div style={{ color:'#FFFFFF', fontWeight:800, fontSize:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{formatNumber(val)}</div>
+                <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11, marginTop:2 }}>{label}</div>
               </div>
             ))}
           </div>
@@ -4281,7 +4288,7 @@ if(activeSubPage==='settings') return (
             {user?.subscription !== 'free' && (
               <div style={{ background:'linear-gradient(135deg,rgba(175,82,222,0.15),rgba(255,45,85,0.1))', border:'1px solid rgba(175,82,222,0.3)', borderRadius:20, padding:'7px 16px', display:'flex', alignItems:'center', gap:6 }}>
                 <span style={{ fontSize:14 }}>👑</span>
-                <span style={{ background:'linear-gradient(135deg,#9D4EDD,#FF2156)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', fontSize:12, fontWeight:800, textTransform:'capitalize' }}>{user.subscription}</span>
+                <span style={{ background:'linear-gradient(135deg,#9D4EDD,#FE2C55)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', fontSize:12, fontWeight:800, textTransform:'capitalize' }}>{user.subscription}</span>
               </div>
             )}
           </div>
@@ -4290,26 +4297,26 @@ if(activeSubPage==='settings') return (
       <div style={{ padding:'16px 16px 4px' }}>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10 }}>
           {menuItems.map(item=>(
-            <button key={item.page} onClick={()=>setActiveSubPage(item.page)} style={{ background:'rgba(20,16,28,0.03)', border:'1px solid rgba(20,16,28,0.06)', borderRadius:18, padding:'14px 6px 12px', display:'flex', flexDirection:'column', alignItems:'center', gap:7, cursor:'pointer' }}>
-              <div style={{ width:40, height:40, borderRadius:14, background:'rgba(20,16,28,0.05)', display:'flex', alignItems:'center', justifyContent:'center' }}>{item.icon}</div>
-              <span style={{ color:item.color==='#fff'?'rgba(20,16,28,0.75)':item.color, fontSize:10, fontWeight:700 }}>{item.label}</span>
+            <button key={item.page} onClick={()=>setActiveSubPage(item.page)} style={{ background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:18, padding:'14px 6px 12px', display:'flex', flexDirection:'column', alignItems:'center', gap:7, cursor:'pointer' }}>
+              <div style={{ width:40, height:40, borderRadius:14, background:'rgba(255,255,255,0.05)', display:'flex', alignItems:'center', justifyContent:'center' }}>{item.icon}</div>
+              <span style={{ color:item.color==='#fff'?'rgba(255,255,255,0.75)':item.color, fontSize:10, fontWeight:700 }}>{item.label}</span>
             </button>
           ))}
         </div>
       </div>
-      <div style={{ display:'flex', borderTop:'1px solid rgba(20,16,28,0.06)', borderBottom:'1px solid rgba(20,16,28,0.06)', marginTop:16 }}>
+      <div style={{ display:'flex', borderTop:'1px solid rgba(255,255,255,0.06)', borderBottom:'1px solid rgba(255,255,255,0.06)', marginTop:16 }}>
         {[
           {id:'posts',icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>},
           {id:'saved',icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>},
           {id:'drafts',icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>},
         ].map(t=>(
-          <button key={t.id} onClick={()=>setProfileTab(t.id)} style={{ flex:1, background:'none', border:'none', borderTop:profileTab===t.id?'2px solid #FF2156':'2px solid transparent', padding:'14px 0', color:profileTab===t.id?'white':'rgba(20,16,28,0.3)', cursor:'pointer', display:'flex', justifyContent:'center' }}>{t.icon}</button>
+          <button key={t.id} onClick={()=>setProfileTab(t.id)} style={{ flex:1, background:'none', border:'none', borderTop:profileTab===t.id?'2px solid #FE2C55':'2px solid transparent', padding:'14px 0', color:profileTab===t.id?'white':'rgba(255,255,255,0.3)', cursor:'pointer', display:'flex', justifyContent:'center' }}>{t.icon}</button>
         ))}
       </div>
       <div style={{ padding:2 }}>
         {profileTab==='posts' && (
           myVideos.length===0 ? (
-            <div style={{ textAlign:'center', padding:48, color:'rgba(20,16,28,0.2)' }}>
+            <div style={{ textAlign:'center', padding:48, color:'rgba(255,255,255,0.2)' }}>
               <div style={{ fontSize:48, marginBottom:12 }}>🎬</div>
               <div style={{ fontSize:15, fontWeight:600, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>No posts yet</div>
               <div style={{ fontSize:13, marginTop:4 }}>Create your first video!</div>
@@ -4317,12 +4324,12 @@ if(activeSubPage==='settings') return (
           ) : (
             <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:2 }}>
               {myVideos.map(v=>(
-                <div key={v.id} style={{ aspectRatio:'9/16', background:'#FAF9FC', position:'relative', overflow:'hidden' }}>
+                <div key={v.id} style={{ aspectRatio:'9/16', background:'#1A1A1D', position:'relative', overflow:'hidden' }}>
                   {v.videoUrl?.match(/\.(jpg|jpeg|png|gif|webp)/i) || v.mediaType?.startsWith('image')
                     ? <img src={v.videoUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" />
                     : <video src={v.videoUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} />
                   }
-                  <div style={{ position:'absolute', bottom:4, left:6, color:'#161221', fontSize:10, fontWeight:700, background:'rgba(0,0,0,0.6)', borderRadius:8, padding:'2px 7px', display:'flex', alignItems:'center', gap:3 }}>
+                  <div style={{ position:'absolute', bottom:4, left:6, color:'#FFFFFF', fontSize:10, fontWeight:700, background:'rgba(0,0,0,0.6)', borderRadius:8, padding:'2px 7px', display:'flex', alignItems:'center', gap:3 }}>
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                     {formatNumber(v.views)}
                     {v.userId === user?.id && (
@@ -4338,7 +4345,7 @@ if(activeSubPage==='settings') return (
       position: 'absolute', top: 4, right: 4,
       background: 'rgba(255,45,85,0.8)', border: 'none',
       borderRadius: '50%', width: 22, height: 22,
-      color: '#161221', cursor: 'pointer', fontSize: 12,
+      color: '#FFFFFF', cursor: 'pointer', fontSize: 12,
       display: 'flex', alignItems: 'center', justifyContent: 'center'
     }}
   >✕</button>
@@ -4349,19 +4356,19 @@ if(activeSubPage==='settings') return (
             </div>
           )
         )}
-        {profileTab==='saved' && <div style={{ textAlign:'center', padding:48, color:'rgba(20,16,28,0.2)' }}><div style={{ fontSize:40, marginBottom:12 }}>🔖</div><div>No saved posts</div></div>}
-        {profileTab==='drafts' && <div style={{ textAlign:'center', padding:48, color:'rgba(20,16,28,0.2)' }}><div style={{ fontSize:40, marginBottom:12 }}>📝</div><div>No drafts yet</div></div>}
+        {profileTab==='saved' && <div style={{ textAlign:'center', padding:48, color:'rgba(255,255,255,0.2)' }}><div style={{ fontSize:40, marginBottom:12 }}>🔖</div><div>No saved posts</div></div>}
+        {profileTab==='drafts' && <div style={{ textAlign:'center', padding:48, color:'rgba(255,255,255,0.2)' }}><div style={{ fontSize:40, marginBottom:12 }}>📝</div><div>No drafts yet</div></div>}
       </div>
       {showEditProfile && <EditProfileModal user={user} onClose={()=>setShowEditProfile(false)} onSave={saveProfile} showToast={showToast} />}
     
       {showAvatarViewer && (
         <div onClick={()=>setShowAvatarViewer(false)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.97)',zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:16}}>
           <div style={{position:'absolute',inset:0,background:user?.avatarUrl?'none':user?.avatarColor,backgroundImage:user?.avatarUrl?`url(${user.avatarUrl})`:'none',backgroundSize:'cover',backgroundPosition:'center',filter:'blur(28px) brightness(0.4)',transform:'scale(1.1)'}}/>
-          <div style={{position:'relative',width:260,height:260,borderRadius:'50%',background:user?.avatarColor,display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden',border:'3px solid rgba(20,16,28,0.2)',boxShadow:'0 20px 80px rgba(0,0,0,0.8)'}}>
-            {user?.avatarUrl?<img src={user.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/>:<span style={{color:'#161221',fontSize:90,fontWeight:'bold'}}>{user?.avatar}</span>}
+          <div style={{position:'relative',width:260,height:260,borderRadius:'50%',background:user?.avatarColor,display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden',border:'3px solid rgba(255,255,255,0.2)',boxShadow:'0 20px 80px rgba(0,0,0,0.8)'}}>
+            {user?.avatarUrl?<img src={user.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/>:<span style={{color:'#FFFFFF',fontSize:90,fontWeight:'bold'}}>{user?.avatar}</span>}
           </div>
-          <span style={{position:'relative',color:'#161221',fontSize:16,fontWeight:700}}>@{user?.username}</span>
-          <span style={{position:'relative',color:'rgba(20,16,28,0.4)',fontSize:12}}>Tap anywhere to close</span>
+          <span style={{position:'relative',color:'#FFFFFF',fontSize:16,fontWeight:700}}>@{user?.username}</span>
+          <span style={{position:'relative',color:'rgba(255,255,255,0.4)',fontSize:12}}>Tap anywhere to close</span>
         </div>
       )}
     </div>
@@ -4482,7 +4489,7 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal' }) => {
 
   if (state === 'idle') {
     return (
-      <button onPointerDown={startRecording} style={{ background:'none', border:'none', cursor:'pointer', padding:size==='small'?6:8, display:'flex', alignItems:'center', justifyContent:'center', color:'rgba(20,16,28,0.5)', borderRadius:'50%', transition:'color 0.15s' }}>
+      <button onPointerDown={startRecording} style={{ background:'none', border:'none', cursor:'pointer', padding:size==='small'?6:8, display:'flex', alignItems:'center', justifyContent:'center', color:'rgba(255,255,255,0.5)', borderRadius:'50%', transition:'color 0.15s' }}>
         <svg width={size==='small'?18:22} height={size==='small'?18:22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
       </button>
     );
@@ -4490,11 +4497,11 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal' }) => {
 
   if (state === 'preview') {
     return (
-      <div style={{ display:'flex', alignItems:'center', gap:8, background:'rgba(20,16,28,0.06)', borderRadius:24, padding:'8px 12px', flex:1 }}>
-        <button onClick={cancelRecording} style={{ background:'rgba(255,45,85,0.15)', border:'none', borderRadius:'50%', width:32, height:32, color:'#FF2156', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}>✕</button>
+      <div style={{ display:'flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.06)', borderRadius:24, padding:'8px 12px', flex:1 }}>
+        <button onClick={cancelRecording} style={{ background:'rgba(255,45,85,0.15)', border:'none', borderRadius:'50%', width:32, height:32, color:'#FE2C55', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}>✕</button>
         <audio src={audioUrl} controls style={{ flex:1, height:28, minWidth:0 }} />
-        <span style={{ color:'rgba(20,16,28,0.4)', fontSize:12, flexShrink:0 }}>{fmtTime(duration)}</span>
-        <button onClick={sendVoice} style={{ background:'#FF2156', border:'none', borderRadius:'50%', width:36, height:36, color:'#fff', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+        <span style={{ color:'rgba(255,255,255,0.4)', fontSize:12, flexShrink:0 }}>{fmtTime(duration)}</span>
+        <button onClick={sendVoice} style={{ background:'#FE2C55', border:'none', borderRadius:'50%', width:36, height:36, color:'#fff', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
       </div>
@@ -4504,20 +4511,20 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal' }) => {
   // recording or paused
   return (
     <div style={{ display:'flex', alignItems:'center', gap:8, flex:1, background:'rgba(255,45,85,0.06)', borderRadius:24, padding:'8px 12px', border:'1px solid rgba(255,45,85,0.15)' }}>
-      <button onClick={cancelRecording} style={{ background:'rgba(255,45,85,0.15)', border:'none', borderRadius:'50%', width:30, height:30, color:'#FF2156', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>✕</button>
+      <button onClick={cancelRecording} style={{ background:'rgba(255,45,85,0.15)', border:'none', borderRadius:'50%', width:30, height:30, color:'#FE2C55', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>✕</button>
       {/* Waveform visualization */}
       <div style={{ flex:1, display:'flex', alignItems:'center', gap:1.5, height:28 }}>
         {waveform.length > 0 ? waveform.map((h,i)=>(
-          <div key={i} style={{ flex:1, background: state==='recording'?'#FF2156':'rgba(20,16,28,0.3)', borderRadius:2, height:`${Math.round(h*100)}%`, minHeight:2, transition:'height 0.05s', opacity: state==='paused'?0.5:1 }} />
+          <div key={i} style={{ flex:1, background: state==='recording'?'#FE2C55':'rgba(255,255,255,0.3)', borderRadius:2, height:`${Math.round(h*100)}%`, minHeight:2, transition:'height 0.05s', opacity: state==='paused'?0.5:1 }} />
         )) : Array.from({length:30}).map((_,i)=>(
-          <div key={i} style={{ flex:1, background:'rgba(20,16,28,0.15)', borderRadius:2, height:'20%' }} />
+          <div key={i} style={{ flex:1, background:'rgba(255,255,255,0.15)', borderRadius:2, height:'20%' }} />
         ))}
       </div>
-      <span style={{ color: state==='paused'?'rgba(20,16,28,0.4)':'#FF2156', fontSize:12, fontWeight:700, fontVariantNumeric:'tabular-nums', flexShrink:0 }}>{fmtTime(duration)}</span>
+      <span style={{ color: state==='paused'?'rgba(255,255,255,0.4)':'#FE2C55', fontSize:12, fontWeight:700, fontVariantNumeric:'tabular-nums', flexShrink:0 }}>{fmtTime(duration)}</span>
       {state === 'recording'
-        ? <button onClick={pauseRecording} style={{ background:'rgba(20,16,28,0.1)', border:'none', borderRadius:'50%', width:30, height:30, color:'#161221', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>⏸</button>
-        : <button onClick={resumeRecording} style={{ background:'rgba(20,16,28,0.1)', border:'none', borderRadius:'50%', width:30, height:30, color:'#161221', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>▶</button>}
-      <button onClick={stopRecording} style={{ background:'#FF2156', border:'none', borderRadius:'50%', width:34, height:34, color:'#fff', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+        ? <button onClick={pauseRecording} style={{ background:'rgba(255,255,255,0.1)', border:'none', borderRadius:'50%', width:30, height:30, color:'#FFFFFF', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>⏸</button>
+        : <button onClick={resumeRecording} style={{ background:'rgba(255,255,255,0.1)', border:'none', borderRadius:'50%', width:30, height:30, color:'#FFFFFF', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>▶</button>}
+      <button onClick={stopRecording} style={{ background:'#FE2C55', border:'none', borderRadius:'50%', width:34, height:34, color:'#fff', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
       </button>
     </div>
@@ -4681,33 +4688,33 @@ unsub = onSnapshot(q, (snap) => {
 
   if(!otherUser?.id || !conversationId || !currentUser?.id) {
   return (
-    <div style={{height:'100%',background:'#F5F4F7',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:12}}>
-      <div style={{width:32,height:32,border:'3px solid rgba(255,45,85,0.3)',borderTop:'3px solid #FF2156',borderRadius:'50%',animation:'spin 1s linear infinite'}}/>
-      <div style={{color:'rgba(20,16,28,0.3)',fontSize:13}}>Loading conversation...</div>
-      <button onClick={onBack} style={{background:'rgba(20,16,28,0.07)',border:'none',borderRadius:20,padding:'8px 20px',color:'rgba(20,16,28,0.5)',cursor:'pointer',fontSize:12,marginTop:8}}>← Back</button>
+    <div style={{height:'100%',background:'#000000',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:12}}>
+      <div style={{width:32,height:32,border:'3px solid rgba(255,45,85,0.3)',borderTop:'3px solid #FE2C55',borderRadius:'50%',animation:'spin 1s linear infinite'}}/>
+      <div style={{color:'rgba(255,255,255,0.3)',fontSize:13}}>Loading conversation...</div>
+      <button onClick={onBack} style={{background:'rgba(255,255,255,0.07)',border:'none',borderRadius:20,padding:'8px 20px',color:'rgba(255,255,255,0.5)',cursor:'pointer',fontSize:12,marginTop:8}}>← Back</button>
     </div>
   );
 }
 
   return (
-    <div style={{height:'100%',display:'flex',flexDirection:'column',background:'#F5F4F7'}}>
-      <div style={{padding:'14px 16px',borderBottom:'1px solid rgba(20,16,28,0.06)',display:'flex',alignItems:'center',gap:12}}>
-        <button onClick={onBack} style={{background:'none',border:'none',color:'#161221',cursor:'pointer',padding:'4px 0'}}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#161221" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
+    <div style={{height:'100%',display:'flex',flexDirection:'column',background:'#000000'}}>
+      <div style={{padding:'14px 16px',borderBottom:'1px solid rgba(255,255,255,0.06)',display:'flex',alignItems:'center',gap:12}}>
+        <button onClick={onBack} style={{background:'none',border:'none',color:'#FFFFFF',cursor:'pointer',padding:'4px 0'}}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
         <div onClick={()=>onViewProfile?.(otherUser?.id)} style={{width:40,height:40,borderRadius:'50%',background:otherUser?.avatarColor||'#5A5A66',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:'bold',overflow:'hidden',cursor:'pointer'}}>
           {otherUser?.avatarUrl?<img src={otherUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/>:(otherUser?.avatar||'?')}
         </div>
         <div onClick={()=>onViewProfile?.(otherUser?.id)} style={{cursor:'pointer'}}>
-          <div style={{color:'#161221',fontWeight:700,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>@{otherUser?.username||'user'}</div>
-          <div style={{color: presenceData?.online ? '#00E6B4':'rgba(20,16,28,0.3)', fontSize:11, display:'flex', alignItems:'center', gap:4}}>
-            <div style={{width:6,height:6,borderRadius:'50%', background: presenceData?.online ? '#00E6B4':'rgba(20,16,28,0.3)'}}/>
+          <div style={{color:'#FFFFFF',fontWeight:700,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>@{otherUser?.username||'user'}</div>
+          <div style={{color: presenceData?.online ? '#00E6B4':'rgba(255,255,255,0.3)', fontSize:11, display:'flex', alignItems:'center', gap:4}}>
+            <div style={{width:6,height:6,borderRadius:'50%', background: presenceData?.online ? '#00E6B4':'rgba(255,255,255,0.3)'}}/>
             {presenceData?.online ? 'Online' : presenceData?.lastSeen ? `last seen ${timeAgo(presenceData.lastSeen.toDate())}` : 'Offline'}
           </div>
         </div>
         <div style={{marginLeft:'auto',display:'flex',gap:10}}>
-          <button onClick={()=>onViewProfile?.(otherUser?.id)} title="View profile" style={{background:'rgba(20,16,28,0.06)',border:'1px solid rgba(20,16,28,0.1)',borderRadius:'50%',width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#161221" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <button onClick={()=>onViewProfile?.(otherUser?.id)} title="View profile" style={{background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:'50%',width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
           </button>
           <button onClick={()=>onVoiceCall?.(otherUser?.id)} style={{background:'rgba(52,199,89,0.12)',border:'1px solid rgba(52,199,89,0.2)',borderRadius:'50%',width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2ED573" strokeWidth="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-5.99-5.99 19.79 19.79 0 01-3.07-8.67A2 2 0 014 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>
@@ -4719,7 +4726,7 @@ unsub = onSnapshot(q, (snap) => {
       </div>
 
       <div style={{flex:1,overflowY:'auto',padding:'16px'}}>
-        {messages.length===0&&<div style={{textAlign:'center',padding:40,color:'rgba(20,16,28,0.2)'}}>Start a conversation! 👋</div>}
+        {messages.length===0&&<div style={{textAlign:'center',padding:40,color:'rgba(255,255,255,0.2)'}}>Start a conversation! 👋</div>}
         {messages.map(msg=>{
           const isMine = msg.from===currentUser?.id;
           return (
@@ -4735,21 +4742,21 @@ unsub = onSnapshot(q, (snap) => {
     </div>
   )}
               <div style={{maxWidth:'72%'}}>
-                {msg.text&&<div style={{background: msg.deleted ? 'rgba(20,16,28,0.04)' : isMine?'linear-gradient(135deg,#FF2156,#9D4EDD)':'rgba(20,16,28,0.09)', borderRadius:isMine?'18px 18px 4px 18px':'18px 18px 18px 4px',padding:'9px 14px',marginBottom:msg.mediaUrl?4:0}}>
-  <span style={{color: msg.deleted ? 'rgba(20,16,28,0.3)':'white', fontSize:14, lineHeight:1.4, fontStyle: msg.deleted?'italic':'normal'}}>{msg.text}</span>
+                {msg.text&&<div style={{background: msg.deleted ? 'rgba(255,255,255,0.04)' : isMine?'linear-gradient(135deg,#FE2C55,#9D4EDD)':'rgba(255,255,255,0.09)', borderRadius:isMine?'18px 18px 4px 18px':'18px 18px 18px 4px',padding:'9px 14px',marginBottom:msg.mediaUrl?4:0}}>
+  <span style={{color: msg.deleted ? 'rgba(255,255,255,0.3)':'white', fontSize:14, lineHeight:1.4, fontStyle: msg.deleted?'italic':'normal'}}>{msg.text}</span>
   {!msg.deleted && !isMine && <MessageTranslate text={msg.text} targetLang={currentUser?.language || 'en'} isMine={isMine} />}
 </div>}
-                <div style={{ color:'rgba(20,16,28,0.25)', fontSize:10, marginTop:3, textAlign:isMine?'right':'left', paddingLeft:isMine?0:2, paddingRight:isMine?2:0, display:'flex', alignItems:'center', justifyContent:isMine?'flex-end':'flex-start', gap:3 }}>
+                <div style={{ color:'rgba(255,255,255,0.25)', fontSize:10, marginTop:3, textAlign:isMine?'right':'left', paddingLeft:isMine?0:2, paddingRight:isMine?2:0, display:'flex', alignItems:'center', justifyContent:isMine?'flex-end':'flex-start', gap:3 }}>
   <span>{msg.ts ? msg.ts.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : ''}</span>
   {isMine && (
-    <span style={{ fontSize:12, color: msg.status==='seen' ? '#2F9BFF' : 'rgba(20,16,28,0.35)', letterSpacing:-2 }}>
+    <span style={{ fontSize:12, color: msg.status==='seen' ? '#2F9BFF' : 'rgba(255,255,255,0.35)', letterSpacing:-2 }}>
       {msg.status === 'sent' ? '✓' : '✓✓'}
     </span>
   )}
 </div>
                 {/* Reaction picker */}
               {showMsgReactions===msg.id && (
-                <div onClick={e=>e.stopPropagation()} style={{position:'absolute',bottom:'100%',left:isMine?'auto':'0',right:isMine?'0':'auto',background:'rgba(255,255,255,0.97)',backdropFilter:'blur(20px)',borderRadius:40,padding:'6px 10px',display:'flex',gap:4,zIndex:100,border:'1px solid rgba(20,16,28,0.12)',animation:'popInBounce 0.25s ease',marginBottom:4,boxShadow:'0 8px 32px rgba(0,0,0,0.5)'}}>
+                <div onClick={e=>e.stopPropagation()} style={{position:'absolute',bottom:'100%',left:isMine?'auto':'0',right:isMine?'0':'auto',background:'rgba(255,255,255,0.97)',backdropFilter:'blur(20px)',borderRadius:40,padding:'6px 10px',display:'flex',gap:4,zIndex:100,border:'1px solid rgba(255,255,255,0.12)',animation:'popInBounce 0.25s ease',marginBottom:4,boxShadow:'0 8px 32px rgba(0,0,0,0.5)'}}>
                   {MSG_EMOJIS.map(emoji=>(
                     <button key={emoji} onClick={async()=>{
                       await updateDoc(doc(db,'messages',conversationId,'msgs',msg.id),{[`reactions.${currentUser.id}`]:emoji});
@@ -4760,7 +4767,7 @@ unsub = onSnapshot(q, (snap) => {
                     onMouseLeave={e=>e.currentTarget.style.transform='scale(1)'}
                     >{emoji}</button>
                   ))}
-                  <button onClick={()=>setShowMsgReactions(null)} style={{background:'rgba(20,16,28,0.08)',border:'none',borderRadius:'50%',width:28,height:28,color:'rgba(20,16,28,0.5)',cursor:'pointer',fontSize:12,display:'flex',alignItems:'center',justifyContent:'center',marginLeft:4}}>✕</button>
+                  <button onClick={()=>setShowMsgReactions(null)} style={{background:'rgba(255,255,255,0.08)',border:'none',borderRadius:'50%',width:28,height:28,color:'rgba(255,255,255,0.5)',cursor:'pointer',fontSize:12,display:'flex',alignItems:'center',justifyContent:'center',marginLeft:4}}>✕</button>
                 </div>
               )}
 
@@ -4771,9 +4778,9 @@ unsub = onSnapshot(q, (snap) => {
                     <span key={emoji} onClick={async()=>{
                       await updateDoc(doc(db,'messages',conversationId,'msgs',msg.id),{[`reactions.${currentUser.id}`]:emoji});
                       haptic('light');
-                    }} style={{background:'rgba(20,16,28,0.08)',borderRadius:20,padding:'2px 7px',fontSize:12,border:'1px solid rgba(20,16,28,0.1)',cursor:'pointer',display:'flex',alignItems:'center',gap:3}}>
+                    }} style={{background:'rgba(255,255,255,0.08)',borderRadius:20,padding:'2px 7px',fontSize:12,border:'1px solid rgba(255,255,255,0.1)',cursor:'pointer',display:'flex',alignItems:'center',gap:3}}>
                       {emoji}
-                      <span style={{color:'rgba(20,16,28,0.4)',fontSize:10}}>{Object.values(msg.reactions).filter(r=>r===emoji).length}</span>
+                      <span style={{color:'rgba(255,255,255,0.4)',fontSize:10}}>{Object.values(msg.reactions).filter(r=>r===emoji).length}</span>
                     </span>
                   ))}
                 </div>
@@ -4781,22 +4788,22 @@ unsub = onSnapshot(q, (snap) => {
                 {msg.mediaUrl&&msg.mediaType?.startsWith('image')&&<img src={msg.mediaUrl} alt="" style={{maxWidth:'100%',borderRadius:14,display:'block'}}/>}
                 {msg.mediaUrl&&msg.mediaType?.startsWith('video')&&<video src={msg.mediaUrl} controls style={{maxWidth:'100%',borderRadius:14,display:'block'}}/>}
                 {(msg.mediaUrl&&msg.mediaType?.startsWith('audio')) || msg.type==='voice'&&(msg.voiceUrl||msg.mediaUrl) ? (
-                  <div style={{display:'flex',alignItems:'center',gap:10,background:isMine?'linear-gradient(135deg,#FF2156,#9D4EDD)':'rgba(20,16,28,0.09)',borderRadius:20,padding:'10px 14px',minWidth:200}}>
+                  <div style={{display:'flex',alignItems:'center',gap:10,background:isMine?'linear-gradient(135deg,#FE2C55,#9D4EDD)':'rgba(255,255,255,0.09)',borderRadius:20,padding:'10px 14px',minWidth:200}}>
                     <button onClick={e=>{
                       e.stopPropagation();
                       const url = msg.voiceUrl || msg.mediaUrl;
                       if (!url) return;
                       const audio = new Audio(url);
                       audio.play().catch(()=>{});
-                    }} style={{background:'rgba(20,16,28,0.2)',border:'none',borderRadius:'50%',width:34,height:34,color:'#161221',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="#161221"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    }} style={{background:'rgba(255,255,255,0.2)',border:'none',borderRadius:'50%',width:34,height:34,color:'#FFFFFF',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="#FFFFFF"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                     </button>
                     <div style={{flex:1,display:'flex',alignItems:'center',gap:1.5,height:24}}>
                       {Array.from({length:24}).map((_,i)=>(
-                        <div key={i} style={{flex:1,background:isMine?'rgba(20,16,28,0.6)':'rgba(20,16,28,0.4)',borderRadius:2,height:`${20+Math.sin(i*0.8)*14}%`,minHeight:3}}/>
+                        <div key={i} style={{flex:1,background:isMine?'rgba(255,255,255,0.6)':'rgba(255,255,255,0.4)',borderRadius:2,height:`${20+Math.sin(i*0.8)*14}%`,minHeight:3}}/>
                       ))}
                     </div>
-                    <span style={{color:isMine?'rgba(20,16,28,0.7)':'rgba(20,16,28,0.5)',fontSize:11,flexShrink:0}}>{msg.duration ? `0:${String(msg.duration).padStart(2,'0')}` : '🎙️'}</span>
+                    <span style={{color:isMine?'rgba(255,255,255,0.7)':'rgba(255,255,255,0.5)',fontSize:11,flexShrink:0}}>{msg.duration ? `0:${String(msg.duration).padStart(2,'0')}` : '🎙️'}</span>
                   </div>
                 ) : null}
               </div>
@@ -4820,14 +4827,14 @@ unsub = onSnapshot(q, (snap) => {
     <div style={{ width:28, height:28, borderRadius:'50%', background:otherUser?.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontSize:11, overflow:'hidden', flexShrink:0 }}>
       {otherUser?.avatarUrl ? <img src={otherUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/> : otherUser?.avatar}
     </div>
-    <div style={{ background:'rgba(20,16,28,0.09)', borderRadius:'18px 18px 18px 4px', padding:'12px 16px', display:'flex', gap:5, alignItems:'center', border:'1px solid rgba(20,16,28,0.06)' }}>
+    <div style={{ background:'rgba(255,255,255,0.09)', borderRadius:'18px 18px 18px 4px', padding:'12px 16px', display:'flex', gap:5, alignItems:'center', border:'1px solid rgba(255,255,255,0.06)' }}>
       {[0,1,2].map(i=>(
-        <div key={i} style={{ width:7, height:7, borderRadius:'50%', background:'rgba(20,16,28,0.6)',
+        <div key={i} style={{ width:7, height:7, borderRadius:'50%', background:'rgba(255,255,255,0.6)',
           animation:`pulse 1.4s ease ${i*0.22}s infinite`,
           transform:`scaleY(${1})` }}/>
       ))}
     </div>
-    <span style={{ color:'rgba(20,16,28,0.25)', fontSize:10, marginBottom:4 }}>typing...</span>
+    <span style={{ color:'rgba(255,255,255,0.25)', fontSize:10, marginBottom:4 }}>typing...</span>
   </div>
 )}
         <div ref={bottomRef}/>
@@ -4835,30 +4842,30 @@ unsub = onSnapshot(q, (snap) => {
 
       {(previewFile||audioBlob)&&(
         <div style={{padding:'0 14px 6px'}}>
-          <div style={{display:'flex',alignItems:'center',gap:10,background:'rgba(20,16,28,0.05)',borderRadius:14,padding:'8px 12px'}}>
+          <div style={{display:'flex',alignItems:'center',gap:10,background:'rgba(255,255,255,0.05)',borderRadius:14,padding:'8px 12px'}}>
             {previewFile?.type?.startsWith('image')&&<img src={previewFile.url} alt="" style={{height:44,width:44,objectFit:'cover',borderRadius:8}}/>}
             {previewFile?.type?.startsWith('video')&&<video src={previewFile.url} style={{height:44,width:60,objectFit:'cover',borderRadius:8}}/>}
             {audioBlob&&!previewFile&&<audio src={URL.createObjectURL(audioBlob)} controls style={{height:28,flex:1}}/>}
-            <button onClick={clearAttach} style={{marginLeft:'auto',background:'rgba(255,45,85,0.2)',border:'none',borderRadius:'50%',width:22,height:22,color:'#FF2156',cursor:'pointer',fontSize:13}}>✕</button>
+            <button onClick={clearAttach} style={{marginLeft:'auto',background:'rgba(255,45,85,0.2)',border:'none',borderRadius:'50%',width:22,height:22,color:'#FE2C55',cursor:'pointer',fontSize:13}}>✕</button>
           </div>
         </div>
       )}
 
 {showEmoji && (
-        <div style={{display:'flex',flexWrap:'wrap',gap:6,padding:'10px 14px',background:'rgba(20,16,28,0.04)',borderRadius:16,margin:'0 14px 4px'}}>
+        <div style={{display:'flex',flexWrap:'wrap',gap:6,padding:'10px 14px',background:'rgba(255,255,255,0.04)',borderRadius:16,margin:'0 14px 4px'}}>
           {EMOJI_LIST.map(e=>(
             <button key={e} onClick={()=>setText(t=>t+e)} style={{background:'none',border:'none',fontSize:22,cursor:'pointer',padding:2}}>{e}</button>
           ))}
         </div>
       )}
-      <div style={{padding:'10px 14px',paddingBottom:'max(28px, env(safe-area-inset-bottom))',borderTop:'1px solid rgba(20,16,28,0.06)',display:'flex',gap:8,alignItems:'center'}}>        <button onClick={()=>fileInputRef.current?.click()} style={{background:'rgba(20,16,28,0.07)',border:'none',borderRadius:'50%',width:38,height:38,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0}}>
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="rgba(20,16,28,0.6)" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+      <div style={{padding:'10px 14px',paddingBottom:'max(28px, env(safe-area-inset-bottom))',borderTop:'1px solid rgba(255,255,255,0.06)',display:'flex',gap:8,alignItems:'center'}}>        <button onClick={()=>fileInputRef.current?.click()} style={{background:'rgba(255,255,255,0.07)',border:'none',borderRadius:'50%',width:38,height:38,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0}}>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
         </button>
         <input ref={fileInputRef} type="file" accept="image/*,video/*,audio/*" onChange={pickFile} style={{display:'none'}}/>
         <input value={text} onChange={e=>{
           setText(e.target.value);
           setDoc(doc(db,'typing',conversationId),{[currentUser.id]:serverTimestamp()},{merge:true}).catch(()=>{});
-        }} onKeyDown={e=>e.key==='Enter'&&handleSend()} placeholder={isRecording?`🔴 ${fmt(recordSecs)}`:'Message...'} style={{flex:1,background:'rgba(20,16,28,0.06)',border:'1px solid rgba(20,16,28,0.08)',borderRadius:28,padding:'11px 16px',color:'#161221',outline:'none',fontSize:13}}/>
+        }} onKeyDown={e=>e.key==='Enter'&&handleSend()} placeholder={isRecording?`🔴 ${fmt(recordSecs)}`:'Message...'} style={{flex:1,background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:28,padding:'11px 16px',color:'#FFFFFF',outline:'none',fontSize:13}}/>
         {!text.trim() && !previewFile && !audioBlob && (
           <VoiceRecorderButton
             showToast={showToast}
@@ -4881,8 +4888,8 @@ unsub = onSnapshot(q, (snap) => {
             }}
           />
         )}
-        <button onClick={()=>setShowEmoji(v=>!v)} style={{background:'rgba(20,16,28,0.07)',border:'none',borderRadius:'50%',width:38,height:38,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0,fontSize:18}}>😊</button>
-        <button onClick={handleSend} style={{background:'linear-gradient(135deg,#FF2156,#9D4EDD)',border:'none',borderRadius:'50%',width:42,height:42,color:'#fff',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>          <svg width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="1"><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        <button onClick={()=>setShowEmoji(v=>!v)} style={{background:'rgba(255,255,255,0.07)',border:'none',borderRadius:'50%',width:38,height:38,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0,fontSize:18}}>😊</button>
+        <button onClick={handleSend} style={{background:'linear-gradient(135deg,#FE2C55,#9D4EDD)',border:'none',borderRadius:'50%',width:42,height:42,color:'#fff',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>          <svg width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="1"><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
       </div>
     </div>
@@ -5023,20 +5030,20 @@ snap.docs.forEach(async conv => {
   }
 
   return (
-    <div style={{ height:'100%', display:'flex', flexDirection:'column', background:'#F5F4F7' }}>
-      <div style={{ padding:'14px 16px 10px', borderBottom:'1px solid rgba(20,16,28,0.06)' }}>
+    <div style={{ height:'100%', display:'flex', flexDirection:'column', background:'#000000' }}>
+      <div style={{ padding:'14px 16px 10px', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
-          <div style={{ color:'#161221', fontWeight:800, fontSize:22, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{t?.inbox||'Messages'}</div>
-          <button onClick={()=>setShowGroupsView(true)} style={{ background:'rgba(255,45,85,0.1)', border:'1px solid rgba(255,45,85,0.2)', borderRadius:20, padding:'6px 14px', color:'#FF2156', fontSize:12, fontWeight:700, cursor:'pointer' }}>👥 Groups</button>
+          <div style={{ color:'#FFFFFF', fontWeight:800, fontSize:22, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{t?.inbox||'Messages'}</div>
+          <button onClick={()=>setShowGroupsView(true)} style={{ background:'rgba(255,45,85,0.1)', border:'1px solid rgba(255,45,85,0.2)', borderRadius:20, padding:'6px 14px', color:'#FE2C55', fontSize:12, fontWeight:700, cursor:'pointer' }}>👥 Groups</button>
         </div>
         {/* Inline search — Telegram standard */}
-        <div style={{ display:'flex', alignItems:'center', background:'rgba(20,16,28,0.06)', borderRadius:14, padding:'9px 12px', gap:8, border:'1px solid rgba(20,16,28,0.08)' }}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(20,16,28,0.35)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <div style={{ display:'flex', alignItems:'center', background:'rgba(255,255,255,0.06)', borderRadius:14, padding:'9px 12px', gap:8, border:'1px solid rgba(255,255,255,0.08)' }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input
             placeholder="Search messages..."
             value={inboxSearch||''}
             onChange={e=>setInboxSearch?.(e.target.value)}
-            style={{ flex:1, background:'none', border:'none', color:'#161221', outline:'none', fontSize:14 }} />
+            style={{ flex:1, background:'none', border:'none', color:'#FFFFFF', outline:'none', fontSize:14 }} />
         </div>
       </div>
       <div style={{ flex:1, overflowY:'auto' }}>
@@ -5045,28 +5052,28 @@ snap.docs.forEach(async conv => {
             ? convUsers.filter(u => u.username?.toLowerCase().includes(inboxSearch.toLowerCase()) || u.fullName?.toLowerCase().includes(inboxSearch.toLowerCase()))
             : convUsers;
           if (filteredConvUsers.length === 0) return (
-            <div style={{textAlign:'center',padding:60,color:'rgba(20,16,28,0.2)'}}>
+            <div style={{textAlign:'center',padding:60,color:'rgba(255,255,255,0.2)'}}>
               <div style={{fontSize:44,marginBottom:12}}>💬</div>
               <div style={{fontSize:14}}>{inboxSearch ? `No chats matching "${inboxSearch}"` : t?.noMessages||'No messages yet'}</div>
-              {!inboxSearch && <div style={{fontSize:12,marginTop:6,color:'rgba(20,16,28,0.12)'}}>{t?.startChat||'Go to a profile and tap Message to start'}</div>}
+              {!inboxSearch && <div style={{fontSize:12,marginTop:6,color:'rgba(255,255,255,0.12)'}}>{t?.startChat||'Go to a profile and tap Message to start'}</div>}
             </div>
           );
           return filteredConvUsers.map(u=>{
           const convId = getConversationId(currentUser.id, u.id);
           const conv = conversations.find(c=>c.id===convId);
           return (
-            <div key={u.id} onClick={()=>openConversation(u.id)} style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 16px', borderBottom:'1px solid rgba(20,16,28,0.04)', cursor:'pointer' }}>
+            <div key={u.id} onClick={()=>openConversation(u.id)} style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 16px', borderBottom:'1px solid rgba(255,255,255,0.04)', cursor:'pointer' }}>
               <div style={{ position:'relative' }}>
                 <div style={{ width:52, height:52, borderRadius:'50%', background:u.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:'bold', fontSize:22, overflow:'hidden' }}>
                   {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : u.avatar}
                 </div>
-                <div style={{ position:'absolute', bottom:1, right:1, width:13, height:13, background:'#00E6B4', borderRadius:'50%', border:'2px solid #F5F4F7' }} />
+                <div style={{ position:'absolute', bottom:1, right:1, width:13, height:13, background:'#00E6B4', borderRadius:'50%', border:'2px solid #000000' }} />
               </div>
               <div style={{ flex:1 }}>
-                <div style={{ color:'#161221', fontWeight:700, fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{u.username}</div>
-                <div style={{ color:'rgba(20,16,28,0.35)', fontSize:12, marginTop:2 }}>{conv?.lastMessage||'Tap to start chatting'}</div>
+                <div style={{ color:'#FFFFFF', fontWeight:700, fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{u.username}</div>
+                <div style={{ color:'rgba(255,255,255,0.35)', fontSize:12, marginTop:2 }}>{conv?.lastMessage||'Tap to start chatting'}</div>
               </div>
-              <div style={{ color:'rgba(20,16,28,0.2)', fontSize:11 }}>{conv?.lastMessageAt?'Now':''}</div>
+              <div style={{ color:'rgba(255,255,255,0.2)', fontSize:11 }}>{conv?.lastMessageAt?'Now':''}</div>
             </div>
           );
         });
@@ -5092,25 +5099,25 @@ const IncomingCallScreen = ({ callData, onAnswer, onDecline }) => {
   return (
   <div style={{position:'fixed',inset:0,background:'linear-gradient(160deg,#0d0025,#001a0d)',zIndex:3000,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'space-between',padding:'80px 40px 80px'}}>
     <div style={{textAlign:'center'}}>
-      <div style={{color:'rgba(20,16,28,0.5)',fontSize:14,marginBottom:16,letterSpacing:2,textTransform:'uppercase'}}>{callData.callType==='video'?'Incoming Video Call':'Incoming Voice Call'}</div>
-      <div style={{width:120,height:120,borderRadius:'50%',background:callData.callerColor||'#FF2156',display:'flex',alignItems:'center',justifyContent:'center',color:'#161221',fontWeight:'bold',fontSize:48,margin:'0 auto 20px',border:'4px solid rgba(20,16,28,0.2)',boxShadow:'0 0 0 12px rgba(20,16,28,0.05),0 0 0 24px rgba(20,16,28,0.03)'}}>
+      <div style={{color:'rgba(255,255,255,0.5)',fontSize:14,marginBottom:16,letterSpacing:2,textTransform:'uppercase'}}>{callData.callType==='video'?'Incoming Video Call':'Incoming Voice Call'}</div>
+      <div style={{width:120,height:120,borderRadius:'50%',background:callData.callerColor||'#FE2C55',display:'flex',alignItems:'center',justifyContent:'center',color:'#FFFFFF',fontWeight:'bold',fontSize:48,margin:'0 auto 20px',border:'4px solid rgba(255,255,255,0.2)',boxShadow:'0 0 0 12px rgba(255,255,255,0.05),0 0 0 24px rgba(255,255,255,0.03)'}}>
         {callData.callerAvatar||'?'}
       </div>
-      <div style={{color:'#161221',fontSize:28,fontWeight:800,fontFamily:"'Inter',sans-serif"}}>@{callData.callerName}</div>
-      <div style={{color:'rgba(20,16,28,0.4)',fontSize:14,marginTop:8,animation:'pulse 1.5s infinite'}}>Calling...</div>
+      <div style={{color:'#FFFFFF',fontSize:28,fontWeight:800,fontFamily:"'Inter',sans-serif"}}>@{callData.callerName}</div>
+      <div style={{color:'rgba(255,255,255,0.4)',fontSize:14,marginTop:8,animation:'pulse 1.5s infinite'}}>Calling...</div>
     </div>
     <div style={{display:'flex',justifyContent:'space-around',width:'100%',alignItems:'center'}}>
       <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:12}}>
-        <button onClick={onDecline} style={{width:70,height:70,borderRadius:'50%',background:'#FF2156',border:'none',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',boxShadow:'0 8px 30px rgba(255,45,85,0.5)'}}>
+        <button onClick={onDecline} style={{width:70,height:70,borderRadius:'50%',background:'#FE2C55',border:'none',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',boxShadow:'0 8px 30px rgba(255,45,85,0.5)'}}>
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M10.68 13.31a16 16 0 003.41 2.6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7 2 2 0 011.72 2v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.42 19.42 0 01-3.33-2.67m-2.67-3.34a19.79 19.79 0 01-3.07-8.63A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91"/><line x1="23" y1="1" x2="1" y2="23"/></svg>
         </button>
-        <span style={{color:'rgba(20,16,28,0.5)',fontSize:13}}>Decline</span>
+        <span style={{color:'rgba(255,255,255,0.5)',fontSize:13}}>Decline</span>
       </div>
       <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:12}}>
         <button onClick={onAnswer} style={{width:70,height:70,borderRadius:'50%',background:'#2ED573',border:'none',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',boxShadow:'0 8px 30px rgba(52,199,89,0.5)',animation:'pulse 1.5s infinite'}}>
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8a19.79 19.79 0 01-3.07-8.67A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>
         </button>
-        <span style={{color:'rgba(20,16,28,0.5)',fontSize:13}}>Answer</span>
+        <span style={{color:'rgba(255,255,255,0.5)',fontSize:13}}>Answer</span>
       </div>
     </div>
   </div>
@@ -5325,9 +5332,9 @@ cleanupCall();
   }[status] || 'Connecting...';
 
   return (
-    <div style={{ position:'fixed', inset:0, background:'#F5F4F7', zIndex:2500, display:'flex', flexDirection:'column' }}>
+    <div style={{ position:'fixed', inset:0, background:'#000000', zIndex:2500, display:'flex', flexDirection:'column' }}>
       {type === 'video' ? (
-        <video ref={remoteVideoRef} autoPlay playsInline style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', background:'#FFFFFF' }} />
+        <video ref={remoteVideoRef} autoPlay playsInline style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', background:'#121214' }} />
       ) : (
         <audio ref={remoteVideoRef} autoPlay playsInline style={{ display:'none' }} />
       )}
@@ -5337,23 +5344,23 @@ cleanupCall();
         </div>
       )}
       {type === 'video' && (
-        <video ref={localVideoRef} autoPlay playsInline muted style={{ position:'absolute', top:60, right:16, width:100, height:140, objectFit:'cover', borderRadius:16, border:'2px solid rgba(20,16,28,0.2)', zIndex:10, background:'#24242E' }} />
+        <video ref={localVideoRef} autoPlay playsInline muted style={{ position:'absolute', top:60, right:16, width:100, height:140, objectFit:'cover', borderRadius:16, border:'2px solid rgba(255,255,255,0.2)', zIndex:10, background:'#24242E' }} />
       )}
       <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:20, padding:'56px 20px 20px', textAlign:'center' }}>
         {type !== 'video' && (
-          <div style={{ width:110, height:110, borderRadius:'50%', padding:3, background:'conic-gradient(#FF2156,#9D4EDD,#FF2156)', margin:'0 auto 20px', animation:status==='calling'?'storyRing 4s linear infinite':'' }}>
+          <div style={{ width:110, height:110, borderRadius:'50%', padding:3, background:'conic-gradient(#FE2C55,#9D4EDD,#FE2C55)', margin:'0 auto 20px', animation:status==='calling'?'storyRing 4s linear infinite':'' }}>
             <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:'#1a0a0a', padding:2, display:'flex', alignItems:'center', justifyContent:'center' }}>
-              <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:'#FF2156', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:'bold', fontSize:42 }}>
+              <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:'#FE2C55', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:'bold', fontSize:42 }}>
                 {contactAvatar || '?'}
               </div>
             </div>
           </div>
         )}
-        <div style={{ color:'#161221', fontSize:22, fontWeight:800, fontFamily:"'Inter',sans-serif" }}>@{contactName}</div>
-        <div style={{ color:'rgba(20,16,28,0.5)', fontSize:13, marginTop:6 }}>{statusLabel}</div>
+        <div style={{ color:'#FFFFFF', fontSize:22, fontWeight:800, fontFamily:"'Inter',sans-serif" }}>@{contactName}</div>
+        <div style={{ color:'rgba(255,255,255,0.5)', fontSize:13, marginTop:6 }}>{statusLabel}</div>
       </div>
       <div style={{ position:'absolute', bottom:60, left:0, right:0, zIndex:20, display:'flex', justifyContent:'center', gap:20 }}>
-        <button onClick={toggleMute} style={{ background:isMuted?'rgba(255,45,85,0.9)':'rgba(20,16,28,0.12)', border:'none', borderRadius:'50%', width:60, height:60, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+        <button onClick={toggleMute} style={{ background:isMuted?'rgba(255,45,85,0.9)':'rgba(255,255,255,0.12)', border:'none', borderRadius:'50%', width:60, height:60, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
             {isMuted
               ? <><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 005.12 2.12M15 9.34V4a3 3 0 00-5.94-.6"/><path d="M17 16.95A7 7 0 015 12v-2m14 0v2a7 7 0 01-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></>
@@ -5361,14 +5368,14 @@ cleanupCall();
             }
           </svg>
         </button>
-        <button onClick={onClose} style={{ background:'#FF2156', border:'none', borderRadius:'50%', width:70, height:70, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', boxShadow:'0 0 30px rgba(255,45,85,0.5)' }}>
+        <button onClick={onClose} style={{ background:'#FE2C55', border:'none', borderRadius:'50%', width:70, height:70, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', boxShadow:'0 0 30px rgba(255,45,85,0.5)' }}>
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
             <path d="M10.68 13.31a16 16 0 003.41 2.6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7 2 2 0 011.72 2v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.42 19.42 0 01-3.33-2.67m-2.67-3.34a19.79 19.79 0 01-3.07-8.63A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91"/>
             <line x1="23" y1="1" x2="1" y2="23"/>
           </svg>
         </button>
         {type === 'video' && (
-          <button onClick={toggleCam} style={{ background:isCamOff?'rgba(255,45,85,0.9)':'rgba(20,16,28,0.12)', border:'none', borderRadius:'50%', width:60, height:60, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+          <button onClick={toggleCam} style={{ background:isCamOff?'rgba(255,45,85,0.9)':'rgba(255,255,255,0.12)', border:'none', borderRadius:'50%', width:60, height:60, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
               {isCamOff
                 ? <><line x1="1" y1="1" x2="23" y2="23"/><path d="M21 21H3a2 2 0 01-2-2V8a2 2 0 012-2h3m3-3h6l2 3h4a2 2 0 012 2v9.34m-7.72-2.06a4 4 0 11-5.56-5.56"/></>
@@ -5424,26 +5431,26 @@ const SearchOverlay = ({ onClose, videos, users, onViewProfile }) => {
   const totalResults = results.users.length + results.videos.length + results.hashtags.length;
 
   return (
-    <div style={{ position:'absolute', inset:0, background:'#F5F4F7', zIndex:200, display:'flex', flexDirection:'column' }}>
+    <div style={{ position:'absolute', inset:0, background:'#000000', zIndex:200, display:'flex', flexDirection:'column' }}>
       {/* ── Header ── */}
-      <div style={{ padding:'12px 16px', borderBottom:'1px solid rgba(20,16,28,0.06)', display:'flex', gap:10, alignItems:'center', background:'rgba(255,255,255,0.98)', backdropFilter:'blur(20px)' }}>
-        <div style={{ flex:1, display:'flex', alignItems:'center', background:'rgba(20,16,28,0.07)', borderRadius:14, padding:'11px 14px', gap:10, border:'1.5px solid rgba(20,16,28,0.1)', transition:'border-color 0.2s' }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(20,16,28,0.45)" strokeWidth="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <div style={{ padding:'12px 16px', borderBottom:'1px solid rgba(255,255,255,0.06)', display:'flex', gap:10, alignItems:'center', background:'rgba(255,255,255,0.98)', backdropFilter:'blur(20px)' }}>
+        <div style={{ flex:1, display:'flex', alignItems:'center', background:'rgba(255,255,255,0.07)', borderRadius:14, padding:'11px 14px', gap:10, border:'1.5px solid rgba(255,255,255,0.1)', transition:'border-color 0.2s' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input autoFocus value={query}
             onChange={e=>setQuery(e.target.value)}
             onKeyDown={e=>{ if(e.key==='Enter' && query.trim()) addRecentSearch(query.trim()); }}
             placeholder="Search users, posts, hashtags..."
-            style={{ flex:1, background:'none', border:'none', color:'#161221', outline:'none', fontSize:15, fontWeight:500 }} />
-          {query && <button onClick={()=>setQuery('')} style={{ background:'rgba(20,16,28,0.12)', border:'none', borderRadius:'50%', width:20, height:20, color:'rgba(20,16,28,0.7)', cursor:'pointer', fontSize:12, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>✕</button>}
+            style={{ flex:1, background:'none', border:'none', color:'#FFFFFF', outline:'none', fontSize:15, fontWeight:500 }} />
+          {query && <button onClick={()=>setQuery('')} style={{ background:'rgba(255,255,255,0.12)', border:'none', borderRadius:'50%', width:20, height:20, color:'rgba(255,255,255,0.7)', cursor:'pointer', fontSize:12, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>✕</button>}
         </div>
-        <button onClick={onClose} style={{ background:'none', border:'none', color:'rgba(20,16,28,0.55)', fontSize:14, cursor:'pointer', fontWeight:600, padding:'4px 8px' }}>Cancel</button>
+        <button onClick={onClose} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.55)', fontSize:14, cursor:'pointer', fontWeight:600, padding:'4px 8px' }}>Cancel</button>
       </div>
 
       {/* ── Filter tabs (when searching) ── */}
       {query.trim() && (
-        <div style={{ display:'flex', padding:'8px 12px', gap:6, borderBottom:'1px solid rgba(20,16,28,0.06)', overflowX:'auto', scrollbarWidth:'none' }}>
+        <div style={{ display:'flex', padding:'8px 12px', gap:6, borderBottom:'1px solid rgba(255,255,255,0.06)', overflowX:'auto', scrollbarWidth:'none' }}>
           {SEARCH_TABS.map(t=>(
-            <button key={t.id} onClick={()=>setTab(t.id)} style={{ flexShrink:0, background:tab===t.id?'rgba(255,45,85,0.15)':'rgba(20,16,28,0.04)', border:tab===t.id?'1px solid rgba(255,45,85,0.4)':'1px solid rgba(20,16,28,0.07)', padding:'6px 14px', color:tab===t.id?'#FF2156':'rgba(20,16,28,0.45)', cursor:'pointer', borderRadius:20, fontSize:12, fontWeight:700, transition:'all 0.15s' }}>{t.label}</button>
+            <button key={t.id} onClick={()=>setTab(t.id)} style={{ flexShrink:0, background:tab===t.id?'rgba(255,45,85,0.15)':'rgba(255,255,255,0.04)', border:tab===t.id?'1px solid rgba(255,45,85,0.4)':'1px solid rgba(255,255,255,0.07)', padding:'6px 14px', color:tab===t.id?'#FE2C55':'rgba(255,255,255,0.45)', cursor:'pointer', borderRadius:20, fontSize:12, fontWeight:700, transition:'all 0.15s' }}>{t.label}</button>
           ))}
         </div>
       )}
@@ -5455,38 +5462,38 @@ const SearchOverlay = ({ onClose, videos, users, onViewProfile }) => {
             {recentSearches.length > 0 && (
               <div style={{ marginTop:20, marginBottom:24 }}>
                 <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
-                  <span style={{ color:'rgba(20,16,28,0.35)', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1 }}>Recent</span>
-                  <button onClick={clearRecentSearches} style={{ background:'none', border:'none', color:'rgba(20,16,28,0.3)', fontSize:12, cursor:'pointer' }}>Clear</button>
+                  <span style={{ color:'rgba(255,255,255,0.35)', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1 }}>Recent</span>
+                  <button onClick={clearRecentSearches} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.3)', fontSize:12, cursor:'pointer' }}>Clear</button>
                 </div>
                 {recentSearches.map((term,i)=>(
-                  <div key={i} onClick={()=>setQuery(term)} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 0', borderBottom:'1px solid rgba(20,16,28,0.04)', cursor:'pointer' }}>
-                    <div style={{ width:34, height:34, borderRadius:'50%', background:'rgba(20,16,28,0.06)', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(20,16,28,0.4)" strokeWidth="2"><polyline points="12 8 12 12 14 14"/><circle cx="12" cy="12" r="10"/></svg>
+                  <div key={i} onClick={()=>setQuery(term)} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 0', borderBottom:'1px solid rgba(255,255,255,0.04)', cursor:'pointer' }}>
+                    <div style={{ width:34, height:34, borderRadius:'50%', background:'rgba(255,255,255,0.06)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2"><polyline points="12 8 12 12 14 14"/><circle cx="12" cy="12" r="10"/></svg>
                     </div>
-                    <span style={{ color:'rgba(20,16,28,0.75)', fontSize:14, flex:1 }}>{term}</span>
-                    <button onClick={e=>{e.stopPropagation(); const u=[...recentSearches]; u.splice(i,1); setRecentSearches(u); try{localStorage.setItem('dagu_recent_searches',JSON.stringify(u));}catch{}}} style={{ background:'none', border:'none', color:'rgba(20,16,28,0.2)', cursor:'pointer', fontSize:16 }}>✕</button>
+                    <span style={{ color:'rgba(255,255,255,0.75)', fontSize:14, flex:1 }}>{term}</span>
+                    <button onClick={e=>{e.stopPropagation(); const u=[...recentSearches]; u.splice(i,1); setRecentSearches(u); try{localStorage.setItem('dagu_recent_searches',JSON.stringify(u));}catch{}}} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.2)', cursor:'pointer', fontSize:16 }}>✕</button>
                   </div>
                 ))}
               </div>
             )}
             <div style={{ marginBottom:8 }}>
-              <div style={{ color:'rgba(20,16,28,0.35)', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:14 }}>🔥 Trending</div>
+              <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:14 }}>🔥 Trending</div>
               <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
                 {trendingSearches.map((tag,i)=>(
-                  <button key={i} onClick={()=>{ setQuery(tag); addRecentSearch(tag); }} style={{ background:'rgba(20,16,28,0.04)', border:'1px solid rgba(20,16,28,0.08)', borderRadius:20, padding:'8px 14px', color:'rgba(20,16,28,0.7)', fontSize:13, cursor:'pointer', fontWeight:600 }}>{tag}</button>
+                  <button key={i} onClick={()=>{ setQuery(tag); addRecentSearch(tag); }} style={{ background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:20, padding:'8px 14px', color:'rgba(255,255,255,0.7)', fontSize:13, cursor:'pointer', fontWeight:600 }}>{tag}</button>
                 ))}
               </div>
             </div>
             <div style={{ marginTop:24 }}>
-              <div style={{ color:'rgba(20,16,28,0.35)', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:14 }}>Suggested People</div>
+              <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:14 }}>Suggested People</div>
               {users.slice(0,5).map(u=>(
-                <div key={u.id} onClick={()=>{onViewProfile?.(u.id); addRecentSearch('@'+u.username); onClose();}} style={{ display:'flex', alignItems:'center', gap:12, padding:'11px 0', borderBottom:'1px solid rgba(20,16,28,0.04)', cursor:'pointer' }}>
-                  <div style={{ width:44, height:44, borderRadius:'50%', background:u.avatarColor||'#FF2156', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:'bold', fontSize:18, overflow:'hidden', flexShrink:0 }}>
+                <div key={u.id} onClick={()=>{onViewProfile?.(u.id); addRecentSearch('@'+u.username); onClose();}} style={{ display:'flex', alignItems:'center', gap:12, padding:'11px 0', borderBottom:'1px solid rgba(255,255,255,0.04)', cursor:'pointer' }}>
+                  <div style={{ width:44, height:44, borderRadius:'50%', background:u.avatarColor||'#FE2C55', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:'bold', fontSize:18, overflow:'hidden', flexShrink:0 }}>
                     {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : u.avatar}
                   </div>
                   <div style={{ flex:1 }}>
-                    <div style={{ color:'#161221', fontWeight:700, fontSize:14 }}>@{u.username}</div>
-                    <div style={{ color:'rgba(20,16,28,0.35)', fontSize:12, marginTop:1 }}>{u.bio?.substring(0,40)||'No bio'}</div>
+                    <div style={{ color:'#FFFFFF', fontWeight:700, fontSize:14 }}>@{u.username}</div>
+                    <div style={{ color:'rgba(255,255,255,0.35)', fontSize:12, marginTop:1 }}>{u.bio?.substring(0,40)||'No bio'}</div>
                   </div>
                   {u.verified && <svg width="16" height="16" viewBox="0 0 24 24" fill="#2F9BFF"><path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>}
                 </div>
@@ -5499,7 +5506,7 @@ const SearchOverlay = ({ onClose, videos, users, onViewProfile }) => {
         {query.trim() && (
           <div style={{ padding:'8px 14px' }}>
             {totalResults === 0 && (
-              <div style={{ textAlign:'center', padding:'60px 20px', color:'rgba(20,16,28,0.25)' }}>
+              <div style={{ textAlign:'center', padding:'60px 20px', color:'rgba(255,255,255,0.25)' }}>
                 <div style={{ fontSize:44, marginBottom:12 }}>🔍</div>
                 <div style={{ fontSize:15, fontWeight:600 }}>No results for "{query}"</div>
                 <div style={{ fontSize:13, marginTop:6 }}>Try different keywords</div>
@@ -5509,24 +5516,24 @@ const SearchOverlay = ({ onClose, videos, users, onViewProfile }) => {
             {/* People */}
             {(tab==='all'||tab==='users') && results.users.length > 0 && (
               <div style={{ marginBottom:20 }}>
-                {tab==='all' && <div style={{ color:'rgba(20,16,28,0.35)', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:12 }}>People</div>}
+                {tab==='all' && <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:12 }}>People</div>}
                 {results.users.map(u=>(
-                  <div key={u.id} onClick={()=>{onViewProfile?.(u.id); addRecentSearch('@'+u.username); onClose();}} style={{ display:'flex', alignItems:'center', gap:12, padding:'11px 12px', background:'rgba(20,16,28,0.03)', borderRadius:16, marginBottom:6, cursor:'pointer', border:'1px solid rgba(20,16,28,0.05)', transition:'background 0.1s' }}>
+                  <div key={u.id} onClick={()=>{onViewProfile?.(u.id); addRecentSearch('@'+u.username); onClose();}} style={{ display:'flex', alignItems:'center', gap:12, padding:'11px 12px', background:'rgba(255,255,255,0.03)', borderRadius:16, marginBottom:6, cursor:'pointer', border:'1px solid rgba(255,255,255,0.05)', transition:'background 0.1s' }}>
                     <div style={{ position:'relative', flexShrink:0 }}>
-                      <div style={{ width:48, height:48, borderRadius:'50%', background:u.avatarColor||'#FF2156', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:'bold', fontSize:20, overflow:'hidden' }}>
+                      <div style={{ width:48, height:48, borderRadius:'50%', background:u.avatarColor||'#FE2C55', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:'bold', fontSize:20, overflow:'hidden' }}>
                         {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : u.avatar}
                       </div>
-                      {u.isOnline && <div style={{ position:'absolute', bottom:1, right:1, width:12, height:12, background:'#2ED573', borderRadius:'50%', border:'2px solid #F5F4F7' }} />}
+                      {u.isOnline && <div style={{ position:'absolute', bottom:1, right:1, width:12, height:12, background:'#2ED573', borderRadius:'50%', border:'2px solid #000000' }} />}
                     </div>
                     <div style={{ flex:1, minWidth:0 }}>
                       <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                        <span style={{ color:'#161221', fontWeight:700, fontSize:14 }}>@{u.username}</span>
+                        <span style={{ color:'#FFFFFF', fontWeight:700, fontSize:14 }}>@{u.username}</span>
                         {u.verified && <svg width="14" height="14" viewBox="0 0 24 24" fill="#2F9BFF"><path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>}
                       </div>
-                      <div style={{ color:'rgba(20,16,28,0.35)', fontSize:12, marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{u.bio?.substring(0,50)||'No bio'}</div>
-                      <div style={{ color:'rgba(20,16,28,0.2)', fontSize:11, marginTop:1 }}>{(u.followers?.length||0).toLocaleString()} followers</div>
+                      <div style={{ color:'rgba(255,255,255,0.35)', fontSize:12, marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{u.bio?.substring(0,50)||'No bio'}</div>
+                      <div style={{ color:'rgba(255,255,255,0.2)', fontSize:11, marginTop:1 }}>{(u.followers?.length||0).toLocaleString()} followers</div>
                     </div>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(20,16,28,0.2)" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
                   </div>
                 ))}
               </div>
@@ -5535,16 +5542,16 @@ const SearchOverlay = ({ onClose, videos, users, onViewProfile }) => {
             {/* Videos */}
             {(tab==='all'||tab==='videos') && results.videos.length > 0 && (
               <div style={{ marginBottom:20 }}>
-                {tab==='all' && <div style={{ color:'rgba(20,16,28,0.35)', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:12 }}>Videos</div>}
+                {tab==='all' && <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:12 }}>Videos</div>}
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
                   {results.videos.slice(0,6).map(v=>(
-                    <div key={v.id} style={{ aspectRatio:'9/16', position:'relative', borderRadius:14, overflow:'hidden', background:'#FAF9FC', cursor:'pointer' }}>
+                    <div key={v.id} style={{ aspectRatio:'9/16', position:'relative', borderRadius:14, overflow:'hidden', background:'#1A1A1D', cursor:'pointer' }}>
                       {v.videoUrl?.match(/\.(jpg|jpeg|png|gif|webp)/i) || v.mediaType?.startsWith('image')
                         ? <img src={v.videoUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
                         : <video src={v.videoUrl} style={{ width:'100%', height:'100%', objectFit:'cover' }} muted />}
                       <div style={{ position:'absolute', bottom:0, left:0, right:0, background:'linear-gradient(transparent,rgba(0,0,0,0.8))', padding:'20px 8px 8px' }}>
-                        <div style={{ color:'#161221', fontSize:11, fontWeight:700 }}>@{v.username}</div>
-                        <div style={{ color:'rgba(20,16,28,0.6)', fontSize:10, marginTop:1 }}>{v.likes||0} ❤️</div>
+                        <div style={{ color:'#FFFFFF', fontSize:11, fontWeight:700 }}>@{v.username}</div>
+                        <div style={{ color:'rgba(255,255,255,0.6)', fontSize:10, marginTop:1 }}>{v.likes||0} ❤️</div>
                       </div>
                     </div>
                   ))}
@@ -5555,13 +5562,13 @@ const SearchOverlay = ({ onClose, videos, users, onViewProfile }) => {
             {/* Hashtags */}
             {(tab==='all'||tab==='hashtags') && results.hashtags.length > 0 && (
               <div style={{ marginBottom:20 }}>
-                {tab==='all' && <div style={{ color:'rgba(20,16,28,0.35)', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:12 }}>Hashtags</div>}
+                {tab==='all' && <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:12 }}>Hashtags</div>}
                 {results.hashtags.map((h,i)=>(
-                  <div key={i} onClick={()=>{ setQuery(h); addRecentSearch(h); }} style={{ display:'flex', alignItems:'center', gap:12, padding:'11px 12px', background:'rgba(20,16,28,0.03)', borderRadius:14, marginBottom:6, cursor:'pointer', border:'1px solid rgba(20,16,28,0.05)' }}>
+                  <div key={i} onClick={()=>{ setQuery(h); addRecentSearch(h); }} style={{ display:'flex', alignItems:'center', gap:12, padding:'11px 12px', background:'rgba(255,255,255,0.03)', borderRadius:14, marginBottom:6, cursor:'pointer', border:'1px solid rgba(255,255,255,0.05)' }}>
                     <div style={{ width:40, height:40, borderRadius:12, background:'rgba(255,45,85,0.12)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20 }}>#</div>
                     <div>
-                      <div style={{ color:'#FF2156', fontWeight:700, fontSize:14 }}>{h}</div>
-                      <div style={{ color:'rgba(20,16,28,0.3)', fontSize:12 }}>{videos.filter(v=>v.hashtags?.includes(h)).length} posts</div>
+                      <div style={{ color:'#FE2C55', fontWeight:700, fontSize:14 }}>{h}</div>
+                      <div style={{ color:'rgba(255,255,255,0.3)', fontSize:12 }}>{videos.filter(v=>v.hashtags?.includes(h)).length} posts</div>
                     </div>
                   </div>
                 ))}
@@ -5571,17 +5578,17 @@ const SearchOverlay = ({ onClose, videos, users, onViewProfile }) => {
             {/* Posts text search */}
             {(tab==='all'||tab==='posts') && results.posts.length > 0 && (
               <div style={{ marginBottom:20 }}>
-                {tab==='all' && <div style={{ color:'rgba(20,16,28,0.35)', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:12 }}>Posts</div>}
+                {tab==='all' && <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:12 }}>Posts</div>}
                 {results.posts.map(v=>(
-                  <div key={v.id} style={{ padding:'12px 14px', background:'rgba(20,16,28,0.03)', borderRadius:14, marginBottom:6, border:'1px solid rgba(20,16,28,0.05)', cursor:'pointer' }}>
+                  <div key={v.id} style={{ padding:'12px 14px', background:'rgba(255,255,255,0.03)', borderRadius:14, marginBottom:6, border:'1px solid rgba(255,255,255,0.05)', cursor:'pointer' }}>
                     <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6 }}>
-                      <div style={{ width:28, height:28, borderRadius:'50%', background:users.find(u=>u.id===v.userId)?.avatarColor||'#FF2156', overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontSize:12, fontWeight:'bold' }}>
+                      <div style={{ width:28, height:28, borderRadius:'50%', background:users.find(u=>u.id===v.userId)?.avatarColor||'#FE2C55', overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontSize:12, fontWeight:'bold' }}>
                         {users.find(u=>u.id===v.userId)?.avatarUrl ? <img src={users.find(u=>u.id===v.userId).avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : v.username?.[0]?.toUpperCase()}
                       </div>
-                      <span style={{ color:'#FF2156', fontSize:12, fontWeight:700 }}>@{v.username}</span>
-                      <span style={{ color:'rgba(20,16,28,0.2)', fontSize:11, marginLeft:'auto' }}>{v.likes||0} ❤️</span>
+                      <span style={{ color:'#FE2C55', fontSize:12, fontWeight:700 }}>@{v.username}</span>
+                      <span style={{ color:'rgba(255,255,255,0.2)', fontSize:11, marginLeft:'auto' }}>{v.likes||0} ❤️</span>
                     </div>
-                    <div style={{ color:'rgba(20,16,28,0.8)', fontSize:13, lineHeight:1.5 }}>{v.description?.substring(0,100)}{v.description?.length>100?'...':''}</div>
+                    <div style={{ color:'rgba(255,255,255,0.8)', fontSize:13, lineHeight:1.5 }}>{v.description?.substring(0,100)}{v.description?.length>100?'...':''}</div>
                   </div>
                 ))}
               </div>
@@ -5749,7 +5756,7 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
           userId: currentUser.id,
           username: currentUser.username || '',
           avatar: currentUser.avatar || (currentUser.username||'U')[0].toUpperCase(),
-          avatarColor: currentUser.avatarColor || '#FF2156',
+          avatarColor: currentUser.avatarColor || '#FE2C55',
           avatarUrl: currentUser.avatarUrl || null,
           verified: currentUser.verified || false,
           description: description,
@@ -5770,7 +5777,7 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
           userId: currentUser.id,
           username: currentUser.username || '',
           avatar: currentUser.avatar || (currentUser.username||'U')[0].toUpperCase(),
-          avatarColor: currentUser.avatarColor || '#FF2156',
+          avatarColor: currentUser.avatarColor || '#FE2C55',
           avatarUrl: currentUser.avatarUrl || null,
           verified: currentUser.verified || false,
           description: description,
@@ -5801,13 +5808,13 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
   if(selectedFile) return (
     <div style={{ position:'fixed', inset:0, background:'#000', zIndex:100, display:'flex', flexDirection:'column' }}>
       <div style={{ padding:'14px 16px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-        <button onClick={()=>setSelectedFile(null)} style={{ background:'rgba(20,16,28,0.1)', border:'none', borderRadius:20, padding:'8px 16px', color:'#161221', cursor:'pointer', fontSize:13 }}>Retake</button>
-        <span style={{ color:'#161221', fontWeight:800, fontSize:16, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>New Post</span>
-        <button onClick={handleUpload} disabled={uploading} style={{ background:'linear-gradient(135deg,#FF2156,#9D4EDD)', border:'none', borderRadius:20, padding:'8px 18px', color:'#fff', fontWeight:700, cursor:'pointer', fontSize:13, opacity:uploading?0.7:1 }}>
+        <button onClick={()=>setSelectedFile(null)} style={{ background:'rgba(255,255,255,0.1)', border:'none', borderRadius:20, padding:'8px 16px', color:'#FFFFFF', cursor:'pointer', fontSize:13 }}>Retake</button>
+        <span style={{ color:'#FFFFFF', fontWeight:800, fontSize:16, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>New Post</span>
+        <button onClick={handleUpload} disabled={uploading} style={{ background:'linear-gradient(135deg,#FE2C55,#9D4EDD)', border:'none', borderRadius:20, padding:'8px 18px', color:'#fff', fontWeight:700, cursor:'pointer', fontSize:13, opacity:uploading?0.7:1 }}>
           {uploading ? `${uploadProgress}%` : 'Post ✓'}
         </button>
       </div>
-      {uploading && <div style={{ height:3, background:'rgba(20,16,28,0.1)' }}><div style={{ height:'100%', background:'linear-gradient(90deg,#FF2156,#9D4EDD)', width:`${uploadProgress}%`, transition:'width 0.3s' }} /></div>}
+      {uploading && <div style={{ height:3, background:'rgba(255,255,255,0.1)' }}><div style={{ height:'100%', background:'linear-gradient(90deg,#FE2C55,#9D4EDD)', width:`${uploadProgress}%`, transition:'width 0.3s' }} /></div>}
       <div style={{ flex:1, position:'relative', overflow:'hidden' }}>
         {selectedFile.type === 'image/multi' ? (
           <div style={{ display:'flex', width:'100%', height:'100%', overflowX:'auto', scrollSnapType:'x mandatory' }}>
@@ -5824,7 +5831,7 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
         {selectedFile.type === 'image/multi' && (
           <div style={{ position:'absolute', top:10, left:0, right:0, display:'flex', justifyContent:'center', gap:5, pointerEvents:'none' }}>
             {selectedFile.urls.map((_,i)=>(
-              <div key={i} style={{ flex:1, maxWidth:36, height:3, borderRadius:2, background:'rgba(20,16,28,0.6)' }} />
+              <div key={i} style={{ flex:1, maxWidth:36, height:3, borderRadius:2, background:'rgba(255,255,255,0.6)' }} />
             ))}
           </div>
         )}
@@ -5833,15 +5840,15 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
       <div style={{ padding:'10px 0', background:'rgba(0,0,0,0.8)', overflowX:'auto', display:'flex', gap:10, paddingLeft:16 }}>
         {FILTERS.map((f,i)=>(
           <div key={f.name} onClick={()=>setActiveFilter(i)} style={{ flexShrink:0, textAlign:'center', cursor:'pointer' }}>
-            <div style={{ width:56, height:56, borderRadius:14, overflow:'hidden', border: i===activeFilter?'2px solid #FF2156':'2px solid transparent' }}>
+            <div style={{ width:56, height:56, borderRadius:14, overflow:'hidden', border: i===activeFilter?'2px solid #FE2C55':'2px solid transparent' }}>
               <img src={selectedFile.type==='image/multi' ? selectedFile.urls[0] : selectedFile.type.startsWith('image/')?selectedFile.url:'https://picsum.photos/56'} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', filter: f.css||'none' }} />
             </div>
-            <div style={{ color: i===activeFilter?'#FF2156':'rgba(20,16,28,0.5)', fontSize:9, marginTop:4, fontWeight:700 }}>{f.name}</div>
+            <div style={{ color: i===activeFilter?'#FE2C55':'rgba(255,255,255,0.5)', fontSize:9, marginTop:4, fontWeight:700 }}>{f.name}</div>
           </div>
         ))}
       </div>
       <div style={{ padding:'10px 16px 32px', background:'rgba(0,0,0,0.9)' }}>
-        <textarea placeholder="Write a caption... #hashtags" value={description} onChange={e=>setDescription(e.target.value)} style={{ width:'100%', background:'rgba(20,16,28,0.06)', border:'1px solid rgba(20,16,28,0.1)', borderRadius:16, padding:'12px 14px', color:'#161221', minHeight:70, outline:'none', fontSize:13, resize:'none', boxSizing:'border-box' }} />
+        <textarea placeholder="Write a caption... #hashtags" value={description} onChange={e=>setDescription(e.target.value)} style={{ width:'100%', background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:16, padding:'12px 14px', color:'#FFFFFF', minHeight:70, outline:'none', fontSize:13, resize:'none', boxSizing:'border-box' }} />
       </div>
     </div>
   );
@@ -5851,11 +5858,11 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
     <div style={{ position:'fixed', inset:0, background:'#000', zIndex:100, display:'flex', flexDirection:'column' }}>
       {/* Top bar */}
       <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:10, padding:'50px 16px 16px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-        <button onClick={onClose} style={{ background:'rgba(0,0,0,0.5)', border:'none', borderRadius:'50%', width:40, height:40, color:'#161221', cursor:'pointer', fontSize:20, display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
+        <button onClick={onClose} style={{ background:'rgba(0,0,0,0.5)', border:'none', borderRadius:'50%', width:40, height:40, color:'#FFFFFF', cursor:'pointer', fontSize:20, display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
         <div style={{ display:'flex', gap:10 }}>
           <button onClick={()=>setFlash(!flash)} style={{ background: flash?'rgba(255,215,0,0.3)':'rgba(0,0,0,0.5)', border:'none', borderRadius:'50%', width:40, height:40, color: flash?'#FFD60A':'white', cursor:'pointer', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center' }}>⚡</button>
-          <button onClick={flipCamera} style={{ background:'rgba(0,0,0,0.5)', border:'none', borderRadius:'50%', width:40, height:40, color:'#161221', cursor:'pointer', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center' }}>🔄</button>
-          <button onClick={()=>setShowFilters(!showFilters)} style={{ background: showFilters?'rgba(255,45,85,0.5)':'rgba(0,0,0,0.5)', border:'none', borderRadius:'50%', width:40, height:40, color:'#161221', cursor:'pointer', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center' }}>✨</button>
+          <button onClick={flipCamera} style={{ background:'rgba(0,0,0,0.5)', border:'none', borderRadius:'50%', width:40, height:40, color:'#FFFFFF', cursor:'pointer', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center' }}>🔄</button>
+          <button onClick={()=>setShowFilters(!showFilters)} style={{ background: showFilters?'rgba(255,45,85,0.5)':'rgba(0,0,0,0.5)', border:'none', borderRadius:'50%', width:40, height:40, color:'#FFFFFF', cursor:'pointer', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center' }}>✨</button>
         </div>
       </div>
 
@@ -5870,13 +5877,13 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
         {recording && (
           <div style={{ position:'absolute', top:60, left:'50%', transform:'translateX(-50%)', background:'rgba(255,45,85,0.9)', borderRadius:20, padding:'6px 16px', display:'flex', alignItems:'center', gap:8 }}>
             <div style={{ width:8, height:8, borderRadius:'50%', background:'white', animation:'pulse 1s infinite' }} />
-            <span style={{ color:'#161221', fontWeight:700, fontSize:14 }}>00:{String(recordSeconds).padStart(2,'0')} / 00:{String(MAX_RECORD_SECONDS).padStart(2,'0')}</span>
+            <span style={{ color:'#FFFFFF', fontWeight:700, fontSize:14 }}>00:{String(recordSeconds).padStart(2,'0')} / 00:{String(MAX_RECORD_SECONDS).padStart(2,'0')}</span>
           </div>
         )}
         {/* Zoom slider */}
         {zoomCaps && (
           <div onClick={e=>e.stopPropagation()} style={{ position:'absolute', right:14, top:'50%', transform:'translateY(-50%)', display:'flex', flexDirection:'column', alignItems:'center', gap:8, background:'rgba(0,0,0,0.45)', borderRadius:20, padding:'12px 6px' }}>
-            <span style={{ color:'#161221', fontSize:11, fontWeight:700 }}>{zoom.toFixed(1)}x</span>
+            <span style={{ color:'#FFFFFF', fontSize:11, fontWeight:700 }}>{zoom.toFixed(1)}x</span>
             <input
               type="range"
               min={zoomCaps.min}
@@ -5884,7 +5891,7 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
               step={zoomCaps.step}
               value={zoom}
               onChange={e=>applyZoom(parseFloat(e.target.value))}
-              style={{ writingMode:'vertical-lr', WebkitAppearance:'slider-vertical', height:120, width:24, accentColor:'#FF2156' }}
+              style={{ writingMode:'vertical-lr', WebkitAppearance:'slider-vertical', height:120, width:24, accentColor:'#FE2C55' }}
             />
           </div>
         )}
@@ -5893,9 +5900,9 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
           <div onClick={e=>e.stopPropagation()} style={{ position:'absolute', bottom:0, left:0, right:0, padding:'10px 0 10px 16px', background:'linear-gradient(transparent,rgba(0,0,0,0.7))', overflowX:'auto', display:'flex', gap:10 }}>
             {FILTERS.map((f,i)=>(
               <div key={f.name} onClick={()=>setActiveFilter(i)} style={{ flexShrink:0, textAlign:'center', cursor:'pointer' }}>
-                <div style={{ width:52, height:52, borderRadius:12, background:'rgba(20,16,28,0.15)', border: i===activeFilter?'2px solid #FF2156':'2px solid transparent', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden' }}>
+                <div style={{ width:52, height:52, borderRadius:12, background:'rgba(255,255,255,0.15)', border: i===activeFilter?'2px solid #FE2C55':'2px solid transparent', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden' }}>
                   <div style={{ width:'100%', height:'100%', background: i===0?'linear-gradient(135deg,#888,#34343E)':i===1?'linear-gradient(135deg,#ff6b6b,#ffa500)':i===2?'linear-gradient(135deg,#FFD60A,#ff8c00)':i===3?'linear-gradient(135deg,#00bfff,#1e90ff)':i===4?'linear-gradient(135deg,#888,#24242E)':i===5?'linear-gradient(135deg,#ddd,#aaa)':i===6?'linear-gradient(135deg,#34343E,#000)':i===7?'linear-gradient(135deg,#ffe,#ffd)':i===8?'linear-gradient(135deg,#ff00ff,#00ffff)':'linear-gradient(135deg,#c8a97e,#8b6f47)', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                    <span style={{ fontSize:9, color:'#161221', fontWeight:700 }}>{f.name}</span>
+                    <span style={{ fontSize:9, color:'#FFFFFF', fontWeight:700 }}>{f.name}</span>
                   </div>
                 </div>
               </div>
@@ -5909,7 +5916,7 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
         {/* Photo / Video toggle */}
         <div style={{ display:'flex', justifyContent:'center', gap:28, marginBottom: cameraMode==='video' && !recording ? 12 : 24 }}>
           {['photo','video'].map(m=>(
-            <button key={m} onClick={()=>setCameraMode(m)} style={{ background:'none', border:'none', color: cameraMode===m?'white':'rgba(20,16,28,0.35)', fontSize:13, fontWeight:700, cursor:'pointer', textTransform:'uppercase', letterSpacing:1, borderBottom: cameraMode===m?'2px solid #FF2156':'2px solid transparent', paddingBottom:4 }}>{m}</button>
+            <button key={m} onClick={()=>setCameraMode(m)} style={{ background:'none', border:'none', color: cameraMode===m?'white':'rgba(255,255,255,0.35)', fontSize:13, fontWeight:700, cursor:'pointer', textTransform:'uppercase', letterSpacing:1, borderBottom: cameraMode===m?'2px solid #FE2C55':'2px solid transparent', paddingBottom:4 }}>{m}</button>
           ))}
         </div>
 
@@ -5917,7 +5924,7 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
         {cameraMode==='video' && !recording && (
           <div style={{ display:'flex', justifyContent:'center', gap:10, marginBottom:24 }}>
             {[0.5,1,2,3].map(sp=>(
-              <button key={sp} onClick={()=>setRecordSpeed(sp)} style={{ background: recordSpeed===sp?'rgba(255,45,85,0.25)':'rgba(20,16,28,0.08)', border: recordSpeed===sp?'1px solid #FF2156':'1px solid rgba(20,16,28,0.1)', borderRadius:16, padding:'5px 12px', color: recordSpeed===sp?'#FF2156':'rgba(20,16,28,0.6)', fontSize:12, fontWeight:700, cursor:'pointer' }}>{sp}x</button>
+              <button key={sp} onClick={()=>setRecordSpeed(sp)} style={{ background: recordSpeed===sp?'rgba(255,45,85,0.25)':'rgba(255,255,255,0.08)', border: recordSpeed===sp?'1px solid #FE2C55':'1px solid rgba(255,255,255,0.1)', borderRadius:16, padding:'5px 12px', color: recordSpeed===sp?'#FE2C55':'rgba(255,255,255,0.6)', fontSize:12, fontWeight:700, cursor:'pointer' }}>{sp}x</button>
             ))}
           </div>
         )}
@@ -5925,20 +5932,20 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
         {/* Capture row */}
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', paddingLeft:60, paddingRight:60 }}>
           {/* Gallery */}
-          <button onClick={()=>fileInputRef.current?.click()} style={{ width:48, height:48, borderRadius:14, background:'rgba(20,16,28,0.1)', border:'1px solid rgba(20,16,28,0.15)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', fontSize:22 }}>🖼️</button>
+          <button onClick={()=>fileInputRef.current?.click()} style={{ width:48, height:48, borderRadius:14, background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', fontSize:22 }}>🖼️</button>
           <input ref={fileInputRef} type="file" accept="video/*,image/*" multiple onChange={handleFileSelect} style={{ display:'none' }} />
 
           {/* Shutter / Record */}
           {cameraMode==='photo' ? (
-            <button onClick={capturePhoto} style={{ width:76, height:76, borderRadius:'50%', background:'white', border:'5px solid rgba(20,16,28,0.3)', cursor:'pointer', position:'relative' }}>
+            <button onClick={capturePhoto} style={{ width:76, height:76, borderRadius:'50%', background:'white', border:'5px solid rgba(255,255,255,0.3)', cursor:'pointer', position:'relative' }}>
               <div style={{ position:'absolute', inset:4, borderRadius:'50%', background:'white' }} />
             </button>
           ) : (
-            <button onClick={recording?stopRecording:startRecording} style={{ width:76, height:76, borderRadius:'50%', background: recording?'#FF2156':'white', border:'5px solid rgba(20,16,28,0.3)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', position:'relative' }}>
+            <button onClick={recording?stopRecording:startRecording} style={{ width:76, height:76, borderRadius:'50%', background: recording?'#FE2C55':'white', border:'5px solid rgba(255,255,255,0.3)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', position:'relative' }}>
               {recording && (
                 <svg width="86" height="86" viewBox="0 0 86 86" style={{ position:'absolute', top:-5, left:-5, transform:'rotate(-90deg)', pointerEvents:'none' }}>
-                  <circle cx="43" cy="43" r="40" fill="none" stroke="rgba(20,16,28,0.25)" strokeWidth="3" />
-                  <circle cx="43" cy="43" r="40" fill="none" stroke="#FF2156" strokeWidth="3"
+                  <circle cx="43" cy="43" r="40" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="3" />
+                  <circle cx="43" cy="43" r="40" fill="none" stroke="#FE2C55" strokeWidth="3"
                     strokeDasharray={`${2*Math.PI*40}`}
                     strokeDashoffset={`${2*Math.PI*40*(1 - recordSeconds/MAX_RECORD_SECONDS)}`}
                     style={{ transition:'stroke-dashoffset 1s linear' }} />
@@ -5946,13 +5953,13 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
               )}
               {recording
                 ? <div style={{ width:24, height:24, borderRadius:4, background:'white' }} />
-                : <div style={{ width:76, height:76, borderRadius:'50%', background:'#FF2156' }} />
+                : <div style={{ width:76, height:76, borderRadius:'50%', background:'#FE2C55' }} />
               }
             </button>
           )}
 
           {/* Flip (right side placeholder for symmetry) */}
-          <button onClick={flipCamera} style={{ width:48, height:48, borderRadius:'50%', background:'rgba(20,16,28,0.1)', border:'1px solid rgba(20,16,28,0.15)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', fontSize:22 }}>🔄</button>
+          <button onClick={flipCamera} style={{ width:48, height:48, borderRadius:'50%', background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', fontSize:22 }}>🔄</button>
         </div>
       </div>
     </div>
@@ -5965,21 +5972,21 @@ const SoundLibraryPage = ({ onSelectSound, onClose }) => {
   const [search, setSearch] = useState('');
   const filtered = useMemo(()=>!search?SOUND_LIBRARY:SOUND_LIBRARY.filter(s=>s.name.toLowerCase().includes(search.toLowerCase())),[search]);
   return (
-    <div style={{ position:'fixed', inset:0, background:'#F5F4F7', zIndex:200, display:'flex', flexDirection:'column' }}>
-      <div style={{ padding:'14px 16px', borderBottom:'1px solid rgba(20,16,28,0.06)', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-        <h2 style={{ color:'#161221', fontSize:20, fontWeight:800, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Sounds</h2>
-        <button onClick={onClose} style={{ background:'rgba(20,16,28,0.06)', border:'none', borderRadius:20, padding:'8px 16px', color:'#161221', cursor:'pointer', fontSize:13 }}>Close</button>
+    <div style={{ position:'fixed', inset:0, background:'#000000', zIndex:200, display:'flex', flexDirection:'column' }}>
+      <div style={{ padding:'14px 16px', borderBottom:'1px solid rgba(255,255,255,0.06)', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+        <h2 style={{ color:'#FFFFFF', fontSize:20, fontWeight:800, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Sounds</h2>
+        <button onClick={onClose} style={{ background:'rgba(255,255,255,0.06)', border:'none', borderRadius:20, padding:'8px 16px', color:'#FFFFFF', cursor:'pointer', fontSize:13 }}>Close</button>
       </div>
       <div style={{ padding:'10px 16px' }}>
-        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search sounds..." style={{ width:'100%', background:'rgba(20,16,28,0.05)', border:'1px solid rgba(20,16,28,0.08)', borderRadius:28, padding:'11px 16px', color:'#161221', outline:'none', fontSize:13, boxSizing:'border-box' }} />
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search sounds..." style={{ width:'100%', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:28, padding:'11px 16px', color:'#FFFFFF', outline:'none', fontSize:13, boxSizing:'border-box' }} />
       </div>
       <div style={{ flex:1, overflowY:'auto', padding:'0 14px' }}>
         {filtered.map(sound=>(
-          <div key={sound.id} onClick={()=>onSelectSound(sound)} style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 12px', background:'rgba(20,16,28,0.03)', borderRadius:18, marginBottom:8, cursor:'pointer', border:'1px solid rgba(20,16,28,0.05)' }}>
-            <div style={{ width:48, height:48, borderRadius:16, background:'linear-gradient(135deg,#FF2156,#9D4EDD)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:24 }}>🎵</div>
+          <div key={sound.id} onClick={()=>onSelectSound(sound)} style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 12px', background:'rgba(255,255,255,0.03)', borderRadius:18, marginBottom:8, cursor:'pointer', border:'1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ width:48, height:48, borderRadius:16, background:'linear-gradient(135deg,#FE2C55,#9D4EDD)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:24 }}>🎵</div>
             <div style={{ flex:1 }}>
-              <div style={{ color:'#161221', fontWeight:700, fontSize:13, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{sound.name}</div>
-              <div style={{ color:'rgba(20,16,28,0.35)', fontSize:11, marginTop:2 }}>{sound.artist} · {sound.duration}</div>
+              <div style={{ color:'#FFFFFF', fontWeight:700, fontSize:13, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{sound.name}</div>
+              <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11, marginTop:2 }}>{sound.artist} · {sound.duration}</div>
             </div>
             {sound.popular && <span style={{ color:'#FFB100', fontSize:11, fontWeight:700 }}>🔥 {formatNumber(sound.usage)}</span>}
           </div>
@@ -6008,40 +6015,40 @@ const CreatorAnalytics = ({ user, videos, onClose }) => {
   const maxVal = Math.max(...weeklyData,1);
 
   return (
-    <div style={{ position:'fixed', inset:0, background:'#F5F4F7', zIndex:200, overflow:'auto' }}>
+    <div style={{ position:'fixed', inset:0, background:'#000000', zIndex:200, overflow:'auto' }}>
       <div style={{ padding:'60px 20px 20px' }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24 }}>
-          <h2 style={{ color:'#161221', fontSize:24, fontWeight:800, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Analytics</h2>
-          <button onClick={onClose} style={{ background:'rgba(20,16,28,0.06)', border:'none', borderRadius:20, padding:'8px 18px', color:'#161221', cursor:'pointer', fontSize:13 }}>Close</button>
+          <h2 style={{ color:'#FFFFFF', fontSize:24, fontWeight:800, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Analytics</h2>
+          <button onClick={onClose} style={{ background:'rgba(255,255,255,0.06)', border:'none', borderRadius:20, padding:'8px 18px', color:'#FFFFFF', cursor:'pointer', fontSize:13 }}>Close</button>
         </div>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:12, marginBottom:20 }}>
-          {[['Total Views',formatNumber(totalViews),'#00E6B4'],['Total Likes',formatNumber(totalLikes),'#FF2156'],['Posts',String(userVideos.length),'#9D4EDD'],['Coins',String(user?.coins||0),'#FFD60A']].map(([label,val,color])=>(
-            <div key={label} style={{ background:'rgba(20,16,28,0.03)', borderRadius:20, padding:20, border:'1px solid rgba(20,16,28,0.06)' }}>
-              <div style={{ color:'rgba(20,16,28,0.35)', fontSize:11, textTransform:'uppercase', letterSpacing:0.5 }}>{label}</div>
+          {[['Total Views',formatNumber(totalViews),'#00E6B4'],['Total Likes',formatNumber(totalLikes),'#FE2C55'],['Posts',String(userVideos.length),'#9D4EDD'],['Coins',String(user?.coins||0),'#FFD60A']].map(([label,val,color])=>(
+            <div key={label} style={{ background:'rgba(255,255,255,0.03)', borderRadius:20, padding:20, border:'1px solid rgba(255,255,255,0.06)' }}>
+              <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11, textTransform:'uppercase', letterSpacing:0.5 }}>{label}</div>
               <div style={{ color:color, fontSize:28, fontWeight:800, marginTop:6, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{val}</div>
             </div>
           ))}
         </div>
-        <div style={{ background:'rgba(20,16,28,0.03)', borderRadius:20, padding:20, marginBottom:16, border:'1px solid rgba(20,16,28,0.06)' }}>
-          <h3 style={{ color:'#161221', marginBottom:16, fontSize:14, fontWeight:700, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Weekly Views</h3>
+        <div style={{ background:'rgba(255,255,255,0.03)', borderRadius:20, padding:20, marginBottom:16, border:'1px solid rgba(255,255,255,0.06)' }}>
+          <h3 style={{ color:'#FFFFFF', marginBottom:16, fontSize:14, fontWeight:700, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Weekly Views</h3>
           <div style={{ height:120, display:'flex', alignItems:'flex-end', gap:6 }}>
             {weeklyData.map((v,i)=>(
               <div key={i} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
-                <div style={{ width:'100%', height:`${Math.max((v/maxVal)*100,4)}%`, background:`linear-gradient(180deg,#FF2156,#9D4EDD)`, borderRadius:6 }} />
-                <span style={{ color:'rgba(20,16,28,0.3)', fontSize:9 }}>{['M','T','W','T','F','S','S'][i]}</span>
+                <div style={{ width:'100%', height:`${Math.max((v/maxVal)*100,4)}%`, background:`linear-gradient(180deg,#FE2C55,#9D4EDD)`, borderRadius:6 }} />
+                <span style={{ color:'rgba(255,255,255,0.3)', fontSize:9 }}>{['M','T','W','T','F','S','S'][i]}</span>
               </div>
             ))}
           </div>
         </div>
-        <div style={{ background:'rgba(20,16,28,0.03)', borderRadius:20, padding:20, border:'1px solid rgba(20,16,28,0.06)' }}>
-          <h3 style={{ color:'#161221', marginBottom:12, fontSize:14, fontWeight:700, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Top Videos</h3>
+        <div style={{ background:'rgba(255,255,255,0.03)', borderRadius:20, padding:20, border:'1px solid rgba(255,255,255,0.06)' }}>
+          <h3 style={{ color:'#FFFFFF', marginBottom:12, fontSize:14, fontWeight:700, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Top Videos</h3>
           {userVideos.sort((a,b)=>(b.views||0)-(a.views||0)).slice(0,3).map(v=>(
-            <div key={v.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12, padding:'10px 12px', background:'rgba(20,16,28,0.03)', borderRadius:14 }}>
-              <div style={{ color:'#161221', fontSize:12, flex:1, marginRight:10 }}>{v.description?.substring(0,30)}...</div>
+            <div key={v.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12, padding:'10px 12px', background:'rgba(255,255,255,0.03)', borderRadius:14 }}>
+              <div style={{ color:'#FFFFFF', fontSize:12, flex:1, marginRight:10 }}>{v.description?.substring(0,30)}...</div>
               <div style={{ color:'#00E6B4', fontSize:12, fontWeight:700 }}>{formatNumber(v.views||0)} views</div>
             </div>
           ))}
-          {userVideos.length===0 && <div style={{textAlign:'center',color:'rgba(20,16,28,0.2)',padding:20}}>Post videos to see analytics</div>}
+          {userVideos.length===0 && <div style={{textAlign:'center',color:'rgba(255,255,255,0.2)',padding:20}}>Post videos to see analytics</div>}
         </div>
       </div>
     </div>
@@ -6051,9 +6058,9 @@ const CreatorAnalytics = ({ user, videos, onClose }) => {
 /* ─────────────── QR CODE ─────────────── */
 const QRCodePage = ({ user, onClose }) => (
   <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.95)', zIndex:200, display:'flex', alignItems:'center', justifyContent:'center' }}>
-    <div style={{ background:'#FFFFFF', borderRadius:28, padding:32, textAlign:'center', maxWidth:300, width:'100%', margin:'0 20px', border:'1px solid rgba(20,16,28,0.08)', position:'relative' }}>
-      <button onClick={onClose} style={{ position:'absolute', top:14, right:14, background:'rgba(20,16,28,0.08)', border:'none', borderRadius:'50%', width:32, height:32, color:'#161221', cursor:'pointer', fontSize:16 }}>✕</button>
-      <div style={{ color:'#161221', fontWeight:800, fontSize:18, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>My QR Code</div>
+    <div style={{ background:'#121214', borderRadius:28, padding:32, textAlign:'center', maxWidth:300, width:'100%', margin:'0 20px', border:'1px solid rgba(255,255,255,0.08)', position:'relative' }}>
+      <button onClick={onClose} style={{ position:'absolute', top:14, right:14, background:'rgba(255,255,255,0.08)', border:'none', borderRadius:'50%', width:32, height:32, color:'#FFFFFF', cursor:'pointer', fontSize:16 }}>✕</button>
+      <div style={{ color:'#FFFFFF', fontWeight:800, fontSize:18, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>My QR Code</div>
       <div style={{ width:180, height:180, margin:'0 auto 20px', borderRadius:20, overflow:'hidden', background:'white', display:'flex', alignItems:'center', justifyContent:'center' }}>
   <img
     src={`https://chart.googleapis.com/chart?chs=160x160&cht=qr&chl=${encodeURIComponent('https://infinity-now.vercel.app/user/' + user?.username)}&choe=UTF-8`}
@@ -6061,10 +6068,10 @@ const QRCodePage = ({ user, onClose }) => (
     style={{ width:160, height:160 }}
   />
 </div>
-      <h3 style={{ color:'#161221', marginBottom:4, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{user?.username}</h3>
-      <p style={{ color:'rgba(20,16,28,0.35)', fontSize:12, marginBottom:20 }}>Scan to follow on Infinity</p>
+      <h3 style={{ color:'#FFFFFF', marginBottom:4, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{user?.username}</h3>
+      <p style={{ color:'rgba(255,255,255,0.35)', fontSize:12, marginBottom:20 }}>Scan to follow on Infinity</p>
       <button onClick={()=>navigator.share?.({title:'Infinity',text:`Follow @${user?.username} on Infinity`,url:`https://infinity-now.vercel.app`
-})} style={{ width:'100%', background:'linear-gradient(135deg,#FF2156,#9D4EDD)', border:'none', borderRadius:20, padding:13, color:'#fff', fontWeight:700, cursor:'pointer', fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Share Profile</button>
+})} style={{ width:'100%', background:'linear-gradient(135deg,#FE2C55,#9D4EDD)', border:'none', borderRadius:20, padding:13, color:'#fff', fontWeight:700, cursor:'pointer', fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Share Profile</button>
     </div>
   </div>
 );
@@ -6119,13 +6126,13 @@ const GuestFeed = ({ onSignIn }) => {
             </div>
           )}
           <div style={{ position:'absolute', bottom:100, left:14, right:14 }}>
-            <div style={{ color:'#161221', fontWeight:700, fontSize:15 }}>@{video.username}</div>
-            <div style={{ color:'rgba(20,16,28,0.8)', fontSize:13, marginTop:4 }}>{video.description}</div>
+            <div style={{ color:'#FFFFFF', fontWeight:700, fontSize:15 }}>@{video.username}</div>
+            <div style={{ color:'rgba(255,255,255,0.8)', fontSize:13, marginTop:4 }}>{video.description}</div>
           </div>
         </div>
       ))}
       <div style={{ position:'absolute', bottom:28, left:0, right:0, display:'flex', justifyContent:'center', zIndex:20 }}>
-        <button onClick={onSignIn} style={{ background:'linear-gradient(135deg,#FF2156,#9D4EDD)', border:'none', borderRadius:28, padding:'14px 36px', color:'#fff', fontWeight:800, fontSize:15, cursor:'pointer', boxShadow:'0 4px 24px rgba(255,45,85,0.5)' }}>
+        <button onClick={onSignIn} style={{ background:'linear-gradient(135deg,#FE2C55,#9D4EDD)', border:'none', borderRadius:28, padding:'14px 36px', color:'#fff', fontWeight:800, fontSize:15, cursor:'pointer', boxShadow:'0 4px 24px rgba(255,45,85,0.5)' }}>
           Sign in to interact 🚀
         </button>
       </div>
@@ -6282,54 +6289,54 @@ setStep('otp');
   );
 
   if(step==='method') return (
-    <div style={{ height:'100%', display:'flex', flexDirection:'column', background:'#F5F4F7', overflow:'auto' }}>
+    <div style={{ height:'100%', display:'flex', flexDirection:'column', background:'#000000', overflow:'auto' }}>
       <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'40px 24px 20px', position:'relative' }}>
         <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse at 50% 30%,rgba(255,45,85,0.2),rgba(175,82,222,0.1),transparent 65%)' }} />
         <div style={{ position:'relative', textAlign:'center', marginBottom:40 }}>
           <img src="https://res.cloudinary.com/dotvhzjmc/image/upload/znfksngv27boh3c1kxpv.png" style={{ width:80, height:80, borderRadius:24, objectFit:'cover', margin:'0 auto 20px', display:'block', boxShadow:'0 20px 60px rgba(255,45,85,0.4)' }} />
-          <p style={{ color:'rgba(20,16,28,0.4)', fontSize:14, marginTop:10 }}>{isLogin?'Welcome back! 👋':'Join the community 🎉'}</p>
+          <p style={{ color:'rgba(255,255,255,0.4)', fontSize:14, marginTop:10 }}>{isLogin?'Welcome back! 👋':'Join the community 🎉'}</p>
         </div>
         <div style={{ position:'relative', width:'100%', maxWidth:340 }}>
-          <div style={{ color:'rgba(20,16,28,0.3)', fontSize:11, marginBottom:14, textAlign:'center', fontWeight:700, textTransform:'uppercase', letterSpacing:1 }}>{isLogin?'Sign in with':'Sign up with'}</div>
-          {error && error.trim().length > 1 && <div style={{background:'rgba(255,45,85,0.1)',border:'1px solid rgba(255,45,85,0.3)',borderRadius:12,padding:'10px 14px',color:'#FF2156',fontSize:12,marginBottom:12,textAlign:'center'}}>{error}</div>}
+          <div style={{ color:'rgba(255,255,255,0.3)', fontSize:11, marginBottom:14, textAlign:'center', fontWeight:700, textTransform:'uppercase', letterSpacing:1 }}>{isLogin?'Sign in with':'Sign up with'}</div>
+          {error && error.trim().length > 1 && <div style={{background:'rgba(255,45,85,0.1)',border:'1px solid rgba(255,45,85,0.3)',borderRadius:12,padding:'10px 14px',color:'#FE2C55',fontSize:12,marginBottom:12,textAlign:'center'}}>{error}</div>}
           <div style={{ display:'flex', flexWrap:'wrap', gap:8, justifyContent:'center', marginBottom:24 }}>
             {LOGIN_METHODS.map(m=>(
-              <button key={m.id} onClick={()=>handleMethodSelect(m)} disabled={loading} style={{ display:'inline-flex', alignItems:'center', gap:6, background:'rgba(20,16,28,0.05)', border:`1px solid rgba(20,16,28,0.1)`, borderRadius:30, padding:'8px 16px', cursor:'pointer', fontSize:13, color:'rgba(20,16,28,0.8)', transition:'all 0.15s', opacity:loading?0.5:1 }}>
+              <button key={m.id} onClick={()=>handleMethodSelect(m)} disabled={loading} style={{ display:'inline-flex', alignItems:'center', gap:6, background:'rgba(255,255,255,0.05)', border:`1px solid rgba(255,255,255,0.1)`, borderRadius:30, padding:'8px 16px', cursor:'pointer', fontSize:13, color:'rgba(255,255,255,0.8)', transition:'all 0.15s', opacity:loading?0.5:1 }}>
                 <span style={{ fontSize:16 }}>{m.icon}</span>{m.name}
               </button>
             ))}
           </div>
-          {loading && <div style={{textAlign:'center',color:'rgba(20,16,28,0.5)',fontSize:13,marginBottom:12}}>⏳ Signing in...</div>}
-          <button onClick={()=>setIsLogin(!isLogin)} style={{ width:'100%', background:'none', border:'none', color:'#FF2156', fontSize:14, cursor:'pointer', fontWeight:600 }}>
+          {loading && <div style={{textAlign:'center',color:'rgba(255,255,255,0.5)',fontSize:13,marginBottom:12}}>⏳ Signing in...</div>}
+          <button onClick={()=>setIsLogin(!isLogin)} style={{ width:'100%', background:'none', border:'none', color:'#FE2C55', fontSize:14, cursor:'pointer', fontWeight:600 }}>
             {isLogin?"Don't have an account? Sign up →":"Already have an account? Sign in →"}
           </button>
           {isLogin && (
-            <button onClick={()=>setStep('resetpw')} style={{ width:'100%', background:'none', border:'none', color:'rgba(20,16,28,0.35)', fontSize:13, cursor:'pointer', marginTop:10, textDecoration:'underline' }}>
+            <button onClick={()=>setStep('resetpw')} style={{ width:'100%', background:'none', border:'none', color:'rgba(255,255,255,0.35)', fontSize:13, cursor:'pointer', marginTop:10, textDecoration:'underline' }}>
               Forgot password?
             </button>
           )}
-          <button onClick={()=>setStep('guest')} style={{ width:'100%', background:'none', border:'none', color:'rgba(20,16,28,0.3)', fontSize:13, cursor:'pointer', marginTop:10 }}>
+          <button onClick={()=>setStep('guest')} style={{ width:'100%', background:'none', border:'none', color:'rgba(255,255,255,0.3)', fontSize:13, cursor:'pointer', marginTop:10 }}>
             👁 Browse without account
           </button>
         </div>
       </div>
-      <div style={{ padding:'0 24px 40px', textAlign:'center', color:'rgba(20,16,28,0.2)', fontSize:11 }}>By continuing, you agree to our Terms of Service & Privacy Policy</div>
+      <div style={{ padding:'0 24px 40px', textAlign:'center', color:'rgba(255,255,255,0.2)', fontSize:11 }}>By continuing, you agree to our Terms of Service & Privacy Policy</div>
     </div>
   );
 if(step==='otp') return (
-    <div style={{height:'100%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:24,background:'#F5F4F7'}}>
+    <div style={{height:'100%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:24,background:'#000000'}}>
       <div style={{textAlign:'center',maxWidth:300,width:'100%'}}>
         <div style={{fontSize:64,marginBottom:16}}>📲</div>
-        <div style={{color:'#161221',fontWeight:800,fontSize:22,marginBottom:10,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>Enter OTP</div>
-        <div style={{color:'rgba(20,16,28,0.5)',fontSize:14,lineHeight:1.6,marginBottom:20}}>
-          We sent a 6-digit code to <strong style={{color:'#161221'}}>{pendingCreds?.email}</strong>
+        <div style={{color:'#FFFFFF',fontWeight:800,fontSize:22,marginBottom:10,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>Enter OTP</div>
+        <div style={{color:'rgba(255,255,255,0.5)',fontSize:14,lineHeight:1.6,marginBottom:20}}>
+          We sent a 6-digit code to <strong style={{color:'#FFFFFF'}}>{pendingCreds?.email}</strong>
         </div>
-        {error && <div style={{background:'rgba(255,45,85,0.1)',border:'1px solid rgba(255,45,85,0.3)',borderRadius:12,padding:'10px 14px',color:'#FF2156',fontSize:12,marginBottom:12}}>{error}</div>}
+        {error && <div style={{background:'rgba(255,45,85,0.1)',border:'1px solid rgba(255,45,85,0.3)',borderRadius:12,padding:'10px 14px',color:'#FE2C55',fontSize:12,marginBottom:12}}>{error}</div>}
         <input
           placeholder="000000"
           value={otpInput}
           onChange={e=>setOtpInput(e.target.value.replace(/\D/g,'').slice(0,6))}
-          style={{width:'100%',background:'rgba(20,16,28,0.05)',border:'1px solid rgba(20,16,28,0.1)',borderRadius:14,padding:'16px',color:'#161221',marginBottom:12,outline:'none',fontSize:28,boxSizing:'border-box',textAlign:'center',letterSpacing:12,fontWeight:800}}
+          style={{width:'100%',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:14,padding:'16px',color:'#FFFFFF',marginBottom:12,outline:'none',fontSize:28,boxSizing:'border-box',textAlign:'center',letterSpacing:12,fontWeight:800}}
           maxLength={6}
         />
         <button onClick={async()=>{
@@ -6378,7 +6385,7 @@ if(profile) {
             }
           }
           setLoading(false);
-        }} disabled={loading||otpInput.length!==6} style={{width:'100%',background:'linear-gradient(135deg,#FF2156,#9D4EDD)',border:'none',borderRadius:24,padding:15,color:'#fff',fontWeight:700,cursor:'pointer',fontSize:15,marginBottom:12,opacity:(loading||otpInput.length!==6)?0.5:1,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>
+        }} disabled={loading||otpInput.length!==6} style={{width:'100%',background:'linear-gradient(135deg,#FE2C55,#9D4EDD)',border:'none',borderRadius:24,padding:15,color:'#fff',fontWeight:700,cursor:'pointer',fontSize:15,marginBottom:12,opacity:(loading||otpInput.length!==6)?0.5:1,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>
           {loading?'Verifying...':'Verify & Create Account'}
         </button>
         <button onClick={async()=>{
@@ -6396,24 +6403,24 @@ setOtpExpiry(Date.now() + 10*60*1000);
 setOtpInput('');
 setError('');
 setLoading(false);
-}} style={{background:'none',border:'none',color:'rgba(20,16,28,0.4)',fontSize:13,cursor:'pointer',textDecoration:'underline',marginBottom:8}}>
+}} style={{background:'none',border:'none',color:'rgba(255,255,255,0.4)',fontSize:13,cursor:'pointer',textDecoration:'underline',marginBottom:8}}>
           Resend code
         </button>
         <br/>
-        <button onClick={()=>{setStep('credentials');setError('');setOtpInput('');}} style={{background:'none',border:'none',color:'rgba(20,16,28,0.4)',fontSize:13,cursor:'pointer',textDecoration:'underline'}}>
+        <button onClick={()=>{setStep('credentials');setError('');setOtpInput('');}} style={{background:'none',border:'none',color:'rgba(255,255,255,0.4)',fontSize:13,cursor:'pointer',textDecoration:'underline'}}>
           Back
         </button>
       </div>
     </div>
   );
   if(step==='resetpw') return (
-    <div style={{height:'100%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:24,background:'#F5F4F7'}}>
+    <div style={{height:'100%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:24,background:'#000000'}}>
       <div style={{textAlign:'center',maxWidth:300,width:'100%'}}>
         <div style={{fontSize:64,marginBottom:16}}>🔑</div>
-        <div style={{color:'#161221',fontWeight:800,fontSize:22,marginBottom:10,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>Reset Password</div>
-        <div style={{color:'rgba(20,16,28,0.5)',fontSize:14,lineHeight:1.6,marginBottom:20}}>Enter your email and we'll send a reset link.</div>
-        {error && <div style={{background:'rgba(255,45,85,0.1)',border:'1px solid rgba(255,45,85,0.3)',borderRadius:12,padding:'10px 14px',color:'#FF2156',fontSize:12,marginBottom:12}}>{error}</div>}
-        <input placeholder="Your email" value={identifier} onChange={e=>setIdentifier(e.target.value)} style={{width:'100%',background:'rgba(20,16,28,0.05)',border:'1px solid rgba(20,16,28,0.1)',borderRadius:14,padding:'13px 16px',color:'#161221',marginBottom:12,outline:'none',fontSize:14,boxSizing:'border-box'}}/>
+        <div style={{color:'#FFFFFF',fontWeight:800,fontSize:22,marginBottom:10,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>Reset Password</div>
+        <div style={{color:'rgba(255,255,255,0.5)',fontSize:14,lineHeight:1.6,marginBottom:20}}>Enter your email and we'll send a reset link.</div>
+        {error && <div style={{background:'rgba(255,45,85,0.1)',border:'1px solid rgba(255,45,85,0.3)',borderRadius:12,padding:'10px 14px',color:'#FE2C55',fontSize:12,marginBottom:12}}>{error}</div>}
+        <input placeholder="Your email" value={identifier} onChange={e=>setIdentifier(e.target.value)} style={{width:'100%',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:14,padding:'13px 16px',color:'#FFFFFF',marginBottom:12,outline:'none',fontSize:14,boxSizing:'border-box'}}/>
         <button onClick={async()=>{
           if(!identifier){setError('Enter your email'); return;}
           setLoading(true); setError('');
@@ -6424,56 +6431,56 @@ setLoading(false);
             setError('Could not send reset email: '+(e.message||''));
           }
           setLoading(false);
-        }} disabled={loading} style={{width:'100%',background:'linear-gradient(135deg,#FF2156,#9D4EDD)',border:'none',borderRadius:24,padding:15,color:'#fff',fontWeight:700,cursor:'pointer',fontSize:15,marginBottom:12,opacity:loading?0.6:1,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>
+        }} disabled={loading} style={{width:'100%',background:'linear-gradient(135deg,#FE2C55,#9D4EDD)',border:'none',borderRadius:24,padding:15,color:'#fff',fontWeight:700,cursor:'pointer',fontSize:15,marginBottom:12,opacity:loading?0.6:1,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>
           {loading?'Sending...':'Send Reset Link'}
         </button>
-        <button onClick={()=>{setStep('method');setError('');}} style={{background:'none',border:'none',color:'rgba(20,16,28,0.4)',fontSize:13,cursor:'pointer',textDecoration:'underline'}}>Back to sign in</button>
+        <button onClick={()=>{setStep('method');setError('');}} style={{background:'none',border:'none',color:'rgba(255,255,255,0.4)',fontSize:13,cursor:'pointer',textDecoration:'underline'}}>Back to sign in</button>
       </div>
     </div>
   );
 
   if(step==='resetpw_sent') return (
-    <div style={{height:'100%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:24,background:'#F5F4F7'}}>
+    <div style={{height:'100%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:24,background:'#000000'}}>
       <div style={{textAlign:'center',maxWidth:300}}>
         <div style={{fontSize:64,marginBottom:16}}>📬</div>
-        <div style={{color:'#161221',fontWeight:800,fontSize:22,marginBottom:10,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>Check your inbox</div>
-        <div style={{color:'rgba(20,16,28,0.5)',fontSize:14,lineHeight:1.6,marginBottom:28}}>We sent a password reset link to <strong style={{color:'#161221'}}>{identifier}</strong>.</div>
-        <button onClick={()=>{setStep('method');setError('');}} style={{width:'100%',background:'linear-gradient(135deg,#FF2156,#9D4EDD)',border:'none',borderRadius:24,padding:15,color:'#fff',fontWeight:700,cursor:'pointer',fontSize:15,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>Back to Sign In →</button>
+        <div style={{color:'#FFFFFF',fontWeight:800,fontSize:22,marginBottom:10,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>Check your inbox</div>
+        <div style={{color:'rgba(255,255,255,0.5)',fontSize:14,lineHeight:1.6,marginBottom:28}}>We sent a password reset link to <strong style={{color:'#FFFFFF'}}>{identifier}</strong>.</div>
+        <button onClick={()=>{setStep('method');setError('');}} style={{width:'100%',background:'linear-gradient(135deg,#FE2C55,#9D4EDD)',border:'none',borderRadius:24,padding:15,color:'#fff',fontWeight:700,cursor:'pointer',fontSize:15,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>Back to Sign In →</button>
       </div>
     </div>
   );
 
 if(step==='verify') return (
-    <div style={{height:'100%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:24,background:'#F5F4F7'}}>
+    <div style={{height:'100%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:24,background:'#000000'}}>
       <div style={{textAlign:'center',maxWidth:300}}>
         <div style={{fontSize:64,marginBottom:16}}>📧</div>
-        <div style={{color:'#161221',fontWeight:800,fontSize:22,marginBottom:10,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>Verify your email</div>
-        <div style={{color:'rgba(20,16,28,0.5)',fontSize:14,lineHeight:1.6,marginBottom:28}}>We sent a link to <strong style={{color:'#161221'}}>{identifier}</strong>. Click it then come back to sign in.</div>
-        <button onClick={()=>{setStep('method');setIsLogin(true);}} style={{width:'100%',background:'linear-gradient(135deg,#FF2156,#9D4EDD)',border:'none',borderRadius:24,padding:15,color:'#fff',fontWeight:700,cursor:'pointer',fontSize:15,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>Go to Sign In →</button>
+        <div style={{color:'#FFFFFF',fontWeight:800,fontSize:22,marginBottom:10,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>Verify your email</div>
+        <div style={{color:'rgba(255,255,255,0.5)',fontSize:14,lineHeight:1.6,marginBottom:28}}>We sent a link to <strong style={{color:'#FFFFFF'}}>{identifier}</strong>. Click it then come back to sign in.</div>
+        <button onClick={()=>{setStep('method');setIsLogin(true);}} style={{width:'100%',background:'linear-gradient(135deg,#FE2C55,#9D4EDD)',border:'none',borderRadius:24,padding:15,color:'#fff',fontWeight:700,cursor:'pointer',fontSize:15,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>Go to Sign In →</button>
       </div>
     </div>
   );
 return (
-    <div style={{ height:'100%', display:'flex', alignItems:'center', justifyContent:'center', padding:24, background:'#F5F4F7' }}>
+    <div style={{ height:'100%', display:'flex', alignItems:'center', justifyContent:'center', padding:24, background:'#000000' }}>
       <div style={{ width:'100%', maxWidth:340 }}>
-        <button onClick={()=>setStep('method')} style={{ background:'none', border:'none', color:'rgba(20,16,28,0.5)', marginBottom:24, cursor:'pointer', fontSize:14, display:'flex', alignItems:'center', gap:6 }}>
+        <button onClick={()=>setStep('method')} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.5)', marginBottom:24, cursor:'pointer', fontSize:14, display:'flex', alignItems:'center', gap:6 }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
         </button>
-        <div style={{ background:'rgba(20,16,28,0.03)', borderRadius:24, padding:24, border:'1px solid rgba(20,16,28,0.07)' }}>
+        <div style={{ background:'rgba(255,255,255,0.03)', borderRadius:24, padding:24, border:'1px solid rgba(255,255,255,0.07)' }}>
           <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:24 }}>
             <div style={{ width:52, height:52, borderRadius:16, background:`${selectedMethod?.color}22`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:28 }}>{selectedMethod?.icon}</div>
             <div>
-              <div style={{ color:'#161221', fontWeight:800, fontSize:16, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{isLogin?'Sign in':'Sign up'}</div>
-              <div style={{ color:'rgba(20,16,28,0.35)', fontSize:12 }}>with {selectedMethod?.name}</div>
+              <div style={{ color:'#FFFFFF', fontWeight:800, fontSize:16, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{isLogin?'Sign in':'Sign up'}</div>
+              <div style={{ color:'rgba(255,255,255,0.35)', fontSize:12 }}>with {selectedMethod?.name}</div>
             </div>
           </div>
-          {error && <div style={{background:'rgba(255,45,85,0.1)',border:'1px solid rgba(255,45,85,0.3)',borderRadius:12,padding:'10px 14px',color:'#FF2156',fontSize:12,marginBottom:12}}>{error}</div>}
+          {error && <div style={{background:'rgba(255,45,85,0.1)',border:'1px solid rgba(255,45,85,0.3)',borderRadius:12,padding:'10px 14px',color:'#FE2C55',fontSize:12,marginBottom:12}}>{error}</div>}
           {!isLogin && <>
-            <input placeholder="Full Name" value={fullName} onChange={e=>setFullName(e.target.value)} style={{ width:'100%', background:'rgba(20,16,28,0.05)', border:'1px solid rgba(20,16,28,0.1)', borderRadius:14, padding:'13px 16px', color:'#161221', marginBottom:10, outline:'none', fontSize:14, boxSizing:'border-box' }} />
-            <input placeholder="Username" value={username} onChange={e=>setUsername(e.target.value)} style={{ width:'100%', background:'rgba(20,16,28,0.05)', border:'1px solid rgba(20,16,28,0.1)', borderRadius:14, padding:'13px 16px', color:'#161221', marginBottom:10, outline:'none', fontSize:14, boxSizing:'border-box' }} />
+            <input placeholder="Full Name" value={fullName} onChange={e=>setFullName(e.target.value)} style={{ width:'100%', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:'13px 16px', color:'#FFFFFF', marginBottom:10, outline:'none', fontSize:14, boxSizing:'border-box' }} />
+            <input placeholder="Username" value={username} onChange={e=>setUsername(e.target.value)} style={{ width:'100%', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:'13px 16px', color:'#FFFFFF', marginBottom:10, outline:'none', fontSize:14, boxSizing:'border-box' }} />
             <div style={{marginBottom:10}}>
-              <div style={{color:'rgba(20,16,28,0.4)',fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:0.5,marginBottom:7}}>Date of Birth *</div>
-              <div style={{background:'rgba(20,16,28,0.05)',border:'1px solid rgba(20,16,28,0.1)',borderRadius:16,padding:'8px 4px',display:'flex',gap:0,position:'relative'}}>
+              <div style={{color:'rgba(255,255,255,0.4)',fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:0.5,marginBottom:7}}>Date of Birth *</div>
+              <div style={{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:16,padding:'8px 4px',display:'flex',gap:0,position:'relative'}}>
                 <div style={{position:'absolute',top:'50%',left:8,right:8,height:36,background:'rgba(255,45,85,0.08)',borderRadius:10,transform:'translateY(-50%)',pointerEvents:'none',border:'1px solid rgba(255,45,85,0.2)'}}/>
                 {[
                   {label:'Month',items:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],val:birthdate?parseInt(birthdate.split('-')[1])-1:0,set:(i)=>{ const p=birthdate||'2000-01-01'; const parts=p.split('-'); parts[1]=String(i+1).padStart(2,'0'); setBirthdate(parts.join('-')); }},
@@ -6481,10 +6488,10 @@ return (
                   {label:'Year',items:Array.from({length:100},(_,i)=>String(new Date().getFullYear()-13-i)),val:birthdate?Array.from({length:100},(_,i)=>String(new Date().getFullYear()-13-i)).indexOf(birthdate.split('-')[0]):0,set:(i)=>{ const p=birthdate||'2000-01-01'; const parts=p.split('-'); parts[0]=String(new Date().getFullYear()-13-i); setBirthdate(parts.join('-')); }},
                 ].map(col=>(
                   <div key={col.label} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center'}}>
-                    <div style={{color:'rgba(20,16,28,0.3)',fontSize:9,fontWeight:700,textTransform:'uppercase',letterSpacing:0.5,marginBottom:4}}>{col.label}</div>
+                    <div style={{color:'rgba(255,255,255,0.3)',fontSize:9,fontWeight:700,textTransform:'uppercase',letterSpacing:0.5,marginBottom:4}}>{col.label}</div>
                     <div style={{height:108,overflowY:'auto',width:'100%',scrollSnapType:'y mandatory',WebkitOverflowScrolling:'touch'}}>
                       {col.items.map((item,i)=>(
-                        <div key={item} onClick={()=>col.set(i)} style={{height:36,display:'flex',alignItems:'center',justifyContent:'center',fontSize:i===col.val?15:12,fontWeight:i===col.val?800:400,color:i===col.val?'white':'rgba(20,16,28,0.3)',cursor:'pointer',scrollSnapAlign:'start',transition:'all 0.15s'}}>
+                        <div key={item} onClick={()=>col.set(i)} style={{height:36,display:'flex',alignItems:'center',justifyContent:'center',fontSize:i===col.val?15:12,fontWeight:i===col.val?800:400,color:i===col.val?'white':'rgba(255,255,255,0.3)',cursor:'pointer',scrollSnapAlign:'start',transition:'all 0.15s'}}>
                           {item}
                         </div>
                       ))}
@@ -6494,9 +6501,9 @@ return (
               </div>
             </div>
           </>}
-          <input placeholder="Email" value={identifier} onChange={e=>setIdentifier(e.target.value)} style={{ width:'100%', background:'rgba(20,16,28,0.05)', border:'1px solid rgba(20,16,28,0.1)', borderRadius:14, padding:'13px 16px', color:'#161221', marginBottom:10, outline:'none', fontSize:14, boxSizing:'border-box' }} />
-          <input type="password" placeholder="Password" value={password} onChange={e=>setPassword(e.target.value)} style={{ width:'100%', background:'rgba(20,16,28,0.05)', border:'1px solid rgba(20,16,28,0.1)', borderRadius:14, padding:'13px 16px', color:'#161221', marginBottom:14, outline:'none', fontSize:14, boxSizing:'border-box' }} />
-          <button onClick={handleSubmit} disabled={loading||!identifier||!password||(!isLogin&&(!username||!fullName||!birthdate))} style={{ width:'100%', background:'linear-gradient(135deg,#FF2156,#9D4EDD)', border:'none', borderRadius:24, padding:15, color:'#fff', fontWeight:700, cursor:'pointer', fontSize:15, opacity:(loading||!identifier||!password)?0.5:1, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>
+          <input placeholder="Email" value={identifier} onChange={e=>setIdentifier(e.target.value)} style={{ width:'100%', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:'13px 16px', color:'#FFFFFF', marginBottom:10, outline:'none', fontSize:14, boxSizing:'border-box' }} />
+          <input type="password" placeholder="Password" value={password} onChange={e=>setPassword(e.target.value)} style={{ width:'100%', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:'13px 16px', color:'#FFFFFF', marginBottom:14, outline:'none', fontSize:14, boxSizing:'border-box' }} />
+          <button onClick={handleSubmit} disabled={loading||!identifier||!password||(!isLogin&&(!username||!fullName||!birthdate))} style={{ width:'100%', background:'linear-gradient(135deg,#FE2C55,#9D4EDD)', border:'none', borderRadius:24, padding:15, color:'#fff', fontWeight:700, cursor:'pointer', fontSize:15, opacity:(loading||!identifier||!password)?0.5:1, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>
             {loading?'Please wait...':'Continue'}
           </button>
           {isLogin && (
@@ -6513,7 +6520,7 @@ return (
     }}
     style={{
       width: '100%', background: 'none', border: 'none',
-      color: 'rgba(20,16,28,0.4)', fontSize: 13,
+      color: 'rgba(255,255,255,0.4)', fontSize: 13,
       cursor: 'pointer', marginTop: 10, textDecoration: 'underline'
     }}
   >
@@ -6588,30 +6595,30 @@ const NotificationsPage = ({ currentUser, users, videos, onClose, onViewProfile,
   };
 
   return (
-    <div style={{ position:'fixed', inset:0, background:'#F5F4F7', zIndex:300, display:'flex', flexDirection:'column' }}>
+    <div style={{ position:'fixed', inset:0, background:'#000000', zIndex:300, display:'flex', flexDirection:'column' }}>
       {/* Header */}
-      <div style={{ padding:'16px 16px 0', borderBottom:'1px solid rgba(20,16,28,0.06)' }}>
+      <div style={{ padding:'16px 16px 0', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
-          <div style={{ color:'#161221', fontWeight:800, fontSize:22, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>
+          <div style={{ color:'#FFFFFF', fontWeight:800, fontSize:22, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>
             Notifications
-            {unreadCount > 0 && <span style={{ marginLeft:8, background:'#FF2156', color:'#fff', fontSize:12, fontWeight:700, borderRadius:20, padding:'2px 8px' }}>{unreadCount}</span>}
+            {unreadCount > 0 && <span style={{ marginLeft:8, background:'#FE2C55', color:'#fff', fontSize:12, fontWeight:700, borderRadius:20, padding:'2px 8px' }}>{unreadCount}</span>}
           </div>
           <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-            {unreadCount>0 && <button onClick={markAllRead} style={{ background:'rgba(255,45,85,0.1)', border:'1px solid rgba(255,45,85,0.2)', borderRadius:20, padding:'6px 12px', color:'#FF2156', fontSize:11, fontWeight:700, cursor:'pointer' }}>Mark all read</button>}
-            <button onClick={onClose} style={{ background:'rgba(20,16,28,0.07)', border:'none', borderRadius:'50%', width:34, height:34, color:'#161221', cursor:'pointer', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
+            {unreadCount>0 && <button onClick={markAllRead} style={{ background:'rgba(255,45,85,0.1)', border:'1px solid rgba(255,45,85,0.2)', borderRadius:20, padding:'6px 12px', color:'#FE2C55', fontSize:11, fontWeight:700, cursor:'pointer' }}>Mark all read</button>}
+            <button onClick={onClose} style={{ background:'rgba(255,255,255,0.07)', border:'none', borderRadius:'50%', width:34, height:34, color:'#FFFFFF', cursor:'pointer', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
           </div>
         </div>
         {/* Category filters */}
         <div style={{ display:'flex', gap:6, overflowX:'auto', scrollbarWidth:'none', paddingBottom:12 }}>
           {NOTIF_FILTERS.map(f=>(
-            <button key={f.id} onClick={()=>setActiveFilter(f.id)} style={{ flexShrink:0, background:activeFilter===f.id?'rgba(255,45,85,0.15)':'rgba(20,16,28,0.04)', border:`1px solid ${activeFilter===f.id?'rgba(255,45,85,0.4)':'rgba(20,16,28,0.07)'}`, borderRadius:20, padding:'6px 14px', color:activeFilter===f.id?'#FF2156':'rgba(20,16,28,0.45)', fontSize:12, fontWeight:700, cursor:'pointer', transition:'all 0.15s' }}>{f.label}</button>
+            <button key={f.id} onClick={()=>setActiveFilter(f.id)} style={{ flexShrink:0, background:activeFilter===f.id?'rgba(255,45,85,0.15)':'rgba(255,255,255,0.04)', border:`1px solid ${activeFilter===f.id?'rgba(255,45,85,0.4)':'rgba(255,255,255,0.07)'}`, borderRadius:20, padding:'6px 14px', color:activeFilter===f.id?'#FE2C55':'rgba(255,255,255,0.45)', fontSize:12, fontWeight:700, cursor:'pointer', transition:'all 0.15s' }}>{f.label}</button>
           ))}
         </div>
       </div>
 
       <div style={{ flex:1, overflowY:'auto' }}>
         {filteredNotifs.length===0 && (
-          <div style={{ textAlign:'center', padding:'60px 20px', color:'rgba(20,16,28,0.2)' }}>
+          <div style={{ textAlign:'center', padding:'60px 20px', color:'rgba(255,255,255,0.2)' }}>
             <div style={{ fontSize:44, marginBottom:12 }}>🔔</div>
             <div style={{ fontSize:15, fontWeight:600 }}>No notifications yet</div>
             <div style={{ fontSize:13, marginTop:6 }}>{activeFilter==='all' ? 'Interact with others to receive notifications' : `No ${activeFilter} notifications`}</div>
@@ -6619,27 +6626,27 @@ const NotificationsPage = ({ currentUser, users, videos, onClose, onViewProfile,
         )}
         {filteredNotifs.map(n=>{
           const fromUser = users.find(u=>u.id===n.fromUserId);
-          const iconBg = {like:'rgba(255,45,85,0.15)',comment:'rgba(0,122,255,0.15)',follow:'rgba(175,82,222,0.15)',mention:'rgba(255,149,0,0.15)',gift:'rgba(255,215,0,0.15)',live:'rgba(255,45,85,0.15)',story:'rgba(175,82,222,0.15)',message:'rgba(52,199,89,0.15)',call:'rgba(52,199,89,0.15)'}[n.type]||'rgba(20,16,28,0.06)';
+          const iconBg = {like:'rgba(255,45,85,0.15)',comment:'rgba(0,122,255,0.15)',follow:'rgba(175,82,222,0.15)',mention:'rgba(255,149,0,0.15)',gift:'rgba(255,215,0,0.15)',live:'rgba(255,45,85,0.15)',story:'rgba(175,82,222,0.15)',message:'rgba(52,199,89,0.15)',call:'rgba(52,199,89,0.15)'}[n.type]||'rgba(255,255,255,0.06)';
           return (
-            <div key={n.id} onClick={()=>handleNotifTap(n)} style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 16px', borderBottom:'1px solid rgba(20,16,28,0.04)', cursor:'pointer', background:n.read?'transparent':'rgba(255,45,85,0.03)', transition:'background 0.1s' }}>
+            <div key={n.id} onClick={()=>handleNotifTap(n)} style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 16px', borderBottom:'1px solid rgba(255,255,255,0.04)', cursor:'pointer', background:n.read?'transparent':'rgba(255,45,85,0.03)', transition:'background 0.1s' }}>
               {/* Avatar with type badge */}
               <div style={{ position:'relative', flexShrink:0 }}>
                 <div style={{ width:48, height:48, borderRadius:'50%', background:fromUser?.avatarColor||'#34343E', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:'bold', fontSize:19, overflow:'hidden', border:!n.read?'2px solid rgba(255,45,85,0.4)':'2px solid transparent' }}>
                   {fromUser?.avatarUrl ? <img src={fromUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : (fromUser?.avatar||'?')}
                 </div>
-                <div style={{ position:'absolute', bottom:-2, right:-2, width:22, height:22, borderRadius:'50%', background:iconBg, border:'2px solid #F5F4F7', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11 }}>{icons[n.type]||'🔔'}</div>
+                <div style={{ position:'absolute', bottom:-2, right:-2, width:22, height:22, borderRadius:'50%', background:iconBg, border:'2px solid #000000', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11 }}>{icons[n.type]||'🔔'}</div>
               </div>
               <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ color:'#161221', fontSize:13.5, lineHeight:1.5 }}>
+                <div style={{ color:'#FFFFFF', fontSize:13.5, lineHeight:1.5 }}>
                   {fromUser && <span style={{ fontWeight:700 }}>@{fromUser.username} </span>}
-                  <span style={{ color:'rgba(20,16,28,0.75)' }}>{n.message}</span>
+                  <span style={{ color:'rgba(255,255,255,0.75)' }}>{n.message}</span>
                 </div>
-                <div style={{ color:'rgba(20,16,28,0.28)', fontSize:11, marginTop:3 }}>{timeAgoShort(n.date)}</div>
+                <div style={{ color:'rgba(255,255,255,0.28)', fontSize:11, marginTop:3 }}>{timeAgoShort(n.date)}</div>
               </div>
               {/* Action area */}
               <div style={{ flexShrink:0, display:'flex', alignItems:'center', gap:8 }}>
-                {!n.read && <div style={{ width:9, height:9, borderRadius:'50%', background:'#FF2156', flexShrink:0 }} />}
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(20,16,28,0.2)" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
+                {!n.read && <div style={{ width:9, height:9, borderRadius:'50%', background:'#FE2C55', flexShrink:0 }} />}
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
               </div>
             </div>
           );
@@ -6662,26 +6669,26 @@ const InboxBadge = ({ currentUser }) => {
     return ()=>unsub();
   },[currentUser?.id]);
   if(!unread) return null;
-  return <div style={{ position:'absolute', top:-4, right:-4, minWidth:16, height:16, background:'#FF2156', borderRadius:8, border:'1.5px solid #F5F4F7', display:'flex', alignItems:'center', justifyContent:'center', fontSize:9, color:'#fff', fontWeight:800, padding:'0 3px' }}>{unread>9?'9+':unread}</div>;
+  return <div style={{ position:'absolute', top:-4, right:-4, minWidth:16, height:16, background:'#FE2C55', borderRadius:8, border:'1.5px solid #000000', display:'flex', alignItems:'center', justifyContent:'center', fontSize:9, color:'#fff', fontWeight:800, padding:'0 3px' }}>{unread>9?'9+':unread}</div>;
 };
 const TabIcon = ({id, active, currentUser}) => {
-  const color = active ? '#FF2156' : 'rgba(20,16,28,0.35)';
+  const color = active ? '#FE2C55' : 'rgba(255,255,255,0.35)';
   const sw = active ? 2.2 : 1.8;
   const s = {width:26,height:26,fill:'none',stroke:color,strokeWidth:sw,strokeLinecap:'round',strokeLinejoin:'round'};
   if(id==='home') return (
     <div style={{ position:'relative' }}>
       <svg viewBox="0 0 24 24" style={s}><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-      {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#FF2156' }} />}
+      {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#FE2C55' }} />}
     </div>
   );
   if(id==='friends') return (
     <div style={{ position:'relative' }}>
       <svg viewBox="0 0 24 24" style={s}><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-      {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#FF2156' }} />}
+      {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#FE2C55' }} />}
     </div>
   );
   if(id==='create') return (
-    <div style={{ width:52, height:34, background:'linear-gradient(135deg,#FF2156,#9D4EDD)', borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 4px 16px rgba(255,45,85,0.4)' }}>
+    <div style={{ width:52, height:34, background:'linear-gradient(135deg,#FE2C55,#9D4EDD)', borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 4px 16px rgba(255,45,85,0.4)' }}>
       <svg viewBox="0 0 24 24" style={{ width:22,height:22,stroke:'white',fill:'none',strokeWidth:2.5,strokeLinecap:'round' }}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
     </div>
   );
@@ -6689,13 +6696,13 @@ const TabIcon = ({id, active, currentUser}) => {
     <div style={{ position:'relative' }}>
       <svg viewBox="0 0 24 24" style={s}><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
       <InboxBadge currentUser={currentUser} />
-      {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#FF2156' }} />}
+      {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#FE2C55' }} />}
     </div>
   );
   if(id==='profile') return (
     <div style={{ position:'relative' }}>
       <svg viewBox="0 0 24 24" style={{...s,fill:active?'rgba(255,45,85,0.15)':''}}><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#FF2156' }} />}
+      {active && <div style={{ position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#FE2C55' }} />}
     </div>
   );
   return null;
@@ -6969,16 +6976,16 @@ const handleMessage = uid => {
   }, []);
 
   if(authLoading) return (
-    <div style={{ maxWidth:430, margin:'0 auto', height:'100dvh', background:'#F5F4F7', display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:16 }}>
+    <div style={{ maxWidth:430, margin:'0 auto', height:'100dvh', background:'#000000', display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:16 }}>
       <GlobalStyles />
       {!isOnline && <OfflineBanner />}
       <img src="https://res.cloudinary.com/dotvhzjmc/image/upload/znfksngv27boh3c1kxpv.png" style={{ width:80, height:80, borderRadius:24, marginBottom:16 }} alt="Infinity" />
-      <div style={{ width:32, height:32, border:'3px solid rgba(255,45,85,0.3)', borderTop:'3px solid #FF2156', borderRadius:'50%', animation:'spin 1s linear infinite' }} />
+      <div style={{ width:32, height:32, border:'3px solid rgba(255,45,85,0.3)', borderTop:'3px solid #FE2C55', borderRadius:'50%', animation:'spin 1s linear infinite' }} />
     </div>
   );
 
   if(!currentUser) return (
-    <div style={{ maxWidth:430, margin:'0 auto', height:'100dvh', background:'#F5F4F7', overflow:'hidden' }}>
+    <div style={{ maxWidth:430, margin:'0 auto', height:'100dvh', background:'#000000', overflow:'hidden' }}>
       <GlobalStyles />
       <AuthScreen onLogin={handleLogin} />
       {notifPopup && (
@@ -6994,7 +7001,7 @@ const handleMessage = uid => {
   );
 
   return (
-    <div style={{ maxWidth:430, margin:'0 auto', height:'100dvh', background:'#F5F4F7', display:'flex', flexDirection:'column', position:'relative', overflow:'hidden' }}>
+    <div style={{ maxWidth:430, margin:'0 auto', height:'100dvh', background:'#000000', display:'flex', flexDirection:'column', position:'relative', overflow:'hidden' }}>
       <GlobalStyles />
       {!isOnline && <OfflineBanner />}
 {incomingCall && !showCall && (
@@ -7051,7 +7058,7 @@ const handleMessage = uid => {
       )}
 
       {quickConversation && (
-        <div style={{ position:'fixed', inset:0, zIndex:10500, background:'#F5F4F7', maxWidth:430, margin:'0 auto' }}>
+        <div style={{ position:'fixed', inset:0, zIndex:10500, background:'#000000', maxWidth:430, margin:'0 auto' }}>
           <ConversationView
             currentUser={currentUser}
             otherUser={users.find(u=>u.id===quickConversation.otherUser?.id) || quickConversation.otherUser}
@@ -7096,30 +7103,26 @@ const handleMessage = uid => {
 
       <div style={{
         position:'fixed', left:0, right:0, bottom:0, maxWidth:430, margin:'0 auto', zIndex:200,
-        padding:'0 14px max(14px, env(safe-area-inset-bottom))',
         pointerEvents: navHidden ? 'none' : 'auto',
         transform: navHidden ? 'translateY(140%)' : 'translateY(0)',
         opacity: navHidden ? 0 : 1,
         transition:'transform 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.25s ease',
       }}>
-        <div style={{ display:'flex', background:'rgba(255,255,255,0.98)', borderRadius:26, padding:'8px 6px', backdropFilter:'blur(30px)', WebkitBackdropFilter:'blur(30px)', border:'1px solid rgba(20,16,28,0.06)', boxShadow:'0 10px 34px rgba(20,16,28,0.16), 0 2px 10px rgba(20,16,28,0.08)' }}>
+        <div style={{ display:'flex', background:'rgba(0,0,0,0.92)', borderRadius:0, padding:'8px 0 max(8px, env(safe-area-inset-bottom))', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', borderTop:'1px solid rgba(255,255,255,0.08)' }}>
         {tabs.map(tab=>{
           const isActive = activeTab===tab.id;
           const tabLabels = { home: t?.home||'Home', friends: t?.friends||'Friends', create: t?.create||'Create', inbox: t?.inbox||'Inbox', profile: t?.profile||'Profile' };
           return (
             <button key={tab.id}
               onClick={()=>{ haptic('light'); if(tab.id==='create'){ setShowCamera(true); } else { setShowCamera(false); setShowSearch(false); setActiveTab(tab.id); } }}
-              style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:2, background:'none', border:'none', cursor:'pointer', padding: tab.id==='create'?'0':'6px 0', position:'relative',
+              style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:3, background:'none', border:'none', cursor:'pointer', padding: tab.id==='create'?'0':'4px 0', position:'relative',
                 transform: isActive && tab.id!=='create' ? 'translateY(-1px)' : 'translateY(0)',
                 transition:'transform 0.2s cubic-bezier(0.34,1.56,0.64,1)' }}>
               <div style={{ position:'relative' }}>
                 <TabIcon id={tab.id} active={isActive} currentUser={currentUser} />
-                {isActive && tab.id!=='create' && (
-                  <div style={{ position:'absolute', bottom:-6, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#FF2156', animation:'bounceIn 0.3s ease' }} />
-                )}
               </div>
               {tab.id !== 'create' && (
-                <span style={{ fontSize:9, color:isActive?'#FF2156':'rgba(20,16,28,0.28)', fontWeight:isActive?800:400, transition:'color 0.2s', letterSpacing:0.3 }}>
+                <span style={{ fontSize:10, color:isActive?'#FFFFFF':'rgba(255,255,255,0.45)', fontWeight:isActive?700:500, transition:'color 0.2s', letterSpacing:0.2 }}>
                   {tabLabels[tab.id]}
                 </span>
               )}
