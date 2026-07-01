@@ -58,7 +58,7 @@ const EMAILJS_PUBLIC_KEY = 'U9fs25Bcx5oQ6A2ru';
 // Recipient for in-app "Report a Problem" submissions. Change in one place if the support inbox changes.
 const SUPPORT_EMAIL = 'getachewshambel11@gmail.com';
 // App creator UID — only this user can grant posting permissions for Jobs & Market
-const APP_CREATOR_UID = 'bE2rVkDgW9NTE4ia2fe2ueawLWZ2';
+const APP_CREATOR_UID = 'REPLACE_WITH_CREATOR_UID'; // Set this to the actual Firebase UID of the app creator
 
 /* ─────────────── CONSTANTS ─────────────── */
 const LOGIN_METHODS = [
@@ -234,7 +234,7 @@ const PollWidget = ({ poll, currentUser, videoId, showToast }) => {
           </div>
         );
       })}
-      {voted !== null && <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 11, marginTop: 4 }}>{totalVotes} votes</div>}
+      {voted !== null && <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: 11, marginTop: 4 }}>{totalVotes} votes</div>}
     </div>
   );
 };
@@ -424,7 +424,7 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack }) => {
             <div style={{ width: 38, height: 38, borderRadius: '50%', background: activeGroup.avatarColor || '#FF2156', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: 16 }}>{activeGroup.avatar || '👥'}</div>
             <div>
               <div style={{ color: 'white', fontWeight: 700, fontSize: 15 }}>{activeGroup.name}</div>
-              <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11 }}>{(activeGroup.members || []).length} members · tap for info</div>
+              <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: 11 }}>{(activeGroup.members || []).length} members · tap for info</div>
             </div>
           </div>
           <button onClick={()=>setGroupCallOpen('audio')} style={{ background:'rgba(52,199,89,0.15)', border:'1px solid rgba(52,199,89,0.25)', borderRadius:'50%', width:36, height:36, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
@@ -443,26 +443,26 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack }) => {
                 <div style={{ width:52, height:52, borderRadius:'50%', background:activeGroup.avatarColor||'#FF2156', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:22 }}>{activeGroup.avatar||'👥'}</div>
                 <div>
                   <div style={{ color:'white', fontWeight:800, fontSize:18 }}>{activeGroup.name}</div>
-                  <div style={{ color:'rgba(255,255,255,0.4)', fontSize:12 }}>Created by group admin</div>
+                  <div style={{ color:'rgba(255,255,255,0.55)', fontSize:12 }}>Created by group admin</div>
                 </div>
               </div>
               <div style={{ color:'rgba(255,255,255,0.5)', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:12 }}>Members ({groupMembers.length})</div>
               {groupMembers.map(u=>(
                 <div key={u.id} style={{ display:'flex', alignItems:'center', gap:12, padding:'11px 0', borderBottom:'1px solid rgba(255,255,255,0.05)' }}>
                   <div style={{ width:44, height:44, borderRadius:'50%', background:u.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:18, overflow:'hidden', flexShrink:0 }}>
-                    {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt={`${u.username || 'User'}'s avatar`} /> : u.avatar}
+                    {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : u.avatar}
                   </div>
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ color:'white', fontSize:14, fontWeight:700, display:'flex', alignItems:'center', gap:6, flexWrap:'wrap' }}>
                       @{u.username}
-                      {u.id===currentUser?.id && <span style={{ color:'#2ED573', fontSize:10 }}>You</span>}
-                      {activeGroup.admin===u.id && <span style={{ background:'rgba(255,204,0,0.15)', border:'1px solid rgba(255,204,0,0.3)', borderRadius:10, padding:'1px 7px', color:'#FFD60A', fontSize:9, fontWeight:800 }}>ADMIN</span>}
+                      {u.id===currentUser?.id && <span style={{ color:'#2ED573', fontSize:11 }}>You</span>}
+                      {activeGroup.admin===u.id && <span style={{ background:'rgba(255,204,0,0.15)', border:'1px solid rgba(255,204,0,0.3)', borderRadius:10, padding:'1px 7px', color:'#FFD60A', fontSize:11, fontWeight:800 }}>ADMIN</span>}
                     </div>
-                    {u.bio && <div style={{ color:'rgba(255,255,255,0.4)', fontSize:11, marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{u.bio}</div>}
-                    <div style={{ color:'rgba(255,255,255,0.25)', fontSize:10, marginTop:1 }}>{u.followers?.length||0} followers</div>
+                    {u.bio && <div style={{ color:'rgba(255,255,255,0.55)', fontSize:11, marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{u.bio}</div>}
+                    <div style={{ color:'rgba(255,255,255,0.25)', fontSize:11, marginTop:1 }}>{u.followers?.length||0} followers</div>
                   </div>
                   {currentUser?.id===activeGroup?.admin && u.id!==currentUser?.id && (
-                    <button onClick={e=>{e.stopPropagation(); const nm=(activeGroup.members||[]).filter(id=>id!==u.id); updateDoc(doc(db,'groups',activeGroup.id),{members:nm}).then(()=>{setActiveGroup(g=>({...g,members:nm})); showToast?.('Member removed','info');}).catch(()=>{});}} style={{ background:'rgba(255,59,48,0.1)', border:'1px solid rgba(255,59,48,0.2)', borderRadius:10, padding:'5px 10px', color:'#FF453A', fontSize:11, cursor:'pointer', flexShrink:0 }}>Remove</button>
+                    <button onClick={e=>{e.stopPropagation(); const nm=(activeGroup.members||[]).filter(id=>id!==u.id); updateDoc(doc(db,'groups',activeGroup.id),{members:nm}).then(()=>{setActiveGroup(g=>({...g,members:nm})); showToast?.('Member removed','info');}).catch(()=>{});}} style={{ background:'rgba(255,59,48,0.1)', border:'1px solid rgba(255,59,48,0.2)', borderRadius:10, padding:'5px 10px', color:'#FF2156', fontSize:11, cursor:'pointer', flexShrink:0 }}>Remove</button>
                   )}
                 </div>
               ))}
@@ -480,10 +480,10 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack }) => {
               {groupMembers.map(u=>(
                 <div key={u.id} style={{ width:'calc(50% - 6px)', background:'rgba(255,255,255,0.06)', borderRadius:20, padding:'18px 12px', display:'flex', flexDirection:'column', alignItems:'center', gap:8, border:'1px solid rgba(255,255,255,0.08)' }}>
                   <div style={{ width:56, height:56, borderRadius:'50%', background:u.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:22, overflow:'hidden', border:'2px solid rgba(52,199,89,0.4)' }}>
-                    {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt={`${u.username || 'User'}'s avatar`} /> : u.avatar}
+                    {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : u.avatar}
                   </div>
                   <div style={{ color:'white', fontSize:12, fontWeight:700 }}>@{u.username}</div>
-                  {u.id===currentUser?.id && <div style={{ color:'#2ED573', fontSize:10 }}>You</div>}
+                  {u.id===currentUser?.id && <div style={{ color:'#2ED573', fontSize:11 }}>You</div>}
                   <div style={{ width:8, height:8, borderRadius:'50%', background:'#2ED573', animation:'pulse 1.5s ease infinite' }} />
                 </div>
               ))}
@@ -506,7 +506,7 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack }) => {
                   </div>
                 )}
                 <div style={{ maxWidth: '72%' }}>
-                  {!isMine && <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 10, marginBottom: 3 }}>@{msg.senderName}</div>}
+                  {!isMine && <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: 10, marginBottom: 3 }}>@{msg.senderName}</div>}
                   <div style={{ background: isMine ? 'linear-gradient(135deg,#FF2156,#9D4EDD)' : 'rgba(255,255,255,0.09)', borderRadius: isMine ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: '10px 14px', color: 'white', fontSize: 14 }}>
                     {msg.text}
                     {!isMine && <MessageTranslate text={msg.text} targetLang={currentUser?.language || 'en'} isMine={isMine} />}
@@ -570,7 +570,7 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack }) => {
             <div style={{ width: 48, height: 48, borderRadius: '50%', background: g.avatarColor || '#FF2156', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: 20, flexShrink: 0 }}>{g.avatar || '👥'}</div>
             <div style={{ flex: 1 }}>
               <div style={{ color: 'white', fontWeight: 700, fontSize: 14 }}>{g.name}</div>
-              <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12, marginTop: 2 }}>{g.lastMessage || 'No messages yet'} · {(g.members || []).length} members</div>
+              <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: 12, marginTop: 2 }}>{g.lastMessage || 'No messages yet'} · {(g.members || []).length} members</div>
             </div>
           </div>
         ))}
@@ -666,7 +666,7 @@ const MessageTranslate = ({ text, targetLang, isMine }) => {
       {translated && !showOriginal && (
         <div style={{ fontSize:13, lineHeight:1.4, color: isMine?'rgba(255,255,255,0.9)':'rgba(255,255,255,0.85)', marginTop:4, paddingTop:4, borderTop:'1px solid rgba(255,255,255,0.12)' }}>{translated}</div>
       )}
-      <button onClick={toggle} disabled={loading} style={{ background:'none', border:'none', color:'#2F9BFF', fontSize:10, cursor:'pointer', padding:0, marginTop:4, display:'block' }}>
+      <button onClick={toggle} disabled={loading} style={{ background:'none', border:'none', color:'#0A84FF', fontSize:11, cursor:'pointer', padding:0, marginTop:4, display:'block' }}>
         {loading ? '...' : translated ? (showOriginal ? '🌐 See translation' : '🌐 See original') : '🌐 Translate'}
       </button>
     </>
@@ -678,7 +678,7 @@ const BroadcastPage = ({ currentUser, users, showToast, onClose }) => {
   const [text, setText] = useState('');
   const [bgColor, setBgColor] = useState('#FF2156');
   const [posting, setPosting] = useState(false);
-  const colors = ['#FF2156','#9D4EDD','#0A84FF','#FFB100','#2ED573','#00A9D6','#FF453A'];
+  const colors = ['#FF2156','#9D4EDD','#0A84FF','#FFB100','#2ED573','#0A84FF','#FF2156'];
 
   const postStatus = async () => {
     if (!text.trim()) { showToast?.('Write something first', 'error'); return; }
@@ -736,7 +736,7 @@ const DiscoverPage = ({ videos, users, onViewProfile, showToast, onClose }) => {
           <div style={{ flex: 1, background: 'rgba(255,255,255,0.06)', borderRadius: 24, display: 'flex', alignItems: 'center', padding: '10px 14px', gap: 8 }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search Infinity..." autoFocus style={{ flex: 1, background: 'none', border: 'none', color: 'white', outline: 'none', fontSize: 14 }} />
-            {search && <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: 16 }}>✕</button>}
+            {search && <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.55)', cursor: 'pointer', fontSize: 16 }}>✕</button>}
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: 14, padding: 4 }}>Cancel</button>
         </div>
@@ -749,9 +749,9 @@ const DiscoverPage = ({ videos, users, onViewProfile, showToast, onClose }) => {
       <div style={{ flex: 1, overflowY: 'auto', padding: 12 }}>
         {!search && (
           <>
-            <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>Trending</div>
+            <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>Trending</div>
             <TrendingHashtags onSearch={t => setSearch(t)} />
-            <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, margin: '20px 0 10px' }}>Suggested Creators</div>
+            <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, margin: '20px 0 10px' }}>Suggested Creators</div>
             {users.slice(0, 6).map(u => (
               <div key={u.id} onClick={() => { onViewProfile?.(u.id); onClose(); }} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: 'pointer' }}>
                 <div style={{ width: 44, height: 44, borderRadius: '50%', background: u.avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: 18, overflow: 'hidden', flexShrink: 0 }}>
@@ -759,7 +759,7 @@ const DiscoverPage = ({ videos, users, onViewProfile, showToast, onClose }) => {
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ color: 'white', fontWeight: 700, fontSize: 14 }}>@{u.username}</div>
-                  <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>{formatNumber(u.followers?.length || 0)} followers</div>
+                  <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: 12 }}>{formatNumber(u.followers?.length || 0)} followers</div>
                 </div>
               </div>
             ))}
@@ -767,7 +767,7 @@ const DiscoverPage = ({ videos, users, onViewProfile, showToast, onClose }) => {
         )}
         {search && filteredUsers.length > 0 && (
           <>
-            <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>People</div>
+            <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>People</div>
             {filteredUsers.map(u => (
               <div key={u.id} onClick={() => { onViewProfile?.(u.id); onClose(); }} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: 'pointer' }}>
                 <div style={{ width: 44, height: 44, borderRadius: '50%', background: u.avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: 18, overflow: 'hidden', flexShrink: 0 }}>
@@ -775,7 +775,7 @@ const DiscoverPage = ({ videos, users, onViewProfile, showToast, onClose }) => {
                 </div>
                 <div>
                   <div style={{ color: 'white', fontWeight: 700, fontSize: 14 }}>@{u.username}</div>
-                  {u.verified && <span style={{ color: '#2F9BFF', fontSize: 11 }}>✓ Verified</span>}
+                  {u.verified && <span style={{ color: '#0A84FF', fontSize: 11 }}>✓ Verified</span>}
                 </div>
               </div>
             ))}
@@ -783,7 +783,7 @@ const DiscoverPage = ({ videos, users, onViewProfile, showToast, onClose }) => {
         )}
         {search && filteredTags.length > 0 && (activeFilter === 'all' || activeFilter === 'hashtag') && (
           <>
-            <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, margin: '16px 0 10px' }}>Hashtags</div>
+            <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, margin: '16px 0 10px' }}>Hashtags</div>
             {filteredTags.map(tag => (
               <div key={tag} style={{ padding: '10px 14px', background: 'rgba(255,255,255,0.03)', borderRadius: 14, marginBottom: 6, cursor: 'pointer', color: '#FF2156', fontWeight: 700, fontSize: 14 }}>{tag}</div>
             ))}
@@ -791,7 +791,7 @@ const DiscoverPage = ({ videos, users, onViewProfile, showToast, onClose }) => {
         )}
         {search && (activeFilter === 'all' || activeFilter === 'video') && filteredVideos.length > 0 && (
           <>
-            <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, margin: '16px 0 10px' }}>Videos</div>
+            <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, margin: '16px 0 10px' }}>Videos</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               {filteredVideos.slice(0, 8).map(v => (
                 <div key={v.id} style={{ aspectRatio: '9/16', position: 'relative', borderRadius: 14, overflow: 'hidden', background: '#24242E' }}>
@@ -958,9 +958,9 @@ const GlobalStyles = () => (
     /* ── DESIGN TOKENS (reference) ──────────────────────────────────────
        Brand accent     #FF2156   |  Secondary/purple  #9D4EDD
        Success          #2ED573   |  Warning            #FFB100
-       Danger           #FF453A   |  Info               #0A84FF
-       Indigo           #5E5CE6   |  Gold/coins          #FFD60A
-       Teal (gradient)  #00E6B4 → #00A9D6   |  Verified check  #2F9BFF
+       Danger           #FF2156   |  Info               #0A84FF
+       Indigo           #0A84FF   |  Gold/coins          #FFD60A
+       Teal (gradient)  #2ED573 → #0A84FF   |  Verified check  #0A84FF
        Surface scale    base #0B0B0F → elev-1 #15151C → elev-2 #1C1C24 → elev-3 #24242E
        Borders/dividers #34343E   |  Muted text/icon    #5A5A66
        These values are the single source of truth for the app's palette —
@@ -968,8 +968,8 @@ const GlobalStyles = () => (
     ──────────────────────────────────────────────────────────────────── */
     :root{
       --accent:#FF2156; --accent-2:#9D4EDD;
-      --success:#2ED573; --warning:#FFB100; --danger:#FF453A; --info:#0A84FF; --indigo:#5E5CE6;
-      --gold:#FFD60A; --teal:#00E6B4; --teal-2:#00A9D6; --verified:#2F9BFF;
+      --success:#2ED573; --warning:#FFB100; --danger:#FF2156; --info:#0A84FF; --indigo:#0A84FF;
+      --gold:#FFD60A; --teal:#2ED573; --teal-2:#0A84FF; --verified:#0A84FF;
       --bg-base:#0B0B0F; --bg-elev-1:#15151C; --bg-elev-2:#1C1C24; --bg-elev-3:#24242E;
       --border-strong:#34343E; --text-muted:#5A5A66;
     }
@@ -1219,13 +1219,13 @@ const NotifPopup = ({ notif, user, onClose, onTap }) => {
         <div style={{ width:44, height:44, borderRadius:'50%', background:user?.avatarColor||'#FF2156', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:18, overflow:'hidden' }}>
           {user?.avatarUrl ? <img src={user.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/> : (user?.avatar||'?')}
         </div>
-        <div style={{ position:'absolute', bottom:-2, right:-2, width:18, height:18, borderRadius:'50%', background:'#1C1C24', display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, border:'1.5px solid rgba(255,255,255,0.1)' }}>{icons[notif?.type]||'🔔'}</div>
+        <div style={{ position:'absolute', bottom:-2, right:-2, width:18, height:18, borderRadius:'50%', background:'#1C1C24', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, border:'1.5px solid rgba(255,255,255,0.1)' }}>{icons[notif?.type]||'🔔'}</div>
       </div>
       <div style={{ flex:1, minWidth:0 }}>
         <div style={{ color:'white', fontSize:13, fontWeight:600, lineHeight:1.35, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
           <span style={{ color:'#FF2156' }}>@{user?.username||'someone'}</span>{' '}{notif?.message}
         </div>
-        <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11, marginTop:2 }}>Just now · Swipe to dismiss</div>
+        <div style={{ color:'rgba(255,255,255,0.55)', fontSize:11, marginTop:2 }}>Just now · Swipe to dismiss</div>
       </div>
       <button onClick={e=>{e.stopPropagation();onClose();}} style={{ background:'rgba(255,255,255,0.08)', border:'none', borderRadius:'50%', width:26, height:26, color:'rgba(255,255,255,0.5)', cursor:'pointer', fontSize:14, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>✕</button>
       <div style={{ position:'absolute', bottom:0, left:0, right:0, height:2, background:'rgba(255,255,255,0.06)', borderRadius:'0 0 20px 20px', overflow:'hidden' }}>
@@ -1238,9 +1238,9 @@ const NotifPopup = ({ notif, user, onClose, onTap }) => {
 const Toast = ({ message, type, onClose }) => {
   useEffect(() => { const t = setTimeout(onClose, 2800); return () => clearTimeout(t); }, [onClose]);
   const configs = {
-    success: { bg: 'linear-gradient(135deg,#00E6B4,#00A9D6)', icon: '✓' },
+    success: { bg: 'linear-gradient(135deg,#2ED573,#0A84FF)', icon: '✓' },
     error: { bg: 'linear-gradient(135deg,#FF2156,#FF8552)', icon: '✕' },
-    info: { bg: 'linear-gradient(135deg,#0A84FF,#5E5CE6)', icon: 'i' },
+    info: { bg: 'linear-gradient(135deg,#0A84FF,#0A84FF)', icon: 'i' },
     warning: { bg: 'linear-gradient(135deg,#FFB100,#FF8552)', icon: '!' },
   };
   const c = configs[type] || configs.info;
@@ -1361,7 +1361,7 @@ const ShareModal = ({ video, onClose, showToast }) => {
               <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
             </svg>
           </div>
-          <span style={{ flex: 1, color: 'rgba(255,255,255,0.3)', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: 8 }}>{url}</span>
+          <span style={{ flex: 1, color: 'rgba(255,255,255,0.55)', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: 8 }}>{url}</span>
           <button onClick={copyLink} style={{ background: '#FF2156', border: 'none', padding: '14px 20px', color: 'white', fontWeight: 700, fontSize: 13, cursor: 'pointer', flexShrink: 0 }}>
             Copy
           </button>
@@ -1584,10 +1584,10 @@ const TelegramStoryViewer = ({ storyGroups, startGroupIdx, currentUser, onClose,
                     </div>
                   );
                 })}
-                {(currentStory.seenBy?.length || 0) > 6 && <div style={{ width:28, height:28, borderRadius:'50%', background:'rgba(255,255,255,0.15)', border:'2px solid #000', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontSize:10, marginLeft:-8 }}>+{currentStory.seenBy.length-6}</div>}
+                {(currentStory.seenBy?.length || 0) > 6 && <div style={{ width:28, height:28, borderRadius:'50%', background:'rgba(255,255,255,0.15)', border:'2px solid #000', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontSize:11, marginLeft:-8 }}>+{currentStory.seenBy.length-6}</div>}
               </div>
             )}
-            {!(currentStory.seenBy?.length) && <div style={{ color:'rgba(255,255,255,0.4)', fontSize:13 }}>No views yet — share it!</div>}
+            {!(currentStory.seenBy?.length) && <div style={{ color:'rgba(255,255,255,0.55)', fontSize:13 }}>No views yet — share it!</div>}
           </div>
         )}
       </div>
@@ -1705,7 +1705,7 @@ const CreateStoryModal = ({ currentUser, onClose, showToast }) => {
   const recorderRef = useRef(null);
   const chunksRef = useRef([]);
   const fileInputRef = useRef(null);
-  const colors = ['#FF2156','#9D4EDD','#0A84FF','#FFB100','#2ED573','#00A9D6','#FF453A','#5E5CE6'];
+  const colors = ['#FF2156','#9D4EDD','#0A84FF','#FFB100','#2ED573','#0A84FF','#FF2156','#0A84FF'];
 
   const startCamera = async () => {
     try { const s = await navigator.mediaDevices.getUserMedia({video:true}); streamRef.current=s; if(videoRef.current) videoRef.current.srcObject=s; setCameraActive(true); }
@@ -1771,7 +1771,7 @@ const CreateStoryModal = ({ currentUser, onClose, showToast }) => {
             <button key={opt.id} onClick={()=>{if(opt.id==='file') fileInputRef.current?.click(); else setMode(opt.id);}} style={{ background:'rgba(255,255,255,0.04)', border:`1px solid ${opt.color}30`, borderRadius:22, padding:'18px 14px', display:'flex', flexDirection:'column', alignItems:'center', gap:8, cursor:'pointer' }}>
               <div style={{ width:52, height:52, borderRadius:'50%', background:opt.color+'18', display:'flex', alignItems:'center', justifyContent:'center', fontSize:26 }}>{opt.icon}</div>
               <div style={{ color:'white', fontWeight:700, fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{opt.label}</div>
-              <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11 }}>{opt.sub}</div>
+              <div style={{ color:'rgba(255,255,255,0.55)', fontSize:11 }}>{opt.sub}</div>
             </button>
           ))}
         </div>
@@ -1844,8 +1844,8 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
             </div>
           </div>
           <div style={{ color:'white', fontWeight:800, fontSize:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{user?.username}</div>
-          {user?.verified && <div style={{ display:'inline-flex', alignItems:'center', gap:4, color:'#2F9BFF', fontSize:12, marginTop:4, background:'rgba(29,155,240,0.1)', borderRadius:20, padding:'3px 10px' }}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="#2F9BFF"><path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          {user?.verified && <div style={{ display:'inline-flex', alignItems:'center', gap:4, color:'#0A84FF', fontSize:12, marginTop:4, background:'rgba(29,155,240,0.1)', borderRadius:20, padding:'3px 10px' }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="#0A84FF"><path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             Verified
           </div>}
           <div style={{ color:'rgba(255,255,255,0.55)', fontSize:13, marginTop:8, lineHeight:1.5 }}>{user?.bio}</div>
@@ -1853,7 +1853,7 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
             {[['Posts', mockVideos.length], ['Followers', user?.followers?.length||0], ['Following', user?.following?.length||0]].map(([label,val],i)=>(
               <div key={label} style={{ flex:1, textAlign:'center', borderRight:i<2?'1px solid rgba(255,255,255,0.08)':'' }}>
                 <div style={{ color:'white', fontWeight:800, fontSize:18, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{formatNumber(val)}</div>
-                <div style={{ color:'rgba(255,255,255,0.4)', fontSize:11, marginTop:2 }}>{label}</div>
+                <div style={{ color:'rgba(255,255,255,0.55)', fontSize:11, marginTop:2 }}>{label}</div>
               </div>
             ))}
           </div>
@@ -1911,7 +1911,7 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
                         ? <img src={v.videoUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
                         : <video src={v.videoUrl} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
                       }
-                      <div style={{ position:'absolute', bottom:4, left:6, color:'white', fontSize:10, fontWeight:700, background:'rgba(0,0,0,0.6)', borderRadius:6, padding:'2px 6px' }}>{formatNumber(v.views)}</div>
+                      <div style={{ position:'absolute', bottom:4, left:6, color:'white', fontSize:11, fontWeight:700, background:'rgba(0,0,0,0.6)', borderRadius:6, padding:'2px 6px' }}>{formatNumber(v.views)}</div>
                     </div>
                   );
                 })}
@@ -1963,7 +1963,7 @@ const LiveChatMessage = ({ msg, targetLang }) => {
         <span style={{ color:'white', fontSize:11 }}>{(translated && !showOriginal) ? translated : msg.text}</span>
       </div>
       {eligible && (
-        <button onClick={toggle} disabled={loading} style={{ alignSelf:'flex-start', background:'none', border:'none', color:'#2F9BFF', fontSize:10, cursor:'pointer', padding:0, marginTop:1 }}>
+        <button onClick={toggle} disabled={loading} style={{ alignSelf:'flex-start', background:'none', border:'none', color:'#0A84FF', fontSize:11, cursor:'pointer', padding:0, marginTop:1 }}>
           {loading ? '...' : translated ? (showOriginal ? '🌐 See translation' : '🌐 See original') : '🌐 Translate'}
         </button>
       )}
@@ -2077,7 +2077,7 @@ const CommentItem = ({ comment, currentUser, onLike, onReply, onPin, onViewProfi
         {!isMine && (
           <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:4 }}>
             <span onClick={()=>onViewProfile?.(comment.userId)} style={{ color:'rgba(255,255,255,0.6)', fontWeight:700, fontSize:11, cursor:'pointer' }}>@{comment.username}</span>
-                        <span style={{ color:'rgba(255,255,255,0.28)',fontSize:10 }}>{comment.time||'just now'}</span>
+                        <span style={{ color:'rgba(255,255,255,0.28)',fontSize:11 }}>{comment.time||'just now'}</span>
           </div>
         )}
         <div style={{ background:isMine?'linear-gradient(135deg,#FF2156,#9D4EDD)':'rgba(255,255,255,0.09)', borderRadius:isMine?'20px 20px 4px 20px':'20px 20px 20px 4px', padding:'10px 14px' }}>
@@ -2087,12 +2087,12 @@ const CommentItem = ({ comment, currentUser, onLike, onReply, onPin, onViewProfi
           {comment.text && <span style={{ color:'white', fontSize:13, lineHeight:1.4 }}>{comment.text}</span>}
         </div>
         <div style={{ display:'flex', gap:10, marginTop:4, justifyContent:isMine?'flex-end':'flex-start' }}>
-          <button onClick={()=>onLike?.(comment.id)} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.35)', fontSize:11, cursor:'pointer', display:'flex', alignItems:'center', gap:3 }}>
+          <button onClick={()=>onLike?.(comment.id)} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.55)', fontSize:11, cursor:'pointer', display:'flex', alignItems:'center', gap:3 }}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
             {comment.likes||0}
           </button>
-          <button onClick={()=>onReply?.(comment)} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.35)', fontSize:11, cursor:'pointer' }}>Reply</button>
-          <button onClick={()=>onPin?.(comment.id)} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.25)', fontSize:10, cursor:'pointer' }}>Pin</button>
+          <button onClick={()=>onReply?.(comment)} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.55)', fontSize:11, cursor:'pointer' }}>Reply</button>
+          <button onClick={()=>onPin?.(comment.id)} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.25)', fontSize:11, cursor:'pointer' }}>Pin</button>
           {isMine && (
             <button onClick={()=>onDelete?.(comment.id)} title="Delete" style={{ background:'none', border:'none', color:'rgba(255,69,58,0.55)', fontSize:11, cursor:'pointer', display:'flex', alignItems:'center' }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
@@ -2504,7 +2504,7 @@ const handleLongPressStart = () => {
                 <div style={{ width:42, height:42, borderRadius:'50%', background:video.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:16, border:'2px solid rgba(255,255,255,0.5)', overflow:'hidden' }}>
                   {video.avatarUrl ? <img src={video.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : video.avatar}
                 </div>
-                {video.verified && <div style={{ position:'absolute', bottom:-2, right:-2, width:14, height:14, background:'#2F9BFF', borderRadius:'50%', fontSize:9, display:'flex', alignItems:'center', justifyContent:'center', color:'white' }}>✓</div>}
+                {video.verified && <div style={{ position:'absolute', bottom:-2, right:-2, width:14, height:14, background:'#0A84FF', borderRadius:'50%', fontSize:11, display:'flex', alignItems:'center', justifyContent:'center', color:'white' }}>✓</div>}
               </button>
               <span onClick={e=>{e.stopPropagation();onViewProfile?.(video.userId);}} style={{ color:'white', fontWeight:700, fontSize:15, cursor:'pointer', fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{video.username}</span>
               <button data-notap='1' onClick={e=>{e.stopPropagation();onFollow?.(video.userId);}} style={{ padding:'5px 14px', borderRadius:20, background:followed?.includes(video.userId)?'rgba(255,255,255,0.08)':'rgba(255,45,85,0.9)', border:followed?.includes(video.userId)?'1px solid rgba(255,255,255,0.4)':'none', color:'white', fontSize:12, fontWeight:700, cursor:'pointer', backdropFilter:'blur(4px)' }}>{followed?.includes(video.userId)?'Unfollow':'+ Follow'}</button>
@@ -2518,7 +2518,7 @@ const handleLongPressStart = () => {
               </p>
             )}
             {translatedDesc && (
-              <button data-notap='1' onClick={e=>{e.stopPropagation(); setShowOriginalDesc(s=>!s);}} style={{ background:'rgba(0,122,255,0.15)', border:'1px solid rgba(0,122,255,0.3)', borderRadius:12, padding:'3px 10px', color:'#2F9BFF', fontSize:11, cursor:'pointer', marginBottom:8, display:'inline-flex', alignItems:'center', gap:4 }}>
+              <button data-notap='1' onClick={e=>{e.stopPropagation(); setShowOriginalDesc(s=>!s);}} style={{ background:'rgba(0,122,255,0.15)', border:'1px solid rgba(0,122,255,0.3)', borderRadius:12, padding:'3px 10px', color:'#0A84FF', fontSize:11, cursor:'pointer', marginBottom:8, display:'inline-flex', alignItems:'center', gap:4 }}>
                 🌐 {showOriginalDesc ? 'See translation' : 'See original'}
               </button>
             )}
@@ -2528,7 +2528,7 @@ const handleLongPressStart = () => {
             <div style={{ display:'flex', alignItems:'center', gap:6 }}>
               <div style={{ width:22, height:22, borderRadius:'50%', background:'linear-gradient(135deg,#FF2156,#9D4EDD)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:12 }}>♪</div>
               <span style={{ color:'rgba(255,255,255,0.65)', fontSize:12 }}>{video.song}</span>
-              <button onClick={()=>onSaveSound?.()} style={{ marginLeft:8, background:'rgba(255,255,255,0.1)', border:'none', borderRadius:10, padding:'3px 8px', color:'rgba(255,255,255,0.7)', fontSize:10, cursor:'pointer', backdropFilter:'blur(8px)' }}>Save</button>
+              <button onClick={()=>onSaveSound?.()} style={{ marginLeft:8, background:'rgba(255,255,255,0.1)', border:'none', borderRadius:10, padding:'3px 8px', color:'rgba(255,255,255,0.7)', fontSize:11, cursor:'pointer', backdropFilter:'blur(8px)' }}>Save</button>
             </div>
           </div>
         );
@@ -2581,7 +2581,7 @@ const handleLongPressStart = () => {
           <div onClick={e=>e.stopPropagation()} style={{ width:'100%', background:'#15151C', borderTopLeftRadius:28, borderTopRightRadius:28, padding:'20px 20px 40px', animation:'slideUp 0.3s ease' }}>
             <div style={{ width:36, height:4, background:'rgba(255,255,255,0.12)', borderRadius:2, margin:'0 auto 20px' }} />
             <div style={{ color:'white', fontWeight:800, fontSize:18, marginBottom:4, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Report Post</div>
-            <div style={{ color:'rgba(255,255,255,0.4)', fontSize:13, marginBottom:16 }}>Why are you reporting this?</div>
+            <div style={{ color:'rgba(255,255,255,0.55)', fontSize:13, marginBottom:16 }}>Why are you reporting this?</div>
             {reportReasons.map(r=>(
               <button key={r} onClick={async ()=>{
                 await addDoc(collection(db,'reports'),{ videoId:video.id, userId:currentUser?.id, reason:r, createdAt:serverTimestamp() });
@@ -2606,7 +2606,7 @@ const handleLongPressStart = () => {
                 </div>
                 <div>
                   <div style={{ color:'white', fontWeight:700, fontSize:13 }}>@{video?.username}</div>
-                  <div style={{ color:'rgba(255,255,255,0.4)', fontSize:11, marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:260 }}>{video?.description}</div>
+                  <div style={{ color:'rgba(255,255,255,0.55)', fontSize:11, marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:260 }}>{video?.description}</div>
                 </div>
               </div>
             </div>
@@ -2624,7 +2624,7 @@ const handleLongPressStart = () => {
                 <span style={{ color, fontSize:15, fontWeight:600, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{label}</span>
               </button>
             ))}
-            <button onClick={()=>setShowLongPressMenu(false)} style={{ width:'100%', padding:'15px 22px', background:'none', border:'none', cursor:'pointer', color:'rgba(255,255,255,0.4)', fontSize:14, fontWeight:500, textAlign:'center', marginTop:4 }}>Cancel</button>
+            <button onClick={()=>setShowLongPressMenu(false)} style={{ width:'100%', padding:'15px 22px', background:'none', border:'none', cursor:'pointer', color:'rgba(255,255,255,0.55)', fontSize:14, fontWeight:500, textAlign:'center', marginTop:4 }}>Cancel</button>
           </div>
         </div>
       )}
@@ -2643,25 +2643,25 @@ const handleLongPressStart = () => {
         <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();haptic('medium');handleLike();}}
           style={{ background:'none', border:'none', display:'flex', flexDirection:'column', alignItems:'center', gap:3, cursor:'pointer', padding:0 }}>
           <svg width="19" height="19" viewBox="0 0 24 24"
-            fill={liked?'#FF3B5C':'none'} stroke={liked?'#FF3B5C':'#65676B'} strokeWidth="1.8"
+            fill={liked?'#FF2156':'none'} stroke={liked?'#FF2156':'#65676B'} strokeWidth="1.8"
             style={{ animation: liked ? 'likeHeart 0.4s ease' : 'none' }}>
             <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
           </svg>
-          <span style={{ color: liked?'#FF3B5C':'#65676B', fontSize:10, fontWeight:600, fontFamily:"'Inter',sans-serif" }}>Like</span>
+          <span style={{ color: liked?'#FF2156':'#65676B', fontSize:11, fontWeight:600, fontFamily:"'Inter',sans-serif" }}>Like</span>
         </button>
 
         {/* 2. 💬 Comment */}
         <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();setShowComments(true);}}
           style={{ background:'none', border:'none', display:'flex', flexDirection:'column', alignItems:'center', gap:3, cursor:'pointer', padding:0 }}>
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#65676B" strokeWidth="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-          <span style={{ color:'#65676B', fontSize:10, fontWeight:600, fontFamily:"'Inter',sans-serif" }}>Comment</span>
+          <span style={{ color:'#65676B', fontSize:11, fontWeight:600, fontFamily:"'Inter',sans-serif" }}>Comment</span>
         </button>
 
         {/* 3. 🔄 Share */}
         <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();setShowShare(true);}}
           style={{ background:'none', border:'none', display:'flex', flexDirection:'column', alignItems:'center', gap:3, cursor:'pointer', padding:0 }}>
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#65676B" strokeWidth="1.8"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-          <span style={{ color:'#65676B', fontSize:10, fontWeight:600, fontFamily:"'Inter',sans-serif" }}>Share</span>
+          <span style={{ color:'#65676B', fontSize:11, fontWeight:600, fontFamily:"'Inter',sans-serif" }}>Share</span>
         </button>
 
         {/* 4. 🔖 Save */}
@@ -2672,28 +2672,28 @@ const handleLongPressStart = () => {
         }}
           style={{ background:'none', border:'none', display:'flex', flexDirection:'column', alignItems:'center', gap:3, cursor:'pointer', padding:0 }}>
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#65676B" strokeWidth="1.8"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
-          <span style={{ color:'#65676B', fontSize:10, fontWeight:600, fontFamily:"'Inter',sans-serif" }}>Save</span>
+          <span style={{ color:'#65676B', fontSize:11, fontWeight:600, fontFamily:"'Inter',sans-serif" }}>Save</span>
         </button>
 
         {/* 5. ⬇️ Download */}
         <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();handleDownloadPost();}}
           style={{ background:'none', border:'none', display:'flex', flexDirection:'column', alignItems:'center', gap:3, cursor:'pointer', padding:0 }}>
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#65676B" strokeWidth="1.8"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          <span style={{ color:'#65676B', fontSize:10, fontWeight:600, fontFamily:"'Inter',sans-serif" }}>Download</span>
+          <span style={{ color:'#65676B', fontSize:11, fontWeight:600, fontFamily:"'Inter',sans-serif" }}>Download</span>
         </button>
 
         {/* 6. ⚠️ Report */}
         <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();showToast?.('Report submitted','info');}}
           style={{ background:'none', border:'none', display:'flex', flexDirection:'column', alignItems:'center', gap:3, cursor:'pointer', padding:0 }}>
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#65676B" strokeWidth="1.8"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-          <span style={{ color:'#65676B', fontSize:10, fontWeight:600, fontFamily:"'Inter',sans-serif" }}>Report</span>
+          <span style={{ color:'#65676B', fontSize:11, fontWeight:600, fontFamily:"'Inter',sans-serif" }}>Report</span>
         </button>
 
         {/* 7. ⋯ More */}
         <button data-notap='1' onClick={e=>{e.stopPropagation();e.preventDefault();setShowActionMenu(v=>!v);}}
           style={{ background:'none', border:'none', display:'flex', flexDirection:'column', alignItems:'center', gap:3, cursor:'pointer', padding:0 }}>
           <svg width="19" height="19" viewBox="0 0 24 24" fill="#65676B"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
-          <span style={{ color:'#65676B', fontSize:10, fontWeight:600, fontFamily:"'Inter',sans-serif" }}>More</span>
+          <span style={{ color:'#65676B', fontSize:11, fontWeight:600, fontFamily:"'Inter',sans-serif" }}>More</span>
         </button>
 
       </div>
@@ -2731,7 +2731,7 @@ const handleLongPressStart = () => {
                 <CommentItem comment={pinnedComment} currentUser={currentUser} onLike={()=>{}} onReply={()=>{}} onPin={()=>{}} />
               </div>
             )}
-            {comments.length===0 && <div style={{textAlign:'center',padding:40,color:'rgba(255,255,255,0.3)',fontSize:13}}>No comments yet. Be the first! 💬</div>}
+            {comments.length===0 && <div style={{textAlign:'center',padding:40,color:'rgba(255,255,255,0.55)',fontSize:13}}>No comments yet. Be the first! 💬</div>}
             {comments.map(comment=>(
               <CommentItem key={comment.id} comment={comment} currentUser={currentUser} onLike={async id=>{await updateDoc(doc(db,'comments',id),{likes:increment(1)});}} onReply={(c)=>setCommentText(`@${c.username} `)} onPin={id=>{const c=comments.find(cc=>cc.id===id); if(c){setPinnedComment(c); showToast?.('Pinned!','success');}}} onViewProfile={onViewProfile} onDelete={async id=>{ await deleteDoc(doc(db,'comments',id)); await updateDoc(doc(db,'videos',video.id),{comments:increment(-1)}); showToast?.('Comment deleted','success'); }} />
             ))}
@@ -2755,7 +2755,7 @@ const NotifBellButton = ({ onOpenNotifications, currentUser }) => {
   return (
     <button onClick={onOpenNotifications} style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(10px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', position:'relative' }}>
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
-      {unread>0 && <div style={{ position:'absolute', top:-4, right:-4, minWidth:18, height:18, background:'#FF2156', borderRadius:9, border:'1.5px solid #000', display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, color:'white', fontWeight:800, padding:'0 3px' }}>{unread>9?'9+':unread}</div>}
+      {unread>0 && <div style={{ position:'absolute', top:-4, right:-4, minWidth:18, height:18, background:'#FF2156', borderRadius:9, border:'1.5px solid #000', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, color:'white', fontWeight:800, padding:'0 3px' }}>{unread>9?'9+':unread}</div>}
     </button>
   );
 };
@@ -2997,11 +2997,11 @@ const JobsMarketPage = ({ currentUser, showToast, mode, onViewProfile }) => {
         <button onClick={()=>{ setShowApplicants(false); setApplicants([]); }} style={{ background:'none', border:'none', color:'white', fontSize:20, cursor:'pointer' }}>←</button>
         <div>
           <div style={{ color:'white', fontWeight:800, fontSize:16 }}>{selectedItem.title}</div>
-          <div style={{ color:'rgba(255,255,255,0.4)', fontSize:12 }}>{applicants.length} applicant{applicants.length!==1?'s':''}</div>
+          <div style={{ color:'rgba(255,255,255,0.55)', fontSize:12 }}>{applicants.length} applicant{applicants.length!==1?'s':''}</div>
         </div>
       </div>
       <div style={{ flex:1, overflowY:'auto', padding:14 }}>
-        {applicants.length === 0 && <div style={{ textAlign:'center', padding:60, color:'rgba(255,255,255,0.3)' }}><div style={{ fontSize:40, marginBottom:12 }}>📋</div><div>No applicants yet</div></div>}
+        {applicants.length === 0 && <div style={{ textAlign:'center', padding:60, color:'rgba(255,255,255,0.55)' }}><div style={{ fontSize:40, marginBottom:12 }}>📋</div><div>No applicants yet</div></div>}
         {applicants.map(app => (
           <div key={app.id} style={{ background:'rgba(255,255,255,0.03)', borderRadius:18, padding:16, marginBottom:12, border:'1px solid rgba(255,255,255,0.07)' }}>
             <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:12 }}>
@@ -3010,20 +3010,20 @@ const JobsMarketPage = ({ currentUser, showToast, mode, onViewProfile }) => {
               </div>
               <div style={{ flex:1 }}>
                 <div style={{ color:'white', fontWeight:700, fontSize:15 }}>@{app.applicantUsername}</div>
-                <div style={{ color:'rgba(255,255,255,0.4)', fontSize:12 }}>{app.applicantFollowers||0} followers</div>
+                <div style={{ color:'rgba(255,255,255,0.55)', fontSize:12 }}>{app.applicantFollowers||0} followers</div>
                 {app.applicantBio && <div style={{ color:'rgba(255,255,255,0.5)', fontSize:12, marginTop:2 }}>{app.applicantBio}</div>}
               </div>
-              <div style={{ background: app.status==='hired'?'rgba(52,199,89,0.15)':app.status==='shortlisted'?'rgba(255,204,0,0.15)':app.status==='rejected'?'rgba(255,59,48,0.15)':'rgba(255,255,255,0.08)', border:`1px solid ${app.status==='hired'?'rgba(52,199,89,0.4)':app.status==='shortlisted'?'rgba(255,204,0,0.4)':app.status==='rejected'?'rgba(255,59,48,0.4)':'rgba(255,255,255,0.15)'}`, borderRadius:20, padding:'4px 10px', color:app.status==='hired'?'#2ED573':app.status==='shortlisted'?'#FFD60A':app.status==='rejected'?'#FF453A':'rgba(255,255,255,0.5)', fontSize:11, fontWeight:700 }}>{app.status||'pending'}</div>
+              <div style={{ background: app.status==='hired'?'rgba(52,199,89,0.15)':app.status==='shortlisted'?'rgba(255,204,0,0.15)':app.status==='rejected'?'rgba(255,59,48,0.15)':'rgba(255,255,255,0.08)', border:`1px solid ${app.status==='hired'?'rgba(52,199,89,0.4)':app.status==='shortlisted'?'rgba(255,204,0,0.4)':app.status==='rejected'?'rgba(255,59,48,0.4)':'rgba(255,255,255,0.15)'}`, borderRadius:20, padding:'4px 10px', color:app.status==='hired'?'#2ED573':app.status==='shortlisted'?'#FFD60A':app.status==='rejected'?'#FF2156':'rgba(255,255,255,0.5)', fontSize:11, fontWeight:700 }}>{app.status||'pending'}</div>
             </div>
             <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:12 }}>
-              <span style={{ background:'rgba(255,255,255,0.05)', borderRadius:20, padding:'3px 10px', color:'rgba(255,255,255,0.4)', fontSize:11 }}>📅 {app.appliedAt?.toDate?.()?.toLocaleDateString?.() || 'N/A'}</span>
-              <span style={{ background:'rgba(255,255,255,0.05)', borderRadius:20, padding:'3px 10px', color:'rgba(255,255,255,0.4)', fontSize:11 }}>🕐 {app.appliedAt?.toDate?.()?.toLocaleTimeString?.([],{hour:'2-digit',minute:'2-digit'}) || ''}</span>
+              <span style={{ background:'rgba(255,255,255,0.05)', borderRadius:20, padding:'3px 10px', color:'rgba(255,255,255,0.55)', fontSize:11 }}>📅 {app.appliedAt?.toDate?.()?.toLocaleDateString?.() || 'N/A'}</span>
+              <span style={{ background:'rgba(255,255,255,0.05)', borderRadius:20, padding:'3px 10px', color:'rgba(255,255,255,0.55)', fontSize:11 }}>🕐 {app.appliedAt?.toDate?.()?.toLocaleTimeString?.([],{hour:'2-digit',minute:'2-digit'}) || ''}</span>
             </div>
             {currentUser?.id === selectedItem.userId && (
               <div style={{ display:'flex', gap:8 }}>
                 <button onClick={()=>updateApplicantStatus(app.id,'shortlisted',app.applicantId,selectedItem.title)} style={{ flex:1, background:'rgba(255,204,0,0.12)', border:'1px solid rgba(255,204,0,0.3)', borderRadius:14, padding:'9px 0', color:'#FFD60A', fontSize:12, fontWeight:700, cursor:'pointer' }}>⭐ Shortlist</button>
                 <button onClick={()=>updateApplicantStatus(app.id,'hired',app.applicantId,selectedItem.title)} style={{ flex:1, background:'rgba(52,199,89,0.12)', border:'1px solid rgba(52,199,89,0.3)', borderRadius:14, padding:'9px 0', color:'#2ED573', fontSize:12, fontWeight:700, cursor:'pointer' }}>✅ Hire</button>
-                <button onClick={()=>updateApplicantStatus(app.id,'rejected',app.applicantId,selectedItem.title)} style={{ flex:1, background:'rgba(255,59,48,0.1)', border:'1px solid rgba(255,59,48,0.2)', borderRadius:14, padding:'9px 0', color:'#FF453A', fontSize:12, fontWeight:700, cursor:'pointer' }}>✕ Pass</button>
+                <button onClick={()=>updateApplicantStatus(app.id,'rejected',app.applicantId,selectedItem.title)} style={{ flex:1, background:'rgba(255,59,48,0.1)', border:'1px solid rgba(255,59,48,0.2)', borderRadius:14, padding:'9px 0', color:'#FF2156', fontSize:12, fontWeight:700, cursor:'pointer' }}>✕ Pass</button>
               </div>
             )}
           </div>
@@ -3057,7 +3057,7 @@ const JobsMarketPage = ({ currentUser, showToast, mode, onViewProfile }) => {
         </div>
         <div style={{ flex:1, overflowY:'auto', padding:14 }}>
           {pending.length === 0 && (
-            <div style={{ textAlign:'center', padding:60, color:'rgba(255,255,255,0.3)' }}>
+            <div style={{ textAlign:'center', padding:60, color:'rgba(255,255,255,0.55)' }}>
               <div style={{ fontSize:40, marginBottom:12 }}>✅</div>
               <div>Nothing pending review</div>
             </div>
@@ -3069,8 +3069,8 @@ const JobsMarketPage = ({ currentUser, showToast, mode, onViewProfile }) => {
               {item.description && <div style={{ color:'rgba(255,255,255,0.5)', fontSize:12, lineHeight:1.5, marginBottom:10 }}>{item.description.length>200?item.description.slice(0,200)+'...':item.description}</div>}
               <div style={{ display:'flex', gap:8 }}>
                 <button onClick={()=>approveItem(item)} style={{ flex:1, background:'rgba(52,199,89,0.12)', border:'1px solid rgba(52,199,89,0.3)', borderRadius:14, padding:'9px 0', color:'#2ED573', fontSize:12, fontWeight:700, cursor:'pointer' }}>✅ Approve</button>
-                <button onClick={()=>removeItem(item)} style={{ flex:1, background:'rgba(255,59,48,0.1)', border:'1px solid rgba(255,59,48,0.2)', borderRadius:14, padding:'9px 0', color:'#FF453A', fontSize:12, fontWeight:700, cursor:'pointer' }}>🗑️ Remove</button>
-                <button onClick={()=>onViewProfile?.(item.userId)} style={{ width:38, height:38, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, color:'rgba(255,255,255,0.4)', fontSize:16, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>👤</button>
+                <button onClick={()=>removeItem(item)} style={{ flex:1, background:'rgba(255,59,48,0.1)', border:'1px solid rgba(255,59,48,0.2)', borderRadius:14, padding:'9px 0', color:'#FF2156', fontSize:12, fontWeight:700, cursor:'pointer' }}>🗑️ Remove</button>
+                <button onClick={()=>onViewProfile?.(item.userId)} style={{ width:38, height:38, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, color:'rgba(255,255,255,0.55)', fontSize:16, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>👤</button>
               </div>
             </div>
           ))}
@@ -3128,7 +3128,7 @@ const JobsMarketPage = ({ currentUser, showToast, mode, onViewProfile }) => {
           ) : (
             myPermissions !== null && (
               requestSent
-                ? <span style={{ color:'rgba(255,255,255,0.3)', fontSize:11 }}>Request pending...</span>
+                ? <span style={{ color:'rgba(255,255,255,0.55)', fontSize:11 }}>Request pending...</span>
                 : <button onClick={requestPermission} style={{ background:'rgba(255,255,255,0.07)', border:'1px solid rgba(255,255,255,0.15)', borderRadius:20, padding:'8px 14px', color:'rgba(255,255,255,0.7)', fontWeight:600, fontSize:12, cursor:'pointer' }}>Request to Post</button>
             )
           )}
@@ -3142,7 +3142,7 @@ const JobsMarketPage = ({ currentUser, showToast, mode, onViewProfile }) => {
         <div style={{ background:'rgba(255,255,255,0.06)', borderRadius:22, display:'flex', alignItems:'center', padding:'9px 14px', gap:8, marginBottom:10 }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input value={search} onChange={e=>setSearch(e.target.value)} placeholder={tab==='jobs'?'Search jobs...':'Search market...'} style={{ flex:1, background:'none', border:'none', color:'white', outline:'none', fontSize:13 }} />
-          {search && <button onClick={()=>setSearch('')} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.4)', cursor:'pointer', fontSize:14 }}>✕</button>}
+          {search && <button onClick={()=>setSearch('')} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.55)', cursor:'pointer', fontSize:14 }}>✕</button>}
         </div>
         {/* Filters */}
         <div style={{ display:'flex', gap:7, overflowX:'auto', paddingBottom:10 }}>
@@ -3178,8 +3178,8 @@ const JobsMarketPage = ({ currentUser, showToast, mode, onViewProfile }) => {
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:2 }}>
                     <div style={{ color:'white', fontWeight:800, fontSize:15 }}>{item.title}</div>
-                    {item.status === 'available' && tab==='market' && <span style={{ background:'rgba(52,199,89,0.12)', border:'1px solid rgba(52,199,89,0.25)', borderRadius:20, padding:'1px 8px', color:'#2ED573', fontSize:10, fontWeight:700 }}>Available</span>}
-                    {item.status === 'active' && tab==='jobs' && <span style={{ background:'rgba(0,122,255,0.12)', border:'1px solid rgba(0,122,255,0.25)', borderRadius:20, padding:'1px 8px', color:'#0A84FF', fontSize:10, fontWeight:700 }}>Hiring</span>}
+                    {item.status === 'available' && tab==='market' && <span style={{ background:'rgba(52,199,89,0.12)', border:'1px solid rgba(52,199,89,0.25)', borderRadius:20, padding:'1px 8px', color:'#2ED573', fontSize:11, fontWeight:700 }}>Available</span>}
+                    {item.status === 'active' && tab==='jobs' && <span style={{ background:'rgba(0,122,255,0.12)', border:'1px solid rgba(0,122,255,0.25)', borderRadius:20, padding:'1px 8px', color:'#0A84FF', fontSize:11, fontWeight:700 }}>Hiring</span>}
                   </div>
                   {tab==='jobs' ? (
                     <>
@@ -3200,8 +3200,8 @@ const JobsMarketPage = ({ currentUser, showToast, mode, onViewProfile }) => {
                     </>
                   )}
                   {item.description && <div style={{ color:'rgba(255,255,255,0.5)', fontSize:12, lineHeight:1.5, marginBottom:8 }}>{item.description.length>150?item.description.slice(0,150)+'...':item.description}</div>}
-                  {item.skills && tab==='jobs' && <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11, marginBottom:8 }}>🛠️ {item.skills}</div>}
-                  {item.tags && tab==='market' && <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11, marginBottom:8 }}>#{item.tags.split(',').map(t=>t.trim()).join(' #')}</div>}
+                  {item.skills && tab==='jobs' && <div style={{ color:'rgba(255,255,255,0.55)', fontSize:11, marginBottom:8 }}>🛠️ {item.skills}</div>}
+                  {item.tags && tab==='market' && <div style={{ color:'rgba(255,255,255,0.55)', fontSize:11, marginBottom:8 }}>#{item.tags.split(',').map(t=>t.trim()).join(' #')}</div>}
                   <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
                     {tab==='jobs' ? (
                       isOwner ? (
@@ -3219,12 +3219,12 @@ const JobsMarketPage = ({ currentUser, showToast, mode, onViewProfile }) => {
                       </button>
                     )}
                     <button onClick={()=>saveItem(item)} style={{ width:38, height:38, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, color:isSaved?'#FFD60A':'rgba(255,255,255,0.4)', fontSize:16, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>{isSaved?'🔖':'📌'}</button>
-                    <button onClick={()=>onViewProfile?.(item.userId)} style={{ width:38, height:38, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, color:'rgba(255,255,255,0.4)', fontSize:16, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>👤</button>
+                    <button onClick={()=>onViewProfile?.(item.userId)} style={{ width:38, height:38, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, color:'rgba(255,255,255,0.55)', fontSize:16, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>👤</button>
                     {!isOwner && item.reviewFlag !== 'pending' && (
-                      <button onClick={()=>reportListing(item)} title="Report as fake" style={{ width:38, height:38, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, color:'rgba(255,255,255,0.4)', fontSize:16, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>🚩</button>
+                      <button onClick={()=>reportListing(item)} title="Report as fake" style={{ width:38, height:38, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, color:'rgba(255,255,255,0.55)', fontSize:16, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>🚩</button>
                     )}
                   </div>
-                  {item.contactEmail && !isOwner && tab==='jobs' && <div style={{ color:'rgba(255,255,255,0.3)', fontSize:11, marginTop:6 }}>📧 {item.contactEmail}</div>}
+                  {item.contactEmail && !isOwner && tab==='jobs' && <div style={{ color:'rgba(255,255,255,0.55)', fontSize:11, marginTop:6 }}>📧 {item.contactEmail}</div>}
                 </div>
               </div>
             </div>
@@ -3249,7 +3249,7 @@ const SuggestedUsers = ({ currentUser, users, followed, onFollow, onViewProfile 
 
   return (
     <div style={{padding:'12px 0 8px'}}>
-      <div style={{color:'rgba(255,255,255,0.4)',fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:1,padding:'0 16px',marginBottom:10}}>
+      <div style={{color:'rgba(255,255,255,0.55)',fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:1,padding:'0 16px',marginBottom:10}}>
         Suggested for you
       </div>
       <div style={{display:'flex',gap:10,overflowX:'auto',padding:'0 16px 4px'}}>
@@ -3259,7 +3259,7 @@ const SuggestedUsers = ({ currentUser, users, followed, onFollow, onViewProfile 
               {u.avatarUrl?<img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/>:u.avatar}
             </div>
             <div style={{color:'white',fontSize:11,fontWeight:700,marginBottom:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>@{u.username}</div>
-            <div style={{color:'rgba(255,255,255,0.3)',fontSize:10,marginBottom:8}}>{formatNumber(u.followers?.length||0)} followers</div>
+            <div style={{color:'rgba(255,255,255,0.55)',fontSize:11,marginBottom:8}}>{formatNumber(u.followers?.length||0)} followers</div>
             <button onClick={()=>onFollow?.(u.id)} style={{background:'linear-gradient(135deg,#FF2156,#9D4EDD)',border:'none',borderRadius:20,padding:'5px 0',color:'white',fontSize:11,fontWeight:700,cursor:'pointer',width:'100%'}}>
               Follow
             </button>
@@ -3302,7 +3302,7 @@ const FeaturedJobsMarket = ({ onOpenCategory }) => {
             <span style={{ fontSize:16 }}>{item._kind==='jobs'?'💼':'🛒'}</span>
             <div style={{ textAlign:'left', minWidth:0 }}>
               <div style={{ color:'white', fontSize:11.5, fontWeight:700, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{item.title}</div>
-              <div style={{ color:'rgba(255,255,255,0.55)', fontSize:10, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+              <div style={{ color:'rgba(255,255,255,0.55)', fontSize:11, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
                 {item._kind==='jobs' ? (item.company||'Hiring') : (item.price||'For sale')}
               </div>
             </div>
@@ -3407,7 +3407,7 @@ const handlePullEnd = async () => {
     }
     startY.current = null;
   };
-  if(!filteredVideos.length && activeCategory === 'foryou') return <div style={{ height:'100%', display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:12 }}><div style={{ fontSize:48 }}>📭</div><div style={{ color:'rgba(255,255,255,0.3)' }}>{t?.noVideos||'No videos yet. Be the first to post!'}</div></div>;
+  if(!filteredVideos.length && activeCategory === 'foryou') return <div style={{ height:'100%', display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:12 }}><div style={{ fontSize:48 }}>📭</div><div style={{ color:'rgba(255,255,255,0.55)' }}>{t?.noVideos||'No videos yet. Be the first to post!'}</div></div>;
 
   if (activeCategory === 'jobs' || activeCategory === 'skills') {
     return (
@@ -3637,7 +3637,7 @@ const CreateScreen = ({ onOpenCamera, onShowSoundLibrary, showToast, t }) => (
     <div style={{ textAlign:'center', marginBottom:12 }}>
       <div style={{ width:72, height:72, borderRadius:'50%', background:'linear-gradient(135deg,#FF2156,#9D4EDD)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px', fontSize:32 }}>🎬</div>
       <div style={{ color:'white', fontWeight:800, fontSize:24, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{t?.createShare||'Create & Share'}</div>
-<div style={{ color:'rgba(255,255,255,0.35)', fontSize:14, marginTop:4 }}>{t?.expressYourself||'Express yourself'}</div>
+<div style={{ color:'rgba(255,255,255,0.55)', fontSize:14, marginTop:4 }}>{t?.expressYourself||'Express yourself'}</div>
     </div>
     {[
       {icon:'📷',label:'Open Camera',sub:'Record or take photo',action:onOpenCamera,grad:true},
@@ -3723,12 +3723,12 @@ const WalletPage = ({ user, setCurrentUser, showToast, onBack }) => {
           <div style={{ background:'linear-gradient(135deg,#FFD60A,#FFB100)', borderRadius:22, padding:20 }}>
             <div style={{ color:'rgba(0,0,0,0.55)', fontSize:11, fontWeight:600, textTransform:'uppercase', letterSpacing:0.5 }}>Coins</div>
             <div style={{ color:'#000', fontSize:30, fontWeight:800, marginTop:4, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{(user?.coins||0).toLocaleString()}</div>
-            <div style={{ color:'rgba(255,255,255,0.4)', fontSize:10, marginTop:2 }}>🪙 Infinity Coins</div>
+            <div style={{ color:'rgba(255,255,255,0.55)', fontSize:11, marginTop:2 }}>🪙 Infinity Coins</div>
           </div>
-          <div style={{ background:'linear-gradient(135deg,#00E6B4,#00A9D6)', borderRadius:22, padding:20 }}>
+          <div style={{ background:'linear-gradient(135deg,#2ED573,#0A84FF)', borderRadius:22, padding:20 }}>
             <div style={{ color:'rgba(0,0,0,0.55)', fontSize:11, fontWeight:600, textTransform:'uppercase', letterSpacing:0.5 }}>Cash</div>
             <div style={{ color:'#000', fontSize:30, fontWeight:800, marginTop:4, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>${(user?.walletBalance||0).toLocaleString()}</div>
-            <div style={{ color:'rgba(0,0,0,0.4)', fontSize:10, marginTop:2 }}>💵 USD</div>
+            <div style={{ color:'rgba(0,0,0,0.4)', fontSize:11, marginTop:2 }}>💵 USD</div>
           </div>
         </div>
         <div style={{ display:'flex', gap:4, marginBottom:16, background:'rgba(255,255,255,0.04)', borderRadius:18, padding:4, border:'1px solid rgba(255,255,255,0.06)' }}>
@@ -3742,15 +3742,15 @@ const WalletPage = ({ user, setCurrentUser, showToast, onBack }) => {
             {transactions.map(tx=>(
               <div key={tx.id} style={{ background:'rgba(255,255,255,0.03)', borderRadius:16, padding:'13px 14px', marginBottom:8, display:'flex', alignItems:'center', gap:12, border:'1px solid rgba(255,255,255,0.05)' }}>
                 <div style={{ width:40, height:40, borderRadius:'50%', background:tx.type==='credit'?'rgba(6,214,160,0.12)':'rgba(255,45,85,0.12)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>{tx.type==='credit'?'⬆️':'⬇️'}</div>
-                <div style={{ flex:1 }}><div style={{ color:'white', fontSize:12 }}>{tx.label}</div><div style={{ color:'rgba(255,255,255,0.3)', fontSize:10, marginTop:2 }}>{tx.date?.toLocaleDateString?.()}</div></div>
-                <div style={{ color:tx.type==='credit'?'#00E6B4':'#FF2156', fontWeight:700, fontSize:15 }}>{tx.type==='credit'?'+':'-'}{tx.amount}{tx.coins?'🪙':'$'}</div>
+                <div style={{ flex:1 }}><div style={{ color:'white', fontSize:12 }}>{tx.label}</div><div style={{ color:'rgba(255,255,255,0.55)', fontSize:11, marginTop:2 }}>{tx.date?.toLocaleDateString?.()}</div></div>
+                <div style={{ color:tx.type==='credit'?'#2ED573':'#FF2156', fontWeight:700, fontSize:15 }}>{tx.type==='credit'?'+':'-'}{tx.amount}{tx.coins?'🪙':'$'}</div>
               </div>
             ))}
           </div>
         )}
         {(activeTab==='deposit'||activeTab==='withdraw'||activeTab==='convert') && (
           <div style={{ background:'rgba(255,255,255,0.03)', borderRadius:22, padding:20, border:'1px solid rgba(255,255,255,0.06)' }}>
-            <div style={{ color:'rgba(255,255,255,0.4)', fontSize:12, marginBottom:8 }}>{activeTab==='deposit'?'Add coins':activeTab==='withdraw'?'Withdraw coins':'Convert to ETH (1 ETH = 10,000 🪙)'}</div>
+            <div style={{ color:'rgba(255,255,255,0.55)', fontSize:12, marginBottom:8 }}>{activeTab==='deposit'?'Add coins':activeTab==='withdraw'?'Withdraw coins':'Convert to ETH (1 ETH = 10,000 🪙)'}</div>
             <div style={{ display:'flex', gap:8, marginBottom:14 }}>
               <input type="number" placeholder="Enter amount..." value={amount} onChange={e=>setAmount(e.target.value)} style={{ flex:1, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:'12px', color:'white', outline:'none', fontSize:15 }} />
             </div>
@@ -3780,7 +3780,7 @@ const EditProfileModal = ({ user, onClose, onSave, showToast }) => {
   const [avatarPreview, setAvatarPreview] = useState(user?.avatarUrl||null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
-  const colors = ['#FF2156','#9D4EDD','#0A84FF','#FFB100','#2ED573','#00A9D6','#FF453A','#5E5CE6','#00A9D6','#FF7A6B'];
+  const colors = ['#FF2156','#9D4EDD','#0A84FF','#FFB100','#2ED573','#0A84FF','#FF2156','#0A84FF','#0A84FF','#FF7A6B'];
 
   const handleAvatarChange = (e) => {
     const f = e.target.files[0];
@@ -3828,7 +3828,7 @@ const EditProfileModal = ({ user, onClose, onSave, showToast }) => {
             </div>
           </div>
           <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarChange} style={{display:'none'}} />
-          <div style={{ color:'rgba(255,255,255,0.4)', fontSize:12, marginTop:12, marginBottom:12 }}>Profile color</div>
+          <div style={{ color:'rgba(255,255,255,0.55)', fontSize:12, marginTop:12, marginBottom:12 }}>Profile color</div>
           <div style={{ display:'flex', gap:10, justifyContent:'center', flexWrap:'wrap' }}>
             {colors.map(c=><div key={c} onClick={()=>setAvatarColor(c)} style={{ width:34, height:34, borderRadius:'50%', background:c, cursor:'pointer', border:c===avatarColor?'3px solid white':'3px solid transparent', transition:'all 0.15s' }} />)}
           </div>
@@ -3839,12 +3839,12 @@ const EditProfileModal = ({ user, onClose, onSave, showToast }) => {
           {label:'Gender',value:gender,set:setGender,placeholder:'e.g. Male, Female, Other'},
         ].map(field=>(
           <div key={field.label} style={{ marginBottom:16 }}>
-            <div style={{ color:'rgba(255,255,255,0.4)', fontSize:12, marginBottom:7, fontWeight:600, textTransform:'uppercase', letterSpacing:0.5 }}>{field.label}</div>
+            <div style={{ color:'rgba(255,255,255,0.55)', fontSize:12, marginBottom:7, fontWeight:600, textTransform:'uppercase', letterSpacing:0.5 }}>{field.label}</div>
             {field.multiline ? (
               <textarea value={field.value} onChange={e=>field.set(e.target.value)} placeholder={field.placeholder} style={{ width:'100%', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:16, padding:'12px 14px', color:'white', outline:'none', fontSize:14, resize:'none', minHeight:80, boxSizing:'border-box' }} />
             ) : (
               <div style={{ display:'flex', alignItems:'center', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:16, padding:'12px 14px' }}>
-                {field.prefix && <span style={{ color:'rgba(255,255,255,0.3)', marginRight:4, fontSize:14 }}>{field.prefix}</span>}
+                {field.prefix && <span style={{ color:'rgba(255,255,255,0.55)', marginRight:4, fontSize:14 }}>{field.prefix}</span>}
                 <input value={field.value} onChange={e=>field.set(e.target.value)} placeholder={field.placeholder} style={{ flex:1, background:'none', border:'none', color:'white', outline:'none', fontSize:14 }} />
               </div>
             )}
@@ -3896,7 +3896,7 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
       </button>
       <div style={{color:'white',fontWeight:800,fontSize:22,marginBottom:8,fontFamily:"'Inter',sans-serif"}}>Change Password</div>
-      <div style={{color:'rgba(255,255,255,0.4)',fontSize:13,marginBottom:24}}>A reset link will be sent to {user?.email}</div>
+      <div style={{color:'rgba(255,255,255,0.55)',fontSize:13,marginBottom:24}}>A reset link will be sent to {user?.email}</div>
       <button onClick={async()=>{
         if(user?.email){ await sendPasswordResetEmail(auth,user.email); showToast?.('Reset link sent to '+user.email,'success'); setActiveSubPage('settings'); }
         else showToast?.('No email on account','error');
@@ -3914,12 +3914,12 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
       <div style={{color:'white',fontWeight:800,fontSize:22,marginBottom:24,fontFamily:"'Inter',sans-serif"}}>Email & Phone</div>
       <div style={{background:'rgba(255,255,255,0.03)',borderRadius:20,overflow:'hidden',border:'1px solid rgba(255,255,255,0.06)'}}>
         <div style={{padding:'16px',borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
-          <div style={{color:'rgba(255,255,255,0.4)',fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:0.5,marginBottom:6}}>Email Address</div>
+          <div style={{color:'rgba(255,255,255,0.55)',fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:0.5,marginBottom:6}}>Email Address</div>
           <div style={{color:'white',fontSize:14}}>{user?.email||'Not set'}</div>
         </div>
         <div style={{padding:'16px'}}>
-          <div style={{color:'rgba(255,255,255,0.4)',fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:0.5,marginBottom:6}}>Phone Number</div>
-          <div style={{color:'rgba(255,255,255,0.3)',fontSize:14}}>Not added</div>
+          <div style={{color:'rgba(255,255,255,0.55)',fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:0.5,marginBottom:6}}>Phone Number</div>
+          <div style={{color:'rgba(255,255,255,0.55)',fontSize:14}}>Not added</div>
         </div>
       </div>
       <div style={{marginTop:16,color:'rgba(255,255,255,0.25)',fontSize:12,lineHeight:1.6}}>
@@ -3935,7 +3935,7 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
       </button>
       <div style={{color:'white',fontWeight:800,fontSize:22,marginBottom:24,fontFamily:"'Inter',sans-serif"}}>Language</div>
       <div style={{background:'rgba(255,255,255,0.03)',borderRadius:20,overflow:'hidden',border:'1px solid rgba(255,255,255,0.06)'}}>
-        <div style={{background:'rgba(6,214,160,0.08)',border:'1px solid rgba(6,214,160,0.2)',borderRadius:14,padding:'10px 14px',marginBottom:16,color:'#00E6B4',fontSize:12,lineHeight:1.5}}>
+        <div style={{background:'rgba(6,214,160,0.08)',border:'1px solid rgba(6,214,160,0.2)',borderRadius:14,padding:'10px 14px',marginBottom:16,color:'#2ED573',fontSize:12,lineHeight:1.5}}>
   ✓ Select your language. All app text will update immediately.
           </div>
         {[['English','English','en'],['አማርኛ','Amharic','am'],['العربية','Arabic','ar'],['Français','French','fr'],['Español','Spanish','es'],['Português','Portuguese','pt'],['हिन्दी','Hindi','hi'],['中文','Chinese','zh'],['Kiswahili','Swahili','sw'],['Deutsch','German','de'],['Русский','Russian','ru'],['Türkçe','Turkish','tr'],['日本語','Japanese','ja'],['한국어','Korean','ko'],['Italiano','Italian','it']].map(([label,sub,code],i,arr)=>{
@@ -3944,7 +3944,7 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
             <div key={code} onClick={async()=>{ await updateDoc(doc(db,'users',user.id),{language:code}); setCurrentUser(u=>({...u,language:code})); showToast?.(`Language set to ${label}`,'success'); }} style={{padding:'15px 16px',borderBottom:i<arr.length-1?'1px solid rgba(255,255,255,0.05)':'',display:'flex',alignItems:'center',justifyContent:'space-between',cursor:'pointer'}}>
               <div>
                 <div style={{color:'white',fontSize:14,fontWeight:selected?700:400}}>{label}</div>
-                <div style={{color:'rgba(255,255,255,0.3)',fontSize:11,marginTop:2}}>{sub}</div>
+                <div style={{color:'rgba(255,255,255,0.55)',fontSize:11,marginTop:2}}>{sub}</div>
               </div>
               {selected && <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF2156" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>}
             </div>
@@ -3973,11 +3973,11 @@ if(activeSubPage==='wallet') return <WalletPage user={user} setCurrentUser={setC
         return (
           <div key={uid} style={{ display:'flex', alignItems:'center', gap:12, background:'rgba(255,255,255,0.03)', borderRadius:18, padding:'14px 16px', marginBottom:10, border:'1px solid rgba(255,255,255,0.06)' }}>
             <div style={{ width:46, height:46, borderRadius:'50%', background:u?.avatarColor||'#34343E', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:18, overflow:'hidden', flexShrink:0 }}>
-              {u?.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt={`${u.username || 'User'}'s avatar`} /> : (u?.avatar||'?')}
+              {u?.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : (u?.avatar||'?')}
             </div>
             <div style={{ flex:1 }}>
               <div style={{ color:'white', fontWeight:700, fontSize:14 }}>@{u?.username||uid}</div>
-              <div style={{ color:'rgba(255,255,255,0.3)', fontSize:12, marginTop:2 }}>{u?.bio?.substring(0,40)||'Blocked user'}</div>
+              <div style={{ color:'rgba(255,255,255,0.55)', fontSize:12, marginTop:2 }}>{u?.bio?.substring(0,40)||'Blocked user'}</div>
             </div>
             <button onClick={async()=>{
               await updateDoc(doc(db,'users',user.id),{ blockedUsers: arrayRemove(uid) });
@@ -3998,7 +3998,7 @@ if(activeSubPage==='settings') return (
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
         </button>
         <div style={{ color:'white', fontWeight:800, fontSize:22, marginBottom:24, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Settings</div>
-        <div style={{ color:'rgba(255,255,255,0.3)', fontSize:11, fontWeight:700, marginBottom:8, textTransform:'uppercase', letterSpacing:1.2 }}>Account</div>
+        <div style={{ color:'rgba(255,255,255,0.55)', fontSize:11, fontWeight:700, marginBottom:8, textTransform:'uppercase', letterSpacing:1.2 }}>Account</div>
         <div style={{ background:'rgba(255,255,255,0.03)', borderRadius:20, overflow:'hidden', marginBottom:20, border:'1px solid rgba(255,255,255,0.06)' }}>
           {[
             {icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,label:'Edit Profile',action:()=>{setShowEditProfile(true); setActiveSubPage(null);}},
@@ -4014,10 +4014,10 @@ if(activeSubPage==='settings') return (
             </div>
           ))}
         </div>
-        <div style={{ color:'rgba(255,255,255,0.3)', fontSize:11, fontWeight:700, marginBottom:8, textTransform:'uppercase', letterSpacing:1.2 }}>Privacy</div>
+        <div style={{ color:'rgba(255,255,255,0.55)', fontSize:11, fontWeight:700, marginBottom:8, textTransform:'uppercase', letterSpacing:1.2 }}>Privacy</div>
         <PrivacyToggles user={user} showToast={showToast} />
         {/* ── v4 APPEARANCE SECTION ── */}
-        <div style={{ color:'rgba(255,255,255,0.3)', fontSize:11, fontWeight:700, marginBottom:8, textTransform:'uppercase', letterSpacing:1.2 }}>Appearance</div>
+        <div style={{ color:'rgba(255,255,255,0.55)', fontSize:11, fontWeight:700, marginBottom:8, textTransform:'uppercase', letterSpacing:1.2 }}>Appearance</div>
         <div style={{ background:'rgba(255,255,255,0.03)', borderRadius:20, overflow:'hidden', marginBottom:20, border:'1px solid rgba(255,255,255,0.06)' }}>
           <div style={{ padding:'15px 16px', display:'flex', alignItems:'center', gap:14 }}>
             <div style={{ width:36, height:36, borderRadius:12, background:'rgba(255,255,255,0.06)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>🌙</div>
@@ -4037,7 +4037,7 @@ if(activeSubPage==='settings') return (
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
           </div>
         </div>
-        <div style={{ color:'rgba(255,255,255,0.3)', fontSize:11, fontWeight:700, marginBottom:8, textTransform:'uppercase', letterSpacing:1.2 }}>Support</div>
+        <div style={{ color:'rgba(255,255,255,0.55)', fontSize:11, fontWeight:700, marginBottom:8, textTransform:'uppercase', letterSpacing:1.2 }}>Support</div>
         <div style={{ background:'rgba(255,255,255,0.03)', borderRadius:20, overflow:'hidden', marginBottom:20, border:'1px solid rgba(255,255,255,0.06)' }}>
           {[
             {label:'Blocked Users',action:()=>setActiveSubPage('unblock')},
@@ -4137,16 +4137,16 @@ if(activeSubPage==='settings') return (
       {JSON.parse(localStorage.getItem('infinity_accounts')||'[]').filter(u=>u.id===user?.id).map(u=>(
         <div key={u.id} style={{ background:'rgba(255,255,255,0.03)', borderRadius:18, padding:16, marginBottom:10, display:'flex', alignItems:'center', gap:14, cursor: u.id===user?.id?'default':'not-allowed', border:u.id===user?.id?'1px solid rgba(255,45,85,0.5)':'1px solid rgba(255,255,255,0.06)', opacity: u.id===user?.id?1:0.4 }} onClick={()=>{ if(u.id!==user?.id){ showToast?.('Sign in to switch accounts','info'); return; } }}>
           <div style={{ width:50, height:50, borderRadius:'50%', background:u.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:20, overflow:'hidden' }}>
-            {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt={`${u.username || 'User'}'s avatar`} /> : u.avatar}
+            {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : u.avatar}
           </div>
           <div style={{ flex:1 }}>
             <div style={{ color:'white', fontWeight:700, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{u.username}</div>
-            <div style={{ color:'rgba(255,255,255,0.3)', fontSize:12, marginTop:2 }}>{u.subscription} plan</div>
+            <div style={{ color:'rgba(255,255,255,0.55)', fontSize:12, marginTop:2 }}>{u.subscription} plan</div>
           </div>
           {u.id===user?.id && <span style={{ color:'#FF2156', fontSize:12, fontWeight:700 }}>Active</span>}
         </div>
       ))}
-      <button style={{ width:'100%', background:'rgba(255,255,255,0.04)', border:'1px dashed rgba(255,255,255,0.15)', borderRadius:18, padding:16, color:'rgba(255,255,255,0.4)', cursor:'pointer', fontSize:14, marginTop:4 }}>+ Add Account</button>
+      <button style={{ width:'100%', background:'rgba(255,255,255,0.04)', border:'1px dashed rgba(255,255,255,0.15)', borderRadius:18, padding:16, color:'rgba(255,255,255,0.55)', cursor:'pointer', fontSize:14, marginTop:4 }}>+ Add Account</button>
     </div>
   );
 
@@ -4161,7 +4161,7 @@ if(activeSubPage==='settings') return (
           <div key={name} style={{ background:'rgba(255,255,255,0.03)', borderRadius:20, padding:18, textAlign:'center', opacity:earned?1:0.4, border:'1px solid rgba(255,255,255,0.06)' }}>
             <div style={{ fontSize:38, marginBottom:8 }}>{icon}</div>
             <div style={{ color:'white', fontSize:12, fontWeight:700, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{name}</div>
-            <div style={{ color:earned?'#00E6B4':'rgba(255,255,255,0.3)', fontSize:10, marginTop:4 }}>{earned?'Earned':'Locked'}</div>
+            <div style={{ color:earned?'#2ED573':'rgba(255,255,255,0.3)', fontSize:11, marginTop:4 }}>{earned?'Earned':'Locked'}</div>
           </div>
         ))}
       </div>
@@ -4194,7 +4194,7 @@ if(activeSubPage==='settings') return (
     {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFD60A" strokeWidth="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>,label:'Wallet',page:'wallet',color:'#FFD60A'},
     {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9D4EDD" strokeWidth="1.8"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>,label:'Badges',page:'badges',color:'#9D4EDD'},
     {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFD60A" strokeWidth="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,label:'Premium',page:'premium',color:'#FFD60A'},
-    {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00E6B4" strokeWidth="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,label:'Analytics',page:'analytics',color:'#00E6B4'},
+    {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2ED573" strokeWidth="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,label:'Analytics',page:'analytics',color:'#2ED573'},
     {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>,label:'QR Code',page:'qrcode',color:'#fff'},
   ];
 
@@ -4257,7 +4257,7 @@ if(activeSubPage==='settings') return (
                         </div>
                         <div style={{flex:1}}>
                           <div style={{color:'white',fontWeight:700,fontSize:14}}>@{u.username}</div>
-                          <div style={{color:'rgba(255,255,255,0.35)',fontSize:12,marginTop:2}}>{u.bio?.substring(0,40)}</div>
+                          <div style={{color:'rgba(255,255,255,0.55)',fontSize:12,marginTop:2}}>{u.bio?.substring(0,40)}</div>
                         </div>
                       </div>
                     );
@@ -4288,8 +4288,8 @@ if(activeSubPage==='settings') return (
           </div>
           <div style={{ color:'white', fontWeight:800, fontSize:22, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{user?.username}</div>
           {user?.verified && (
-            <div style={{ display:'inline-flex', alignItems:'center', gap:4, color:'#2F9BFF', fontSize:12, marginTop:4, background:'rgba(29,155,240,0.1)', borderRadius:20, padding:'3px 10px' }}>
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="#2F9BFF"><path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <div style={{ display:'inline-flex', alignItems:'center', gap:4, color:'#0A84FF', fontSize:12, marginTop:4, background:'rgba(29,155,240,0.1)', borderRadius:20, padding:'3px 10px' }}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="#0A84FF"><path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
               Verified
             </div>
           )}
@@ -4300,7 +4300,7 @@ if(activeSubPage==='settings') return (
             {[['Posts',myVideos.length,null],['Followers',user?.followers?.length||0,'followers'],['Following',user?.following?.length||0,'following']].map(([label,val,listKey],i)=>(
               <div key={label} onClick={()=>listKey&&setShowFollowersList(listKey)} style={{ flex:1, textAlign:'center', borderRight:i<2?'1px solid rgba(255,255,255,0.06)':'', cursor:listKey?'pointer':'default' }}>
                 <div style={{ color:'white', fontWeight:800, fontSize:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{formatNumber(val)}</div>
-                <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11, marginTop:2 }}>{label}</div>
+                <div style={{ color:'rgba(255,255,255,0.55)', fontSize:11, marginTop:2 }}>{label}</div>
               </div>
             ))}
           </div>
@@ -4308,12 +4308,12 @@ if(activeSubPage==='settings') return (
             <div style={{ background:'linear-gradient(135deg,rgba(255,149,0,0.15),rgba(255,45,85,0.1))', border:'1px solid rgba(255,149,0,0.3)', borderRadius:20, padding:'7px 16px', display:'flex', alignItems:'center', gap:6, backdropFilter:'blur(10px)' }}>
               <span style={{ fontSize:16, animation:(user?.streak||1)>=7?'pulse 1.5s infinite':'' }}>🔥</span>
               <span style={{ color:'#FFB100', fontSize:12, fontWeight:800 }}>{user?.streak||1} day streak</span>
-              {(user?.streak||1)>=7 && <span style={{ background:'rgba(255,149,0,0.2)', color:'#FFB100', fontSize:9, fontWeight:800, borderRadius:10, padding:'2px 6px' }}>HOT</span>}
+              {(user?.streak||1)>=7 && <span style={{ background:'rgba(255,149,0,0.2)', color:'#FFB100', fontSize:11, fontWeight:800, borderRadius:10, padding:'2px 6px' }}>HOT</span>}
             </div>
             <div style={{ background:'linear-gradient(135deg,rgba(255,215,0,0.12),rgba(255,149,0,0.08))', border:'1px solid rgba(255,215,0,0.25)', borderRadius:20, padding:'7px 16px', display:'flex', alignItems:'center', gap:6, backdropFilter:'blur(10px)' }}>
               <span style={{ fontSize:16 }}>🪙</span>
               <span style={{ color:'#FFD60A', fontSize:12, fontWeight:800 }}>{(user?.coins||0).toLocaleString()}</span>
-              <span style={{ color:'rgba(255,215,0,0.5)', fontSize:10 }}>coins</span>
+              <span style={{ color:'rgba(255,215,0,0.5)', fontSize:11 }}>coins</span>
             </div>
             {user?.subscription !== 'free' && (
               <div style={{ background:'linear-gradient(135deg,rgba(175,82,222,0.15),rgba(255,45,85,0.1))', border:'1px solid rgba(175,82,222,0.3)', borderRadius:20, padding:'7px 16px', display:'flex', alignItems:'center', gap:6 }}>
@@ -4329,7 +4329,7 @@ if(activeSubPage==='settings') return (
           {menuItems.map(item=>(
             <button key={item.page} onClick={()=>setActiveSubPage(item.page)} style={{ background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:18, padding:'14px 6px 12px', display:'flex', flexDirection:'column', alignItems:'center', gap:7, cursor:'pointer' }}>
               <div style={{ width:40, height:40, borderRadius:14, background:'rgba(255,255,255,0.05)', display:'flex', alignItems:'center', justifyContent:'center' }}>{item.icon}</div>
-              <span style={{ color:item.color==='#fff'?'rgba(255,255,255,0.75)':item.color, fontSize:10, fontWeight:700 }}>{item.label}</span>
+              <span style={{ color:item.color==='#fff'?'rgba(255,255,255,0.75)':item.color, fontSize:11, fontWeight:700 }}>{item.label}</span>
             </button>
           ))}
         </div>
@@ -4359,7 +4359,7 @@ if(activeSubPage==='settings') return (
                     ? <img src={v.videoUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" />
                     : <video src={v.videoUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} />
                   }
-                  <div style={{ position:'absolute', bottom:4, left:6, color:'white', fontSize:10, fontWeight:700, background:'rgba(0,0,0,0.6)', borderRadius:8, padding:'2px 7px', display:'flex', alignItems:'center', gap:3 }}>
+                  <div style={{ position:'absolute', bottom:4, left:6, color:'white', fontSize:11, fontWeight:700, background:'rgba(0,0,0,0.6)', borderRadius:8, padding:'2px 7px', display:'flex', alignItems:'center', gap:3 }}>
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                     {formatNumber(v.views)}
                     {v.userId === user?.id && (
@@ -4398,7 +4398,7 @@ if(activeSubPage==='settings') return (
             {user?.avatarUrl?<img src={user.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/>:<span style={{color:'white',fontSize:90,fontWeight:'bold'}}>{user?.avatar}</span>}
           </div>
           <span style={{position:'relative',color:'white',fontSize:16,fontWeight:700}}>@{user?.username}</span>
-          <span style={{position:'relative',color:'rgba(255,255,255,0.4)',fontSize:12}}>Tap anywhere to close</span>
+          <span style={{position:'relative',color:'rgba(255,255,255,0.55)',fontSize:12}}>Tap anywhere to close</span>
         </div>
       )}
     </div>
@@ -4530,7 +4530,7 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal' }) => {
       <div style={{ display:'flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.06)', borderRadius:24, padding:'8px 12px', flex:1 }}>
         <button onClick={cancelRecording} style={{ background:'rgba(255,45,85,0.15)', border:'none', borderRadius:'50%', width:32, height:32, color:'#FF2156', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}>✕</button>
         <audio src={audioUrl} controls style={{ flex:1, height:28, minWidth:0 }} />
-        <span style={{ color:'rgba(255,255,255,0.4)', fontSize:12, flexShrink:0 }}>{fmtTime(duration)}</span>
+        <span style={{ color:'rgba(255,255,255,0.55)', fontSize:12, flexShrink:0 }}>{fmtTime(duration)}</span>
         <button onClick={sendVoice} style={{ background:'#FF2156', border:'none', borderRadius:'50%', width:36, height:36, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
@@ -4720,7 +4720,7 @@ unsub = onSnapshot(q, (snap) => {
   return (
     <div style={{height:'100%',background:'#0B0B0F',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:12}}>
       <div style={{width:32,height:32,border:'3px solid rgba(255,45,85,0.3)',borderTop:'3px solid #FF2156',borderRadius:'50%',animation:'spin 1s linear infinite'}}/>
-      <div style={{color:'rgba(255,255,255,0.3)',fontSize:13}}>Loading conversation...</div>
+      <div style={{color:'rgba(255,255,255,0.55)',fontSize:13}}>Loading conversation...</div>
       <button onClick={onBack} style={{background:'rgba(255,255,255,0.07)',border:'none',borderRadius:20,padding:'8px 20px',color:'rgba(255,255,255,0.5)',cursor:'pointer',fontSize:12,marginTop:8}}>← Back</button>
     </div>
   );
@@ -4737,8 +4737,8 @@ unsub = onSnapshot(q, (snap) => {
         </div>
         <div onClick={()=>onViewProfile?.(otherUser?.id)} style={{cursor:'pointer'}}>
           <div style={{color:'white',fontWeight:700,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>@{otherUser?.username||'user'}</div>
-          <div style={{color: presenceData?.online ? '#00E6B4':'rgba(255,255,255,0.3)', fontSize:11, display:'flex', alignItems:'center', gap:4}}>
-            <div style={{width:6,height:6,borderRadius:'50%', background: presenceData?.online ? '#00E6B4':'rgba(255,255,255,0.3)'}}/>
+          <div style={{color: presenceData?.online ? '#2ED573':'rgba(255,255,255,0.3)', fontSize:11, display:'flex', alignItems:'center', gap:4}}>
+            <div style={{width:6,height:6,borderRadius:'50%', background: presenceData?.online ? '#2ED573':'rgba(255,255,255,0.3)'}}/>
             {presenceData?.online ? 'Online' : presenceData?.lastSeen ? `last seen ${timeAgo(presenceData.lastSeen.toDate())}` : 'Offline'}
           </div>
         </div>
@@ -4767,7 +4767,7 @@ unsub = onSnapshot(q, (snap) => {
               onMouseUp={()=>clearTimeout(msgLongTimer.current)}
               style={{display:'flex',justifyContent:isMine?'flex-end':'flex-start',alignItems:'flex-end',gap:8,marginBottom:10,position:'relative'}}>
   {!isMine && (
-    <div onClick={()=>onViewProfile?.(otherUser?.id)} style={{width:26,height:26,borderRadius:'50%',background:otherUser?.avatarColor||'#5A5A66',display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontWeight:'bold',fontSize:10,flexShrink:0,cursor:'pointer',overflow:'hidden'}}>
+    <div onClick={()=>onViewProfile?.(otherUser?.id)} style={{width:26,height:26,borderRadius:'50%',background:otherUser?.avatarColor||'#5A5A66',display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontWeight:'bold',fontSize:11,flexShrink:0,cursor:'pointer',overflow:'hidden'}}>
       {otherUser?.avatarUrl ? <img src={otherUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/> : otherUser?.avatar}
     </div>
   )}
@@ -4776,10 +4776,10 @@ unsub = onSnapshot(q, (snap) => {
   <span style={{color: msg.deleted ? 'rgba(255,255,255,0.3)':'white', fontSize:14, lineHeight:1.4, fontStyle: msg.deleted?'italic':'normal'}}>{msg.text}</span>
   {!msg.deleted && !isMine && <MessageTranslate text={msg.text} targetLang={currentUser?.language || 'en'} isMine={isMine} />}
 </div>}
-                <div style={{ color:'rgba(255,255,255,0.25)', fontSize:10, marginTop:3, textAlign:isMine?'right':'left', paddingLeft:isMine?0:2, paddingRight:isMine?2:0, display:'flex', alignItems:'center', justifyContent:isMine?'flex-end':'flex-start', gap:3 }}>
+                <div style={{ color:'rgba(255,255,255,0.25)', fontSize:11, marginTop:3, textAlign:isMine?'right':'left', paddingLeft:isMine?0:2, paddingRight:isMine?2:0, display:'flex', alignItems:'center', justifyContent:isMine?'flex-end':'flex-start', gap:3 }}>
   <span>{msg.ts ? msg.ts.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : ''}</span>
   {isMine && (
-    <span style={{ fontSize:12, color: msg.status==='seen' ? '#2F9BFF' : 'rgba(255,255,255,0.35)', letterSpacing:-2 }}>
+    <span style={{ fontSize:12, color: msg.status==='seen' ? '#0A84FF' : 'rgba(255,255,255,0.35)', letterSpacing:-2 }}>
       {msg.status === 'sent' ? '✓' : '✓✓'}
     </span>
   )}
@@ -4810,12 +4810,12 @@ unsub = onSnapshot(q, (snap) => {
                       haptic('light');
                     }} style={{background:'rgba(255,255,255,0.08)',borderRadius:20,padding:'2px 7px',fontSize:12,border:'1px solid rgba(255,255,255,0.1)',cursor:'pointer',display:'flex',alignItems:'center',gap:3}}>
                       {emoji}
-                      <span style={{color:'rgba(255,255,255,0.4)',fontSize:10}}>{Object.values(msg.reactions).filter(r=>r===emoji).length}</span>
+                      <span style={{color:'rgba(255,255,255,0.55)',fontSize:11}}>{Object.values(msg.reactions).filter(r=>r===emoji).length}</span>
                     </span>
                   ))}
                 </div>
               )}
-                {msg.mediaUrl&&msg.mediaType?.startsWith('image')&&<img src={msg.mediaUrl} alt="Shared image" style={{maxWidth:'100%',borderRadius:14,display:'block'}}/>}
+                {msg.mediaUrl&&msg.mediaType?.startsWith('image')&&<img src={msg.mediaUrl} alt="" style={{maxWidth:'100%',borderRadius:14,display:'block'}}/>}
                 {msg.mediaUrl&&msg.mediaType?.startsWith('video')&&<video src={msg.mediaUrl} controls style={{maxWidth:'100%',borderRadius:14,display:'block'}}/>}
                 {(msg.mediaUrl&&msg.mediaType?.startsWith('audio')) || msg.type==='voice'&&(msg.voiceUrl||msg.mediaUrl) ? (
                   <div style={{display:'flex',alignItems:'center',gap:10,background:isMine?'linear-gradient(135deg,#FF2156,#9D4EDD)':'rgba(255,255,255,0.09)',borderRadius:20,padding:'10px 14px',minWidth:200}}>
@@ -4847,7 +4847,7 @@ unsub = onSnapshot(q, (snap) => {
       deleted: true 
     });
   }
-}} style={{background:'none',border:'none',color:'rgba(255,45,85,0.4)',fontSize:10,cursor:'pointer',padding:'0 2px',alignSelf:'flex-end',marginBottom:2}}>✕</button>
+}} style={{background:'none',border:'none',color:'rgba(255,45,85,0.4)',fontSize:11,cursor:'pointer',padding:'0 2px',alignSelf:'flex-end',marginBottom:2}}>✕</button>
               )}
             </div>
           );
@@ -4864,7 +4864,7 @@ unsub = onSnapshot(q, (snap) => {
           transform:`scaleY(${1})` }}/>
       ))}
     </div>
-    <span style={{ color:'rgba(255,255,255,0.25)', fontSize:10, marginBottom:4 }}>typing...</span>
+    <span style={{ color:'rgba(255,255,255,0.25)', fontSize:11, marginBottom:4 }}>typing...</span>
   </div>
 )}
         <div ref={bottomRef}/>
@@ -5095,13 +5095,13 @@ snap.docs.forEach(async conv => {
             <div key={u.id} onClick={()=>openConversation(u.id)} style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 16px', borderBottom:'1px solid rgba(255,255,255,0.04)', cursor:'pointer' }}>
               <div style={{ position:'relative' }}>
                 <div style={{ width:52, height:52, borderRadius:'50%', background:u.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:22, overflow:'hidden' }}>
-                  {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt={`${u.username || 'User'}'s avatar`} /> : u.avatar}
+                  {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : u.avatar}
                 </div>
-                <div style={{ position:'absolute', bottom:1, right:1, width:13, height:13, background:'#00E6B4', borderRadius:'50%', border:'2px solid #0B0B0F' }} />
+                <div style={{ position:'absolute', bottom:1, right:1, width:13, height:13, background:'#2ED573', borderRadius:'50%', border:'2px solid #0B0B0F' }} />
               </div>
               <div style={{ flex:1 }}>
                 <div style={{ color:'white', fontWeight:700, fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{u.username}</div>
-                <div style={{ color:'rgba(255,255,255,0.35)', fontSize:12, marginTop:2 }}>{conv?.lastMessage||'Tap to start chatting'}</div>
+                <div style={{ color:'rgba(255,255,255,0.55)', fontSize:12, marginTop:2 }}>{conv?.lastMessage||'Tap to start chatting'}</div>
               </div>
               <div style={{ color:'rgba(255,255,255,0.2)', fontSize:11 }}>{conv?.lastMessageAt?'Now':''}</div>
             </div>
@@ -5134,7 +5134,7 @@ const IncomingCallScreen = ({ callData, onAnswer, onDecline }) => {
         {callData.callerAvatar||'?'}
       </div>
       <div style={{color:'white',fontSize:28,fontWeight:800,fontFamily:"'Inter',sans-serif"}}>@{callData.callerName}</div>
-      <div style={{color:'rgba(255,255,255,0.4)',fontSize:14,marginTop:8,animation:'pulse 1.5s infinite'}}>Calling...</div>
+      <div style={{color:'rgba(255,255,255,0.55)',fontSize:14,marginTop:8,animation:'pulse 1.5s infinite'}}>Calling...</div>
     </div>
     <div style={{display:'flex',justifyContent:'space-around',width:'100%',alignItems:'center'}}>
       <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:12}}>
@@ -5492,8 +5492,8 @@ const SearchOverlay = ({ onClose, videos, users, onViewProfile }) => {
             {recentSearches.length > 0 && (
               <div style={{ marginTop:20, marginBottom:24 }}>
                 <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
-                  <span style={{ color:'rgba(255,255,255,0.35)', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1 }}>Recent</span>
-                  <button onClick={clearRecentSearches} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.3)', fontSize:12, cursor:'pointer' }}>Clear</button>
+                  <span style={{ color:'rgba(255,255,255,0.55)', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1 }}>Recent</span>
+                  <button onClick={clearRecentSearches} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.55)', fontSize:12, cursor:'pointer' }}>Clear</button>
                 </div>
                 {recentSearches.map((term,i)=>(
                   <div key={i} onClick={()=>setQuery(term)} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 0', borderBottom:'1px solid rgba(255,255,255,0.04)', cursor:'pointer' }}>
@@ -5507,7 +5507,7 @@ const SearchOverlay = ({ onClose, videos, users, onViewProfile }) => {
               </div>
             )}
             <div style={{ marginBottom:8 }}>
-              <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:14 }}>🔥 Trending</div>
+              <div style={{ color:'rgba(255,255,255,0.55)', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:14 }}>🔥 Trending</div>
               <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
                 {trendingSearches.map((tag,i)=>(
                   <button key={i} onClick={()=>{ setQuery(tag); addRecentSearch(tag); }} style={{ background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:20, padding:'8px 14px', color:'rgba(255,255,255,0.7)', fontSize:13, cursor:'pointer', fontWeight:600 }}>{tag}</button>
@@ -5515,17 +5515,17 @@ const SearchOverlay = ({ onClose, videos, users, onViewProfile }) => {
               </div>
             </div>
             <div style={{ marginTop:24 }}>
-              <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:14 }}>Suggested People</div>
+              <div style={{ color:'rgba(255,255,255,0.55)', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:14 }}>Suggested People</div>
               {users.slice(0,5).map(u=>(
                 <div key={u.id} onClick={()=>{onViewProfile?.(u.id); addRecentSearch('@'+u.username); onClose();}} style={{ display:'flex', alignItems:'center', gap:12, padding:'11px 0', borderBottom:'1px solid rgba(255,255,255,0.04)', cursor:'pointer' }}>
                   <div style={{ width:44, height:44, borderRadius:'50%', background:u.avatarColor||'#FF2156', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:18, overflow:'hidden', flexShrink:0 }}>
-                    {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt={`${u.username || 'User'}'s avatar`} /> : u.avatar}
+                    {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : u.avatar}
                   </div>
                   <div style={{ flex:1 }}>
                     <div style={{ color:'white', fontWeight:700, fontSize:14 }}>@{u.username}</div>
-                    <div style={{ color:'rgba(255,255,255,0.35)', fontSize:12, marginTop:1 }}>{u.bio?.substring(0,40)||'No bio'}</div>
+                    <div style={{ color:'rgba(255,255,255,0.55)', fontSize:12, marginTop:1 }}>{u.bio?.substring(0,40)||'No bio'}</div>
                   </div>
-                  {u.verified && <svg width="16" height="16" viewBox="0 0 24 24" fill="#2F9BFF"><path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>}
+                  {u.verified && <svg width="16" height="16" viewBox="0 0 24 24" fill="#0A84FF"><path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>}
                 </div>
               ))}
             </div>
@@ -5546,21 +5546,21 @@ const SearchOverlay = ({ onClose, videos, users, onViewProfile }) => {
             {/* People */}
             {(tab==='all'||tab==='users') && results.users.length > 0 && (
               <div style={{ marginBottom:20 }}>
-                {tab==='all' && <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:12 }}>People</div>}
+                {tab==='all' && <div style={{ color:'rgba(255,255,255,0.55)', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:12 }}>People</div>}
                 {results.users.map(u=>(
                   <div key={u.id} onClick={()=>{onViewProfile?.(u.id); addRecentSearch('@'+u.username); onClose();}} style={{ display:'flex', alignItems:'center', gap:12, padding:'11px 12px', background:'rgba(255,255,255,0.03)', borderRadius:16, marginBottom:6, cursor:'pointer', border:'1px solid rgba(255,255,255,0.05)', transition:'background 0.1s' }}>
                     <div style={{ position:'relative', flexShrink:0 }}>
                       <div style={{ width:48, height:48, borderRadius:'50%', background:u.avatarColor||'#FF2156', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:20, overflow:'hidden' }}>
-                        {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt={`${u.username || 'User'}'s avatar`} /> : u.avatar}
+                        {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : u.avatar}
                       </div>
                       {u.isOnline && <div style={{ position:'absolute', bottom:1, right:1, width:12, height:12, background:'#2ED573', borderRadius:'50%', border:'2px solid #0B0B0F' }} />}
                     </div>
                     <div style={{ flex:1, minWidth:0 }}>
                       <div style={{ display:'flex', alignItems:'center', gap:6 }}>
                         <span style={{ color:'white', fontWeight:700, fontSize:14 }}>@{u.username}</span>
-                        {u.verified && <svg width="14" height="14" viewBox="0 0 24 24" fill="#2F9BFF"><path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>}
+                        {u.verified && <svg width="14" height="14" viewBox="0 0 24 24" fill="#0A84FF"><path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>}
                       </div>
-                      <div style={{ color:'rgba(255,255,255,0.35)', fontSize:12, marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{u.bio?.substring(0,50)||'No bio'}</div>
+                      <div style={{ color:'rgba(255,255,255,0.55)', fontSize:12, marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{u.bio?.substring(0,50)||'No bio'}</div>
                       <div style={{ color:'rgba(255,255,255,0.2)', fontSize:11, marginTop:1 }}>{(u.followers?.length||0).toLocaleString()} followers</div>
                     </div>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
@@ -5572,7 +5572,7 @@ const SearchOverlay = ({ onClose, videos, users, onViewProfile }) => {
             {/* Videos */}
             {(tab==='all'||tab==='videos') && results.videos.length > 0 && (
               <div style={{ marginBottom:20 }}>
-                {tab==='all' && <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:12 }}>Videos</div>}
+                {tab==='all' && <div style={{ color:'rgba(255,255,255,0.55)', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:12 }}>Videos</div>}
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
                   {results.videos.slice(0,6).map(v=>(
                     <div key={v.id} style={{ aspectRatio:'9/16', position:'relative', borderRadius:14, overflow:'hidden', background:'#1C1C24', cursor:'pointer' }}>
@@ -5581,7 +5581,7 @@ const SearchOverlay = ({ onClose, videos, users, onViewProfile }) => {
                         : <video src={v.videoUrl} style={{ width:'100%', height:'100%', objectFit:'cover' }} muted />}
                       <div style={{ position:'absolute', bottom:0, left:0, right:0, background:'linear-gradient(transparent,rgba(0,0,0,0.8))', padding:'20px 8px 8px' }}>
                         <div style={{ color:'white', fontSize:11, fontWeight:700 }}>@{v.username}</div>
-                        <div style={{ color:'rgba(255,255,255,0.6)', fontSize:10, marginTop:1 }}>{v.likes||0} ❤️</div>
+                        <div style={{ color:'rgba(255,255,255,0.6)', fontSize:11, marginTop:1 }}>{v.likes||0} ❤️</div>
                       </div>
                     </div>
                   ))}
@@ -5592,13 +5592,13 @@ const SearchOverlay = ({ onClose, videos, users, onViewProfile }) => {
             {/* Hashtags */}
             {(tab==='all'||tab==='hashtags') && results.hashtags.length > 0 && (
               <div style={{ marginBottom:20 }}>
-                {tab==='all' && <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:12 }}>Hashtags</div>}
+                {tab==='all' && <div style={{ color:'rgba(255,255,255,0.55)', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:12 }}>Hashtags</div>}
                 {results.hashtags.map((h,i)=>(
                   <div key={i} onClick={()=>{ setQuery(h); addRecentSearch(h); }} style={{ display:'flex', alignItems:'center', gap:12, padding:'11px 12px', background:'rgba(255,255,255,0.03)', borderRadius:14, marginBottom:6, cursor:'pointer', border:'1px solid rgba(255,255,255,0.05)' }}>
                     <div style={{ width:40, height:40, borderRadius:12, background:'rgba(255,45,85,0.12)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20 }}>#</div>
                     <div>
                       <div style={{ color:'#FF2156', fontWeight:700, fontSize:14 }}>{h}</div>
-                      <div style={{ color:'rgba(255,255,255,0.3)', fontSize:12 }}>{videos.filter(v=>v.hashtags?.includes(h)).length} posts</div>
+                      <div style={{ color:'rgba(255,255,255,0.55)', fontSize:12 }}>{videos.filter(v=>v.hashtags?.includes(h)).length} posts</div>
                     </div>
                   </div>
                 ))}
@@ -5608,7 +5608,7 @@ const SearchOverlay = ({ onClose, videos, users, onViewProfile }) => {
             {/* Posts text search */}
             {(tab==='all'||tab==='posts') && results.posts.length > 0 && (
               <div style={{ marginBottom:20 }}>
-                {tab==='all' && <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:12 }}>Posts</div>}
+                {tab==='all' && <div style={{ color:'rgba(255,255,255,0.55)', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:12 }}>Posts</div>}
                 {results.posts.map(v=>(
                   <div key={v.id} style={{ padding:'12px 14px', background:'rgba(255,255,255,0.03)', borderRadius:14, marginBottom:6, border:'1px solid rgba(255,255,255,0.05)', cursor:'pointer' }}>
                     <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6 }}>
@@ -5873,7 +5873,7 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
             <div style={{ width:56, height:56, borderRadius:14, overflow:'hidden', border: i===activeFilter?'2px solid #FF2156':'2px solid transparent' }}>
               <img src={selectedFile.type==='image/multi' ? selectedFile.urls[0] : selectedFile.type.startsWith('image/')?selectedFile.url:'https://picsum.photos/56'} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', filter: f.css||'none' }} />
             </div>
-            <div style={{ color: i===activeFilter?'#FF2156':'rgba(255,255,255,0.5)', fontSize:9, marginTop:4, fontWeight:700 }}>{f.name}</div>
+            <div style={{ color: i===activeFilter?'#FF2156':'rgba(255,255,255,0.5)', fontSize:11, marginTop:4, fontWeight:700 }}>{f.name}</div>
           </div>
         ))}
       </div>
@@ -5932,7 +5932,7 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
               <div key={f.name} onClick={()=>setActiveFilter(i)} style={{ flexShrink:0, textAlign:'center', cursor:'pointer' }}>
                 <div style={{ width:52, height:52, borderRadius:12, background:'rgba(255,255,255,0.15)', border: i===activeFilter?'2px solid #FF2156':'2px solid transparent', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden' }}>
                   <div style={{ width:'100%', height:'100%', background: i===0?'linear-gradient(135deg,#888,#34343E)':i===1?'linear-gradient(135deg,#ff6b6b,#ffa500)':i===2?'linear-gradient(135deg,#FFD60A,#ff8c00)':i===3?'linear-gradient(135deg,#00bfff,#1e90ff)':i===4?'linear-gradient(135deg,#888,#24242E)':i===5?'linear-gradient(135deg,#ddd,#aaa)':i===6?'linear-gradient(135deg,#34343E,#000)':i===7?'linear-gradient(135deg,#ffe,#ffd)':i===8?'linear-gradient(135deg,#ff00ff,#00ffff)':'linear-gradient(135deg,#c8a97e,#8b6f47)', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                    <span style={{ fontSize:9, color:'white', fontWeight:700 }}>{f.name}</span>
+                    <span style={{ fontSize:11, color:'white', fontWeight:700 }}>{f.name}</span>
                   </div>
                 </div>
               </div>
@@ -6016,7 +6016,7 @@ const SoundLibraryPage = ({ onSelectSound, onClose }) => {
             <div style={{ width:48, height:48, borderRadius:16, background:'linear-gradient(135deg,#FF2156,#9D4EDD)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:24 }}>🎵</div>
             <div style={{ flex:1 }}>
               <div style={{ color:'white', fontWeight:700, fontSize:13, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{sound.name}</div>
-              <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11, marginTop:2 }}>{sound.artist} · {sound.duration}</div>
+              <div style={{ color:'rgba(255,255,255,0.55)', fontSize:11, marginTop:2 }}>{sound.artist} · {sound.duration}</div>
             </div>
             {sound.popular && <span style={{ color:'#FFB100', fontSize:11, fontWeight:700 }}>🔥 {formatNumber(sound.usage)}</span>}
           </div>
@@ -6052,9 +6052,9 @@ const CreatorAnalytics = ({ user, videos, onClose }) => {
           <button onClick={onClose} style={{ background:'rgba(255,255,255,0.06)', border:'none', borderRadius:20, padding:'8px 18px', color:'white', cursor:'pointer', fontSize:13 }}>Close</button>
         </div>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:12, marginBottom:20 }}>
-          {[['Total Views',formatNumber(totalViews),'#00E6B4'],['Total Likes',formatNumber(totalLikes),'#FF2156'],['Posts',String(userVideos.length),'#9D4EDD'],['Coins',String(user?.coins||0),'#FFD60A']].map(([label,val,color])=>(
+          {[['Total Views',formatNumber(totalViews),'#2ED573'],['Total Likes',formatNumber(totalLikes),'#FF2156'],['Posts',String(userVideos.length),'#9D4EDD'],['Coins',String(user?.coins||0),'#FFD60A']].map(([label,val,color])=>(
             <div key={label} style={{ background:'rgba(255,255,255,0.03)', borderRadius:20, padding:20, border:'1px solid rgba(255,255,255,0.06)' }}>
-              <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11, textTransform:'uppercase', letterSpacing:0.5 }}>{label}</div>
+              <div style={{ color:'rgba(255,255,255,0.55)', fontSize:11, textTransform:'uppercase', letterSpacing:0.5 }}>{label}</div>
               <div style={{ color:color, fontSize:28, fontWeight:800, marginTop:6, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{val}</div>
             </div>
           ))}
@@ -6065,7 +6065,7 @@ const CreatorAnalytics = ({ user, videos, onClose }) => {
             {weeklyData.map((v,i)=>(
               <div key={i} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
                 <div style={{ width:'100%', height:`${Math.max((v/maxVal)*100,4)}%`, background:`linear-gradient(180deg,#FF2156,#9D4EDD)`, borderRadius:6 }} />
-                <span style={{ color:'rgba(255,255,255,0.3)', fontSize:9 }}>{['M','T','W','T','F','S','S'][i]}</span>
+                <span style={{ color:'rgba(255,255,255,0.55)', fontSize:11 }}>{['M','T','W','T','F','S','S'][i]}</span>
               </div>
             ))}
           </div>
@@ -6075,7 +6075,7 @@ const CreatorAnalytics = ({ user, videos, onClose }) => {
           {userVideos.sort((a,b)=>(b.views||0)-(a.views||0)).slice(0,3).map(v=>(
             <div key={v.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12, padding:'10px 12px', background:'rgba(255,255,255,0.03)', borderRadius:14 }}>
               <div style={{ color:'white', fontSize:12, flex:1, marginRight:10 }}>{v.description?.substring(0,30)}...</div>
-              <div style={{ color:'#00E6B4', fontSize:12, fontWeight:700 }}>{formatNumber(v.views||0)} views</div>
+              <div style={{ color:'#2ED573', fontSize:12, fontWeight:700 }}>{formatNumber(v.views||0)} views</div>
             </div>
           ))}
           {userVideos.length===0 && <div style={{textAlign:'center',color:'rgba(255,255,255,0.2)',padding:20}}>Post videos to see analytics</div>}
@@ -6099,7 +6099,7 @@ const QRCodePage = ({ user, onClose }) => (
   />
 </div>
       <h3 style={{ color:'white', marginBottom:4, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{user?.username}</h3>
-      <p style={{ color:'rgba(255,255,255,0.35)', fontSize:12, marginBottom:20 }}>Scan to follow on Infinity</p>
+      <p style={{ color:'rgba(255,255,255,0.55)', fontSize:12, marginBottom:20 }}>Scan to follow on Infinity</p>
       <button onClick={()=>navigator.share?.({title:'Infinity',text:`Follow @${user?.username} on Infinity`,url:`https://infinity-now.vercel.app`
 })} style={{ width:'100%', background:'linear-gradient(135deg,#FF2156,#9D4EDD)', border:'none', borderRadius:20, padding:13, color:'white', fontWeight:700, cursor:'pointer', fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Share Profile</button>
     </div>
@@ -6332,7 +6332,7 @@ setStep('otp');
           <div style={{ color:'white', fontWeight:900, fontSize:26, letterSpacing:-0.5, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>
             {isLogin ? 'Welcome back 👋' : "Let's get you in 🎉"}
           </div>
-          <p style={{ color:'rgba(255,255,255,0.4)', fontSize:14, marginTop:8, fontWeight:500 }}>
+          <p style={{ color:'rgba(255,255,255,0.55)', fontSize:14, marginTop:8, fontWeight:500 }}>
             {isLogin ? 'Your feed missed you' : 'Takes like 20 seconds, promise'}
           </p>
         </div>
@@ -6394,7 +6394,7 @@ setStep('otp');
             </button>
             {isLogin && (
               <div style={{ marginTop:10 }}>
-                <button onClick={()=>setStep('resetpw')} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.35)', fontSize:13, cursor:'pointer' }}>
+                <button onClick={()=>setStep('resetpw')} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.55)', fontSize:13, cursor:'pointer' }}>
                   Forgot password?
                 </button>
               </div>
@@ -6488,11 +6488,11 @@ setOtpExpiry(Date.now() + 10*60*1000);
 setOtpInput('');
 setError('');
 setLoading(false);
-}} style={{background:'none',border:'none',color:'rgba(255,255,255,0.4)',fontSize:13,cursor:'pointer',textDecoration:'underline',marginBottom:8}}>
+}} style={{background:'none',border:'none',color:'rgba(255,255,255,0.55)',fontSize:13,cursor:'pointer',textDecoration:'underline',marginBottom:8}}>
           Resend code
         </button>
         <br/>
-        <button onClick={()=>{setStep('credentials');setError('');setOtpInput('');}} style={{background:'none',border:'none',color:'rgba(255,255,255,0.4)',fontSize:13,cursor:'pointer',textDecoration:'underline'}}>
+        <button onClick={()=>{setStep('credentials');setError('');setOtpInput('');}} style={{background:'none',border:'none',color:'rgba(255,255,255,0.55)',fontSize:13,cursor:'pointer',textDecoration:'underline'}}>
           Back
         </button>
       </div>
@@ -6519,7 +6519,7 @@ setLoading(false);
         }} disabled={loading} style={{width:'100%',background:'linear-gradient(135deg,#FF2156,#9D4EDD)',border:'none',borderRadius:24,padding:15,color:'white',fontWeight:700,cursor:'pointer',fontSize:15,marginBottom:12,opacity:loading?0.6:1,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>
           {loading?'Sending...':'Send Reset Link'}
         </button>
-        <button onClick={()=>{setStep('method');setError('');}} style={{background:'none',border:'none',color:'rgba(255,255,255,0.4)',fontSize:13,cursor:'pointer',textDecoration:'underline'}}>Back to sign in</button>
+        <button onClick={()=>{setStep('method');setError('');}} style={{background:'none',border:'none',color:'rgba(255,255,255,0.55)',fontSize:13,cursor:'pointer',textDecoration:'underline'}}>Back to sign in</button>
       </div>
     </div>
   );
@@ -6556,7 +6556,7 @@ return (
             <div style={{ width:52, height:52, borderRadius:16, background:`${selectedMethod?.color}22`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:28 }}>{selectedMethod?.icon}</div>
             <div>
               <div style={{ color:'white', fontWeight:800, fontSize:16, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{isLogin?'Sign in':'Sign up'}</div>
-              <div style={{ color:'rgba(255,255,255,0.35)', fontSize:12 }}>with {selectedMethod?.name}</div>
+              <div style={{ color:'rgba(255,255,255,0.55)', fontSize:12 }}>with {selectedMethod?.name}</div>
             </div>
           </div>
           {error && <div style={{background:'rgba(255,45,85,0.1)',border:'1px solid rgba(255,45,85,0.3)',borderRadius:12,padding:'10px 14px',color:'#FF2156',fontSize:12,marginBottom:12}}>{error}</div>}
@@ -6564,7 +6564,7 @@ return (
             <input placeholder="Full Name" value={fullName} onChange={e=>setFullName(e.target.value)} style={{ width:'100%', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:'13px 16px', color:'white', marginBottom:10, outline:'none', fontSize:14, boxSizing:'border-box' }} />
             <input placeholder="Username" value={username} onChange={e=>setUsername(e.target.value)} style={{ width:'100%', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:'13px 16px', color:'white', marginBottom:10, outline:'none', fontSize:14, boxSizing:'border-box' }} />
             <div style={{marginBottom:10}}>
-              <div style={{color:'rgba(255,255,255,0.4)',fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:0.5,marginBottom:7}}>Date of Birth *</div>
+              <div style={{color:'rgba(255,255,255,0.55)',fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:0.5,marginBottom:7}}>Date of Birth *</div>
               <div style={{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:16,padding:'8px 4px',display:'flex',gap:0,position:'relative'}}>
                 <div style={{position:'absolute',top:'50%',left:8,right:8,height:36,background:'rgba(255,45,85,0.08)',borderRadius:10,transform:'translateY(-50%)',pointerEvents:'none',border:'1px solid rgba(255,45,85,0.2)'}}/>
                 {[
@@ -6573,7 +6573,7 @@ return (
                   {label:'Year',items:Array.from({length:100},(_,i)=>String(new Date().getFullYear()-13-i)),val:birthdate?Array.from({length:100},(_,i)=>String(new Date().getFullYear()-13-i)).indexOf(birthdate.split('-')[0]):0,set:(i)=>{ const p=birthdate||'2000-01-01'; const parts=p.split('-'); parts[0]=String(new Date().getFullYear()-13-i); setBirthdate(parts.join('-')); }},
                 ].map(col=>(
                   <div key={col.label} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center'}}>
-                    <div style={{color:'rgba(255,255,255,0.3)',fontSize:9,fontWeight:700,textTransform:'uppercase',letterSpacing:0.5,marginBottom:4}}>{col.label}</div>
+                    <div style={{color:'rgba(255,255,255,0.55)',fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:0.5,marginBottom:4}}>{col.label}</div>
                     <div style={{height:108,overflowY:'auto',width:'100%',scrollSnapType:'y mandatory',WebkitOverflowScrolling:'touch'}}>
                       {col.items.map((item,i)=>(
                         <div key={item} onClick={()=>col.set(i)} style={{height:36,display:'flex',alignItems:'center',justifyContent:'center',fontSize:i===col.val?15:12,fontWeight:i===col.val?800:400,color:i===col.val?'white':'rgba(255,255,255,0.3)',cursor:'pointer',scrollSnapAlign:'start',transition:'all 0.15s'}}>
@@ -6605,7 +6605,7 @@ return (
     }}
     style={{
       width: '100%', background: 'none', border: 'none',
-      color: 'rgba(255,255,255,0.4)', fontSize: 13,
+      color: 'rgba(255,255,255,0.55)', fontSize: 13,
       cursor: 'pointer', marginTop: 10, textDecoration: 'underline'
     }}
   >
@@ -6754,7 +6754,7 @@ const InboxBadge = ({ currentUser }) => {
     return ()=>unsub();
   },[currentUser?.id]);
   if(!unread) return null;
-  return <div style={{ position:'absolute', top:-4, right:-4, minWidth:16, height:16, background:'#FF2156', borderRadius:8, border:'1.5px solid #0B0B0F', display:'flex', alignItems:'center', justifyContent:'center', fontSize:9, color:'white', fontWeight:800, padding:'0 3px' }}>{unread>9?'9+':unread}</div>;
+  return <div style={{ position:'absolute', top:-4, right:-4, minWidth:16, height:16, background:'#FF2156', borderRadius:8, border:'1.5px solid #0B0B0F', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, color:'white', fontWeight:800, padding:'0 3px' }}>{unread>9?'9+':unread}</div>;
 };
 const TabIcon = ({id, active, currentUser}) => {
   const color = active ? '#FF2156' : 'rgba(255,255,255,0.35)';
@@ -6908,10 +6908,9 @@ const [blockedUsers, setBlockedUsers] = useState([]);
     return ()=>unsub();
   },[]);
 
-  // Real-time users from Firestore (capped — do NOT stream the whole table)
+  // Real-time users from Firestore
   useEffect(()=>{
-    const q = query(collection(db,'users'), orderBy('createdAt','desc'), limit(200));
-    const unsub = onSnapshot(q, snap=>{
+    const unsub = onSnapshot(collection(db,'users'), snap=>{
       setUsers(snap.docs.map(d=>({id:d.id,...d.data()})));
     });
     return ()=>unsub();
@@ -7186,7 +7185,7 @@ const handleMessage = uid => {
                 )}
               </div>
               {tab.id !== 'create' && (
-                <span style={{ fontSize:9, color:isActive?'#FF2156':'rgba(255,255,255,0.28)', fontWeight:isActive?800:400, transition:'color 0.2s', letterSpacing:0.3 }}>
+                <span style={{ fontSize:11, color:isActive?'#FF2156':'rgba(255,255,255,0.28)', fontWeight:isActive?800:400, transition:'color 0.2s', letterSpacing:0.3 }}>
                   {tabLabels[tab.id]}
                 </span>
               )}
