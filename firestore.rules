@@ -4,51 +4,60 @@ service cloud.firestore {
     // Users collection - users can only read/write their own
     match /users/{userId} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && request.auth.uid == userId
+        && !request.resource.data.diff(resource.data).affectedKeys()
+             .hasAny(['coins', 'walletBalance']);
+      allow create: if request.auth != null && request.auth.uid == userId;
     }
-    
+
     // Videos - public read for approved, write only for authenticated
     match /videos/{videoId} {
-      allow read: if resource.data.moderationStatus == 'approved';
-      allow create: if request.auth != null;
+      allow read: if resource.data.moderationStatus == 'approved'
+        || (request.auth != null && request.auth.uid == resource.data.userId);
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
       allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
     }
-    
+
     // Comments - public read, write if authenticated
     match /comments/{commentId} {
       allow read: if true;
-      allow create: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
       allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
     }
-    
+
     // Likes - public read, write if authenticated
     match /likes/{likeId} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
     }
-    
-    // Notifications - users can only read their own
+
+    // Notifications - users can only read/manage their own
     match /notifications/{notificationId} {
       allow read: if request.auth != null && request.auth.uid == resource.data.userId;
-      allow write: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
     }
-    
-    // Conversations - only participants can read
+
+    // Conversations - only participants can read or write
     match /conversations/{conversationId} {
       allow read: if request.auth != null && resource.data.participants.hasAny([request.auth.uid]);
-      allow write: if request.auth != null;
+      allow create: if request.auth != null && request.resource.data.participants.hasAny([request.auth.uid]);
+      allow update: if request.auth != null && resource.data.participants.hasAny([request.auth.uid]);
     }
-    
+
     // Messages - only conversation participants
     match /messages/{messageId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
+      allow read: if request.auth != null && resource.data.participants.hasAny([request.auth.uid]);
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.senderId
+        && request.resource.data.participants.hasAny([request.auth.uid]);
     }
-    
+
     // Stories - public read, write if authenticated
     match /stories/{storyId} {
       allow read: if resource.data.expiresAt > request.time;
-      allow write: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
     }
   }
 }
