@@ -9,16 +9,7 @@
       ]
     },
     {
-      "collectionGroup": "notifications",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "toUserId", "order": "ASCENDING" },
-        { "fieldPath": "read", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "notifications",
+      "collectionGroup": "videos",
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "toUserId", "order": "ASCENDING" },
@@ -30,8 +21,7 @@
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "toUserId", "order": "ASCENDING" },
-        { "fieldPath": "read", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
+        { "fieldPath": "read", "order": "ASCENDING" }
       ]
     },
     {
