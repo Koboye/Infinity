@@ -450,7 +450,7 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack }) => {
               {groupMembers.map(u=>(
                 <div key={u.id} style={{ display:'flex', alignItems:'center', gap:12, padding:'11px 0', borderBottom:'1px solid rgba(255,255,255,0.05)' }}>
                   <div style={{ width:44, height:44, borderRadius:'50%', background:u.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:18, overflow:'hidden', flexShrink:0 }}>
-                    {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : u.avatar}
+                    {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt={`${u.username || 'User'}'s avatar`} /> : u.avatar}
                   </div>
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ color:'white', fontSize:14, fontWeight:700, display:'flex', alignItems:'center', gap:6, flexWrap:'wrap' }}>
@@ -480,7 +480,7 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack }) => {
               {groupMembers.map(u=>(
                 <div key={u.id} style={{ width:'calc(50% - 6px)', background:'rgba(255,255,255,0.06)', borderRadius:20, padding:'18px 12px', display:'flex', flexDirection:'column', alignItems:'center', gap:8, border:'1px solid rgba(255,255,255,0.08)' }}>
                   <div style={{ width:56, height:56, borderRadius:'50%', background:u.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:22, overflow:'hidden', border:'2px solid rgba(52,199,89,0.4)' }}>
-                    {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : u.avatar}
+                    {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt={`${u.username || 'User'}'s avatar`} /> : u.avatar}
                   </div>
                   <div style={{ color:'white', fontSize:12, fontWeight:700 }}>@{u.username}</div>
                   {u.id===currentUser?.id && <div style={{ color:'#2ED573', fontSize:10 }}>You</div>}
@@ -3973,7 +3973,7 @@ if(activeSubPage==='wallet') return <WalletPage user={user} setCurrentUser={setC
         return (
           <div key={uid} style={{ display:'flex', alignItems:'center', gap:12, background:'rgba(255,255,255,0.03)', borderRadius:18, padding:'14px 16px', marginBottom:10, border:'1px solid rgba(255,255,255,0.06)' }}>
             <div style={{ width:46, height:46, borderRadius:'50%', background:u?.avatarColor||'#34343E', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:18, overflow:'hidden', flexShrink:0 }}>
-              {u?.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : (u?.avatar||'?')}
+              {u?.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt={`${u.username || 'User'}'s avatar`} /> : (u?.avatar||'?')}
             </div>
             <div style={{ flex:1 }}>
               <div style={{ color:'white', fontWeight:700, fontSize:14 }}>@{u?.username||uid}</div>
@@ -4137,7 +4137,7 @@ if(activeSubPage==='settings') return (
       {JSON.parse(localStorage.getItem('infinity_accounts')||'[]').filter(u=>u.id===user?.id).map(u=>(
         <div key={u.id} style={{ background:'rgba(255,255,255,0.03)', borderRadius:18, padding:16, marginBottom:10, display:'flex', alignItems:'center', gap:14, cursor: u.id===user?.id?'default':'not-allowed', border:u.id===user?.id?'1px solid rgba(255,45,85,0.5)':'1px solid rgba(255,255,255,0.06)', opacity: u.id===user?.id?1:0.4 }} onClick={()=>{ if(u.id!==user?.id){ showToast?.('Sign in to switch accounts','info'); return; } }}>
           <div style={{ width:50, height:50, borderRadius:'50%', background:u.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:20, overflow:'hidden' }}>
-            {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : u.avatar}
+            {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt={`${u.username || 'User'}'s avatar`} /> : u.avatar}
           </div>
           <div style={{ flex:1 }}>
             <div style={{ color:'white', fontWeight:700, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{u.username}</div>
@@ -5095,7 +5095,7 @@ snap.docs.forEach(async conv => {
             <div key={u.id} onClick={()=>openConversation(u.id)} style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 16px', borderBottom:'1px solid rgba(255,255,255,0.04)', cursor:'pointer' }}>
               <div style={{ position:'relative' }}>
                 <div style={{ width:52, height:52, borderRadius:'50%', background:u.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:22, overflow:'hidden' }}>
-                  {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : u.avatar}
+                  {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt={`${u.username || 'User'}'s avatar`} /> : u.avatar}
                 </div>
                 <div style={{ position:'absolute', bottom:1, right:1, width:13, height:13, background:'#00E6B4', borderRadius:'50%', border:'2px solid #0B0B0F' }} />
               </div>
@@ -5519,7 +5519,7 @@ const SearchOverlay = ({ onClose, videos, users, onViewProfile }) => {
               {users.slice(0,5).map(u=>(
                 <div key={u.id} onClick={()=>{onViewProfile?.(u.id); addRecentSearch('@'+u.username); onClose();}} style={{ display:'flex', alignItems:'center', gap:12, padding:'11px 0', borderBottom:'1px solid rgba(255,255,255,0.04)', cursor:'pointer' }}>
                   <div style={{ width:44, height:44, borderRadius:'50%', background:u.avatarColor||'#FF2156', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:18, overflow:'hidden', flexShrink:0 }}>
-                    {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : u.avatar}
+                    {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt={`${u.username || 'User'}'s avatar`} /> : u.avatar}
                   </div>
                   <div style={{ flex:1 }}>
                     <div style={{ color:'white', fontWeight:700, fontSize:14 }}>@{u.username}</div>
@@ -5551,7 +5551,7 @@ const SearchOverlay = ({ onClose, videos, users, onViewProfile }) => {
                   <div key={u.id} onClick={()=>{onViewProfile?.(u.id); addRecentSearch('@'+u.username); onClose();}} style={{ display:'flex', alignItems:'center', gap:12, padding:'11px 12px', background:'rgba(255,255,255,0.03)', borderRadius:16, marginBottom:6, cursor:'pointer', border:'1px solid rgba(255,255,255,0.05)', transition:'background 0.1s' }}>
                     <div style={{ position:'relative', flexShrink:0 }}>
                       <div style={{ width:48, height:48, borderRadius:'50%', background:u.avatarColor||'#FF2156', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:20, overflow:'hidden' }}>
-                        {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : u.avatar}
+                        {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt={`${u.username || 'User'}'s avatar`} /> : u.avatar}
                       </div>
                       {u.isOnline && <div style={{ position:'absolute', bottom:1, right:1, width:12, height:12, background:'#2ED573', borderRadius:'50%', border:'2px solid #0B0B0F' }} />}
                     </div>
