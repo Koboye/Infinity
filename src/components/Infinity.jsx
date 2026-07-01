@@ -58,7 +58,7 @@ const EMAILJS_PUBLIC_KEY = 'U9fs25Bcx5oQ6A2ru';
 // Recipient for in-app "Report a Problem" submissions. Change in one place if the support inbox changes.
 const SUPPORT_EMAIL = 'getachewshambel11@gmail.com';
 // App creator UID — only this user can grant posting permissions for Jobs & Market
-const APP_CREATOR_UID = 'REPLACE_WITH_CREATOR_UID'; // Set this to the actual Firebase UID of the app creator
+const APP_CREATOR_UID = 'bE2rVkDgW9NTE4ia2fe2ueawLWZ2';
 
 /* ─────────────── CONSTANTS ─────────────── */
 const LOGIN_METHODS = [
