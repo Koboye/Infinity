@@ -1826,7 +1826,7 @@ const Stories = ({ users, currentUser, onViewStory, onCreateStory, onLive, follo
 };
 
 /* ─────────────── STORIES PAGE (image 2) — full-screen browse ─────────────── */
-const StoriesPage = ({ users, currentUser, onClose, onViewStory, onCreateStory, showToast }) => {
+const StoriesPage = ({ users, currentUser, onClose, onViewStory, onCreateStory, showToast, t }) => {
   const [storyUsers, setStoryUsers] = useState([]);
   const [explore, setExplore] = useState('popular');
   const [activeIdx, setActiveIdx] = useState(0);
@@ -1858,7 +1858,12 @@ const StoriesPage = ({ users, currentUser, onClose, onViewStory, onCreateStory, 
   const others = storyUsers.filter(g => g.userId !== currentUser?.id);
   const tiles = [{ userId: currentUser?.id, mine: true, username: 'Your story', avatarColor: currentUser?.avatarColor, avatarUrl: currentUser?.avatarUrl, stories: myStories?.stories||[] }, ...others];
   const active = tiles[activeIdx];
-  const activeMedia = active?.stories?.[0]?.mediaUrl;
+  const activeStory = active?.stories?.[0];
+  const activeMedia = activeStory?.mediaUrl;
+  const activeMediaType = activeStory?.mediaType || '';
+  const isActiveVideo = activeMediaType.startsWith('video');
+  const isActiveAudio = activeMediaType.includes('audio');
+  const isActiveImage = activeMedia && !isActiveVideo && !isActiveAudio;
 
   return (
     <div style={{ position:'fixed', inset:0, zIndex:4000, background:COLORS.bg, display:'flex', flexDirection:'column' }}>
@@ -1870,7 +1875,7 @@ const StoriesPage = ({ users, currentUser, onClose, onViewStory, onCreateStory, 
           </button>
           <div style={{ flex:1, display:'flex', alignItems:'center', gap:8, background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:20, padding:'9px 14px' }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <span style={{ color:COLORS.textTertiary, fontSize:13 }}>Search</span>
+            <span style={{ color:COLORS.textTertiary, fontSize:13 }}>{t?.search||'Search'}</span>
           </div>
           <button style={{ background:'none', border:'none', width:34, height:34, display:'flex', alignItems:'center', justifyContent:'center', color:COLORS.textSecondary, cursor:'pointer' }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
@@ -1926,11 +1931,31 @@ const StoriesPage = ({ users, currentUser, onClose, onViewStory, onCreateStory, 
       </div>
 
       {/* Preview panel */}
-      <div style={{ flex:1, margin:'0 16px 16px', borderRadius:22, overflow:'hidden', position:'relative', background:'#1a1a24', minHeight:0 }}>
-        {activeMedia ? (
+      <div style={{ flex:1, margin:'0 16px 16px', borderRadius:22, overflow:'hidden', position:'relative', background: activeStory?.bgColor || '#1a1a24', minHeight:0 }}>
+        {isActiveImage ? (
           <img src={activeMedia} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', position:'absolute', inset:0 }} />
+        ) : isActiveVideo ? (
+          <video src={activeMedia} muted loop autoPlay playsInline style={{ width:'100%', height:'100%', objectFit:'cover', position:'absolute', inset:0 }} />
+        ) : isActiveAudio ? (
+          <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:14, padding:24 }}>
+            <div style={{ fontSize:56 }}>🎙️</div>
+            <audio src={activeMedia} controls style={{ width:'100%', maxWidth:260 }} />
+          </div>
+        ) : activeStory?.text ? (
+          <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', padding:24 }}>
+            <span style={{ color:'#fff', fontWeight:700, fontSize:22, textAlign:'center' }}>{activeStory.text}</span>
+          </div>
         ) : (
-          <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', color:'rgba(255,255,255,0.3)', fontSize:13 }}>No story to preview</div>
+          <>
+            <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', background:active?.avatarColor||COLORS.brand, overflow:'hidden' }}>
+              {active?.avatarUrl ? <img src={active.avatarUrl} style={{ width:'100%', height:'100%', objectFit:'cover' }} alt="" /> : <span style={{ color:'#fff', fontWeight:800, fontSize:64 }}>{(active?.username||'?')[0]?.toUpperCase()}</span>}
+            </div>
+            <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.35)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <span style={{ color:'rgba(255,255,255,0.85)', fontSize:13, fontWeight:600, textAlign:'center', padding:'0 20px' }}>
+                {active?.mine ? "You haven't posted a story yet — tap + to add one" : 'No story to preview'}
+              </span>
+            </div>
+          </>
         )}
         <div style={{ position:'absolute', inset:0, background:'linear-gradient(180deg,rgba(0,0,0,0.05) 40%,rgba(0,0,0,0.65) 100%)' }} />
         <div style={{ position:'absolute', bottom:14, left:14, right:14, display:'flex', alignItems:'center', gap:10 }}>
@@ -3861,9 +3886,9 @@ const FriendsDiscoveryPage = ({ currentUser, users, followed, onFollow, onViewPr
               {label:'Contacts', icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>)},
               {label:'Interests', icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>)},
               {label:'Nearby', icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>)},
-              {label:'Groups', icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>)},
+              {label:'Groups', icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>), action:()=>setTab('groups')},
             ].map(item=>(
-              <button key={item.label} style={{ background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:16, padding:'14px 6px', display:'flex', flexDirection:'column', alignItems:'center', gap:6, cursor:'pointer' }}>
+              <button key={item.label} onClick={item.action} style={{ background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:16, padding:'14px 6px', display:'flex', flexDirection:'column', alignItems:'center', gap:6, cursor:'pointer' }}>
                 {item.icon}
                 <span style={{ color:COLORS.textSecondary, fontSize:10.5, fontWeight:600 }}>{item.label}</span>
               </button>
@@ -3898,9 +3923,8 @@ const FriendsDiscoveryPage = ({ currentUser, users, followed, onFollow, onViewPr
       )}
 
       {tab==='groups' && (
-        <div style={{ textAlign:'center', padding:48, color:COLORS.textTertiary }}>
-          <div style={{ fontSize:44, marginBottom:12 }}>👨‍👩‍👧‍👦</div>
-          <div>No groups yet</div>
+        <div style={{ margin:'0 -16px', height:'calc(100vh - 260px)', minHeight:420 }}>
+          <GroupChatPage currentUser={currentUser} users={users} showToast={showToast} onBack={()=>setTab('discover')} />
         </div>
       )}
       </>
@@ -4279,7 +4303,7 @@ const PrivacyToggles = ({ user, showToast }) => {
 };
 
 /* ─────────────── PROFILE PAGE ─────────────── */
-const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowAnalytics, onShowQRCode, allVideos, setBlockedUsers, onShowSavedPosts, onGoToGroups, onShowBroadcast, onViewProfile, settingsSignal, onFeedScroll }) => {
+const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowAnalytics, onShowQRCode, allVideos, setBlockedUsers, onShowSavedPosts, onGoToGroups, onShowBroadcast, onViewProfile, settingsSignal, onFeedScroll, t }) => {
   const [activeSubPage, setActiveSubPage] = useState(null);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showAvatarViewer, setShowAvatarViewer] = useState(false);
@@ -4423,15 +4447,16 @@ if(activeSubPage==='settings') return (
         <button onClick={()=>setActiveSubPage(null)} style={{ background:COLORS.surface2, border:`1px solid ${COLORS.border}`, borderRadius:20, padding:'8px 16px', color:COLORS.textPrimary, cursor:'pointer', fontSize:13, marginBottom:20, display:'flex', alignItems:'center', gap:6 }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
         </button>
-        <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:22, marginBottom:24, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Settings</div>
+        <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:22, marginBottom:24, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{t?.settings||'Settings'}</div>
         <div style={{ color:COLORS.textTertiary, fontSize:11, fontWeight:700, marginBottom:8, textTransform:'uppercase', letterSpacing:1.2 }}>Account</div>
         <div style={{ background:COLORS.surface2, borderRadius:20, overflow:'hidden', marginBottom:20, border:`1px solid ${COLORS.border}` }}>
           {[
-            {icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,label:'Edit Profile',action:()=>{setShowEditProfile(true); setActiveSubPage(null);}},
-            {icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>,label:'Change Password',action:()=>setActiveSubPage('changepw')},
-            {icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>,label:'Email & Phone',action:()=>setActiveSubPage('emailphone')},
-            {icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>,label:'Language',action:()=>setActiveSubPage('language')},
-            {icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>,label:'Switch Account',action:()=>setActiveSubPage('switch')},
+            {icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,label:t?.editProfile||'Edit Profile',action:()=>{setShowEditProfile(true); setActiveSubPage(null);}},
+            {icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>,label:t?.changePassword||'Change Password',action:()=>setActiveSubPage('changepw')},
+            {icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>,label:t?.emailPhone||'Email & Phone',action:()=>setActiveSubPage('emailphone')},
+            {icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>,label:t?.language||'Language',action:()=>setActiveSubPage('language')},
+            {icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H9a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-3a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>,label:'My Groups',action:()=>{onGoToGroups?.(); setActiveSubPage(null);}},
+            {icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>,label:t?.switchAccount||'Switch Account',action:()=>setActiveSubPage('switch')},
           ].map((item,i,arr)=>(
             <div key={item.label} onClick={item.action} style={{ padding:'15px 16px', borderBottom:i<arr.length-1?`1px solid ${COLORS.border}`:'', display:'flex', alignItems:'center', gap:14, cursor:'pointer' }}>
               <div style={{ width:36, height:36, borderRadius:12, background:COLORS.surface2, display:'flex', alignItems:'center', justifyContent:'center' }}>{item.icon}</div>
@@ -4466,14 +4491,14 @@ if(activeSubPage==='settings') return (
         <div style={{ color:COLORS.textTertiary, fontSize:11, fontWeight:700, marginBottom:8, textTransform:'uppercase', letterSpacing:1.2 }}>Support</div>
         <div style={{ background:COLORS.surface2, borderRadius:20, overflow:'hidden', marginBottom:20, border:`1px solid ${COLORS.border}` }}>
           {[
-            {label:'Blocked Users',action:()=>setActiveSubPage('unblock')},
-            {label:'Help Center',action:()=>showToast?.('Help center','info')},
-            {label:'Report a Problem',action:async()=>{
+            {label:t?.blockedUsers||'Blocked Users',action:()=>setActiveSubPage('unblock')},
+            {label:t?.helpCenter||'Help Center',action:()=>showToast?.('Help center','info')},
+            {label:t?.reportProblem||'Report a Problem',action:async()=>{
               await sendEmailJS({to_email:SUPPORT_EMAIL,from_name:user?.username,message:`User ${user?.username} (${user?.email}) reported a problem.`});
               showToast?.('Report sent!','success');
             }},
-            {label:'Terms of Service', action:()=>window.open('https://yoursite.com/terms','_blank')},
-{label:'Privacy Policy', action:()=>window.open('https://yoursite.com/privacy','_blank')},
+            {label:t?.termsOfService||'Terms of Service', action:()=>window.open('https://yoursite.com/terms','_blank')},
+{label:t?.privacyPolicy||'Privacy Policy', action:()=>window.open('https://yoursite.com/privacy','_blank')},
           ].map((item,i,arr)=>(
             <div key={item.label} onClick={item.action} style={{ padding:'14px 16px', borderBottom:i<arr.length-1?`1px solid ${COLORS.border}`:'', display:'flex', alignItems:'center', gap:12, cursor:'pointer' }}>
               <span style={{ color:COLORS.textPrimary, flex:1, fontSize:14 }}>{item.label}</span>
@@ -4507,7 +4532,7 @@ if(activeSubPage==='settings') return (
 
 <div onClick={onLogout} style={{ padding:'14px 16px', borderBottom:`1px solid ${COLORS.border}`, display:'flex', alignItems:'center', gap:12, cursor:'pointer' }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFB100" strokeWidth="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-          <span style={{ color:COLORS.warning, fontSize:14 }}>Log Out</span>
+          <span style={{ color:COLORS.warning, fontSize:14 }}>{t?.logOut||t?.logout||'Log Out'}</span>
         </div>
 
         <div onClick={async()=>{
@@ -4617,10 +4642,10 @@ if(activeSubPage==='settings') return (
   );
 
   const menuItems = [
-    {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFD60A" strokeWidth="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>,label:'Wallet',page:'wallet',color:'#FFD60A'},
-    {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9D4EDD" strokeWidth="1.8"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>,label:'Badges',page:'badges',color:'#9D4EDD'},
-    {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFD60A" strokeWidth="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,label:'Premium',page:'premium',color:'#FFD60A'},
-    {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00E6B4" strokeWidth="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,label:'Analytics',page:'analytics',color:'#00E6B4'},
+    {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFD60A" strokeWidth="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>,label:t?.wallet||'Wallet',page:'wallet',color:'#FFD60A'},
+    {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9D4EDD" strokeWidth="1.8"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>,label:t?.badges||'Badges',page:'badges',color:'#9D4EDD'},
+    {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFD60A" strokeWidth="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,label:t?.premium||'Premium',page:'premium',color:'#FFD60A'},
+    {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00E6B4" strokeWidth="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,label:t?.analytics||'Analytics',page:'analytics',color:'#00E6B4'},
     {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>,label:'QR Code',page:'qrcode',color:'#fff'},
   ];
 
@@ -7611,6 +7636,7 @@ const handleMessage = uid => {
           onViewStory={(payload)=>{ setShowStoryViewer(payload); }}
           onCreateStory={()=>setShowCreateStory(true)}
           showToast={showToast}
+          t={t}
         />
       )}
       {/* ── v4 NEW OVERLAYS ── */}
@@ -7629,7 +7655,7 @@ const handleMessage = uid => {
         <>
           <div onClick={()=>setShowProfileDrawer(false)} style={{ position:'fixed', inset:0, zIndex:8998, background:'rgba(30,27,46,0.4)', backdropFilter:'blur(2px)', maxWidth:430, margin:'0 auto', animation:'fadeIn 0.2s ease' }} />
           <div style={{ position:'fixed', top:0, bottom:0, left:'max(0px, calc(50% - 215px))', width:'86%', maxWidth:370, zIndex:8999, background:COLORS.bg, boxShadow:'8px 0 40px rgba(30,27,46,0.25)', animation:'slideInLeft 0.28s cubic-bezier(0.4,0,0.2,1)', overflow:'hidden' }}>
-            <ProfilePage user={currentUser} setCurrentUser={setCurrentUser} onLogout={handleLogout} users={users} showToast={showToast} onShowAnalytics={()=>setShowAnalytics(true)} onShowQRCode={()=>setShowQRCode(true)} allVideos={videos} setBlockedUsers={setBlockedUsers} onShowSavedPosts={()=>setShowSavedPosts(true)} onGoToGroups={()=>{ setShowProfileDrawer(false); setActiveTab('inbox'); setInboxOpenGroups(n=>n+1); }} onShowBroadcast={()=>setShowBroadcast(true)} onViewProfile={handleViewProfile} />
+            <ProfilePage user={currentUser} setCurrentUser={setCurrentUser} onLogout={handleLogout} users={users} showToast={showToast} onShowAnalytics={()=>setShowAnalytics(true)} onShowQRCode={()=>setShowQRCode(true)} allVideos={videos} setBlockedUsers={setBlockedUsers} onShowSavedPosts={()=>setShowSavedPosts(true)} onGoToGroups={()=>{ setShowProfileDrawer(false); setActiveTab('inbox'); setInboxOpenGroups(n=>n+1); }} onShowBroadcast={()=>setShowBroadcast(true)} onViewProfile={handleViewProfile} t={t} />
           </div>
         </>
       )}
@@ -7674,7 +7700,7 @@ const handleMessage = uid => {
   onVoiceCall={uid=>{ const u=users.find(uu=>uu.id===uid); const callDocId=[currentUser.id,uid].sort().join('_'); setShowCall({type:'audio',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
   onVideoCall={uid=>{ const u=users.find(uu=>uu.id===uid); const callDocId=[currentUser.id,uid].sort().join('_'); setShowCall({type:'video',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
 />}
-            {(activeTab==='profile'||activeTab==='settings') && <ProfilePage user={currentUser} setCurrentUser={setCurrentUser} onLogout={handleLogout} users={users} showToast={showToast} onShowAnalytics={()=>setShowAnalytics(true)} onShowQRCode={()=>setShowQRCode(true)} allVideos={videos} setBlockedUsers={setBlockedUsers} onShowSavedPosts={()=>setShowSavedPosts(true)} onGoToGroups={()=>{ setActiveTab('inbox'); setInboxOpenGroups(n=>n+1); }} onShowBroadcast={()=>setShowBroadcast(true)} onViewProfile={handleViewProfile} settingsSignal={activeTab==='settings'?settingsSignal:0} onFeedScroll={handleFeedScroll} />}
+            {(activeTab==='profile'||activeTab==='settings') && <ProfilePage user={currentUser} setCurrentUser={setCurrentUser} onLogout={handleLogout} users={users} showToast={showToast} onShowAnalytics={()=>setShowAnalytics(true)} onShowQRCode={()=>setShowQRCode(true)} allVideos={videos} setBlockedUsers={setBlockedUsers} onShowSavedPosts={()=>setShowSavedPosts(true)} onGoToGroups={()=>{ setActiveTab('inbox'); setInboxOpenGroups(n=>n+1); }} onShowBroadcast={()=>setShowBroadcast(true)} onViewProfile={handleViewProfile} settingsSignal={activeTab==='settings'?settingsSignal:0} onFeedScroll={handleFeedScroll} t={t} />}
           </>
         )}
       </div>
