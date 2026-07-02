@@ -2893,7 +2893,7 @@ const handleLongPressStart = () => {
     onClick={e => e.stopPropagation()}
     onTouchStart={e => e.stopPropagation()}
     onTouchEnd={e => e.stopPropagation()}
-    style={{ position:'fixed', bottom:0, left:'50%', transform:'translateX(-50%)', width:'100%', maxWidth:430, height:'60%', background:'#15151C', borderTopLeftRadius:28, borderTopRightRadius:28, zIndex:9500, display:'flex', flexDirection:'column', animation:'slideUp 0.3s ease', boxShadow:'0 -8px 40px rgba(0,0,0,0.7)' }}>
+    style={{ position:'fixed', bottom:0, left:'50%', transform:'translateX(-50%)', width:'100%', maxWidth:430, height:'55%', background:'#15151C', borderTopLeftRadius:28, borderTopRightRadius:28, zIndex:9500, display:'flex', flexDirection:'column', animation:'slideUp 0.3s ease', boxShadow:'0 -8px 40px rgba(0,0,0,0.7)' }}>
           <div style={{ padding:'16px', borderBottom:'1px solid rgba(255,255,255,0.07)', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
             <span style={{ color:'white', fontWeight:700, fontSize:16, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{t?.comments||'Comments'}</span>
             <button onClick={()=>setShowComments(false)} style={{ background:'rgba(255,255,255,0.08)', border:'none', borderRadius:'50%', width:32, height:32, color:'white', cursor:'pointer', fontSize:16 }}>✕</button>
@@ -3088,7 +3088,7 @@ const CommentsModal = ({ video, currentUser, onClose, showToast, onViewProfile }
 
   return (
     <div onClick={onClose} style={{ position:'fixed', inset:0, zIndex:5000, background:'rgba(15,10,25,0.5)', display:'flex', alignItems:'flex-end', maxWidth:430, margin:'0 auto' }}>
-      <div onClick={e=>e.stopPropagation()} style={{ width:'100%', height:'78vh', background:COLORS.surface, borderTopLeftRadius:24, borderTopRightRadius:24, display:'flex', flexDirection:'column', animation:'slideUp 0.25s cubic-bezier(0.4,0,0.2,1)' }}>
+      <div onClick={e=>e.stopPropagation()} style={{ width:'100%', height:'58vh', maxHeight:520, background:COLORS.surface, borderTopLeftRadius:24, borderTopRightRadius:24, display:'flex', flexDirection:'column', animation:'slideUp 0.25s cubic-bezier(0.4,0,0.2,1)' }}>
       <div style={{ display:'flex', justifyContent:'center', paddingTop:8 }}>
         <div style={{ width:36, height:4, borderRadius:2, background:COLORS.border }} />
       </div>
@@ -5163,6 +5163,8 @@ const InboxPage = ({ t, users, currentUser, showToast, onViewProfile, initialTar
   const [conversations, setConversations] = useState([]);
   const [showGroupsView, setShowGroupsView] = useState(false);
   const [inboxSearch, setInboxSearch] = useState('');
+  const [convLoadError, setConvLoadError] = useState(false);
+  const [convLoading, setConvLoading] = useState(true);
   useEffect(()=>{
     if(openGroupsSignal){ setShowGroupsView(true); }
   },[openGroupsSignal]);
@@ -5192,6 +5194,8 @@ const InboxPage = ({ t, users, currentUser, showToast, onViewProfile, initialTar
 
   useEffect(()=>{
     if(!currentUser?.id) return;
+    setConvLoading(true);
+    setConvLoadError(false);
     const q = query(
       collection(db,'conversations'),
       where('participants','array-contains',currentUser.id),
@@ -5199,6 +5203,8 @@ const InboxPage = ({ t, users, currentUser, showToast, onViewProfile, initialTar
     );
     const unsub = onSnapshot(q, snap=>{
       setConversations(snap.docs.map(d=>({id:d.id,...d.data()})));
+      setConvLoading(false);
+      setConvLoadError(false);
       // Mark messages as delivered for this user
 snap.docs.forEach(async conv => {
   const convId = conv.id;
@@ -5211,13 +5217,18 @@ snap.docs.forEach(async conv => {
 });
     }, (error)=>{
       console.error('Conversations index error:', error);
-      // Fallback without orderBy
+      // Fallback without orderBy — handles a missing composite index. If this
+      // ALSO errors out (e.g. Firestore security rules reject the read), that's
+      // a real failure and the inbox should say so instead of silently looking
+      // like "no messages yet" forever.
       const q2 = query(collection(db,'conversations'), where('participants','array-contains',currentUser.id));
       onSnapshot(q2, snap2=>{
         const sorted = snap2.docs
           .map(d=>({id:d.id,...d.data()}))
           .sort((a,b)=>(b.lastMessageAt?.seconds||0)-(a.lastMessageAt?.seconds||0));
         setConversations(sorted);
+        setConvLoading(false);
+        setConvLoadError(false);
         // Mark messages as delivered for this user
       snap2.docs.forEach(async conv => {
         const convId = conv.id;
@@ -5230,6 +5241,10 @@ snap.docs.forEach(async conv => {
           msgSnap.docs.forEach(d => updateDoc(d.ref, { status: 'delivered' }).catch(()=>{}));
         } catch(e) {}
       });
+      }, (error2)=>{
+        console.error('Conversations fallback error:', error2);
+        setConvLoading(false);
+        setConvLoadError(true);
       });
     });
     return ()=>unsub();
@@ -5335,7 +5350,19 @@ snap.docs.forEach(async conv => {
         </div>
       </div>
       <div data-main-scroll="true" onScroll={onFeedScroll} style={{ flex:1, overflowY:'auto', paddingBottom:'max(90px, calc(66px + env(safe-area-inset-bottom)))' }}>
-        {(() => {
+        {convLoading ? (
+          <div style={{textAlign:'center',padding:60,color:COLORS.textTertiary}}>
+            <div style={{ width:28, height:28, border:`3px solid ${COLORS.border}`, borderTop:`3px solid ${COLORS.brand}`, borderRadius:'50%', animation:'spin 1s linear infinite', margin:'0 auto 14px' }} />
+            <div style={{fontSize:13.5}}>Loading your messages…</div>
+          </div>
+        ) : convLoadError ? (
+          <div style={{textAlign:'center',padding:60,color:COLORS.textTertiary}}>
+            <div style={{fontSize:44,marginBottom:12}}>⚠️</div>
+            <div style={{fontSize:14, color:COLORS.textPrimary, fontWeight:700, marginBottom:6}}>Couldn't load your messages</div>
+            <div style={{fontSize:12.5, marginBottom:16}}>This is usually a permissions or connection issue, not an empty inbox.</div>
+            <button onClick={()=>{ setConvLoading(true); setConvLoadError(false); }} style={{ background:COLORS.gradient, border:'none', borderRadius:20, padding:'10px 22px', color:'#fff', fontWeight:700, fontSize:13, cursor:'pointer' }}>Retry</button>
+          </div>
+        ) : (() => {
           const filteredConvUsers = inboxSearch
             ? convUsers.filter(u => u.username?.toLowerCase().includes(inboxSearch.toLowerCase()) || u.fullName?.toLowerCase().includes(inboxSearch.toLowerCase()))
             : convUsers;
