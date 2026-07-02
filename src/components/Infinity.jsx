@@ -885,7 +885,8 @@ const timeAgo = (date) => {
   if(hrs < 24) return `${hrs}h`;
   const days = Math.floor(hrs/24);
   if(days < 7) return `${days}d`;
-  return date.toLocaleDateString();
+  const sameYear = date.getFullYear() === new Date().getFullYear();
+  return date.toLocaleDateString('en-US', sameYear ? { month:'short', day:'numeric' } : { month:'short', day:'numeric', year:'numeric' });
 };
 const haptic = (style='light') => {
   try {
@@ -3283,6 +3284,9 @@ const PostOptionsMenu = ({ video, currentUser, onClose, showToast, onDelete, onB
   );
 };
 
+// Ensures only one FeedPostCard video autoplays at a time (TikTok-style single active playback)
+let __activeFeedVideoEl = null;
+
 const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onShare, users, onFollow, followed, showToast, onDelete, onBlock }) => {
   const [liked, setLiked] = useState((video.likedBy||[]).includes(currentUser?.id));
   const [likeCount, setLikeCount] = useState(video.likes||0);
@@ -3295,6 +3299,43 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
   const [descExpanded, setDescExpanded] = useState(false);
   const isVideo = video?.mediaType?.startsWith('video') || /\.(mp4|webm|mov)(\?|$)/i.test(video?.videoUrl||'');
   const mediaSrc = (Array.isArray(video.images) && video.images[0]) || video.videoUrl;
+  const mediaWrapRef = useRef(null);
+  const videoElRef = useRef(null);
+  const [muted, setMuted] = useState(true);
+  const [zoomed, setZoomed] = useState(false);
+  const [videoPaused, setVideoPaused] = useState(false);
+  const viewCountedRef = useRef(false);
+  const isVisible = useIntersectionObserver(mediaWrapRef, { threshold: 0.6 });
+
+  // Count a view once per mount, the first time the post is actually scrolled into view
+  useEffect(() => {
+    if (!isVisible || viewCountedRef.current || !video?.id) return;
+    viewCountedRef.current = true;
+    updateDoc(doc(db, 'videos', video.id), { views: increment(1) }).catch(() => {});
+  }, [isVisible, video?.id]);
+
+  // TikTok-style single-active playback: autoplay when in view, pause when scrolled away,
+  // and pause any other feed video that was already playing so only one plays at once.
+  useEffect(() => {
+    if (!isVideo) return;
+    const el = videoElRef.current;
+    if (!el) return;
+    if (isVisible) {
+      if (__activeFeedVideoEl && __activeFeedVideoEl !== el) {
+        try { __activeFeedVideoEl.pause(); } catch {}
+      }
+      __activeFeedVideoEl = el;
+      el.play().then(()=>setVideoPaused(false)).catch(() => { setVideoPaused(true); });
+    } else {
+      el.pause();
+      setVideoPaused(true);
+      if (__activeFeedVideoEl === el) __activeFeedVideoEl = null;
+    }
+  }, [isVisible, isVideo]);
+
+  useEffect(() => () => {
+    if (__activeFeedVideoEl === videoElRef.current) __activeFeedVideoEl = null;
+  }, []);
 
   const toggleLike = async () => {
     const nowLiked = !liked;
@@ -3351,9 +3392,18 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
         <div onClick={()=>onViewProfile?.(video.userId)} style={{ width:44, height:44, borderRadius:'50%', background:video.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, fontSize:17, overflow:'hidden', cursor:'pointer', flexShrink:0 }}>
           {video.avatarUrl ? <img src={video.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : (video.username||'?')[0]?.toUpperCase()}
         </div>
-        <div style={{ flex:1, minWidth:0, display:'flex', alignItems:'baseline', gap:6, overflow:'hidden' }}>
-          <span style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:14, whiteSpace:'nowrap' }}>{video.fullName || video.username}</span>
-          <span style={{ color:COLORS.textTertiary, fontSize:12, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>@{video.username} · {video.createdAt?.toDate ? timeAgo(video.createdAt.toDate()) : 'now'}</span>
+        <div style={{ flex:1, minWidth:0, display:'flex', flexDirection:'column', overflow:'hidden', cursor:'pointer' }} onClick={()=>onViewProfile?.(video.userId)}>
+          {video.fullName && video.fullName !== video.username ? (
+            <>
+              <span style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:14, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{video.fullName}</span>
+              <span style={{ color:COLORS.textTertiary, fontSize:12, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>@{video.username} · {timeAgo(video.createdAt?.toDate ? video.createdAt.toDate() : null)}</span>
+            </>
+          ) : (
+            <span style={{ display:'flex', alignItems:'baseline', gap:6, overflow:'hidden' }}>
+              <span style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:14, whiteSpace:'nowrap' }}>@{video.username}</span>
+              <span style={{ color:COLORS.textTertiary, fontSize:12, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>· {timeAgo(video.createdAt?.toDate ? video.createdAt.toDate() : null)}</span>
+            </span>
+          )}
         </div>
         <button onClick={()=>setShowOptions(true)} style={{ background:'none', border:'none', cursor:'pointer', color:COLORS.textTertiary, fontSize:16, padding:4, flexShrink:0 }}>•••</button>
       </div>
@@ -3373,9 +3423,49 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
         );
       })()}
       {mediaSrc && (
-        <div style={{ borderRadius:16, overflow:'hidden', marginBottom:10, background:COLORS.surfaceAlt }}>
+        <div ref={mediaWrapRef} style={{ position:'relative', borderRadius:16, overflow:'hidden', marginBottom:10, background:'#000' }}>
           {isVideo ? (
-            <video src={mediaSrc} controls style={{ width:'100%', maxHeight:420, display:'block', objectFit:'cover' }} />
+            <>
+              <div onClick={()=>{
+                  const el = videoElRef.current; if (!el) return;
+                  if (el.paused) { el.play().then(()=>setVideoPaused(false)).catch(()=>{}); }
+                  else { el.pause(); setVideoPaused(true); }
+                }} style={{ cursor:'pointer', width:'100%', maxHeight:520, overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                <video
+                  ref={videoElRef}
+                  src={mediaSrc}
+                  loop
+                  playsInline
+                  muted={muted}
+                  style={{ width:'100%', maxHeight:520, display:'block', objectFit: zoomed ? 'contain' : 'cover', background:'#000', transform: zoomed ? 'scale(1.15)' : 'scale(1)', transition:'transform 0.25s ease' }}
+                />
+              </div>
+              {/* Top progress line — mirrors the swipeable feed's video progress style */}
+              <VideoProgressBar videoRef={videoElRef} isActive={isVisible} isImage={false} />
+              {videoPaused && (
+                <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', pointerEvents:'none' }}>
+                  <div style={{ width:56, height:56, borderRadius:'50%', background:'rgba(0,0,0,0.45)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                  </div>
+                </div>
+              )}
+              {/* TikTok-style side controls: sound, zoom, download */}
+              <div style={{ position:'absolute', right:10, bottom:10, display:'flex', flexDirection:'column', gap:10, zIndex:20 }}>
+                <button onClick={e=>{ e.stopPropagation(); setMuted(m=>!m); }} style={{ background:'rgba(0,0,0,0.45)', backdropFilter:'blur(6px)', border:'none', borderRadius:'50%', width:34, height:34, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+                  {muted ? (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+                  ) : (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg>
+                  )}
+                </button>
+                <button onClick={e=>{ e.stopPropagation(); setZoomed(z=>!z); }} style={{ background:'rgba(0,0,0,0.45)', backdropFilter:'blur(6px)', border:'none', borderRadius:'50%', width:34, height:34, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>{zoomed ? <line x1="8" y1="11" x2="14" y2="11"/> : <><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></>}</svg>
+                </button>
+                <button onClick={e=>{ e.stopPropagation(); handleDownload(); }} style={{ background:'rgba(0,0,0,0.45)', backdropFilter:'blur(6px)', border:'none', borderRadius:'50%', width:34, height:34, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                </button>
+              </div>
+            </>
           ) : (
             <img src={mediaSrc} alt="" style={{ width:'100%', maxHeight:420, display:'block', objectFit:'cover' }} />
           )}
@@ -3396,6 +3486,10 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           {formatNumber(video.shares||0)}
         </button>
+        <span style={{ display:'flex', alignItems:'center', gap:6, color:COLORS.textTertiary, fontWeight:700, fontSize:13, padding:'6px 8px' }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          {formatNumber(video.views||0)}
+        </span>
         <div style={{ flex:1 }} />
         <button onClick={toggleSave} style={{ background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', color:saved?COLORS.brand:COLORS.textSecondary, padding:'6px 6px', borderRadius:12 }}>
           <svg width="19" height="19" viewBox="0 0 24 24" fill={saved?COLORS.brand:'none'} stroke={saved?COLORS.brand:COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
@@ -5396,16 +5490,18 @@ snap.docs.forEach(async conv => {
     const otherUser = users.find(u=>u.id===activeConversation.otherUserId)
       || { id: activeConversation.otherUserId, username: '', avatar:'?', avatarColor:'#5A5A66' };
     return (
-      <ConversationView
-        currentUser={currentUser}
-        otherUser={otherUser}
-        conversationId={activeConversation.id}
-        onBack={()=>{ setActiveConversation(null); onSetConversation?.(null); onClearTarget?.(); }}
-        showToast={showToast}
-        onViewProfile={uid=>{ onViewProfile?.(uid); }}
-        onVoiceCall={onVoiceCall}
-        onVideoCall={onVideoCall}
-      />
+      <div style={{ position:'fixed', inset:0, zIndex:1500, background:'#0B0B0F', maxWidth:430, margin:'0 auto' }}>
+        <ConversationView
+          currentUser={currentUser}
+          otherUser={otherUser}
+          conversationId={activeConversation.id}
+          onBack={()=>{ setActiveConversation(null); onSetConversation?.(null); onClearTarget?.(); }}
+          showToast={showToast}
+          onViewProfile={uid=>{ onViewProfile?.(uid); }}
+          onVoiceCall={onVoiceCall}
+          onVideoCall={onVideoCall}
+        />
+      </div>
     );
   }
 
