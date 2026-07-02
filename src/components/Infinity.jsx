@@ -3166,20 +3166,25 @@ const SaveConfirmSheet = ({ onClose, onViewCollections }) => (
 );
 
 /* ─────────────── POST OPTIONS MENU (image 12) ─────────────── */
-const PostOptionsMenu = ({ video, currentUser, onClose, showToast, onDelete }) => {
+const PostOptionsMenu = ({ video, currentUser, onClose, showToast, onDelete, onBlock }) => {
   const isMine = video?.userId === currentUser?.id;
   const name = video?.fullName || video?.username || 'User';
   const items = [
     { label:'Edit Post', show:isMine, action:()=>{ showToast?.('Opening editor…','info'); }, icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4z"/></svg>) },
     { label:'Pin Post', show:isMine, action:()=>{ showToast?.('Pinned to profile','success'); }, icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14l-1.4-7.5A3 3 0 0014.66 7H9.34a3 3 0 00-2.94 2.5z"/></svg>) },
-    { label:'Copy Link', show:true, action:async()=>{ try{ await navigator.clipboard.writeText(`https://infinity-now.vercel.app/video/${video?.id}`); showToast?.('Link copied!','success'); }catch{} }, icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 007.07 0l2.83-2.83a5 5 0 00-7.07-7.07l-1.5 1.5"/><path d="M14 11a5 5 0 00-7.07 0L4.1 13.83a5 5 0 007.07 7.07l1.5-1.5"/></svg>) },
+    { label:'Copy Link', show:true, action:async()=>{ try{ await navigator.clipboard.writeText(`https://infinity-now.vercel.app/video/${video?.id}`); showToast?.('Link copied!','success'); }catch{ showToast?.('Could not copy link','error'); } }, icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 007.07 0l2.83-2.83a5 5 0 00-7.07-7.07l-1.5 1.5"/><path d="M14 11a5 5 0 00-7.07 0L4.1 13.83a5 5 0 007.07 7.07l1.5-1.5"/></svg>) },
     { label:'Repost', show:!isMine, action:()=>{ showToast?.('Reposted to your profile','success'); }, icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>) },
     { label:'Send to Friends', show:true, action:()=>{ showToast?.('Open Messages to send','info'); }, icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>) },
     { label:'Add to Collection', show:true, action:()=>{ showToast?.('Added to collection','success'); }, icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 2a2 2 0 00-2 2v18l8-6 8 6V4a2 2 0 00-2-2z"/></svg>) },
     { label:`Mute ${name}`, show:!isMine, action:()=>{ showToast?.(`Muted ${name}`,'info'); }, icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>) },
-    { label:`Block ${name}`, show:!isMine, action:()=>{ showToast?.(`Blocked ${name}`,'info'); }, icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="4.9" y1="4.9" x2="19.1" y2="19.1"/></svg>) },
+    { label:`Block ${name}`, show:!isMine, action:()=>{ onBlock?.(video?.userId); showToast?.(`Blocked ${name} — their posts are now hidden`,'info'); }, icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="4.9" y1="4.9" x2="19.1" y2="19.1"/></svg>) },
     { label:'Report', show:!isMine, danger:true, action:()=>{ showToast?.('Post reported','info'); }, icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 9v4M12 17h.01"/><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>) },
-    { label:'Delete Post', show:isMine, danger:true, sep:true, action:()=>{ onDelete?.(video?.id); onClose(); }, icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>) },
+    { label:'Delete Post', show:isMine, danger:true, sep:true, action:async()=>{
+        if(!window.confirm('Delete this post? This cannot be undone.')) return;
+        try{ await deleteDoc(doc(db,'videos',video.id)); showToast?.('Post deleted','success'); }
+        catch(e){ showToast?.('Could not delete post','error'); }
+        onDelete?.(video?.id); onClose();
+      }, icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>) },
   ].filter(i => i.show);
   return (
     <div style={{ position:'fixed', inset:0, zIndex:5000, background:'rgba(20,15,35,0.45)', display:'flex', alignItems:'flex-end' }} onClick={onClose}>
@@ -3197,7 +3202,7 @@ const PostOptionsMenu = ({ video, currentUser, onClose, showToast, onDelete }) =
   );
 };
 
-const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onShare, users, onFollow, followed, showToast, onDelete }) => {
+const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onShare, users, onFollow, followed, showToast, onDelete, onBlock }) => {
   const [liked, setLiked] = useState((video.likedBy||[]).includes(currentUser?.id));
   const [likeCount, setLikeCount] = useState(video.likes||0);
   const [saved, setSaved] = useState((video.savedBy||[]).includes(currentUser?.id));
@@ -3259,7 +3264,7 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
     {showComments && <CommentsModal video={video} currentUser={currentUser} onClose={()=>setShowComments(false)} showToast={showToast} onViewProfile={onViewProfile} />}
     {showShare && <ShareSheet video={video} currentUser={currentUser} onClose={()=>setShowShare(false)} showToast={showToast} />}
     {showSaveConfirm && <SaveConfirmSheet onClose={()=>setShowSaveConfirm(false)} onViewCollections={()=>{ setShowSaveConfirm(false); showToast?.('Opening collections…','info'); }} />}
-    {showOptions && <PostOptionsMenu video={video} currentUser={currentUser} onClose={()=>setShowOptions(false)} showToast={showToast} onDelete={onDelete} />}
+    {showOptions && <PostOptionsMenu video={video} currentUser={currentUser} onClose={()=>setShowOptions(false)} showToast={showToast} onDelete={onDelete} onBlock={onBlock} />}
     <div style={{ background:COLORS.surface, borderRadius:RADIUS.lg, padding:16, marginBottom:14, boxShadow:'0 2px 14px rgba(124,58,237,0.06)', border:`1px solid ${COLORS.border}` }}>
       <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
         <div onClick={()=>onViewProfile?.(video.userId)} style={{ width:44, height:44, borderRadius:'50%', background:video.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, fontSize:17, overflow:'hidden', cursor:'pointer', flexShrink:0 }}>
@@ -3326,7 +3331,7 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
   );
 };
 
-const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, onVoiceCall, onVideoCall, onDuet, onStitch, onSaveSound, followed, showToast, onLive, currentUser, onViewProfile, onOpenSearch, onOpenNotifications, onOpenStories, onCreateStory, onViewStory, blockedUsers, onBlock, users, onOpenProfileDrawer, onFeedScroll }) => {
+const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, onVoiceCall, onVideoCall, onDuet, onStitch, onSaveSound, followed, showToast, onLive, currentUser, onViewProfile, onOpenSearch, onOpenNotifications, onOpenStories, onCreateStory, onViewStory, blockedUsers, onBlock, users, onOpenProfileDrawer, onFeedScroll, onOpenCamera }) => {
   const filteredVideos = useMemo(()=>{
     return videos
       .filter(v=>!(blockedUsers||[]).includes(v.userId))
@@ -3371,7 +3376,7 @@ const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, 
       </div>
 
       {/* Post composer */}
-      <div style={{ background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:RADIUS.lg, padding:14, marginBottom:16 }}>
+      <div onClick={()=>onOpenCamera?.()} style={{ background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:RADIUS.lg, padding:14, marginBottom:16, cursor:'pointer' }}>
         <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
           <div style={{ width:38, height:38, borderRadius:'50%', background:currentUser?.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, overflow:'hidden', flexShrink:0 }}>
             {currentUser?.avatarUrl ? <img src={currentUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/> : (currentUser?.username||'?')[0]?.toUpperCase()}
@@ -3380,12 +3385,12 @@ const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, 
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:8 }}>
           {[
-            {icon:(<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.info} strokeWidth="2"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="M21 15l-5-5L5 19"/></svg>), label:'Photo'},
-            {icon:(<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.brandSecondary} strokeWidth="2"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="M16 10l6-3v10l-6-3"/></svg>), label:'Video'},
-            {icon:(<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.brand} strokeWidth="2"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>), label:'Poll'},
-            {icon:(<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.warning} strokeWidth="2"><circle cx="12" cy="12" r="9"/><path d="M9 10h.01M15 10h.01M8 15s1.5 2 4 2 4-2 4-2"/></svg>), label:'Feeling'},
+            {icon:(<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.info} strokeWidth="2"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="M21 15l-5-5L5 19"/></svg>), label:'Photo', action:()=>onOpenCamera?.()},
+            {icon:(<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.brandSecondary} strokeWidth="2"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="M16 10l6-3v10l-6-3"/></svg>), label:'Video', action:()=>onOpenCamera?.()},
+            {icon:(<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.brand} strokeWidth="2"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>), label:'Poll', action:()=>showToast?.('Polls are coming soon','info')},
+            {icon:(<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.warning} strokeWidth="2"><circle cx="12" cy="12" r="9"/><path d="M9 10h.01M15 10h.01M8 15s1.5 2 4 2 4-2 4-2"/></svg>), label:'Feeling', action:()=>showToast?.('Feelings/activities are coming soon','info')},
           ].map(btn=>(
-            <button key={btn.label} style={{ display:'flex', alignItems:'center', gap:6, background:COLORS.surfaceAlt, border:'none', borderRadius:14, padding:'7px 12px', color:COLORS.textSecondary, fontSize:12, fontWeight:600, cursor:'pointer' }}>
+            <button key={btn.label} onClick={e=>{ e.stopPropagation(); btn.action(); }} style={{ display:'flex', alignItems:'center', gap:6, background:COLORS.surfaceAlt, border:'none', borderRadius:14, padding:'7px 12px', color:COLORS.textSecondary, fontSize:12, fontWeight:600, cursor:'pointer' }}>
               {btn.icon}{btn.label}
             </button>
           ))}
@@ -3411,6 +3416,7 @@ const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, 
           onFollow={onFollow}
           followed={followed}
           showToast={showToast}
+          onBlock={onBlock}
         />
       ))}
     </div>
@@ -7457,7 +7463,7 @@ const handleMessage = uid => {
   onOpenSearch={()=>setShowDiscover(true)} onOpenNotifications={()=>setShowNotifications(true)} onOpenStories={()=>setShowStoriesPage(true)}
   onCreateStory={()=>setShowCreateStory(true)} onViewStory={(payload)=>setShowStoryViewer(payload)}
   onOpenProfileDrawer={()=>setShowProfileDrawer(true)} onFeedScroll={handleFeedScroll}
-  blockedUsers={blockedUsers} onBlock={uid=>setBlockedUsers(p=>[...p,uid])} users={users} />}
+  blockedUsers={blockedUsers} onBlock={uid=>setBlockedUsers(p=>[...p,uid])} users={users} onOpenCamera={()=>setShowCamera(true)} />}
             {activeTab==='friends' && <FriendsDiscoveryPage currentUser={currentUser} users={users} followed={followed} onFollow={toggleFollow} onViewProfile={handleViewProfile} onOpenSearch={()=>setShowDiscover(true)} onFeedScroll={handleFeedScroll} />}
             {activeTab==='create' && <CreateScreen onOpenCamera={()=>setShowCamera(true)} onShowSoundLibrary={()=>setShowSoundLibrary(true)} showToast={showToast} t={t} currentUser={currentUser} onPosted={()=>setActiveTab('home')} />}
             {activeTab==='inbox' && <InboxPage t={t} users={users} currentUser={currentUser} showToast={showToast} onViewProfile={handleViewProfile} initialTargetId={inboxTargetId} onClearTarget={()=>setInboxTargetId(null)} persistedConversation={activeConversation} openGroupsSignal={inboxOpenGroups} onSetConversation={(conv)=>{ setActiveConversation(conv); }} onFeedScroll={handleFeedScroll}
