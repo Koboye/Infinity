@@ -1470,11 +1470,19 @@ const TelegramStoryViewer = ({ storyGroups, startGroupIdx, currentUser, onClose,
   const [replyText, setReplyText] = useState('');
   const [seenMap, setSeenMap] = useState({});
   const [liked, setLiked] = useState({});
+  const [finished, setFinished] = useState(false);
   const timerRef = useRef(null);
   const DURATION = 5000;
 
   const currentGroup = storyGroups[groupIdx];
   const currentStory = currentGroup?.stories[storyIdx];
+
+  // Reflect this user's own persisted reaction (if any) when the story changes
+  useEffect(() => {
+    if (!currentStory?.id || !currentUser?.id) return;
+    const mine = (currentStory.reactions || []).find(r => r.startsWith(`${currentUser.id}:`));
+    setLiked(p => ({ ...p, [currentStory.id]: mine ? mine.split(':')[1] : (p[currentStory.id] || null) }));
+  }, [currentStory?.id]);
 
   // Mark story as seen
   useEffect(() => {
@@ -1490,7 +1498,7 @@ const TelegramStoryViewer = ({ storyGroups, startGroupIdx, currentUser, onClose,
   // Progress timer
   useEffect(() => {
     setProgress(0);
-    if (paused) return;
+    if (paused || finished) return;
     const start = Date.now();
     timerRef.current = setInterval(() => {
       const elapsed = Date.now() - start;
@@ -1499,7 +1507,7 @@ const TelegramStoryViewer = ({ storyGroups, startGroupIdx, currentUser, onClose,
       if (pct >= 100) goNext();
     }, 50);
     return () => clearInterval(timerRef.current);
-  }, [storyIdx, groupIdx, paused]);
+  }, [storyIdx, groupIdx, paused, finished]);
 
   const goNext = useCallback(() => {
     clearInterval(timerRef.current);
@@ -1512,9 +1520,18 @@ const TelegramStoryViewer = ({ storyGroups, startGroupIdx, currentUser, onClose,
       setStoryIdx(0);
       setProgress(0);
     } else {
-      onClose();
+      // Reached the end — show a Replay screen instead of silently closing
+      setProgress(100);
+      setFinished(true);
     }
   }, [storyIdx, groupIdx, storyGroups]);
+
+  const handleReplay = () => {
+    setFinished(false);
+    setGroupIdx(0);
+    setStoryIdx(0);
+    setProgress(0);
+  };
 
   const goPrev = useCallback(() => {
     clearInterval(timerRef.current);
@@ -1529,7 +1546,7 @@ const TelegramStoryViewer = ({ storyGroups, startGroupIdx, currentUser, onClose,
   }, [storyIdx, groupIdx]);
 
   const sendReply = async () => {
-    if (!replyText.trim()) return;
+    if (!replyText.trim() || !currentStory?.id) return;
     try {
       await addDoc(collection(db, 'messages'), {
         senderId: currentUser.id,
@@ -1538,15 +1555,28 @@ const TelegramStoryViewer = ({ storyGroups, startGroupIdx, currentUser, onClose,
         createdAt: serverTimestamp(),
         read: false,
       });
+      // Persist so the story owner sees a comment count on their own story
+      await updateDoc(doc(db, 'stories', currentStory.id), { replyCount: increment(1) }).catch(() => {});
       showToast?.('Reply sent ✓', 'success');
     } catch { showToast?.('Failed to send', 'error'); }
     setReplyText('');
   };
 
-  const toggleLike = () => {
+  const toggleLike = (emoji = '❤️') => {
     const key = currentStory?.id;
-    setLiked(p => ({ ...p, [key]: !p[key] }));
-    if (!liked[key]) showToast?.('❤️ Liked!', 'success');
+    if (!key || !currentUser?.id) return;
+    const already = liked[key] === emoji;
+    setLiked(p => ({ ...p, [key]: already ? null : emoji }));
+    // Persist the reaction on the story doc (one reaction per user, stored as "uid:emoji")
+    const tag = `${currentUser.id}:${emoji}`;
+    if (already) {
+      updateDoc(doc(db, 'stories', key), { reactions: arrayRemove(tag) }).catch(() => {});
+    } else {
+      const prevEmoji = liked[key];
+      if (prevEmoji) updateDoc(doc(db, 'stories', key), { reactions: arrayRemove(`${currentUser.id}:${prevEmoji}`) }).catch(() => {});
+      updateDoc(doc(db, 'stories', key), { reactions: arrayUnion(tag) }).catch(() => {});
+      showToast?.(`${emoji} Reacted!`, 'success');
+    }
   };
 
   if (!currentGroup || !currentStory) return null;
@@ -1639,8 +1669,8 @@ const TelegramStoryViewer = ({ storyGroups, startGroupIdx, currentUser, onClose,
             {/* Quick emoji reactions */}
             <div style={{ display:'flex', gap:4 }}>
               {['❤️','😂','😮','🔥','👏'].map(emoji=>(
-                <button key={emoji} onClick={e=>{e.stopPropagation(); toggleLike(); showToast?.(emoji+' Reacted!','success');}}
-                  style={{ background:'rgba(255,255,255,0.1)', backdropFilter:'blur(12px)', border:'none', borderRadius:'50%', width:38, height:38, fontSize:18, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', transform: liked[currentStory?.id] && emoji==='❤️' ? 'scale(1.3)' : 'scale(1)', transition:'transform 0.15s' }}>
+                <button key={emoji} onClick={e=>{e.stopPropagation(); toggleLike(emoji);}}
+                  style={{ background: liked[currentStory?.id]===emoji ? 'rgba(255,45,85,0.35)' : 'rgba(255,255,255,0.1)', backdropFilter:'blur(12px)', border:'none', borderRadius:'50%', width:38, height:38, fontSize:18, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', transform: liked[currentStory?.id]===emoji ? 'scale(1.3)' : 'scale(1)', transition:'transform 0.15s' }}>
                   {emoji}
                 </button>
               ))}
@@ -1659,9 +1689,16 @@ const TelegramStoryViewer = ({ storyGroups, startGroupIdx, currentUser, onClose,
           </div>
         ) : (
           <div style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(12px)', borderRadius:20, padding:'12px 16px' }}>
-            <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
-              <span style={{ fontSize:18 }}>👁</span>
-              <span style={{ color:'white', fontWeight:700, fontSize:15 }}>{currentStory.seenBy?.length || 0} views</span>
+            <div style={{ display:'flex', alignItems:'center', gap:16, marginBottom:8 }}>
+              <span style={{ display:'flex', alignItems:'center', gap:6, color:'white', fontWeight:700, fontSize:14 }}>
+                <span style={{ fontSize:16 }}>👁</span>{currentStory.seenBy?.length || 0}
+              </span>
+              <span style={{ display:'flex', alignItems:'center', gap:6, color:'white', fontWeight:700, fontSize:14 }}>
+                <span style={{ fontSize:16 }}>❤️</span>{currentStory.reactions?.length || 0}
+              </span>
+              <span style={{ display:'flex', alignItems:'center', gap:6, color:'white', fontWeight:700, fontSize:14 }}>
+                <span style={{ fontSize:16 }}>💬</span>{currentStory.replyCount || 0}
+              </span>
             </div>
             {(currentStory.seenBy?.length || 0) > 0 && (
               <div style={{ display:'flex', gap:-8 }}>
@@ -1680,6 +1717,23 @@ const TelegramStoryViewer = ({ storyGroups, startGroupIdx, currentUser, onClose,
           </div>
         )}
       </div>
+
+      {/* Replay overlay — shown instead of auto-closing when the last story ends */}
+      {finished && (
+        <div style={{ position:'fixed', inset:0, zIndex:40, background:'rgba(0,0,0,0.85)', backdropFilter:'blur(6px)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:18, animation:'fadeIn 0.25s ease' }}>
+          <div style={{ width:76, height:76, borderRadius:'50%', background:currentGroup.avatarColor||'#FF2156', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:28, overflow:'hidden', border:'3px solid white' }}>
+            {currentGroup.avatarUrl ? <img src={currentGroup.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : (currentGroup.username||'?')[0].toUpperCase()}
+          </div>
+          <div style={{ color:'white', fontWeight:700, fontSize:16 }}>You've seen all stories</div>
+          <div style={{ display:'flex', gap:12 }}>
+            <button onClick={handleReplay} style={{ display:'flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.12)', border:'1px solid rgba(255,255,255,0.25)', borderRadius:24, padding:'12px 22px', color:'white', fontWeight:700, fontSize:14, cursor:'pointer' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+              Replay
+            </button>
+            <button onClick={onClose} style={{ background:'linear-gradient(135deg,#FF2156,#9D4EDD)', border:'none', borderRadius:24, padding:'12px 26px', color:'white', fontWeight:700, fontSize:14, cursor:'pointer' }}>Close</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -1689,44 +1743,35 @@ const Stories = ({ users, currentUser, onViewStory, onCreateStory, onLive, follo
   const [storyUsers, setStoryUsers] = useState([]);
 
   useEffect(() => {
-    // Load all users who have recent stories (not just followed)
-    const loadStories = async () => {
-      try {
-        const now = new Date();
-        const snap = await getDocs(query(collection(db, 'stories'), orderBy('createdAt', 'desc')));
-        const byUser = {};
-        snap.docs.forEach(d => {
-          const data = d.data();
-          const exp = data.expiresAt?.toDate ? data.expiresAt.toDate() : new Date(data.expiresAt);
-          if (exp < now) return; // skip expired
-          if (!byUser[data.userId]) byUser[data.userId] = { userId: data.userId, stories: [] };
-          byUser[data.userId].stories.push({ id: d.id, ...data });
-        });
-        // Merge user profile info
-        const result = Object.values(byUser).map(g => {
-          const u = users.find(u => u.id === g.userId);
-          return { ...g, username: u?.username || g.stories[0]?.username || 'user', avatarColor: u?.avatarColor || g.stories[0]?.avatarColor, avatarUrl: u?.avatarUrl || g.stories[0]?.avatarUrl };
-        });
-        setStoryUsers(result);
-      } catch (e) {
-        // Fallback: no orderBy
-        try {
-          const snap = await getDocs(collection(db, 'stories'));
-          const byUser = {};
-          snap.docs.forEach(d => {
-            const data = d.data();
-            if (!byUser[data.userId]) byUser[data.userId] = { userId: data.userId, stories: [] };
-            byUser[data.userId].stories.push({ id: d.id, ...data });
-          });
-          const result = Object.values(byUser).map(g => {
-            const u = users.find(u => u.id === g.userId);
-            return { ...g, username: u?.username || g.stories[0]?.username || 'user', avatarColor: u?.avatarColor || g.stories[0]?.avatarColor, avatarUrl: u?.avatarUrl || g.stories[0]?.avatarUrl };
-          });
-          setStoryUsers(result);
-        } catch {}
-      }
+    // Live-subscribe to all users' stories (not just followed) so a story posted
+    // just now shows up immediately, instead of only appearing after a remount.
+    const buildGroups = (docs) => {
+      const now = new Date();
+      const byUser = {};
+      docs.forEach(d => {
+        const data = d.data();
+        const exp = data.expiresAt?.toDate ? data.expiresAt.toDate() : (data.expiresAt ? new Date(data.expiresAt) : null);
+        if (exp && exp < now) return; // skip expired
+        if (!byUser[data.userId]) byUser[data.userId] = { userId: data.userId, stories: [] };
+        byUser[data.userId].stories.push({ id: d.id, ...data });
+      });
+      return Object.values(byUser).map(g => {
+        const u = users.find(u => u.id === g.userId);
+        return { ...g, username: u?.username || g.stories[0]?.username || 'user', avatarColor: u?.avatarColor || g.stories[0]?.avatarColor, avatarUrl: u?.avatarUrl || g.stories[0]?.avatarUrl };
+      });
     };
-    loadStories();
+    const primaryQ = query(collection(db, 'stories'), orderBy('createdAt', 'desc'));
+    let fallbackUnsub = null;
+    const unsub = onSnapshot(primaryQ, snap => {
+      setStoryUsers(buildGroups(snap.docs));
+    }, () => {
+      // Fallback: no orderBy (e.g. missing composite index)
+      const fallbackQ = query(collection(db, 'stories'));
+      fallbackUnsub = onSnapshot(fallbackQ, snap => {
+        setStoryUsers(buildGroups(snap.docs));
+      }, () => {});
+    });
+    return () => { unsub(); fallbackUnsub?.(); };
   }, [users]);
 
   const myStories = storyUsers.find(g => g.userId === currentUser?.id);
@@ -1787,22 +1832,25 @@ const StoriesPage = ({ users, currentUser, onClose, onViewStory, onCreateStory, 
   const [msg, setMsg] = useState('');
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const snap = await getDocs(query(collection(db, 'stories'), orderBy('createdAt', 'desc')));
-        const byUser = {};
-        snap.docs.forEach(d => {
-          const data = d.data();
-          if (!byUser[data.userId]) byUser[data.userId] = { userId: data.userId, stories: [] };
-          byUser[data.userId].stories.push({ id: d.id, ...data });
-        });
-        setStoryUsers(Object.values(byUser).map(g => {
-          const u = users.find(uu => uu.id === g.userId);
-          return { ...g, username: u?.username || g.stories[0]?.username || 'user', avatarColor: u?.avatarColor, avatarUrl: u?.avatarUrl };
-        }));
-      } catch {}
+    const buildGroups = (docs) => {
+      const byUser = {};
+      docs.forEach(d => {
+        const data = d.data();
+        if (!byUser[data.userId]) byUser[data.userId] = { userId: data.userId, stories: [] };
+        byUser[data.userId].stories.push({ id: d.id, ...data });
+      });
+      return Object.values(byUser).map(g => {
+        const u = users.find(uu => uu.id === g.userId);
+        return { ...g, username: u?.username || g.stories[0]?.username || 'user', avatarColor: u?.avatarColor, avatarUrl: u?.avatarUrl };
+      });
     };
-    load();
+    const primaryQ = query(collection(db, 'stories'), orderBy('createdAt', 'desc'));
+    let fallbackUnsub = null;
+    const unsub = onSnapshot(primaryQ, snap => setStoryUsers(buildGroups(snap.docs)), () => {
+      const fallbackQ = query(collection(db, 'stories'));
+      fallbackUnsub = onSnapshot(fallbackQ, snap => setStoryUsers(buildGroups(snap.docs)), () => {});
+    });
+    return () => { unsub(); fallbackUnsub?.(); };
   }, [users]);
 
   const myStories = storyUsers.find(g => g.userId === currentUser?.id);
@@ -2327,6 +2375,7 @@ const CommentInputBar = ({ currentUser, commentText, setCommentText, onSend, sho
   const chunksRef = useRef([]);
   const timerRef = useRef(null);
   const fileInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
 
   const startVoice = async () => {
     try {
@@ -2374,19 +2423,30 @@ const CommentInputBar = ({ currentUser, commentText, setCommentText, onSend, sho
         </div>
       )}
       <div style={{display:'flex',gap:8,alignItems:'center'}}>
-     <div style={{width:34,height:34,borderRadius:'50%',background:currentUser?.avatarColor,display:'flex',alignItems:'center',justifyContent:'center',color:COLORS.textPrimary,fontWeight:'bold',fontSize:14,flexShrink:0,overflow:'hidden'}}>          {currentUser?.avatarUrl?<img src={currentUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/>:currentUser?.avatar}
+        <div style={{width:34,height:34,borderRadius:'50%',background:currentUser?.avatarColor,display:'flex',alignItems:'center',justifyContent:'center',color:COLORS.textPrimary,fontWeight:'bold',fontSize:14,flexShrink:0,overflow:'hidden'}}>
+          {currentUser?.avatarUrl?<img src={currentUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/>:currentUser?.avatar}
         </div>
-        <input value={commentText} onChange={e=>setCommentText(e.target.value)} onKeyDown={e=>e.key==='Enter'&&handleSend()} placeholder={isRecording?`🔴 ${fmt(recordSecs)}`:'Add a comment...'} style={{flex:1,background:COLORS.overlaySubtle,border:`1px solid ${COLORS.border}`,borderRadius:28,padding:'10px 14px',color:COLORS.textPrimary,outline:'none',fontSize:13}}/>
-        <button onClick={()=>fileInputRef.current?.click()} style={{background:COLORS.border,border:'none',borderRadius:'50%',width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0}}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.surface3} strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
-        </button>
+        <div style={{flex:1,minWidth:0,display:'flex',alignItems:'center',gap:2,background:COLORS.overlaySubtle,border:`1px solid ${COLORS.border}`,borderRadius:26,padding:'4px 6px 4px 12px'}}>
+          <button onClick={()=>setShowEmoji(v=>!v)} style={{background:'none',border:'none',cursor:'pointer',flexShrink:0,fontSize:17,display:'flex',padding:4}}>😊</button>
+          <input value={commentText} onChange={e=>setCommentText(e.target.value)} onKeyDown={e=>e.key==='Enter'&&handleSend()} placeholder={isRecording?`🔴 ${fmt(recordSecs)}`:'Add a comment...'} style={{flex:1,minWidth:0,background:'none',border:'none',outline:'none',color:COLORS.textPrimary,fontSize:13,padding:'8px 4px'}}/>
+          <button onClick={()=>fileInputRef.current?.click()} style={{background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:5}}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.surface3} strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+          </button>
+          <button onClick={()=>cameraInputRef.current?.click()} style={{background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:5}}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.surface3} strokeWidth="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </button>
+        </div>
         <input ref={fileInputRef} type="file" accept="image/*,video/*,audio/*" onChange={pickFile} style={{display:'none'}}/>
-        <button onMouseDown={startVoice} onMouseUp={stopVoice} onTouchStart={startVoice} onTouchEnd={stopVoice} style={{background:isRecording?'rgba(255,45,85,0.9)':COLORS.border,border:'none',borderRadius:'50%',width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0,boxShadow:isRecording?'0 0 10px rgba(255,45,85,0.6)':'none'}}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={isRecording?'white':COLORS.surface3} strokeWidth="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-        </button>
-        <button onClick={()=>setShowEmoji(v=>!v)} style={{background:COLORS.border,border:'none',borderRadius:'50%',width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0,fontSize:18}}>😊</button>
-        <button onClick={handleSend} style={{background:`linear-gradient(135deg,${COLORS.brand},${COLORS.brandSecondary})`,border:'none',borderRadius:'50%',width:36,height:36,color:'white',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>          <svg width="15" height="15" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="1"><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-        </button>
+        <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={pickFile} style={{display:'none'}}/>
+        {(commentText.trim() || previewFile || audioBlob) ? (
+          <button onClick={handleSend} style={{background:`linear-gradient(135deg,${COLORS.brand},${COLORS.brandSecondary})`,border:'none',borderRadius:'50%',width:36,height:36,color:'white',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="1"><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        ) : (
+          <button onMouseDown={startVoice} onMouseUp={stopVoice} onTouchStart={startVoice} onTouchEnd={stopVoice} style={{background:isRecording?'rgba(255,45,85,0.9)':`linear-gradient(135deg,${COLORS.brand},${COLORS.brandSecondary})`,border:'none',borderRadius:'50%',width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0,boxShadow:isRecording?'0 0 10px rgba(255,45,85,0.6)':'none'}}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+          </button>
+        )}
       </div>
     </div>
   );
@@ -3044,6 +3104,10 @@ const CommentsModal = ({ video, currentUser, onClose, showToast, onViewProfile }
   const [commentText, setCommentText] = useState('');
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  const cmFileInputRef = useRef(null);
+  const cmCameraInputRef = useRef(null);
+  const [cmAttachment, setCmAttachment] = useState(null);
+  const cmPickFile = e => { const f=e.target.files[0]; if(f){setCmAttachment({url:URL.createObjectURL(f),file:f,type:f.type}); e.target.value='';} };
 
   useEffect(() => {
     if (!video?.id) return;
@@ -3078,12 +3142,17 @@ const CommentsModal = ({ video, currentUser, onClose, showToast, onViewProfile }
   };
 
   const send = async () => {
-    if (!commentText.trim()) return;
+    if (!commentText.trim() && !cmAttachment) return;
     try {
-      await addDoc(collection(db, 'comments'), { videoId: video.id, userId: currentUser.id, username: currentUser.username, avatar: currentUser.avatar || (currentUser.username||'U')[0].toUpperCase(), avatarColor: currentUser.avatarColor || COLORS.brand, avatarUrl: currentUser.avatarUrl || null, text: commentText, likes: 0, createdAt: serverTimestamp() });
+      let mediaUrl = null, mediaType = null;
+      if (cmAttachment?.file) {
+        try { mediaUrl = await uploadToCloudinary(cmAttachment.file); mediaType = cmAttachment.type; }
+        catch { showToast?.('Upload failed', 'error'); return; }
+      }
+      await addDoc(collection(db, 'comments'), { videoId: video.id, userId: currentUser.id, username: currentUser.username, avatar: currentUser.avatar || (currentUser.username||'U')[0].toUpperCase(), avatarColor: currentUser.avatarColor || COLORS.brand, avatarUrl: currentUser.avatarUrl || null, text: commentText, mediaUrl, mediaType, likes: 0, createdAt: serverTimestamp() });
       await updateDoc(doc(db, 'videos', video.id), { comments: increment(1) });
     } catch { showToast?.('Failed to post comment', 'error'); }
-    setCommentText('');
+    setCommentText(''); setCmAttachment(null);
   };
 
   return (
@@ -3125,20 +3194,32 @@ const CommentsModal = ({ video, currentUser, onClose, showToast, onViewProfile }
           </div>
         ))}
       </div>
+      {cmAttachment && (
+        <div style={{ padding:'0 16px 6px' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10, background:COLORS.overlaySubtle, borderRadius:14, padding:'8px 12px' }}>
+            {cmAttachment.type?.startsWith('image') && <img src={cmAttachment.url} alt="" style={{ height:44, width:44, objectFit:'cover', borderRadius:8 }}/>}
+            {cmAttachment.type?.startsWith('video') && <video src={cmAttachment.url} style={{ height:44, width:60, objectFit:'cover', borderRadius:8 }}/>}
+            <button onClick={()=>setCmAttachment(null)} style={{ marginLeft:'auto', background:'rgba(255,45,85,0.2)', border:'none', borderRadius:'50%', width:22, height:22, color:COLORS.brand, cursor:'pointer', fontSize:13 }}>✕</button>
+          </div>
+        </div>
+      )}
       <div style={{ padding:'8px 16px', display:'flex', gap:8 }}>
         {REACTION_EMOJIS.map(e => (
           <button key={e} onClick={()=>setCommentText(t=>t+e)} style={{ background:'none', border:'none', fontSize:20, cursor:'pointer', padding:2 }}>{e}</button>
         ))}
       </div>
       <div style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 16px max(16px, env(safe-area-inset-bottom))', borderTop:`1px solid ${COLORS.border}` }}>
-        <button style={{ background:'none', border:'none', cursor:'pointer', color:COLORS.textTertiary, flexShrink:0 }}>
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
-        </button>
-        <button style={{ background:'none', border:'none', cursor:'pointer', color:COLORS.textTertiary, fontSize:11, fontWeight:800, flexShrink:0 }}>GIF</button>
-        <input value={commentText} onChange={e=>setCommentText(e.target.value)} onKeyDown={e=>e.key==='Enter'&&send()} placeholder="Add a comment..." style={{ flex:1, background:COLORS.surface2, border:`1px solid ${COLORS.border}`, borderRadius:22, padding:'10px 14px', color:COLORS.textPrimary, outline:'none', fontSize:13 }} />
-        <button style={{ background:'none', border:'none', cursor:'pointer', color:COLORS.textTertiary, flexShrink:0 }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
-        </button>
+        <div style={{ flex:1, minWidth:0, display:'flex', alignItems:'center', gap:2, background:COLORS.surface2, border:`1px solid ${COLORS.border}`, borderRadius:24, padding:'4px 6px 4px 12px' }}>
+          <input value={commentText} onChange={e=>setCommentText(e.target.value)} onKeyDown={e=>e.key==='Enter'&&send()} placeholder="Add a comment..." style={{ flex:1, minWidth:0, background:'none', border:'none', outline:'none', color:COLORS.textPrimary, fontSize:13, padding:'8px 4px' }} />
+          <button onClick={()=>cmFileInputRef.current?.click()} style={{ background:'none', border:'none', cursor:'pointer', color:COLORS.textTertiary, flexShrink:0, display:'flex', padding:5 }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+          </button>
+          <button onClick={()=>cmCameraInputRef.current?.click()} style={{ background:'none', border:'none', cursor:'pointer', color:COLORS.textTertiary, flexShrink:0, display:'flex', padding:5 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </button>
+        </div>
+        <input ref={cmFileInputRef} type="file" accept="image/*,video/*" onChange={cmPickFile} style={{ display:'none' }} />
+        <input ref={cmCameraInputRef} type="file" accept="image/*" capture="environment" onChange={cmPickFile} style={{ display:'none' }} />
         <button onClick={send} style={{ background:COLORS.gradient, border:'none', borderRadius:'50%', width:36, height:36, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
@@ -3567,7 +3648,7 @@ const handlePullEnd = async () => {
 
 /* ─────────────── CREATE SCREEN ─────────────── */
 /* ─────────────── FRIENDS DISCOVERY (SMART DISCOVERY) ─────────────── */
-const FriendsDiscoveryPage = ({ currentUser, users, followed, onFollow, onViewProfile, onOpenSearch, onFeedScroll }) => {
+const FriendsDiscoveryPage = ({ currentUser, users, followed, onFollow, onViewProfile, onOpenSearch, onFeedScroll, onCreateStory, onViewStory, onOpenStories }) => {
   const [tab, setTab] = useState('discover');
   const [search, setSearch] = useState('');
 
@@ -3601,6 +3682,18 @@ const FriendsDiscoveryPage = ({ currentUser, users, followed, onFollow, onViewPr
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         </button>
       </div>
+
+      {!search && (
+        <>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:2 }}>
+            <span style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:14 }}>Stories</span>
+            {onOpenStories && <span onClick={onOpenStories} style={{ color:COLORS.brand, fontSize:12, fontWeight:700, cursor:'pointer' }}>See all</span>}
+          </div>
+          <div style={{ margin:'0 -16px 6px' }}>
+            <Stories users={users} currentUser={currentUser} onViewStory={onViewStory} onCreateStory={onCreateStory} followed={followed} />
+          </div>
+        </>
+      )}
 
       {search ? (
         <div>
@@ -4813,6 +4906,7 @@ const ConversationView = ({ currentUser, otherUser, conversationId, onBack, show
   const chunksRef = useRef([]);
   const timerRef = useRef(null);
   const fileInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
   const isReady = !!(otherUser?.id && conversationId && currentUser?.id);
 
   const timeAgo = (date) => {
@@ -5120,15 +5214,27 @@ unsub = onSnapshot(q, (snap) => {
           ))}
         </div>
       )}
-      <div style={{padding:'10px 14px',paddingBottom:'max(28px, env(safe-area-inset-bottom))',borderTop:'1px solid rgba(255,255,255,0.06)',display:'flex',gap:8,alignItems:'center'}}>        <button onClick={()=>fileInputRef.current?.click()} style={{background:'rgba(255,255,255,0.07)',border:'none',borderRadius:'50%',width:38,height:38,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0}}>
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
-        </button>
+      <div style={{padding:'10px 14px',paddingBottom:'max(28px, env(safe-area-inset-bottom))',borderTop:'1px solid rgba(255,255,255,0.06)',display:'flex',gap:8,alignItems:'center'}}>
+        <div style={{flex:1,minWidth:0,display:'flex',alignItems:'center',gap:2,background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:26,padding:'4px 6px 4px 12px'}}>
+          <button onClick={()=>setShowEmoji(v=>!v)} style={{background:'none',border:'none',cursor:'pointer',flexShrink:0,fontSize:18,display:'flex',padding:4}}>😊</button>
+          <input value={text} onChange={e=>{
+            setText(e.target.value);
+            setDoc(doc(db,'typing',conversationId),{[currentUser.id]:serverTimestamp()},{merge:true}).catch(()=>{});
+          }} onKeyDown={e=>e.key==='Enter'&&handleSend()} placeholder={isRecording?`🔴 ${fmt(recordSecs)}`:'Message'} style={{flex:1,minWidth:0,background:'none',border:'none',outline:'none',color:'white',fontSize:13.5,padding:'9px 4px'}}/>
+          <button onClick={()=>fileInputRef.current?.click()} style={{background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:6}}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+          </button>
+          <button onClick={()=>cameraInputRef.current?.click()} style={{background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:6}}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </button>
+        </div>
         <input ref={fileInputRef} type="file" accept="image/*,video/*,audio/*" onChange={pickFile} style={{display:'none'}}/>
-        <input value={text} onChange={e=>{
-          setText(e.target.value);
-          setDoc(doc(db,'typing',conversationId),{[currentUser.id]:serverTimestamp()},{merge:true}).catch(()=>{});
-        }} onKeyDown={e=>e.key==='Enter'&&handleSend()} placeholder={isRecording?`🔴 ${fmt(recordSecs)}`:'Message...'} style={{flex:1,background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:28,padding:'11px 16px',color:'white',outline:'none',fontSize:13}}/>
-        {!text.trim() && !previewFile && !audioBlob && (
+        <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={pickFile} style={{display:'none'}}/>
+        {(text.trim() || previewFile || audioBlob) ? (
+          <button onClick={handleSend} style={{background:'linear-gradient(135deg,#FF2156,#9D4EDD)',border:'none',borderRadius:'50%',width:42,height:42,color:'white',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="1"><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        ) : (
           <VoiceRecorderButton
             showToast={showToast}
             size="small"
@@ -5150,9 +5256,6 @@ unsub = onSnapshot(q, (snap) => {
             }}
           />
         )}
-        <button onClick={()=>setShowEmoji(v=>!v)} style={{background:'rgba(255,255,255,0.07)',border:'none',borderRadius:'50%',width:38,height:38,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0,fontSize:18}}>😊</button>
-        <button onClick={handleSend} style={{background:'linear-gradient(135deg,#FF2156,#9D4EDD)',border:'none',borderRadius:'50%',width:42,height:42,color:'white',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>          <svg width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="1"><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-        </button>
       </div>
     </div>
   );
@@ -7491,7 +7594,7 @@ const handleMessage = uid => {
   onCreateStory={()=>setShowCreateStory(true)} onViewStory={(payload)=>setShowStoryViewer(payload)}
   onOpenProfileDrawer={()=>setShowProfileDrawer(true)} onFeedScroll={handleFeedScroll}
   blockedUsers={blockedUsers} onBlock={uid=>setBlockedUsers(p=>[...p,uid])} users={users} onOpenCamera={()=>setShowCamera(true)} />}
-            {activeTab==='friends' && <FriendsDiscoveryPage currentUser={currentUser} users={users} followed={followed} onFollow={toggleFollow} onViewProfile={handleViewProfile} onOpenSearch={()=>setShowDiscover(true)} onFeedScroll={handleFeedScroll} />}
+            {activeTab==='friends' && <FriendsDiscoveryPage currentUser={currentUser} users={users} followed={followed} onFollow={toggleFollow} onViewProfile={handleViewProfile} onOpenSearch={()=>setShowDiscover(true)} onFeedScroll={handleFeedScroll} onCreateStory={()=>setShowCreateStory(true)} onViewStory={(payload)=>setShowStoryViewer(payload)} onOpenStories={()=>setShowStoriesPage(true)} />}
             {activeTab==='create' && <CreateScreen onOpenCamera={()=>setShowCamera(true)} onShowSoundLibrary={()=>setShowSoundLibrary(true)} showToast={showToast} t={t} currentUser={currentUser} onPosted={()=>setActiveTab('home')} />}
             {activeTab==='inbox' && <InboxPage t={t} users={users} currentUser={currentUser} showToast={showToast} onViewProfile={handleViewProfile} initialTargetId={inboxTargetId} onClearTarget={()=>setInboxTargetId(null)} persistedConversation={activeConversation} openGroupsSignal={inboxOpenGroups} onSetConversation={(conv)=>{ setActiveConversation(conv); }} onFeedScroll={handleFeedScroll}
   onVoiceCall={uid=>{ const u=users.find(uu=>uu.id===uid); const callDocId=[currentUser.id,uid].sort().join('_'); setShowCall({type:'audio',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
