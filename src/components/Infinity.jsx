@@ -3177,6 +3177,7 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
   const [showShare, setShowShare] = useState(false);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
+  const [descExpanded, setDescExpanded] = useState(false);
   const isVideo = video?.mediaType?.startsWith('video') || /\.(mp4|webm|mov)(\?|$)/i.test(video?.videoUrl||'');
   const mediaSrc = (Array.isArray(video.images) && video.images[0]) || video.videoUrl;
 
@@ -3241,7 +3242,21 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
         </div>
         <button onClick={()=>setShowOptions(true)} style={{ background:'none', border:'none', cursor:'pointer', color:COLORS.textTertiary, fontSize:16, padding:4, flexShrink:0 }}>•••</button>
       </div>
-      {video.description && <div style={{ color:COLORS.textPrimary, fontSize:14, lineHeight:1.5, marginBottom:12 }}>{video.description}</div>}
+      {video.description && (()=>{
+        const DESC_LIMIT = 140;
+        const isLong = video.description.length > DESC_LIMIT;
+        const shown = descExpanded || !isLong ? video.description : video.description.slice(0, DESC_LIMIT).trimEnd();
+        return (
+          <div style={{ color:COLORS.textPrimary, fontSize:14, lineHeight:1.5, marginBottom:12, whiteSpace:'pre-wrap', wordBreak:'break-word' }}>
+            {shown}{isLong && !descExpanded && '…'}
+            {isLong && (
+              <span onClick={()=>setDescExpanded(v=>!v)} style={{ color:COLORS.textTertiary, fontWeight:700, cursor:'pointer', marginLeft:5 }}>
+                {descExpanded ? 'Show less' : 'See more'}
+              </span>
+            )}
+          </div>
+        );
+      })()}
       {mediaSrc && (
         <div style={{ borderRadius:16, overflow:'hidden', marginBottom:10, background:COLORS.surfaceAlt }}>
           {isVideo ? (
@@ -3282,7 +3297,7 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
   );
 };
 
-const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, onVoiceCall, onVideoCall, onDuet, onStitch, onSaveSound, followed, showToast, onLive, currentUser, onViewProfile, onOpenSearch, onOpenNotifications, onOpenStories, blockedUsers, onBlock, users, onOpenProfileDrawer }) => {
+const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, onVoiceCall, onVideoCall, onDuet, onStitch, onSaveSound, followed, showToast, onLive, currentUser, onViewProfile, onOpenSearch, onOpenNotifications, onOpenStories, onCreateStory, onViewStory, blockedUsers, onBlock, users, onOpenProfileDrawer }) => {
   const filteredVideos = useMemo(()=>{
     return videos
       .filter(v=>!(blockedUsers||[]).includes(v.userId))
@@ -3302,7 +3317,7 @@ const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, 
   },[videos, blockedUsers, followed]);
 
   return (
-    <div style={{ height:'100%', overflowY:'auto', background:COLORS.bg, padding:'14px 14px max(96px, calc(72px + env(safe-area-inset-bottom)))' }}>
+    <div data-main-scroll="true" style={{ height:'100%', overflowY:'auto', background:COLORS.bg, padding:'14px 14px max(96px, calc(72px + env(safe-area-inset-bottom)))' }}>
       {/* Top search bar */}
       <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
         <button onClick={onOpenProfileDrawer} style={{ width:40, height:40, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:14, cursor:'pointer' }}>
@@ -3315,26 +3330,15 @@ const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, 
         <SparkleMenuButton onOpenNotifications={onOpenNotifications} currentUser={currentUser} />
       </div>
 
-      {/* Stories row */}
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
+      {/* Stories row — reuses the same Stories component as the Friends feed, so
+          tapping an avatar actually opens that user's story instead of their profile,
+          and the "+" actually opens the story composer instead of doing nothing. */}
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:2 }}>
         <span style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:14 }}>Stories</span>
         <span onClick={onOpenStories} style={{ color:COLORS.brand, fontSize:12, fontWeight:700, cursor:'pointer' }}>See all</span>
       </div>
-      <div style={{ display:'flex', gap:14, overflowX:'auto', paddingBottom:16, marginBottom:6 }}>
-        <div style={{ textAlign:'center', flexShrink:0 }}>
-          <div style={{ width:58, height:58, borderRadius:'50%', border:`2px dashed ${COLORS.brand}`, display:'flex', alignItems:'center', justifyContent:'center', color:COLORS.brand, fontSize:20, cursor:'pointer' }}>+</div>
-          <div style={{ color:COLORS.textTertiary, fontSize:10.5, marginTop:4 }}>Your story</div>
-        </div>
-        {(users||[]).slice(0,8).map(u=>(
-          <div key={u.id} style={{ textAlign:'center', flexShrink:0, cursor:'pointer' }} onClick={()=>onViewProfile?.(u.id)}>
-            <div className="story-avatar-ring" style={{ width:58, height:58 }}>
-              <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:u.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, overflow:'hidden' }}>
-                {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/> : (u.username||'?')[0]?.toUpperCase()}
-              </div>
-            </div>
-            <div style={{ color:COLORS.textSecondary, fontSize:10.5, marginTop:4, maxWidth:58, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{u.username}</div>
-          </div>
-        ))}
+      <div style={{ margin:'0 -14px 6px' }}>
+        <Stories users={users} currentUser={currentUser} onViewStory={onViewStory} onCreateStory={onCreateStory} followed={followed} />
       </div>
 
       {/* Post composer */}
@@ -3549,7 +3553,7 @@ const FriendsDiscoveryPage = ({ currentUser, users, followed, onFollow, onViewPr
   );
 
   return (
-    <div style={{ height:'100%', overflowY:'auto', background:COLORS.bg, padding:'14px 16px max(96px, calc(72px + env(safe-area-inset-bottom)))' }}>
+    <div data-main-scroll="true" style={{ height:'100%', overflowY:'auto', background:COLORS.bg, padding:'14px 16px max(96px, calc(72px + env(safe-area-inset-bottom)))' }}>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
         <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:18 }}>Friends</div>
       </div>
@@ -4399,7 +4403,7 @@ if(activeSubPage==='settings') return (
   ];
 
   return (
-    <div style={{ height:'100%', overflow:'auto', background:COLORS.bg, paddingBottom:'max(96px, calc(72px + env(safe-area-inset-bottom)))' }}>
+    <div data-main-scroll="true" style={{ height:'100%', overflow:'auto', background:COLORS.bg, paddingBottom:'max(96px, calc(72px + env(safe-area-inset-bottom)))' }}>
       <div style={{ position:'relative', paddingBottom:20, background:COLORS.surface, borderRadius:'0 0 24px 24px', boxShadow:'0 2px 14px rgba(124,58,237,0.06)' }}>
         <div style={{ height:150, position:'absolute', top:0, left:0, right:0, overflow:'hidden', borderRadius:'0 0 24px 24px' }}>
           <div style={{ width:'100%', height:'100%', background:'linear-gradient(135deg,#8B5CF6,#EC4899 55%,#3B82F6)' }} />
@@ -5295,7 +5299,7 @@ snap.docs.forEach(async conv => {
           ))}
         </div>
       </div>
-      <div style={{ flex:1, overflowY:'auto', paddingBottom:'max(90px, calc(66px + env(safe-area-inset-bottom)))' }}>
+      <div data-main-scroll="true" style={{ flex:1, overflowY:'auto', paddingBottom:'max(90px, calc(66px + env(safe-area-inset-bottom)))' }}>
         {(() => {
           const filteredConvUsers = inboxSearch
             ? convUsers.filter(u => u.username?.toLowerCase().includes(inboxSearch.toLowerCase()) || u.fullName?.toLowerCase().includes(inboxSearch.toLowerCase()))
@@ -7021,14 +7025,28 @@ const [blockedUsers, setBlockedUsers] = useState([]);
   useEffect(()=>{
     const el = contentWrapperRef.current;
     if(!el) return;
+    let ticking = false;
     const handleScroll = (e) => {
-      const scrollTop = e.target?.scrollTop;
-      if(typeof scrollTop !== 'number') return;
-      const delta = scrollTop - lastScrollYRef.current;
-      if(scrollTop < 24){ setNavVisible(true); }
-      else if(delta > 8){ setNavVisible(false); }
-      else if(delta < -8){ setNavVisible(true); }
-      lastScrollYRef.current = scrollTop;
+      // Only the primary tab containers (marked data-main-scroll) should drive nav
+      // visibility. Without this check, scrolling inside nested overlays that live in
+      // the same DOM subtree — comments, likes list, share sheet, etc. — was also
+      // toggling the nav, making it feel like it hid/showed at random.
+      if(e.target?.getAttribute?.('data-main-scroll') !== 'true') return;
+      const rawTop = e.target?.scrollTop;
+      if(typeof rawTop !== 'number') return;
+      // iOS rubber-band overscroll can report negative or jittery values near the
+      // edges; clamp so a bounce doesn't get misread as a real scroll gesture.
+      const scrollTop = Math.max(0, rawTop);
+      if(ticking) return;
+      ticking = true;
+      requestAnimationFrame(()=>{
+        const delta = scrollTop - lastScrollYRef.current;
+        if(scrollTop < 24){ setNavVisible(true); }
+        else if(delta > 10){ setNavVisible(false); }
+        else if(delta < -10){ setNavVisible(true); }
+        lastScrollYRef.current = scrollTop;
+        ticking = false;
+      });
     };
     el.addEventListener('scroll', handleScroll, true);
     return () => el.removeEventListener('scroll', handleScroll, true);
@@ -7413,6 +7431,7 @@ const handleMessage = uid => {
   onDuet={()=>showToast?.('Duet mode ready','info')} onStitch={()=>showToast?.('Stitch mode ready','info')} onSaveSound={()=>showToast?.('Sound saved!','success')}
   followed={followed} showToast={showToast} onLive={()=>setShowLiveStream(currentUser)} onViewProfile={handleViewProfile}
   onOpenSearch={()=>setShowDiscover(true)} onOpenNotifications={()=>setShowNotifications(true)} onOpenStories={()=>setShowStoriesPage(true)}
+  onCreateStory={()=>setShowCreateStory(true)} onViewStory={(payload)=>setShowStoryViewer(payload)}
   onOpenProfileDrawer={()=>setShowProfileDrawer(true)}
   blockedUsers={blockedUsers} onBlock={uid=>setBlockedUsers(p=>[...p,uid])} users={users} />}
             {activeTab==='friends' && <FriendsDiscoveryPage currentUser={currentUser} users={users} followed={followed} onFollow={toggleFollow} onViewProfile={handleViewProfile} onOpenSearch={()=>setShowDiscover(true)} />}
