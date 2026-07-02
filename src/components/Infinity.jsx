@@ -3042,12 +3042,35 @@ const REACTION_EMOJIS = ['❤️','😂','😢','🔥','😍','🙏'];
 const CommentsModal = ({ video, currentUser, onClose, showToast, onViewProfile }) => {
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     if (!video?.id) return;
-    const q = query(collection(db, 'comments'), where('videoId', '==', video.id), orderBy('createdAt', 'desc'));
-    const unsub = onSnapshot(q, snap => setComments(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
-    return () => unsub();
+    setLoading(true);
+    setLoadError(false);
+    // The compound query (where + orderBy on different fields) needs a Firestore
+    // composite index. If that index hasn't been created yet, onSnapshot's error
+    // callback fires and — since there wasn't one before — the list just silently
+    // stayed empty forever with no indication anything had gone wrong. Falling back
+    // to the where-only query (sorted client-side) means comments still show even
+    // before/without that index, matching the same fallback pattern already used
+    // for stories.
+    const primaryQ = query(collection(db, 'comments'), where('videoId', '==', video.id), orderBy('createdAt', 'desc'));
+    let fallbackUnsub = null;
+    const unsub = onSnapshot(primaryQ, snap => {
+      setComments(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setLoading(false);
+    }, () => {
+      const fallbackQ = query(collection(db, 'comments'), where('videoId', '==', video.id));
+      fallbackUnsub = onSnapshot(fallbackQ, snap => {
+        const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        list.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+        setComments(list);
+        setLoading(false);
+      }, () => { setLoading(false); setLoadError(true); });
+    });
+    return () => { unsub(); fallbackUnsub?.(); };
   }, [video?.id]);
 
   const likeComment = async (id) => {
@@ -3064,16 +3087,21 @@ const CommentsModal = ({ video, currentUser, onClose, showToast, onViewProfile }
   };
 
   return (
-    <div style={{ position:'fixed', inset:0, zIndex:5000, background:COLORS.surface, display:'flex', flexDirection:'column' }}>
-      <div style={{ display:'flex', alignItems:'center', gap:14, padding:'16px 16px 14px', borderBottom:`1px solid ${COLORS.border}` }}>
-        <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', color:COLORS.textPrimary, padding:4, display:'flex' }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    <div onClick={onClose} style={{ position:'fixed', inset:0, zIndex:5000, background:'rgba(15,10,25,0.5)', display:'flex', alignItems:'flex-end', maxWidth:430, margin:'0 auto' }}>
+      <div onClick={e=>e.stopPropagation()} style={{ width:'100%', height:'78vh', background:COLORS.surface, borderTopLeftRadius:24, borderTopRightRadius:24, display:'flex', flexDirection:'column', animation:'slideUp 0.25s cubic-bezier(0.4,0,0.2,1)' }}>
+      <div style={{ display:'flex', justifyContent:'center', paddingTop:8 }}>
+        <div style={{ width:36, height:4, borderRadius:2, background:COLORS.border }} />
+      </div>
+      <div style={{ display:'flex', alignItems:'center', gap:14, padding:'10px 16px 14px', borderBottom:`1px solid ${COLORS.border}` }}>
+        <div style={{ flex:1, color:COLORS.textPrimary, fontWeight:800, fontSize:16, textAlign:'center' }}>{comments.length} Comments</div>
+        <button onClick={onClose} style={{ position:'absolute', right:16, background:'none', border:'none', cursor:'pointer', color:COLORS.textTertiary, padding:4, display:'flex' }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
-        <div style={{ flex:1, color:COLORS.textPrimary, fontWeight:800, fontSize:17 }}>{comments.length} Comments</div>
-        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
       </div>
       <div style={{ flex:1, overflowY:'auto', padding:'14px 16px' }}>
-        {!comments.length && <div style={{ textAlign:'center', color:COLORS.textTertiary, padding:'40px 0', fontSize:13 }}>Be the first to comment</div>}
+        {loading && <div style={{ textAlign:'center', color:COLORS.textTertiary, padding:'40px 0', fontSize:13 }}>Loading comments…</div>}
+        {!loading && loadError && <div style={{ textAlign:'center', color:COLORS.textTertiary, padding:'40px 0', fontSize:13 }}>Couldn't load comments. Pull down to try again.</div>}
+        {!loading && !loadError && !comments.length && <div style={{ textAlign:'center', color:COLORS.textTertiary, padding:'40px 0', fontSize:13 }}>Be the first to comment</div>}
         {comments.map(c => (
           <div key={c.id} style={{ display:'flex', gap:10, marginBottom:18 }}>
             <div onClick={()=>onViewProfile?.(c.userId)} style={{ width:38, height:38, borderRadius:'50%', background:c.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, fontSize:13, overflow:'hidden', flexShrink:0, cursor:'pointer' }}>
@@ -3114,6 +3142,7 @@ const CommentsModal = ({ video, currentUser, onClose, showToast, onViewProfile }
         <button onClick={send} style={{ background:COLORS.gradient, border:'none', borderRadius:'50%', width:36, height:36, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
+      </div>
       </div>
     </div>
   );
@@ -3297,7 +3326,7 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
   );
 };
 
-const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, onVoiceCall, onVideoCall, onDuet, onStitch, onSaveSound, followed, showToast, onLive, currentUser, onViewProfile, onOpenSearch, onOpenNotifications, onOpenStories, onCreateStory, onViewStory, blockedUsers, onBlock, users, onOpenProfileDrawer }) => {
+const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, onVoiceCall, onVideoCall, onDuet, onStitch, onSaveSound, followed, showToast, onLive, currentUser, onViewProfile, onOpenSearch, onOpenNotifications, onOpenStories, onCreateStory, onViewStory, blockedUsers, onBlock, users, onOpenProfileDrawer, onFeedScroll }) => {
   const filteredVideos = useMemo(()=>{
     return videos
       .filter(v=>!(blockedUsers||[]).includes(v.userId))
@@ -3317,7 +3346,7 @@ const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, 
   },[videos, blockedUsers, followed]);
 
   return (
-    <div data-main-scroll="true" style={{ height:'100%', overflowY:'auto', background:COLORS.bg, padding:'14px 14px max(96px, calc(72px + env(safe-area-inset-bottom)))' }}>
+    <div data-main-scroll="true" onScroll={onFeedScroll} style={{ height:'100%', overflowY:'auto', background:COLORS.bg, padding:'14px 14px max(96px, calc(72px + env(safe-area-inset-bottom)))' }}>
       {/* Top search bar */}
       <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
         <button onClick={onOpenProfileDrawer} style={{ width:40, height:40, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:14, cursor:'pointer' }}>
@@ -3532,7 +3561,7 @@ const handlePullEnd = async () => {
 
 /* ─────────────── CREATE SCREEN ─────────────── */
 /* ─────────────── FRIENDS DISCOVERY (SMART DISCOVERY) ─────────────── */
-const FriendsDiscoveryPage = ({ currentUser, users, followed, onFollow, onViewProfile, onOpenSearch }) => {
+const FriendsDiscoveryPage = ({ currentUser, users, followed, onFollow, onViewProfile, onOpenSearch, onFeedScroll }) => {
   const [tab, setTab] = useState('discover');
   const [search, setSearch] = useState('');
 
@@ -3553,7 +3582,7 @@ const FriendsDiscoveryPage = ({ currentUser, users, followed, onFollow, onViewPr
   );
 
   return (
-    <div data-main-scroll="true" style={{ height:'100%', overflowY:'auto', background:COLORS.bg, padding:'14px 16px max(96px, calc(72px + env(safe-area-inset-bottom)))' }}>
+    <div data-main-scroll="true" onScroll={onFeedScroll} style={{ height:'100%', overflowY:'auto', background:COLORS.bg, padding:'14px 16px max(96px, calc(72px + env(safe-area-inset-bottom)))' }}>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
         <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:18 }}>Friends</div>
       </div>
@@ -4057,7 +4086,7 @@ const PrivacyToggles = ({ user, showToast }) => {
 };
 
 /* ─────────────── PROFILE PAGE ─────────────── */
-const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowAnalytics, onShowQRCode, allVideos, setBlockedUsers, onShowSavedPosts, onGoToGroups, onShowBroadcast, onViewProfile, settingsSignal }) => {
+const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowAnalytics, onShowQRCode, allVideos, setBlockedUsers, onShowSavedPosts, onGoToGroups, onShowBroadcast, onViewProfile, settingsSignal, onFeedScroll }) => {
   const [activeSubPage, setActiveSubPage] = useState(null);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showAvatarViewer, setShowAvatarViewer] = useState(false);
@@ -4403,7 +4432,7 @@ if(activeSubPage==='settings') return (
   ];
 
   return (
-    <div data-main-scroll="true" style={{ height:'100%', overflow:'auto', background:COLORS.bg, paddingBottom:'max(96px, calc(72px + env(safe-area-inset-bottom)))' }}>
+    <div data-main-scroll="true" onScroll={onFeedScroll} style={{ height:'100%', overflow:'auto', background:COLORS.bg, paddingBottom:'max(96px, calc(72px + env(safe-area-inset-bottom)))' }}>
       <div style={{ position:'relative', paddingBottom:20, background:COLORS.surface, borderRadius:'0 0 24px 24px', boxShadow:'0 2px 14px rgba(124,58,237,0.06)' }}>
         <div style={{ height:150, position:'absolute', top:0, left:0, right:0, overflow:'hidden', borderRadius:'0 0 24px 24px' }}>
           <div style={{ width:'100%', height:'100%', background:'linear-gradient(135deg,#8B5CF6,#EC4899 55%,#3B82F6)' }} />
@@ -5123,7 +5152,7 @@ unsub = onSnapshot(q, (snap) => {
   );
 };
 
-const InboxPage = ({ t, users, currentUser, showToast, onViewProfile, initialTargetId, onClearTarget, persistedConversation, onSetConversation, onVoiceCall, onVideoCall, openGroupsSignal }) => {
+const InboxPage = ({ t, users, currentUser, showToast, onViewProfile, initialTargetId, onClearTarget, persistedConversation, onSetConversation, onVoiceCall, onVideoCall, openGroupsSignal, onFeedScroll }) => {
   const [activeConversation, setActiveConversation] = useState(persistedConversation || null);
   const [conversations, setConversations] = useState([]);
   const [showGroupsView, setShowGroupsView] = useState(false);
@@ -5299,7 +5328,7 @@ snap.docs.forEach(async conv => {
           ))}
         </div>
       </div>
-      <div data-main-scroll="true" style={{ flex:1, overflowY:'auto', paddingBottom:'max(90px, calc(66px + env(safe-area-inset-bottom)))' }}>
+      <div data-main-scroll="true" onScroll={onFeedScroll} style={{ flex:1, overflowY:'auto', paddingBottom:'max(90px, calc(66px + env(safe-area-inset-bottom)))' }}>
         {(() => {
           const filteredConvUsers = inboxSearch
             ? convUsers.filter(u => u.username?.toLowerCase().includes(inboxSearch.toLowerCase()) || u.fullName?.toLowerCase().includes(inboxSearch.toLowerCase()))
@@ -7021,36 +7050,31 @@ const [blockedUsers, setBlockedUsers] = useState([]);
   const [showProfileDrawer, setShowProfileDrawer] = useState(false);
   const contentWrapperRef = useRef(null);
   const lastScrollYRef = useRef(0);
+  const scrollTickingRef = useRef(false);
 
-  useEffect(()=>{
-    const el = contentWrapperRef.current;
-    if(!el) return;
-    let ticking = false;
-    const handleScroll = (e) => {
-      // Only the primary tab containers (marked data-main-scroll) should drive nav
-      // visibility. Without this check, scrolling inside nested overlays that live in
-      // the same DOM subtree — comments, likes list, share sheet, etc. — was also
-      // toggling the nav, making it feel like it hid/showed at random.
-      if(e.target?.getAttribute?.('data-main-scroll') !== 'true') return;
-      const rawTop = e.target?.scrollTop;
-      if(typeof rawTop !== 'number') return;
-      // iOS rubber-band overscroll can report negative or jittery values near the
-      // edges; clamp so a bounce doesn't get misread as a real scroll gesture.
-      const scrollTop = Math.max(0, rawTop);
-      if(ticking) return;
-      ticking = true;
-      requestAnimationFrame(()=>{
-        const delta = scrollTop - lastScrollYRef.current;
-        if(scrollTop < 24){ setNavVisible(true); }
-        else if(delta > 10){ setNavVisible(false); }
-        else if(delta < -10){ setNavVisible(true); }
-        lastScrollYRef.current = scrollTop;
-        ticking = false;
-      });
-    };
-    el.addEventListener('scroll', handleScroll, true);
-    return () => el.removeEventListener('scroll', handleScroll, true);
-  },[]);
+  // Passed directly to the scrollable div of each primary tab (Home, Friends, Profile,
+  // Inbox) as onScroll={handleFeedScroll}. A direct handler on the element that's
+  // actually scrolling is far more reliable across mobile browsers than trying to
+  // catch the event on an ancestor — some mobile WebViews don't propagate 'scroll'
+  // the way desktop Chrome does, which is why the previous version sometimes never
+  // fired at all.
+  const handleFeedScroll = useCallback((e) => {
+    const rawTop = e.currentTarget?.scrollTop;
+    if(typeof rawTop !== 'number') return;
+    // iOS rubber-band overscroll can report negative or jittery values near the
+    // edges; clamp so a bounce doesn't get misread as a real scroll gesture.
+    const scrollTop = Math.max(0, rawTop);
+    if(scrollTickingRef.current) return;
+    scrollTickingRef.current = true;
+    requestAnimationFrame(()=>{
+      const delta = scrollTop - lastScrollYRef.current;
+      if(scrollTop < 24){ setNavVisible(true); }
+      else if(delta > 10){ setNavVisible(false); }
+      else if(delta < -10){ setNavVisible(true); }
+      lastScrollYRef.current = scrollTop;
+      scrollTickingRef.current = false;
+    });
+  }, []);
 
   // Switching tabs used to leave the nav stuck hidden if you'd scrolled down before
   // switching (lastScrollYRef still held the old tab's scroll position, so the new tab's
@@ -7432,15 +7456,15 @@ const handleMessage = uid => {
   followed={followed} showToast={showToast} onLive={()=>setShowLiveStream(currentUser)} onViewProfile={handleViewProfile}
   onOpenSearch={()=>setShowDiscover(true)} onOpenNotifications={()=>setShowNotifications(true)} onOpenStories={()=>setShowStoriesPage(true)}
   onCreateStory={()=>setShowCreateStory(true)} onViewStory={(payload)=>setShowStoryViewer(payload)}
-  onOpenProfileDrawer={()=>setShowProfileDrawer(true)}
+  onOpenProfileDrawer={()=>setShowProfileDrawer(true)} onFeedScroll={handleFeedScroll}
   blockedUsers={blockedUsers} onBlock={uid=>setBlockedUsers(p=>[...p,uid])} users={users} />}
-            {activeTab==='friends' && <FriendsDiscoveryPage currentUser={currentUser} users={users} followed={followed} onFollow={toggleFollow} onViewProfile={handleViewProfile} onOpenSearch={()=>setShowDiscover(true)} />}
+            {activeTab==='friends' && <FriendsDiscoveryPage currentUser={currentUser} users={users} followed={followed} onFollow={toggleFollow} onViewProfile={handleViewProfile} onOpenSearch={()=>setShowDiscover(true)} onFeedScroll={handleFeedScroll} />}
             {activeTab==='create' && <CreateScreen onOpenCamera={()=>setShowCamera(true)} onShowSoundLibrary={()=>setShowSoundLibrary(true)} showToast={showToast} t={t} currentUser={currentUser} onPosted={()=>setActiveTab('home')} />}
-            {activeTab==='inbox' && <InboxPage t={t} users={users} currentUser={currentUser} showToast={showToast} onViewProfile={handleViewProfile} initialTargetId={inboxTargetId} onClearTarget={()=>setInboxTargetId(null)} persistedConversation={activeConversation} openGroupsSignal={inboxOpenGroups} onSetConversation={(conv)=>{ setActiveConversation(conv); }}
+            {activeTab==='inbox' && <InboxPage t={t} users={users} currentUser={currentUser} showToast={showToast} onViewProfile={handleViewProfile} initialTargetId={inboxTargetId} onClearTarget={()=>setInboxTargetId(null)} persistedConversation={activeConversation} openGroupsSignal={inboxOpenGroups} onSetConversation={(conv)=>{ setActiveConversation(conv); }} onFeedScroll={handleFeedScroll}
   onVoiceCall={uid=>{ const u=users.find(uu=>uu.id===uid); const callDocId=[currentUser.id,uid].sort().join('_'); setShowCall({type:'audio',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
   onVideoCall={uid=>{ const u=users.find(uu=>uu.id===uid); const callDocId=[currentUser.id,uid].sort().join('_'); setShowCall({type:'video',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
 />}
-            {(activeTab==='profile'||activeTab==='settings') && <ProfilePage user={currentUser} setCurrentUser={setCurrentUser} onLogout={handleLogout} users={users} showToast={showToast} onShowAnalytics={()=>setShowAnalytics(true)} onShowQRCode={()=>setShowQRCode(true)} allVideos={videos} setBlockedUsers={setBlockedUsers} onShowSavedPosts={()=>setShowSavedPosts(true)} onGoToGroups={()=>{ setActiveTab('inbox'); setInboxOpenGroups(n=>n+1); }} onShowBroadcast={()=>setShowBroadcast(true)} onViewProfile={handleViewProfile} settingsSignal={activeTab==='settings'?settingsSignal:0} />}
+            {(activeTab==='profile'||activeTab==='settings') && <ProfilePage user={currentUser} setCurrentUser={setCurrentUser} onLogout={handleLogout} users={users} showToast={showToast} onShowAnalytics={()=>setShowAnalytics(true)} onShowQRCode={()=>setShowQRCode(true)} allVideos={videos} setBlockedUsers={setBlockedUsers} onShowSavedPosts={()=>setShowSavedPosts(true)} onGoToGroups={()=>{ setActiveTab('inbox'); setInboxOpenGroups(n=>n+1); }} onShowBroadcast={()=>setShowBroadcast(true)} onViewProfile={handleViewProfile} settingsSignal={activeTab==='settings'?settingsSignal:0} onFeedScroll={handleFeedScroll} />}
           </>
         )}
       </div>
