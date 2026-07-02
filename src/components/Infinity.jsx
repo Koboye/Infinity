@@ -7025,6 +7025,45 @@ const [blockedUsers, setBlockedUsers] = useState([]);
     return () => el.removeEventListener('scroll', handleScroll, true);
   },[]);
 
+  // Switching tabs used to leave the nav stuck hidden if you'd scrolled down before
+  // switching (lastScrollYRef still held the old tab's scroll position, so the new tab's
+  // first scroll event could compute a stale/huge delta). Reset both on every tab change.
+  useEffect(()=>{
+    setNavVisible(true);
+    lastScrollYRef.current = 0;
+  }, [activeTab]);
+
+  // Horizontal swipe between tabs (Home ↔ Friends ↔ Inbox ↔ Profile), so the app behaves
+  // like a real tab carousel instead of only responding to bottom-nav taps. 'create' opens
+  // the camera modal rather than being a swipeable page, so it's excluded from the cycle.
+  const swipeTabOrder = ['home','friends','inbox','profile'];
+  const touchStartRef = useRef(null);
+  const handleTabTouchStart = (e) => {
+    const t = e.touches?.[0];
+    if(!t) return;
+    touchStartRef.current = { x:t.clientX, y:t.clientY, time:Date.now() };
+  };
+  const handleTabTouchEnd = (e) => {
+    const start = touchStartRef.current;
+    touchStartRef.current = null;
+    if(!start) return;
+    const t = e.changedTouches?.[0];
+    if(!t) return;
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    const elapsed = Date.now() - start.time;
+    // Require a clearly horizontal, deliberate swipe so this never fights the vertical
+    // swipe-to-next-video gesture used throughout the feed.
+    if(elapsed > 600 || Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.8) return;
+    const currentIdx = swipeTabOrder.indexOf(activeTab);
+    if(currentIdx === -1) return; // e.g. on 'settings', which isn't part of the swipe cycle
+    const nextIdx = dx < 0 ? currentIdx + 1 : currentIdx - 1;
+    if(nextIdx < 0 || nextIdx >= swipeTabOrder.length) return;
+    haptic('light');
+    setShowCamera(false); setShowSearch(false);
+    setActiveTab(swipeTabOrder[nextIdx]);
+  };
+
   const showToast = useCallback((message, type='info')=>setToast({message,type}),[]);
   const isOnline = useNetworkStatus();
   const t = TRANSLATIONS[currentUser?.language || 'en'] || TRANSLATIONS.en;
@@ -7239,11 +7278,11 @@ const handleMessage = uid => {
   ];
 
   if(authLoading) return (
-    <div style={{ maxWidth:430, margin:'0 auto', height:'100dvh', background:'#0B0B0F', display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:16 }}>
+    <div style={{ maxWidth:430, margin:'0 auto', height:'100dvh', background:COLORS.bg, display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:16 }}>
       <GlobalStyles />
       {!isOnline && <OfflineBanner />}
       <img src="https://res.cloudinary.com/dotvhzjmc/image/upload/znfksngv27boh3c1kxpv.png" style={{ width:80, height:80, borderRadius:24, marginBottom:16 }} alt="Infinity" />
-      <div style={{ width:32, height:32, border:'3px solid rgba(255,45,85,0.3)', borderTop:'3px solid #FF2156', borderRadius:'50%', animation:'spin 1s linear infinite' }} />
+      <div style={{ width:32, height:32, border:'3px solid rgba(139,92,246,0.25)', borderTop:`3px solid ${COLORS.brand}`, borderRadius:'50%', animation:'spin 1s linear infinite' }} />
     </div>
   );
 
@@ -7264,7 +7303,7 @@ const handleMessage = uid => {
   );
 
   return (
-    <div style={{ maxWidth:430, margin:'0 auto', height:'100dvh', background:'#0B0B0F', display:'flex', flexDirection:'column', position:'relative', overflow:'hidden' }}>
+    <div style={{ maxWidth:430, margin:'0 auto', height:'100dvh', background:COLORS.bg, display:'flex', flexDirection:'column', position:'relative', overflow:'hidden' }}>
       <GlobalStyles />
       {!isOnline && <OfflineBanner />}
 {incomingCall && !showCall && (
@@ -7354,7 +7393,7 @@ const handleMessage = uid => {
         </div>
       )}
 
-      <div ref={contentWrapperRef} style={{ flex:1, overflow:'hidden', position:'relative', minHeight:0 }}>
+      <div ref={contentWrapperRef} onTouchStart={handleTabTouchStart} onTouchEnd={handleTabTouchEnd} style={{ flex:1, overflow:'hidden', position:'relative', minHeight:0 }}>
         {showSearch && <SearchOverlay onClose={()=>setShowSearch(false)} videos={videos} users={users} onViewProfile={uid=>{handleViewProfile(uid); setShowSearch(false);}} />}
         {showCamera && <CameraUpload onUpload={v=>{setVideos(prev=>[v,...prev]);}} onClose={()=>setShowCamera(false)} showToast={showToast} currentUser={currentUser} />}
         {!showSearch && !showCamera && (
