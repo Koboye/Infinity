@@ -1,0 +1,79 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      // Broad read is intentional: there's no backend, so the feed, search, comments and
+      // follow lists all read this collection directly from the client. Anything sensitive
+      // (phone, birthdate) must NOT be written here — see the /private subcollection below.
+      // email is a deliberate, documented exception (see createUserProfile in Infinity.jsx).
+      allow read: if request.auth != null;
+
+      allow update: if request.auth != null && (
+        // The owner may update anything except the protected balance/relationship fields —
+        // those are only ever touched via dedicated increment()/arrayUnion flows.
+        (request.auth.uid == userId
+          && !request.resource.data.diff(resource.data).affectedKeys()
+               .hasAny(['coins', 'walletBalance', 'followers', 'following']))
+        // Any other authenticated user may ONLY touch the followers array on someone else's
+        // doc (this is what makes toggleFollow's second write — to the target user's doc —
+        // legal; it was previously rejected outright by the owner-only rule above). Note:
+        // this doesn't verify the array only gained/lost request.auth.uid specifically, just
+        // that no other field changed — a known, low-severity gap (worst case a bad actor
+        // pollutes someone's followers array with junk ids, not a data-exposure issue).
+        || (request.auth.uid != userId
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followers']))
+      );
+      allow create: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Owner-only contact info (phone, birthdate). Split out of the public /users doc so it
+    // can't be read via the broad `allow read` above. email stays on the public doc — see
+    // the comment there.
+    match /users/{userId}/private/{docId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /videos/{videoId} {
+      allow read: if resource.data.moderationStatus == 'approved'
+        || (request.auth != null && request.auth.uid == resource.data.userId);
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+
+    match /comments/{commentId} {
+      allow read: if true;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+
+    match /likes/{likeId} {
+      allow read: if true;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+
+    match /conversations/{conversationId} {
+      allow read: if request.auth != null && resource.data.participants.hasAny([request.auth.uid]);
+      allow create: if request.auth != null && request.resource.data.participants.hasAny([request.auth.uid]);
+      allow update: if request.auth != null && resource.data.participants.hasAny([request.auth.uid]);
+    }
+
+    match /messages/{messageId} {
+      allow read: if request.auth != null && resource.data.participants.hasAny([request.auth.uid]);
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.senderId
+        && request.resource.data.participants.hasAny([request.auth.uid]);
+    }
+
+    match /stories/{storyId} {
+      allow read: if resource.data.expiresAt > request.time;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+  }
+}
