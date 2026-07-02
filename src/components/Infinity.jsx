@@ -3251,22 +3251,31 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
           )}
         </div>
       )}
-      <div style={{ display:'flex', alignItems:'center', gap:16, paddingTop:6, borderTop:`1px solid ${COLORS.border}`, marginTop:2 }}>
-        <button onClick={toggleLike} onDoubleClick={()=>setShowLikes(true)} style={{ background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:6, color:liked?COLORS.brand:COLORS.textSecondary, fontWeight:700, fontSize:13, paddingTop:10 }}>
-          <span style={{ fontSize:17 }}>{liked?'❤️':'🤍'}</span>
+      <div style={{ display:'flex', alignItems:'center', gap:2, paddingTop:10, marginTop:8, borderTop:`1px solid ${COLORS.border}` }}>
+        <button onClick={toggleLike} onDoubleClick={()=>setShowLikes(true)} style={{ background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:6, color:liked?'#FF3B5C':COLORS.textSecondary, fontWeight:700, fontSize:13, padding:'6px 8px 6px 4px', borderRadius:12 }}>
+          <svg width="21" height="21" viewBox="0 0 24 24" fill={liked?'#FF3B5C':'none'} stroke={liked?'#FF3B5C':COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: liked ? 'likeHeart 0.35s ease' : 'none' }}>
+            <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+          </svg>
           <span onClick={e=>{ e.stopPropagation(); setShowLikes(true); }}>{formatNumber(likeCount)}</span>
         </button>
-        <button onClick={()=>{ setShowComments(true); onOpenComments?.(video); }} style={{ background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:6, color:COLORS.textSecondary, fontWeight:700, fontSize:13, paddingTop:10 }}>
-          💬 {formatNumber(video.comments||0)}
+        <button onClick={()=>{ setShowComments(true); onOpenComments?.(video); }} style={{ background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:6, color:COLORS.textSecondary, fontWeight:700, fontSize:13, padding:'6px 8px', borderRadius:12 }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+          {formatNumber(video.comments||0)}
         </button>
-        <button onClick={()=>{ setShowShare(true); onShare?.(video); }} style={{ background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:6, color:COLORS.textSecondary, fontWeight:700, fontSize:13, paddingTop:10 }}>
-          <span style={{ fontSize:15 }}>↗️</span>{formatNumber(video.shares||0)}
+        <button onClick={()=>{ setShowShare(true); onShare?.(video); }} style={{ background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:6, color:COLORS.textSecondary, fontWeight:700, fontSize:13, padding:'6px 8px', borderRadius:12 }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          {formatNumber(video.shares||0)}
         </button>
-        <button onClick={toggleSave} style={{ background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:6, color:saved?COLORS.brand:COLORS.textSecondary, fontWeight:700, fontSize:13, paddingTop:10 }}>
-          <span style={{ fontSize:15 }}>{saved?'🔖':'🏷️'}</span>{formatNumber(video.saves||0)}
+        <div style={{ flex:1 }} />
+        <button onClick={toggleSave} style={{ background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', color:saved?COLORS.brand:COLORS.textSecondary, padding:'6px 6px', borderRadius:12 }}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill={saved?COLORS.brand:'none'} stroke={saved?COLORS.brand:COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
         </button>
-        <button onClick={handleDownload} style={{ background:'none', border:'none', cursor:'pointer', marginLeft:'auto', color:COLORS.textTertiary, fontSize:15, paddingTop:10 }}>⬇️</button>
-        <button onClick={()=>setShowOptions(true)} style={{ background:'none', border:'none', cursor:'pointer', color:COLORS.textTertiary, fontSize:15, paddingTop:10 }}>•••</button>
+        <button onClick={handleDownload} style={{ background:'none', border:'none', cursor:'pointer', color:COLORS.textTertiary, display:'flex', alignItems:'center', padding:'6px 6px', borderRadius:12 }}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </button>
+        <button onClick={()=>setShowOptions(true)} style={{ background:'none', border:'none', cursor:'pointer', color:COLORS.textTertiary, display:'flex', alignItems:'center', padding:'6px 4px', borderRadius:12 }}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+        </button>
       </div>
     </div>
     </>
@@ -3293,7 +3302,7 @@ const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, 
   },[videos, blockedUsers, followed]);
 
   return (
-    <div style={{ height:'100%', overflowY:'auto', background:COLORS.bg, padding:'14px 14px 20px' }}>
+    <div style={{ height:'100%', overflowY:'auto', background:COLORS.bg, padding:'14px 14px max(96px, calc(72px + env(safe-area-inset-bottom)))' }}>
       {/* Top search bar */}
       <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
         <button onClick={onOpenProfileDrawer} style={{ width:40, height:40, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:14, cursor:'pointer' }}>
@@ -3540,7 +3549,7 @@ const FriendsDiscoveryPage = ({ currentUser, users, followed, onFollow, onViewPr
   );
 
   return (
-    <div style={{ height:'100%', overflowY:'auto', background:COLORS.bg, padding:'14px 16px 20px' }}>
+    <div style={{ height:'100%', overflowY:'auto', background:COLORS.bg, padding:'14px 16px max(96px, calc(72px + env(safe-area-inset-bottom)))' }}>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
         <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:18 }}>Friends</div>
       </div>
@@ -4390,7 +4399,7 @@ if(activeSubPage==='settings') return (
   ];
 
   return (
-    <div style={{ height:'100%', overflow:'auto', background:COLORS.bg }}>
+    <div style={{ height:'100%', overflow:'auto', background:COLORS.bg, paddingBottom:'max(96px, calc(72px + env(safe-area-inset-bottom)))' }}>
       <div style={{ position:'relative', paddingBottom:20, background:COLORS.surface, borderRadius:'0 0 24px 24px', boxShadow:'0 2px 14px rgba(124,58,237,0.06)' }}>
         <div style={{ height:150, position:'absolute', top:0, left:0, right:0, overflow:'hidden', borderRadius:'0 0 24px 24px' }}>
           <div style={{ width:'100%', height:'100%', background:'linear-gradient(135deg,#8B5CF6,#EC4899 55%,#3B82F6)' }} />
@@ -5286,7 +5295,7 @@ snap.docs.forEach(async conv => {
           ))}
         </div>
       </div>
-      <div style={{ flex:1, overflowY:'auto' }}>
+      <div style={{ flex:1, overflowY:'auto', paddingBottom:'max(90px, calc(66px + env(safe-area-inset-bottom)))' }}>
         {(() => {
           const filteredConvUsers = inboxSearch
             ? convUsers.filter(u => u.username?.toLowerCase().includes(inboxSearch.toLowerCase()) || u.fullName?.toLowerCase().includes(inboxSearch.toLowerCase()))
@@ -7393,7 +7402,7 @@ const handleMessage = uid => {
         </div>
       )}
 
-      <div ref={contentWrapperRef} onTouchStart={handleTabTouchStart} onTouchEnd={handleTabTouchEnd} style={{ flex:1, overflow:'hidden', position:'relative', minHeight:0 }}>
+      <div ref={contentWrapperRef} onTouchStart={handleTabTouchStart} onTouchEnd={handleTabTouchEnd} style={{ flex:1, overflow:'hidden', position:'relative', minHeight:0, height:'100%' }}>
         {showSearch && <SearchOverlay onClose={()=>setShowSearch(false)} videos={videos} users={users} onViewProfile={uid=>{handleViewProfile(uid); setShowSearch(false);}} />}
         {showCamera && <CameraUpload onUpload={v=>{setVideos(prev=>[v,...prev]);}} onClose={()=>setShowCamera(false)} showToast={showToast} currentUser={currentUser} />}
         {!showSearch && !showCamera && (
@@ -7417,7 +7426,7 @@ const handleMessage = uid => {
         )}
       </div>
 
-      <div style={{ display:'flex', background:'rgba(255,255,255,0.35)', border:'1px solid rgba(255,255,255,0.4)', borderRadius:28, margin:'0 12px max(14px, env(safe-area-inset-bottom))', padding:'8px 4px', flexShrink:0, backdropFilter:'blur(22px)', WebkitBackdropFilter:'blur(22px)', boxShadow:'0 8px 28px rgba(139,92,246,0.14)', position:'relative', zIndex:100, transform: navVisible ? 'translateY(0)' : 'translateY(140%)', opacity: navVisible ? 1 : 0, transition:'transform 0.28s cubic-bezier(0.4,0,0.2,1), opacity 0.22s ease' }}>
+      <div style={{ display:'flex', background:'rgba(255,255,255,0.6)', border:'1px solid rgba(255,255,255,0.5)', borderRadius:28, padding:'8px 4px', backdropFilter:'blur(28px) saturate(1.6)', WebkitBackdropFilter:'blur(28px) saturate(1.6)', boxShadow:'0 12px 32px rgba(30,27,46,0.18), 0 2px 8px rgba(30,27,46,0.10)', position:'absolute', left:12, right:12, bottom:'max(14px, env(safe-area-inset-bottom))', zIndex:500, transform: navVisible ? 'translateY(0)' : 'translateY(140%)', opacity: navVisible ? 1 : 0, transition:'transform 0.28s cubic-bezier(0.4,0,0.2,1), opacity 0.22s ease' }}>
         {tabs.map(tab=>{
           const isActive = activeTab===tab.id;
           const tabLabels = { home: t?.home||'Home', friends: t?.friends||'Friends', create: t?.create||'Create', inbox: t?.inbox||'Inbox', profile: t?.profile||'Profile' };
