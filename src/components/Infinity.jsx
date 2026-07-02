@@ -3326,8 +3326,6 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
   const mediaSrc = (Array.isArray(video.images) && video.images[0]) || video.videoUrl;
   const mediaWrapRef = useRef(null);
   const videoElRef = useRef(null);
-  const [muted, setMuted] = useState(true);
-  const [zoomed, setZoomed] = useState(false);
   const [videoPaused, setVideoPaused] = useState(false);
   const viewCountedRef = useRef(false);
   const isVisible = useIntersectionObserver(mediaWrapRef, { threshold: 0.6 });
@@ -3461,8 +3459,9 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
                   src={mediaSrc}
                   loop
                   playsInline
-                  muted={muted}
-                  style={{ width:'100%', maxHeight:520, display:'block', objectFit: zoomed ? 'contain' : 'cover', background:'#000', transform: zoomed ? 'scale(1.15)' : 'scale(1)', transition:'transform 0.25s ease' }}
+                  autoPlay
+                  muted
+                  style={{ width:'100%', maxHeight:520, display:'block', objectFit:'cover', background:'#000' }}
                 />
               </div>
               {/* Top progress line — mirrors the swipeable feed's video progress style */}
@@ -3474,22 +3473,6 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
                   </div>
                 </div>
               )}
-              {/* TikTok-style side controls: sound, zoom, download */}
-              <div style={{ position:'absolute', right:10, bottom:10, display:'flex', flexDirection:'column', gap:10, zIndex:20 }}>
-                <button onClick={e=>{ e.stopPropagation(); setMuted(m=>!m); }} style={{ background:'rgba(0,0,0,0.45)', backdropFilter:'blur(6px)', border:'none', borderRadius:'50%', width:34, height:34, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
-                  {muted ? (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
-                  ) : (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg>
-                  )}
-                </button>
-                <button onClick={e=>{ e.stopPropagation(); setZoomed(z=>!z); }} style={{ background:'rgba(0,0,0,0.45)', backdropFilter:'blur(6px)', border:'none', borderRadius:'50%', width:34, height:34, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>{zoomed ? <line x1="8" y1="11" x2="14" y2="11"/> : <><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></>}</svg>
-                </button>
-                <button onClick={e=>{ e.stopPropagation(); handleDownload(); }} style={{ background:'rgba(0,0,0,0.45)', backdropFilter:'blur(6px)', border:'none', borderRadius:'50%', width:34, height:34, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                </button>
-              </div>
             </>
           ) : (
             <img src={mediaSrc} alt="" style={{ width:'100%', maxHeight:420, display:'block', objectFit:'cover' }} />
@@ -3531,7 +3514,7 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
   );
 };
 
-const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, onVoiceCall, onVideoCall, onDuet, onStitch, onSaveSound, followed, showToast, onLive, currentUser, onViewProfile, onOpenSearch, onOpenNotifications, onOpenStories, onCreateStory, onViewStory, blockedUsers, onBlock, users, onOpenProfileDrawer, onFeedScroll, onOpenCamera, onOpenComposer }) => {
+const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, onVoiceCall, onVideoCall, onDuet, onStitch, onSaveSound, followed, showToast, onLive, currentUser, onViewProfile, onOpenSearch, onOpenNotifications, onOpenStories, onCreateStory, onViewStory, blockedUsers, onBlock, users, onOpenProfileDrawer, onFeedScroll, onOpenCamera, onOpenComposer, hideTopChrome }) => {
   const filteredVideos = useMemo(()=>{
     return videos
       .filter(v=>!(blockedUsers||[]).includes(v.userId))
@@ -3552,8 +3535,9 @@ const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, 
 
   return (
     <div data-main-scroll="true" onScroll={onFeedScroll} style={{ height:'100%', overflowY:'auto', background:COLORS.bg, padding:'14px 14px max(96px, calc(72px + env(safe-area-inset-bottom)))' }}>
-      {/* Top search bar */}
-      <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
+      {/* Top search bar — hidden (same slide/fade behavior as the bottom nav) while the
+          Create screen (camera or text composer) is open, so it never floats above it. */}
+      <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16, transform: hideTopChrome ? 'translateY(-140%)' : 'translateY(0)', opacity: hideTopChrome ? 0 : 1, maxHeight: hideTopChrome ? 0 : 200, overflow: hideTopChrome ? 'hidden' : 'visible', pointerEvents: hideTopChrome ? 'none' : 'auto', transition:'transform 0.28s cubic-bezier(0.4,0,0.2,1), opacity 0.22s ease' }}>
         <button onClick={onOpenProfileDrawer} style={{ width:40, height:40, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:14, cursor:'pointer' }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
         </button>
@@ -3575,8 +3559,8 @@ const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, 
         <Stories users={users} currentUser={currentUser} onViewStory={onViewStory} onCreateStory={onCreateStory} followed={followed} />
       </div>
 
-      {/* Post composer */}
-      <div style={{ background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:RADIUS.lg, padding:14, marginBottom:16 }}>
+      {/* Post composer ("What's on your mind?") — same hide behavior as the top bar/nav */}
+      <div style={{ background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:RADIUS.lg, padding:14, marginBottom:16, transform: hideTopChrome ? 'translateY(-140%)' : 'translateY(0)', opacity: hideTopChrome ? 0 : 1, maxHeight: hideTopChrome ? 0 : 300, overflow: hideTopChrome ? 'hidden' : 'visible', pointerEvents: hideTopChrome ? 'none' : 'auto', transition:'transform 0.28s cubic-bezier(0.4,0,0.2,1), opacity 0.22s ease' }}>
         <div onClick={()=>onOpenComposer?.()} style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12, cursor:'pointer' }}>
           <div style={{ width:38, height:38, borderRadius:'50%', background:currentUser?.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, overflow:'hidden', flexShrink:0 }}>
             {currentUser?.avatarUrl ? <img src={currentUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/> : (currentUser?.username||'?')[0]?.toUpperCase()}
@@ -7558,6 +7542,13 @@ const handleMessage = uid => {
     {id:'home'},{id:'friends'},{id:'create'},{id:'inbox'},{id:'profile'},{id:'settings'},
   ];
 
+  // True whenever any "Create" surface (camera, text composer, or the inline create
+  // tab) is open. Used to hide the bottom nav and HomeFeed's top chrome (search bar,
+  // "What's on your mind" composer, notifications bell, hamburger menu) with the same
+  // slide/fade behavior as the bottom nav's scroll-based show/hide, instead of letting
+  // the nav bar's z-index float on top of the full-screen camera/composer overlays.
+  const createOpen = showCamera || showTextComposer || activeTab==='create';
+
   if(authLoading) return (
     <div style={{ maxWidth:430, margin:'0 auto', height:'100dvh', background:COLORS.bg, display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:16 }}>
       <GlobalStyles />
@@ -7693,7 +7684,7 @@ const handleMessage = uid => {
   onOpenSearch={()=>setShowDiscover(true)} onOpenNotifications={()=>setShowNotifications(true)} onOpenStories={()=>setShowStoriesPage(true)}
   onCreateStory={()=>setShowCreateStory(true)} onViewStory={(payload)=>setShowStoryViewer(payload)}
   onOpenProfileDrawer={()=>setShowProfileDrawer(true)} onFeedScroll={handleFeedScroll}
-  blockedUsers={blockedUsers} onBlock={uid=>setBlockedUsers(p=>[...p,uid])} users={users} onOpenCamera={()=>setShowCamera(true)} onOpenComposer={()=>setShowTextComposer(true)} />}
+  blockedUsers={blockedUsers} onBlock={uid=>setBlockedUsers(p=>[...p,uid])} users={users} onOpenCamera={()=>setShowCamera(true)} onOpenComposer={()=>setShowTextComposer(true)} hideTopChrome={createOpen} />}
             {activeTab==='friends' && <FriendsDiscoveryPage currentUser={currentUser} users={users} followed={followed} onFollow={toggleFollow} onViewProfile={handleViewProfile} onOpenSearch={()=>setShowDiscover(true)} onFeedScroll={handleFeedScroll} onCreateStory={()=>setShowCreateStory(true)} onViewStory={(payload)=>setShowStoryViewer(payload)} onOpenStories={()=>setShowStoriesPage(true)} />}
             {activeTab==='create' && <CreateScreen onOpenCamera={()=>setShowCamera(true)} onShowSoundLibrary={()=>setShowSoundLibrary(true)} showToast={showToast} t={t} currentUser={currentUser} onPosted={()=>setActiveTab('home')} />}
             {activeTab==='inbox' && <InboxPage t={t} users={users} currentUser={currentUser} showToast={showToast} onViewProfile={handleViewProfile} initialTargetId={inboxTargetId} onClearTarget={()=>setInboxTargetId(null)} persistedConversation={activeConversation} openGroupsSignal={inboxOpenGroups} onSetConversation={(conv)=>{ setActiveConversation(conv); }} onFeedScroll={handleFeedScroll}
@@ -7705,14 +7696,14 @@ const handleMessage = uid => {
         )}
       </div>
 
-      <div style={{ display:'flex', background:'rgba(255,255,255,0.6)', border:'1px solid rgba(255,255,255,0.5)', borderRadius:28, padding:'8px 4px', backdropFilter:'blur(28px) saturate(1.6)', WebkitBackdropFilter:'blur(28px) saturate(1.6)', boxShadow:'0 12px 32px rgba(30,27,46,0.18), 0 2px 8px rgba(30,27,46,0.10)', position:'absolute', left:12, right:12, bottom:'max(14px, env(safe-area-inset-bottom))', zIndex:500, transform: navVisible ? 'translateY(0)' : 'translateY(140%)', opacity: navVisible ? 1 : 0, transition:'transform 0.28s cubic-bezier(0.4,0,0.2,1), opacity 0.22s ease' }}>
+      <div style={{ display:'flex', overflowX:'auto', WebkitOverflowScrolling:'touch', scrollbarWidth:'none', background:'rgba(255,255,255,0.32)', border:'1px solid rgba(255,255,255,0.35)', borderRadius:28, padding:'8px 4px', backdropFilter:'blur(28px) saturate(1.6)', WebkitBackdropFilter:'blur(28px) saturate(1.6)', boxShadow:'0 12px 32px rgba(30,27,46,0.14), 0 2px 8px rgba(30,27,46,0.08)', position:'absolute', left:12, right:12, bottom:'max(14px, env(safe-area-inset-bottom))', zIndex:500, transform: (navVisible && !createOpen) ? 'translateY(0)' : 'translateY(140%)', opacity: (navVisible && !createOpen) ? 1 : 0, transition:'transform 0.28s cubic-bezier(0.4,0,0.2,1), opacity 0.22s ease', pointerEvents: (navVisible && !createOpen) ? 'auto' : 'none' }}>
         {tabs.map(tab=>{
           const isActive = activeTab===tab.id;
-          const tabLabels = { home: t?.home||'Home', friends: t?.friends||'Friends', create: t?.create||'Create', inbox: t?.inbox||'Inbox', profile: t?.profile||'Profile' };
+          const tabLabels = { home: t?.home||'Home', friends: t?.friends||'Friends', create: t?.create||'Create', inbox: t?.inbox||'Inbox', profile: t?.profile||'Profile', settings: t?.settings||'Settings' };
           return (
             <button key={tab.id}
               onClick={()=>{ haptic('light'); if(tab.id==='create'){ setShowCamera(true); } else { setShowCamera(false); setShowSearch(false); setActiveTab(tab.id); if(tab.id==='settings'){ setSettingsSignal(n=>n+1); } } }}
-              style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:2, background:'none', border:'none', cursor:'pointer', padding: tab.id==='create'?'0':'6px 0', position:'relative',
+              style={{ flex:'0 0 auto', minWidth:56, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:2, background:'none', border:'none', cursor:'pointer', padding: tab.id==='create'?'0':'6px 0', position:'relative',
                 transform: isActive && tab.id!=='create' ? 'translateY(-1px)' : 'translateY(0)',
                 transition:'transform 0.2s cubic-bezier(0.34,1.56,0.64,1)' }}>
               <div style={{ position:'relative' }}>
