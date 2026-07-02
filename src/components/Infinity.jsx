@@ -3472,7 +3472,11 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
         </div>
       )}
       <div style={{ display:'flex', alignItems:'center', gap:2, paddingTop:10, marginTop:8, borderTop:`1px solid ${COLORS.border}` }}>
-        <button onClick={toggleLike} onDoubleClick={()=>setShowLikes(true)} style={{ background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:6, color:liked?'#FF3B5C':COLORS.textSecondary, fontWeight:700, fontSize:13, padding:'6px 8px 6px 4px', borderRadius:12 }}>
+        <span style={{ display:'flex', alignItems:'center', gap:6, color:COLORS.textTertiary, fontWeight:700, fontSize:13, padding:'6px 8px 6px 4px' }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          {formatNumber(video.views||0)}
+        </span>
+        <button onClick={toggleLike} onDoubleClick={()=>setShowLikes(true)} style={{ background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:6, color:liked?'#FF3B5C':COLORS.textSecondary, fontWeight:700, fontSize:13, padding:'6px 8px', borderRadius:12 }}>
           <svg width="21" height="21" viewBox="0 0 24 24" fill={liked?'#FF3B5C':'none'} stroke={liked?'#FF3B5C':COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: liked ? 'likeHeart 0.35s ease' : 'none' }}>
             <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
           </svg>
@@ -3486,10 +3490,6 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           {formatNumber(video.shares||0)}
         </button>
-        <span style={{ display:'flex', alignItems:'center', gap:6, color:COLORS.textTertiary, fontWeight:700, fontSize:13, padding:'6px 8px' }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-          {formatNumber(video.views||0)}
-        </span>
         <div style={{ flex:1 }} />
         <button onClick={toggleSave} style={{ background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', color:saved?COLORS.brand:COLORS.textSecondary, padding:'6px 6px', borderRadius:12 }}>
           <svg width="19" height="19" viewBox="0 0 24 24" fill={saved?COLORS.brand:'none'} stroke={saved?COLORS.brand:COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
@@ -3506,7 +3506,7 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
   );
 };
 
-const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, onVoiceCall, onVideoCall, onDuet, onStitch, onSaveSound, followed, showToast, onLive, currentUser, onViewProfile, onOpenSearch, onOpenNotifications, onOpenStories, onCreateStory, onViewStory, blockedUsers, onBlock, users, onOpenProfileDrawer, onFeedScroll, onOpenCamera }) => {
+const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, onVoiceCall, onVideoCall, onDuet, onStitch, onSaveSound, followed, showToast, onLive, currentUser, onViewProfile, onOpenSearch, onOpenNotifications, onOpenStories, onCreateStory, onViewStory, blockedUsers, onBlock, users, onOpenProfileDrawer, onFeedScroll, onOpenCamera, onOpenComposer }) => {
   const filteredVideos = useMemo(()=>{
     return videos
       .filter(v=>!(blockedUsers||[]).includes(v.userId))
@@ -3551,8 +3551,8 @@ const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, 
       </div>
 
       {/* Post composer */}
-      <div onClick={()=>onOpenCamera?.()} style={{ background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:RADIUS.lg, padding:14, marginBottom:16, cursor:'pointer' }}>
-        <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
+      <div style={{ background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:RADIUS.lg, padding:14, marginBottom:16 }}>
+        <div onClick={()=>onOpenComposer?.()} style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12, cursor:'pointer' }}>
           <div style={{ width:38, height:38, borderRadius:'50%', background:currentUser?.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, overflow:'hidden', flexShrink:0 }}>
             {currentUser?.avatarUrl ? <img src={currentUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/> : (currentUser?.username||'?')[0]?.toUpperCase()}
           </div>
@@ -3910,7 +3910,7 @@ const FriendsDiscoveryPage = ({ currentUser, users, followed, onFollow, onViewPr
 };
 
 
-const CreateScreen = ({ onOpenCamera, onShowSoundLibrary, showToast, t, currentUser, onPosted }) => {
+const CreateScreen = ({ onOpenCamera, onShowSoundLibrary, showToast, t, currentUser, onPosted, onClose, autoFocusText }) => {
   const [text, setText] = useState('');
   const [media, setMedia] = useState([]); // [{url,file,type}]
   const [posting, setPosting] = useState(false);
@@ -3965,7 +3965,7 @@ const CreateScreen = ({ onOpenCamera, onShowSoundLibrary, showToast, t, currentU
       <input ref={fileInputRef} type="file" accept="image/*,video/*" multiple onChange={pickFiles} style={{ display:'none' }} />
       {/* Header */}
       <div style={{ display:'flex', alignItems:'center', gap:12, padding:'16px 16px 14px', background:COLORS.surface, borderBottom:`1px solid ${COLORS.border}` }}>
-        <button onClick={()=>{ setText(''); setMedia([]); }} style={{ background:'none', border:'none', cursor:'pointer', color:COLORS.textTertiary, width:26, height:26, display:'flex', alignItems:'center', justifyContent:'center' }}>
+        <button onClick={()=>{ if(onClose){ onClose(); } else { setText(''); setMedia([]); } }} style={{ background:'none', border:'none', cursor:'pointer', color:COLORS.textTertiary, width:26, height:26, display:'flex', alignItems:'center', justifyContent:'center' }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
         <div style={{ flex:1, color:COLORS.textPrimary, fontWeight:800, fontSize:17 }}>Create Post</div>
@@ -3978,7 +3978,7 @@ const CreateScreen = ({ onOpenCamera, onShowSoundLibrary, showToast, t, currentU
           <div style={{ width:40, height:40, borderRadius:'50%', background:currentUser?.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, overflow:'hidden', flexShrink:0 }}>
             {currentUser?.avatarUrl ? <img src={currentUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : (currentUser?.username||'?')[0]?.toUpperCase()}
           </div>
-          <textarea value={text} onChange={e=>setText(e.target.value)} placeholder="What's on your mind?" rows={3} style={{ flex:1, background:'none', border:'none', outline:'none', resize:'none', color:COLORS.textPrimary, fontSize:15, fontFamily:'inherit', paddingTop:8 }} />
+          <textarea value={text} onChange={e=>setText(e.target.value)} placeholder="What's on your mind?" rows={3} autoFocus={!!autoFocusText} style={{ flex:1, background:'none', border:'none', outline:'none', resize:'none', color:COLORS.textPrimary, fontSize:15, fontFamily:'inherit', paddingTop:8 }} />
         </div>
 
         {/* Media previews */}
@@ -4635,35 +4635,7 @@ if(activeSubPage==='settings') return (
             <button onClick={()=>setActiveSubPage('settings')} style={{ background:'rgba(255,255,255,0.25)', backdropFilter:'blur(10px)', border:'none', borderRadius:'50%', width:34, height:34, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
             </button>
-            <button onClick={()=>setShowHamburger(true)} style={{ background:'rgba(255,255,255,0.25)', backdropFilter:'blur(10px)', border:'none', borderRadius:'50%', width:34, height:34, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M4 12v7a2 2 0 002 2h12a2 2 0 002-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-            </button>
           </div>
-          {showHamburger && (
-            <div onClick={()=>setShowHamburger(false)} style={{position:'fixed',inset:0,zIndex:5000,background:'rgba(0,0,0,0.6)',backdropFilter:'blur(4px)'}}>
-              <div onClick={e=>e.stopPropagation()} style={{position:'absolute',top:60,right:16,background:COLORS.surface,borderRadius:20,padding:'8px 0',minWidth:220,border:`1px solid ${COLORS.border}`,boxShadow:'0 20px 60px rgba(30,27,46,0.18)',animation:'popIn 0.2s ease'}}>
-                {[
-                  {icon:'⚙️',label:'Settings',action:()=>{setActiveSubPage('settings');setShowHamburger(false);}},
-                  {icon:'🔒',label:'Privacy',action:()=>{setActiveSubPage('privacy');setShowHamburger(false);}},
-                  {icon:'💳',label:'Wallet',action:()=>{setActiveSubPage('wallet');setShowHamburger(false);}},
-                  {icon:'📊',label:'Analytics',action:()=>{onShowAnalytics?.();setShowHamburger(false);}},
-                  {icon:'🏅',label:'Badges',action:()=>{setActiveSubPage('badges');setShowHamburger(false);}},
-                  {icon:'👑',label:'Premium',action:()=>{setActiveSubPage('premium');setShowHamburger(false);}},
-                  {icon:'📱',label:'QR Code',action:()=>{onShowQRCode?.();setShowHamburger(false);}},
-                  {icon:'🔖',label:'Saved Posts',action:()=>{onShowSavedPosts?.();setShowHamburger(false);}},
-                  {icon:'👥',label:'My Groups',action:()=>{onGoToGroups?.();setShowHamburger(false);}},
-                  {icon:'📡',label:'Broadcast Status',action:()=>{onShowBroadcast?.();setShowHamburger(false);}},
-                  {icon:'🔄',label:'Switch Account',action:()=>{setActiveSubPage('switch');setShowHamburger(false);}},
-                  {icon:'🚫',label:'Blocked Users',action:()=>{setActiveSubPage('unblock');setShowHamburger(false);}},
-                  {icon:'🚪',label:'Log Out',action:()=>{setShowHamburger(false);onLogout?.();},danger:true},
-                ].map((item,i,arr)=>(
-                  <div key={item.label} onClick={item.action} style={{display:'flex',alignItems:'center',gap:14,padding:'13px 18px',borderBottom:i<arr.length-1?`1px solid ${COLORS.border}`:'',cursor:'pointer',color:item.danger?COLORS.danger:COLORS.textPrimary,fontSize:14}}>
-                    <span style={{fontSize:18}}>{item.icon}</span>{item.label}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
           {showFollowersList && (
             <div onClick={()=>setShowFollowersList(null)} style={{position:'fixed',inset:0,zIndex:5000,background:'rgba(30,27,46,0.45)',backdropFilter:'blur(4px)',display:'flex',alignItems:'flex-end'}}>
               <div onClick={e=>e.stopPropagation()} style={{width:'100%',background:COLORS.surface,borderTopLeftRadius:28,borderTopRightRadius:28,maxHeight:'70vh',display:'flex',flexDirection:'column',animation:'slideUp 0.3s ease'}}>
@@ -7258,6 +7230,7 @@ export default function DaguV3App() {
   const [notifPopup, setNotifPopup] = useState(null);
   const [showSearch, setShowSearch] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
+  const [showTextComposer, setShowTextComposer] = useState(false);
   const [showStoriesPage, setShowStoriesPage] = useState(false);
   const [showCall, setShowCall] = useState(null); // { type, contactName, contactAvatar, contactId }
   const [showLiveStream, setShowLiveStream] = useState(null);
@@ -7679,6 +7652,11 @@ const handleMessage = uid => {
       <div ref={contentWrapperRef} onTouchStart={handleTabTouchStart} onTouchEnd={handleTabTouchEnd} style={{ flex:1, overflow:'hidden', position:'relative', minHeight:0, height:'100%' }}>
         {showSearch && <SearchOverlay onClose={()=>setShowSearch(false)} videos={videos} users={users} onViewProfile={uid=>{handleViewProfile(uid); setShowSearch(false);}} />}
         {showCamera && <CameraUpload onUpload={v=>{setVideos(prev=>[v,...prev]);}} onClose={()=>setShowCamera(false)} showToast={showToast} currentUser={currentUser} />}
+        {showTextComposer && (
+          <div style={{ position:'fixed', inset:0, zIndex:9500, background:COLORS.bg, maxWidth:430, margin:'0 auto' }}>
+            <CreateScreen onOpenCamera={()=>{ setShowTextComposer(false); setShowCamera(true); }} onShowSoundLibrary={()=>setShowSoundLibrary(true)} showToast={showToast} t={t} currentUser={currentUser} autoFocusText onClose={()=>setShowTextComposer(false)} onPosted={()=>setShowTextComposer(false)} />
+          </div>
+        )}
         {!showSearch && !showCamera && (
           <>
             {activeTab==='home' && <HomeFeed t={t} videos={videos} currentUser={currentUser} onLike={()=>{}} onComment={()=>{}} onShare={(v)=>setShowShareSheet(v)} onFollow={toggleFollow} onMessage={handleMessage}
@@ -7689,7 +7667,7 @@ const handleMessage = uid => {
   onOpenSearch={()=>setShowDiscover(true)} onOpenNotifications={()=>setShowNotifications(true)} onOpenStories={()=>setShowStoriesPage(true)}
   onCreateStory={()=>setShowCreateStory(true)} onViewStory={(payload)=>setShowStoryViewer(payload)}
   onOpenProfileDrawer={()=>setShowProfileDrawer(true)} onFeedScroll={handleFeedScroll}
-  blockedUsers={blockedUsers} onBlock={uid=>setBlockedUsers(p=>[...p,uid])} users={users} onOpenCamera={()=>setShowCamera(true)} />}
+  blockedUsers={blockedUsers} onBlock={uid=>setBlockedUsers(p=>[...p,uid])} users={users} onOpenCamera={()=>setShowCamera(true)} onOpenComposer={()=>setShowTextComposer(true)} />}
             {activeTab==='friends' && <FriendsDiscoveryPage currentUser={currentUser} users={users} followed={followed} onFollow={toggleFollow} onViewProfile={handleViewProfile} onOpenSearch={()=>setShowDiscover(true)} onFeedScroll={handleFeedScroll} onCreateStory={()=>setShowCreateStory(true)} onViewStory={(payload)=>setShowStoryViewer(payload)} onOpenStories={()=>setShowStoriesPage(true)} />}
             {activeTab==='create' && <CreateScreen onOpenCamera={()=>setShowCamera(true)} onShowSoundLibrary={()=>setShowSoundLibrary(true)} showToast={showToast} t={t} currentUser={currentUser} onPosted={()=>setActiveTab('home')} />}
             {activeTab==='inbox' && <InboxPage t={t} users={users} currentUser={currentUser} showToast={showToast} onViewProfile={handleViewProfile} initialTargetId={inboxTargetId} onClearTarget={()=>setInboxTargetId(null)} persistedConversation={activeConversation} openGroupsSignal={inboxOpenGroups} onSetConversation={(conv)=>{ setActiveConversation(conv); }} onFeedScroll={handleFeedScroll}
