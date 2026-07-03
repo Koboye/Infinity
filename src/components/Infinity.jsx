@@ -3131,7 +3131,7 @@ const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, 
 
       {/* Post composer — fully inline: typing, attaching a photo, building a poll and
           picking a feeling all happen right here in one tap each, nothing navigates away. */}
-      <div style={{ background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:RADIUS.lg, padding:14, marginBottom:6 }}>
+      <div style={{ background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:RADIUS.lg, padding:14, marginBottom:0 }}>
         <input ref={composerFileInputRef} type="file" accept="image/*,video/*" multiple onChange={pickComposerFiles} style={{ display:'none' }} />
         <div style={{ display:'flex', alignItems:'flex-start', gap:10, marginBottom:12 }}>
           <div style={{ width:38, height:38, borderRadius:'50%', background:currentUser?.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, overflow:'hidden', flexShrink:0 }}>
