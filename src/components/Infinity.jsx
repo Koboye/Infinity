@@ -886,9 +886,13 @@ const useIntersectionObserver = (ref, options={}) => {
      formData.append('signature', signature);
      // Without this, Cloudinary's /upload endpoint defaults to resource_type=image, which
      // rejects video files outright — this is why video posts (but not photo posts) failed.
-     formData.append('resource_type', file.type?.startsWith('video/') ? 'video' : 'image');
 
-     const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/upload`;
+     const resourceType = file.type?.startsWith('video/')
+  ? 'video'
+  : 'image';
+
+const uploadUrl =
+  `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`;
 
      return new Promise((resolve, reject) => {
        const xhr = new XMLHttpRequest();
@@ -902,7 +906,8 @@ const useIntersectionObserver = (ref, options={}) => {
            const data = JSON.parse(xhr.responseText);
            resolve(data.secure_url);
          } else {
-           reject(new Error('Upload failed'));
+           console.error('Cloudinary response:', xhr.responseText);
+reject(new Error(`Upload failed: ${xhr.responseText}`));
          }
        };
        xhr.onerror = () => reject(new Error('Upload error'));
