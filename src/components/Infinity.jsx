@@ -7247,34 +7247,75 @@ const TourPage = ({ onFeedScroll, showToast, currentUser, onCreate }) => {
    so nothing looks mismatched at a glance. */
 const NAV_ACTIVE_COLOR = COLORS.brand;
 const NAV_INACTIVE_COLOR = COLORS.textTertiary;
+/* Extraordinary, text-free tab glyphs. Every icon is duotone: a soft brand-tinted
+   fill appears only when active (via a unique per-tab gradient id so multiple tabs
+   mounted at once never bleed into each other's gradients), layered under a crisp
+   outline whose stroke weight and opacity shift on activation. No labels — the
+   glyph itself, plus a gentle scale/lift and a glowing dot beneath it, is the only
+   indicator of the active tab. */
 const TabGlyph = ({id, active, currentUser}) => {
   const color = active ? NAV_ACTIVE_COLOR : NAV_INACTIVE_COLOR;
-  const sw = active ? 2.3 : 1.9;
-  const s = {width:21,height:21,fill:'none',stroke:color,strokeWidth:sw,strokeLinecap:'round',strokeLinejoin:'round', opacity: active?1:0.85, transition:'stroke 0.2s ease'};
+  const sw = active ? 2.1 : 1.75;
+  const gid = `navg-${id}`;
+  const s = {width:24,height:24,fill:'none',stroke:color,strokeWidth:sw,strokeLinecap:'round',strokeLinejoin:'round', opacity: active?1:0.78, transform: active?'scale(1)':'scale(0.94)', transitionProperty:'stroke,opacity,transform', transitionDuration:'0.28s', transitionTimingFunction:'cubic-bezier(0.34,1.56,0.64,1)'};
+  const defs = (
+    <defs>
+      <linearGradient id={gid} x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stopColor="#8B5CF6" />
+        <stop offset="100%" stopColor="#EC4899" />
+      </linearGradient>
+    </defs>
+  );
   if(id==='home') return (
-    <svg viewBox="0 0 24 24" style={s}><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <svg viewBox="0 0 24 24" style={s}>
+      {defs}
+      <path d="M4 11.5L12 4l8 7.5" fill="none" />
+      <path d="M6 10.2V19a1.4 1.4 0 001.4 1.4h2.2v-4.6a2.4 2.4 0 014.8 0V20.4h2.2A1.4 1.4 0 0018 19v-8.8"
+        fill={active ? `url(#${gid})` : 'none'} fillOpacity={active ? 0.24 : 0} stroke={color} />
+      <path d="M9.6 20.4v-4.6a2.4 2.4 0 014.8 0v4.6" fill="none" />
+    </svg>
   );
   if(id==='tour') return (
-    <svg viewBox="0 0 24 24" style={s}><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+    <svg viewBox="0 0 24 24" style={s}>
+      {defs}
+      <circle cx="12" cy="12" r="8.6" fill={active ? `url(#${gid})` : 'none'} fillOpacity={active ? 0.16 : 0} />
+      <path d="M15.3 8.7l-2.1 5-5 2.1 2.1-5z" fill={active ? color : 'none'} fillOpacity={active ? 0.9 : 0} strokeLinejoin="round" />
+      <circle cx="12" cy="12" r="0.9" fill={color} stroke="none" />
+    </svg>
   );
   if(id==='friends') return (
-    <svg viewBox="0 0 24 24" style={s}><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+    <svg viewBox="0 0 24 24" style={s}>
+      {defs}
+      <circle cx="9" cy="8.3" r="3.3" fill={active ? `url(#${gid})` : 'none'} fillOpacity={active ? 0.22 : 0} />
+      <path d="M3.6 19.4c0-3.3 2.4-5.2 5.4-5.2s5.4 1.9 5.4 5.2" fill="none" />
+      <path d="M14.7 4.9a3.3 3.3 0 010 6.4" fill="none" />
+      <path d="M15.9 14.5c2.5.4 4.1 2.1 4.1 4.9" fill="none" />
+    </svg>
   );
   if(id==='inbox') return (
     <span style={{ position:'relative', display:'flex' }}>
-      <svg viewBox="0 0 24 24" style={s}><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      <svg viewBox="0 0 24 24" style={s}>
+        {defs}
+        <path d="M3.2 5.4l9-3 9 3v.2L12.2 14 3.2 5.6z" fill={active ? `url(#${gid})` : 'none'} fillOpacity={active ? 0.22 : 0} />
+        <path d="M3.2 5.4v12.2A1.4 1.4 0 004.6 19h14.8a1.4 1.4 0 001.4-1.4V5.4" fill="none" />
+        <path d="M3.2 5.6L12.2 14l8.8-8.4" fill="none" />
+      </svg>
       <InboxBadge currentUser={currentUser} />
     </span>
   );
   if(id==='profile') return (
-    <div style={{ width:23, height:23, borderRadius:'50%', border:`2px solid ${color}`, padding:1.5, display:'flex', alignItems:'center', justifyContent:'center', opacity: active?1:0.85 }}>
-      <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:currentUser?.avatarColor||color, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, fontSize:9, overflow:'hidden' }}>
+    <div style={{ width:24, height:24, borderRadius:'50%', padding:2, display:'flex', alignItems:'center', justifyContent:'center', opacity: active?1:0.85, background: active ? COLORS.gradient : 'transparent', transform: active?'scale(1)':'scale(0.94)', transitionProperty:'transform,background', transitionDuration:'0.28s', transitionTimingFunction:'cubic-bezier(0.34,1.56,0.64,1)' }}>
+      <div style={{ width:'100%', height:'100%', borderRadius:'50%', background: active ? (currentUser?.avatarColor||color) : color, border: active ? '1.5px solid rgba(255,255,255,0.85)' : `1.75px solid ${color}`, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, fontSize:9, overflow:'hidden' }}>
         {currentUser?.avatarUrl ? <img src={currentUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : (currentUser?.username||'?')[0]?.toUpperCase()}
       </div>
     </div>
   );
   if(id==='settings') return (
-    <svg viewBox="0 0 24 24" style={s}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+    <svg viewBox="0 0 24 24" style={s}>
+      {defs}
+      <circle cx="12" cy="12" r="3.1" fill={active ? `url(#${gid})` : 'none'} fillOpacity={active ? 0.28 : 0} />
+      <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" fill="none" />
+    </svg>
   );
   return null;
 };
@@ -7776,12 +7817,11 @@ const handleMessage = uid => {
 
       <div style={{ display:'flex', alignItems:'center', background:'linear-gradient(180deg, rgba(255,255,255,0.74), rgba(255,255,255,0.58))', border:'1px solid rgba(255,255,255,0.6)', borderRadius:30, padding:'8px 8px', backdropFilter:'blur(30px) saturate(1.7)', WebkitBackdropFilter:'blur(30px) saturate(1.7)', boxShadow:'0 18px 40px rgba(30,27,46,0.20), 0 2px 10px rgba(30,27,46,0.10), inset 0 1px 0 rgba(255,255,255,0.7)', position:'absolute', left:12, right:12, bottom:'max(14px, env(safe-area-inset-bottom))', zIndex:500, transform: navVisible ? 'translateY(0)' : 'translateY(140%)', opacity: navVisible ? 1 : 0, transition:'transform 0.28s cubic-bezier(0.4,0,0.2,1), opacity 0.22s ease' }}>
         {tabs.map(tab=>{
-          const tabLabels = { home: t?.home||'Home', tour: t?.tour||'Tour', friends: t?.friends||'Friends', create: t?.create||'Create', inbox: t?.inbox||'Messages' };
-
           if(tab.id==='create') {
             return (
               <button key="create"
                 onClick={()=>{ haptic('medium'); setShowCamera(true); setActiveTab('create'); }}
+                aria-label="Create"
                 style={{ flex:'0 0 auto', width:60, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'flex-end', background:'none', border:'none', cursor:'pointer', padding:0 }}>
                 <div style={{ position:'relative', width:52, height:52, transform:'translateY(-16px)' }}>
                   <div style={{ position:'absolute', inset:-7, borderRadius:'50%', background:'radial-gradient(circle, rgba(255,33,86,0.38), rgba(157,78,221,0.18) 60%, transparent 75%)', filter:'blur(5px)' }} />
@@ -7794,14 +7834,15 @@ const handleMessage = uid => {
           }
 
           const isActive = activeTab===tab.id;
-          const label = tabLabels[tab.id];
+          const glyphLabels = { home:'Home', tour:'Tour', friends:'Friends', inbox:'Messages' };
           return (
             <button key={tab.id}
               onClick={()=>{ haptic('light'); navigateToTab(tab.id); }}
+              aria-label={glyphLabels[tab.id]}
               style={{ flex:1, minWidth:0, display:'flex', alignItems:'center', justifyContent:'center', background:'none', border:'none', cursor:'pointer', padding:'8px 2px' }}>
-              <div style={{ display:'flex', alignItems:'center', gap:isActive?6:0, padding: isActive ? '7px 14px' : '7px 11px', borderRadius:20, background: isActive ? `${NAV_ACTIVE_COLOR}16` : 'transparent', boxShadow: isActive ? `inset 0 0 0 1px ${NAV_ACTIVE_COLOR}2A` : 'none', transition:'all 0.32s cubic-bezier(0.34,1.56,0.64,1)', overflow:'hidden' }}>
+              <div style={{ position:'relative', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', width:44, height:38, borderRadius:18, background: isActive ? `${NAV_ACTIVE_COLOR}16` : 'transparent', boxShadow: isActive ? `inset 0 0 0 1px ${NAV_ACTIVE_COLOR}2A` : 'none', transition:'background 0.32s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.32s cubic-bezier(0.34,1.56,0.64,1)' }}>
                 <TabGlyph id={tab.id} active={isActive} currentUser={currentUser} />
-                <span style={{ maxWidth: isActive ? 90 : 0, opacity: isActive ? 1 : 0, color:NAV_ACTIVE_COLOR, fontWeight:700, fontSize:11.5, letterSpacing:0.15, whiteSpace:'nowrap', transition:'max-width 0.32s cubic-bezier(0.34,1.56,0.64,1), opacity 0.22s ease' }}>{label}</span>
+                <span style={{ position:'absolute', bottom:-1, width:4, height:4, borderRadius:'50%', background:NAV_ACTIVE_COLOR, opacity:isActive?1:0, transform:isActive?'scale(1)':'scale(0)', boxShadow:isActive?`0 0 6px ${NAV_ACTIVE_COLOR}99`:'none', transition:'opacity 0.25s ease, transform 0.25s cubic-bezier(0.34,1.56,0.64,1)' }} />
               </div>
             </button>
           );
