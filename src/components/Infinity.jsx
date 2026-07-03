@@ -2050,22 +2050,10 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
     </div>
   );
 };
-const LiveCameraView = () => {
-  const videoRef = useRef(null);
-  useEffect(()=>{
-    let stream;
-    navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:true})
-      .then(s=>{
-        stream = s;
-        if(videoRef.current){ 
-          videoRef.current.srcObject = s; 
-          videoRef.current.play().catch(()=>{});
-        }
-      }).catch(()=>{});
-    return ()=>{ stream?.getTracks().forEach(t=>t.stop()); };
-  },[]);
-  return <video ref={videoRef} autoPlay playsInline muted style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover'}}/>;
-};
+/* LiveCameraView removed — it made every LiveStream participant (host AND
+   every viewer) open their own camera, which was the root cause of viewers
+   never seeing the streamer. Replaced by LiveHostVideo (host's own camera)
+   and LiveViewerVideo (the streamer's video received over WebRTC) below. */
 /* ─────────────── LIVE STREAM ─────────────── */
 /* ─────────────── LIVE CHAT MESSAGE (with live translation) ─────────────── */
 const LiveChatMessage = ({ msg, targetLang }) => {
@@ -2095,18 +2083,95 @@ const LiveChatMessage = ({ msg, targetLang }) => {
   );
 };
 
+const LIVE_ICE_SERVERS = [
+  { urls: 'stun:stun.relay.metered.ca:80' },
+  { urls: 'turn:global.relay.metered.ca:80', username: 'f5e29fd91b8ea2fc485c24ac', credential: 'FZlzkJ5GJJUyYocD' },
+  { urls: 'turn:global.relay.metered.ca:80?transport=tcp', username: 'f5e29fd91b8ea2fc485c24ac', credential: 'FZlzkJ5GJJUyYocD' },
+  { urls: 'turn:global.relay.metered.ca:443', username: 'f5e29fd91b8ea2fc485c24ac', credential: 'FZlzkJ5GJJUyYocD' },
+  { urls: 'turns:global.relay.metered.ca:443?transport=tcp', username: 'f5e29fd91b8ea2fc485c24ac', credential: 'FZlzkJ5GJJUyYocD' },
+];
+
+// Broadcaster's own camera preview (host side only).
+const LiveHostVideo = ({ streamRef }) => {
+  const videoRef = useRef(null);
+  useEffect(()=>{
+    if(videoRef.current && streamRef.current){
+      videoRef.current.srcObject = streamRef.current;
+      videoRef.current.play().catch(()=>{});
+    }
+  });
+  return <video ref={videoRef} autoPlay playsInline muted style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover'}}/>;
+};
+
+// Viewer's incoming WebRTC feed from the streamer — this is what makes "going live"
+// actually visible to anyone other than the broadcaster. Previously every participant
+// (host AND every viewer) rendered LiveCameraView, i.e. each person's own camera, so
+// viewers never saw the streamer at all. This renders the real remote MediaStream
+// received over the peer connection set up below.
+const LiveViewerVideo = ({ remoteStream, connected }) => {
+  const videoRef = useRef(null);
+  useEffect(()=>{
+    if(videoRef.current && remoteStream){
+      videoRef.current.srcObject = remoteStream;
+      videoRef.current.play().catch(()=>{});
+    }
+  },[remoteStream]);
+  return (
+    <>
+      <video ref={videoRef} autoPlay playsInline style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',background:'#000'}}/>
+      {!connected && (
+        <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:12 }}>
+          <div style={{ width:36, height:36, border:'3px solid rgba(255,255,255,0.25)', borderTop:'3px solid #FF2156', borderRadius:'50%', animation:'spin 1s linear infinite' }} />
+          <span style={{ color:'rgba(255,255,255,0.6)', fontSize:13 }}>Connecting to stream...</span>
+        </div>
+      )}
+    </>
+  );
+};
+
+/* ─────────────── LIVE STREAM ───────────────
+   `streamer` is the user whose broadcast this is. `isHost` (streamer.id === currentUser.id)
+   decides the role:
+   - Host: captures their own camera/mic and, for every viewer that joins, opens a
+     dedicated RTCPeerConnection and pushes their local tracks to it (simple mesh — fine
+     for small live audiences; a real SFU would be needed at scale).
+   - Viewer: opens a single RTCPeerConnection, receives the host's offer via Firestore
+     signaling under liveStreams/{id}/viewers/{viewerId}, answers it, and renders the
+     resulting remote stream. No camera/mic of their own is requested. */
 const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
+  const isHost = !!streamer?.id && streamer.id === currentUser?.id;
+  const [liveId, setLiveId] = useState(null);
   const [viewers, setViewers] = useState(0);
+  const [connected, setConnected] = useState(isHost); // host is "connected" immediately (their own camera)
+  const [remoteStream, setRemoteStream] = useState(null);
   const [chatMessages, setChatMessages] = useState([]);
   const [message, setMessage] = useState('');
   const [floatingGifts, setFloatingGifts] = useState([]);
   const [showGiftPicker, setShowGiftPicker] = useState(false);
-  const chatRef = useRef(null);
-  const liveRef = useRef(null);
+  const localStreamRef = useRef(null);
+  const liveIdRef = useRef(null);
+  const endedRef = useRef(false);
 
-  useEffect(()=>{
-    // Create live session in Firestore
-    const createLive = async () => {
+  // ── HOST: capture camera/mic, create the live doc, and answer every viewer ──
+  useEffect(() => {
+    if(!isHost) return;
+    let cancelled = false;
+    const pcByViewer = new Map();
+    const cleanupByViewer = new Map();
+    let unsubViewers = () => {};
+
+    const start = async () => {
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'user' }, audio:true });
+      } catch (e) {
+        showToast?.('Camera/mic access is needed to go live', 'error');
+        onClose?.();
+        return;
+      }
+      if(cancelled){ stream.getTracks().forEach(t=>t.stop()); return; }
+      localStreamRef.current = stream;
+
       const ref = await addDoc(collection(db, 'liveStreams'), {
         streamerId: streamer?.id,
         streamerUsername: streamer?.username,
@@ -2114,42 +2179,145 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
         createdAt: serverTimestamp(),
         active: true,
       });
-      liveRef.current = ref.id;
-    };
-    createLive();
+      if(cancelled){ updateDoc(ref, { active:false }).catch(()=>{}); return; }
+      liveIdRef.current = ref.id;
+      setLiveId(ref.id);
 
-    // Real viewer count from Firestore
-    let unsubLive = ()=>{};
-    const waitForLive = setInterval(()=>{
-      if(!liveRef.current) return;
-      clearInterval(waitForLive);
-      updateDoc(doc(db,'liveStreams',liveRef.current),{ viewers: increment(1) }).catch(()=>{});
-      unsubLive = onSnapshot(doc(db,'liveStreams',liveRef.current), snap=>{
-        if(snap.exists()) setViewers(snap.data().viewers||0);
+      unsubViewers = onSnapshot(collection(db, 'liveStreams', ref.id, 'viewers'), snap => {
+        setViewers(snap.size);
+        snap.docChanges().forEach(async change => {
+          const viewerId = change.doc.id;
+          if(change.type === 'added'){
+            const pc = new RTCPeerConnection({ iceServers: LIVE_ICE_SERVERS });
+            pcByViewer.set(viewerId, pc);
+            stream.getTracks().forEach(track => pc.addTrack(track, stream));
+            pc.onicecandidate = e => {
+              if(e.candidate) addDoc(collection(db,'liveStreams',ref.id,'viewers',viewerId,'hostCandidates'), e.candidate.toJSON()).catch(()=>{});
+            };
+            try {
+              const offer = await pc.createOffer();
+              await pc.setLocalDescription(offer);
+              await updateDoc(change.doc.ref, { offer: { type: offer.type, sdp: offer.sdp } });
+            } catch {}
+            const unsubAnswer = onSnapshot(change.doc.ref, async docSnap => {
+              const data = docSnap.data();
+              if(data?.answer && pc.signalingState === 'have-local-offer'){
+                try { await pc.setRemoteDescription(new RTCSessionDescription(data.answer)); } catch {}
+              }
+            });
+            const unsubCands = onSnapshot(collection(db,'liveStreams',ref.id,'viewers',viewerId,'viewerCandidates'), s2 => {
+              s2.docChanges().forEach(async c => {
+                if(c.type === 'added'){ try { await pc.addIceCandidate(new RTCIceCandidate(c.doc.data())); } catch {} }
+              });
+            });
+            cleanupByViewer.set(viewerId, () => { unsubAnswer(); unsubCands(); });
+          } else if(change.type === 'removed'){
+            pcByViewer.get(viewerId)?.close();
+            pcByViewer.delete(viewerId);
+            cleanupByViewer.get(viewerId)?.();
+            cleanupByViewer.delete(viewerId);
+          }
+        });
       });
-    },300);
-    return ()=>{
-      unsubLive();
-      clearInterval(waitForLive);
-      if(liveRef.current) updateDoc(doc(db,'liveStreams',liveRef.current),{ active:false, viewers: increment(-1) }).catch(()=>{});
     };
-  },[streamer]);
+    start();
 
-  useEffect(()=>{
-    if(!liveRef.current) return;
-    const q = query(collection(db,'liveMessages'), where('liveId','==',liveRef.current), orderBy('createdAt','asc'));
-    const unsub = onSnapshot(q, snap=>{
-      const msgs = snap.docs.map(d=>({id:d.id,...d.data()}));
+    return () => {
+      cancelled = true;
+      endedRef.current = true;
+      unsubViewers();
+      cleanupByViewer.forEach(fn => fn());
+      pcByViewer.forEach(pc => pc.close());
+      localStreamRef.current?.getTracks().forEach(t => t.stop());
+      if(liveIdRef.current) updateDoc(doc(db,'liveStreams',liveIdRef.current), { active:false }).catch(()=>{});
+    };
+  }, [isHost, streamer?.id]);
+
+  // ── VIEWER: find the streamer's active live doc and answer their offer ──
+  useEffect(() => {
+    if(isHost) return;
+    let cancelled = false;
+    let pc = null;
+    let unsubOffer = () => {};
+    let unsubHostCandidates = () => {};
+    let unsubLiveDoc = () => {};
+    let viewerDocRef = null;
+
+    const start = async () => {
+      const q = query(collection(db,'liveStreams'), where('streamerId','==', streamer?.id), where('active','==', true));
+      const snap = await getDocs(q);
+      if(cancelled) return;
+      if(snap.empty){
+        showToast?.('This live stream has ended', 'info');
+        onClose?.();
+        return;
+      }
+      const liveDoc = snap.docs.sort((a,b)=>(b.data().createdAt?.seconds||0)-(a.data().createdAt?.seconds||0))[0];
+      liveIdRef.current = liveDoc.id;
+      setLiveId(liveDoc.id);
+
+      pc = new RTCPeerConnection({ iceServers: LIVE_ICE_SERVERS });
+      pc.ontrack = e => { setRemoteStream(e.streams[0]); setConnected(true); };
+
+      viewerDocRef = doc(db, 'liveStreams', liveDoc.id, 'viewers', currentUser.id);
+      pc.onicecandidate = e => {
+        if(e.candidate) addDoc(collection(viewerDocRef,'viewerCandidates'), e.candidate.toJSON()).catch(()=>{});
+      };
+
+      await setDoc(viewerDocRef, { joinedAt: serverTimestamp(), username: currentUser?.username || 'viewer' });
+
+      unsubOffer = onSnapshot(viewerDocRef, async docSnap => {
+        const data = docSnap.data();
+        if(data?.offer && pc.signalingState === 'stable' && !pc.currentRemoteDescription){
+          try {
+            await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            await updateDoc(viewerDocRef, { answer: { type: answer.type, sdp: answer.sdp } });
+          } catch {}
+        }
+      });
+      unsubHostCandidates = onSnapshot(collection(viewerDocRef, 'hostCandidates'), s2 => {
+        s2.docChanges().forEach(async c => {
+          if(c.type === 'added'){ try { await pc.addIceCandidate(new RTCIceCandidate(c.doc.data())); } catch {} }
+        });
+      });
+      unsubLiveDoc = onSnapshot(doc(db,'liveStreams', liveDoc.id), s => {
+        const d = s.data();
+        if(!d) return;
+        setViewers(d.viewers ?? 0);
+        if(d.active === false && !endedRef.current){
+          endedRef.current = true;
+          showToast?.('Stream ended', 'info');
+          onClose?.();
+        }
+      });
+    };
+    start();
+
+    return () => {
+      cancelled = true;
+      unsubOffer(); unsubHostCandidates(); unsubLiveDoc();
+      pc?.close();
+      if(viewerDocRef) deleteDoc(viewerDocRef).catch(()=>{});
+    };
+  }, [isHost, streamer?.id, currentUser?.id]);
+
+  useEffect(() => {
+    if(!liveId) return;
+    const q = query(collection(db,'liveMessages'), where('liveId','==',liveId), orderBy('createdAt','asc'));
+    const unsub = onSnapshot(q, snap => {
+      const msgs = snap.docs.map(d => ({ id:d.id, ...d.data() }));
       setChatMessages(msgs.slice(-20));
     });
-    return ()=>unsub();
-  },[liveRef.current]);
+    return () => unsub();
+  }, [liveId]);
 
   const sendMessage = async () => {
-    if(!message.trim()||!liveRef.current) return;
-    await addDoc(collection(db,'liveMessages'),{
-      liveId: liveRef.current,
-      user: currentUser?.username||'viewer',
+    if(!message.trim() || !liveId) return;
+    await addDoc(collection(db,'liveMessages'), {
+      liveId,
+      user: currentUser?.username || 'viewer',
       text: message,
       createdAt: serverTimestamp(),
     });
@@ -2157,7 +2325,7 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
   };
 
   const sendGift = async (gift) => {
-    if(!currentUser?.id || !liveRef.current) return;
+    if(!currentUser?.id || !liveId) return;
     if((currentUser.coins||0) < gift.coins){ showToast?.('Insufficient coins','error'); return; }
     setShowGiftPicker(false);
     const emoji = gift.name.split(' ')[0];
@@ -2165,16 +2333,13 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
     setFloatingGifts(g=>[...g, { id:fid, emoji, x: 20+Math.random()*60 }]);
     setTimeout(()=>setFloatingGifts(g=>g.filter(x=>x.id!==fid)), 1500);
     try {
-      // Server-authoritative atomic transfer: debits the sender's coins and credits the
-      // streamer's walletBalance in one Firestore transaction (see /api/wallet, type:'gift').
-      // Neither side's balance is writable directly by the client anymore.
       await apiFetch('/api/wallet', {
         method: 'POST',
-        body: JSON.stringify({ type:'gift', toUserId: streamer?.id, amount: gift.coins, streamId: liveRef.current }),
+        body: JSON.stringify({ type:'gift', toUserId: streamer?.id, amount: gift.coins, streamId: liveId }),
       });
       await addDoc(collection(db,'transactions'),{ userId:currentUser.id, type:'debit', label:`Sent ${gift.name} to @${streamer?.username||'streamer'}`, amount:gift.coins, coins:true, createdAt:serverTimestamp() });
       await addDoc(collection(db,'liveMessages'),{
-        liveId: liveRef.current,
+        liveId,
         user: currentUser?.username||'viewer',
         text: `sent ${gift.name}`,
         isGift: true,
@@ -2192,6 +2357,11 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
             <div style={{ width:7, height:7, borderRadius:'50%', background:'white', animation:'pulse 1s infinite' }} />
             <span style={{ color:'white', fontSize:13, fontWeight:700 }}>LIVE</span>
           </div>
+          {!isHost && (
+            <div style={{ background:'rgba(0,0,0,0.4)', borderRadius:20, padding:'4px 12px' }}>
+              <span style={{ color:'white', fontSize:12, fontWeight:700 }}>@{streamer?.username || 'streamer'}</span>
+            </div>
+          )}
           <div style={{ background:'rgba(0,0,0,0.4)', borderRadius:20, padding:'4px 12px', display:'flex', alignItems:'center', gap:5 }}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="rgba(255,255,255,0.7)"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
             <span style={{ color:'rgba(255,255,255,0.7)', fontSize:12 }}>{formatNumber(viewers)}</span>
@@ -2199,7 +2369,7 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
         </div>
         <button onClick={onClose} style={{ background:'rgba(255,255,255,0.12)', border:'none', borderRadius:'50%', width:36, height:36, color:'white', cursor:'pointer', fontSize:16 }}>✕</button>
       </div>
-      <LiveCameraView />
+      {isHost ? <LiveHostVideo streamRef={localStreamRef} /> : <LiveViewerVideo remoteStream={remoteStream} connected={connected} />}
       {floatingGifts.map(g=>(
         <div key={g.id} style={{ position:'absolute', bottom:120, left:`${g.x}%`, zIndex:60, pointerEvents:'none', fontSize:44, animation:'floatUp 1.5s ease forwards' }}>{g.emoji}</div>
       ))}
@@ -2231,7 +2401,9 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
       )}
       <div style={{ display:'flex', gap:10, padding:'10px 14px 28px', borderTop:'1px solid rgba(255,255,255,0.06)', zIndex:10 }}>
         <input value={message} onChange={e=>setMessage(e.target.value)} onKeyDown={e=>e.key==='Enter'&&sendMessage()} placeholder="Say something..." style={{ flex:1, background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:28, padding:'10px 16px', color:'white', outline:'none', fontSize:13 }} />
-        <button onClick={()=>setShowGiftPicker(v=>!v)} style={{ background: showGiftPicker ? 'rgba(255,214,10,0.25)' : 'rgba(255,255,255,0.08)', border:'1px solid rgba(255,214,10,0.3)', borderRadius:'50%', width:42, height:42, color:'#FFD60A', cursor:'pointer', fontSize:18, flexShrink:0 }}>🎁</button>
+        {!isHost && (
+          <button onClick={()=>setShowGiftPicker(v=>!v)} style={{ background: showGiftPicker ? 'rgba(255,214,10,0.25)' : 'rgba(255,255,255,0.08)', border:'1px solid rgba(255,214,10,0.3)', borderRadius:'50%', width:42, height:42, color:'#FFD60A', cursor:'pointer', fontSize:18, flexShrink:0 }}>🎁</button>
+        )}
         <button onClick={sendMessage} style={{ background:'linear-gradient(135deg,#FF2156,#9D4EDD)', border:'none', borderRadius:'50%', width:42, height:42, color:'white', cursor:'pointer', fontSize:16, flexShrink:0 }}>↑</button>
       </div>
     </div>
@@ -2782,7 +2954,43 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
   );
 };
 
-const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, onVoiceCall, onVideoCall, onDuet, onStitch, onSaveSound, followed, showToast, onLive, currentUser, onViewProfile, onOpenSearch, onOpenNotifications, onOpenStories, onCreateStory, onViewStory, blockedUsers, onBlock, users, onOpenProfileDrawer, onFeedScroll, onOpenCamera, onOpenComposer }) => {
+// Shows everyone currently broadcasting so other users have an actual way to
+// discover and watch a live stream (previously there was none — "Go Live" only
+// ever opened the broadcaster's own camera for the broadcaster themselves).
+const LiveNowStrip = ({ currentUser, users, onWatch }) => {
+  const [liveList, setLiveList] = useState([]);
+  useEffect(()=>{
+    const q = query(collection(db,'liveStreams'), where('active','==',true));
+    const unsub = onSnapshot(q, snap=>{
+      const list = snap.docs
+        .map(d=>({ id:d.id, ...d.data() }))
+        .filter(l=>l.streamerId && l.streamerId!==currentUser?.id);
+      setLiveList(list);
+    });
+    return ()=>unsub();
+  },[currentUser?.id]);
+  if(!liveList.length) return null;
+  return (
+    <div style={{ display:'flex', gap:14, overflowX:'auto', padding:'2px 0 14px' }}>
+      {liveList.map(l=>{
+        const u = users?.find(uu=>uu.id===l.streamerId);
+        const uname = u?.username || l.streamerUsername || 'user';
+        return (
+          <div key={l.id} onClick={()=>onWatch?.(u || { id:l.streamerId, username:l.streamerUsername })} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4, cursor:'pointer', flexShrink:0, width:60 }}>
+            <div style={{ width:56, height:56, borderRadius:'50%', padding:2, background:'linear-gradient(135deg,#FF2156,#FF7A00)', position:'relative' }}>
+              <div style={{ width:'100%', height:'100%', borderRadius:'50%', overflow:'hidden', background:u?.avatarColor||'#FF2156', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, fontSize:20, border:`2px solid ${COLORS.bg}` }}>
+                {u?.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : uname[0]?.toUpperCase()}
+              </div>
+              <div style={{ position:'absolute', bottom:-3, left:'50%', transform:'translateX(-50%)', background:'#FF2156', borderRadius:6, padding:'1px 6px', fontSize:8, fontWeight:800, color:'white', letterSpacing:0.4, whiteSpace:'nowrap' }}>LIVE</div>
+            </div>
+            <span style={{ fontSize:10, color:COLORS.textSecondary, maxWidth:60, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>@{uname}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, onVoiceCall, onVideoCall, onDuet, onStitch, onSaveSound, followed, showToast, onWatchLive, currentUser, onViewProfile, onOpenSearch, onOpenNotifications, onOpenStories, onCreateStory, onViewStory, blockedUsers, onBlock, users, onOpenProfileDrawer, onFeedScroll, onOpenCamera, onOpenComposer }) => {
   const filteredVideos = useMemo(()=>{
     return videos
       .filter(v=>!(blockedUsers||[]).includes(v.userId))
@@ -2812,11 +3020,6 @@ const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, 
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <span style={{ color:COLORS.textTertiary, fontSize:13 }}>Search</span>
         </button>
-        {onLive && (
-          <button onClick={()=>onLive?.()} title="Go Live" style={{ width:40, height:40, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(255,45,85,0.12)', border:'1px solid rgba(255,45,85,0.3)', borderRadius:14, cursor:'pointer' }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF2156" strokeWidth="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
-          </button>
-        )}
         <SparkleMenuButton onOpenNotifications={onOpenNotifications} currentUser={currentUser} />
       </div>
 
@@ -2830,6 +3033,12 @@ const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, 
       <div style={{ margin:'0 -14px 6px' }}>
         <Stories users={users} currentUser={currentUser} onViewStory={onViewStory} onCreateStory={onCreateStory} followed={followed} />
       </div>
+
+      {/* Who's live right now — this is the "how do others actually watch a live
+          stream" entry point. The Go Live *button* itself now lives in the bottom
+          nav (see the 'live' tab); this strip is how everyone else finds and taps
+          into that broadcast. */}
+      <LiveNowStrip currentUser={currentUser} users={users} onWatch={onWatchLive} />
 
       {/* Post composer */}
       <div style={{ background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:RADIUS.lg, padding:14, marginBottom:16 }}>
@@ -5652,21 +5861,35 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
 
   const startCamera = async (facing = facingMode) => {
     streamRef.current?.getTracks().forEach(t => t.stop());
+    let s;
     try {
-      const s = await navigator.mediaDevices.getUserMedia({ video:{ facingMode: facing }, audio: true });
-      streamRef.current = s;
-      if(videoRef.current) videoRef.current.srcObject = s;
-      // Detect optical/digital zoom support on this track
-      const track = s.getVideoTracks?.()[0];
-      const caps = track?.getCapabilities?.();
-      if(caps?.zoom){
-        setZoomCaps({ min: caps.zoom.min, max: caps.zoom.max, step: caps.zoom.step || 0.1 });
-        setZoom(caps.zoom.min || 1);
-      } else {
-        setZoomCaps(null);
-        setZoom(1);
+      s = await navigator.mediaDevices.getUserMedia({ video:{ facingMode: facing }, audio: true });
+    } catch (err) {
+      // Requesting camera+mic together fails outright if the mic is denied/unavailable —
+      // even when the camera itself is fine — which silently blocked the whole camera
+      // screen (no preview, capture button did nothing). Falling back to video-only
+      // means posing for a photo still works even without microphone access; video
+      // recordings just won't have audio in that case.
+      try {
+        s = await navigator.mediaDevices.getUserMedia({ video:{ facingMode: facing }, audio: false });
+        showToast?.('Microphone unavailable — recording without audio','info');
+      } catch (err2) {
+        showToast?.(err2?.name === 'NotAllowedError' ? 'Camera access denied — enable it in your browser/app settings' : 'Could not access camera','error');
+        return;
       }
-    } catch { showToast?.('Camera denied','error'); }
+    }
+    streamRef.current = s;
+    if(videoRef.current){ videoRef.current.srcObject = s; videoRef.current.play().catch(()=>{}); }
+    // Detect optical/digital zoom support on this track
+    const track = s.getVideoTracks?.()[0];
+    const caps = track?.getCapabilities?.();
+    if(caps?.zoom){
+      setZoomCaps({ min: caps.zoom.min, max: caps.zoom.max, step: caps.zoom.step || 0.1 });
+      setZoom(caps.zoom.min || 1);
+    } else {
+      setZoomCaps(null);
+      setZoom(1);
+    }
   };
 
   const applyZoom = (value) => {
@@ -5699,37 +5922,65 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
   };
 
   const capturePhoto = () => {
-    if(!videoRef.current) return;
-    const c = document.createElement('canvas');
-    c.width = videoRef.current.videoWidth;
-    c.height = videoRef.current.videoHeight;
-    const ctx = c.getContext('2d');
-    if(flash){ ctx.fillStyle='white'; ctx.fillRect(0,0,c.width,c.height); }
-    ctx.filter = FILTERS[activeFilter].css || 'none';
-    ctx.drawImage(videoRef.current, 0, 0);
-    c.toBlob(blob => {
-      setSelectedFile({ file: new File([blob],'photo.jpg',{type:'image/jpeg'}), url: URL.createObjectURL(blob), type:'image/jpeg' });
-    }, 'image/jpeg');
+    if(!videoRef.current){ showToast?.('Camera not ready yet — try again in a moment','error'); return; }
+    // videoWidth/videoHeight are 0 until the stream has actually started decoding frames.
+    // Capturing before that produces a blank/empty image with no error, which is exactly
+    // what looked like "posing for a photo fails" — nothing visibly happens on tap.
+    if(!videoRef.current.videoWidth || !videoRef.current.videoHeight){
+      showToast?.('Camera still loading — hold still and try again','error');
+      return;
+    }
+    try {
+      const c = document.createElement('canvas');
+      c.width = videoRef.current.videoWidth;
+      c.height = videoRef.current.videoHeight;
+      const ctx = c.getContext('2d');
+      if(flash){ ctx.fillStyle='white'; ctx.fillRect(0,0,c.width,c.height); }
+      ctx.filter = FILTERS[activeFilter].css || 'none';
+      ctx.drawImage(videoRef.current, 0, 0);
+      c.toBlob(blob => {
+        if(!blob){ showToast?.('Could not capture photo — try again','error'); return; }
+        setSelectedFile({ file: new File([blob],'photo.jpg',{type:'image/jpeg'}), url: URL.createObjectURL(blob), type:'image/jpeg' });
+      }, 'image/jpeg');
+    } catch (e) {
+      showToast?.('Could not capture photo — try again','error');
+    }
   };
 
   const startRecording = () => {
-    if(!streamRef.current) return;
+    if(!streamRef.current){ showToast?.('Camera not ready — try again in a moment','error'); return; }
+    if(!streamRef.current.getVideoTracks().length){ showToast?.('No camera feed to record — check camera permission','error'); return; }
     chunksRef.current = [];
-    const r = new MediaRecorder(streamRef.current);
-    r.ondataavailable = e => chunksRef.current.push(e.data);
-    r.onstop = () => {
-      const blob = new Blob(chunksRef.current, { type:'video/webm' });
-      setSelectedFile({ file: new File([blob],'video.webm',{type:'video/webm'}), url: URL.createObjectURL(blob), type:'video/webm' });
-    };
-    r.start();
-    recorderRef.current = r;
-    setRecording(true);
-    setRecordSeconds(0);
-    timerRef.current = setInterval(() => setRecordSeconds(s => { if(s>=MAX_RECORD_SECONDS-1){ stopRecording(); return MAX_RECORD_SECONDS; } return s+1; }), 1000);
+    try {
+      // Not every browser supports the same container/codec — Safari/iOS in particular
+      // often can't do plain 'video/webm'. Picking the first type it actually supports
+      // (and falling back to the recorder's default if none report as supported) is what
+      // was missing here; previously an unsupported mimeType threw inside the constructor
+      // and, since there was no try/catch, recording silently failed with no feedback.
+      const preferredTypes = ['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm','video/mp4'];
+      const mimeType = preferredTypes.find(mt => window.MediaRecorder?.isTypeSupported?.(mt));
+      const r = mimeType ? new MediaRecorder(streamRef.current, { mimeType }) : new MediaRecorder(streamRef.current);
+      const usedType = r.mimeType || mimeType || 'video/webm';
+      r.ondataavailable = e => { if(e.data && e.data.size > 0) chunksRef.current.push(e.data); };
+      r.onerror = () => { showToast?.('Recording failed — try again','error'); setRecording(false); clearInterval(timerRef.current); };
+      r.onstop = () => {
+        if(!chunksRef.current.length){ showToast?.('Recording was empty — try again','error'); return; }
+        const blob = new Blob(chunksRef.current, { type: usedType });
+        const ext = usedType.includes('mp4') ? 'mp4' : 'webm';
+        setSelectedFile({ file: new File([blob],`video.${ext}`,{type:usedType}), url: URL.createObjectURL(blob), type:usedType });
+      };
+      r.start();
+      recorderRef.current = r;
+      setRecording(true);
+      setRecordSeconds(0);
+      timerRef.current = setInterval(() => setRecordSeconds(s => { if(s>=MAX_RECORD_SECONDS-1){ stopRecording(); return MAX_RECORD_SECONDS; } return s+1; }), 1000);
+    } catch (e) {
+      showToast?.('Recording is not supported on this device/browser','error');
+    }
   };
 
   const stopRecording = () => {
-    recorderRef.current?.stop();
+    try { if(recorderRef.current && recorderRef.current.state !== 'inactive') recorderRef.current.stop(); } catch {}
     setRecording(false);
     clearInterval(timerRef.current);
   };
@@ -6874,6 +7125,11 @@ const TabIcon = ({id, active, currentUser}) => {
       <InboxBadge currentUser={currentUser} />
     </NavIconShell>
   );
+  if(id==='live') return (
+    <NavIconShell active={active}>
+      <svg viewBox="0 0 24 24" style={{...s, stroke: active ? '#FF2156' : color}}><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+    </NavIconShell>
+  );
   if(id==='profile') return (
     <NavIconShell active={active}>
       <div style={{ width:26, height:26, borderRadius:'50%', border:`2px solid ${color}`, padding:1.5, display:'flex', alignItems:'center', justifyContent:'center', opacity: active?1:0.85 }}>
@@ -6975,11 +7231,23 @@ const [blockedUsers, setBlockedUsers] = useState([]);
     lastScrollYRef.current = 0;
   }, [activeTab]);
 
-  // Horizontal swipe between tabs (Home ↔ Friends ↔ Inbox ↔ Profile), so the app behaves
-  // like a real tab carousel instead of only responding to bottom-nav taps. 'create' opens
-  // the camera modal rather than being a swipeable page, so it's excluded from the cycle.
-  const swipeTabOrder = ['home','tour','friends','inbox','profile'];
+  // Horizontal swipe between tabs: Home ↔ Tour ↔ Friends ↔ Create ↔ Message ↔ Live ↔
+  // Profile ↔ Settings. Profile and Settings are no longer in the bottom nav at all —
+  // they're reachable only by swiping past Live — per the requested nav redesign.
+  const swipeTabOrder = ['home','tour','friends','create','inbox','live','profile','settings'];
   const touchStartRef = useRef(null);
+
+  // Centralized navigation so bottom-nav taps and swipe gestures always agree on what
+  // happens when entering/leaving 'live' (open/close the go-live modal) and 'settings'
+  // (fire the settings signal so ProfilePage jumps straight to its settings view).
+  const navigateToTab = useCallback((tabId) => {
+    setShowCamera(false); setShowSearch(false);
+    if(activeTab === 'live' && tabId !== 'live') setShowLiveStream(null);
+    setActiveTab(tabId);
+    if(tabId === 'live') setShowLiveStream(currentUser);
+    if(tabId === 'settings') setSettingsSignal(n=>n+1);
+  }, [activeTab, currentUser]);
+
   const handleTabTouchStart = (e) => {
     const t = e.touches?.[0];
     if(!t) return;
@@ -6998,12 +7266,11 @@ const [blockedUsers, setBlockedUsers] = useState([]);
     // swipe-to-next-video gesture used throughout the feed.
     if(elapsed > 600 || Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.8) return;
     const currentIdx = swipeTabOrder.indexOf(activeTab);
-    if(currentIdx === -1) return; // e.g. on 'settings', which isn't part of the swipe cycle
+    if(currentIdx === -1) return;
     const nextIdx = dx < 0 ? currentIdx + 1 : currentIdx - 1;
     if(nextIdx < 0 || nextIdx >= swipeTabOrder.length) return;
     haptic('light');
-    setShowCamera(false); setShowSearch(false);
-    setActiveTab(swipeTabOrder[nextIdx]);
+    navigateToTab(swipeTabOrder[nextIdx]);
   };
 
   const showToast = useCallback((message, type='info')=>setToast({message,type}),[]);
@@ -7221,8 +7488,10 @@ const handleMessage = uid => {
   }, { merge: true }).catch(() => {});
 };
 
+  // Profile and Settings are intentionally not here anymore — they're reached by
+  // swiping right past 'live' (see swipeTabOrder / navigateToTab above).
   const tabs = [
-    {id:'home'},{id:'tour'},{id:'friends'},{id:'create'},{id:'inbox'},{id:'profile'},{id:'settings'},
+    {id:'home'},{id:'tour'},{id:'friends'},{id:'create'},{id:'inbox'},{id:'live'},
   ];
 
   if(authLoading) return (
@@ -7356,7 +7625,7 @@ const handleMessage = uid => {
   onVoiceCall={uid=>{ const u=users.find(uu=>uu.id===uid); const callDocId=[currentUser.id,uid].sort().join('_'); setShowCall({type:'audio',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
   onVideoCall={uid=>{ const u=users.find(uu=>uu.id===uid); const callDocId=[currentUser.id,uid].sort().join('_'); setShowCall({type:'video',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
   onDuet={()=>showToast?.('Duet mode ready','info')} onStitch={()=>showToast?.('Stitch mode ready','info')} onSaveSound={()=>showToast?.('Sound saved!','success')}
-  followed={followed} showToast={showToast} onLive={()=>setShowLiveStream(currentUser)} onViewProfile={handleViewProfile}
+  followed={followed} showToast={showToast} onWatchLive={(u)=>setShowLiveStream(u)} onViewProfile={handleViewProfile}
   onOpenSearch={()=>setShowDiscover(true)} onOpenNotifications={()=>setShowNotifications(true)} onOpenStories={()=>setShowStoriesPage(true)}
   onCreateStory={()=>setShowCreateStory(true)} onViewStory={(payload)=>setShowStoryViewer(payload)}
   onOpenProfileDrawer={()=>setShowProfileDrawer(true)} onFeedScroll={handleFeedScroll}
@@ -7368,6 +7637,16 @@ const handleMessage = uid => {
   onVoiceCall={uid=>{ const u=users.find(uu=>uu.id===uid); const callDocId=[currentUser.id,uid].sort().join('_'); setShowCall({type:'audio',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
   onVideoCall={uid=>{ const u=users.find(uu=>uu.id===uid); const callDocId=[currentUser.id,uid].sort().join('_'); setShowCall({type:'video',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
 />}
+            {activeTab==='live' && !showLiveStream && (
+              <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:16, padding:24, textAlign:'center' }}>
+                <div style={{ width:64, height:64, borderRadius:'50%', background:'rgba(255,45,85,0.12)', border:'1px solid rgba(255,45,85,0.3)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#FF2156" strokeWidth="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+                </div>
+                <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:16 }}>Stream ended</div>
+                <div style={{ color:COLORS.textTertiary, fontSize:13, maxWidth:260 }}>Go live again to reach your followers in real time, or check the Home feed to watch someone else's stream.</div>
+                <button onClick={()=>setShowLiveStream(currentUser)} style={{ background:'linear-gradient(135deg,#FF2156,#9D4EDD)', border:'none', borderRadius:24, padding:'12px 24px', color:'white', fontWeight:700, cursor:'pointer', fontSize:14 }}>Go Live</button>
+              </div>
+            )}
             {(activeTab==='profile'||activeTab==='settings') && <ProfilePage user={currentUser} setCurrentUser={setCurrentUser} onLogout={handleLogout} users={users} showToast={showToast} onShowAnalytics={()=>setShowAnalytics(true)} onShowQRCode={()=>setShowQRCode(true)} allVideos={videos} setBlockedUsers={setBlockedUsers} onShowSavedPosts={()=>setShowSavedPosts(true)} onGoToGroups={()=>{ setActiveTab('inbox'); setInboxOpenGroups(n=>n+1); }} onShowBroadcast={()=>setShowBroadcast(true)} onViewProfile={handleViewProfile} settingsSignal={activeTab==='settings'?settingsSignal:0} onFeedScroll={handleFeedScroll} t={t} theme={theme} onToggleTheme={toggleTheme} />}
           </>
         )}
@@ -7376,10 +7655,10 @@ const handleMessage = uid => {
       <div style={{ display:'flex', background:'rgba(255,255,255,0.6)', border:'1px solid rgba(255,255,255,0.5)', borderRadius:28, padding:'8px 4px', backdropFilter:'blur(28px) saturate(1.6)', WebkitBackdropFilter:'blur(28px) saturate(1.6)', boxShadow:'0 12px 32px rgba(30,27,46,0.18), 0 2px 8px rgba(30,27,46,0.10)', position:'absolute', left:12, right:12, bottom:'max(14px, env(safe-area-inset-bottom))', zIndex:500, transform: navVisible ? 'translateY(0)' : 'translateY(140%)', opacity: navVisible ? 1 : 0, transition:'transform 0.28s cubic-bezier(0.4,0,0.2,1), opacity 0.22s ease' }}>
         {tabs.map(tab=>{
           const isActive = activeTab===tab.id;
-          const tabLabels = { home: t?.home||'Home', tour: t?.tour||'Tour', friends: t?.friends||'Friends', create: t?.create||'Create', inbox: t?.inbox||'Inbox', profile: t?.profile||'Profile' };
+          const tabLabels = { home: t?.home||'Home', tour: t?.tour||'Tour', friends: t?.friends||'Friends', create: t?.create||'Create', inbox: t?.inbox||'Inbox', live: t?.live||'Live' };
           return (
             <button key={tab.id}
-              onClick={()=>{ haptic('light'); if(tab.id==='create'){ setShowCamera(true); } else { setShowCamera(false); setShowSearch(false); setActiveTab(tab.id); if(tab.id==='settings'){ setSettingsSignal(n=>n+1); } } }}
+              onClick={()=>{ haptic('light'); if(tab.id==='create'){ setShowCamera(true); setActiveTab('create'); } else { navigateToTab(tab.id); } }}
               style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:2, background:'none', border:'none', cursor:'pointer', padding: tab.id==='create'?'0':'6px 0', position:'relative',
                 transform: isActive && tab.id!=='create' ? 'translateY(-1px)' : 'translateY(0)',
                 transition:'transform 0.2s cubic-bezier(0.34,1.56,0.64,1)' }}>
