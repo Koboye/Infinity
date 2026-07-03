@@ -1,0 +1,22 @@
+{
+  "name": "Infinity",
+  "short_name": "Infinity",
+  "description": "Infinity — share, discover, and connect.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F7F5FC",
+  "theme_color": "#8B5CF6",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://res.cloudinary.com/dotvhzjmc/image/upload/znfksngv27boh3c1kxpv.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://res.cloudinary.com/dotvhzjmc/image/upload/znfksngv27boh3c1kxpv.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
