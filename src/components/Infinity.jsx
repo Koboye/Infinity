@@ -3033,7 +3033,7 @@ const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, 
     try {
       let images = [];
       for (const m of composerMedia) { try { images.push(await uploadToCloudinary(m.file)); } catch {} }
-      const payload = { description: composerText, images, mediaType: images.length ? 'image' : 'text' };
+      const payload = { description: composerText, images, mediaType: images.length ? 'image' : 'text', hashtags: (composerText||'').match(/#\w+/g) || [] };
       if (pollIsValid) payload.poll = { question: pollQuestion.trim(), options: pollOptions.map(o=>o.trim()).filter(Boolean), votes:{}, voters:{} };
       if (feeling) payload.feeling = feeling;
       const data = await apiFetch('/api/videos/create', { method:'POST', body: JSON.stringify(payload) });
@@ -3492,6 +3492,7 @@ const CreateScreen = ({ onOpenCamera, onShowSoundLibrary, showToast, t, currentU
       for (const m of media) { try { images.push(await uploadToCloudinary(m.file)); } catch {} }
       const payload = {
         description: text, images, mediaType: images.length ? 'image' : 'text',
+        hashtags: (text||'').match(/#\w+/g) || [],
       };
       if (pollIsValid) {
         payload.poll = { question: pollQuestion.trim(), options: pollOptions.map(o=>o.trim()).filter(Boolean), votes:{}, voters:{} };
@@ -7246,62 +7247,34 @@ const TourPage = ({ onFeedScroll, showToast, currentUser, onCreate }) => {
    so nothing looks mismatched at a glance. */
 const NAV_ACTIVE_COLOR = COLORS.brand;
 const NAV_INACTIVE_COLOR = COLORS.textTertiary;
-const NavIconShell = ({ active, children }) => (
-  <div style={{ position:'relative' }}>
-    <div style={{ width:38, height:38, borderRadius:'50%', background:active?`${NAV_ACTIVE_COLOR}1F`:'transparent', display:'flex', alignItems:'center', justifyContent:'center', transition:'background 0.2s ease' }}>
-      {children}
-    </div>
-    {active && <div style={{ position:'absolute', bottom:-6, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:NAV_ACTIVE_COLOR }} />}
-  </div>
-);
-const TabIcon = ({id, active, currentUser}) => {
+const TabGlyph = ({id, active, currentUser}) => {
   const color = active ? NAV_ACTIVE_COLOR : NAV_INACTIVE_COLOR;
   const sw = active ? 2.3 : 1.9;
-  const s = {width:24,height:24,fill:'none',stroke:color,strokeWidth:sw,strokeLinecap:'round',strokeLinejoin:'round', opacity: active?1:0.85};
+  const s = {width:21,height:21,fill:'none',stroke:color,strokeWidth:sw,strokeLinecap:'round',strokeLinejoin:'round', opacity: active?1:0.85, transition:'stroke 0.2s ease'};
   if(id==='home') return (
-    <NavIconShell active={active}>
-      <svg viewBox="0 0 24 24" style={s}><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-    </NavIconShell>
+    <svg viewBox="0 0 24 24" style={s}><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
   );
   if(id==='tour') return (
-    <NavIconShell active={active}>
-      <svg viewBox="0 0 24 24" style={s}><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
-    </NavIconShell>
+    <svg viewBox="0 0 24 24" style={s}><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
   );
   if(id==='friends') return (
-    <NavIconShell active={active}>
-      <svg viewBox="0 0 24 24" style={s}><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-    </NavIconShell>
-  );
-  if(id==='create') return (
-    <div style={{ width:52, height:34, background:COLORS.gradient, borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 4px 16px rgba(139,92,246,0.35)' }}>
-      <svg viewBox="0 0 24 24" style={{ width:22,height:22,stroke:'white',fill:'none',strokeWidth:2.5,strokeLinecap:'round' }}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-    </div>
+    <svg viewBox="0 0 24 24" style={s}><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
   );
   if(id==='inbox') return (
-    <NavIconShell active={active}>
+    <span style={{ position:'relative', display:'flex' }}>
       <svg viewBox="0 0 24 24" style={s}><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
       <InboxBadge currentUser={currentUser} />
-    </NavIconShell>
-  );
-  if(id==='live') return (
-    <NavIconShell active={active}>
-      <svg viewBox="0 0 24 24" style={{...s, stroke: active ? '#FF2156' : color}}><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
-    </NavIconShell>
+    </span>
   );
   if(id==='profile') return (
-    <NavIconShell active={active}>
-      <div style={{ width:26, height:26, borderRadius:'50%', border:`2px solid ${color}`, padding:1.5, display:'flex', alignItems:'center', justifyContent:'center', opacity: active?1:0.85 }}>
-        <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:currentUser?.avatarColor||color, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, fontSize:10, overflow:'hidden' }}>
-          {currentUser?.avatarUrl ? <img src={currentUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : (currentUser?.username||'?')[0]?.toUpperCase()}
-        </div>
+    <div style={{ width:23, height:23, borderRadius:'50%', border:`2px solid ${color}`, padding:1.5, display:'flex', alignItems:'center', justifyContent:'center', opacity: active?1:0.85 }}>
+      <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:currentUser?.avatarColor||color, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, fontSize:9, overflow:'hidden' }}>
+        {currentUser?.avatarUrl ? <img src={currentUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : (currentUser?.username||'?')[0]?.toUpperCase()}
       </div>
-    </NavIconShell>
+    </div>
   );
   if(id==='settings') return (
-    <NavIconShell active={active}>
-      <svg viewBox="0 0 24 24" style={s}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-    </NavIconShell>
+    <svg viewBox="0 0 24 24" style={s}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
   );
   return null;
 };
@@ -7390,11 +7363,12 @@ const [blockedUsers, setBlockedUsers] = useState([]);
     lastScrollYRef.current = 0;
   }, [activeTab]);
 
-  // Horizontal swipe between tabs: Home ↔ Tour ↔ Friends ↔ Create ↔ Message ↔
-  // Profile ↔ Settings. Profile and Settings are no longer in the bottom nav at all —
-  // they're reachable only by swiping past Inbox. Going live is now a single-tap
-  // action in the Home composer (see the 'Live' quick-action button) rather than a tab.
-  const swipeTabOrder = ['home','tour','friends','create','inbox','profile','settings'];
+  // Horizontal swipe: Profile ↔ Home ↔ Tour ↔ Friends ↔ Messages ↔ Settings.
+  // 'Create' is deliberately excluded from the swipe order — it's a tap-only action,
+  // reached from its raised button in the bottom nav (or the Home composer), never
+  // by swiping past it. Swiping right from Home reveals Profile; swiping left walks
+  // forward through Tour → Friends → Messages → Settings.
+  const swipeTabOrder = ['profile','home','tour','friends','inbox','settings'];
   const touchStartRef = useRef(null);
 
   // Centralized navigation so bottom-nav taps and swipe gestures always agree on what
@@ -7647,10 +7621,9 @@ const handleMessage = uid => {
 };
 
   // Profile and Settings are intentionally not here anymore — they're reached by
-  // swiping right past 'inbox' (see swipeTabOrder / navigateToTab above). 'Live' also
-  // isn't a tab anymore — it's a single-tap quick-action in the Home composer.
+  // swiping (right from Home for Profile, left past Messages for Settings).
   const tabs = [
-    {id:'home'},{id:'tour'},{id:'friends'},{id:'create'},{id:'inbox'},
+    {id:'home'},{id:'tour'},{id:'create'},{id:'friends'},{id:'inbox'},
   ];
 
   if(authLoading) return (
@@ -7801,21 +7774,34 @@ const handleMessage = uid => {
         )}
       </div>
 
-      <div style={{ display:'flex', background:'rgba(255,255,255,0.6)', border:'1px solid rgba(255,255,255,0.5)', borderRadius:28, padding:'8px 4px', backdropFilter:'blur(28px) saturate(1.6)', WebkitBackdropFilter:'blur(28px) saturate(1.6)', boxShadow:'0 12px 32px rgba(30,27,46,0.18), 0 2px 8px rgba(30,27,46,0.10)', position:'absolute', left:12, right:12, bottom:'max(14px, env(safe-area-inset-bottom))', zIndex:500, transform: navVisible ? 'translateY(0)' : 'translateY(140%)', opacity: navVisible ? 1 : 0, transition:'transform 0.28s cubic-bezier(0.4,0,0.2,1), opacity 0.22s ease' }}>
+      <div style={{ display:'flex', alignItems:'center', background:'linear-gradient(180deg, rgba(255,255,255,0.74), rgba(255,255,255,0.58))', border:'1px solid rgba(255,255,255,0.6)', borderRadius:30, padding:'8px 8px', backdropFilter:'blur(30px) saturate(1.7)', WebkitBackdropFilter:'blur(30px) saturate(1.7)', boxShadow:'0 18px 40px rgba(30,27,46,0.20), 0 2px 10px rgba(30,27,46,0.10), inset 0 1px 0 rgba(255,255,255,0.7)', position:'absolute', left:12, right:12, bottom:'max(14px, env(safe-area-inset-bottom))', zIndex:500, transform: navVisible ? 'translateY(0)' : 'translateY(140%)', opacity: navVisible ? 1 : 0, transition:'transform 0.28s cubic-bezier(0.4,0,0.2,1), opacity 0.22s ease' }}>
         {tabs.map(tab=>{
+          const tabLabels = { home: t?.home||'Home', tour: t?.tour||'Tour', friends: t?.friends||'Friends', create: t?.create||'Create', inbox: t?.inbox||'Messages' };
+
+          if(tab.id==='create') {
+            return (
+              <button key="create"
+                onClick={()=>{ haptic('medium'); setShowCamera(true); setActiveTab('create'); }}
+                style={{ flex:'0 0 auto', width:60, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'flex-end', background:'none', border:'none', cursor:'pointer', padding:0 }}>
+                <div style={{ position:'relative', width:52, height:52, transform:'translateY(-16px)' }}>
+                  <div style={{ position:'absolute', inset:-7, borderRadius:'50%', background:'radial-gradient(circle, rgba(255,33,86,0.38), rgba(157,78,221,0.18) 60%, transparent 75%)', filter:'blur(5px)' }} />
+                  <div style={{ position:'relative', width:'100%', height:'100%', borderRadius:'50%', background:COLORS.gradient, display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 10px 22px rgba(139,92,246,0.45), 0 0 0 4px rgba(255,255,255,0.75)' }}>
+                    <svg viewBox="0 0 24 24" style={{ width:22,height:22,stroke:'white',fill:'none',strokeWidth:2.5,strokeLinecap:'round' }}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  </div>
+                </div>
+              </button>
+            );
+          }
+
           const isActive = activeTab===tab.id;
-          const tabLabels = { home: t?.home||'Home', tour: t?.tour||'Tour', friends: t?.friends||'Friends', create: t?.create||'Create', inbox: t?.inbox||'Inbox', live: t?.live||'Live' };
+          const label = tabLabels[tab.id];
           return (
             <button key={tab.id}
-              onClick={()=>{ haptic('light'); if(tab.id==='create'){ setShowCamera(true); setActiveTab('create'); } else { navigateToTab(tab.id); } }}
-              style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:2, background:'none', border:'none', cursor:'pointer', padding: tab.id==='create'?'0':'6px 0', position:'relative',
-                transform: isActive && tab.id!=='create' ? 'translateY(-1px)' : 'translateY(0)',
-                transition:'transform 0.2s cubic-bezier(0.34,1.56,0.64,1)' }}>
-              <div style={{ position:'relative' }}>
-                <TabIcon id={tab.id} active={isActive} currentUser={currentUser} />
-                {isActive && tab.id!=='create' && (
-                  <div style={{ position:'absolute', bottom:-6, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:COLORS.brand, animation:'bounceIn 0.3s ease' }} />
-                )}
+              onClick={()=>{ haptic('light'); navigateToTab(tab.id); }}
+              style={{ flex:1, minWidth:0, display:'flex', alignItems:'center', justifyContent:'center', background:'none', border:'none', cursor:'pointer', padding:'8px 2px' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:isActive?6:0, padding: isActive ? '7px 14px' : '7px 11px', borderRadius:20, background: isActive ? `${NAV_ACTIVE_COLOR}16` : 'transparent', boxShadow: isActive ? `inset 0 0 0 1px ${NAV_ACTIVE_COLOR}2A` : 'none', transition:'all 0.32s cubic-bezier(0.34,1.56,0.64,1)', overflow:'hidden' }}>
+                <TabGlyph id={tab.id} active={isActive} currentUser={currentUser} />
+                <span style={{ maxWidth: isActive ? 90 : 0, opacity: isActive ? 1 : 0, color:NAV_ACTIVE_COLOR, fontWeight:700, fontSize:11.5, letterSpacing:0.15, whiteSpace:'nowrap', transition:'max-width 0.32s cubic-bezier(0.34,1.56,0.64,1), opacity 0.22s ease' }}>{label}</span>
               </div>
             </button>
           );
