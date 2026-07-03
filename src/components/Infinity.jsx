@@ -6765,7 +6765,7 @@ const TourPage = ({ onFeedScroll, showToast, currentUser }) => {
                 <svg width="14" height="14" viewBox="0 0 24 24" fill={savedIds.has(d.id) ? '#FF2156' : 'none'} stroke={savedIds.has(d.id) ? '#FF2156' : '#fff'} strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
               </button>
               <div style={{ position:'absolute', top:8, right:8, background:'rgba(0,0,0,0.55)', backdropFilter:'blur(6px)', borderRadius:12, padding:'3px 8px', display:'flex', alignItems:'center', gap:3 }}>
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="#FBBF24" stroke="#FBBF24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></polygon></svg>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="#FBBF24" stroke="#FBBF24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                 <span style={{ color:'#fff', fontSize:10.5, fontWeight:700 }}>{d.rating}</span>
               </div>
             </div>
