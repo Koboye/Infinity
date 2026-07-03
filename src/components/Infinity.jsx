@@ -6670,157 +6670,158 @@ const InboxBadge = ({ currentUser }) => {
   return <div style={{ position:'absolute', top:-4, right:-4, minWidth:16, height:16, background:COLORS.brand, borderRadius:8, border:`1.5px solid ${COLORS.bg}`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:9, color:'white', fontWeight:800, padding:'0 3px' }}>{unread>9?'9+':unread}</div>;
 };
 /* ─────────────── TOUR PAGE ───────────────
-   Destinations + travelers/experiences discovery tab, sits next to Home. */
-const TOUR_CATEGORIES = ['All','Beaches','Mountains','Cities','Culture','Food'];
-const TOUR_DESTINATIONS = [
-  { id:'t1', name:'Santorini, Greece', category:'Beaches', img:'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=600&q=80', rating:4.9, travelers:1280, price:'$1,240', blurb:'Whitewashed cliffside villages overlooking the Aegean, famous for sunsets in Oia and volcanic black-sand beaches.' },
-  { id:'t2', name:'Kyoto, Japan', category:'Culture', img:'https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?w=600&q=80', rating:4.8, travelers:2140, price:'$1,690', blurb:'Thousands of temples, bamboo groves, and geisha districts — the cultural heart of old Japan.' },
-  { id:'t3', name:'Swiss Alps', category:'Mountains', img:'https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=600&q=80', rating:4.9, travelers:940, price:'$2,050', blurb:'Snow-capped peaks, alpine lakes, and cable-car rides straight into postcard views.' },
-  { id:'t4', name:'Marrakech, Morocco', category:'Cities', img:'https://images.unsplash.com/photo-1489749798305-4fea3ae63d43?w=600&q=80', rating:4.6, travelers:1560, price:'$980', blurb:'Maze-like souks, riad courtyards, and the buzz of Jemaa el-Fnaa square at night.' },
-  { id:'t5', name:'Bali, Indonesia', category:'Beaches', img:'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=600&q=80', rating:4.7, travelers:3020, price:'$1,120', blurb:'Rice terraces, surf breaks, and jungle temples across the Island of the Gods.' },
-  { id:'t6', name:'Rome, Italy', category:'Culture', img:'https://images.unsplash.com/photo-1515542622106-78bda8ba0e5b?w=600&q=80', rating:4.8, travelers:2680, price:'$1,340', blurb:'Ancient ruins, world-class pasta, and a city built layer upon layer over 2,000 years.' },
-  { id:'t7', name:'Patagonia, Chile', category:'Mountains', img:'https://images.unsplash.com/photo-1531065208531-4036c0dba3ca?w=600&q=80', rating:4.9, travelers:520, price:'$2,480', blurb:'Jagged granite towers, glaciers, and some of the most remote trekking on Earth.' },
-  { id:'t8', name:'Bangkok, Thailand', category:'Food', img:'https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=600&q=80', rating:4.6, travelers:2990, price:'$860', blurb:'Street-food stalls on every corner, golden temples, and a river that runs through it all.' },
-];
-const TOUR_TRAVELERS = [
-  { id:'tr1', name:'Maya', avatarColor:'#F59E0B', trips:34 },
-  { id:'tr2', name:'Leo', avatarColor:'#3B82F6', trips:21 },
-  { id:'tr3', name:'Aiko', avatarColor:'#EC4899', trips:47 },
-  { id:'tr4', name:'Omar', avatarColor:'#22C55E', trips:12 },
-  { id:'tr5', name:'Nina', avatarColor:'#8B5CF6', trips:29 },
-];
-const TourPage = ({ onFeedScroll, showToast, currentUser }) => {
-  const [category, setCategory] = useState('All');
+   Real user-generated trip plans (#tripplan) people can join, and travel
+   experience posts (#travel) — both are regular posts from the main feed,
+   just filtered by hashtag, so no separate posting flow is needed. */
+const TOUR_CATEGORIES = ['Trip Plans', 'Experiences'];
+
+const TourPage = ({ onFeedScroll, showToast, currentUser, onCreate }) => {
+  const [tab, setTab] = useState('Trip Plans');
+  const [tripPlans, setTripPlans] = useState([]);
+  const [experiences, setExperiences] = useState([]);
   const [selected, setSelected] = useState(null);
-  const [savedIds, setSavedIds] = useState(new Set());
-  const [showBoard, setShowBoard] = useState(false);
-  const filtered = category==='All' ? TOUR_DESTINATIONS : TOUR_DESTINATIONS.filter(d=>d.category===category);
 
   useEffect(() => {
-    if (!currentUser?.id) return;
-    const unsub = onSnapshot(collection(db, 'users', currentUser.id, 'tripBoard'), snap => {
-      setSavedIds(new Set(snap.docs.map(d => d.id)));
-    }, () => {});
-    return () => unsub();
-  }, [currentUser?.id]);
+    let unsub = () => {};
+    let fallbackUnsub = () => {};
+    const primaryQ = query(collection(db, 'videos'), where('hashtags', 'array-contains', '#tripplan'), orderBy('createdAt', 'desc'), limit(30));
+    unsub = onSnapshot(primaryQ, snap => {
+      setTripPlans(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }, () => {
+      const fallbackQ = query(collection(db, 'videos'), where('hashtags', 'array-contains', '#tripplan'), limit(30));
+      fallbackUnsub = onSnapshot(fallbackQ, snap => {
+        const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        list.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+        setTripPlans(list);
+      }, () => {});
+    });
+    return () => { unsub(); fallbackUnsub(); };
+  }, []);
 
-  const toggleSave = async (dest) => {
+  useEffect(() => {
+    let unsub = () => {};
+    let fallbackUnsub = () => {};
+    const primaryQ = query(collection(db, 'videos'), where('hashtags', 'array-contains', '#travel'), orderBy('createdAt', 'desc'), limit(30));
+    unsub = onSnapshot(primaryQ, snap => {
+      setExperiences(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }, () => {
+      const fallbackQ = query(collection(db, 'videos'), where('hashtags', 'array-contains', '#travel'), limit(30));
+      fallbackUnsub = onSnapshot(fallbackQ, snap => {
+        const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        list.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+        setExperiences(list);
+      }, () => {});
+    });
+    return () => { unsub(); fallbackUnsub(); };
+  }, []);
+
+  const joinTrip = async (video) => {
     if (!currentUser?.id) return;
-    const ref = doc(db, 'users', currentUser.id, 'tripBoard', dest.id);
+    if ((video.joinedBy || []).includes(currentUser.id)) {
+      showToast?.('Already joined this trip', 'info');
+      return;
+    }
     try {
-      if (savedIds.has(dest.id)) {
-        await deleteDoc(ref);
-        showToast?.(`Removed ${dest.name} from your trip board`, 'info');
-      } else {
-        await setDoc(ref, { name: dest.name, price: dest.price, img: dest.img, savedAt: serverTimestamp() });
-        showToast?.(`Saved ${dest.name} to your trip board`, 'success');
-      }
+      await updateDoc(doc(db, 'videos', video.id), { joinedBy: arrayUnion(currentUser.id) });
+      showToast?.('Joined the trip! Say hi to the group', 'success');
     } catch (e) {
-      showToast?.('Failed to update trip board: ' + e.message, 'error');
+      showToast?.('Failed to join: ' + e.message, 'error');
     }
   };
 
-  const savedList = TOUR_DESTINATIONS.filter(d => savedIds.has(d.id));
-  const boardPct = Math.min(100, savedIds.size * 40);
   return (
     <div data-main-scroll="true" onScroll={onFeedScroll} style={{ height:'100%', overflowY:'auto', background:COLORS.bg, padding:'14px 16px max(96px, calc(72px + env(safe-area-inset-bottom)))' }}>
-      <div style={{ fontSize:22, fontWeight:800, color:COLORS.textPrimary, marginBottom:4 }}>Tour</div>
-      <div style={{ fontSize:13, color:COLORS.textSecondary, marginBottom:16 }}>Destinations and travelers to inspire your next trip</div>
-
-      <div style={{ display:'flex', gap:8, overflowX:'auto', paddingBottom:6, marginBottom:16 }}>
-        {TOUR_TRAVELERS.map(tr=>(
-          <div key={tr.id} onClick={()=>showToast?.(`${tr.name} — ${tr.trips} trips shared`,'info')} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4, minWidth:56, cursor:'pointer' }}>
-            <div style={{ width:52, height:52, borderRadius:'50%', background:tr.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:800, fontSize:18, border:`2px solid ${COLORS.surface}`, boxShadow:'0 2px 8px rgba(30,27,46,0.12)' }}>
-              {tr.name[0]}
-            </div>
-            <span style={{ fontSize:11, color:COLORS.textSecondary, fontWeight:600 }}>{tr.name}</span>
-          </div>
-        ))}
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:4 }}>
+        <div style={{ fontSize:22, fontWeight:800, color:COLORS.textPrimary }}>Tour</div>
+        <button onClick={()=>{ onCreate?.(); showToast?.('Add #tripplan or #travel to your caption so it shows up here', 'info'); }} style={{ background:COLORS.gradient, border:'none', borderRadius:16, padding:'7px 14px', color:'#fff', fontWeight:700, fontSize:12.5, cursor:'pointer' }}>+ Share</button>
       </div>
+      <div style={{ fontSize:13, color:COLORS.textSecondary, marginBottom:16 }}>Trip plans and experiences shared by travelers like you</div>
 
-      <div style={{ display:'flex', gap:8, overflowX:'auto', paddingBottom:4, marginBottom:14 }}>
+      <div style={{ display:'flex', gap:8, marginBottom:16 }}>
         {TOUR_CATEGORIES.map(c=>(
-          <button key={c} onClick={()=>setCategory(c)} style={{ flexShrink:0, background: category===c ? COLORS.gradient : COLORS.surface2, border: category===c ? 'none' : `1px solid ${COLORS.border}`, color: category===c ? '#fff' : COLORS.textSecondary, fontWeight:700, fontSize:12.5, padding:'8px 16px', borderRadius:20, cursor:'pointer' }}>
+          <button key={c} onClick={()=>setTab(c)} style={{ flex:1, background: tab===c ? COLORS.gradient : COLORS.surface2, border: tab===c ? 'none' : `1px solid ${COLORS.border}`, color: tab===c ? '#fff' : COLORS.textSecondary, fontWeight:700, fontSize:12.5, padding:'9px 0', borderRadius:20, cursor:'pointer' }}>
             {c}
           </button>
         ))}
       </div>
 
-      {savedIds.size > 0 && (
-        <div onClick={()=>setShowBoard(true)} style={{ background:COLORS.surfaceAlt, borderRadius:16, padding:'12px 14px', marginBottom:14, display:'flex', alignItems:'center', justifyContent:'space-between', cursor:'pointer', border:`1px solid ${COLORS.border}` }}>
-          <div>
-            <div style={{ fontSize:13, fontWeight:700, color:COLORS.textPrimary }}>Your trip board — {savedIds.size} saved</div>
-            <div style={{ fontSize:11.5, color:COLORS.textTertiary, marginTop:2 }}>{boardPct}% planned</div>
+      {tab==='Trip Plans' && (
+        tripPlans.length === 0 ? (
+          <div style={{ textAlign:'center', color:COLORS.textTertiary, fontSize:13, padding:'40px 20px' }}>
+            No trip plans yet. Tap + Share and add #tripplan to your caption.
           </div>
-          <div style={{ fontSize:13, fontWeight:700, color:COLORS.brand }}>Plan it →</div>
-        </div>
+        ) : (
+          <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+            {tripPlans.map(v => (
+              <div key={v.id} style={{ background:COLORS.surface, borderRadius:18, overflow:'hidden', border:`1px solid ${COLORS.border}`, boxShadow:'0 4px 16px rgba(30,27,46,0.08)' }}>
+                {(v.videoUrl || (v.images && v.images[0])) && (
+                  <div style={{ width:'100%', height:180, background:COLORS.surfaceAlt }}>
+                    {v.mediaType==='video' ? (
+                      <video src={v.videoUrl} style={{ width:'100%', height:'100%', objectFit:'cover' }} muted />
+                    ) : (
+                      <img src={v.images?.[0] || v.videoUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+                    )}
+                  </div>
+                )}
+                <div style={{ padding:'12px 14px' }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
+                    <div style={{ width:28, height:28, borderRadius:'50%', background:v.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:800, fontSize:12, overflow:'hidden' }}>
+                      {v.avatarUrl ? <img src={v.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} /> : (v.username||'U')[0].toUpperCase()}
+                    </div>
+                    <div style={{ fontSize:12.5, fontWeight:700, color:COLORS.textPrimary }}>{v.username}</div>
+                  </div>
+                  <div style={{ fontSize:13, color:COLORS.textPrimary, lineHeight:1.4, marginBottom:10 }}>{v.description}</div>
+                  <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                    <div style={{ fontSize:11.5, color:COLORS.textTertiary }}>{(v.joinedBy||[]).length} joined</div>
+                    <button onClick={()=>joinTrip(v)} disabled={(v.joinedBy||[]).includes(currentUser?.id)} style={{ background: (v.joinedBy||[]).includes(currentUser?.id) ? COLORS.surface2 : COLORS.gradient, border:'none', borderRadius:16, padding:'7px 16px', color: (v.joinedBy||[]).includes(currentUser?.id) ? COLORS.textTertiary : '#fff', fontWeight:700, fontSize:12, cursor:'pointer' }}>
+                      {(v.joinedBy||[]).includes(currentUser?.id) ? 'Joined' : 'Join trip'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )
       )}
 
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
-        {filtered.map(d=>(
-          <div key={d.id} onClick={()=>setSelected(d)} style={{ background:COLORS.surface, borderRadius:18, overflow:'hidden', cursor:'pointer', boxShadow:'0 4px 16px rgba(30,27,46,0.08)', border:`1px solid ${COLORS.border}` }}>
-            <div style={{ position:'relative', width:'100%', paddingTop:'70%', background:COLORS.surfaceAlt }}>
-              <img src={d.img} alt={d.name} style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover' }} />
-              <button onClick={(e)=>{ e.stopPropagation(); toggleSave(d); }} style={{ position:'absolute', top:8, left:8, width:28, height:28, borderRadius:'50%', background:'rgba(0,0,0,0.45)', backdropFilter:'blur(6px)', border:'none', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill={savedIds.has(d.id) ? '#FF2156' : 'none'} stroke={savedIds.has(d.id) ? '#FF2156' : '#fff'} strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-              </button>
-              <div style={{ position:'absolute', top:8, right:8, background:'rgba(0,0,0,0.55)', backdropFilter:'blur(6px)', borderRadius:12, padding:'3px 8px', display:'flex', alignItems:'center', gap:3 }}>
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="#FBBF24" stroke="#FBBF24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                <span style={{ color:'#fff', fontSize:10.5, fontWeight:700 }}>{d.rating}</span>
-              </div>
-            </div>
-            <div style={{ padding:'10px 12px' }}>
-              <div style={{ fontSize:13.5, fontWeight:700, color:COLORS.textPrimary, marginBottom:2 }}>{d.name}</div>
-              <div style={{ fontSize:11.5, color:COLORS.textTertiary, marginBottom:6 }}>{formatNumber(d.travelers)} travelers</div>
-              <div style={{ fontSize:13, fontWeight:800, color:COLORS.brand }}>{d.price}<span style={{ fontSize:10.5, fontWeight:500, color:COLORS.textTertiary }}> / trip</span></div>
-            </div>
+      {tab==='Experiences' && (
+        experiences.length === 0 ? (
+          <div style={{ textAlign:'center', color:COLORS.textTertiary, fontSize:13, padding:'40px 20px' }}>
+            No experiences shared yet. Tap + Share and add #travel to your caption.
           </div>
-        ))}
-      </div>
+        ) : (
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+            {experiences.map(v => (
+              <div key={v.id} onClick={()=>setSelected(v)} style={{ position:'relative', width:'100%', paddingTop:'130%', borderRadius:14, overflow:'hidden', background:COLORS.surfaceAlt, cursor:'pointer' }}>
+                {v.mediaType==='video' ? (
+                  <video src={v.videoUrl} style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover' }} muted />
+                ) : (
+                  <img src={v.images?.[0] || v.videoUrl} alt="" style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover' }} />
+                )}
+                <div style={{ position:'absolute', bottom:0, left:0, right:0, padding:'8px', background:'linear-gradient(to top, rgba(0,0,0,0.6), transparent)' }}>
+                  <div style={{ color:'#fff', fontSize:11, fontWeight:700 }}>{v.username}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      )}
 
       {selected && (
         <div onClick={()=>setSelected(null)} style={{ position:'fixed', inset:0, background:'rgba(20,17,30,0.55)', backdropFilter:'blur(4px)', zIndex:4200, display:'flex', alignItems:'flex-end' }}>
-          <div onClick={e=>e.stopPropagation()} style={{ width:'100%', maxWidth:430, margin:'0 auto', background:COLORS.surface, borderTopLeftRadius:26, borderTopRightRadius:26, maxHeight:'82%', overflow:'auto', animation:'slideUp 0.25s ease' }}>
-            <div style={{ position:'relative', width:'100%', height:220 }}>
-              <img src={selected.img} alt={selected.name} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+          <div onClick={e=>e.stopPropagation()} style={{ width:'100%', maxWidth:430, margin:'0 auto', background:COLORS.surface, borderTopLeftRadius:26, borderTopRightRadius:26, maxHeight:'82%', overflow:'auto' }}>
+            <div style={{ position:'relative', width:'100%', height:280, background:'#000' }}>
+              {selected.mediaType==='video' ? (
+                <video src={selected.videoUrl} style={{ width:'100%', height:'100%', objectFit:'contain' }} controls autoPlay />
+              ) : (
+                <img src={selected.images?.[0] || selected.videoUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'contain' }} />
+              )}
               <button onClick={()=>setSelected(null)} style={{ position:'absolute', top:12, right:12, width:32, height:32, borderRadius:'50%', background:'rgba(0,0,0,0.45)', border:'none', color:'#fff', fontSize:16, cursor:'pointer' }}>✕</button>
-              <div style={{ position:'absolute', bottom:0, left:0, right:0, padding:'24px 18px 14px', background:'linear-gradient(to top, rgba(0,0,0,0.65), transparent)' }}>
-                <div style={{ color:'#fff', fontWeight:800, fontSize:19 }}>{selected.name}</div>
-              </div>
             </div>
             <div style={{ padding:'16px 18px 28px' }}>
-              <div style={{ display:'flex', gap:16, marginBottom:14 }}>
-                <div style={{ display:'flex', alignItems:'center', gap:4, fontSize:13, color:COLORS.textSecondary }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="#FBBF24" stroke="#FBBF24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                  {selected.rating} rating
-                </div>
-                <div style={{ fontSize:13, color:COLORS.textSecondary }}>{formatNumber(selected.travelers)} travelers</div>
-              </div>
-              <button onClick={()=>{ toggleSave(selected); setSelected(null); }} style={{ width:'100%', background:COLORS.gradient, border:'none', borderRadius:20, padding:'14px', color:'#fff', fontWeight:700, fontSize:14.5, cursor:'pointer' }}>
-                {savedIds.has(selected.id) ? 'Remove from trip board' : `Add to trip board — ${selected.price}`}
-              </button>
+              <div style={{ fontSize:14, fontWeight:700, color:COLORS.textPrimary, marginBottom:6 }}>{selected.username}</div>
+              <div style={{ fontSize:13.5, color:COLORS.textSecondary, lineHeight:1.5 }}>{selected.description}</div>
             </div>
-          </div>
-        </div>
-      )}
-
-      {showBoard && (
-        <div onClick={()=>setShowBoard(false)} style={{ position:'fixed', inset:0, background:'rgba(20,17,30,0.55)', backdropFilter:'blur(4px)', zIndex:4300, display:'flex', alignItems:'flex-end' }}>
-          <div onClick={e=>e.stopPropagation()} style={{ width:'100%', maxWidth:430, margin:'0 auto', background:COLORS.surface, borderTopLeftRadius:26, borderTopRightRadius:26, maxHeight:'75%', overflow:'auto', padding:'20px 18px 28px' }}>
-            <div style={{ fontSize:18, fontWeight:800, color:COLORS.textPrimary, marginBottom:14 }}>Your trip board</div>
-            {savedList.length === 0 ? (
-              <div style={{ fontSize:13, color:COLORS.textTertiary }}>Nothing saved yet — tap the heart on any destination.</div>
-            ) : savedList.map(d => (
-              <div key={d.id} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 0', borderBottom:`1px solid ${COLORS.border}` }}>
-                <img src={d.img} alt={d.name} style={{ width:48, height:48, borderRadius:12, objectFit:'cover' }} />
-                <div style={{ flex:1 }}>
-                  <div style={{ fontSize:13.5, fontWeight:700, color:COLORS.textPrimary }}>{d.name}</div>
-                  <div style={{ fontSize:12, color:COLORS.textTertiary }}>{d.price} / trip</div>
-                </div>
-                <button onClick={()=>toggleSave(d)} style={{ background:'none', border:'none', color:COLORS.textTertiary, fontSize:12, cursor:'pointer' }}>Remove</button>
-              </div>
-            ))}
-            <div style={{ fontSize:11.5, color:COLORS.textTertiary, marginTop:16, textAlign:'center' }}>Full itinerary builder coming soon</div>
           </div>
         </div>
       )}
