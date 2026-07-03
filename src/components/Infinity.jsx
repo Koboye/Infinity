@@ -2802,8 +2802,8 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
     {showShare && <ShareSheet video={video} currentUser={currentUser} onClose={()=>setShowShare(false)} showToast={showToast} />}
     {showSaveConfirm && <SaveConfirmSheet onClose={()=>setShowSaveConfirm(false)} onViewCollections={()=>{ setShowSaveConfirm(false); showToast?.('Opening collections…','info'); }} />}
     {showOptions && <PostOptionsMenu video={video} currentUser={currentUser} onClose={()=>setShowOptions(false)} showToast={showToast} onDelete={onDelete} onBlock={onBlock} />}
-    <div style={{ background:COLORS.surface, borderRadius:RADIUS.lg, padding:16, marginBottom:14, boxShadow:'0 2px 14px rgba(124,58,237,0.06)', border:`1px solid ${COLORS.border}` }}>
-      <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
+    <div style={{ background:COLORS.surface, borderRadius:RADIUS.lg, padding:14, marginBottom:10, boxShadow:'0 2px 14px rgba(124,58,237,0.06)', border:`1px solid ${COLORS.border}` }}>
+      <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:10 }}>
         <div onClick={()=>onViewProfile?.(video.userId)} style={{ width:44, height:44, borderRadius:'50%', background:video.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, fontSize:17, overflow:'hidden', cursor:'pointer', flexShrink:0 }}>
           {video.avatarUrl ? <img src={video.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : (video.username||'?')[0]?.toUpperCase()}
         </div>
@@ -2919,7 +2919,7 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
           )}
         </div>
       )}
-      <div style={{ display:'flex', alignItems:'center', gap:2, paddingTop:10, marginTop:8, borderTop:`1px solid ${COLORS.border}` }}>
+<div style={{ display:'flex', alignItems:'center', gap:2, paddingTop:8, marginTop:6, borderTop:`1px solid ${COLORS.border}` }}>
         <span style={{ display:'flex', alignItems:'center', gap:6, color:COLORS.textTertiary, fontWeight:700, fontSize:13, padding:'6px 8px 6px 4px' }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
           {formatNumber(video.views||0)}
@@ -3131,7 +3131,7 @@ const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, 
 
       {/* Post composer — fully inline: typing, attaching a photo, building a poll and
           picking a feeling all happen right here in one tap each, nothing navigates away. */}
-      <div style={{ background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:RADIUS.lg, padding:14, marginBottom:16 }}>
+      <div style={{ background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:RADIUS.lg, padding:14, marginBottom:6 }}>
         <input ref={composerFileInputRef} type="file" accept="image/*,video/*" multiple onChange={pickComposerFiles} style={{ display:'none' }} />
         <div style={{ display:'flex', alignItems:'flex-start', gap:10, marginBottom:12 }}>
           <div style={{ width:38, height:38, borderRadius:'50%', background:currentUser?.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, overflow:'hidden', flexShrink:0 }}>
