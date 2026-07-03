@@ -4367,21 +4367,24 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal' }) => {
   };
 
   const sendVoice = async () => {
-    if (!blobRef.current) return;
-    try {
-      const fd = new FormData();
-      fd.append('file', blobRef.current, 'voice.webm');
-      fd.append('upload_preset', CLOUDINARY_PRESET);
-      fd.append('resource_type', 'video');
-      const res = await fetch(CLOUDINARY_UPLOAD_URL, { method: 'POST', body: fd });
-      const data = await res.json();
-      if (data.secure_url) {
-        onSend({ type: 'voice', url: data.secure_url, duration });
-        showToast?.('Voice message sent 🎤', 'success');
-      }
-    } catch { showToast?.('Failed to send voice', 'error'); }
-    cancelRecording();
-  };
+     if (!blobRef.current) return;
+     try {
+       const { signature, timestamp, apiKey, cloudName } = await apiFetch('/api/cloudinary-sign', { method: 'POST' });
+       const fd = new FormData();
+       fd.append('file', blobRef.current, 'voice.webm');
+       fd.append('api_key', apiKey);
+       fd.append('timestamp', timestamp);
+       fd.append('signature', signature);
+       fd.append('resource_type', 'video');
+       const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/upload`, { method: 'POST', body: fd });
+       const data = await res.json();
+       if (data.secure_url) {
+         onSend({ type: 'voice', url: data.secure_url, duration });
+         showToast?.('Voice message sent 🎤', 'success');
+       }
+     } catch { showToast?.('Failed to send voice', 'error'); }
+     cancelRecording();
+   };
 
   const fmtTime = s => `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
 
