@@ -2991,6 +2991,58 @@ const LiveNowStrip = ({ currentUser, users, onWatch }) => {
   );
 };
 const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, onVoiceCall, onVideoCall, onDuet, onStitch, onSaveSound, followed, showToast, onWatchLive, currentUser, onViewProfile, onOpenSearch, onOpenNotifications, onOpenStories, onCreateStory, onViewStory, blockedUsers, onBlock, users, onOpenProfileDrawer, onFeedScroll, onOpenCamera, onOpenComposer }) => {
+  // Inline "quick search" — filters users/posts in place instead of navigating to Discover.
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const searchResults = useMemo(()=>{
+    const q = searchQuery.trim().toLowerCase();
+    if(!q) return { users:[], posts:[] };
+    const matchedUsers = (users||[]).filter(u=>u.id!==currentUser?.id && (u.username?.toLowerCase().includes(q) || u.fullName?.toLowerCase().includes(q))).slice(0,5);
+    const matchedPosts = (videos||[]).filter(v=>v.description?.toLowerCase().includes(q)).slice(0,5);
+    return { users:matchedUsers, posts:matchedPosts };
+  },[searchQuery, users, videos, currentUser?.id]);
+
+  // Inline quick composer — Photo/Video/Poll/Feeling/Live all act directly on this card
+  // (single tap, no separate page). Mirrors CreateScreen's post-submission logic.
+  const [composerText, setComposerText] = useState('');
+  const [composerMedia, setComposerMedia] = useState([]);
+  const [composerPosting, setComposerPosting] = useState(false);
+  const [showFeelingPicker, setShowFeelingPicker] = useState(false);
+  const [feeling, setFeeling] = useState(null);
+  const [showPollBuilder, setShowPollBuilder] = useState(false);
+  const [pollQuestion, setPollQuestion] = useState('');
+  const [pollOptions, setPollOptions] = useState(['', '']);
+  const composerFileInputRef = useRef(null);
+
+  const pickComposerFiles = e => {
+    const files = Array.from(e.target.files||[]);
+    setComposerMedia(m => [...m, ...files.map(f=>({ url:URL.createObjectURL(f), file:f, type:f.type }))].slice(0,4));
+    e.target.value = '';
+  };
+  const removeComposerMedia = idx => setComposerMedia(m => m.filter((_,i)=>i!==idx));
+  const setPollOption = (idx, val) => setPollOptions(opts => opts.map((o,i)=>i===idx?val:o));
+  const addPollOption = () => setPollOptions(opts => opts.length<4 ? [...opts, ''] : opts);
+  const removePollOption = idx => setPollOptions(opts => opts.length>2 ? opts.filter((_,i)=>i!==idx) : opts);
+  const closePollBuilder = () => { setShowPollBuilder(false); setPollQuestion(''); setPollOptions(['','']); };
+  const pollIsValid = pollQuestion.trim() && pollOptions.filter(o=>o.trim()).length>=2;
+  const composerHasContent = composerText.trim() || composerMedia.length || pollIsValid || feeling;
+
+  const submitQuickPost = async () => {
+    if(!composerHasContent || composerPosting) return;
+    setComposerPosting(true);
+    try {
+      let images = [];
+      for (const m of composerMedia) { try { images.push(await uploadToCloudinary(m.file)); } catch {} }
+      const payload = { description: composerText, images, mediaType: images.length ? 'image' : 'text' };
+      if (pollIsValid) payload.poll = { question: pollQuestion.trim(), options: pollOptions.map(o=>o.trim()).filter(Boolean), votes:{}, voters:{} };
+      if (feeling) payload.feeling = feeling;
+      const data = await apiFetch('/api/videos/create', { method:'POST', body: JSON.stringify(payload) });
+      showToast?.(data.moderationStatus === 'pending' ? 'Posted — under review' : 'Posted!', 'success');
+      setComposerText(''); setComposerMedia([]); setFeeling(null); setShowFeelingPicker(false); closePollBuilder();
+    } catch (e) { showToast?.('Failed to post', 'error'); }
+    setComposerPosting(false);
+  };
+
   const filteredVideos = useMemo(()=>{
     return videos
       .filter(v=>!(blockedUsers||[]).includes(v.userId))
@@ -3011,16 +3063,55 @@ const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, 
 
   return (
     <div data-main-scroll="true" onScroll={onFeedScroll} style={{ height:'100%', overflowY:'auto', background:COLORS.bg, padding:'14px 14px max(96px, calc(72px + env(safe-area-inset-bottom)))' }}>
-      {/* Top search bar */}
-      <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
-        <button onClick={onOpenProfileDrawer} style={{ width:40, height:40, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:14, cursor:'pointer' }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-        </button>
-        <button onClick={onOpenSearch} style={{ flex:1, display:'flex', alignItems:'center', gap:8, background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:20, padding:'10px 14px', cursor:'pointer', textAlign:'left' }}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <span style={{ color:COLORS.textTertiary, fontSize:13 }}>Search</span>
-        </button>
-        <SparkleMenuButton onOpenNotifications={onOpenNotifications} currentUser={currentUser} />
+      {/* Top search bar — expands and filters in place; tapping a result acts immediately,
+          nothing here navigates to a separate search page. */}
+      <div style={{ position:'relative', marginBottom:16 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+          <button onClick={onOpenProfileDrawer} style={{ width:40, height:40, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:14, cursor:'pointer' }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+          <div style={{ flex:1, display:'flex', alignItems:'center', gap:8, background:COLORS.surface, border:`1px solid ${searchOpen?COLORS.brand:COLORS.border}`, borderRadius:20, padding:'10px 14px' }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2" style={{flexShrink:0}}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input
+              value={searchQuery}
+              onFocus={()=>setSearchOpen(true)}
+              onChange={e=>{ setSearchQuery(e.target.value); setSearchOpen(true); }}
+              placeholder="Search"
+              style={{ flex:1, minWidth:0, background:'none', border:'none', outline:'none', color:COLORS.textPrimary, fontSize:13, fontFamily:'inherit' }}
+            />
+            {searchOpen && (
+              <span onClick={()=>{ setSearchOpen(false); setSearchQuery(''); }} style={{ cursor:'pointer', color:COLORS.textTertiary, fontSize:12, flexShrink:0 }}>✕</span>
+            )}
+          </div>
+          <SparkleMenuButton onOpenNotifications={onOpenNotifications} currentUser={currentUser} />
+        </div>
+
+        {searchOpen && searchQuery.trim() && (
+          <div style={{ position:'absolute', top:'calc(100% + 6px)', left:50, right:0, background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:16, boxShadow:'0 12px 32px rgba(30,27,46,0.18)', zIndex:40, maxHeight:320, overflowY:'auto', padding:8 }}>
+            {!searchResults.users.length && !searchResults.posts.length && (
+              <div style={{ padding:'14px 10px', color:COLORS.textTertiary, fontSize:12.5, textAlign:'center' }}>No matches for "{searchQuery}"</div>
+            )}
+            {searchResults.users.map(u=>(
+              <div key={u.id} onClick={()=>{ onViewProfile?.(u.id); setSearchOpen(false); setSearchQuery(''); }} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 6px', borderRadius:10, cursor:'pointer' }}>
+                <div style={{ width:32, height:32, borderRadius:'50%', background:u.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, fontSize:13, overflow:'hidden', flexShrink:0 }}>
+                  {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/> : (u.username||'?')[0]?.toUpperCase()}
+                </div>
+                <div style={{ minWidth:0 }}>
+                  <div style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:13, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>@{u.username}</div>
+                  {u.fullName && <div style={{ color:COLORS.textTertiary, fontSize:11 }}>{u.fullName}</div>}
+                </div>
+              </div>
+            ))}
+            {searchResults.posts.map(v=>(
+              <div key={v.id} onClick={()=>{ onViewProfile?.(v.userId); setSearchOpen(false); setSearchQuery(''); }} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 6px', borderRadius:10, cursor:'pointer' }}>
+                <div style={{ width:32, height:32, borderRadius:8, background:COLORS.surfaceAlt, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="M21 15l-5-5L5 19"/></svg>
+                </div>
+                <div style={{ color:COLORS.textSecondary, fontSize:12.5, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{v.description}</div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Stories row — reuses the same Stories component as the Friends feed, so
@@ -3034,31 +3125,99 @@ const HomeFeed = ({ t, videos, onLike, onComment, onShare, onFollow, onMessage, 
         <Stories users={users} currentUser={currentUser} onViewStory={onViewStory} onCreateStory={onCreateStory} followed={followed} />
       </div>
 
-      {/* Who's live right now — this is the "how do others actually watch a live
-          stream" entry point. The Go Live *button* itself now lives in the bottom
-          nav (see the 'live' tab); this strip is how everyone else finds and taps
-          into that broadcast. */}
+      {/* Who's live right now — entry point for watching others. Going live yourself
+          now happens from the "Live" quick-action right in the composer below. */}
       <LiveNowStrip currentUser={currentUser} users={users} onWatch={onWatchLive} />
 
-      {/* Post composer */}
+      {/* Post composer — fully inline: typing, attaching a photo, building a poll and
+          picking a feeling all happen right here in one tap each, nothing navigates away. */}
       <div style={{ background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:RADIUS.lg, padding:14, marginBottom:16 }}>
-        <div onClick={()=>onOpenComposer?.()} style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12, cursor:'pointer' }}>
+        <input ref={composerFileInputRef} type="file" accept="image/*,video/*" multiple onChange={pickComposerFiles} style={{ display:'none' }} />
+        <div style={{ display:'flex', alignItems:'flex-start', gap:10, marginBottom:12 }}>
           <div style={{ width:38, height:38, borderRadius:'50%', background:currentUser?.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, overflow:'hidden', flexShrink:0 }}>
             {currentUser?.avatarUrl ? <img src={currentUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/> : (currentUser?.username||'?')[0]?.toUpperCase()}
           </div>
-          <div style={{ flex:1, color:COLORS.textTertiary, fontSize:13.5 }}>What's on your mind?</div>
+          <textarea
+            value={composerText}
+            onChange={e=>setComposerText(e.target.value)}
+            placeholder="What's on your mind?"
+            rows={1}
+            style={{ flex:1, minWidth:0, background:'none', border:'none', outline:'none', resize:'none', color:COLORS.textPrimary, fontSize:13.5, fontFamily:'inherit', paddingTop:8 }}
+          />
         </div>
-        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+
+        {feeling && (
+          <div style={{ display:'inline-flex', alignItems:'center', gap:6, background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:12, padding:'5px 10px', fontSize:12, fontWeight:600, color:COLORS.textSecondary, marginBottom:10 }}>
+            feeling {feeling.emoji} {feeling.text}
+            <span onClick={()=>setFeeling(null)} style={{ cursor:'pointer', color:COLORS.textTertiary, fontWeight:800 }}>✕</span>
+          </div>
+        )}
+
+        {composerMedia.length>0 && (
+          <div style={{ display:'flex', gap:8, marginBottom:12, overflowX:'auto' }}>
+            {composerMedia.map((m,i)=>(
+              <div key={i} style={{ position:'relative', width:64, height:64, borderRadius:12, overflow:'hidden', background:COLORS.surfaceAlt, flexShrink:0 }}>
+                {m.type?.startsWith('video') ? <video src={m.url} style={{ width:'100%', height:'100%', objectFit:'cover' }} /> : <img src={m.url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />}
+                <button onClick={()=>removeComposerMedia(i)} style={{ position:'absolute', top:3, right:3, width:18, height:18, borderRadius:'50%', background:'rgba(0,0,0,0.55)', color:'#fff', border:'none', cursor:'pointer', fontSize:11, display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {showFeelingPicker && (
+          <div style={{ background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:14, padding:12, marginBottom:12 }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
+              <span style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:12.5 }}>How are you feeling?</span>
+              <span onClick={()=>setShowFeelingPicker(false)} style={{ cursor:'pointer', color:COLORS.textTertiary }}>✕</span>
+            </div>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
+              {FEELINGS.map(f=>(
+                <button key={f.text} onClick={()=>{ setFeeling(f); setShowFeelingPicker(false); }} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4, background:feeling?.text===f.text?COLORS.surface2:COLORS.surface, border:`1px solid ${feeling?.text===f.text?COLORS.brand:COLORS.border}`, borderRadius:12, padding:'8px 4px', cursor:'pointer' }}>
+                  <span style={{ fontSize:18 }}>{f.emoji}</span>
+                  <span style={{ fontSize:9.5, color:COLORS.textSecondary, fontWeight:600 }}>{f.text}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {showPollBuilder && (
+          <div style={{ background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:14, padding:12, marginBottom:12 }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
+              <span style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:12.5 }}>📊 Create a poll</span>
+              <span onClick={closePollBuilder} style={{ cursor:'pointer', color:COLORS.textTertiary }}>✕</span>
+            </div>
+            <input value={pollQuestion} onChange={e=>setPollQuestion(e.target.value)} placeholder="Ask a question…" style={{ width:'100%', background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:12, padding:'9px 12px', color:COLORS.textPrimary, outline:'none', fontSize:13, marginBottom:8, boxSizing:'border-box' }} />
+            {pollOptions.map((opt,i)=>(
+              <div key={i} style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
+                <input value={opt} onChange={e=>setPollOption(i,e.target.value)} placeholder={`Option ${i+1}`} style={{ flex:1, background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:12, padding:'8px 12px', color:COLORS.textPrimary, outline:'none', fontSize:12.5, boxSizing:'border-box' }} />
+                {pollOptions.length>2 && (
+                  <span onClick={()=>removePollOption(i)} style={{ cursor:'pointer', color:COLORS.textTertiary, fontSize:13, padding:4 }}>✕</span>
+                )}
+              </div>
+            ))}
+            {pollOptions.length<4 && (
+              <button onClick={addPollOption} style={{ background:'none', border:'none', color:COLORS.brand, fontWeight:700, fontSize:12, cursor:'pointer', padding:'2px 0' }}>+ Add option</button>
+            )}
+          </div>
+        )}
+
+        <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
           {[
-            {icon:(<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.info} strokeWidth="2"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="M21 15l-5-5L5 19"/></svg>), label:'Photo', action:()=>onOpenCamera?.()},
-            {icon:(<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.brandSecondary} strokeWidth="2"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="M16 10l6-3v10l-6-3"/></svg>), label:'Video', action:()=>onOpenCamera?.()},
-            {icon:(<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.brand} strokeWidth="2"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>), label:'Poll', action:()=>onOpenComposer?.()},
-            {icon:(<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.warning} strokeWidth="2"><circle cx="12" cy="12" r="9"/><path d="M9 10h.01M15 10h.01M8 15s1.5 2 4 2 4-2 4-2"/></svg>), label:'Feeling', action:()=>onOpenComposer?.()},
+            {icon:(<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.info} strokeWidth="2"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="M21 15l-5-5L5 19"/></svg>), label:'Photo', active:false, action:()=>composerFileInputRef.current?.click()},
+            {icon:(<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.brand} strokeWidth="2"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>), label:'Poll', active:showPollBuilder, action:()=>setShowPollBuilder(v=>!v)},
+            {icon:(<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.warning} strokeWidth="2"><circle cx="12" cy="12" r="9"/><path d="M9 10h.01M15 10h.01M8 15s1.5 2 4 2 4-2 4-2"/></svg>), label:'Feeling', active:showFeelingPicker, action:()=>setShowFeelingPicker(v=>!v)},
+            {icon:(<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF2156" strokeWidth="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>), label:'Live', active:false, action:()=>onWatchLive?.(currentUser)},
           ].map(btn=>(
-            <button key={btn.label} onClick={e=>{ e.stopPropagation(); btn.action(); }} style={{ display:'flex', alignItems:'center', gap:6, background:COLORS.surfaceAlt, border:'none', borderRadius:14, padding:'7px 12px', color:COLORS.textSecondary, fontSize:12, fontWeight:600, cursor:'pointer' }}>
+            <button key={btn.label} onClick={e=>{ e.stopPropagation(); btn.action(); }} style={{ display:'flex', alignItems:'center', gap:6, background:btn.active?COLORS.surface2:COLORS.surfaceAlt, border:`1px solid ${btn.active?COLORS.brand:'transparent'}`, borderRadius:14, padding:'7px 12px', color:COLORS.textSecondary, fontSize:12, fontWeight:600, cursor:'pointer' }}>
               {btn.icon}{btn.label}
             </button>
           ))}
+          {composerHasContent && (
+            <button onClick={submitQuickPost} disabled={composerPosting} style={{ marginLeft:'auto', background:'linear-gradient(135deg,#FF2156,#9D4EDD)', border:'none', borderRadius:14, padding:'8px 16px', color:'white', fontSize:12.5, fontWeight:700, cursor:composerPosting?'default':'pointer', opacity:composerPosting?0.7:1 }}>
+              {composerPosting ? 'Posting…' : 'Post'}
+            </button>
+          )}
         </div>
       </div>
 
@@ -7231,22 +7390,21 @@ const [blockedUsers, setBlockedUsers] = useState([]);
     lastScrollYRef.current = 0;
   }, [activeTab]);
 
-  // Horizontal swipe between tabs: Home ↔ Tour ↔ Friends ↔ Create ↔ Message ↔ Live ↔
+  // Horizontal swipe between tabs: Home ↔ Tour ↔ Friends ↔ Create ↔ Message ↔
   // Profile ↔ Settings. Profile and Settings are no longer in the bottom nav at all —
-  // they're reachable only by swiping past Live — per the requested nav redesign.
-  const swipeTabOrder = ['home','tour','friends','create','inbox','live','profile','settings'];
+  // they're reachable only by swiping past Inbox. Going live is now a single-tap
+  // action in the Home composer (see the 'Live' quick-action button) rather than a tab.
+  const swipeTabOrder = ['home','tour','friends','create','inbox','profile','settings'];
   const touchStartRef = useRef(null);
 
   // Centralized navigation so bottom-nav taps and swipe gestures always agree on what
-  // happens when entering/leaving 'live' (open/close the go-live modal) and 'settings'
-  // (fire the settings signal so ProfilePage jumps straight to its settings view).
+  // happens when entering 'settings' (fire the settings signal so ProfilePage jumps
+  // straight to its settings view).
   const navigateToTab = useCallback((tabId) => {
     setShowCamera(false); setShowSearch(false);
-    if(activeTab === 'live' && tabId !== 'live') setShowLiveStream(null);
     setActiveTab(tabId);
-    if(tabId === 'live') setShowLiveStream(currentUser);
     if(tabId === 'settings') setSettingsSignal(n=>n+1);
-  }, [activeTab, currentUser]);
+  }, []);
 
   const handleTabTouchStart = (e) => {
     const t = e.touches?.[0];
@@ -7489,9 +7647,10 @@ const handleMessage = uid => {
 };
 
   // Profile and Settings are intentionally not here anymore — they're reached by
-  // swiping right past 'live' (see swipeTabOrder / navigateToTab above).
+  // swiping right past 'inbox' (see swipeTabOrder / navigateToTab above). 'Live' also
+  // isn't a tab anymore — it's a single-tap quick-action in the Home composer.
   const tabs = [
-    {id:'home'},{id:'tour'},{id:'friends'},{id:'create'},{id:'inbox'},{id:'live'},
+    {id:'home'},{id:'tour'},{id:'friends'},{id:'create'},{id:'inbox'},
   ];
 
   if(authLoading) return (
@@ -7637,16 +7796,6 @@ const handleMessage = uid => {
   onVoiceCall={uid=>{ const u=users.find(uu=>uu.id===uid); const callDocId=[currentUser.id,uid].sort().join('_'); setShowCall({type:'audio',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
   onVideoCall={uid=>{ const u=users.find(uu=>uu.id===uid); const callDocId=[currentUser.id,uid].sort().join('_'); setShowCall({type:'video',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
 />}
-            {activeTab==='live' && !showLiveStream && (
-              <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:16, padding:24, textAlign:'center' }}>
-                <div style={{ width:64, height:64, borderRadius:'50%', background:'rgba(255,45,85,0.12)', border:'1px solid rgba(255,45,85,0.3)', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#FF2156" strokeWidth="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
-                </div>
-                <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:16 }}>Stream ended</div>
-                <div style={{ color:COLORS.textTertiary, fontSize:13, maxWidth:260 }}>Go live again to reach your followers in real time, or check the Home feed to watch someone else's stream.</div>
-                <button onClick={()=>setShowLiveStream(currentUser)} style={{ background:'linear-gradient(135deg,#FF2156,#9D4EDD)', border:'none', borderRadius:24, padding:'12px 24px', color:'white', fontWeight:700, cursor:'pointer', fontSize:14 }}>Go Live</button>
-              </div>
-            )}
             {(activeTab==='profile'||activeTab==='settings') && <ProfilePage user={currentUser} setCurrentUser={setCurrentUser} onLogout={handleLogout} users={users} showToast={showToast} onShowAnalytics={()=>setShowAnalytics(true)} onShowQRCode={()=>setShowQRCode(true)} allVideos={videos} setBlockedUsers={setBlockedUsers} onShowSavedPosts={()=>setShowSavedPosts(true)} onGoToGroups={()=>{ setActiveTab('inbox'); setInboxOpenGroups(n=>n+1); }} onShowBroadcast={()=>setShowBroadcast(true)} onViewProfile={handleViewProfile} settingsSignal={activeTab==='settings'?settingsSignal:0} onFeedScroll={handleFeedScroll} t={t} theme={theme} onToggleTheme={toggleTheme} />}
           </>
         )}
