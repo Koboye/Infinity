@@ -884,7 +884,7 @@ const uploadToCloudinary = async (file, onProgress) => {
   formData.append('api_key', apiKey);
   formData.append('timestamp', timestamp);
   formData.append('signature', signature);
-  formData.append('upload_preset', 'infinity_uploads'); // ✅ ADD THIS LINE
+  formData.append('upload_preset', 'infinity_uploads');
 
   const resourceType = file.type?.startsWith('video/') ? 'video' : 'image';
   const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`;
@@ -910,7 +910,6 @@ const uploadToCloudinary = async (file, onProgress) => {
     xhr.send(formData);
   });
 };
-
 /* ─────────────── EMAILJS SEND ─────────────── */
 const sendEmailJS = async (templateParams) => {
   try {
