@@ -876,45 +876,40 @@ const useIntersectionObserver = (ref, options={}) => {
   return isIntersecting;
 };
 /* ─────────────── CLOUDINARY UPLOAD ─────────────── */
-   const uploadToCloudinary = async (file, onProgress) => {
-     const { signature, timestamp, apiKey, cloudName } = await apiFetch('/api/cloudinary-sign', { method: 'POST' });
+const uploadToCloudinary = async (file, onProgress) => {
+  const { signature, timestamp, apiKey, cloudName } = await apiFetch('/api/cloudinary-sign', { method: 'POST' });
 
-     const formData = new FormData();
-     formData.append('file', file);
-     formData.append('api_key', apiKey);
-     formData.append('timestamp', timestamp);
-     formData.append('signature', signature);
-     // Without this, Cloudinary's /upload endpoint defaults to resource_type=image, which
-     // rejects video files outright — this is why video posts (but not photo posts) failed.
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('api_key', apiKey);
+  formData.append('timestamp', timestamp);
+  formData.append('signature', signature);
+  formData.append('upload_preset', 'infinity_uploads'); // ✅ ADD THIS LINE
 
-     const resourceType = file.type?.startsWith('video/')
-  ? 'video'
-  : 'image';
+  const resourceType = file.type?.startsWith('video/') ? 'video' : 'image';
+  const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`;
 
-const uploadUrl =
-  `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`;
-
-     return new Promise((resolve, reject) => {
-       const xhr = new XMLHttpRequest();
-       xhr.upload.onprogress = (e) => {
-         if (e.lengthComputable && onProgress) {
-           onProgress(Math.round((e.loaded / e.total) * 100));
-         }
-       };
-       xhr.onload = () => {
-         if (xhr.status === 200) {
-           const data = JSON.parse(xhr.responseText);
-           resolve(data.secure_url);
-         } else {
-           console.error('Cloudinary response:', xhr.responseText);
-reject(new Error(`Upload failed: ${xhr.responseText}`));
-         }
-       };
-       xhr.onerror = () => reject(new Error('Upload error'));
-       xhr.open('POST', uploadUrl);
-       xhr.send(formData);
-     });
-   };
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable && onProgress) {
+        onProgress(Math.round((e.loaded / e.total) * 100));
+      }
+    };
+    xhr.onload = () => {
+      if (xhr.status === 200) {
+        const data = JSON.parse(xhr.responseText);
+        resolve(data.secure_url);
+      } else {
+        console.error('Cloudinary response:', xhr.responseText);
+        reject(new Error(`Upload failed: ${xhr.responseText}`));
+      }
+    };
+    xhr.onerror = () => reject(new Error('Upload error'));
+    xhr.open('POST', uploadUrl);
+    xhr.send(formData);
+  });
+};
 
 /* ─────────────── EMAILJS SEND ─────────────── */
 const sendEmailJS = async (templateParams) => {
