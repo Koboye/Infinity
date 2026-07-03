@@ -6689,10 +6689,39 @@ const TOUR_TRAVELERS = [
   { id:'tr4', name:'Omar', avatarColor:'#22C55E', trips:12 },
   { id:'tr5', name:'Nina', avatarColor:'#8B5CF6', trips:29 },
 ];
-const TourPage = ({ onFeedScroll, showToast }) => {
+const TourPage = ({ onFeedScroll, showToast, currentUser }) => {
   const [category, setCategory] = useState('All');
   const [selected, setSelected] = useState(null);
+  const [savedIds, setSavedIds] = useState(new Set());
+  const [showBoard, setShowBoard] = useState(false);
   const filtered = category==='All' ? TOUR_DESTINATIONS : TOUR_DESTINATIONS.filter(d=>d.category===category);
+
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    const unsub = onSnapshot(collection(db, 'users', currentUser.id, 'tripBoard'), snap => {
+      setSavedIds(new Set(snap.docs.map(d => d.id)));
+    }, () => {});
+    return () => unsub();
+  }, [currentUser?.id]);
+
+  const toggleSave = async (dest) => {
+    if (!currentUser?.id) return;
+    const ref = doc(db, 'users', currentUser.id, 'tripBoard', dest.id);
+    try {
+      if (savedIds.has(dest.id)) {
+        await deleteDoc(ref);
+        showToast?.(`Removed ${dest.name} from your trip board`, 'info');
+      } else {
+        await setDoc(ref, { name: dest.name, price: dest.price, img: dest.img, savedAt: serverTimestamp() });
+        showToast?.(`Saved ${dest.name} to your trip board`, 'success');
+      }
+    } catch (e) {
+      showToast?.('Failed to update trip board: ' + e.message, 'error');
+    }
+  };
+
+  const savedList = TOUR_DESTINATIONS.filter(d => savedIds.has(d.id));
+  const boardPct = Math.min(100, savedIds.size * 40);
   return (
     <div data-main-scroll="true" onScroll={onFeedScroll} style={{ height:'100%', overflowY:'auto', background:COLORS.bg, padding:'14px 16px max(96px, calc(72px + env(safe-area-inset-bottom)))' }}>
       <div style={{ fontSize:22, fontWeight:800, color:COLORS.textPrimary, marginBottom:4 }}>Tour</div>
@@ -6717,13 +6746,26 @@ const TourPage = ({ onFeedScroll, showToast }) => {
         ))}
       </div>
 
+      {savedIds.size > 0 && (
+        <div onClick={()=>setShowBoard(true)} style={{ background:COLORS.surfaceAlt, borderRadius:16, padding:'12px 14px', marginBottom:14, display:'flex', alignItems:'center', justifyContent:'space-between', cursor:'pointer', border:`1px solid ${COLORS.border}` }}>
+          <div>
+            <div style={{ fontSize:13, fontWeight:700, color:COLORS.textPrimary }}>Your trip board — {savedIds.size} saved</div>
+            <div style={{ fontSize:11.5, color:COLORS.textTertiary, marginTop:2 }}>{boardPct}% planned</div>
+          </div>
+          <div style={{ fontSize:13, fontWeight:700, color:COLORS.brand }}>Plan it →</div>
+        </div>
+      )}
+
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
         {filtered.map(d=>(
           <div key={d.id} onClick={()=>setSelected(d)} style={{ background:COLORS.surface, borderRadius:18, overflow:'hidden', cursor:'pointer', boxShadow:'0 4px 16px rgba(30,27,46,0.08)', border:`1px solid ${COLORS.border}` }}>
             <div style={{ position:'relative', width:'100%', paddingTop:'70%', background:COLORS.surfaceAlt }}>
               <img src={d.img} alt={d.name} style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover' }} />
+              <button onClick={(e)=>{ e.stopPropagation(); toggleSave(d); }} style={{ position:'absolute', top:8, left:8, width:28, height:28, borderRadius:'50%', background:'rgba(0,0,0,0.45)', backdropFilter:'blur(6px)', border:'none', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill={savedIds.has(d.id) ? '#FF2156' : 'none'} stroke={savedIds.has(d.id) ? '#FF2156' : '#fff'} strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              </button>
               <div style={{ position:'absolute', top:8, right:8, background:'rgba(0,0,0,0.55)', backdropFilter:'blur(6px)', borderRadius:12, padding:'3px 8px', display:'flex', alignItems:'center', gap:3 }}>
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="#FBBF24" stroke="#FBBF24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="#FBBF24" stroke="#FBBF24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></polygon></svg>
                 <span style={{ color:'#fff', fontSize:10.5, fontWeight:700 }}>{d.rating}</span>
               </div>
             </div>
@@ -6754,18 +6796,37 @@ const TourPage = ({ onFeedScroll, showToast }) => {
                 </div>
                 <div style={{ fontSize:13, color:COLORS.textSecondary }}>{formatNumber(selected.travelers)} travelers</div>
               </div>
-              <div style={{ fontSize:14, color:COLORS.textSecondary, lineHeight:1.5, marginBottom:18 }}>{selected.blurb}</div>
-              <button onClick={()=>{ showToast?.(`${selected.name} added to your trip wishlist`,'success'); setSelected(null); }} style={{ width:'100%', background:COLORS.gradient, border:'none', borderRadius:20, padding:'14px', color:'#fff', fontWeight:700, fontSize:14.5, cursor:'pointer' }}>
-                Plan this trip — {selected.price}
+              <button onClick={()=>{ toggleSave(selected); setSelected(null); }} style={{ width:'100%', background:COLORS.gradient, border:'none', borderRadius:20, padding:'14px', color:'#fff', fontWeight:700, fontSize:14.5, cursor:'pointer' }}>
+                {savedIds.has(selected.id) ? 'Remove from trip board' : `Add to trip board — ${selected.price}`}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showBoard && (
+        <div onClick={()=>setShowBoard(false)} style={{ position:'fixed', inset:0, background:'rgba(20,17,30,0.55)', backdropFilter:'blur(4px)', zIndex:4300, display:'flex', alignItems:'flex-end' }}>
+          <div onClick={e=>e.stopPropagation()} style={{ width:'100%', maxWidth:430, margin:'0 auto', background:COLORS.surface, borderTopLeftRadius:26, borderTopRightRadius:26, maxHeight:'75%', overflow:'auto', padding:'20px 18px 28px' }}>
+            <div style={{ fontSize:18, fontWeight:800, color:COLORS.textPrimary, marginBottom:14 }}>Your trip board</div>
+            {savedList.length === 0 ? (
+              <div style={{ fontSize:13, color:COLORS.textTertiary }}>Nothing saved yet — tap the heart on any destination.</div>
+            ) : savedList.map(d => (
+              <div key={d.id} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 0', borderBottom:`1px solid ${COLORS.border}` }}>
+                <img src={d.img} alt={d.name} style={{ width:48, height:48, borderRadius:12, objectFit:'cover' }} />
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:13.5, fontWeight:700, color:COLORS.textPrimary }}>{d.name}</div>
+                  <div style={{ fontSize:12, color:COLORS.textTertiary }}>{d.price} / trip</div>
+                </div>
+                <button onClick={()=>toggleSave(d)} style={{ background:'none', border:'none', color:COLORS.textTertiary, fontSize:12, cursor:'pointer' }}>Remove</button>
+              </div>
+            ))}
+            <div style={{ fontSize:11.5, color:COLORS.textTertiary, marginTop:16, textAlign:'center' }}>Full itinerary builder coming soon</div>
           </div>
         </div>
       )}
     </div>
   );
 };
-
 /* Bottom nav: standardized across every tab — same 38x38 footprint, same stroke
    weight, same single accent color (COLORS.brand) for the active state, same
    inactive treatment (COLORS.textTertiary). 'create' is intentionally the one
