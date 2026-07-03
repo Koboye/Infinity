@@ -1056,7 +1056,7 @@ const GlobalStyles = () => (
     button{touch-action:manipulation}
     button:active{transform:scale(0.94)!important;transition:transform 0.1s}
     input,textarea{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif}
-    input:focus,textarea:focus{outline:none;box-shadow:0 0 0 2px rgba(255,33,86,0.22);border-radius:inherit;transition:box-shadow 0.15s ease}
+    input:focus,textarea:focus{outline:none;box-shadow:none}
     .tab-active-indicator{animation:tabPop 0.25s ease}
     .story-avatar-ring{background:conic-gradient(#8B5CF6,#EC4899,#F59E0B,#3B82F6,#8B5CF6);padding:2.5px;border-radius:50%}
     .skeleton{background:linear-gradient(90deg,rgba(255,255,255,0.04) 25%,rgba(255,255,255,0.1) 50%,rgba(255,255,255,0.04) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite}
@@ -2805,7 +2805,7 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
     {showShare && <ShareSheet video={video} currentUser={currentUser} onClose={()=>setShowShare(false)} showToast={showToast} />}
     {showSaveConfirm && <SaveConfirmSheet onClose={()=>setShowSaveConfirm(false)} onViewCollections={()=>{ setShowSaveConfirm(false); showToast?.('Opening collections…','info'); }} />}
     {showOptions && <PostOptionsMenu video={video} currentUser={currentUser} onClose={()=>setShowOptions(false)} showToast={showToast} onDelete={onDelete} onBlock={onBlock} />}
-    <div style={{ background:COLORS.surface, borderRadius:RADIUS.lg, padding:14, marginBottom:10, boxShadow:'0 2px 14px rgba(124,58,237,0.06)', border:`1px solid ${COLORS.border}` }}>
+    <div style={{ background:COLORS.surface, borderRadius:RADIUS.lg, padding:14, marginBottom:0, boxShadow:'0 2px 14px rgba(124,58,237,0.06)', border:`1px solid ${COLORS.border}` }}>
       <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:10 }}>
         <div onClick={()=>onViewProfile?.(video.userId)} style={{ width:44, height:44, borderRadius:'50%', background:video.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, fontSize:17, overflow:'hidden', cursor:'pointer', flexShrink:0 }}>
           {video.avatarUrl ? <img src={video.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : (video.username||'?')[0]?.toUpperCase()}
@@ -7826,7 +7826,7 @@ const handleMessage = uid => {
         )}
       </div>
 
-      <div style={{ display:'flex', alignItems:'stretch', background:COLORS.surface, borderTop:`1px solid ${COLORS.border}`, boxShadow:'0 -4px 20px rgba(30,27,46,0.06)', paddingTop:4, paddingBottom:'max(4px, env(safe-area-inset-bottom))', position:'absolute', left:0, right:0, bottom:0, zIndex:500, transform: navVisible ? 'translateY(0)' : 'translateY(100%)', transition:'transform 0.25s cubic-bezier(0.4,0,0.2,1)' }}>
+      <div style={{ display:'flex', alignItems:'stretch', background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderBottom:'none', borderRadius:'20px 20px 0 0', boxShadow:'0 -4px 20px rgba(30,27,46,0.06)', paddingTop:4, paddingBottom:'max(4px, env(safe-area-inset-bottom))', position:'absolute', left:14, right:14, bottom:0, zIndex:500, transform: navVisible ? 'translateY(0)' : 'translateY(100%)', transition:'transform 0.25s cubic-bezier(0.4,0,0.2,1)' }}>
         {tabs.map(tab=>{
           if(tab.id==='create') {
             return (
