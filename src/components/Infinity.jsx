@@ -52,10 +52,6 @@ const apiFetch = async (path, options = {}) => {
   return data;
 };
 
-/* ─────────────── CLOUDINARY CONFIG ─────────────── */
-const CLOUDINARY_CLOUD = 'dotvhzjmc';
-const CLOUDINARY_PRESET = 'g3c7dwdg';
-const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/upload`;
 const useNetworkStatus = () => {
   const [online, setOnline] = useState(navigator.onLine);
   useEffect(()=>{
@@ -862,32 +858,37 @@ const useIntersectionObserver = (ref, options={}) => {
   return isIntersecting;
 };
 /* ─────────────── CLOUDINARY UPLOAD ─────────────── */
-const uploadToCloudinary = async (file, onProgress) => {
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('upload_preset', CLOUDINARY_PRESET);
-  formData.append('cloud_name', CLOUDINARY_CLOUD);
-  
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable && onProgress) {
-        onProgress(Math.round((e.loaded / e.total) * 100));
-      }
-    };
-    xhr.onload = () => {
-      if (xhr.status === 200) {
-        const data = JSON.parse(xhr.responseText);
-        resolve(data.secure_url);
-      } else {
-        reject(new Error('Upload failed'));
-      }
-    };
-    xhr.onerror = () => reject(new Error('Upload error'));
-    xhr.open('POST', CLOUDINARY_UPLOAD_URL);
-    xhr.send(formData);
-  });
-};
+   const uploadToCloudinary = async (file, onProgress) => {
+     const { signature, timestamp, apiKey, cloudName } = await apiFetch('/api/cloudinary-sign', { method: 'POST' });
+
+     const formData = new FormData();
+     formData.append('file', file);
+     formData.append('api_key', apiKey);
+     formData.append('timestamp', timestamp);
+     formData.append('signature', signature);
+
+     const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/upload`;
+
+     return new Promise((resolve, reject) => {
+       const xhr = new XMLHttpRequest();
+       xhr.upload.onprogress = (e) => {
+         if (e.lengthComputable && onProgress) {
+           onProgress(Math.round((e.loaded / e.total) * 100));
+         }
+       };
+       xhr.onload = () => {
+         if (xhr.status === 200) {
+           const data = JSON.parse(xhr.responseText);
+           resolve(data.secure_url);
+         } else {
+           reject(new Error('Upload failed'));
+         }
+       };
+       xhr.onerror = () => reject(new Error('Upload error'));
+       xhr.open('POST', uploadUrl);
+       xhr.send(formData);
+     });
+   };
 
 /* ─────────────── EMAILJS SEND ─────────────── */
 const sendEmailJS = async (templateParams) => {
