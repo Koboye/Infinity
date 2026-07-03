@@ -7360,7 +7360,7 @@ const handleMessage = uid => {
   onCreateStory={()=>setShowCreateStory(true)} onViewStory={(payload)=>setShowStoryViewer(payload)}
   onOpenProfileDrawer={()=>setShowProfileDrawer(true)} onFeedScroll={handleFeedScroll}
   blockedUsers={blockedUsers} onBlock={uid=>setBlockedUsers(p=>[...p,uid])} users={users} onOpenCamera={()=>setShowCamera(true)} onOpenComposer={()=>setShowTextComposer(true)} />}
-            {activeTab==='tour' && <TourPage onFeedScroll={handleFeedScroll} showToast={showToast} />}
+            {activeTab==='tour' && <TourPage onFeedScroll={handleFeedScroll} showToast={showToast} currentUser={currentUser} />}
             {activeTab==='friends' && <FriendsDiscoveryPage currentUser={currentUser} users={users} followed={followed} onFollow={toggleFollow} onViewProfile={handleViewProfile} onOpenSearch={()=>setShowDiscover(true)} onFeedScroll={handleFeedScroll} onCreateStory={()=>setShowCreateStory(true)} onViewStory={(payload)=>setShowStoryViewer(payload)} onOpenStories={()=>setShowStoriesPage(true)} />}
             {activeTab==='create' && <CreateScreen onOpenCamera={()=>setShowCamera(true)} onShowSoundLibrary={()=>setShowSoundLibrary(true)} showToast={showToast} t={t} currentUser={currentUser} users={users} onPosted={()=>setActiveTab('home')} />}
             {activeTab==='inbox' && <InboxPage t={t} users={users} currentUser={currentUser} showToast={showToast} onViewProfile={handleViewProfile} initialTargetId={inboxTargetId} onClearTarget={()=>setInboxTargetId(null)} persistedConversation={activeConversation} openGroupsSignal={inboxOpenGroups} onSetConversation={(conv)=>{ setActiveConversation(conv); }} onFeedScroll={handleFeedScroll}
