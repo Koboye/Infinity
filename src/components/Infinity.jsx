@@ -6986,7 +6986,7 @@ const [blockedUsers, setBlockedUsers] = useState([]);
         // not a hardcoded support email — the claim lives on the ID token, not Firestore.
         let isAdmin = false;
         try {
-          const tokenResult = await getIdTokenResult(fbUser);
+          const tokenResult = await getIdTokenResult(fbUser, true);
           isAdmin = tokenResult.claims?.admin === true;
         } catch {}
         if(profile) {
