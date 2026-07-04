@@ -59,26 +59,44 @@ export async function POST(req) {
       createdAt: Date.now(),
     });
 
+    // EmailJS's REST API rejects server-side (non-browser) calls unless a private key
+    // ("accessToken") is supplied — the public key alone (user_id) is only accepted from
+    // requests EmailJS can verify came from a real browser via Origin/Referer headers,
+    // which this Next.js server route obviously doesn't have. Without EMAILJS_PRIVATE_KEY
+    // set, EmailJS returns 403 "API calls are disabled for non-browser applications", which
+    // is exactly what was surfacing to the user as "Failed to send verification email".
+    const emailBody = {
+      service_id: EMAILJS_SERVICE,
+      template_id: EMAILJS_TEMPLATE,
+      user_id: EMAILJS_PUBLIC_KEY,
+      template_params: {
+        to_email: normalizedEmail,
+        from_name: 'Infinity',
+        message: `Your Infinity verification code is: ${otp}\n\nExpires in 10 minutes.`,
+        otp_code: otp,
+        code: otp,
+      },
+    };
+    if (process.env.EMAILJS_PRIVATE_KEY) {
+      emailBody.accessToken = process.env.EMAILJS_PRIVATE_KEY;
+    }
+
     const emailRes = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        service_id: EMAILJS_SERVICE,
-        template_id: EMAILJS_TEMPLATE,
-        user_id: EMAILJS_PUBLIC_KEY,
-        template_params: {
-          to_email: normalizedEmail,
-          from_name: 'Infinity',
-          message: `Your Infinity verification code is: ${otp}\n\nExpires in 10 minutes.`,
-          otp_code: otp,
-          code: otp,
-        },
-      }),
+      headers: { 'Content-Type': 'application/json', origin: 'https://api.emailjs.com' },
+      body: JSON.stringify(emailBody),
     });
 
     if (!emailRes.ok) {
-      console.error('EmailJS send failed', emailRes.status, await emailRes.text());
-      return NextResponse.json({ error: 'Failed to send verification email' }, { status: 502 });
+      const errBody = await emailRes.text();
+      console.error('EmailJS send failed', emailRes.status, errBody);
+      // Clean up the OTP doc we just wrote so a failed send doesn't leave a dangling,
+      // unusable code blocking the next legitimate attempt for this email.
+      await adminDb.collection('otps').doc(normalizedEmail).delete().catch(() => {});
+      const hint = !process.env.EMAILJS_PRIVATE_KEY
+        ? 'Failed to send verification email. (Missing EMAILJS_PRIVATE_KEY on the server \u2014 see env.example.)'
+        : 'Failed to send verification email';
+      return NextResponse.json({ error: hint }, { status: 502 });
     }
 
     return NextResponse.json({ ok: true, expiresAt });
