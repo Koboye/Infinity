@@ -17,7 +17,7 @@ function hashOtp(otp, email) {
 
 export async function POST(req) {
   try {
-    const { email } = await req.json();
+    const { email, username } = await req.json();
     if (!email || typeof email !== 'string' || !/^\S+@\S+\.\S+$/.test(email)) {
       return NextResponse.json({ error: 'Valid email required' }, { status: 400 });
     }
@@ -29,6 +29,22 @@ export async function POST(req) {
     const emailCheck = await rateLimit(`otp-send-email:${normalizedEmail}`, 5, 15 * 60);
     if (!ipCheck.allowed || !emailCheck.allowed) {
       return NextResponse.json({ error: 'Too many requests. Try again later.' }, { status: 429 });
+    }
+
+    // Username availability, checked here with the Admin SDK (bypasses firestore.rules)
+    // instead of on the client. The client used to run this same check itself via
+    // getDocs() against /users straight from the browser, but that collection requires
+    // request.auth != null to read — and at this point in signup the user has no auth
+    // session yet (the Firebase Auth account isn't created until verify-otp succeeds).
+    // That mismatch is exactly what produced the "Missing or insufficient permissions"
+    // error on the sign-up screen; checking it server-side removes the need for any
+    // unauthenticated Firestore read at all.
+    if (username && typeof username === 'string' && username.trim()) {
+      const usernameLower = username.toLowerCase().trim();
+      const existing = await adminDb.collection('users').where('usernameLower', '==', usernameLower).limit(1).get();
+      if (!existing.empty) {
+        return NextResponse.json({ error: 'Username already taken' }, { status: 409 });
+      }
     }
 
     const otp = String(randomInt(100000, 1000000));
