@@ -1994,7 +1994,7 @@ const CreateStoryModal = ({ currentUser, onClose, showToast }) => {
 };
 
 /* ─────────────── USER PROFILE MODAL ─────────────── */
-const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onVoiceCall, onVideoCall, followed, showToast, userVideos }) => {
+const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onVoiceCall, onVideoCall, followed, showToast, userVideos, isLive, onJoinLive }) => {
   const isFollowing = followed?.includes(user?.id);
   const isOwn = user?.id === currentUser?.id;
   const [tab, setTab] = useState('posts');
@@ -2009,14 +2009,23 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
           <button onClick={onClose} style={{ background:'rgba(255,255,255,0.08)', border:'none', borderRadius:'50%', width:34, height:34, color:'white', cursor:'pointer', fontSize:16 }}>✕</button>
         </div>
         <div style={{ textAlign:'center', padding:'4px 20px 20px' }}>
-          <div style={{ width:90, height:90, borderRadius:'50%', padding:2.5, margin:'0 auto 14px', background:'conic-gradient(#FF2156,#FFB100,#9D4EDD,#FF2156)' }}>
+          <div style={{ width:90, height:90, borderRadius:'50%', padding:2.5, margin:'0 auto 14px', background: isLive ? 'linear-gradient(135deg,#FF2156,#FF7A00)' : 'conic-gradient(#FF2156,#FFB100,#9D4EDD,#FF2156)', position:'relative' }}>
             <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:'#0d0d0d', padding:2 }}>
               <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:user?.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:32, overflow:'hidden' }}>
                 {avatarSrc ? <img src={avatarSrc} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : user?.avatar}
               </div>
             </div>
+            {isLive && (
+              <div style={{ position:'absolute', bottom:-2, left:'50%', transform:'translateX(-50%)', background:'#FF2156', borderRadius:6, padding:'2px 8px', fontSize:9, fontWeight:800, color:'white', letterSpacing:0.4, whiteSpace:'nowrap' }}>LIVE</div>
+            )}
           </div>
-          <div style={{ color:'white', fontWeight:800, fontSize:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{getDisplayHandle(user)}</div>
+          <div style={{ color:'white', fontWeight:800, fontSize:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{user?.fullName || user?.username}</div>
+          {isLive && (
+            <button onClick={()=>onJoinLive?.(user)} style={{ marginTop:10, background:'linear-gradient(135deg,#FF2156,#FF7A00)', border:'none', borderRadius:20, padding:'9px 20px', color:'white', fontWeight:700, fontSize:13, cursor:'pointer', display:'inline-flex', alignItems:'center', gap:6 }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+              Join Live
+            </button>
+          )}
           {user?.verified && <div style={{ display:'inline-flex', alignItems:'center', gap:4, color:'#2F9BFF', fontSize:12, marginTop:4, background:'rgba(29,155,240,0.1)', borderRadius:20, padding:'3px 10px' }}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="#2F9BFF"><path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             Verified
@@ -3120,7 +3129,7 @@ const HomeFeed = ({ t, videos, videosLoading, onLike, onComment, onShare, onFoll
   };
   const removeComposerMedia = idx => setComposerMedia(m => m.filter((_,i)=>i!==idx));
   const setPollOption = (idx, val) => setPollOptions(opts => opts.map((o,i)=>i===idx?val:o));
-  const addPollOption = () => setPollOptions(opts => opts.length<4 ? [...opts, ''] : opts);
+  const addPollOption = () => setPollOptions(opts => [...opts, '']); // unlimited options — poll length is only naturally bounded by what fits Firestore/UI
   const removePollOption = idx => setPollOptions(opts => opts.length>2 ? opts.filter((_,i)=>i!==idx) : opts);
   const closePollBuilder = () => { setShowPollBuilder(false); setPollQuestion(''); setPollOptions(['','']); };
   const pollIsValid = pollQuestion.trim() && pollOptions.filter(o=>o.trim()).length>=2;
@@ -3279,9 +3288,7 @@ const HomeFeed = ({ t, videos, videosLoading, onLike, onComment, onShare, onFoll
                 )}
               </div>
             ))}
-            {pollOptions.length<4 && (
-              <button onClick={addPollOption} style={{ background:'none', border:'none', color:COLORS.brand, fontWeight:700, fontSize:12, cursor:'pointer', padding:'2px 0' }}>+ Add option</button>
-            )}
+            <button onClick={addPollOption} style={{ background:'none', border:'none', color:COLORS.brand, fontWeight:700, fontSize:12, cursor:'pointer', padding:'2px 0' }}>+ Add option</button>
           </div>
         )}
 
@@ -3553,7 +3560,7 @@ const CreateScreen = ({ onOpenCamera, onShowSoundLibrary, showToast, t, currentU
   const removeMedia = idx => setMedia(m => m.filter((_,i)=>i!==idx));
 
   const setPollOption = (idx, val) => setPollOptions(opts => opts.map((o,i)=>i===idx?val:o));
-  const addPollOption = () => setPollOptions(opts => opts.length<4 ? [...opts, ''] : opts);
+  const addPollOption = () => setPollOptions(opts => [...opts, '']); // unlimited options — poll length is only naturally bounded by what fits Firestore/UI
   const removePollOption = idx => setPollOptions(opts => opts.length>2 ? opts.filter((_,i)=>i!==idx) : opts);
   const closePollBuilder = () => { setShowPollBuilder(false); setPollQuestion(''); setPollOptions(['','']); };
   const pollIsValid = pollQuestion.trim() && pollOptions.filter(o=>o.trim()).length>=2;
@@ -3692,9 +3699,7 @@ const CreateScreen = ({ onOpenCamera, onShowSoundLibrary, showToast, t, currentU
                 )}
               </div>
             ))}
-            {pollOptions.length<4 && (
-              <button onClick={addPollOption} style={{ background:'none', border:'none', color:COLORS.brand, fontWeight:700, fontSize:12.5, cursor:'pointer', padding:'4px 0' }}>+ Add option</button>
-            )}
+            <button onClick={addPollOption} style={{ background:'none', border:'none', color:COLORS.brand, fontWeight:700, fontSize:12.5, cursor:'pointer', padding:'4px 0' }}>+ Add option</button>
           </div>
         )}
 
@@ -4619,7 +4624,6 @@ if(activeSubPage==='settings') return (
           </div>
           <div style={{ textAlign:'center' }}>
           <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:19 }}>{user?.fullName || user?.username}</div>
-          <div style={{ color:COLORS.textTertiary, fontSize:13, marginTop:2 }}>{getDisplayHandle(user)}</div>
           <div style={{ color:COLORS.textSecondary, fontSize:13, marginTop:10, lineHeight:1.6, maxWidth:280, margin:'10px auto 0' }}>{user?.bio || 'Creating memories & chasing dreams'} ✨</div>
           {user?.link && (safeProfileUrl(user.link) ? (
             <a href={safeProfileUrl(user.link)} target="_blank" rel="noopener noreferrer" style={{ color:COLORS.info, fontSize:13, display:'block', marginTop:4 }}>{user.link}</a>
@@ -7472,6 +7476,7 @@ export default function DaguV3App() {
   const [showStoriesPage, setShowStoriesPage] = useState(false);
   const [showCall, setShowCall] = useState(null); // { type, contactName, contactAvatar, contactId }
   const [showLiveStream, setShowLiveStream] = useState(null);
+  const liveStreamerIds = useLiveStreamerIds(currentUser);
   const [showStoryViewer, setShowStoryViewer] = useState(null);
   const [showSoundLibrary, setShowSoundLibrary] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
@@ -7884,7 +7889,8 @@ const handleMessage = uid => {
       {viewingProfile && (
         <UserProfileModal user={viewingProfile} currentUser={currentUser} onClose={()=>setViewingProfile(null)} onFollow={toggleFollow} onMessage={uid=>{handleMessage(uid); setViewingProfile(null);}} onVoiceCall={uid=>{const u=users.find(uu=>uu.id===uid); setShowCall({type:'audio',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid}); setViewingProfile(null);}}
  onVideoCall={uid=>{const u=users.find(uu=>uu.id===uid); setShowCall({type:'video',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid}); setViewingProfile(null);}}
- followed={followed} showToast={showToast} userVideos={videos.filter(v=>v.userId===viewingProfile?.id)} />
+ followed={followed} showToast={showToast} userVideos={videos.filter(v=>v.userId===viewingProfile?.id)}
+ isLive={liveStreamerIds?.has(viewingProfile?.id)} onJoinLive={u=>{ setShowLiveStream(u); setViewingProfile(null); }} />
       )}
 
       {showProfileDrawer && (
