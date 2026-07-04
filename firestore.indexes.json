@@ -70,6 +70,14 @@
         { "fieldPath": "commentId", "order": "ASCENDING" },
         { "fieldPath": "userId", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "liveMessages",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "liveId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []
