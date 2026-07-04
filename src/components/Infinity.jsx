@@ -877,7 +877,12 @@ const useIntersectionObserver = (ref, options={}) => {
 };
 /* ─────────────── CLOUDINARY UPLOAD ─────────────── */
 const uploadToCloudinary = async (file, onProgress) => {
-  const { signature, timestamp, apiKey, cloudName } = await apiFetch('/api/cloudinary-sign', { method: 'POST' });
+  // Tell the signing endpoint exactly which extra param this upload will send
+  // (upload_preset) so it signs the same string Cloudinary reconstructs on its end.
+  const { signature, timestamp, apiKey, cloudName } = await apiFetch('/api/cloudinary-sign', {
+    method: 'POST',
+    body: JSON.stringify({ params: { upload_preset: 'infinity_uploads' } }),
+  });
 
   const formData = new FormData();
   formData.append('file', file);
@@ -2278,6 +2283,22 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
 
       pc = new RTCPeerConnection({ iceServers: LIVE_ICE_SERVERS });
       pc.ontrack = e => { setRemoteStream(e.streams[0]); setConnected(true); };
+
+      // BUG FIX: previously there was no timeout here at all — if the WebRTC connection
+      // never actually established (dead/rate-limited TURN servers, blocked ports,
+      // restrictive NAT), the viewer was stuck on "Connecting to stream..." forever with
+      // no error and no way out except manually closing. That's exactly what "tries and
+      // nothing happens" looks like from the outside. Now it gives up and tells the user
+      // after a generous window instead of hanging silently.
+      const connectTimeout = setTimeout(() => {
+        if (!cancelled && pc && pc.connectionState !== 'connected') {
+          showToast?.('Could not connect to this live stream. Check your connection and try again.', 'error');
+          onClose?.();
+        }
+      }, 20000);
+      pc.addEventListener('connectionstatechange', () => {
+        if (pc.connectionState === 'connected') clearTimeout(connectTimeout);
+      });
 
       viewerDocRef = doc(db, 'liveStreams', liveDoc.id, 'viewers', currentUser.id);
       pc.onicecandidate = e => {
@@ -5688,7 +5709,23 @@ unsubCandidatesRef.current = onSnapshot(collection(db, 'calls', callDocId.curren
             });
           });
         }
-        setTimeout(() => setStatus(s => s === 'calling' ? 'connected' : s), 8000);
+        // BUG FIX: this used to force status to 'connected' after 8 seconds no matter
+        // what — even if the peer connection had never actually connected (e.g. dead/
+        // rate-limited TURN servers, blocked ports, restrictive NAT). That made the UI
+        // show "Connected · 0:01" with a running timer while no audio/video was ever
+        // flowing, which looked exactly like "the call does nothing" to the user. Now,
+        // if the connection genuinely hasn't gone through after a generous window, we
+        // report a real failure instead of a fake success.
+        const connectTimeout = setTimeout(() => {
+          if (pc.connectionState !== 'connected') {
+            setStatus('failed');
+            showToast?.('Could not connect the call. Check your connection and try again.', 'error');
+            setTimeout(onClose, 2500);
+          }
+        }, 20000);
+        pc.addEventListener('connectionstatechange', () => {
+          if (pc.connectionState === 'connected') clearTimeout(connectTimeout);
+        });
       } catch (e) {
         console.error('Call error:', e);
         // NotFoundError means the device has no camera/mic at all (not just permission
@@ -7446,12 +7483,13 @@ const [blockedUsers, setBlockedUsers] = useState([]);
     lastScrollYRef.current = 0;
   }, [activeTab]);
 
-  // Horizontal swipe: Profile ↔ Home ↔ Tour ↔ Friends ↔ Messages ↔ Settings.
+  // Horizontal swipe: Settings ↔ Profile ↔ Home ↔ Tour ↔ Friends ↔ Messages ↔ back to Settings.
   // 'Create' is deliberately excluded from the swipe order — it's a tap-only action,
   // reached from its raised button in the bottom nav (or the Home composer), never
-  // by swiping past it. Swiping right from Home reveals Profile; swiping left walks
-  // forward through Tour → Friends → Messages → Settings.
-  const swipeTabOrder = ['profile','home','tour','friends','inbox','settings'];
+  // by swiping past it. This is a continuous loop: swiping left past Messages wraps
+  // around to Settings, and swiping right past Settings wraps around to Messages —
+  // it never just stops dead at either end.
+  const swipeTabOrder = ['settings','profile','home','tour','friends','inbox'];
   const touchStartRef = useRef(null);
 
   // Centralized navigation so bottom-nav taps and swipe gestures always agree on what
@@ -7482,8 +7520,10 @@ const [blockedUsers, setBlockedUsers] = useState([]);
     if(elapsed > 600 || Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.8) return;
     const currentIdx = swipeTabOrder.indexOf(activeTab);
     if(currentIdx === -1) return;
-    const nextIdx = dx < 0 ? currentIdx + 1 : currentIdx - 1;
-    if(nextIdx < 0 || nextIdx >= swipeTabOrder.length) return;
+    const len = swipeTabOrder.length;
+    // Wrap around in both directions so the swipe order is a continuous loop
+    // rather than a dead end at Settings or Messages.
+    const nextIdx = (currentIdx + (dx < 0 ? 1 : -1) + len) % len;
     haptic('light');
     navigateToTab(swipeTabOrder[nextIdx]);
   };
