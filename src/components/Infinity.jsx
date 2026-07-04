@@ -2116,6 +2116,16 @@ const LIVE_ICE_SERVERS = [
   { urls: 'turns:global.relay.metered.ca:443?transport=tcp', username: 'f5e29fd91b8ea2fc485c24ac', credential: 'FZlzkJ5GJJUyYocD' },
 ];
 
+// Some environments simply don't expose a real RTCPeerConnection constructor at all:
+// embedded webviews/preview iframes without WebRTC entitlements, some in-app browsers
+// (e.g. certain social apps' built-in browser), or strict privacy modes that stub it
+// out. In those cases `new RTCPeerConnection(...)` throws "RTCPeerConnection is not a
+// constructor" deep inside a snapshot handler, as an uncaught promise rejection with no
+// user-facing message at all. This checks up front so Live/Calls can fail with a clear,
+// actionable toast instead of silently doing nothing.
+const isWebRTCSupported = () =>
+  typeof window !== 'undefined' && typeof window.RTCPeerConnection === 'function';
+
 // Broadcaster's own camera preview (host side only).
 const LiveHostVideo = ({ streamRef }) => {
   const videoRef = useRef(null);
@@ -2186,6 +2196,11 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
     let unsubViewers = () => {};
 
     const start = async () => {
+      if (!isWebRTCSupported()) {
+        showToast?.("This browser/window doesn't support video calling. Try opening the app in a regular browser tab.", 'error');
+        onClose?.();
+        return;
+      }
       let stream;
       try {
         stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'user' }, audio:true });
@@ -2269,6 +2284,11 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
     let viewerDocRef = null;
 
     const start = async () => {
+      if (!isWebRTCSupported()) {
+        showToast?.("This browser/window doesn't support video calling. Try opening the app in a regular browser tab.", 'error');
+        onClose?.();
+        return;
+      }
       const q = query(collection(db,'liveStreams'), where('streamerId','==', streamer?.id), where('active','==', true));
       const snap = await getDocs(q);
       if(cancelled) return;
@@ -5575,6 +5595,12 @@ const CallModal = ({ type, contactName, contactAvatar, contactId, currentUser, o
 
     const startCall = async () => {
       try {
+        if (!isWebRTCSupported()) {
+          showToast?.("This browser/window doesn't support calling. Try opening the app in a regular browser tab.", 'error');
+          setStatus('failed');
+          setTimeout(onClose, 1500);
+          return;
+        }
         const constraints = type === 'video'
           ? { audio: true, video: { facingMode: 'user' } }
           : { audio: true, video: false };
