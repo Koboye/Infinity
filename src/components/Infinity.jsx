@@ -2259,6 +2259,9 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
       unsubViewers = onSnapshot(collection(db, 'liveStreams', ref.id, 'viewers'), snap => {
         setViewers(snap.size);
         snap.docChanges().forEach(async change => {
+          // (see error handler below — if this listener never fires for a viewer
+          // that actually joined, the host never creates a peer connection/offer,
+          // and that viewer is stuck on "Connecting..." with nothing wrong shown)
           const viewerId = change.doc.id;
           if(change.type === 'added'){
             const pc = new RTCPeerConnection({ iceServers: LIVE_ICE_SERVERS });
@@ -2291,6 +2294,15 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
             cleanupByViewer.delete(viewerId);
           }
         });
+      }, (err) => {
+        // BUG FIX: this listener previously had no error callback at all. If Firestore
+        // denied it (e.g. a rules mismatch on liveStreams/{id}/viewers), the host would
+        // never learn a viewer had joined, never create a peer connection, and never
+        // send an offer — the viewer would then sit on "Connecting..." until the
+        // 20s timeout with no indication of what went wrong. Now it's logged so the
+        // real cause (almost always firestore.rules) is visible instead of invisible.
+        console.error('Live host viewers listener error (check firestore.rules for /liveStreams/{id}/viewers):', err);
+        showToast?.('Having trouble reaching viewers — check your connection', 'error');
       });
     };
     start();
@@ -2370,6 +2382,8 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
             await updateDoc(viewerDocRef, { answer: { type: answer.type, sdp: answer.sdp } });
           } catch {}
         }
+      }, (err) => {
+        console.error('Viewer offer listener error (check firestore.rules for /liveStreams/{id}/viewers/{viewerId}):', err);
       });
       unsubHostCandidates = onSnapshot(collection(viewerDocRef, 'hostCandidates'), s2 => {
         s2.docChanges().forEach(async c => {
@@ -5736,18 +5750,29 @@ unsubCandidatesRef.current = onSnapshot(collection(db, 'calls', callDocId.curren
           };
           const offer = await pc.createOffer();
           await pc.setLocalDescription(offer);
+          // BUG FIX: this write was previously wrapped in .catch(()=>{}) — if it failed
+          // (most commonly a Firestore permission-denied, or a transient network error),
+          // the call UI kept going as if ringing had started, but no call doc ever
+          // existed for the callee to see. That's exactly "I call, the other person
+          // never gets notified." Now a failed write is a real, visible failure instead
+          // of a silent no-op (caught by the outer try/catch below).
           await setDoc(doc(db, 'calls', callDocId.current), {
             offer: { type: offer.type, sdp: offer.sdp },
             callType: type, callerId: currentUser?.id, callerName: currentUser?.username,
             callerAvatar: currentUser?.avatar, callerColor: currentUser?.avatarColor,
             calleeId: contactId, calleeName: contactName, status: 'ringing', createdAt: serverTimestamp(),
-          }).catch(()=>{});
+          });
 unsubAnswerRef.current = onSnapshot(doc(db, 'calls', callDocId.current), async (snap) => {
             const data = snap.data();
             if (data?.answer && pc.signalingState === 'have-local-offer') {
               try { await pc.setRemoteDescription(new RTCSessionDescription(data.answer)); setStatus('connected'); } catch {}
             }
             if (data?.status === 'declined') { setStatus('declined'); setTimeout(onClose, 1500); }
+          }, (err) => {
+            console.error('Call doc listener error:', err);
+            showToast?.('Lost connection to call status — check permissions/network', 'error');
+            setStatus('failed');
+            setTimeout(onClose, 2000);
           });
 unsubCandidatesRef.current = onSnapshot(collection(db, 'calls', callDocId.current, 'calleeCandidates'), (snap) => {
             snap.docChanges().forEach(async (change) => {
@@ -7722,7 +7747,13 @@ const [blockedUsers, setBlockedUsers] = useState([]);
           setIncomingCall({...data, callDocId: change.doc.id});
         }
       });
-    },()=>{});
+    }, (err)=>{
+      // BUG FIX: this error callback used to be a no-op. If Firestore denied this
+      // query (e.g. a security-rules mismatch), the callee would NEVER see an
+      // incoming call and there was no trace of why — it just looked like calling
+      // someone silently did nothing. Now it's logged so it's actually diagnosable.
+      console.error('Incoming-call listener error (check firestore.rules for /calls):', err);
+    });
     return ()=>unsub();
   },[currentUser?.id]);
 
