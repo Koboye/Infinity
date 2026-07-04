@@ -4030,7 +4030,9 @@ const CreateScreen = ({ onOpenCamera, onShowSoundLibrary, showToast, t, currentU
               <span onClick={closeEventBuilder} style={{ cursor:'pointer', color:COLORS.textTertiary }}>✕</span>
             </div>
             <input value={eventTitle} onChange={e=>setEventTitle(e.target.value)} placeholder="Event title" style={{ width:'100%', background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:12, padding:'10px 12px', color:COLORS.textPrimary, outline:'none', fontSize:13.5, marginBottom:8, boxSizing:'border-box' }} />
-            <input type="date" value={eventDate} onChange={e=>setEventDate(e.target.value)} style={{ width:'100%', background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:12, padding:'10px 12px', color:COLORS.textPrimary, outline:'none', fontSize:13.5, marginBottom:8, boxSizing:'border-box' }} />
+            <div style={{ marginBottom:8 }}>
+              <InlineDateSelect value={eventDate} onChange={setEventDate} minYear={new Date().getFullYear()} maxYear={new Date().getFullYear()+10} futureOk />
+            </div>
             <input value={eventLocation} onChange={e=>setEventLocation(e.target.value)} placeholder="Event location (optional)" style={{ width:'100%', background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:12, padding:'10px 12px', color:COLORS.textPrimary, outline:'none', fontSize:13.5, boxSizing:'border-box' }} />
           </div>
         )}
@@ -6938,6 +6940,55 @@ const GuestFeed = ({ onSignIn }) => {
   );
 };
 
+/* ─────────────── Reusable inline date picker (no full-screen native picker) ───────────────
+   Native <input type="date"> is fine on desktop, but on mobile Chrome/Safari it opens an OS-level
+   full-screen picker that takes over the whole viewport and feels jarring inside a modal/panel.
+   This renders three plain <select> dropdowns instead, matching the existing dropdown look used
+   elsewhere, and stays inline no matter what device it's on. */
+const InlineDateSelect = ({ value, onChange, minYear, maxYear, futureOk }) => {
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const today = new Date();
+  const hiYear = maxYear ?? today.getFullYear() + (futureOk ? 10 : 0);
+  const loYear = minYear ?? today.getFullYear() - 100;
+  const parts = value ? value.split('-') : ['', '', ''];
+  const [y, m, d] = parts;
+  const daysInMonth = (year, month) => {
+    if (!year || !month) return 31;
+    return new Date(Number(year), Number(month), 0).getDate();
+  };
+  const maxDay = daysInMonth(y, m);
+  const update = (nextY, nextM, nextD) => {
+    if (!nextY || !nextM || !nextD) { onChange(''); return; }
+    const clampedDay = Math.min(Number(nextD), daysInMonth(nextY, nextM));
+    onChange(`${nextY}-${String(nextM).padStart(2,'0')}-${String(clampedDay).padStart(2,'0')}`);
+  };
+  const selectStyle = {
+    flex:1, background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:12,
+    padding:'12px 10px', color:value?COLORS.textPrimary:COLORS.textTertiary, fontSize:14,
+    fontWeight:600, outline:'none', appearance:'none', WebkitAppearance:'none', cursor:'pointer',
+    fontFamily:'inherit',
+    backgroundImage:`url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='${encodeURIComponent(COLORS.textTertiary)}' stroke-width='2'><polyline points='6 9 12 15 18 9'/></svg>")`,
+    backgroundRepeat:'no-repeat', backgroundPosition:'right 8px center', backgroundSize:14,
+    paddingRight:26,
+  };
+  return (
+    <div style={{display:'flex',gap:8}}>
+      <select aria-label="Month" value={m||''} onChange={e=>update(y, e.target.value, d)} style={selectStyle}>
+        <option value="" disabled>Month</option>
+        {MONTHS.map((name,i)=>(<option key={name} value={String(i+1).padStart(2,'0')}>{name}</option>))}
+      </select>
+      <select aria-label="Day" value={d||''} onChange={e=>update(y, m, e.target.value)} style={{...selectStyle, flex:0.7}}>
+        <option value="" disabled>Day</option>
+        {Array.from({length:maxDay},(_,i)=>i+1).map(day=>(<option key={day} value={String(day).padStart(2,'0')}>{day}</option>))}
+      </select>
+      <select aria-label="Year" value={y||''} onChange={e=>update(e.target.value, m, d)} style={{...selectStyle, flex:0.9}}>
+        <option value="" disabled>Year</option>
+        {Array.from({length:hiYear-loYear+1},(_,i)=>hiYear-i).map(year=>(<option key={year} value={String(year)}>{year}</option>))}
+      </select>
+    </div>
+  );
+};
+
 /* ─────────────── AUTH SCREEN (REAL FIREBASE) ─────────────── */
 const AuthScreen = ({ onLogin }) => {
   const [isLogin, setIsLogin] = useState(true);
@@ -6954,6 +7005,11 @@ const AuthScreen = ({ onLogin }) => {
   const [pendingCreds, setPendingCreds] = useState(null);
   const [otpInput, setOtpInput] = useState('');
   const [otpExpiry, setOtpExpiry] = useState(()=>Date.now() + 10*60*1000);
+  // Google users land here for a moment before an account is created — see handleGoogleLogin.
+  const [pendingGoogleUser, setPendingGoogleUser] = useState(null);
+  const [googleUsername, setGoogleUsername] = useState('');
+  const [googleFullName, setGoogleFullName] = useState('');
+  const [googleBirthdate, setGoogleBirthdate] = useState('');
 
   const handleGoogleLogin = async () => {
     setLoading(true); setError('');
@@ -6970,18 +7026,18 @@ const AuthScreen = ({ onLogin }) => {
     setLoading(false);
     return;
   } else {
+    // Brand-new account: don't silently create it with an auto-generated username.
+    // Ask the person to confirm/choose a username and date of birth first, the same
+    // way the email sign-up flow does, instead of the app deciding for them.
     const baseUsername = (fbUser.displayName||fbUser.email||'user')
-      .split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g,'');
-    // Make username unique but stable: based on UID not random
-    const uname = baseUsername + fbUser.uid.slice(-4);
-    await createUserProfile(fbUser.uid,{
-      username: uname,
-      fullName: fbUser.displayName||'',
-      email: fbUser.email||'',
-      avatarUrl: fbUser.photoURL||null,
-      avatarColor: `hsl(${Math.floor(Math.random()*360)},70%,60%)`,
-    });
-    profile = await getUserProfile(fbUser.uid);
+      .split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g,'') || 'user';
+    setPendingGoogleUser(fbUser);
+    setGoogleUsername(baseUsername + fbUser.uid.slice(-4));
+    setGoogleFullName(fbUser.displayName||'');
+    setGoogleBirthdate('');
+    setStep('google_onboarding');
+    setLoading(false);
+    return;
   }
 }
       if(profile) onLogin({...profile, id:fbUser.uid});
@@ -7001,7 +7057,10 @@ const AuthScreen = ({ onLogin }) => {
   };
 
   const handleSubmit = async () => {
-  setLoading(true); setError('');
+  setError('');
+  if(!identifier){ setError('Email is required'); return; }
+  if(!password){ setError('Password is required'); return; }
+  setLoading(true);
   try {
     if(isLogin){
       const result = await signInWithEmailAndPassword(auth, identifier, password);
@@ -7075,6 +7134,70 @@ if(!result.user.emailVerified && !isNewAccount){
 
   if(step==='guest') return (
     <GuestFeed onSignIn={()=>setStep('method')} />
+  );
+
+  if(step==='google_onboarding') return (
+    <div style={{ height:'100%', display:'flex', alignItems:'center', justifyContent:'center', padding:24, background:COLORS.bg }}>
+      <div style={{ width:'100%', maxWidth:340 }}>
+        <div style={{ background:COLORS.surface, borderRadius:24, padding:24, border:`1px solid ${COLORS.border}`, boxShadow:'0 4px 20px rgba(30,27,46,0.06)' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:20 }}>
+            {pendingGoogleUser?.photoURL
+              ? <img src={pendingGoogleUser.photoURL} alt="" style={{ width:52, height:52, borderRadius:16, objectFit:'cover' }} />
+              : <div style={{ width:52, height:52, borderRadius:16, background:`${COLORS.brand}22`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:28 }}>🌐</div>}
+            <div>
+              <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:16, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Finish setting up</div>
+              <div style={{ color:COLORS.textTertiary, fontSize:12 }}>{pendingGoogleUser?.email}</div>
+            </div>
+          </div>
+          <div style={{ color:COLORS.textSecondary, fontSize:13, lineHeight:1.5, marginBottom:16 }}>
+            Almost done — pick a username and confirm a few details before we create your account.
+          </div>
+          {error && <div style={{background:`${COLORS.danger}1A`,border:`1px solid ${COLORS.danger}4D`,borderRadius:12,padding:'10px 14px',color:COLORS.danger,fontSize:12,marginBottom:12}}>{error}</div>}
+          <input placeholder="Full Name" value={googleFullName} onChange={e=>setGoogleFullName(e.target.value)} style={{ width:'100%', background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:14, padding:'13px 16px', color:COLORS.textPrimary, marginBottom:10, outline:'none', fontSize:14, boxSizing:'border-box' }} />
+          <input placeholder="Username" value={googleUsername} onChange={e=>setGoogleUsername(e.target.value.replace(/\s/g,''))} style={{ width:'100%', background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:14, padding:'13px 16px', color:COLORS.textPrimary, marginBottom:10, outline:'none', fontSize:14, boxSizing:'border-box' }} />
+          <div style={{marginBottom:16}}>
+            <div style={{color:COLORS.textTertiary,fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:0.5,marginBottom:7}}>Date of Birth *</div>
+            <InlineDateSelect value={googleBirthdate} onChange={setGoogleBirthdate} maxYear={new Date().getFullYear()-13} minYear={new Date().getFullYear()-100} />
+            <div style={{color:COLORS.textTertiary,fontSize:11,marginTop:6}}>You must be at least 13 years old.</div>
+          </div>
+          <button onClick={async()=>{
+            setError('');
+            if(!googleUsername.trim()){ setError('Username is required'); return; }
+            if(!googleFullName.trim()){ setError('Full name is required'); return; }
+            if(!googleBirthdate){ setError('Date of birth is required'); return; }
+            const ageMs = Date.now() - new Date(googleBirthdate).getTime();
+            if(ageMs < 13*365.25*24*60*60*1000){ setError('You must be at least 13 years old to sign up'); return; }
+            setLoading(true);
+            try {
+              const usernameLower = googleUsername.trim().toLowerCase();
+              const existing = await getDocs(query(collection(db,'users'), where('usernameLower','==',usernameLower)));
+              if(!existing.empty){ setError('Username already taken'); setLoading(false); return; }
+              const fbUser = pendingGoogleUser;
+              await createUserProfile(fbUser.uid,{
+                username: googleUsername.trim(),
+                fullName: googleFullName.trim(),
+                email: fbUser.email||'',
+                birthdate: googleBirthdate,
+                avatarUrl: fbUser.photoURL||null,
+                avatarColor: `hsl(${Math.floor(Math.random()*360)},70%,60%)`,
+              });
+              const profile = await getUserProfile(fbUser.uid);
+              onLogin(profile ? {...profile, id:fbUser.uid} : buildDefaultProfile(fbUser.uid, {
+                username: googleUsername.trim(), fullName: googleFullName.trim(), email: fbUser.email||'',
+              }));
+            } catch(e){
+              setError(e.message || 'Could not finish setting up your account.');
+              setLoading(false);
+            }
+          }} disabled={loading} style={{ width:'100%', background:COLORS.gradient, border:'none', borderRadius:24, padding:15, color:'white', fontWeight:700, cursor:'pointer', fontSize:15, opacity:loading?0.6:1, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>
+            {loading?'Creating account...':'Create Account'}
+          </button>
+          <button onClick={async()=>{ await signOut(auth).catch(()=>{}); setPendingGoogleUser(null); setStep('method'); setError(''); }} style={{ width:'100%', background:'none', border:'none', color:COLORS.textTertiary, fontSize:13, cursor:'pointer', marginTop:10, textDecoration:'underline' }}>
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
   );
 
   if(step==='method') return (
@@ -7261,58 +7384,13 @@ return (
             <input placeholder="Username" value={username} onChange={e=>setUsername(e.target.value)} style={{ width:'100%', background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:14, padding:'13px 16px', color:COLORS.textPrimary, marginBottom:10, outline:'none', fontSize:14, boxSizing:'border-box' }} />
             <div style={{marginBottom:10}}>
               <div style={{color:COLORS.textTertiary,fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:0.5,marginBottom:7}}>Date of Birth *</div>
-              {(() => {
-                const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-                const today = new Date();
-                const maxYear = today.getFullYear() - 13; // must be at least 13
-                const minYear = today.getFullYear() - 100;
-                const parts = birthdate ? birthdate.split('-') : ['', '', ''];
-                const [y, m, d] = parts;
-                const daysInMonth = (year, month) => {
-                  if (!year || !month) return 31;
-                  return new Date(Number(year), Number(month), 0).getDate();
-                };
-                const maxDay = daysInMonth(y, m);
-                const updateDate = (nextY, nextM, nextD) => {
-                  if (!nextY || !nextM || !nextD) { setBirthdate(''); return; }
-                  // Clamp day in case switching month/year shortens it (e.g. Feb 30 -> Feb 28)
-                  const clampedDay = Math.min(Number(nextD), daysInMonth(nextY, nextM));
-                  setBirthdate(`${nextY}-${String(nextM).padStart(2,'0')}-${String(clampedDay).padStart(2,'0')}`);
-                };
-                const selectStyle = {
-                  flex:1, background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:12,
-                  padding:'12px 10px', color:birthdate?COLORS.textPrimary:COLORS.textTertiary, fontSize:14,
-                  fontWeight:600, outline:'none', appearance:'none', WebkitAppearance:'none', cursor:'pointer',
-                  fontFamily:'inherit',
-                  backgroundImage:`url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='${encodeURIComponent(COLORS.textTertiary)}' stroke-width='2'><polyline points='6 9 12 15 18 9'/></svg>")`,
-                  backgroundRepeat:'no-repeat', backgroundPosition:'right 8px center', backgroundSize:14,
-                  paddingRight:26,
-                };
-                return (
-                  <div>
-                    <div style={{display:'flex',gap:8}}>
-                      <select aria-label="Month" value={m||''} onChange={e=>updateDate(y, e.target.value, d)} style={selectStyle}>
-                        <option value="" disabled>Month</option>
-                        {MONTHS.map((name,i)=>(<option key={name} value={String(i+1).padStart(2,'0')}>{name}</option>))}
-                      </select>
-                      <select aria-label="Day" value={d||''} onChange={e=>updateDate(y, m, e.target.value)} style={{...selectStyle, flex:0.7}}>
-                        <option value="" disabled>Day</option>
-                        {Array.from({length:maxDay},(_,i)=>i+1).map(day=>(<option key={day} value={String(day).padStart(2,'0')}>{day}</option>))}
-                      </select>
-                      <select aria-label="Year" value={y||''} onChange={e=>updateDate(e.target.value, m, d)} style={{...selectStyle, flex:0.9}}>
-                        <option value="" disabled>Year</option>
-                        {Array.from({length:maxYear-minYear+1},(_,i)=>maxYear-i).map(year=>(<option key={year} value={String(year)}>{year}</option>))}
-                      </select>
-                    </div>
-                    <div style={{color:COLORS.textTertiary,fontSize:11,marginTop:6}}>You must be at least 13 years old.</div>
-                  </div>
-                );
-              })()}
+              <InlineDateSelect value={birthdate} onChange={setBirthdate} maxYear={new Date().getFullYear()-13} minYear={new Date().getFullYear()-100} />
+              <div style={{color:COLORS.textTertiary,fontSize:11,marginTop:6}}>You must be at least 13 years old.</div>
             </div>
           </>}
           <input placeholder="Email" value={identifier} onChange={e=>setIdentifier(e.target.value)} style={{ width:'100%', background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:14, padding:'13px 16px', color:COLORS.textPrimary, marginBottom:10, outline:'none', fontSize:14, boxSizing:'border-box' }} />
           <input type="password" placeholder="Password" value={password} onChange={e=>setPassword(e.target.value)} style={{ width:'100%', background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:14, padding:'13px 16px', color:COLORS.textPrimary, marginBottom:14, outline:'none', fontSize:14, boxSizing:'border-box' }} />
-          <button onClick={handleSubmit} disabled={loading||!identifier||!password||(!isLogin&&(!username||!fullName||!birthdate))} style={{ width:'100%', background:COLORS.gradient, border:'none', borderRadius:24, padding:15, color:'white', fontWeight:700, cursor:'pointer', fontSize:15, opacity:(loading||!identifier||!password)?0.5:1, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>
+          <button onClick={handleSubmit} disabled={loading} style={{ width:'100%', background:COLORS.gradient, border:'none', borderRadius:24, padding:15, color:'white', fontWeight:700, cursor:'pointer', fontSize:15, opacity:loading?0.6:1, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>
             {loading?'Please wait...':'Continue'}
           </button>
           {isLogin && (
