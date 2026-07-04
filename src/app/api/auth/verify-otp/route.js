@@ -58,12 +58,6 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Username already taken' }, { status: 409 });
     }
 
-    // Clean up any stale unverified doc left from a previous abandoned signup with this email.
-    const staleEmail = await adminDb.collection('users').where('email', '==', normalizedEmail).limit(1).get();
-    if (!staleEmail.empty) {
-      await adminDb.collection('users').doc(staleEmail.docs[0].id).delete();
-    }
-
     let userRecord;
     try {
       userRecord = await adminAuth.createUser({
@@ -80,6 +74,19 @@ export async function POST(req) {
         return NextResponse.json({ error: 'Password must be at least 6 characters.' }, { status: 400 });
       }
       throw e;
+    }
+
+    // Clean up any stale unverified doc left from a previous abandoned signup with this
+    // email. This now runs strictly AFTER adminAuth.createUser succeeds, not before.
+    // Previously it ran first, which meant: if the email already belonged to a real,
+    // active account, this deleted that person's Firestore profile doc and only THEN
+    // discovered (via 'auth/email-already-exists' above) that it shouldn't have —
+    // by which point the real user's profile was already gone. Reaching this line at
+    // all now proves the email had no existing Auth account, so any doc still sitting
+    // on it is genuinely orphaned and safe to remove.
+    const staleEmail = await adminDb.collection('users').where('email', '==', normalizedEmail).limit(1).get();
+    if (!staleEmail.empty) {
+      await adminDb.collection('users').doc(staleEmail.docs[0].id).delete();
     }
 
     const now = Date.now();
