@@ -93,7 +93,7 @@ const EMAILJS_SERVICE = 'service_mtqmvbb';
 const EMAILJS_TEMPLATE = 'template_1k7wiqa';
 const EMAILJS_PUBLIC_KEY = 'U9fs25Bcx5oQ6A2ru';
 // Recipient for in-app "Report a Problem" submissions. Change in one place if the support inbox changes.
-const SUPPORT_EMAIL = 'getachewshambel11@gmail.com';
+const SUPPORT_EMAIL = 'supportinfinity@gmail.com';
 /* ─────────────── CONSTANTS ─────────────── */
 const LOGIN_METHODS = [
   { id: 'google', name: 'Google', icon: '🌐', color: '#4285f4' },
@@ -212,6 +212,8 @@ const PollWidget = ({ poll, currentUser, videoId, showToast }) => {
   const handleVote = async (optionIdx) => {
     if (voted !== null || !currentUser?.id) return;
     votePendingRef.current = true;
+    const prevVoted = voted;
+    const prevVotes = localVotes;
     setVoted(optionIdx);
     const newVotes = { ...localVotes, [optionIdx]: (localVotes[optionIdx] || 0) + 1 };
     setLocalVotes(newVotes);
@@ -220,9 +222,19 @@ const PollWidget = ({ poll, currentUser, videoId, showToast }) => {
         [`poll.votes.${optionIdx}`]: increment(1),
         [`poll.voters.${currentUser.id}`]: optionIdx
       });
-    } catch (e) { console.log('Poll vote error:', e); }
+      // Only report success once the write has actually been confirmed — previously
+      // this toast fired unconditionally after the try/catch, so a rejected write
+      // (e.g. the missing 'poll' field in firestore.rules, now fixed) still told the
+      // user their vote was counted even though nothing was persisted.
+      showToast?.('Vote counted! 🗳️', 'success');
+    } catch (e) {
+      console.log('Poll vote error:', e);
+      // Roll back the optimistic update so the UI matches what's really in Firestore.
+      setVoted(prevVoted);
+      setLocalVotes(prevVotes);
+      showToast?.('Vote failed — please try again', 'error');
+    }
     finally { votePendingRef.current = false; }
-    showToast?.('Vote counted! 🗳️', 'success');
   };
 
   if (!poll?.options?.length) return null;
@@ -2218,6 +2230,8 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
   const [showGiftPicker, setShowGiftPicker] = useState(false);
   const localStreamRef = useRef(null);
   const liveIdRef = useRef(null);
+  const heartbeatIntervalRef = useRef(null);
+  const unloadHandlerRef = useRef(null);
   const endedRef = useRef(false);
 
   // ── HOST: capture camera/mic, create the live doc, and answer every viewer ──
@@ -2250,11 +2264,30 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
         streamerUsername: streamer?.username,
         viewers: 0,
         createdAt: serverTimestamp(),
+        lastHeartbeat: serverTimestamp(),
         active: true,
       });
       if(cancelled){ updateDoc(ref, { active:false }).catch(()=>{}); return; }
       liveIdRef.current = ref.id;
       setLiveId(ref.id);
+
+      // Keep proving to viewers (and useLiveStreamerIds) that this stream is still
+      // genuinely alive. Without this, the only way `active` ever flipped back to
+      // false was the cleanup below running on a clean unmount — which never happens
+      // if the tab crashes, loses network, or the app is force-quit, leaving a
+      // "ghost" live stream that shows the LIVE ring forever even though no one is
+      // actually streaming.
+      heartbeatIntervalRef.current = setInterval(() => {
+        updateDoc(ref, { lastHeartbeat: serverTimestamp() }).catch(()=>{});
+      }, 15000);
+
+      // Best-effort: if the tab is abruptly closed (not just navigated within the app),
+      // try to flip `active` off immediately rather than waiting up to LIVE_STALE_MS for
+      // the heartbeat to go stale. Not guaranteed to complete, which is exactly why the
+      // heartbeat/staleness check above still exists as the real fix.
+      const markInactiveOnUnload = () => { updateDoc(ref, { active:false }).catch(()=>{}); };
+      window.addEventListener('pagehide', markInactiveOnUnload);
+      unloadHandlerRef.current = markInactiveOnUnload;
 
       unsubViewers = onSnapshot(collection(db, 'liveStreams', ref.id, 'viewers'), snap => {
         setViewers(snap.size);
@@ -2310,6 +2343,8 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
     return () => {
       cancelled = true;
       endedRef.current = true;
+      clearInterval(heartbeatIntervalRef.current);
+      if(unloadHandlerRef.current) window.removeEventListener('pagehide', unloadHandlerRef.current);
       unsubViewers();
       cleanupByViewer.forEach(fn => fn());
       pcByViewer.forEach(pc => pc.close());
@@ -2929,14 +2964,18 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
           )}
         </div>
         <div style={{ flex:1, minWidth:0, display:'flex', flexDirection:'column', overflow:'hidden', cursor:'pointer' }} onClick={()=>onViewProfile?.(video.userId)}>
+          {/* Posts now show only the person's display name — the @username handle
+              underneath/alongside it has been removed per request. Falls back to the
+              username itself only when no fullName was ever set, so something is still
+              shown, but it's rendered as a plain name (no "@") either way. */}
           {video.fullName && video.fullName !== video.username ? (
             <>
               <span style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:14, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{video.fullName}{video.feeling && <span style={{ color:COLORS.textSecondary, fontWeight:500 }}> is feeling {video.feeling.emoji} {video.feeling.text}</span>}</span>
-              <span style={{ color:COLORS.textTertiary, fontSize:12, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>@{video.username} · {timeAgo(tsToDate(video.createdAt))}</span>
+              <span style={{ color:COLORS.textTertiary, fontSize:12, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{timeAgo(tsToDate(video.createdAt))}</span>
             </>
           ) : (
             <span style={{ display:'flex', alignItems:'baseline', gap:6, overflow:'hidden', flexWrap:'wrap' }}>
-              <span style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:14, whiteSpace:'nowrap' }}>@{video.username}</span>
+              <span style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:14, whiteSpace:'nowrap' }}>{video.username}</span>
               {video.feeling && <span style={{ color:COLORS.textSecondary, fontSize:12.5, fontWeight:500, whiteSpace:'nowrap' }}>is feeling {video.feeling.emoji} {video.feeling.text}</span>}
               <span style={{ color:COLORS.textTertiary, fontSize:12, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>· {timeAgo(tsToDate(video.createdAt))}</span>
             </span>
@@ -3078,19 +3117,40 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
 // Tracks which users are currently broadcasting, so their avatar can show a LIVE
 // badge wherever it already appears (Stories, their post in the feed) instead of
 // duplicating that avatar in a separate floating strip.
+// A live stream's `active: true` flag was previously only ever cleared by the host's own
+// cleanup running on clean component unmount (see the LiveStream effect below). If the
+// host's tab crashed, lost network, force-quit the app, or the OS just killed it in the
+// background, that cleanup never ran and the doc stayed `active: true` forever — so the
+// red LIVE ring kept showing on that user's avatar/profile even though they weren't
+// streaming anymore. The host now also writes a `lastHeartbeat` timestamp every ~15s
+// while genuinely live (see the host effect), and this hook additionally requires that
+// heartbeat to be recent before it treats someone as live, re-checked on an interval so a
+// stream doesn't have to wait for another Firestore event to be recognized as stale.
+const LIVE_STALE_MS = 45000;
 const useLiveStreamerIds = (currentUser) => {
   const [liveIds, setLiveIds] = useState(() => new Set());
+  const docsRef = useRef([]);
   useEffect(()=>{
-    const q = query(collection(db,'liveStreams'), where('active','==',true));
-    const unsub = onSnapshot(q, snap=>{
+    const recompute = () => {
+      const now = Date.now();
       const ids = new Set(
-        snap.docs
-          .map(d=>d.data().streamerId)
+        docsRef.current
+          .filter(d => {
+            const hb = tsToMillis(d.lastHeartbeat) || tsToMillis(d.createdAt);
+            return hb && (now - hb) < LIVE_STALE_MS;
+          })
+          .map(d=>d.streamerId)
           .filter(id=>id && id!==currentUser?.id)
       );
       setLiveIds(ids);
+    };
+    const q = query(collection(db,'liveStreams'), where('active','==',true));
+    const unsub = onSnapshot(q, snap=>{
+      docsRef.current = snap.docs.map(d=>d.data());
+      recompute();
     });
-    return ()=>unsub();
+    const interval = setInterval(recompute, 10000);
+    return ()=>{ unsub(); clearInterval(interval); };
   },[currentUser?.id]);
   return liveIds;
 };
@@ -3154,7 +3214,21 @@ const HomeFeed = ({ t, videos, videosLoading, onLike, onComment, onShare, onFoll
     setComposerPosting(true);
     try {
       let images = [];
-      for (const m of composerMedia) { try { images.push(await uploadToCloudinary(m.file)); } catch {} }
+      // Previously each upload failure was swallowed by an empty `catch {}`, so a
+      // broken/rejected photo or video upload just silently vanished — the post still
+      // went through as a text-only post with no indication anything had failed. Now a
+      // failed upload stops the whole post and tells the user, instead of quietly
+      // publishing something they didn't intend to send.
+      for (const m of composerMedia) {
+        try {
+          images.push(await uploadToCloudinary(m.file));
+        } catch (uploadErr) {
+          console.error('Media upload failed:', uploadErr);
+          showToast?.('Failed to upload photo/video — please try again', 'error');
+          setComposerPosting(false);
+          return;
+        }
+      }
       const payload = { description: composerText, images, mediaType: images.length ? 'image' : 'text', hashtags: (composerText||'').match(/#\w+/g) || [] };
       if (pollIsValid) payload.poll = { question: pollQuestion.trim(), options: pollOptions.map(o=>o.trim()).filter(Boolean), votes:{}, voters:{} };
       if (feeling) payload.feeling = feeling;
@@ -3448,10 +3522,13 @@ const FriendsDiscoveryPage = ({ currentUser, users, followed, onFollow, onViewPr
           </div>
           <div style={{ display:'flex', gap:10, overflowX:'auto', paddingBottom:16, marginBottom:6 }}>
             {suggestions.map(u=>(
-              <div key={u.id} style={{ flexShrink:0, width:112, background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:16, padding:'12px 10px', textAlign:'center' }}>
+              <div key={u.id} style={{ flexShrink:0, width:132, background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:16, padding:'12px 10px', textAlign:'center' }}>
                 <div onClick={()=>onViewProfile?.(u.id)} style={{ cursor:'pointer', margin:'0 auto 8px' }}><AvatarCircle u={u} size={52} /></div>
-                <div style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:12, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{u.fullName || u.username}</div>
-                <div style={{ color:COLORS.textTertiary, fontSize:10.5, marginBottom:8 }}>{Math.max(1,(u.followers?.length||0)%20)} mutual</div>
+                {/* Full name shown in full (wraps up to 2 lines) instead of being clipped
+                    with an ellipsis after a couple characters — the fixed 112px card was
+                    too narrow for most real names to fit on one line. */}
+                <div style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:12, overflowWrap:'break-word', wordBreak:'break-word', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden', lineHeight:1.25, minHeight:30 }}>{u.fullName || u.username}</div>
+                <div style={{ color:COLORS.textTertiary, fontSize:10.5, marginBottom:8, marginTop:2 }}>{Math.max(1,(u.followers?.length||0)%20)} mutual</div>
                 <RippleButton onClick={()=>onFollow?.(u.id)} style={{ width:'100%', background:'none', border:`1px solid ${COLORS.brand}`, color:COLORS.brand, borderRadius:12, padding:'5px 0', fontSize:11.5, fontWeight:700, cursor:'pointer' }}>Follow</RippleButton>
               </div>
             ))}
@@ -3602,7 +3679,18 @@ const CreateScreen = ({ onOpenCamera, onShowSoundLibrary, showToast, t, currentU
     setPosting(true);
     try {
       let images = [];
-      for (const m of media) { try { images.push(await uploadToCloudinary(m.file)); } catch {} }
+      // See submitQuickPost's comment above — same fix: don't swallow upload errors,
+      // stop and tell the user instead of quietly posting without their media.
+      for (const m of media) {
+        try {
+          images.push(await uploadToCloudinary(m.file));
+        } catch (uploadErr) {
+          console.error('Media upload failed:', uploadErr);
+          showToast?.('Failed to upload photo/video — please try again', 'error');
+          setPosting(false);
+          return;
+        }
+      }
       const payload = {
         description: text, images, mediaType: images.length ? 'image' : 'text',
         hashtags: (text||'').match(/#\w+/g) || [],
@@ -6808,21 +6896,21 @@ if(!result.user.emailVerified && !isNewAccount){
       const ageMs = Date.now() - new Date(birthdate).getTime();
       if(ageMs < 13*365.25*24*60*60*1000){ setError('You must be at least 13 years old to sign up'); setLoading(false); return; }
 
-      // Case-insensitive: @Bob and @bob are treated as the same handle, matching WhatsApp/Instagram.
-      const usersSnap = await getDocs(query(collection(db,'users'), where('usernameLower','==',username.toLowerCase())));
-      if(!usersSnap.empty){ setError('Username already taken'); setLoading(false); return; }
-
-      const emailSnap = await getDocs(query(collection(db,'users'), where('email','==',identifier)));
-      if(!emailSnap.empty){
-        await deleteDoc(doc(db,'users',emailSnap.docs[0].id));
-      }
-
-      // OTP is now generated, hashed, and stored server-side (see /api/auth/send-otp).
+      // Username and email uniqueness are now checked server-side inside /api/auth/send-otp
+      // and /api/auth/verify-otp (both use the Admin SDK, which bypasses firestore.rules).
+      // This used to run as a direct getDocs() query against /users from the client, but
+      // that collection requires request.auth != null to read, and at this point in the
+      // sign-up flow there's no auth session yet — the account isn't created until OTP
+      // verification succeeds. That mismatch is exactly what caused the "Missing or
+      // insufficient permissions" error on the sign-up screen (case-insensitive handles,
+      // i.e. @Bob == @bob, are still enforced — just on the server now).
+      //
+      // OTP is generated, hashed, and stored server-side (see /api/auth/send-otp).
       // The client never sees the code and can't read or forge it via devtools/state —
       // verification happens against Firestore on the server in the 'otp' step below.
       await apiFetch('/api/auth/send-otp', {
         method: 'POST',
-        body: JSON.stringify({ email: identifier }),
+        body: JSON.stringify({ email: identifier, username }),
       });
       setPendingCreds({ email: identifier, password, username, fullName, birthdate });
       setOtpExpiry(Date.now() + 10*60*1000);
