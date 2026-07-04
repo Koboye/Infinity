@@ -122,7 +122,7 @@ const SOUND_LIBRARY = [
 const EMOJI_LIST = ['😀','😂','😍','🥰','😎','🤔','😭','😱','🔥','❤️','👍','🎉','✨','💯','🙌','👏','🤝','💪','🎵','📸'];
 const TRANSLATIONS = {
   en: { home:'For You', friends:'Friends', inbox:'Messages', profile:'Profile', create:'Create', foryou:'For You', skills:'Skills', jobs:'Jobs', post:'Post', cancel:'Cancel', save:'Save', follow:'+ Follow', unfollow:'Following', message:'Message', settings:'Settings', logout:'Log Out', editProfile:'Edit Profile', search:'Search anything...', noVideos:'No videos yet. Be the first to post!', addComment:'Add a comment...', noMessages:'No messages yet', startChat:'Go to a profile and tap Message to start', notifications:'Notifications', markRead:'Mark all read', wallet:'Wallet', analytics:'Analytics', badges:'Badges', premium:'Premium', live:'Go Live', report:'Report', block:'Block', duet:'Duet', stitch:'Stitch', voiceCall:'Voice Call', videoCall:'Video Call', pinned:'Pinned', reply:'Reply', pin:'Pin', retake:'Retake', newPost:'New Post', sounds:'Sounds', close:'Close', back:'Back', comments:'Comments' },
-am: { home:'ለእርስዎ', friends:'ጓደኞች', inbox:'መልዕክቶች', profile:'መገለጫ', create:'ፍጠር', foryou:'ለእርስዎ', skills:'ችሎታዎች', jobs:'ስራዎች', post:'ለጥፍ', cancel:'ሰርዝ', save:'አስቀምጥ', follow:'+ ተከተል', unfollow:'እየተከተሉ ነው', message:'መልዕክት', settings:'ቅንብሮች', logout:'ውጣ', editProfile:'መገለጫ አርትዕ', search:'ፈልግ...', noVideos:'ምንም ቪዲዮ የለም።', addComment:'አስተያየት ጨምር...', noMessages:'ምንም መልዕክቶች የሉም', startChat:'ወደ መገለጫ ሂድ እና መልዕክት ላክ', notifications:'ማሳወቂያዎች', markRead:'ሁሉንም እንደተነበበ ምልክት አድርግ', wallet:'ቦርሳ', analytics:'ትንተና', badges:'ሽልማቶች', premium:'ፕሪሚየም', live:'ቀጥታ', report:'ሪፖርት', block:'አግድ', duet:'ዱዌት', stitch:'ስቲች', voiceCall:'የድምፅ ጥሪ', videoCall:'ቪዲዮ ጥሪ', pinned:'ተሰክቷል', reply:'መልስ', pin:'ስክ', retake:'እንደገና', newPost:'አዲስ ለጥፍ', sounds:'ድምፆች', close:'ዝጋ', back:'ተመለስ', comments:'አስተያየቶች', posts:'ልጥፎች', followers:'ተከታዮች', following:'እየተከተሉ', language:'ቋንቋ', privacy:'ግላዊነት', wallet:'ቦርሳ', deposit:'ጨምር', withdraw:'አውጣ', convert:'ቀይር', transactions:'ግብይቶች', noTransactions:'ምንም ግብይቶች የሉም', coins:'ሳንቲሞች', cash:'ገንዘብ', openCamera:'ካሜራ ክፈት', uploadGallery:'ከጋለሪ ጫን', writeText:'ጽሁፍ ጻፍ', recordAudio:'ድምፅ ቅዳ', addSound:'ድምፅ ጨምር', createShare:'ፍጠር እና አጋራ', expressYourself:'እራስህን ግለፅ', noPosts:'ምንም ልጥፍ የለም', noSaved:'ምንም አልተቀመጠም', noDrafts:'ምንም ረቂቆች የሉም', createFirst:'የመጀመሪያ ቪዲዮህን ፍጠር!', online:'ኦንላይን', offline:'ኦፍላይን', typing:'እየተየፉ ነው...', startConvo:'ወግ ጀምር! 👋', verified:'የተረጋገጠ', trending:'አዝማሚያ', noResults:'ምንም ውጤት የለም', shareProfile:'መገለጫ አጋራ', scanToFollow:'ለመከተል ቅዱ', weeklyViews:'ሳምንታዊ እይታዎች', topVideos:'ምርጥ ቪዲዮዎች', totalViews:'ጠቅላላ እይታዎች', totalLikes:'ጠቅላላ ወደዶዎች', editProfile:'መገለጫ አርትዕ', changePassword:'የይለፍ ቃል ቀይር', emailPhone:'ኢሜይል እና ስልክ', switchAccount:'አካውንት ቀይር', blockedUsers:'የታገዱ ተጠቃሚዎች', helpCenter:'የእርዳታ ማዕከል', reportProblem:'ችግር ሪፖርት አድርግ', termsOfService:'የአገልግሎት ውሎች', privacyPolicy:'የግላዊነት ፖሊሲ', resetAccount:'አካውንት ዳግም አስጀምር', deleteAccount:'አካውንት ሰርዝ', logOut:'ውጣ', version:'ስሪት', madeWith:'ተሰርቷል', noNotifications:'ምንም ማሳወቂያዎች የሉም', markAllRead:'ሁሉንም እንደተነበበ ምልክት አድርግ' },  ar: { home:'لك', friends:'أصدقاء', inbox:'رسائل', profile:'الملف', create:'إنشاء', foryou:'لك', skills:'مهارات', jobs:'وظائف', post:'نشر', cancel:'إلغاء', save:'حفظ', follow:'+ متابعة', unfollow:'تتابع', message:'رسالة', settings:'الإعدادات', logout:'تسجيل الخروج', editProfile:'تعديل الملف', search:'ابحث...', noVideos:'لا توجد مقاطع بعد.', addComment:'أضف تعليقاً...', noMessages:'لا رسائل بعد', startChat:'اذهب إلى ملف وأرسل رسالة', notifications:'الإشعارات', markRead:'تعليم الكل كمقروء', wallet:'المحفظة', analytics:'التحليلات', badges:'الشارات', premium:'مميز', live:'بث مباشر', report:'إبلاغ', block:'حظر', duet:'ثنائي', stitch:'خياطة', voiceCall:'مكالمة صوتية', videoCall:'مكالمة فيديو', pinned:'مثبت', reply:'رد', pin:'تثبيت', retake:'إعادة', newPost:'منشور جديد', sounds:'أصوات', close:'إغلاق', back:'رجوع', comments:'تعليقات' },
+am: { home:'ለእርስዎ', friends:'ጓደኞች', inbox:'መልዕክቶች', profile:'መገለጫ', create:'ፍጠር', foryou:'ለእርስዎ', skills:'ችሎታዎች', jobs:'ስራዎች', post:'ለጥፍ', cancel:'ሰርዝ', save:'አስቀምጥ', follow:'+ ተከተል', unfollow:'እየተከተሉ ነው', message:'መልዕክት', settings:'ቅንብሮች', logout:'ውጣ', editProfile:'መገለጫ አርትዕ', search:'ፈልግ...', noVideos:'ምንም ቪዲዮ የለም።', addComment:'አስተያየት ጨምር...', noMessages:'ምንም መልዕክቶች የሉም', startChat:'ወደ መገለጫ ሂድ እና መልዕክት ላክ', notifications:'ማሳወቂያዎች', markRead:'ሁሉንም እንደተነበበ ምልክት አድርግ', wallet:'ቦርሳ', analytics:'ትንተና', badges:'ሽልማቶች', premium:'ፕሪሚየም', live:'ቀጥታ', report:'ሪፖርት', block:'አግድ', duet:'ዱዌት', stitch:'ስቲች', voiceCall:'የድምፅ ጥሪ', videoCall:'ቪዲዮ ጥሪ', pinned:'ተሰክቷል', reply:'መልስ', pin:'ስክ', retake:'እንደገና', newPost:'አዲስ ለጥፍ', sounds:'ድምፆች', close:'ዝጋ', back:'ተመለስ', comments:'አስተያየቶች', posts:'ልጥፎች', followers:'ተከታዮች', following:'እየተከተሉ', language:'ቋንቋ', privacy:'ግላዊነት', deposit:'ጨምር', withdraw:'አውጣ', convert:'ቀይር', transactions:'ግብይቶች', noTransactions:'ምንም ግብይቶች የሉም', coins:'ሳንቲሞች', cash:'ገንዘብ', openCamera:'ካሜራ ክፈት', uploadGallery:'ከጋለሪ ጫን', writeText:'ጽሁፍ ጻፍ', recordAudio:'ድምፅ ቅዳ', addSound:'ድምፅ ጨምር', createShare:'ፍጠር እና አጋራ', expressYourself:'እራስህን ግለፅ', noPosts:'ምንም ልጥፍ የለም', noSaved:'ምንም አልተቀመጠም', noDrafts:'ምንም ረቂቆች የሉም', createFirst:'የመጀመሪያ ቪዲዮህን ፍጠር!', online:'ኦንላይን', offline:'ኦፍላይን', typing:'እየተየፉ ነው...', startConvo:'ወግ ጀምር! 👋', verified:'የተረጋገጠ', trending:'አዝማሚያ', noResults:'ምንም ውጤት የለም', shareProfile:'መገለጫ አጋራ', scanToFollow:'ለመከተል ቅዱ', weeklyViews:'ሳምንታዊ እይታዎች', topVideos:'ምርጥ ቪዲዮዎች', totalViews:'ጠቅላላ እይታዎች', totalLikes:'ጠቅላላ ወደዶዎች', changePassword:'የይለፍ ቃል ቀይር', emailPhone:'ኢሜይል እና ስልክ', switchAccount:'አካውንት ቀይር', blockedUsers:'የታገዱ ተጠቃሚዎች', helpCenter:'የእርዳታ ማዕከል', reportProblem:'ችግር ሪፖርት አድርግ', termsOfService:'የአገልግሎት ውሎች', privacyPolicy:'የግላዊነት ፖሊሲ', resetAccount:'አካውንት ዳግም አስጀምር', deleteAccount:'አካውንት ሰርዝ', logOut:'ውጣ', version:'ስሪት', madeWith:'ተሰርቷል', noNotifications:'ምንም ማሳወቂያዎች የሉም', markAllRead:'ሁሉንም እንደተነበበ ምልክት አድርግ' },  ar: { home:'لك', friends:'أصدقاء', inbox:'رسائل', profile:'الملف', create:'إنشاء', foryou:'لك', skills:'مهارات', jobs:'وظائف', post:'نشر', cancel:'إلغاء', save:'حفظ', follow:'+ متابعة', unfollow:'تتابع', message:'رسالة', settings:'الإعدادات', logout:'تسجيل الخروج', editProfile:'تعديل الملف', search:'ابحث...', noVideos:'لا توجد مقاطع بعد.', addComment:'أضف تعليقاً...', noMessages:'لا رسائل بعد', startChat:'اذهب إلى ملف وأرسل رسالة', notifications:'الإشعارات', markRead:'تعليم الكل كمقروء', wallet:'المحفظة', analytics:'التحليلات', badges:'الشارات', premium:'مميز', live:'بث مباشر', report:'إبلاغ', block:'حظر', duet:'ثنائي', stitch:'خياطة', voiceCall:'مكالمة صوتية', videoCall:'مكالمة فيديو', pinned:'مثبت', reply:'رد', pin:'تثبيت', retake:'إعادة', newPost:'منشور جديد', sounds:'أصوات', close:'إغلاق', back:'رجوع', comments:'تعليقات' },
   fr: { home:'Pour vous', friends:'Amis', inbox:'Messages', profile:'Profil', create:'Créer', foryou:'Pour vous', skills:'Compétences', jobs:'Emplois', post:'Publier', cancel:'Annuler', save:'Enregistrer', follow:'+ Suivre', unfollow:'Abonné', message:'Message', settings:'Paramètres', logout:'Déconnexion', editProfile:'Modifier le profil', search:'Rechercher...', noVideos:'Aucune vidéo pour l\'instant.', addComment:'Ajouter un commentaire...', noMessages:'Aucun message', startChat:'Allez sur un profil et envoyez un message', notifications:'Notifications', markRead:'Tout marquer comme lu', wallet:'Portefeuille', analytics:'Analytique', badges:'Badges', premium:'Premium', live:'En direct', report:'Signaler', block:'Bloquer', duet:'Duo', stitch:'Raccord', voiceCall:'Appel vocal', videoCall:'Appel vidéo', pinned:'Épinglé', reply:'Répondre', pin:'Épingler', retake:'Reprendre', newPost:'Nouveau post', sounds:'Sons', close:'Fermer', back:'Retour', comments:'Commentaires' },
   es: { home:'Para ti', friends:'Amigos', inbox:'Mensajes', profile:'Perfil', create:'Crear', foryou:'Para ti', skills:'Habilidades', jobs:'Empleos', post:'Publicar', cancel:'Cancelar', save:'Guardar', follow:'+ Seguir', unfollow:'Siguiendo', message:'Mensaje', settings:'Ajustes', logout:'Cerrar sesión', editProfile:'Editar perfil', search:'Buscar...', noVideos:'Aún no hay videos.', addComment:'Añadir comentario...', noMessages:'Sin mensajes aún', startChat:'Ve a un perfil y envía un mensaje', notifications:'Notificaciones', markRead:'Marcar todo como leído', wallet:'Billetera', analytics:'Analíticas', badges:'Insignias', premium:'Premium', live:'En vivo', report:'Reportar', block:'Bloquear', duet:'Dueto', stitch:'Costura', voiceCall:'Llamada de voz', videoCall:'Videollamada', pinned:'Fijado', reply:'Responder', pin:'Fijar', retake:'Retomar', newPost:'Nueva publicación', sounds:'Sonidos', close:'Cerrar', back:'Atrás', comments:'Comentarios' },
   pt: { home:'Para você', friends:'Amigos', inbox:'Mensagens', profile:'Perfil', create:'Criar', foryou:'Para você', skills:'Habilidades', jobs:'Empregos', post:'Publicar', cancel:'Cancelar', save:'Salvar', follow:'+ Seguir', unfollow:'Seguindo', message:'Mensagem', settings:'Configurações', logout:'Sair', editProfile:'Editar perfil', search:'Pesquisar...', noVideos:'Nenhum vídeo ainda.', addComment:'Adicionar comentário...', noMessages:'Sem mensagens ainda', startChat:'Vá a um perfil e envie uma mensagem', notifications:'Notificações', markRead:'Marcar tudo como lido', wallet:'Carteira', analytics:'Análises', badges:'Emblemas', premium:'Premium', live:'Ao vivo', report:'Denunciar', block:'Bloquear', duet:'Dueto', stitch:'Ponto', voiceCall:'Chamada de voz', videoCall:'Chamada de vídeo', pinned:'Fixado', reply:'Responder', pin:'Fixar', retake:'Refazer', newPost:'Nova publicação', sounds:'Sons', close:'Fechar', back:'Voltar', comments:'Comentários' },
@@ -175,9 +175,9 @@ const TRENDING_HASHTAGS = [
 ];
 
 const SUPPORTED_LANGUAGES = [
-  ['English','en'],['አማርኛ','am'],['العربية','ar'],['Français','fr'],['Español','es'],
-  ['Português','pt'],['हिन्दी','hi'],['中文','zh'],['Kiswahili','sw'],['Deutsch','de'],
-  ['Русский','ru'],['Türkçe','tr'],['日本語','ja'],['한국어','ko'],['Italiano','it'],
+  ['English','English','en'],['አማርኛ','Amharic','am'],['العربية','Arabic','ar'],['Français','French','fr'],['Español','Spanish','es'],
+  ['Português','Portuguese','pt'],['हिन्दी','Hindi','hi'],['中文','Chinese','zh'],['Kiswahili','Swahili','sw'],['Deutsch','German','de'],
+  ['Русский','Russian','ru'],['Türkçe','Turkish','tr'],['日本語','Japanese','ja'],['한국어','Korean','ko'],['Italiano','Italian','it'],
 ];
 
 const REPORT_REASONS = [
@@ -1159,6 +1159,7 @@ const GlobalStyles = () => (
     @keyframes progressBar{from{width:0%}to{width:100%}}
     @keyframes bounceIn{0%{transform:scale(0.3);opacity:0}50%{transform:scale(1.1)}70%{transform:scale(0.9)}100%{transform:scale(1);opacity:1}}
     @keyframes swipeHint{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+    @keyframes infinityPulse{0%,100%{box-shadow:0 0 0 4px rgba(251,191,36,0.28),0 0 12px rgba(251,191,36,0.7)}50%{box-shadow:0 0 0 8px rgba(251,191,36,0.12),0 0 18px rgba(251,191,36,0.9)}}
     button{touch-action:manipulation}
     button:active{transform:scale(0.94)!important;transition:transform 0.1s}
     input,textarea{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif}
@@ -1190,17 +1191,21 @@ const SkeletonLoader = ({ count=3 }) => (
   </div>
 );
 
+// Was defined but never rendered anywhere (a leftover from before the light-theme
+// redesign — it still had the old hardcoded dark '#15151C' background). Reworked to
+// use the current theme tokens and now used as Infinity's loading placeholder while
+// posts are still streaming in, instead of just deleting it outright.
 const VideoSkeleton = () => (
-  <div style={{ position:'absolute', inset:0, background:'#15151C', display:'flex', flexDirection:'column', justifyContent:'flex-end', padding:20 }}>
-    <div style={{ display:'flex', gap:12, alignItems:'center', marginBottom:14 }}>
-      <div className="skeleton" style={{ width:44, height:44, borderRadius:'50%' }} />
-      <div style={{ flex:1 }}>
-        <div className="skeleton" style={{ height:13, borderRadius:6, width:'50%', marginBottom:8 }} />
-        <div className="skeleton" style={{ height:11, borderRadius:6, width:'30%' }} />
-      </div>
+  <div style={{ background:COLORS.surface, borderRadius:20, overflow:'hidden', border:`1px solid ${COLORS.border}` }}>
+    <div style={{ display:'flex', gap:10, alignItems:'center', padding:'12px 14px 10px' }}>
+      <div className="skeleton-shimmer" style={{ width:28, height:28, borderRadius:'50%', flexShrink:0 }} />
+      <div className="skeleton-shimmer" style={{ height:11, borderRadius:6, width:'35%' }} />
     </div>
-    <div className="skeleton" style={{ height:11, borderRadius:6, width:'80%', marginBottom:6 }} />
-    <div className="skeleton" style={{ height:11, borderRadius:6, width:'60%' }} />
+    <div className="skeleton-shimmer" style={{ width:'100%', height:200 }} />
+    <div style={{ padding:'12px 14px 14px', display:'flex', flexDirection:'column', gap:8 }}>
+      <div className="skeleton-shimmer" style={{ height:11, borderRadius:6, width:'80%' }} />
+      <div className="skeleton-shimmer" style={{ height:11, borderRadius:6, width:'55%' }} />
+    </div>
   </div>
 );
 const RippleButton = ({ onClick, style, children, disabled }) => {
@@ -4591,7 +4596,7 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
         <div style={{background:`${COLORS.success}14`,border:`1px solid ${COLORS.success}33`,borderRadius:14,padding:'10px 14px',marginBottom:16,color:COLORS.success,fontSize:12,lineHeight:1.5}}>
   ✓ Select your language. All app text will update immediately.
           </div>
-        {[['English','English','en'],['አማርኛ','Amharic','am'],['العربية','Arabic','ar'],['Français','French','fr'],['Español','Spanish','es'],['Português','Portuguese','pt'],['हिन्दी','Hindi','hi'],['中文','Chinese','zh'],['Kiswahili','Swahili','sw'],['Deutsch','German','de'],['Русский','Russian','ru'],['Türkçe','Turkish','tr'],['日本語','Japanese','ja'],['한국어','Korean','ko'],['Italiano','Italian','it']].map(([label,sub,code],i,arr)=>{
+        {SUPPORTED_LANGUAGES.map(([label,sub,code],i,arr)=>{
           const selected = (user?.language||'en')===code;
           return (
             <div key={code} onClick={async()=>{ await updateDoc(doc(db,'users',user.id),{language:code}); setCurrentUser(u=>({...u,language:code})); showToast?.(`Language set to ${label}`,'success'); }} style={{padding:'15px 16px',borderBottom:i<arr.length-1?`1px solid ${COLORS.border}`:'',display:'flex',alignItems:'center',justifyContent:'space-between',cursor:'pointer'}}>
@@ -7631,162 +7636,332 @@ const InboxBadge = ({ currentUser }) => {
   if(!unread) return null;
   return <div style={{ position:'absolute', top:-4, right:-4, minWidth:16, height:16, background:COLORS.brand, borderRadius:8, border:`1.5px solid ${COLORS.bg}`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:9, color:'white', fontWeight:800, padding:'0 3px' }}>{unread>9?'9+':unread}</div>;
 };
-/* ─────────────── TOUR PAGE ───────────────
-   Real user-generated trip plans (#tripplan) people can join, and travel
-   experience posts (#travel) — both are regular posts from the main feed,
-   just filtered by hashtag, so no separate posting flow is needed. */
-const TOUR_CATEGORIES = ['Trip Plans', 'Experiences'];
+/* ─────────────── INFINITY PAGE ───────────────
+   The old "Tour" tab was a narrow travel-only feed (#tripplan / #travel). Infinity
+   replaces it completely: it isn't another feed of more-of-the-same, it's a discovery
+   engine. Every open reshuffles real posts from across the whole app — any creator,
+   any topic, any hashtag — mixes in a bias toward small/new/underrated creators, and
+   sprinkles in pure serendipity (a "this day in history" moment, a live-earth jump,
+   a mystery reveal) so two sessions never look alike. No new backend/schema needed:
+   it rides on the same `videos`/`users` data every other tab already uses, it just
+   curates and frames it differently. The feeling to aim for: "Open Infinity — you'll
+   always find something you didn't know you wanted." */
 
-const TourPage = ({ onFeedScroll, showToast, currentUser, onCreate }) => {
-  const [tab, setTab] = useState('Trip Plans');
-  const [tripPlans, setTripPlans] = useState([]);
-  const [experiences, setExperiences] = useState([]);
-  const [selected, setSelected] = useState(null);
+const DISCOVERY_MODES = [
+  { id:'shuffle',  label:'Shuffle All',  icon:'🎲' },
+  { id:'gem',      label:'Hidden Gems',  icon:'💎' },
+  { id:'earth',    label:'Live Earth',   icon:'🌍' },
+  { id:'time',     label:'Time Machine', icon:'⏳' },
+  { id:'mystery',  label:'Mystery Mode', icon:'🎯' },
+];
 
-  useEffect(() => {
-    let unsub = () => {};
-    let fallbackUnsub = () => {};
-    const primaryQ = query(collection(db, 'videos'), where('hashtags', 'array-contains', '#tripplan'), orderBy('createdAt', 'desc'), limit(30));
-    unsub = onSnapshot(primaryQ, snap => {
-      setTripPlans(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    }, () => {
-      const fallbackQ = query(collection(db, 'videos'), where('hashtags', 'array-contains', '#tripplan'), limit(30));
-      fallbackUnsub = onSnapshot(fallbackQ, snap => {
-        const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        list.sort((a, b) => tsToMillis(b.createdAt) - tsToMillis(a.createdAt));
-        setTripPlans(list);
-      }, () => {});
-    });
-    return () => { unsub(); fallbackUnsub(); };
-  }, []);
+// Deterministic little hash so the same post always lands in the same "bucket" for a
+// given shuffle seed — lets the whole tab genuinely re-shuffle on one tap with zero
+// new backend fields, while staying stable within a single session.
+const infinityHash = (str, seed=0) => {
+  let h = (seed>>>0) || 0;
+  const s = String(str);
+  for (let i=0;i<s.length;i++){ h = (Math.imul(h,31) + s.charCodeAt(i)) >>> 0; }
+  return h;
+};
 
-  useEffect(() => {
-    let unsub = () => {};
-    let fallbackUnsub = () => {};
-    const primaryQ = query(collection(db, 'videos'), where('hashtags', 'array-contains', '#travel'), orderBy('createdAt', 'desc'), limit(30));
-    unsub = onSnapshot(primaryQ, snap => {
-      setExperiences(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    }, () => {
-      const fallbackQ = query(collection(db, 'videos'), where('hashtags', 'array-contains', '#travel'), limit(30));
-      fallbackUnsub = onSnapshot(fallbackQ, snap => {
-        const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        list.sort((a, b) => tsToMillis(b.createdAt) - tsToMillis(a.createdAt));
-        setExperiences(list);
-      }, () => {});
-    });
-    return () => { unsub(); fallbackUnsub(); };
-  }, []);
+const GEM_TAGS = ['🌍 Hidden place','🎨 Unknown artist','💡 New idea','🎵 Fresh sound','🤝 Small community','📚 Something to learn','🛍️ Small business','🎤 Live experience'];
+const CURIOSITY_LINES = [
+  "You've never searched for this — but you might love it.",
+  "Something completely outside your usual feed.",
+  "A different corner of the world, just for you.",
+  "Not trending. Not viral. Just interesting.",
+  "This one found you, not the other way around.",
+  "Nobody asked for this — that's exactly why it's here.",
+];
+const TIME_MACHINE_CARDS = [
+  { icon:'📸', tag:'This Day in History', title:'The first email was sent in 1971', body:'Ray Tomlinson sent the first network email between two machines sitting side by side, and picked the @ symbol almost at random.' },
+  { icon:'🔮', tag:'Future Technology', title:'Brain-computer interfaces are leaving the lab', body:'Clinical trials are shifting from "can it work" to "how many people can it help" — within a decade this could feel as ordinary as a pacemaker.' },
+  { icon:'🕯️', tag:'Cultural Milestone', title:'The first photograph took 8 hours to expose', body:'In 1826, Nicéphore Niépce pointed a camera obscura out his window and waited while the sun moved across the entire sky before the image finished.' },
+  { icon:'🧭', tag:'This Day in History', title:'Explorers once crossed oceans with no instruments', body:'Pacific Islander wayfinders read ocean swells, star paths and bird flight patterns to navigate thousands of miles of open water.' },
+  { icon:'🛰️', tag:'Future Technology', title:'Cities are starting to grow their own materials', body:'Self-healing concrete laced with dormant bacteria can seal its own cracks the moment water gets in, with no repair crew required.' },
+  { icon:'🎼', tag:'Cultural Milestone', title:'The oldest known song is over 3,400 years old', body:'A hymn carved onto a clay tablet in ancient Ugarit is the earliest piece of music notation ever found, complete with playing instructions.' },
+];
+const LIVE_EARTH_SPOTS = [
+  { city:'Lagos', country:'Nigeria', top:26, left:47, vibe:'A live street-food market just went live' },
+  { city:'Kyoto', country:'Japan', top:32, left:82, vibe:'A local festival is streaming right now' },
+  { city:'São Paulo', country:'Brazil', top:66, left:32, vibe:'A startup demo day just started' },
+  { city:'Reykjavík', country:'Iceland', top:14, left:38, vibe:'Aurora watchers are broadcasting live' },
+  { city:'Nairobi', country:'Kenya', top:52, left:56, vibe:'A community mural is being painted live' },
+  { city:'Jakarta', country:'Indonesia', top:64, left:80, vibe:'A night market just came alive' },
+  { city:'Dessie', country:'Ethiopia', top:40, left:57, vibe:'A coffee ceremony is being shared live' },
+  { city:'Oaxaca', country:'Mexico', top:58, left:16, vibe:'A mezcal distillery is live right now' },
+];
 
-  const joinTrip = async (video) => {
-    if (!currentUser?.id) return;
-    if ((video.joinedBy || []).includes(currentUser.id)) {
-      showToast?.('Already joined this trip', 'info');
-      return;
-    }
+// Tiny inline globe: not a real map projection, just a soft radial "planet" with a
+// handful of glowing landing points — tapping one drops the user straight into that
+// spot's live moment via toast, which is honest about what actually exists today
+// while still delivering the "jump anywhere" feeling.
+const LiveEarthGlobe = ({ onPick }) => (
+  <div style={{ position:'relative', width:'100%', height:150, borderRadius:20, overflow:'hidden', background:'radial-gradient(circle at 32% 28%,#3B82F6 0%,#6366F1 42%,#1E1B4B 100%)', boxShadow:'inset 0 0 40px rgba(0,0,0,0.25)' }}>
+    <div style={{ position:'absolute', inset:0, background:'repeating-linear-gradient(0deg, rgba(255,255,255,0.06) 0px, rgba(255,255,255,0.06) 1px, transparent 1px, transparent 14px)' }} />
+    <div style={{ position:'absolute', inset:0, background:'repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 1px, transparent 1px, transparent 18px)' }} />
+    {LIVE_EARTH_SPOTS.map(spot=>(
+      <button key={spot.city} onClick={()=>onPick(spot)} aria-label={spot.city}
+        style={{ position:'absolute', top:`${spot.top}%`, left:`${spot.left}%`, width:14, height:14, marginTop:-7, marginLeft:-7, borderRadius:'50%', background:'#FBBF24', border:'2px solid rgba(255,255,255,0.85)', boxShadow:'0 0 0 4px rgba(251,191,36,0.28), 0 0 12px rgba(251,191,36,0.7)', cursor:'pointer', padding:0, animation:'infinityPulse 2.4s ease-in-out infinite' }} />
+    ))}
+    <div style={{ position:'absolute', bottom:8, left:12, color:'rgba(255,255,255,0.85)', fontSize:11, fontWeight:700, letterSpacing:0.2 }}>🌍 Tap a light to jump in</div>
+  </div>
+);
+
+const InfinityTimeMachineCard = ({ card }) => (
+  <div style={{ background:'linear-gradient(135deg, rgba(99,102,241,0.10), rgba(236,72,153,0.10))', border:`1px solid ${COLORS.border}`, borderRadius:20, padding:'16px 16px 18px' }}>
+    <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
+      <div style={{ width:34, height:34, borderRadius:12, background:COLORS.gradientBlue, display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}>{card.icon}</div>
+      <div style={{ fontSize:11, fontWeight:800, color:COLORS.info, textTransform:'uppercase', letterSpacing:0.4 }}>⏳ Time Machine · {card.tag}</div>
+    </div>
+    <div style={{ fontSize:15, fontWeight:800, color:COLORS.textPrimary, marginBottom:6, lineHeight:1.3 }}>{card.title}</div>
+    <div style={{ fontSize:13, color:COLORS.textSecondary, lineHeight:1.55 }}>{card.body}</div>
+  </div>
+);
+
+const InfinityPostCard = ({ item, currentUser, followed, onFollow, onViewProfile, onMessage, showToast, isMystery }) => {
+  const v = item.data;
+  const [revealed, setRevealed] = useState(!isMystery);
+  const isFollowing = followed?.includes(v.userId || v.uid);
+  const targetId = v.userId || v.uid;
+
+  // Same like/save/download mechanics as the main feed's FeedPostCard, kept local to
+  // this card so Infinity doesn't need to touch/depend on that component.
+  const [liked, setLiked] = useState((v.likedBy||[]).includes(currentUser?.id));
+  const [likeCount, setLikeCount] = useState(v.likes||0);
+  const [saved, setSaved] = useState((v.savedBy||[]).includes(currentUser?.id));
+  const [showComments, setShowComments] = useState(false);
+  const [showShare, setShowShare] = useState(false);
+  const isVideoMedia = v.mediaType==='video';
+  const mediaSrc = (Array.isArray(v.images) && v.images[0]) || v.videoUrl;
+
+  const toggleLike = async () => {
+    if (!v.id) return;
+    const nowLiked = !liked;
+    setLiked(nowLiked); setLikeCount(c=>c+(nowLiked?1:-1)); haptic('light');
     try {
-      await updateDoc(doc(db, 'videos', video.id), { joinedBy: arrayUnion(currentUser.id) });
-      showToast?.('Joined the trip! Say hi to the group', 'success');
-    } catch (e) {
-      showToast?.('Failed to join: ' + e.message, 'error');
-    }
+      await updateDoc(doc(db,'videos', v.id), { likes: increment(nowLiked?1:-1), likedBy: nowLiked ? arrayUnion(currentUser?.id) : arrayRemove(currentUser?.id) });
+    } catch(e) {}
   };
 
-  return (
-    <div data-main-scroll="true" onScroll={onFeedScroll} style={{ height:'100%', overflowY:'auto', background:COLORS.bg, padding:'10px 16px max(74px, calc(58px + env(safe-area-inset-bottom)))' }}>
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:4 }}>
-        <div style={{ fontSize:22, fontWeight:800, color:COLORS.textPrimary }}>Tour</div>
-        <button onClick={()=>{ onCreate?.(); showToast?.('Add #tripplan or #travel to your caption so it shows up here', 'info'); }} style={{ background:COLORS.gradient, border:'none', borderRadius:16, padding:'7px 14px', color:'#fff', fontWeight:700, fontSize:12.5, cursor:'pointer' }}>+ Share</button>
-      </div>
-      <div style={{ fontSize:13, color:COLORS.textSecondary, marginBottom:12 }}>Trip plans and experiences shared by travelers like you</div>
+  const toggleSave = async () => {
+    if (!v.id) return;
+    const nowSaved = !saved;
+    setSaved(nowSaved); haptic('light');
+    try {
+      await updateDoc(doc(db,'videos', v.id), { savedBy: nowSaved ? arrayUnion(currentUser?.id) : arrayRemove(currentUser?.id) });
+      showToast?.(nowSaved ? 'Saved to your collection' : 'Removed from saved', 'success');
+    } catch(e) {}
+  };
 
-      <div style={{ display:'flex', gap:8, marginBottom:12 }}>
-        {TOUR_CATEGORIES.map(c=>(
-          <button key={c} onClick={()=>setTab(c)} style={{ flex:1, background: tab===c ? COLORS.gradient : COLORS.surface2, border: tab===c ? 'none' : `1px solid ${COLORS.border}`, color: tab===c ? '#fff' : COLORS.textSecondary, fontWeight:700, fontSize:12.5, padding:'9px 0', borderRadius:20, cursor:'pointer' }}>
-            {c}
+  const handleDownload = async () => {
+    if (!mediaSrc) { showToast?.('No media to download', 'error'); return; }
+    haptic('light');
+    try {
+      const res = await fetch(mediaSrc);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const ext = isVideoMedia ? 'mp4' : 'jpg';
+      const a = document.createElement('a');
+      a.href = url; a.download = `infinity_${v.id || Date.now()}.${ext}`;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+      showToast?.('Downloaded! 📥', 'success');
+    } catch(e) { showToast?.('Download failed', 'error'); }
+  };
+
+  const actionBtnStyle = { flex:1, minWidth:0, background:'none', border:'none', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:2, padding:'7px 2px', borderRadius:10 };
+  const actionLabelStyle = { fontSize:10.5, fontWeight:700 };
+
+  return (
+    <>
+    {showComments && <CommentsModal video={v} currentUser={currentUser} onClose={()=>setShowComments(false)} showToast={showToast} onViewProfile={onViewProfile} />}
+    {showShare && <ShareSheet video={v} currentUser={currentUser} onClose={()=>setShowShare(false)} showToast={showToast} />}
+    <div style={{ position:'relative', background:COLORS.surface, borderRadius:20, overflow:'hidden', border:`1px solid ${COLORS.border}`, boxShadow:'0 4px 18px rgba(30,27,46,0.08)' }}>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'11px 14px 8px' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:7 }}>
+          <span style={{ fontSize:11, fontWeight:800, color:COLORS.brandSecondary, background:'rgba(236,72,153,0.12)', borderRadius:10, padding:'3px 9px' }}>
+            {item.isGem ? item.gemType : '✨ Discovery'}
+          </span>
+        </div>
+        {item.isGem && <span style={{ fontSize:10, fontWeight:700, color:COLORS.success, background:'rgba(34,197,94,0.12)', borderRadius:10, padding:'3px 8px' }}>New / underrated</span>}
+      </div>
+      <div style={{ fontSize:12, color:COLORS.textTertiary, padding:'0 14px 8px', fontStyle:'italic' }}>{item.curiosity}</div>
+
+      <div style={{ position:'relative', width:'100%', height:200, background:COLORS.surfaceAlt }}>
+        {(v.videoUrl || (v.images && v.images[0])) ? (
+          v.mediaType==='video' ? (
+            <video src={v.videoUrl} style={{ width:'100%', height:'100%', objectFit:'cover', filter: revealed?'none':'blur(22px) saturate(0.6)' }} muted />
+          ) : (
+            <img src={v.images?.[0] || v.videoUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', filter: revealed?'none':'blur(22px) saturate(0.6)' }} />
+          )
+        ) : (
+          <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:34, filter: revealed?'none':'blur(10px)' }}>🎬</div>
+        )}
+        {!revealed && (
+          <button onClick={()=>{ setRevealed(true); haptic('medium'); }} style={{ position:'absolute', inset:0, background:'rgba(20,17,30,0.32)', border:'none', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, cursor:'pointer' }}>
+            <div style={{ fontSize:30 }}>🎁</div>
+            <div style={{ color:'#fff', fontWeight:800, fontSize:13, textShadow:'0 1px 4px rgba(0,0,0,0.5)' }}>Tap to reveal your mystery discovery</div>
+          </button>
+        )}
+      </div>
+
+      <div style={{ padding:'12px 14px 6px' }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
+          <button onClick={()=>onViewProfile?.(targetId)} style={{ display:'flex', alignItems:'center', gap:8, background:'none', border:'none', cursor:'pointer', padding:0 }}>
+            <div style={{ width:28, height:28, borderRadius:'50%', background:v.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:800, fontSize:12, overflow:'hidden', flexShrink:0 }}>
+              {v.avatarUrl ? <img src={v.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} /> : (v.username||'U')[0].toUpperCase()}
+            </div>
+            <span style={{ fontSize:12.5, fontWeight:700, color:COLORS.textPrimary }}>{v.username}</span>
+          </button>
+          <div style={{ display:'flex', gap:6 }}>
+            {targetId && targetId !== currentUser?.id && (
+              <button onClick={()=>onFollow?.(targetId)} style={{ background: isFollowing ? COLORS.surface2 : COLORS.gradient, border: isFollowing ? `1px solid ${COLORS.border}` : 'none', borderRadius:14, padding:'6px 12px', color: isFollowing ? COLORS.textSecondary : '#fff', fontWeight:700, fontSize:11.5, cursor:'pointer' }}>
+                {isFollowing ? 'Following' : '+ Follow'}
+              </button>
+            )}
+            {targetId && targetId !== currentUser?.id && (
+              <button onClick={()=>onMessage?.(targetId)} style={{ background:COLORS.surface2, border:`1px solid ${COLORS.border}`, borderRadius:14, padding:'6px 10px', color:COLORS.textSecondary, fontWeight:700, fontSize:11.5, cursor:'pointer' }}>💬</button>
+            )}
+          </div>
+        </div>
+        {v.description && <div style={{ fontSize:13, color:COLORS.textPrimary, lineHeight:1.45, marginBottom:4 }}>{v.description}</div>}
+      </div>
+
+      {/* Single-row action bar: Like · Comment · Views · Share · Download · Save — all six
+          together, evenly spaced, so nothing spills onto a second line. */}
+      <div style={{ display:'flex', alignItems:'stretch', borderTop:`1px solid ${COLORS.border}`, padding:'2px 6px 6px' }}>
+        <button onClick={toggleLike} style={{ ...actionBtnStyle, color: liked?'#FF3B5C':COLORS.textSecondary }}>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill={liked?'#FF3B5C':'none'} stroke={liked?'#FF3B5C':COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: liked ? 'likeHeart 0.35s ease' : 'none' }}>
+            <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+          </svg>
+          <span style={actionLabelStyle}>{formatNumber(likeCount)}</span>
+        </button>
+        <button onClick={()=>setShowComments(true)} style={{ ...actionBtnStyle, color:COLORS.textSecondary }}>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+          <span style={actionLabelStyle}>{formatNumber(v.comments||0)}</span>
+        </button>
+        <div style={{ ...actionBtnStyle, cursor:'default', color:COLORS.textTertiary }}>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <span style={actionLabelStyle}>{formatNumber(v.views||0)}</span>
+        </div>
+        <button onClick={()=>setShowShare(true)} style={{ ...actionBtnStyle, color:COLORS.textSecondary }}>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          <span style={actionLabelStyle}>Share</span>
+        </button>
+        <button onClick={handleDownload} style={{ ...actionBtnStyle, color:COLORS.textSecondary }}>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span style={actionLabelStyle}>Save file</span>
+        </button>
+        <button onClick={toggleSave} style={{ ...actionBtnStyle, color: saved?COLORS.brand:COLORS.textSecondary }}>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill={saved?COLORS.brand:'none'} stroke={saved?COLORS.brand:COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+          <span style={actionLabelStyle}>{saved?'Saved':'Save'}</span>
+        </button>
+      </div>
+    </div>
+    </>
+  );
+};
+
+const InfinityLiveEarthCard = ({ item, showToast }) => {
+  const s = item.data;
+  return (
+    <div style={{ background:'linear-gradient(135deg, rgba(59,130,246,0.10), rgba(139,92,246,0.10))', border:`1px solid ${COLORS.border}`, borderRadius:20, padding:'16px', display:'flex', alignItems:'center', gap:12, cursor:'pointer' }}
+      onClick={()=>showToast?.(`🌍 Jumping into ${s.city}, ${s.country} — ${s.vibe}`, 'success')}>
+      <div style={{ width:44, height:44, borderRadius:14, background:COLORS.gradientBlue, display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, flexShrink:0 }}>🌍</div>
+      <div style={{ flex:1 }}>
+        <div style={{ fontSize:11, fontWeight:800, color:COLORS.info, textTransform:'uppercase', letterSpacing:0.4, marginBottom:2 }}>Live Earth</div>
+        <div style={{ fontSize:14, fontWeight:800, color:COLORS.textPrimary }}>{s.city}, {s.country}</div>
+        <div style={{ fontSize:12, color:COLORS.textSecondary, marginTop:2 }}>{s.vibe}</div>
+      </div>
+      <div style={{ fontSize:18, color:COLORS.textTertiary }}>→</div>
+    </div>
+  );
+};
+
+const InfinityPage = ({ onFeedScroll, showToast, currentUser, onCreate, videos, videosLoading, followed, onFollow, onViewProfile, onMessage }) => {
+  const [mode, setMode] = useState('shuffle');
+  const [seed, setSeed] = useState(()=>Date.now());
+
+  const reshuffle = () => { setSeed(Date.now()); haptic('medium'); showToast?.('Curating something new for you…', 'info'); };
+
+  const cards = useMemo(() => {
+    const postPool = (videos||[]).map(v => {
+      const h = infinityHash(v.id, seed);
+      const gemType = GEM_TAGS[h % GEM_TAGS.length];
+      const curiosity = CURIOSITY_LINES[Math.floor(h/13) % CURIOSITY_LINES.length];
+      const engagement = (v.likes||0) + (v.views||0);
+      const isGem = engagement < 500 || h % 3 === 0;
+      return { kind:'post', id:'p_'+v.id, data:v, gemType, curiosity, isGem, sortKey:h };
+    });
+    const timeCards = TIME_MACHINE_CARDS.map((c,i)=>({ kind:'time', id:'t_'+i, data:c, sortKey: infinityHash('time'+i, seed) }));
+    const earthCards = LIVE_EARTH_SPOTS.map((s,i)=>({ kind:'earth', id:'e_'+i, data:s, sortKey: infinityHash('earth'+i, seed) }));
+
+    let combined;
+    if (mode==='gem') combined = postPool.filter(c=>c.isGem);
+    else if (mode==='time') combined = timeCards;
+    else if (mode==='earth') combined = earthCards;
+    else if (mode==='mystery') combined = postPool;
+    else combined = [...postPool, ...timeCards.slice(0,3), ...earthCards.slice(0,3)];
+
+    return combined.sort((a,b)=>a.sortKey-b.sortKey);
+  }, [videos, seed, mode]);
+
+  return (
+    <div data-main-scroll="true" onScroll={onFeedScroll} style={{ height:'100%', overflowY:'auto', background:COLORS.bg, padding:'10px 16px max(74px, calc(58px + env(safe-area-inset-bottom)))', position:'relative' }}>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:2 }}>
+        <div style={{ fontSize:23, fontWeight:800, color:COLORS.textPrimary, display:'flex', alignItems:'center', gap:6 }}>
+          <span style={{ background:COLORS.gradient, WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text' }}>♾️ Infinity</span>
+        </div>
+        <button onClick={()=>{ onCreate?.(); showToast?.('Anything you post can surface here for someone else to discover', 'info'); }} style={{ background:COLORS.gradient, border:'none', borderRadius:16, padding:'7px 14px', color:'#fff', fontWeight:700, fontSize:12.5, cursor:'pointer' }}>+ Add</button>
+      </div>
+      <div style={{ fontSize:12.5, color:COLORS.textSecondary, marginBottom:12, lineHeight:1.4 }}>Endless discovery. You'll always find something you didn't know you wanted.</div>
+
+      <div style={{ display:'flex', gap:8, marginBottom:14, overflowX:'auto', paddingBottom:2 }}>
+        {DISCOVERY_MODES.map(m=>(
+          <button key={m.id} onClick={()=>setMode(m.id)} style={{ flexShrink:0, display:'flex', alignItems:'center', gap:5, background: mode===m.id ? COLORS.gradient : COLORS.surface2, border: mode===m.id ? 'none' : `1px solid ${COLORS.border}`, color: mode===m.id ? '#fff' : COLORS.textSecondary, fontWeight:700, fontSize:12, padding:'8px 13px', borderRadius:20, cursor:'pointer', whiteSpace:'nowrap' }}>
+            <span>{m.icon}</span>{m.label}
           </button>
         ))}
       </div>
 
-      {tab==='Trip Plans' && (
-        tripPlans.length === 0 ? (
-          <div style={{ textAlign:'center', color:COLORS.textTertiary, fontSize:13, padding:'40px 20px' }}>
-            No trip plans yet. Tap + Share and add #tripplan to your caption.
-          </div>
-        ) : (
-          <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
-            {tripPlans.map(v => (
-              <div key={v.id} style={{ background:COLORS.surface, borderRadius:18, overflow:'hidden', border:`1px solid ${COLORS.border}`, boxShadow:'0 4px 16px rgba(30,27,46,0.08)' }}>
-                {(v.videoUrl || (v.images && v.images[0])) && (
-                  <div style={{ width:'100%', height:180, background:COLORS.surfaceAlt }}>
-                    {v.mediaType==='video' ? (
-                      <video src={v.videoUrl} style={{ width:'100%', height:'100%', objectFit:'cover' }} muted />
-                    ) : (
-                      <img src={v.images?.[0] || v.videoUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
-                    )}
-                  </div>
-                )}
-                <div style={{ padding:'12px 14px' }}>
-                  <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
-                    <div style={{ width:28, height:28, borderRadius:'50%', background:v.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:800, fontSize:12, overflow:'hidden' }}>
-                      {v.avatarUrl ? <img src={v.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} /> : (v.username||'U')[0].toUpperCase()}
-                    </div>
-                    <div style={{ fontSize:12.5, fontWeight:700, color:COLORS.textPrimary }}>{v.username}</div>
-                  </div>
-                  <div style={{ fontSize:13, color:COLORS.textPrimary, lineHeight:1.4, marginBottom:10 }}>{v.description}</div>
-                  <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-                    <div style={{ fontSize:11.5, color:COLORS.textTertiary }}>{(v.joinedBy||[]).length} joined</div>
-                    <button onClick={()=>joinTrip(v)} disabled={(v.joinedBy||[]).includes(currentUser?.id)} style={{ background: (v.joinedBy||[]).includes(currentUser?.id) ? COLORS.surface2 : COLORS.gradient, border:'none', borderRadius:16, padding:'7px 16px', color: (v.joinedBy||[]).includes(currentUser?.id) ? COLORS.textTertiary : '#fff', fontWeight:700, fontSize:12, cursor:'pointer' }}>
-                      {(v.joinedBy||[]).includes(currentUser?.id) ? 'Joined' : 'Join trip'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )
-      )}
-
-      {tab==='Experiences' && (
-        experiences.length === 0 ? (
-          <div style={{ textAlign:'center', color:COLORS.textTertiary, fontSize:13, padding:'40px 20px' }}>
-            No experiences shared yet. Tap + Share and add #travel to your caption.
-          </div>
-        ) : (
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
-            {experiences.map(v => (
-              <div key={v.id} onClick={()=>setSelected(v)} style={{ position:'relative', width:'100%', paddingTop:'130%', borderRadius:14, overflow:'hidden', background:COLORS.surfaceAlt, cursor:'pointer' }}>
-                {v.mediaType==='video' ? (
-                  <video src={v.videoUrl} style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover' }} muted />
-                ) : (
-                  <img src={v.images?.[0] || v.videoUrl} alt="" style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover' }} />
-                )}
-                <div style={{ position:'absolute', bottom:0, left:0, right:0, padding:'8px', background:'linear-gradient(to top, rgba(0,0,0,0.6), transparent)' }}>
-                  <div style={{ color:'#fff', fontSize:11, fontWeight:700 }}>{v.username}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )
-      )}
-
-      {selected && (
-        <div onClick={()=>setSelected(null)} style={{ position:'fixed', inset:0, background:'rgba(20,17,30,0.55)', backdropFilter:'blur(4px)', zIndex:4200, display:'flex', alignItems:'flex-end' }}>
-          <div onClick={e=>e.stopPropagation()} style={{ width:'100%', maxWidth:430, margin:'0 auto', background:COLORS.surface, borderTopLeftRadius:26, borderTopRightRadius:26, maxHeight:'82%', overflow:'auto' }}>
-            <div style={{ position:'relative', width:'100%', height:280, background:'#000' }}>
-              {selected.mediaType==='video' ? (
-                <video src={selected.videoUrl} style={{ width:'100%', height:'100%', objectFit:'contain' }} controls autoPlay />
-              ) : (
-                <img src={selected.images?.[0] || selected.videoUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'contain' }} />
-              )}
-              <button onClick={()=>setSelected(null)} style={{ position:'absolute', top:12, right:12, width:32, height:32, borderRadius:'50%', background:'rgba(0,0,0,0.45)', border:'none', color:'#fff', fontSize:16, cursor:'pointer' }}>✕</button>
-            </div>
-            <div style={{ padding:'16px 18px 28px' }}>
-              <div style={{ fontSize:14, fontWeight:700, color:COLORS.textPrimary, marginBottom:6 }}>{selected.username}</div>
-              <div style={{ fontSize:13.5, color:COLORS.textSecondary, lineHeight:1.5 }}>{selected.description}</div>
-            </div>
-          </div>
+      {mode==='earth' && (
+        <div style={{ marginBottom:14 }}>
+          <LiveEarthGlobe onPick={(spot)=>showToast?.(`🌍 Jumping into ${spot.city}, ${spot.country} — ${spot.vibe}`, 'success')} />
         </div>
       )}
+
+      {mode==='mystery' && (
+        <div style={{ display:'flex', alignItems:'center', gap:8, background:'rgba(139,92,246,0.08)', border:`1px solid ${COLORS.border}`, borderRadius:16, padding:'10px 12px', marginBottom:14, fontSize:12, color:COLORS.textSecondary }}>
+          <span style={{ fontSize:16 }}>🎯</span> Every card is blurred until you tap it. No previews, no spoilers.
+        </div>
+      )}
+
+      {videosLoading && cards.length===0 ? (
+        <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+          <VideoSkeleton /><VideoSkeleton />
+        </div>
+      ) : cards.length===0 ? (
+        <div style={{ textAlign:'center', color:COLORS.textTertiary, fontSize:13, padding:'50px 20px' }}>
+          Nothing here yet — tap <b>+ Add</b> to be the first thing someone discovers, or try another mode above.
+        </div>
+      ) : (
+        <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+          {cards.map(item => {
+            if (item.kind==='time') return <InfinityTimeMachineCard key={item.id} card={item.data} />;
+            if (item.kind==='earth') return <InfinityLiveEarthCard key={item.id} item={item} showToast={showToast} />;
+            return (
+              <InfinityPostCard key={item.id} item={item} currentUser={currentUser} followed={followed} onFollow={onFollow}
+                onViewProfile={onViewProfile} onMessage={onMessage} showToast={showToast} isMystery={mode==='mystery'} />
+            );
+          })}
+        </div>
+      )}
+
+      <button onClick={reshuffle} aria-label="Surprise me" style={{ position:'fixed', right:'max(20px, calc((100vw - 430px)/2 + 20px))', bottom:'max(96px, calc(84px + env(safe-area-inset-bottom)))', width:52, height:52, borderRadius:'50%', background:COLORS.gradient, border:'none', boxShadow:'0 6px 20px rgba(139,92,246,0.45)', color:'#fff', fontSize:22, cursor:'pointer', zIndex:400, display:'flex', alignItems:'center', justifyContent:'center' }}>
+        🎲
+      </button>
     </div>
   );
 };
@@ -7826,12 +8001,11 @@ const TabGlyph = ({id, active, currentUser}) => {
       <path d="M9.6 20.4v-4.6a2.4 2.4 0 014.8 0v4.6" fill="none" />
     </svg>
   );
-  if(id==='tour') return (
+  if(id==='infinity') return (
     <svg viewBox="0 0 24 24" style={s}>
       {defs}
-      <circle cx="12" cy="12" r="8.6" fill={active ? `url(#${gid})` : 'none'} fillOpacity={active ? 0.16 : 0} />
-      <path d="M15.3 8.7l-2.1 5-5 2.1 2.1-5z" fill={active ? color : 'none'} fillOpacity={active ? 0.9 : 0} strokeLinejoin="round" />
-      <circle cx="12" cy="12" r="0.9" fill={color} stroke="none" />
+      <path d="M7.2 8.4c-2.1 0-3.8 1.6-3.8 3.6s1.7 3.6 3.8 3.6c2.7 0 3.9-2.2 4.8-3.6.9-1.4 2.1-3.6 4.8-3.6 2.1 0 3.8 1.6 3.8 3.6s-1.7 3.6-3.8 3.6c-2.7 0-3.9-2.2-4.8-3.6-.9-1.4-2.1-3.6-4.8-3.6z"
+        fill={active ? `url(#${gid})` : 'none'} fillOpacity={active ? 0.22 : 0} strokeLinejoin="round" />
     </svg>
   );
   if(id==='friends') return (
@@ -7957,13 +8131,13 @@ const [blockedUsers, setBlockedUsers] = useState([]);
     lastScrollYRef.current = 0;
   }, [activeTab]);
 
-  // Horizontal swipe: Settings ↔ Profile ↔ Home ↔ Tour ↔ Friends ↔ Messages ↔ back to Settings.
+  // Horizontal swipe: Settings ↔ Profile ↔ Home ↔ Infinity ↔ Friends ↔ Messages ↔ back to Settings.
   // 'Create' is deliberately excluded from the swipe order — it's a tap-only action,
   // reached from its raised button in the bottom nav (or the Home composer), never
   // by swiping past it. This is a continuous loop: swiping left past Messages wraps
   // around to Settings, and swiping right past Settings wraps around to Messages —
   // it never just stops dead at either end.
-  const swipeTabOrder = ['settings','profile','home','tour','friends','inbox'];
+  const swipeTabOrder = ['settings','profile','home','infinity','friends','inbox'];
   const touchStartRef = useRef(null);
 
   // Centralized navigation so bottom-nav taps and swipe gestures always agree on what
@@ -8227,7 +8401,7 @@ const handleMessage = uid => {
   // Profile and Settings are intentionally not here anymore — they're reached by
   // swiping (right from Home for Profile, left past Messages for Settings).
   const tabs = [
-    {id:'home'},{id:'tour'},{id:'create'},{id:'friends'},{id:'inbox'},
+    {id:'home'},{id:'infinity'},{id:'create'},{id:'friends'},{id:'inbox'},
   ];
 
   if(authLoading) return (
@@ -8367,7 +8541,8 @@ const handleMessage = uid => {
   onCreateStory={()=>setShowCreateStory(true)} onViewStory={(payload)=>setShowStoryViewer(payload)}
   onOpenProfileDrawer={()=>setShowProfileDrawer(true)} onFeedScroll={handleFeedScroll}
   blockedUsers={blockedUsers} onBlock={uid=>setBlockedUsers(p=>[...p,uid])} users={users} onOpenCamera={()=>setShowCamera(true)} onOpenComposer={()=>setShowTextComposer(true)} />}
-            {activeTab==='tour' && <TourPage onFeedScroll={handleFeedScroll} showToast={showToast} currentUser={currentUser} onCreate={()=>setActiveTab('create')} />}
+            {activeTab==='infinity' && <InfinityPage onFeedScroll={handleFeedScroll} showToast={showToast} currentUser={currentUser} onCreate={()=>setActiveTab('create')}
+  videos={videos} videosLoading={videosLoading} followed={followed} onFollow={toggleFollow} onViewProfile={handleViewProfile} onMessage={handleMessage} />}
             {activeTab==='friends' && <FriendsDiscoveryPage currentUser={currentUser} users={users} followed={followed} onFollow={toggleFollow} onViewProfile={handleViewProfile} onOpenSearch={()=>setShowDiscover(true)} onFeedScroll={handleFeedScroll} onCreateStory={()=>setShowCreateStory(true)} onViewStory={(payload)=>setShowStoryViewer(payload)} onOpenStories={()=>setShowStoriesPage(true)} />}
             {activeTab==='create' && <CreateScreen onOpenCamera={()=>setShowCamera(true)} onShowSoundLibrary={()=>setShowSoundLibrary(true)} showToast={showToast} t={t} currentUser={currentUser} users={users} onPosted={()=>setActiveTab('home')} />}
             {activeTab==='inbox' && <InboxPage t={t} users={users} currentUser={currentUser} showToast={showToast} onViewProfile={handleViewProfile} initialTargetId={inboxTargetId} onClearTarget={()=>setInboxTargetId(null)} persistedConversation={activeConversation} openGroupsSignal={inboxOpenGroups} onSetConversation={(conv)=>{ setActiveConversation(conv); }} onFeedScroll={handleFeedScroll}
@@ -8398,7 +8573,7 @@ const handleMessage = uid => {
           }
 
           const isActive = activeTab===tab.id;
-          const glyphLabels = { home:'Home', tour:'Tour', friends:'Friends', inbox:'Messages' };
+          const glyphLabels = { home:'Home', infinity:'Infinity', friends:'Friends', inbox:'Messages' };
           return (
             <button key={tab.id}
               onClick={()=>{ haptic('light'); navigateToTab(tab.id); }}
