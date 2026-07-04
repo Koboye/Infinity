@@ -278,6 +278,60 @@ const SheetBackHeader = ({ title, onClose, right }) => (
   </div>
 );
 
+/* ─────────────── REPORT REASON SHEET (shared by post + user reports) ─────────────── */
+/* Reuses the existing REPORT_REASONS constant declared above (was previously unused —
+   nothing rendered it before this sheet existed). */
+const ReportReasonSheet = ({ title = 'Report', onClose, onSubmit }) => {
+  const [selected, setSelected] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  return (
+    <div style={{ position:'fixed', inset:0, zIndex:6000, background:'rgba(20,15,35,0.55)', display:'flex', alignItems:'flex-end' }} onClick={e=>{ e.stopPropagation(); onClose(); }}>
+      <div onClick={e=>e.stopPropagation()} style={{ width:'100%', maxHeight:'86vh', overflowY:'auto', background:COLORS.surface, borderTopLeftRadius:26, borderTopRightRadius:26, paddingBottom:'max(20px, env(safe-area-inset-bottom))' }}>
+        <SheetBackHeader title={title} onClose={onClose} />
+        <div style={{ padding:'10px 16px 4px', color:COLORS.textTertiary, fontSize:12.5 }}>
+          Your report is anonymous, except if you're reporting an intellectual property infringement.
+        </div>
+        <div style={{ padding:'10px 8px' }}>
+          {REPORT_REASONS.map(reason=>(
+            <button
+              key={reason}
+              disabled={submitting}
+              onClick={()=>setSelected(reason)}
+              style={{
+                width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between',
+                background: selected===reason ? `${COLORS.brand}14` : 'none',
+                border: selected===reason ? `1px solid ${COLORS.brand}55` : '1px solid transparent',
+                borderRadius:12, padding:'13px 12px', marginBottom:4,
+                color:COLORS.textPrimary, fontSize:14.5, fontWeight:600, cursor:submitting?'default':'pointer', textAlign:'left'
+              }}>
+              {reason}
+              {selected===reason && (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.brand} strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              )}
+            </button>
+          ))}
+        </div>
+        <div style={{ padding:'8px 16px 0' }}>
+          <button
+            disabled={!selected||submitting}
+            onClick={async()=>{
+              setSubmitting(true);
+              try { await onSubmit?.(selected); }
+              finally { setSubmitting(false); }
+            }}
+            style={{
+              width:'100%', background: (!selected||submitting) ? COLORS.surfaceAlt : COLORS.gradient,
+              border:'none', borderRadius:20, padding:'14px', color: (!selected||submitting) ? COLORS.textTertiary : 'white',
+              fontWeight:700, fontSize:14.5, cursor:(!selected||submitting)?'default':'pointer'
+            }}>
+            {submitting ? 'Submitting…' : 'Submit Report'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const ShareIconBtn = ({ bg, fg='#fff', label, onClick, children }) => (
   <button onClick={onClick} style={{ background:'none', border:'none', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:7, width:60 }}>
     <div style={{ width:52, height:52, borderRadius:'50%', background:bg, display:'flex', alignItems:'center', justifyContent:'center', color:fg, flexShrink:0 }}>{children}</div>
@@ -2012,6 +2066,24 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
   const [tab, setTab] = useState('posts');
   const mockVideos = userVideos || [];
   const avatarSrc = user?.avatarUrl;
+  const [showReportSheet, setShowReportSheet] = useState(false);
+  const submitUserReport = async (reason) => {
+    try {
+      await addDoc(collection(db, 'reports'), {
+        type: 'user',
+        reportedUserId: user.id,
+        reportedUsername: user?.username || null,
+        reportedBy: currentUser.id,
+        reporterUsername: currentUser?.username || currentUser?.fullName || null,
+        reason,
+        createdAt: serverTimestamp(),
+      });
+      showToast?.('User reported — thanks for letting us know', 'success');
+    } catch (e) {
+      showToast?.('Could not submit report', 'error');
+    }
+    setShowReportSheet(false);
+  };
 
   return (
     <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.85)', zIndex:3000, display:'flex', alignItems:'flex-end' }} onClick={onClose}>
@@ -2059,15 +2131,7 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
   {isFollowing ? 'Following' : '+ Follow'}
 </button>
 <button
-  onClick={async () => {
-    await addDoc(collection(db, 'reports'), {
-      reportedUserId: user.id,
-      reportedBy: currentUser.id,
-      type: 'user',
-      createdAt: serverTimestamp()
-    });
-    showToast?.('User reported', 'success');
-  }}
+  onClick={() => setShowReportSheet(true)}
   style={{
     background: 'rgba(255,150,0,0.1)', border: '1px solid rgba(255,150,0,0.3)',
     borderRadius: 14, padding: '12px', color: '#FFB100',
@@ -2117,6 +2181,13 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
         </div>
         <div style={{ height:30 }} />
       </div>
+      {showReportSheet && (
+        <ReportReasonSheet
+          title={`Report @${user?.username||'user'}`}
+          onClose={()=>setShowReportSheet(false)}
+          onSubmit={submitUserReport}
+        />
+      )}
     </div>
   );
 };
@@ -2807,6 +2878,30 @@ const SaveConfirmSheet = ({ onClose, onViewCollections }) => (
 const PostOptionsMenu = ({ video, currentUser, onClose, showToast, onDelete, onBlock }) => {
   const isMine = video?.userId === currentUser?.id;
   const name = video?.fullName || video?.username || 'User';
+  const [showReportSheet, setShowReportSheet] = useState(false);
+  const submitPostReport = async (reason) => {
+    try {
+      await addDoc(collection(db, 'reports'), {
+        type: 'video',
+        videoId: video?.id || null,
+        reportedBy: currentUser.id,
+        reporterUsername: currentUser.username || currentUser.fullName || null,
+        reason,
+        // Denormalized snapshot so the moderation screen can show what was reported
+        // even if the post is later edited or deleted.
+        videoUsername: video?.username || null,
+        videoUserId: video?.userId || null,
+        videoCaption: video?.description || video?.caption || null,
+        videoThumbUrl: video?.thumbUrl || video?.thumbnailUrl || video?.url || null,
+        createdAt: serverTimestamp(),
+      });
+      showToast?.('Post reported — thanks for letting us know', 'success');
+    } catch (e) {
+      showToast?.('Could not submit report', 'error');
+    }
+    setShowReportSheet(false);
+    onClose();
+  };
   const items = [
     { label:'Edit Post', show:isMine, action:()=>{ showToast?.('Opening editor…','info'); }, icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4z"/></svg>) },
     { label:'Pin Post', show:isMine, action:()=>{ showToast?.('Pinned to profile','success'); }, icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14l-1.4-7.5A3 3 0 0014.66 7H9.34a3 3 0 00-2.94 2.5z"/></svg>) },
@@ -2816,7 +2911,7 @@ const PostOptionsMenu = ({ video, currentUser, onClose, showToast, onDelete, onB
     { label:'Add to Collection', show:true, action:()=>{ showToast?.('Added to collection','success'); }, icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 2a2 2 0 00-2 2v18l8-6 8 6V4a2 2 0 00-2-2z"/></svg>) },
     { label:`Mute ${name}`, show:!isMine, action:()=>{ showToast?.(`Muted ${name}`,'info'); }, icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>) },
     { label:`Block ${name}`, show:!isMine, action:()=>{ onBlock?.(video?.userId); showToast?.(`Blocked ${name} — their posts are now hidden`,'info'); }, icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="4.9" y1="4.9" x2="19.1" y2="19.1"/></svg>) },
-    { label:'Report', show:!isMine, danger:true, action:()=>{ showToast?.('Post reported','info'); }, icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 9v4M12 17h.01"/><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>) },
+    { label:'Report', show:!isMine, danger:true, keepOpen:true, action:()=>{ setShowReportSheet(true); }, icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 9v4M12 17h.01"/><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>) },
     { label:'Delete Post', show:isMine, danger:true, sep:true, action:async()=>{
         if(!window.confirm('Delete this post? This cannot be undone.')) return;
         try{ await deleteDoc(doc(db,'videos',video.id)); showToast?.('Post deleted','success'); }
@@ -2830,12 +2925,19 @@ const PostOptionsMenu = ({ video, currentUser, onClose, showToast, onDelete, onB
         <SheetBackHeader title="More Options" onClose={onClose} />
         <div style={{ padding:'6px 8px' }}>
           {items.map(item => (
-            <button key={item.label} onClick={()=>{ item.action(); if(!item.label.startsWith('Delete')) onClose(); }} style={{ width:'100%', display:'flex', alignItems:'center', gap:14, background:'none', border:'none', borderTop:item.sep?`1px solid ${COLORS.border}`:'none', marginTop:item.sep?8:0, paddingTop:item.sep?16:12, padding:item.sep?'16px 12px 12px':'12px', color:item.danger?COLORS.danger:COLORS.textPrimary, fontSize:14.5, fontWeight:600, cursor:'pointer', textAlign:'left', borderRadius:12 }}>
+            <button key={item.label} onClick={()=>{ item.action(); if(!item.label.startsWith('Delete') && !item.keepOpen) onClose(); }} style={{ width:'100%', display:'flex', alignItems:'center', gap:14, background:'none', border:'none', borderTop:item.sep?`1px solid ${COLORS.border}`:'none', marginTop:item.sep?8:0, paddingTop:item.sep?16:12, padding:item.sep?'16px 12px 12px':'12px', color:item.danger?COLORS.danger:COLORS.textPrimary, fontSize:14.5, fontWeight:600, cursor:'pointer', textAlign:'left', borderRadius:12 }}>
               {item.icon}{item.label}
             </button>
           ))}
         </div>
       </div>
+      {showReportSheet && (
+        <ReportReasonSheet
+          title="Report Post"
+          onClose={()=>{ setShowReportSheet(false); onClose(); }}
+          onSubmit={submitPostReport}
+        />
+      )}
     </div>
   );
 };
@@ -4200,7 +4302,7 @@ const PrivacyToggles = ({ user, showToast }) => {
 /* ─────────────── PROFILE PAGE ─────────────── */
 /* Lightweight owner-only moderation view for the `reports` collection. Nothing else in
    the app ever reads reports before this — they were write-only into a black hole. */
-const ModerationPage = ({ user, users, showToast, onBack }) => {
+const ModerationPage = ({ user, users, allVideos, showToast, onBack }) => {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [flagged, setFlagged] = useState([]);
@@ -4288,25 +4390,54 @@ const ModerationPage = ({ user, users, showToast, onBack }) => {
         </div>
       )}
       {reports.map(r=>{
+        const isUserReport = r.type==='user';
         const reportedUser = users.find(u=>u.id===(r.reportedUserId||r.userId));
+        const reporter = users.find(u=>u.id===r.reportedBy);
+        const reporterLabel = r.reporterUsername || reporter?.username || r.reportedBy || 'unknown';
+        const reportedVideo = !isUserReport ? allVideos?.find(v=>v.id===r.videoId) : null;
+        // Prefer the denormalized snapshot captured at report-time (still correct even if the
+        // post/user was later edited or deleted); fall back to a live lookup for older reports
+        // created before those fields existed.
+        const postCaption = r.videoCaption ?? reportedVideo?.description ?? reportedVideo?.caption ?? '(no caption)';
+        const postAuthor = r.videoUsername || reportedVideo?.username || r.videoUserId || 'unknown';
+        const postThumb = r.videoThumbUrl || reportedVideo?.thumbUrl || reportedVideo?.thumbnailUrl;
+        const targetLabel = isUserReport
+          ? `@${r.reportedUsername || reportedUser?.username || r.reportedUserId || 'unknown'}`
+          : `@${postAuthor}`;
         return (
           <div key={r.id} style={{ background:COLORS.surface2, borderRadius:18, padding:'14px 16px', marginBottom:10, border:`1px solid ${COLORS.border}` }}>
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8 }}>
-              <div>
-                <div style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:14 }}>
-                  {r.type==='user' ? 'Reported user' : 'Reported post'}
-                </div>
-                <div style={{ color:COLORS.textTertiary, fontSize:12, marginTop:2 }}>
-                  {r.type==='user' ? `@${reportedUser?.username||r.reportedUserId||'unknown'}` : `Video ${r.videoId||'unknown'}`}
-                  {r.reason ? ` — ${r.reason}` : ''}
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:10 }}>
+              <div style={{ display:'flex', gap:10, alignItems:'flex-start' }}>
+                {!isUserReport && postThumb && (
+                  <img src={postThumb} alt="" style={{ width:44, height:44, borderRadius:10, objectFit:'cover', flexShrink:0 }} />
+                )}
+                <div>
+                  <div style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:14 }}>
+                    {isUserReport ? 'Reported user' : 'Reported post'} — {targetLabel}
+                  </div>
+                  {!isUserReport && (
+                    <div style={{ color:COLORS.textSecondary, fontSize:12, marginTop:2, maxWidth:220 }}>
+                      "{postCaption}"
+                    </div>
+                  )}
+                  <div style={{ color:COLORS.textTertiary, fontSize:11.5, marginTop:4 }}>
+                    Reported by <span style={{color:COLORS.textSecondary,fontWeight:600}}>@{reporterLabel}</span>
+                    {r.createdAt?.toDate ? ` · ${timeAgo(r.createdAt.toDate())}` : ''}
+                  </div>
+                  <div style={{ marginTop:6, display:'inline-flex', alignItems:'center', gap:4, background:`${COLORS.danger}14`, color:COLORS.danger, fontSize:11, fontWeight:700, padding:'3px 9px', borderRadius:10 }}>
+                    Reason: {r.reason || 'Not specified'}
+                  </div>
                 </div>
               </div>
-              <span style={{ background:`${COLORS.warning}1A`, color:COLORS.warning, fontSize:10.5, fontWeight:700, padding:'3px 8px', borderRadius:10 }}>{r.type||'report'}</span>
+              <span style={{ background:`${COLORS.warning}1A`, color:COLORS.warning, fontSize:10.5, fontWeight:700, padding:'3px 8px', borderRadius:10, flexShrink:0 }}>{r.type||'report'}</span>
             </div>
             <div style={{ display:'flex', gap:8 }}>
               <button onClick={()=>dismiss(r.id)} style={{ flex:1, background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:14, padding:'9px', color:COLORS.textSecondary, fontWeight:600, fontSize:12.5, cursor:'pointer' }}>Dismiss</button>
               {r.videoId && (
                 <button onClick={()=>deleteReportedVideo(r)} style={{ flex:1, background:`${COLORS.danger}1A`, border:`1px solid ${COLORS.danger}4D`, borderRadius:14, padding:'9px', color:COLORS.danger, fontWeight:700, fontSize:12.5, cursor:'pointer' }}>Delete post</button>
+              )}
+              {isUserReport && r.reportedUserId && (
+                <button onClick={()=>{ showToast?.('Open their profile from Users search to take action','info'); }} style={{ flex:1, background:`${COLORS.warning}1A`, border:`1px solid ${COLORS.warning}4D`, borderRadius:14, padding:'9px', color:COLORS.warning, fontWeight:700, fontSize:12.5, cursor:'pointer' }}>View profile</button>
               )}
             </div>
           </div>
@@ -4419,7 +4550,7 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
 
 if(activeSubPage==='wallet') return <WalletPage user={user} setCurrentUser={setCurrentUser} showToast={showToast} onBack={()=>setActiveSubPage(null)} />;
 
-  if(activeSubPage==='reports') return <ModerationPage user={user} users={users} showToast={showToast} onBack={()=>setActiveSubPage('settings')} />;
+  if(activeSubPage==='reports') return <ModerationPage user={user} users={users} allVideos={allVideos} showToast={showToast} onBack={()=>setActiveSubPage('settings')} />;
 
   if(activeSubPage==='unblock') return (
     <div style={{ height:'100%', overflow:'auto', background:COLORS.bg, padding:16 }}>
@@ -7130,25 +7261,53 @@ return (
             <input placeholder="Username" value={username} onChange={e=>setUsername(e.target.value)} style={{ width:'100%', background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:14, padding:'13px 16px', color:COLORS.textPrimary, marginBottom:10, outline:'none', fontSize:14, boxSizing:'border-box' }} />
             <div style={{marginBottom:10}}>
               <div style={{color:COLORS.textTertiary,fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:0.5,marginBottom:7}}>Date of Birth *</div>
-              <div style={{background:COLORS.surfaceAlt,border:`1px solid ${COLORS.border}`,borderRadius:16,padding:'8px 4px',display:'flex',gap:0,position:'relative'}}>
-                <div style={{position:'absolute',top:'50%',left:8,right:8,height:36,background:`${COLORS.brand}14`,borderRadius:10,transform:'translateY(-50%)',pointerEvents:'none',border:`1px solid ${COLORS.brand}33`}}/>
-                {[
-                  {label:'Month',items:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],val:birthdate?parseInt(birthdate.split('-')[1])-1:0,set:(i)=>{ const p=birthdate||'2000-01-01'; const parts=p.split('-'); parts[1]=String(i+1).padStart(2,'0'); setBirthdate(parts.join('-')); }},
-                  {label:'Day',items:Array.from({length:31},(_,i)=>String(i+1)),val:birthdate?parseInt(birthdate.split('-')[2])-1:0,set:(i)=>{ const p=birthdate||'2000-01-01'; const parts=p.split('-'); parts[2]=String(i+1).padStart(2,'0'); setBirthdate(parts.join('-')); }},
-                  {label:'Year',items:Array.from({length:100},(_,i)=>String(new Date().getFullYear()-13-i)),val:birthdate?Array.from({length:100},(_,i)=>String(new Date().getFullYear()-13-i)).indexOf(birthdate.split('-')[0]):0,set:(i)=>{ const p=birthdate||'2000-01-01'; const parts=p.split('-'); parts[0]=String(new Date().getFullYear()-13-i); setBirthdate(parts.join('-')); }},
-                ].map(col=>(
-                  <div key={col.label} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center'}}>
-                    <div style={{color:COLORS.textTertiary,fontSize:9,fontWeight:700,textTransform:'uppercase',letterSpacing:0.5,marginBottom:4}}>{col.label}</div>
-                    <div style={{height:108,overflowY:'auto',width:'100%',scrollSnapType:'y mandatory',WebkitOverflowScrolling:'touch'}}>
-                      {col.items.map((item,i)=>(
-                        <div key={item} onClick={()=>col.set(i)} style={{height:36,display:'flex',alignItems:'center',justifyContent:'center',fontSize:i===col.val?15:12,fontWeight:i===col.val?800:400,color:i===col.val?COLORS.textPrimary:COLORS.textTertiary,cursor:'pointer',scrollSnapAlign:'start',transition:'all 0.15s'}}>
-                          {item}
-                        </div>
-                      ))}
+              {(() => {
+                const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+                const today = new Date();
+                const maxYear = today.getFullYear() - 13; // must be at least 13
+                const minYear = today.getFullYear() - 100;
+                const parts = birthdate ? birthdate.split('-') : ['', '', ''];
+                const [y, m, d] = parts;
+                const daysInMonth = (year, month) => {
+                  if (!year || !month) return 31;
+                  return new Date(Number(year), Number(month), 0).getDate();
+                };
+                const maxDay = daysInMonth(y, m);
+                const updateDate = (nextY, nextM, nextD) => {
+                  if (!nextY || !nextM || !nextD) { setBirthdate(''); return; }
+                  // Clamp day in case switching month/year shortens it (e.g. Feb 30 -> Feb 28)
+                  const clampedDay = Math.min(Number(nextD), daysInMonth(nextY, nextM));
+                  setBirthdate(`${nextY}-${String(nextM).padStart(2,'0')}-${String(clampedDay).padStart(2,'0')}`);
+                };
+                const selectStyle = {
+                  flex:1, background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:12,
+                  padding:'12px 10px', color:birthdate?COLORS.textPrimary:COLORS.textTertiary, fontSize:14,
+                  fontWeight:600, outline:'none', appearance:'none', WebkitAppearance:'none', cursor:'pointer',
+                  fontFamily:'inherit',
+                  backgroundImage:`url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='${encodeURIComponent(COLORS.textTertiary)}' stroke-width='2'><polyline points='6 9 12 15 18 9'/></svg>")`,
+                  backgroundRepeat:'no-repeat', backgroundPosition:'right 8px center', backgroundSize:14,
+                  paddingRight:26,
+                };
+                return (
+                  <div>
+                    <div style={{display:'flex',gap:8}}>
+                      <select aria-label="Month" value={m||''} onChange={e=>updateDate(y, e.target.value, d)} style={selectStyle}>
+                        <option value="" disabled>Month</option>
+                        {MONTHS.map((name,i)=>(<option key={name} value={String(i+1).padStart(2,'0')}>{name}</option>))}
+                      </select>
+                      <select aria-label="Day" value={d||''} onChange={e=>updateDate(y, m, e.target.value)} style={{...selectStyle, flex:0.7}}>
+                        <option value="" disabled>Day</option>
+                        {Array.from({length:maxDay},(_,i)=>i+1).map(day=>(<option key={day} value={String(day).padStart(2,'0')}>{day}</option>))}
+                      </select>
+                      <select aria-label="Year" value={y||''} onChange={e=>updateDate(e.target.value, m, d)} style={{...selectStyle, flex:0.9}}>
+                        <option value="" disabled>Year</option>
+                        {Array.from({length:maxYear-minYear+1},(_,i)=>maxYear-i).map(year=>(<option key={year} value={String(year)}>{year}</option>))}
+                      </select>
                     </div>
+                    <div style={{color:COLORS.textTertiary,fontSize:11,marginTop:6}}>You must be at least 13 years old.</div>
                   </div>
-                ))}
-              </div>
+                );
+              })()}
             </div>
           </>}
           <input placeholder="Email" value={identifier} onChange={e=>setIdentifier(e.target.value)} style={{ width:'100%', background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:14, padding:'13px 16px', color:COLORS.textPrimary, marginBottom:10, outline:'none', fontSize:14, boxSizing:'border-box' }} />
