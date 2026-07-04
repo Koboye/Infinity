@@ -1734,48 +1734,71 @@ const Stories = ({ users, currentUser, onViewStory, onCreateStory, followed, liv
     else onCreateStory?.();
   };
 
-  return (
-    <div style={{ display:'flex', gap:14, padding:'14px 16px', overflowX:'auto', borderBottom:`1px solid ${COLORS.overlaySubtle}`, scrollbarWidth:'none' }}>
-      {/* My Story (Go Live integrated as a badge on this same avatar) */}
-      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5, flexShrink:0 }}>
-        <button onClick={handleMyStory} style={{ width:66, height:66, borderRadius:'50%', padding:0, background:'none', border:'none', cursor:'pointer', position:'relative' }}>
-          <div style={{ width:'100%', height:'100%', borderRadius:'50%',
-            background: myStories ? `linear-gradient(135deg,${COLORS.brand},${COLORS.brandSecondary},${COLORS.warning})` : COLORS.overlaySubtle,
-            padding: myStories ? 2 : 0,
-            display:'flex', alignItems:'center', justifyContent:'center' }}>
-            <div style={{ width:'100%', height:'100%', borderRadius:'50%', background: myStories ? COLORS.bg : 'transparent', padding: myStories ? 2 : 0, display:'flex', alignItems:'center', justifyContent:'center' }}>
-              <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:currentUser?.avatarColor||COLORS.brand,
-                border: !myStories ? `1.5px dashed ${COLORS.textTertiary}` : 'none',
-                display:'flex', alignItems:'center', justifyContent:'center', color:COLORS.textPrimary, fontWeight:'bold', fontSize:20, overflow:'hidden' }}>
-                {currentUser?.avatarUrl ? <img src={currentUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : currentUser?.avatar}
-              </div>
+  // Facebook-style tall rectangular story card. The whole card is the tappable target
+  // (not just an avatar circle) — cover photo fills the card, name sits at the bottom
+  // over a gradient scrim, and the person's avatar overlaps the top-left corner.
+  const CARD_W = 104, CARD_H = 172;
+  const StoryCard = ({ cover, avatarUrl, avatarColor, initial, label, isLive, isAddCard, onClick }) => (
+    <button onClick={onClick} style={{ position:'relative', width:CARD_W, height:CARD_H, flexShrink:0, borderRadius:14, overflow:'hidden', border:'none', padding:0, cursor:'pointer', background:COLORS.surfaceAlt }}>
+      {cover ? (
+        <img src={cover} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+      ) : (
+        <div style={{ width:'100%', height:'100%', background: avatarColor || COLORS.brand, opacity:0.55 }} />
+      )}
+      <div style={{ position:'absolute', inset:0, background: isAddCard ? 'linear-gradient(to top,rgba(0,0,0,0.05),transparent 55%)' : 'linear-gradient(to top,rgba(0,0,0,0.75) 0%,rgba(0,0,0,0.05) 45%,transparent 65%)' }} />
+      {isLive && (
+        <div style={{ position:'absolute', top:8, left:8, background:'#FF2156', borderRadius:6, padding:'2px 7px', fontSize:9, fontWeight:800, color:'white', letterSpacing:0.4 }}>LIVE</div>
+      )}
+      {isAddCard ? (
+        <>
+          <div style={{ position:'absolute', left:0, right:0, top: CARD_H - 66, height:66, background:COLORS.surface, display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <div style={{ width:36, height:36, borderRadius:'50%', background:COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', border:`3px solid ${COLORS.surfaceAlt}`, color:'white', fontSize:20, fontWeight:800, marginTop:-40 }}>+</div>
+          </div>
+          <div style={{ position:'absolute', bottom:8, left:0, right:0, textAlign:'center', color:COLORS.textPrimary, fontSize:11.5, fontWeight:700 }}>{label}</div>
+        </>
+      ) : (
+        <>
+          <div style={{ position:'absolute', top:8, left:8, width:30, height:30, borderRadius:'50%', background: isLive ? 'linear-gradient(135deg,#FF2156,#FF7A00)' : `linear-gradient(135deg,${COLORS.brand},${COLORS.brandSecondary})`, padding:2.5, boxSizing:'border-box' }}>
+            <div style={{ width:'100%', height:'100%', borderRadius:'50%', background: avatarColor || COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, fontSize:12, overflow:'hidden' }}>
+              {avatarUrl ? <img src={avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : initial}
             </div>
           </div>
-          <div onClick={e=>{e.stopPropagation(); onCreateStory?.();}} style={{ position:'absolute', bottom:0, right:0, width:20, height:20, background:COLORS.brand, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', border:`2px solid ${COLORS.bg}`, fontSize:12, color:'white', fontWeight:800 }}>+</div>
-        </button>
-        <span style={{ color:COLORS.textTertiary, fontSize:11 }}>Your story</span>
-      </div>
+          <div style={{ position:'absolute', bottom:8, left:8, right:8, color:'white', fontSize:12.5, fontWeight:700, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', textShadow:'0 1px 3px rgba(0,0,0,0.5)' }}>{label}</div>
+        </>
+      )}
+    </button>
+  );
+
+  return (
+    <div style={{ display:'flex', gap:8, padding:'12px 16px', overflowX:'auto', borderBottom:`1px solid ${COLORS.overlaySubtle}`, scrollbarWidth:'none' }}>
+      {/* My Story / Create Story card */}
+      {myStories ? (
+        <StoryCard
+          cover={currentUser?.avatarUrl}
+          avatarUrl={currentUser?.avatarUrl}
+          avatarColor={currentUser?.avatarColor}
+          initial={currentUser?.avatar}
+          label="Your story"
+          onClick={handleMyStory}
+        />
+      ) : (
+        <StoryCard isAddCard label="Create story" onClick={handleMyStory} />
+      )}
 
       {/* Other users' stories — ALL users, not just followed */}
-      {otherStories.map((group, idx) => {
+      {otherStories.map(group => {
         const isLive = liveUserIds?.has(group.userId);
         return (
-        <div key={group.userId} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5, flexShrink:0 }}>
-          <button onClick={() => onViewStory?.({ groups: storyUsers, startIdx: storyUsers.findIndex(g => g.userId === group.userId) })}
-            style={{ padding:0, background:'none', border:'none', cursor:'pointer', position:'relative' }}>
-            <div style={{ width:66, height:66, borderRadius:'50%', background: isLive ? 'linear-gradient(135deg,#FF2156,#FF7A00)' : `linear-gradient(135deg,${COLORS.brand},${COLORS.brandSecondary},${COLORS.warning})`, padding:2, display:'flex', alignItems:'center', justifyContent:'center' }}>
-              <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:COLORS.bg, padding:2, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:group.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:20, overflow:'hidden' }}>
-                  {group.avatarUrl ? <img src={group.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : (group.username||'?')[0].toUpperCase()}
-                </div>
-              </div>
-            </div>
-            {isLive && (
-              <div style={{ position:'absolute', bottom:-3, left:'50%', transform:'translateX(-50%)', background:'#FF2156', borderRadius:6, padding:'1px 6px', fontSize:8, fontWeight:800, color:'white', letterSpacing:0.4, whiteSpace:'nowrap' }}>LIVE</div>
-            )}
-          </button>
-          <span style={{ color:COLORS.textTertiary, fontSize:11, maxWidth:60, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', textAlign:'center' }}>{group.username.split('_')[0]}</span>
-        </div>
+          <StoryCard
+            key={group.userId}
+            cover={group.avatarUrl}
+            avatarUrl={group.avatarUrl}
+            avatarColor={group.avatarColor}
+            initial={(group.username||'?')[0].toUpperCase()}
+            label={group.username.split('_')[0]}
+            isLive={isLive}
+            onClick={() => onViewStory?.({ groups: storyUsers, startIdx: storyUsers.findIndex(g => g.userId === group.userId) })}
+          />
         );
       })}
     </div>
@@ -3181,35 +3204,63 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
           )}
         </div>
       )}
-<div style={{ display:'flex', alignItems:'center', gap:2, paddingTop:8, marginTop:6, borderTop:`1px solid ${COLORS.border}` }}>
-        <span style={{ display:'flex', alignItems:'center', gap:6, color:COLORS.textTertiary, fontWeight:700, fontSize:13, padding:'6px 8px 6px 4px' }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-          {formatNumber(video.views||0)}
-        </span>
-        <button onClick={toggleLike} onDoubleClick={()=>setShowLikes(true)} style={{ background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:6, color:liked?'#FF3B5C':COLORS.textSecondary, fontWeight:700, fontSize:13, padding:'6px 8px', borderRadius:12 }}>
-          <svg width="21" height="21" viewBox="0 0 24 24" fill={liked?'#FF3B5C':'none'} stroke={liked?'#FF3B5C':COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: liked ? 'likeHeart 0.35s ease' : 'none' }}>
-            <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
-          </svg>
-          <span onClick={e=>{ e.stopPropagation(); setShowLikes(true); }}>{formatNumber(likeCount)}</span>
-        </button>
-        <button onClick={()=>{ setShowComments(true); onOpenComments?.(video); }} style={{ background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:6, color:COLORS.textSecondary, fontWeight:700, fontSize:13, padding:'6px 8px', borderRadius:12 }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
-          {formatNumber(video.comments||0)}
-        </button>
-        <button onClick={()=>{ setShowShare(true); onShare?.(video); }} style={{ background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:6, color:COLORS.textSecondary, fontWeight:700, fontSize:13, padding:'6px 8px', borderRadius:12 }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-          {formatNumber(video.shares||0)}
-        </button>
-        <div style={{ flex:1 }} />
-        <button onClick={toggleSave} style={{ background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', color:saved?COLORS.brand:COLORS.textSecondary, padding:'6px 6px', borderRadius:12 }}>
-          <svg width="19" height="19" viewBox="0 0 24 24" fill={saved?COLORS.brand:'none'} stroke={saved?COLORS.brand:COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
-        </button>
-        <button onClick={handleDownload} style={{ background:'none', border:'none', cursor:'pointer', color:COLORS.textTertiary, display:'flex', alignItems:'center', padding:'6px 6px', borderRadius:12 }}>
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        </button>
-        <button onClick={()=>setShowOptions(true)} style={{ background:'none', border:'none', cursor:'pointer', color:COLORS.textTertiary, display:'flex', alignItems:'center', padding:'6px 4px', borderRadius:12 }}>
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
-        </button>
+      {/* ── Facebook-style engagement bar ── */}
+      <div style={{ marginTop:10 }}>
+        {/* Stats row: reaction bubble + count, comments/shares as tappable text on the right */}
+        {(likeCount > 0 || video.comments > 0 || video.shares > 0) && (
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 2px 10px' }}>
+            <div onClick={()=>likeCount>0 && setShowLikes(true)} style={{ display:'flex', alignItems:'center', gap:6, cursor: likeCount>0 ? 'pointer' : 'default' }}>
+              {likeCount > 0 && (
+                <div style={{ width:20, height:20, borderRadius:'50%', background:'linear-gradient(135deg,#FF3B5C,#EC4899)', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:`0 0 0 2px ${COLORS.surface}` }}>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="white"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+                </div>
+              )}
+              <span style={{ color:COLORS.textTertiary, fontSize:13 }}>{likeCount > 0 ? formatNumber(likeCount) : ''}</span>
+            </div>
+            <div style={{ display:'flex', gap:14 }}>
+              {video.comments > 0 && <span onClick={()=>{ setShowComments(true); onOpenComments?.(video); }} style={{ color:COLORS.textTertiary, fontSize:13, cursor:'pointer' }}>{formatNumber(video.comments)} comments</span>}
+              {video.shares > 0 && <span style={{ color:COLORS.textTertiary, fontSize:13 }}>{formatNumber(video.shares)} shares</span>}
+            </div>
+          </div>
+        )}
+
+        {/* Primary action row — Facebook's signature 3 equal-width buttons */}
+        <div style={{ display:'flex', alignItems:'center', borderTop:`1px solid ${COLORS.border}`, borderBottom:`1px solid ${COLORS.border}`, padding:'2px 0' }}>
+          <button onClick={toggleLike} onDoubleClick={()=>setShowLikes(true)} style={{ flex:1, background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8, color:liked?'#FF3B5C':COLORS.textSecondary, fontWeight:700, fontSize:14, padding:'11px 0', borderRadius:10 }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill={liked?'#FF3B5C':'none'} stroke={liked?'#FF3B5C':COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: liked ? 'likeHeart 0.35s ease' : 'none' }}>
+              <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+            </svg>
+            Like
+          </button>
+          <button onClick={()=>{ setShowComments(true); onOpenComments?.(video); }} style={{ flex:1, background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8, color:COLORS.textSecondary, fontWeight:700, fontSize:14, padding:'11px 0', borderRadius:10 }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+            Comment
+          </button>
+          <button onClick={()=>{ setShowShare(true); onShare?.(video); }} style={{ flex:1, background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8, color:COLORS.textSecondary, fontWeight:700, fontSize:14, padding:'11px 0', borderRadius:10 }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            Share
+          </button>
+        </div>
+
+        {/* Secondary utility row — views + save/download/more, kept out of the way of the main 3 */}
+        <div style={{ display:'flex', alignItems:'center', gap:2, paddingTop:8 }}>
+          <span style={{ display:'flex', alignItems:'center', gap:6, color:COLORS.textTertiary, fontWeight:600, fontSize:12.5, padding:'4px 6px 4px 4px' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            {formatNumber(video.views||0)}
+          </span>
+          <div style={{ flex:1 }} />
+          <button onClick={toggleSave} style={{ background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:5, color:saved?COLORS.brand:COLORS.textSecondary, fontWeight:600, fontSize:12.5, padding:'6px 8px', borderRadius:12 }}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill={saved?COLORS.brand:'none'} stroke={saved?COLORS.brand:COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+            Save
+          </button>
+          <button onClick={handleDownload} style={{ background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:5, color:COLORS.textSecondary, fontWeight:600, fontSize:12.5, padding:'6px 8px', borderRadius:12 }}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download
+          </button>
+          <button onClick={()=>setShowOptions(true)} style={{ background:'none', border:'none', cursor:'pointer', color:COLORS.textTertiary, display:'flex', alignItems:'center', padding:'6px 6px', borderRadius:12 }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+          </button>
+        </div>
       </div>
     </div>
     </>
@@ -3272,6 +3323,11 @@ const FeedSkeletonCard = () => (
     <div className="skeleton-shimmer" style={{ width:'100%', height:180, borderRadius:10 }} />
   </div>
 );
+
+/* PeopleYouMayKnow: considered adding a suggestions carousel into the Home feed, but the
+   app already has a suggestions feature in the Friends tab (Smart Suggestions below) —
+   so the Facebook-style card design went there instead, in place, rather than duplicating
+   the feature across tabs. */
 
 const HomeFeed = ({ t, videos, videosLoading, onLike, onComment, onShare, onFollow, onMessage, onVoiceCall, onVideoCall, onDuet, onStitch, onSaveSound, followed, showToast, onWatchLive, currentUser, onViewProfile, onOpenSearch, onOpenNotifications, onOpenStories, onCreateStory, onViewStory, blockedUsers, onBlock, users, onOpenProfileDrawer, onFeedScroll, onOpenCamera, onOpenComposer }) => {
   const liveUserIds = useLiveStreamerIds(currentUser);
@@ -3624,14 +3680,15 @@ const FriendsDiscoveryPage = ({ currentUser, users, followed, onFollow, onViewPr
           </div>
           <div style={{ display:'flex', gap:10, overflowX:'auto', paddingBottom:16, marginBottom:6 }}>
             {suggestions.map(u=>(
-              <div key={u.id} style={{ flexShrink:0, width:132, background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:16, padding:'12px 10px', textAlign:'center' }}>
-                <div onClick={()=>onViewProfile?.(u.id)} style={{ cursor:'pointer', margin:'0 auto 8px' }}><AvatarCircle u={u} size={52} /></div>
-                {/* Full name shown in full (wraps up to 2 lines) instead of being clipped
-                    with an ellipsis after a couple characters — the fixed 112px card was
-                    too narrow for most real names to fit on one line. */}
-                <div style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:12, overflowWrap:'break-word', wordBreak:'break-word', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden', lineHeight:1.25, minHeight:30 }}>{u.fullName || u.username}</div>
-                <div style={{ color:COLORS.textTertiary, fontSize:10.5, marginBottom:8, marginTop:2 }}>{Math.max(1,(u.followers?.length||0)%20)} mutual</div>
-                <RippleButton onClick={()=>onFollow?.(u.id)} style={{ width:'100%', background:'none', border:`1px solid ${COLORS.brand}`, color:COLORS.brand, borderRadius:12, padding:'5px 0', fontSize:11.5, fontWeight:700, cursor:'pointer' }}>Follow</RippleButton>
+              <div key={u.id} style={{ position:'relative', flexShrink:0, width:132, background:COLORS.surfaceAlt, borderRadius:12, overflow:'hidden', border:`1px solid ${COLORS.border}` }}>
+                <div onClick={()=>onViewProfile?.(u.id)} style={{ height:110, background:u.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', overflow:'hidden' }}>
+                  {u.avatarUrl ? <img src={u.avatarUrl} style={{ width:'100%', height:'100%', objectFit:'cover' }} alt="" /> : <span style={{ color:'white', fontWeight:800, fontSize:32 }}>{u.avatar||u.username?.[0]?.toUpperCase()}</span>}
+                </div>
+                <div style={{ padding:'8px 10px 10px' }}>
+                  <div onClick={()=>onViewProfile?.(u.id)} style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:12.5, cursor:'pointer', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{u.fullName || u.username}</div>
+                  <div style={{ color:COLORS.textTertiary, fontSize:11, marginBottom:8 }}>{Math.max(1,(u.followers?.length||0)%20)} mutual</div>
+                  <RippleButton onClick={()=>onFollow?.(u.id)} style={{ width:'100%', background:COLORS.gradient, border:'none', borderRadius:8, padding:'7px 0', color:'white', fontSize:12, fontWeight:700, cursor:'pointer' }}>+ Follow</RippleButton>
+                </div>
               </div>
             ))}
           </div>
