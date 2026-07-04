@@ -6950,21 +6950,39 @@ const InlineDateSelect = ({ value, onChange, minYear, maxYear, futureOk }) => {
   const today = new Date();
   const hiYear = maxYear ?? today.getFullYear() + (futureOk ? 10 : 0);
   const loYear = minYear ?? today.getFullYear() - 100;
-  const parts = value ? value.split('-') : ['', '', ''];
-  const [y, m, d] = parts;
+
+  // Keep the three dropdowns' own pending state instead of deriving purely from `value`.
+  // Reason: `value` is only a complete "YYYY-MM-DD" string once all three are picked, so if
+  // we derived straight from it, selecting e.g. Month alone (with Day/Year still empty) had
+  // nowhere to be remembered and immediately got reported back up as '' — which looked like
+  // the picker "wasn't picking" anything. Now each dropdown's choice sticks locally right
+  // away, and we only call onChange() once with a full date once all three are set.
+  const initial = value ? value.split('-') : ['', '', ''];
+  const [y, setY] = useState(initial[0] || '');
+  const [m, setM] = useState(initial[1] || '');
+  const [d, setD] = useState(initial[2] || '');
+
+  // If the parent resets `value` externally (e.g. clearing the form), mirror that here too.
+  useEffect(() => {
+    if (!value) { setY(''); setM(''); setD(''); }
+  }, [value]);
+
   const daysInMonth = (year, month) => {
     if (!year || !month) return 31;
     return new Date(Number(year), Number(month), 0).getDate();
   };
   const maxDay = daysInMonth(y, m);
-  const update = (nextY, nextM, nextD) => {
-    if (!nextY || !nextM || !nextD) { onChange(''); return; }
+
+  const commit = (nextY, nextM, nextD) => {
+    setY(nextY); setM(nextM); setD(nextD);
+    if (!nextY || !nextM || !nextD) return; // wait until all three are picked
     const clampedDay = Math.min(Number(nextD), daysInMonth(nextY, nextM));
     onChange(`${nextY}-${String(nextM).padStart(2,'0')}-${String(clampedDay).padStart(2,'0')}`);
   };
+
   const selectStyle = {
     flex:1, background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:12,
-    padding:'12px 10px', color:value?COLORS.textPrimary:COLORS.textTertiary, fontSize:14,
+    padding:'12px 10px', color:(y||m||d)?COLORS.textPrimary:COLORS.textTertiary, fontSize:14,
     fontWeight:600, outline:'none', appearance:'none', WebkitAppearance:'none', cursor:'pointer',
     fontFamily:'inherit',
     backgroundImage:`url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='${encodeURIComponent(COLORS.textTertiary)}' stroke-width='2'><polyline points='6 9 12 15 18 9'/></svg>")`,
@@ -6973,15 +6991,15 @@ const InlineDateSelect = ({ value, onChange, minYear, maxYear, futureOk }) => {
   };
   return (
     <div style={{display:'flex',gap:8}}>
-      <select aria-label="Month" value={m||''} onChange={e=>update(y, e.target.value, d)} style={selectStyle}>
+      <select aria-label="Month" value={m||''} onChange={e=>commit(y, e.target.value, d)} style={selectStyle}>
         <option value="" disabled>Month</option>
         {MONTHS.map((name,i)=>(<option key={name} value={String(i+1).padStart(2,'0')}>{name}</option>))}
       </select>
-      <select aria-label="Day" value={d||''} onChange={e=>update(y, m, e.target.value)} style={{...selectStyle, flex:0.7}}>
+      <select aria-label="Day" value={d||''} onChange={e=>commit(y, m, e.target.value)} style={{...selectStyle, flex:0.7}}>
         <option value="" disabled>Day</option>
         {Array.from({length:maxDay},(_,i)=>i+1).map(day=>(<option key={day} value={String(day).padStart(2,'0')}>{day}</option>))}
       </select>
-      <select aria-label="Year" value={y||''} onChange={e=>update(e.target.value, m, d)} style={{...selectStyle, flex:0.9}}>
+      <select aria-label="Year" value={y||''} onChange={e=>commit(e.target.value, m, d)} style={{...selectStyle, flex:0.9}}>
         <option value="" disabled>Year</option>
         {Array.from({length:hiYear-loYear+1},(_,i)=>hiYear-i).map(year=>(<option key={year} value={String(year)}>{year}</option>))}
       </select>
