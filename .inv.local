@@ -27,4 +27,4 @@ UPSTASH_REDIS_REST_TOKEN=
 OTP_HASH_SECRET=
 
 # EmailJS private key — REQUIRED to fix "Failed to send verification email"
-EMAILJS_PRIVATE_KEY=
+EMAILJS_PRIVATE_KEY=MVLt2_GiTF_TQmLKwpYjn
