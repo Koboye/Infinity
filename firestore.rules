@@ -58,11 +58,15 @@ service cloud.firestore {
       allow create: if false;
       allow update: if request.auth != null && (
         request.auth.uid == resource.data.userId
-        // Likes, views, shares, comment counts and saves are written by whoever's viewing
-        // the post (toggleLike, toggleSave, the view-count effect, share buttons, comment
-        // create/delete), not just the author — scope non-owners to just those fields.
+        // Likes, views, shares, comment counts, saves and poll votes are written by
+        // whoever's viewing the post (toggleLike, toggleSave, the view-count effect,
+        // share buttons, comment create/delete, PollWidget.handleVote), not just the
+        // author — scope non-owners to just those fields. 'saves' and 'poll' were
+        // missing here, which silently rejected save-toggling and poll-voting for
+        // anyone who wasn't the post's author (looked like it worked client-side
+        // thanks to optimistic UI, but never actually persisted).
         || request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['likes', 'likedBy', 'views', 'shares', 'comments', 'savedBy'])
+             .hasOnly(['likes', 'likedBy', 'views', 'shares', 'comments', 'savedBy', 'saves', 'poll'])
         // Admins approving/rejecting from the Moderation queue — scoped to just the
         // moderation fields so a moderator can't also rewrite the post's content.
         || (request.auth.token.admin == true
