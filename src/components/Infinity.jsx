@@ -198,10 +198,20 @@ const PollWidget = ({ poll, currentUser, videoId, showToast }) => {
   const initialVoted = poll?.voters && currentUser?.id in (poll.voters||{}) ? poll.voters[currentUser.id] : null;
   const [voted, setVoted] = useState(initialVoted);
   const [localVotes, setLocalVotes] = useState(poll?.votes || {});
+  const votePendingRef = useRef(false);
+  // Re-sync from the live Firestore snapshot whenever it changes (someone else voting)
+  // so totals/percentages update in real time for every viewer, instead of freezing
+  // at whatever the poll looked like when this card first mounted.
+  useEffect(() => {
+    if (votePendingRef.current) return; // don't clobber our own optimistic update mid-flight
+    setLocalVotes(poll?.votes || {});
+    setVoted(poll?.voters && currentUser?.id in (poll.voters||{}) ? poll.voters[currentUser.id] : null);
+  }, [poll?.votes, poll?.voters, currentUser?.id]);
   const totalVotes = Object.values(localVotes).reduce((s, v) => s + (v || 0), 0);
 
   const handleVote = async (optionIdx) => {
     if (voted !== null || !currentUser?.id) return;
+    votePendingRef.current = true;
     setVoted(optionIdx);
     const newVotes = { ...localVotes, [optionIdx]: (localVotes[optionIdx] || 0) + 1 };
     setLocalVotes(newVotes);
@@ -211,6 +221,7 @@ const PollWidget = ({ poll, currentUser, videoId, showToast }) => {
         [`poll.voters.${currentUser.id}`]: optionIdx
       });
     } catch (e) { console.log('Poll vote error:', e); }
+    finally { votePendingRef.current = false; }
     showToast?.('Vote counted! 🗳️', 'success');
   };
 
@@ -234,7 +245,7 @@ const PollWidget = ({ poll, currentUser, videoId, showToast }) => {
           </div>
         );
       })}
-      {voted !== null && <div style={{ color: COLORS.textTertiary, fontSize: 11, marginTop: 4 }}>{totalVotes} vote{totalVotes !== 1 ? 's' : ''}</div>}
+      {voted !== null && <div style={{ color: COLORS.textTertiary, fontSize: 11, marginTop: 4 }}>{formatNumber(totalVotes)} vote{totalVotes !== 1 ? 's' : ''}</div>}
     </div>
   );
 };
@@ -265,20 +276,27 @@ const ShareIconBtn = ({ bg, fg='#fff', label, onClick, children }) => (
 const ShareSheet = ({ video, currentUser, onClose, showToast }) => {
   const shareUrl = `https://infinity-now.vercel.app/video/${video?.id}`;
   const mediaSrc = (Array.isArray(video?.images) && video.images[0]) || video?.videoUrl;
-  const copyLink = async () => { try { await navigator.clipboard.writeText(shareUrl); showToast?.('Link copied!', 'success'); } catch { showToast?.('Copy failed', 'error'); } };
+  // Every share action below previously did nothing to the post's actual share count —
+  // the "shares" number shown in the feed never moved no matter how many times someone
+  // shared. Now each action bumps it, TikTok-style.
+  const recordShare = () => {
+    if (!video?.id) return;
+    updateDoc(doc(db, 'videos', video.id), { shares: increment(1) }).catch(() => {});
+  };
+  const copyLink = async () => { try { await navigator.clipboard.writeText(shareUrl); recordShare(); showToast?.('Link copied!', 'success'); } catch { showToast?.('Copy failed', 'error'); } };
   const shareTo = [
     { label:'Copy link', bg:COLORS.surfaceAlt, fg:COLORS.brand, action:copyLink, icon:(<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 007.07 0l2.83-2.83a5 5 0 00-7.07-7.07l-1.5 1.5"/><path d="M14 11a5 5 0 00-7.07 0L4.1 13.83a5 5 0 007.07 7.07l1.5-1.5"/></svg>) },
-    { label:'Facebook', bg:'#1877F2', action:()=>window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`), icon:(<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 10-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.5 1.49-3.89 3.78-3.89 1.1 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.89h-2.34v6.99A10 10 0 0022 12z"/></svg>) },
-    { label:'Messenger', bg:'linear-gradient(135deg,#00B2FF,#006AFF)', action:()=>showToast?.('Opening Messenger…','info'), icon:(<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.15 2 11.25c0 2.9 1.45 5.49 3.72 7.19V22l3.4-1.87c.91.25 1.87.38 2.88.38 5.52 0 10-4.15 10-9.26C22 6.15 17.52 2 12 2zm1.02 12.47l-2.55-2.72-4.98 2.72 5.48-5.83 2.61 2.72 4.92-2.72-5.48 5.83z"/></svg>) },
-    { label:'TikTok', bg:'#000', action:()=>showToast?.('Opening TikTok…','info'), icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M16.6 5.82a4.28 4.28 0 01-3.15-1.4V15.3a5.4 5.4 0 11-4.68-5.35v2.68a2.72 2.72 0 102.28 2.68V2h2.6a4.28 4.28 0 003.9 3.8z"/></svg>) },
-    { label:'More', bg:COLORS.surfaceAlt, fg:COLORS.textPrimary, action:async()=>{ try { await navigator.share({ title:`@${video?.username} on Infinity`, text:video?.description, url:shareUrl }); } catch {} }, icon:(<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>) },
+    { label:'Facebook', bg:'#1877F2', action:()=>{ recordShare(); window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`); }, icon:(<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 10-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.5 1.49-3.89 3.78-3.89 1.1 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.89h-2.34v6.99A10 10 0 0022 12z"/></svg>) },
+    { label:'Messenger', bg:'linear-gradient(135deg,#00B2FF,#006AFF)', action:()=>{ recordShare(); showToast?.('Opening Messenger…','info'); }, icon:(<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.15 2 11.25c0 2.9 1.45 5.49 3.72 7.19V22l3.4-1.87c.91.25 1.87.38 2.88.38 5.52 0 10-4.15 10-9.26C22 6.15 17.52 2 12 2zm1.02 12.47l-2.55-2.72-4.98 2.72 5.48-5.83 2.61 2.72 4.92-2.72-5.48 5.83z"/></svg>) },
+    { label:'TikTok', bg:'#000', action:()=>{ recordShare(); showToast?.('Opening TikTok…','info'); }, icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M16.6 5.82a4.28 4.28 0 01-3.15-1.4V15.3a5.4 5.4 0 11-4.68-5.35v2.68a2.72 2.72 0 102.28 2.68V2h2.6a4.28 4.28 0 003.9 3.8z"/></svg>) },
+    { label:'More', bg:COLORS.surfaceAlt, fg:COLORS.textPrimary, action:async()=>{ try { await navigator.share({ title:`@${video?.username} on Infinity`, text:video?.description, url:shareUrl }); recordShare(); } catch {} }, icon:(<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>) },
   ];
   const moreWays = [
-    { label:'Repost', bg:COLORS.surfaceAlt, fg:COLORS.textPrimary, action:()=>{ showToast?.('Reposted to your profile','success'); }, icon:(<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>) },
-    { label:'Stories', bg:COLORS.gradient, action:()=>{ showToast?.('Open Create to add to story','info'); }, icon:(<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="12" cy="12" r="4"/></svg>) },
-    { label:'WhatsApp', bg:'#25D366', action:()=>window.open(`https://wa.me/?text=${encodeURIComponent((video?.description||'')+' '+shareUrl)}`), icon:(<svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 00-8.5 15.2L2 22l4.9-1.4A10 10 0 1012 2zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.3-.5.1-1 .1-3.3-.7-2.8-1-4.6-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.8 0-1.3.7-2 .9-2.2.2-.2.5-.3.7-.3h.5c.2 0 .4 0 .6.5.2.5.7 1.8.8 1.9.1.2.1.4 0 .6-.1.2-.2.3-.4.5-.2.2-.4.4-.5.6-.2.2-.4.4-.2.7.2.4.9 1.5 2 2.4 1.4 1.2 2.5 1.6 2.9 1.8.4.2.6.1.8-.1.2-.2.9-1 1.1-1.4.2-.4.5-.3.8-.2.3.1 1.9.9 2.3 1 .3.2.5.2.6.4.1.2.1.9-.2 1.5z"/></svg>) },
-    { label:'Instagram Direct', bg:'linear-gradient(135deg,#F58529,#DD2A7B,#8134AF)', action:()=>showToast?.('Opening Instagram…','info'), icon:(<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg>) },
-    { label:'SMS', bg:COLORS.success, action:()=>window.open(`sms:?body=${encodeURIComponent((video?.description||'')+' '+shareUrl)}`), icon:(<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>) },
+    { label:'Repost', bg:COLORS.surfaceAlt, fg:COLORS.textPrimary, action:()=>{ recordShare(); showToast?.('Reposted to your profile','success'); }, icon:(<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>) },
+    { label:'Stories', bg:COLORS.gradient, action:()=>{ recordShare(); showToast?.('Open Create to add to story','info'); }, icon:(<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="12" cy="12" r="4"/></svg>) },
+    { label:'WhatsApp', bg:'#25D366', action:()=>{ recordShare(); window.open(`https://wa.me/?text=${encodeURIComponent((video?.description||'')+' '+shareUrl)}`); }, icon:(<svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 00-8.5 15.2L2 22l4.9-1.4A10 10 0 1012 2zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.3-.5.1-1 .1-3.3-.7-2.8-1-4.6-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.8 0-1.3.7-2 .9-2.2.2-.2.5-.3.7-.3h.5c.2 0 .4 0 .6.5.2.5.7 1.8.8 1.9.1.2.1.4 0 .6-.1.2-.2.3-.4.5-.2.2-.4.4-.5.6-.2.2-.4.4-.2.7.2.4.9 1.5 2 2.4 1.4 1.2 2.5 1.6 2.9 1.8.4.2.6.1.8-.1.2-.2.9-1 1.1-1.4.2-.4.5-.3.8-.2.3.1 1.9.9 2.3 1 .3.2.5.2.6.4.1.2.1.9-.2 1.5z"/></svg>) },
+    { label:'Instagram Direct', bg:'linear-gradient(135deg,#F58529,#DD2A7B,#8134AF)', action:()=>{ recordShare(); showToast?.('Opening Instagram…','info'); }, icon:(<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg>) },
+    { label:'SMS', bg:COLORS.success, action:()=>{ recordShare(); window.open(`sms:?body=${encodeURIComponent((video?.description||'')+' '+shareUrl)}`); }, icon:(<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>) },
   ];
   return (
     <div style={{ position:'fixed', inset:0, zIndex:5000, background:'rgba(20,15,35,0.45)', display:'flex', alignItems:'flex-end' }} onClick={onClose}>
@@ -1607,7 +1625,7 @@ const TelegramStoryViewer = ({ storyGroups, startGroupIdx, currentUser, onClose,
 };
 
 /* ─────────────── STORIES ROW ─────────────── */
-const Stories = ({ users, currentUser, onViewStory, onCreateStory, followed }) => {
+const Stories = ({ users, currentUser, onViewStory, onCreateStory, followed, liveUserIds }) => {
   const [storyUsers, setStoryUsers] = useState([]);
 
   useEffect(() => {
@@ -1673,21 +1691,27 @@ const Stories = ({ users, currentUser, onViewStory, onCreateStory, followed }) =
       </div>
 
       {/* Other users' stories — ALL users, not just followed */}
-      {otherStories.map((group, idx) => (
+      {otherStories.map((group, idx) => {
+        const isLive = liveUserIds?.has(group.userId);
+        return (
         <div key={group.userId} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5, flexShrink:0 }}>
           <button onClick={() => onViewStory?.({ groups: storyUsers, startIdx: storyUsers.findIndex(g => g.userId === group.userId) })}
-            style={{ padding:0, background:'none', border:'none', cursor:'pointer' }}>
-            <div style={{ width:66, height:66, borderRadius:'50%', background:`linear-gradient(135deg,${COLORS.brand},${COLORS.brandSecondary},${COLORS.warning})`, padding:2, display:'flex', alignItems:'center', justifyContent:'center' }}>
+            style={{ padding:0, background:'none', border:'none', cursor:'pointer', position:'relative' }}>
+            <div style={{ width:66, height:66, borderRadius:'50%', background: isLive ? 'linear-gradient(135deg,#FF2156,#FF7A00)' : `linear-gradient(135deg,${COLORS.brand},${COLORS.brandSecondary},${COLORS.warning})`, padding:2, display:'flex', alignItems:'center', justifyContent:'center' }}>
               <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:COLORS.bg, padding:2, display:'flex', alignItems:'center', justifyContent:'center' }}>
                 <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:group.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:20, overflow:'hidden' }}>
                   {group.avatarUrl ? <img src={group.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : (group.username||'?')[0].toUpperCase()}
                 </div>
               </div>
             </div>
+            {isLive && (
+              <div style={{ position:'absolute', bottom:-3, left:'50%', transform:'translateX(-50%)', background:'#FF2156', borderRadius:6, padding:'1px 6px', fontSize:8, fontWeight:800, color:'white', letterSpacing:0.4, whiteSpace:'nowrap' }}>LIVE</div>
+            )}
           </button>
           <span style={{ color:COLORS.textTertiary, fontSize:11, maxWidth:60, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', textAlign:'center' }}>{group.username.split('_')[0]}</span>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 };
@@ -2496,12 +2520,13 @@ const VideoProgressBar = ({ videoRef, isActive, isImage }) => {
    actually used in HomeFeed; its long-press save/like logic already writes
    to videos.savedBy/likedBy the same way this component did. */
 /* NotifBellButton removed — dead code, an earlier filled-circle notification bell
-   that was superseded by SparkleMenuButton below (the one actually rendered in
+   that was superseded by NotificationBellButton below (the one actually rendered in
    HomeFeed's header) and never deleted. InboxBadge (used in the tab bar) already
    covers the unread-count concern this component duplicated. */
 
-// Light, borderless 4-dot sparkle/menu icon — matches the Home Feed reference top-right control
-const SparkleMenuButton = ({ onOpenNotifications, currentUser }) => {
+// Notification entry point in the Home Feed header — a real bell glyph (previously
+// this rendered a 4-dot sparkle icon that didn't read as a notifications control).
+const NotificationBellButton = ({ onOpenNotifications, currentUser }) => {
   const [unread, setUnread] = useState(0);
   useEffect(()=>{
     if(!currentUser?.id) return;
@@ -2511,11 +2536,9 @@ const SparkleMenuButton = ({ onOpenNotifications, currentUser }) => {
   },[currentUser?.id]);
   return (
     <button onClick={onOpenNotifications} style={{ background:'none', border:'none', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', position:'relative', flexShrink:0 }}>
-      <svg width="20" height="20" viewBox="0 0 24 24" fill={COLORS.brand}>
-        <circle cx="12" cy="5" r="1.6"/>
-        <circle cx="12" cy="19" r="1.6"/>
-        <circle cx="5" cy="12" r="1.6"/>
-        <circle cx="18.5" cy="12.5" r="2.3"/>
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke={COLORS.brand} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
+        <path d="M13.73 21a2 2 0 01-3.46 0"/>
       </svg>
       {unread>0 && <div style={{ position:'absolute', top:0, right:0, minWidth:15, height:15, background:COLORS.danger, borderRadius:8, border:`1.5px solid ${COLORS.surface}`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:9, color:'white', fontWeight:800, padding:'0 2px' }}>{unread>9?'9+':unread}</div>}
     </button>
@@ -2659,7 +2682,7 @@ const CommentsModal = ({ video, currentUser, onClose, showToast, onViewProfile }
               </div>
               <div style={{ color:COLORS.textSecondary, fontSize:13.5, lineHeight:1.45, marginTop:2 }}>{c.text}</div>
               <div style={{ display:'flex', alignItems:'center', gap:16, marginTop:6 }}>
-                <button onClick={()=>{}} style={{ background:'none', border:'none', cursor:'pointer', color:COLORS.textTertiary, fontSize:12, fontWeight:600 }}>Like</button>
+                <button onClick={()=>likeComment(c.id)} style={{ background:'none', border:'none', cursor:'pointer', color:COLORS.textTertiary, fontSize:12, fontWeight:600 }}>Like</button>
                 <button onClick={()=>{}} style={{ background:'none', border:'none', cursor:'pointer', color:COLORS.textTertiary, fontSize:12, fontWeight:600 }}>Reply</button>
               </div>
             </div>
@@ -2762,9 +2785,18 @@ const PostOptionsMenu = ({ video, currentUser, onClose, showToast, onDelete, onB
 // Ensures only one FeedPostCard video autoplays at a time (TikTok-style single active playback)
 let __activeFeedVideoEl = null;
 
-const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onShare, users, onFollow, followed, showToast, onDelete, onBlock }) => {
+const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onShare, users, onFollow, followed, showToast, onDelete, onBlock, isLive }) => {
   const [liked, setLiked] = useState((video.likedBy||[]).includes(currentUser?.id));
   const [likeCount, setLikeCount] = useState(video.likes||0);
+  // Re-sync from the live Firestore snapshot whenever it changes (e.g. someone else
+  // likes/unlikes this post) so the count updates in real time for every viewer,
+  // TikTok-style, instead of freezing at whatever it was when this card first mounted.
+  const likeActionPendingRef = useRef(false);
+  useEffect(() => {
+    if (likeActionPendingRef.current) return; // don't clobber our own optimistic update mid-flight
+    setLiked((video.likedBy||[]).includes(currentUser?.id));
+    setLikeCount(video.likes||0);
+  }, [video.likes, video.likedBy, currentUser?.id]);
   const [saved, setSaved] = useState((video.savedBy||[]).includes(currentUser?.id));
   const [showLikes, setShowLikes] = useState(false);
   const [showComments, setShowComments] = useState(false);
@@ -2814,6 +2846,7 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
 
   const toggleLike = async () => {
     const nowLiked = !liked;
+    likeActionPendingRef.current = true;
     setLiked(nowLiked);
     setLikeCount(c => c + (nowLiked ? 1 : -1));
     haptic('light');
@@ -2823,6 +2856,7 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
         likedBy: nowLiked ? arrayUnion(currentUser?.id) : arrayRemove(currentUser?.id),
       });
     } catch (e) { /* best-effort */ }
+    finally { likeActionPendingRef.current = false; }
   };
 
   const toggleSave = async () => {
@@ -2865,8 +2899,11 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
     {showOptions && <PostOptionsMenu video={video} currentUser={currentUser} onClose={()=>setShowOptions(false)} showToast={showToast} onDelete={onDelete} onBlock={onBlock} />}
     <div style={{ background:COLORS.surface, borderRadius:RADIUS.lg, padding:14, marginBottom:0, boxShadow:'0 2px 14px rgba(124,58,237,0.06)', border:`1px solid ${COLORS.border}` }}>
       <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:10 }}>
-        <div onClick={()=>onViewProfile?.(video.userId)} style={{ width:44, height:44, borderRadius:'50%', background:video.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, fontSize:17, overflow:'hidden', cursor:'pointer', flexShrink:0 }}>
+        <div onClick={()=>onViewProfile?.(video.userId)} style={{ width:44, height:44, borderRadius:'50%', background:video.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, fontSize:17, overflow:'hidden', cursor:'pointer', flexShrink:0, position:'relative', border: isLive ? '2px solid #FF2156' : 'none' }}>
           {video.avatarUrl ? <img src={video.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : (video.username||'?')[0]?.toUpperCase()}
+          {isLive && (
+            <div style={{ position:'absolute', bottom:-3, left:'50%', transform:'translateX(-50%)', background:'#FF2156', borderRadius:6, padding:'1px 5px', fontSize:7, fontWeight:800, color:'white', letterSpacing:0.3, whiteSpace:'nowrap' }}>LIVE</div>
+          )}
         </div>
         <div style={{ flex:1, minWidth:0, display:'flex', flexDirection:'column', overflow:'hidden', cursor:'pointer' }} onClick={()=>onViewProfile?.(video.userId)}>
           {video.fullName && video.fullName !== video.username ? (
@@ -3015,41 +3052,24 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
   );
 };
 
-// Shows everyone currently broadcasting so other users have an actual way to
-// discover and watch a live stream (previously there was none — "Go Live" only
-// ever opened the broadcaster's own camera for the broadcaster themselves).
-const LiveNowStrip = ({ currentUser, users, onWatch }) => {
-  const [liveList, setLiveList] = useState([]);
+// Tracks which users are currently broadcasting, so their avatar can show a LIVE
+// badge wherever it already appears (Stories, their post in the feed) instead of
+// duplicating that avatar in a separate floating strip.
+const useLiveStreamerIds = (currentUser) => {
+  const [liveIds, setLiveIds] = useState(() => new Set());
   useEffect(()=>{
     const q = query(collection(db,'liveStreams'), where('active','==',true));
     const unsub = onSnapshot(q, snap=>{
-      const list = snap.docs
-        .map(d=>({ id:d.id, ...d.data() }))
-        .filter(l=>l.streamerId && l.streamerId!==currentUser?.id);
-      setLiveList(list);
+      const ids = new Set(
+        snap.docs
+          .map(d=>d.data().streamerId)
+          .filter(id=>id && id!==currentUser?.id)
+      );
+      setLiveIds(ids);
     });
     return ()=>unsub();
   },[currentUser?.id]);
-  if(!liveList.length) return null;
-  return (
-    <div style={{ display:'flex', gap:14, overflowX:'auto', padding:'2px 0 14px' }}>
-      {liveList.map(l=>{
-        const u = users?.find(uu=>uu.id===l.streamerId);
-        const uname = u?.username || l.streamerUsername || 'user';
-        return (
-          <div key={l.id} onClick={()=>onWatch?.(u || { id:l.streamerId, username:l.streamerUsername })} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4, cursor:'pointer', flexShrink:0, width:60 }}>
-            <div style={{ width:56, height:56, borderRadius:'50%', padding:2, background:'linear-gradient(135deg,#FF2156,#FF7A00)', position:'relative' }}>
-              <div style={{ width:'100%', height:'100%', borderRadius:'50%', overflow:'hidden', background:u?.avatarColor||'#FF2156', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, fontSize:20, border:`2px solid ${COLORS.bg}` }}>
-                {u?.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : uname[0]?.toUpperCase()}
-              </div>
-              <div style={{ position:'absolute', bottom:-3, left:'50%', transform:'translateX(-50%)', background:'#FF2156', borderRadius:6, padding:'1px 6px', fontSize:8, fontWeight:800, color:'white', letterSpacing:0.4, whiteSpace:'nowrap' }}>LIVE</div>
-            </div>
-            <span style={{ fontSize:10, color:COLORS.textSecondary, maxWidth:60, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>@{uname}</span>
-          </div>
-        );
-      })}
-    </div>
-  );
+  return liveIds;
 };
 // Placeholder card shown while the feed's first snapshot is still loading, so the user
 // sees skeleton content instead of a flash of "No posts yet" before real data arrives.
@@ -3069,6 +3089,7 @@ const FeedSkeletonCard = () => (
 );
 
 const HomeFeed = ({ t, videos, videosLoading, onLike, onComment, onShare, onFollow, onMessage, onVoiceCall, onVideoCall, onDuet, onStitch, onSaveSound, followed, showToast, onWatchLive, currentUser, onViewProfile, onOpenSearch, onOpenNotifications, onOpenStories, onCreateStory, onViewStory, blockedUsers, onBlock, users, onOpenProfileDrawer, onFeedScroll, onOpenCamera, onOpenComposer }) => {
+  const liveUserIds = useLiveStreamerIds(currentUser);
   // Inline "quick search" — filters users/posts in place instead of navigating to Discover.
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -3149,7 +3170,7 @@ const HomeFeed = ({ t, videos, videosLoading, onLike, onComment, onShare, onFoll
               <span onClick={()=>{ setSearchOpen(false); setSearchQuery(''); }} style={{ cursor:'pointer', color:COLORS.textTertiary, fontSize:12, flexShrink:0 }}>✕</span>
             )}
           </div>
-          <SparkleMenuButton onOpenNotifications={onOpenNotifications} currentUser={currentUser} />
+          <NotificationBellButton onOpenNotifications={onOpenNotifications} currentUser={currentUser} />
         </div>
 
         {searchOpen && searchQuery.trim() && (
@@ -3188,12 +3209,8 @@ const HomeFeed = ({ t, videos, videosLoading, onLike, onComment, onShare, onFoll
         <span onClick={onOpenStories} style={{ color:COLORS.brand, fontSize:12, fontWeight:700, cursor:'pointer' }}>See all</span>
       </div>
       <div style={{ margin:'0 -14px 6px' }}>
-        <Stories users={users} currentUser={currentUser} onViewStory={onViewStory} onCreateStory={onCreateStory} followed={followed} />
+        <Stories users={users} currentUser={currentUser} onViewStory={onViewStory} onCreateStory={onCreateStory} followed={followed} liveUserIds={liveUserIds} />
       </div>
-
-      {/* Who's live right now — entry point for watching others. Going live yourself
-          now happens from the "Live" quick-action right in the composer below. */}
-      <LiveNowStrip currentUser={currentUser} users={users} onWatch={onWatchLive} />
 
       {/* Post composer — fully inline: typing, attaching a photo, building a poll and
           picking a feeling all happen right here in one tap each, nothing navigates away. */}
@@ -3315,6 +3332,7 @@ const HomeFeed = ({ t, videos, videosLoading, onLike, onComment, onShare, onFoll
           followed={followed}
           showToast={showToast}
           onBlock={onBlock}
+          isLive={liveUserIds?.has(video.userId)}
         />
       ))}
     </div>
