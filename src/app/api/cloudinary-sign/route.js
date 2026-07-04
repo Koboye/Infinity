@@ -19,8 +19,28 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Uploads are not configured on this server.' }, { status: 503 });
     }
 
+    // Cloudinary requires every non-file param the client will actually upload with
+    // (upload_preset, folder, etc.) to be included in the signed string, sorted
+    // alphabetically by key. Previously this only ever signed `timestamp`, so any
+    // upload that also sent `upload_preset` failed with "Invalid Signature" because
+    // the string Cloudinary reconstructed didn't match what we signed here. The client
+    // now tells us which extra params it intends to send, and we sign exactly that set.
+    let extraParams = {};
+    try {
+      const body = await req.json();
+      if (body && typeof body.params === 'object' && body.params !== null) {
+        extraParams = body.params;
+      }
+    } catch {
+      // No JSON body (or empty body) — fine, just sign the timestamp alone.
+    }
+
     const timestamp = Math.round(Date.now() / 1000);
-    const paramsToSign = `timestamp=${timestamp}`;
+    const allParams = { ...extraParams, timestamp };
+    const paramsToSign = Object.keys(allParams)
+      .sort()
+      .map(key => `${key}=${allParams[key]}`)
+      .join('&');
     const signature = createHash('sha1').update(paramsToSign + process.env.CLOUDINARY_API_SECRET).digest('hex');
 
     return NextResponse.json({
