@@ -966,14 +966,41 @@ const DiscoverPage = ({ videos, users, onViewProfile, showToast, onClose }) => {
 // the applyTheme()/COLORS_DARK system in src/lib/theme.js, wired up in DaguV3App below.)
 
 /* ─────────────── SEND NOTIFICATION HELPER (v4 — already defined below, re-export alias) ─────────────── */
+// Title shown by the OS notification (lock screen / notification tray) per type — kept
+// short since some platforms truncate aggressively. `message` is the existing in-app
+// copy (e.g. "sent you a message") and becomes the push body, prefixed with @username
+// by the caller where that context is available.
+const pushTitleForType = (type) => ({
+  message: 'New message',
+  follow: 'New follower',
+  like: 'New like',
+  comment: 'New comment',
+  mention: 'You were mentioned',
+  gift: 'You got a gift',
+  live: 'Live now',
+  call: 'Incoming call',
+  moderation: 'Infinity',
+}[type] || 'Infinity');
+
 const sendNotification = async (toUserId, fromUserId, type, message, extra = {}) => {
   if (!toUserId || toUserId === fromUserId) return;
+  const { fromUsername, ...docExtra } = extra; // fromUsername is push-only, never stored
   try {
     await addDoc(collection(db, 'notifications'), {
       toUserId, fromUserId, type, message,
-      read: false, createdAt: serverTimestamp(), ...extra,
+      read: false, createdAt: serverTimestamp(), ...docExtra,
     });
   } catch (e) { console.log('Notification error:', e); }
+  // Fire-and-forget the actual push — this is what reaches the device when the
+  // app is backgrounded/closed. In-app Firestore doc above still drives the
+  // in-app toast/badge regardless of whether this succeeds.
+  try {
+    const pushBody = fromUsername ? `@${fromUsername} ${message}` : message;
+    await apiFetch('/api/notifications/send', {
+      method: 'POST',
+      body: JSON.stringify({ toUserId, title: pushTitleForType(type), body: pushBody, type, data: docExtra?.link ? { link: docExtra.link } : undefined }),
+    });
+  } catch (e) { /* push is best-effort; in-app notification already landed */ }
 };
 
 // WhatsApp-style: show phone number only if the user opted in via Privacy settings; default to @username
@@ -1383,40 +1410,29 @@ const playNotifSound = (type = 'notif') => {
 };
 
 /* ─────────────── BACKGROUND PUSH NOTIFICATIONS (Service Worker) ─────────────── */
+// BUG FIX: this used to register a Service Worker from a Blob URL
+// (URL.createObjectURL(...)) at scope '/'. Two problems, both silent:
+//   1. Blob-URL service workers don't persist — the browser can't re-fetch a
+//      blob: URL on a later visit, so this "background handler" effectively
+//      stopped existing the moment the tab that created it was closed. That's
+//      exactly the situation where a TikTok-style notification is supposed to
+//      still show up.
+//   2. It registered at the SAME scope ('/') as /firebase-messaging-sw.js —
+//      the real, file-based service worker the Firebase Messaging SDK needs
+//      for background pushes. Two service workers fighting over one scope's
+//      push events is undefined behavior across browsers, and on top of the
+//      root cause below (no server ever sent a push at all), this made sure
+//      even a correctly-sent push had nowhere reliable to land.
+// Fix: register the actual static file, and hand that registration to
+// getToken() explicitly instead of relying on implicit auto-registration.
 const registerNotifServiceWorker = async () => {
-  if (!('serviceWorker' in navigator) || !('Notification' in window)) return;
+  if (!('serviceWorker' in navigator) || !('Notification' in window)) return null;
   try {
-    // Inline SW that handles push events when app is closed
-    const swCode = `
-self.addEventListener('push', e => {
-  const data = e.data ? e.data.json() : {};
-  const title = data.title || 'Dagu';
-  const options = {
-    body: data.body || 'You have a new notification',
-    icon: 'https://res.cloudinary.com/dotvhzjmc/image/upload/znfksngv27boh3c1kxpv.png',
-    badge: 'https://res.cloudinary.com/dotvhzjmc/image/upload/znfksngv27boh3c1kxpv.png',
-    vibrate: [200, 100, 200],
-    data: data,
-    actions: data.type === 'call' ? [
-      { action: 'answer', title: '✅ Answer' },
-      { action: 'decline', title: '❌ Decline' }
-    ] : [
-      { action: 'open', title: 'Open' }
-    ],
-    tag: data.type || 'notif',
-    renotify: true,
-  };
-  e.waitUntil(self.registration.showNotification(title, options));
-});
-self.addEventListener('notificationclick', e => {
-  e.notification.close();
-  e.waitUntil(clients.openWindow('/'));
-});
-`;
-    const blob = new Blob([swCode], { type: 'application/javascript' });
-    const swUrl = URL.createObjectURL(blob);
-    await navigator.serviceWorker.register(swUrl, { scope: '/' });
-  } catch(e) { console.log('SW registration skipped:', e.message); }
+    return await navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/' });
+  } catch (e) {
+    console.log('SW registration skipped:', e.message);
+    return null;
+  }
 };
 
 /* ─────────────── BROWSER NOTIFICATION HELPER ─────────────── */
@@ -6389,14 +6405,7 @@ unsub = onSnapshot(q, (snap) => {
         [`unread_${otherUser.id}`]: increment(1) 
       },{ merge:true });
       clearAttach();
-      addDoc(collection(db,'notifications'),{
-        toUserId: otherUser.id,
-        fromUserId: currentUser.id,
-        type: 'message',
-        message: 'sent you a message',
-        read: false,
-        createdAt: serverTimestamp(),
-      }).catch(()=>{});
+      sendNotification(otherUser.id, currentUser.id, 'message', 'sent you a message', { fromUsername: currentUser.username });
     } catch(e){
       showToast?.('Failed to send: ' + e.message, 'error');
       if(msg) setText(msg);
@@ -6427,14 +6436,7 @@ unsub = onSnapshot(q, (snap) => {
         hiddenFor: [],
         [`unread_${otherUser.id}`]: increment(1)
       },{ merge:true });
-      addDoc(collection(db,'notifications'),{
-        toUserId: otherUser.id,
-        fromUserId: currentUser.id,
-        type: 'message',
-        message: 'sent you a sticker',
-        read: false,
-        createdAt: serverTimestamp(),
-      }).catch(()=>{});
+      sendNotification(otherUser.id, currentUser.id, 'message', 'sent you a sticker', { fromUsername: currentUser.username });
     } catch(e){
       showToast?.('Failed to send sticker: ' + e.message, 'error');
     }
@@ -6443,45 +6445,45 @@ unsub = onSnapshot(q, (snap) => {
 
   if(!otherUser?.id || !conversationId || !currentUser?.id) {
   return (
-    <div style={{height:'100%',background:'#0B0B0F',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:12}}>
-      <div style={{width:32,height:32,border:'3px solid rgba(11,95,255,0.3)',borderTop:'3px solid #0B5FFF',borderRadius:'50%',animation:'spin 1s linear infinite'}}/>
-      <div style={{color:'rgba(255,255,255,0.3)',fontSize:13}}>Loading conversation...</div>
-      <button onClick={onBack} style={{background:'rgba(255,255,255,0.07)',border:'none',borderRadius:20,padding:'8px 20px',color:'rgba(255,255,255,0.5)',cursor:'pointer',fontSize:12,marginTop:8}}>← Back</button>
+    <div style={{height:'100%',background:COLORS.bg,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:12}}>
+      <div style={{width:32,height:32,border:`3px solid ${COLORS.border}`,borderTop:`3px solid ${COLORS.brand}`,borderRadius:'50%',animation:'spin 1s linear infinite'}}/>
+      <div style={{color:COLORS.textTertiary,fontSize:13}}>Loading conversation...</div>
+      <button onClick={onBack} style={{background:COLORS.surfaceAlt,border:'none',borderRadius:20,padding:'8px 20px',color:COLORS.textSecondary,cursor:'pointer',fontSize:12,marginTop:8}}>← Back</button>
     </div>
   );
 }
 
   return (
-    <div style={{height:'100%',display:'flex',flexDirection:'column',background:'#0B0B0F'}}>
-      <div style={{padding:'14px 16px',borderBottom:'1px solid rgba(255,255,255,0.06)',display:'flex',alignItems:'center',gap:12}}>
-        <button onClick={onBack} style={{background:'none',border:'none',color:'white',cursor:'pointer',padding:'4px 0'}}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
+    <div style={{height:'100%',display:'flex',flexDirection:'column',background:COLORS.bg}}>
+      <div style={{padding:'14px 16px',background:COLORS.surface,borderBottom:`1px solid ${COLORS.border}`,display:'flex',alignItems:'center',gap:12,boxShadow:'0 1px 0 rgba(11,95,255,0.04)'}}>
+        <button onClick={onBack} style={{background:'none',border:'none',color:COLORS.textPrimary,cursor:'pointer',padding:'4px 0',display:'flex'}}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
-        <div onClick={()=>onViewProfile?.(otherUser?.id)} style={{width:40,height:40,borderRadius:'50%',background:otherUser?.avatarColor||'#5A5A66',display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontWeight:'bold',overflow:'hidden',cursor:'pointer'}}>
+        <div onClick={()=>onViewProfile?.(otherUser?.id)} style={{width:42,height:42,borderRadius:'50%',background:otherUser?.avatarColor||COLORS.brand,display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontWeight:700,overflow:'hidden',cursor:'pointer',boxShadow:SHADOW.xs,flexShrink:0}}>
           {otherUser?.avatarUrl?<img src={otherUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/>:(otherUser?.avatar||'?')}
         </div>
-        <div onClick={()=>onViewProfile?.(otherUser?.id)} style={{cursor:'pointer'}}>
-          <div style={{color:'white',fontWeight:700,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>@{otherUser?.username||'user'}</div>
-          <div style={{color: presenceData?.online ? '#00E6B4':'rgba(255,255,255,0.3)', fontSize:11, display:'flex', alignItems:'center', gap:4}}>
-            <div style={{width:6,height:6,borderRadius:'50%', background: presenceData?.online ? '#00E6B4':'rgba(255,255,255,0.3)'}}/>
+        <div onClick={()=>onViewProfile?.(otherUser?.id)} style={{cursor:'pointer',minWidth:0}}>
+          <div style={{color:COLORS.textPrimary,fontWeight:700,fontSize:15,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif",overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>@{otherUser?.username||'user'}</div>
+          <div style={{color: presenceData?.online ? COLORS.success : COLORS.textTertiary, fontSize:11.5, display:'flex', alignItems:'center', gap:4}}>
+            {presenceData?.online && <div style={{width:6,height:6,borderRadius:'50%', background: COLORS.success}}/>}
             {presenceData?.online ? 'Online' : presenceData?.lastSeen ? `last seen ${timeAgo(presenceData.lastSeen.toDate())}` : 'Offline'}
           </div>
         </div>
-        <div style={{marginLeft:'auto',display:'flex',gap:10}}>
-          <button onClick={()=>onViewProfile?.(otherUser?.id)} title="View profile" style={{background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:'50%',width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <div style={{marginLeft:'auto',display:'flex',gap:8}}>
+          <button onClick={()=>onVoiceCall?.(otherUser?.id)} style={{background:COLORS.surfaceAlt,border:`1px solid ${COLORS.border}`,borderRadius:'50%',width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={COLORS.brand} strokeWidth="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-5.99-5.99 19.79 19.79 0 01-3.07-8.67A2 2 0 014 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>
           </button>
-          <button onClick={()=>onVoiceCall?.(otherUser?.id)} style={{background:'rgba(52,199,89,0.12)',border:'1px solid rgba(52,199,89,0.2)',borderRadius:'50%',width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2ED573" strokeWidth="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-5.99-5.99 19.79 19.79 0 01-3.07-8.67A2 2 0 014 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>
+          <button onClick={()=>onVideoCall?.(otherUser?.id)} style={{background:COLORS.surfaceAlt,border:`1px solid ${COLORS.border}`,borderRadius:'50%',width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={COLORS.brand} strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
           </button>
-          <button onClick={()=>onVideoCall?.(otherUser?.id)} style={{background:'rgba(175,82,222,0.12)',border:'1px solid rgba(175,82,222,0.2)',borderRadius:'50%',width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B5FFF" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+          <button onClick={()=>onViewProfile?.(otherUser?.id)} title="View profile" style={{background:'none',border:'none',borderRadius:'50%',width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
           </button>
         </div>
       </div>
 
-      <div style={{flex:1,overflowY:'auto',padding:'16px'}}>
-        {messages.length===0&&<div style={{textAlign:'center',padding:40,color:'rgba(255,255,255,0.2)'}}>Start a conversation! 👋</div>}
+      <div style={{flex:1,overflowY:'auto',padding:'16px',backgroundImage:`radial-gradient(${COLORS.border} 1px, transparent 1px)`,backgroundSize:'18px 18px',backgroundColor:COLORS.bg}}>
+        {messages.length===0&&<div style={{textAlign:'center',padding:40,color:COLORS.textTertiary,fontSize:13}}>Start a conversation! 👋</div>}
         {messages.map(msg=>{
           const isMine = msg.from===currentUser?.id;
           return (
@@ -6492,7 +6494,7 @@ unsub = onSnapshot(q, (snap) => {
               onMouseUp={()=>clearTimeout(msgLongTimer.current)}
               style={{display:'flex',justifyContent:isMine?'flex-end':'flex-start',alignItems:'flex-end',gap:8,marginBottom:10,position:'relative'}}>
   {!isMine && (
-    <div onClick={()=>onViewProfile?.(otherUser?.id)} style={{width:26,height:26,borderRadius:'50%',background:otherUser?.avatarColor||'#5A5A66',display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontWeight:'bold',fontSize:10,flexShrink:0,cursor:'pointer',overflow:'hidden'}}>
+    <div onClick={()=>onViewProfile?.(otherUser?.id)} style={{width:26,height:26,borderRadius:'50%',background:otherUser?.avatarColor||COLORS.brand,display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontWeight:700,fontSize:10,flexShrink:0,cursor:'pointer',overflow:'hidden'}}>
       {otherUser?.avatarUrl ? <img src={otherUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/> : otherUser?.avatar}
     </div>
   )}
@@ -6500,21 +6502,21 @@ unsub = onSnapshot(q, (snap) => {
                 {msg.text && msg.type==='sticker' && !msg.deleted && (
                   <div style={{fontSize:56, lineHeight:1, padding:'2px 4px'}}>{msg.text}</div>
                 )}
-                {msg.text && msg.type!=='sticker' && <div style={{background: msg.deleted ? 'rgba(255,255,255,0.04)' : isMine?'linear-gradient(135deg,#2E7BFF,#0B5FFF)':'rgba(255,255,255,0.09)', borderRadius:isMine?'18px 18px 4px 18px':'18px 18px 18px 4px',padding:'9px 14px',marginBottom:msg.mediaUrl?4:0, boxShadow: isMine ? '0 2px 10px rgba(11,95,255,0.28)' : '0 1px 4px rgba(0,0,0,0.18)' }}>
-  <span style={{color: msg.deleted ? 'rgba(255,255,255,0.3)':'white', fontSize:14, lineHeight:1.4, fontStyle: msg.deleted?'italic':'normal'}}>{msg.text}</span>
+                {msg.text && msg.type!=='sticker' && <div style={{background: msg.deleted ? COLORS.surfaceAlt : isMine?COLORS.gradient:COLORS.surface, borderRadius:isMine?'18px 18px 4px 18px':'18px 18px 18px 4px',padding:'9px 14px',marginBottom:msg.mediaUrl?4:0, boxShadow: isMine ? SHADOW.glow(COLORS.brand) : SHADOW.xs, border: isMine ? 'none' : `1px solid ${COLORS.border}` }}>
+  <span style={{color: msg.deleted ? COLORS.textTertiary : isMine?COLORS.textOnBrand:COLORS.textPrimary, fontSize:14, lineHeight:1.4, fontStyle: msg.deleted?'italic':'normal'}}>{msg.text}</span>
   {!msg.deleted && !isMine && <MessageTranslate text={msg.text} targetLang={currentUser?.language || 'en'} isMine={isMine} />}
 </div>}
-                <div style={{ color:'rgba(255,255,255,0.25)', fontSize:10, marginTop:3, textAlign:isMine?'right':'left', paddingLeft:isMine?0:2, paddingRight:isMine?2:0, display:'flex', alignItems:'center', justifyContent:isMine?'flex-end':'flex-start', gap:3 }}>
+                <div style={{ color:COLORS.textTertiary, fontSize:10.5, marginTop:3, textAlign:isMine?'right':'left', paddingLeft:isMine?0:2, paddingRight:isMine?2:0, display:'flex', alignItems:'center', justifyContent:isMine?'flex-end':'flex-start', gap:3 }}>
   <span>{msg.ts ? msg.ts.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : ''}</span>
   {isMine && (
-    <span style={{ fontSize:12, color: msg.status==='seen' ? '#2F9BFF' : 'rgba(255,255,255,0.35)', letterSpacing:-2 }}>
+    <span style={{ fontSize:12, color: msg.status==='seen' ? COLORS.brand : COLORS.textTertiary, letterSpacing:-2 }}>
       {msg.status === 'sent' ? '✓' : '✓✓'}
     </span>
   )}
 </div>
                 {/* Reaction picker */}
               {showMsgReactions===msg.id && (
-                <div onClick={e=>e.stopPropagation()} style={{position:'absolute',bottom:'100%',left:isMine?'auto':'0',right:isMine?'0':'auto',background:'rgba(20,20,20,0.97)',backdropFilter:'blur(20px)',borderRadius:40,padding:'6px 10px',display:'flex',gap:4,zIndex:100,border:'1px solid rgba(255,255,255,0.12)',animation:'popInBounce 0.25s ease',marginBottom:4,boxShadow:'0 8px 32px rgba(0,0,0,0.5)'}}>
+                <div onClick={e=>e.stopPropagation()} style={{position:'absolute',bottom:'100%',left:isMine?'auto':'0',right:isMine?'0':'auto',background:COLORS.surface,backdropFilter:'blur(20px)',borderRadius:40,padding:'6px 10px',display:'flex',gap:4,zIndex:100,border:`1px solid ${COLORS.border}`,animation:'popInBounce 0.25s ease',marginBottom:4,boxShadow:SHADOW.raised}}>
                   {MSG_EMOJIS.map(emoji=>(
                     <button key={emoji} onClick={async()=>{
                       await updateDoc(doc(db,'messages',conversationId,'msgs',msg.id),{[`reactions.${currentUser.id}`]:emoji});
@@ -6525,7 +6527,7 @@ unsub = onSnapshot(q, (snap) => {
                     onMouseLeave={e=>e.currentTarget.style.transform='scale(1)'}
                     >{emoji}</button>
                   ))}
-                  <button onClick={()=>setShowMsgReactions(null)} style={{background:'rgba(255,255,255,0.08)',border:'none',borderRadius:'50%',width:28,height:28,color:'rgba(255,255,255,0.5)',cursor:'pointer',fontSize:12,display:'flex',alignItems:'center',justifyContent:'center',marginLeft:4}}>✕</button>
+                  <button onClick={()=>setShowMsgReactions(null)} style={{background:COLORS.surfaceAlt,border:'none',borderRadius:'50%',width:28,height:28,color:COLORS.textSecondary,cursor:'pointer',fontSize:12,display:'flex',alignItems:'center',justifyContent:'center',marginLeft:4}}>✕</button>
                 </div>
               )}
 
@@ -6536,9 +6538,9 @@ unsub = onSnapshot(q, (snap) => {
                     <span key={emoji} onClick={async()=>{
                       await updateDoc(doc(db,'messages',conversationId,'msgs',msg.id),{[`reactions.${currentUser.id}`]:emoji});
                       haptic('light');
-                    }} style={{background:'rgba(255,255,255,0.08)',borderRadius:20,padding:'2px 7px',fontSize:12,border:'1px solid rgba(255,255,255,0.1)',cursor:'pointer',display:'flex',alignItems:'center',gap:3}}>
+                    }} style={{background:COLORS.surface,borderRadius:20,padding:'2px 7px',fontSize:12,border:`1px solid ${COLORS.border}`,cursor:'pointer',display:'flex',alignItems:'center',gap:3,boxShadow:SHADOW.xs}}>
                       {emoji}
-                      <span style={{color:'rgba(255,255,255,0.4)',fontSize:10}}>{Object.values(msg.reactions).filter(r=>r===emoji).length}</span>
+                      <span style={{color:COLORS.textTertiary,fontSize:10}}>{Object.values(msg.reactions).filter(r=>r===emoji).length}</span>
                     </span>
                   ))}
                 </div>
@@ -6546,22 +6548,22 @@ unsub = onSnapshot(q, (snap) => {
                 {msg.mediaUrl&&msg.mediaType?.startsWith('image')&&<img src={msg.mediaUrl} alt="" style={{maxWidth:'100%',borderRadius:14,display:'block'}}/>}
                 {msg.mediaUrl&&msg.mediaType?.startsWith('video')&&<video src={msg.mediaUrl} controls style={{maxWidth:'100%',borderRadius:14,display:'block'}}/>}
                 {(msg.mediaUrl&&msg.mediaType?.startsWith('audio')) || msg.type==='voice'&&(msg.voiceUrl||msg.mediaUrl) ? (
-                  <div style={{display:'flex',alignItems:'center',gap:10,background:isMine?'linear-gradient(135deg,#2E7BFF,#0B5FFF)':'rgba(255,255,255,0.09)',borderRadius:20,padding:'10px 14px',minWidth:200}}>
+                  <div style={{display:'flex',alignItems:'center',gap:10,background:isMine?COLORS.gradient:COLORS.surface,borderRadius:20,padding:'10px 14px',minWidth:200,border: isMine?'none':`1px solid ${COLORS.border}`,boxShadow: isMine ? SHADOW.glow(COLORS.brand) : SHADOW.xs}}>
                     <button onClick={e=>{
                       e.stopPropagation();
                       const url = msg.voiceUrl || msg.mediaUrl;
                       if (!url) return;
                       const audio = new Audio(url);
                       audio.play().catch(()=>{});
-                    }} style={{background:'rgba(255,255,255,0.2)',border:'none',borderRadius:'50%',width:34,height:34,color:'white',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    }} style={{background:isMine?'rgba(255,255,255,0.25)':COLORS.surfaceAlt,border:'none',borderRadius:'50%',width:34,height:34,color:isMine?'white':COLORS.brand,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill={isMine?'white':COLORS.brand}><polygon points="5 3 19 12 5 21 5 3"/></svg>
                     </button>
                     <div style={{flex:1,display:'flex',alignItems:'center',gap:1.5,height:24}}>
                       {Array.from({length:24}).map((_,i)=>(
-                        <div key={i} style={{flex:1,background:isMine?'rgba(255,255,255,0.6)':'rgba(255,255,255,0.4)',borderRadius:2,height:`${20+Math.sin(i*0.8)*14}%`,minHeight:3}}/>
+                        <div key={i} style={{flex:1,background:isMine?'rgba(255,255,255,0.6)':COLORS.border,borderRadius:2,height:`${20+Math.sin(i*0.8)*14}%`,minHeight:3}}/>
                       ))}
                     </div>
-                    <span style={{color:isMine?'rgba(255,255,255,0.7)':'rgba(255,255,255,0.5)',fontSize:11,flexShrink:0}}>{msg.duration ? `0:${String(msg.duration).padStart(2,'0')}` : '🎙️'}</span>
+                    <span style={{color:isMine?'rgba(255,255,255,0.8)':COLORS.textTertiary,fontSize:11,flexShrink:0}}>{msg.duration ? `0:${String(msg.duration).padStart(2,'0')}` : '🎙️'}</span>
                   </div>
                 ) : null}
               </div>
@@ -6575,24 +6577,23 @@ unsub = onSnapshot(q, (snap) => {
       deleted: true 
     });
   }
-}} style={{background:'none',border:'none',color:'rgba(11,95,255,0.4)',fontSize:10,cursor:'pointer',padding:'0 2px',alignSelf:'flex-end',marginBottom:2}}>✕</button>
+}} style={{background:'none',border:'none',color:COLORS.textDisabled,fontSize:10,cursor:'pointer',padding:'0 2px',alignSelf:'flex-end',marginBottom:2}}>✕</button>
               )}
             </div>
           );
         })}
         {otherTyping && (
   <div style={{ display:'flex', alignItems:'flex-end', gap:8, marginBottom:8, animation:'fadeIn 0.3s ease' }}>
-    <div style={{ width:28, height:28, borderRadius:'50%', background:otherUser?.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontSize:11, overflow:'hidden', flexShrink:0 }}>
+    <div style={{ width:28, height:28, borderRadius:'50%', background:otherUser?.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontSize:11, overflow:'hidden', flexShrink:0 }}>
       {otherUser?.avatarUrl ? <img src={otherUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/> : otherUser?.avatar}
     </div>
-    <div style={{ background:'rgba(255,255,255,0.09)', borderRadius:'18px 18px 18px 4px', padding:'12px 16px', display:'flex', gap:5, alignItems:'center', border:'1px solid rgba(255,255,255,0.06)' }}>
+    <div style={{ background:COLORS.surface, borderRadius:'18px 18px 18px 4px', padding:'12px 16px', display:'flex', gap:5, alignItems:'center', border:`1px solid ${COLORS.border}`, boxShadow:SHADOW.xs }}>
       {[0,1,2].map(i=>(
-        <div key={i} style={{ width:7, height:7, borderRadius:'50%', background:'rgba(255,255,255,0.6)',
+        <div key={i} style={{ width:7, height:7, borderRadius:'50%', background:COLORS.textTertiary,
           animation:`pulse 1.4s ease ${i*0.22}s infinite`,
           transform:`scaleY(${1})` }}/>
       ))}
     </div>
-    <span style={{ color:'rgba(255,255,255,0.25)', fontSize:10, marginBottom:4 }}>typing...</span>
   </div>
 )}
         <div ref={bottomRef}/>
@@ -6600,17 +6601,17 @@ unsub = onSnapshot(q, (snap) => {
 
       {(previewFile||audioBlob)&&(
         <div style={{padding:'0 14px 6px'}}>
-          <div style={{display:'flex',alignItems:'center',gap:10,background:'rgba(255,255,255,0.05)',borderRadius:14,padding:'8px 12px'}}>
+          <div style={{display:'flex',alignItems:'center',gap:10,background:COLORS.surface,border:`1px solid ${COLORS.border}`,borderRadius:14,padding:'8px 12px',boxShadow:SHADOW.xs}}>
             {previewFile?.type?.startsWith('image')&&<img src={previewFile.url} alt="" style={{height:44,width:44,objectFit:'cover',borderRadius:8}}/>}
             {previewFile?.type?.startsWith('video')&&<video src={previewFile.url} style={{height:44,width:60,objectFit:'cover',borderRadius:8}}/>}
             {audioBlob&&!previewFile&&<audio src={URL.createObjectURL(audioBlob)} controls style={{height:28,flex:1}}/>}
-            <button onClick={clearAttach} style={{marginLeft:'auto',background:'rgba(11,95,255,0.2)',border:'none',borderRadius:'50%',width:22,height:22,color:'#0B5FFF',cursor:'pointer',fontSize:13}}>✕</button>
+            <button onClick={clearAttach} style={{marginLeft:'auto',background:COLORS.surfaceAlt,border:'none',borderRadius:'50%',width:22,height:22,color:COLORS.brand,cursor:'pointer',fontSize:13}}>✕</button>
           </div>
         </div>
       )}
 
 {showEmoji && (
-        <div style={{display:'flex',flexWrap:'wrap',gap:6,padding:'10px 14px',background:'rgba(255,255,255,0.04)',borderRadius:16,margin:'0 14px 4px'}}>
+        <div style={{display:'flex',flexWrap:'wrap',gap:6,padding:'10px 14px',background:COLORS.surface,border:`1px solid ${COLORS.border}`,borderRadius:16,margin:'0 14px 4px',maxHeight:180,overflowY:'auto'}}>
           {EMOJI_LIST.map(e=>(
             <button key={e} onClick={()=>setText(t=>t+e)} style={{background:'none',border:'none',fontSize:22,cursor:'pointer',padding:2}}>{e}</button>
           ))}
@@ -6621,25 +6622,25 @@ unsub = onSnapshot(q, (snap) => {
           <StickerPicker onSelect={sendSticker} onClose={()=>setShowStickers(false)} />
         </div>
       )}
-      <div style={{padding:'10px 14px',paddingBottom:'max(28px, env(safe-area-inset-bottom))',borderTop:'1px solid rgba(255,255,255,0.06)',display:'flex',gap:8,alignItems:'center'}}>
-        <div style={{flex:1,minWidth:0,display:'flex',alignItems:'center',gap:2,background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:26,padding:'4px 6px 4px 12px'}}>
+      <div style={{padding:'10px 14px',paddingBottom:'max(28px, env(safe-area-inset-bottom))',background:COLORS.surface,borderTop:`1px solid ${COLORS.border}`,display:'flex',gap:8,alignItems:'center'}}>
+        <div style={{flex:1,minWidth:0,display:'flex',alignItems:'center',gap:2,background:COLORS.surfaceAlt,border:`1px solid ${COLORS.border}`,borderRadius:26,padding:'4px 6px 4px 12px'}}>
           <button onClick={()=>setShowEmoji(v=>!v)} style={{background:'none',border:'none',cursor:'pointer',flexShrink:0,fontSize:18,display:'flex',padding:4}}>😊</button>
           <button onClick={()=>setShowStickers(v=>!v)} style={{background:'none',border:'none',cursor:'pointer',flexShrink:0,fontSize:18,display:'flex',padding:4}}>🧩</button>
           <input value={text} onChange={e=>{
             setText(e.target.value);
             setDoc(doc(db,'typing',conversationId),{[currentUser.id]:serverTimestamp()},{merge:true}).catch(()=>{});
-          }} onKeyDown={e=>e.key==='Enter'&&handleSend()} placeholder={isRecording?`🔴 ${fmt(recordSecs)}`:'Message'} style={{flex:1,minWidth:0,background:'none',border:'none',outline:'none',color:'white',fontSize:13.5,padding:'9px 4px'}}/>
+          }} onKeyDown={e=>e.key==='Enter'&&handleSend()} placeholder={isRecording?`🔴 ${fmt(recordSecs)}`:'Message'} style={{flex:1,minWidth:0,background:'none',border:'none',outline:'none',color:COLORS.textPrimary,fontSize:13.5,padding:'9px 4px'}}/>
           <button onClick={()=>fileInputRef.current?.click()} style={{background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:6}}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
           </button>
           <button onClick={()=>cameraInputRef.current?.click()} style={{background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:6}}>
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
           </button>
         </div>
         <input ref={fileInputRef} type="file" accept="image/*,video/*,audio/*" onChange={pickFile} style={{display:'none'}}/>
         <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={pickFile} style={{display:'none'}}/>
         {(text.trim() || previewFile || audioBlob) ? (
-          <button onClick={handleSend} style={{background:'linear-gradient(135deg,#2E7BFF,#0B5FFF)',border:'none',borderRadius:'50%',width:42,height:42,color:'white',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+          <button onClick={handleSend} style={{background:COLORS.gradient,border:'none',borderRadius:'50%',width:42,height:42,color:'white',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,boxShadow:SHADOW.glow(COLORS.brand)}}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="1"><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           </button>
         ) : (
@@ -7161,6 +7162,10 @@ const CallModal = ({ type, contactName, contactAvatar, contactId, currentUser, o
   const [status, setStatus] = useState('calling');
   const [isMuted, setIsMuted] = useState(false);
   const [isCamOff, setIsCamOff] = useState(false);
+  // Voice calls render as a small popup card instead of taking over the whole screen
+  // (WhatsApp-style) — `minimized` further collapses that popup into a tiny pill the
+  // person can tap to bring back. Video calls are left full-screen as before.
+  const [minimized, setMinimized] = useState(false);
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const pcRef = useRef(null);
@@ -7404,31 +7409,71 @@ cleanupCall();
     failed: 'Call failed',
   }[status] || 'Connecting...';
 
+  // ── VOICE CALL: small popup card (never full screen), collapsible to a tiny pill ──
+  if (type !== 'video') {
+    const endCallBtn = (size=44) => (
+      <button onClick={onClose} title="End call" style={{ background:COLORS.danger, border:'none', borderRadius:'50%', width:size, height:size, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', boxShadow:'0 6px 18px rgba(239,68,68,0.4)', flexShrink:0 }}>
+        <svg width={size*0.42} height={size*0.42} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+          <path d="M10.68 13.31a16 16 0 003.41 2.6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7 2 2 0 011.72 2v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.42 19.42 0 01-3.33-2.67m-2.67-3.34a19.79 19.79 0 01-3.07-8.63A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91"/>
+          <line x1="23" y1="1" x2="1" y2="23"/>
+        </svg>
+      </button>
+    );
+
+    return (
+      <>
+        <audio ref={remoteVideoRef} autoPlay playsInline style={{ display:'none' }} />
+        {minimized ? (
+          // Collapsed pill — tap to reopen the popup, exactly like WhatsApp's
+          // minimized in-call bar. Ending the call still works without expanding.
+          <div onClick={()=>setMinimized(false)} style={{ position:'fixed', top:'max(14px, env(safe-area-inset-top))', left:'50%', transform:'translateX(-50%)', zIndex:2500, background:COLORS.gradient, borderRadius:999, padding:'7px 8px 7px 14px', display:'flex', alignItems:'center', gap:10, boxShadow:SHADOW.raised, cursor:'pointer' }}>
+            <div style={{ width:8, height:8, borderRadius:'50%', background:'#fff', animation: status==='connected' ? 'pulse 1.4s ease infinite' : '' }} />
+            <span style={{ color:'white', fontSize:12.5, fontWeight:700 }}>@{contactName}</span>
+            <span style={{ color:'rgba(255,255,255,0.85)', fontSize:11.5 }}>{status==='connected' ? fmt() : statusLabel}</span>
+            <div onClick={e=>e.stopPropagation()}>{endCallBtn(30)}</div>
+          </div>
+        ) : (
+          <div style={{ position:'fixed', top:'max(20px, env(safe-area-inset-top))', right:16, zIndex:2500, width:264, background:COLORS.surface, borderRadius:RADIUS.xl, boxShadow:SHADOW.raised, border:`1px solid ${COLORS.border}`, padding:'16px 16px 18px', display:'flex', flexDirection:'column', alignItems:'center', animation:'popInBounce 0.25s ease' }}>
+            <button onClick={()=>setMinimized(true)} title="Minimize" style={{ position:'absolute', top:10, right:10, background:COLORS.surfaceAlt, border:'none', borderRadius:'50%', width:26, height:26, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', color:COLORS.textSecondary }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
+            <div style={{ width:76, height:76, borderRadius:'50%', padding:3, background:COLORS.gradient, margin:'4px auto 12px', animation:status==='calling'?'storyRing 4s linear infinite':'' }}>
+              <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:COLORS.surface, padding:2, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, fontSize:28 }}>
+                  {contactAvatar || '?'}
+                </div>
+              </div>
+            </div>
+            <div style={{ color:COLORS.textPrimary, fontSize:16, fontWeight:700, fontFamily:"'Inter',sans-serif" }}>@{contactName}</div>
+            <div style={{ color:COLORS.textTertiary, fontSize:12.5, marginTop:4, marginBottom:16 }}>{statusLabel}</div>
+            <div style={{ display:'flex', justifyContent:'center', gap:16 }}>
+              <button onClick={toggleMute} style={{ background:isMuted?COLORS.danger:COLORS.surfaceAlt, border:'none', borderRadius:'50%', width:44, height:44, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={isMuted?'white':COLORS.textSecondary} strokeWidth="2">
+                  {isMuted
+                    ? <><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 005.12 2.12M15 9.34V4a3 3 0 00-5.94-.6"/><path d="M17 16.95A7 7 0 015 12v-2m14 0v2a7 7 0 01-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></>
+                    : <><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></>
+                  }
+                </svg>
+              </button>
+              {endCallBtn(52)}
+            </div>
+          </div>
+        )}
+      </>
+    );
+  }
+
+  // ── VIDEO CALL: full screen, as expected for video ──
   return (
     <div style={{ position:'fixed', inset:0, background:'#0B0B0F', zIndex:2500, display:'flex', flexDirection:'column' }}>
-      {type === 'video' ? (
-        <video ref={remoteVideoRef} autoPlay playsInline style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', background:'#15151C' }} />
-      ) : (
-        <audio ref={remoteVideoRef} autoPlay playsInline style={{ display:'none' }} />
-      )}
+      <video ref={remoteVideoRef} autoPlay playsInline style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', background:'#15151C' }} />
       {status !== 'connected' && (
         <div style={{ position:'absolute', inset:0, background:'linear-gradient(160deg,#0a0a1a,#1a0a0a)', zIndex:1 }}>
           <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse at 50% 30%,rgba(11,95,255,0.2),transparent 60%)' }} />
         </div>
       )}
-      {type === 'video' && (
-        <video ref={localVideoRef} autoPlay playsInline muted style={{ position:'absolute', top:60, right:16, width:100, height:140, objectFit:'cover', borderRadius:16, border:'2px solid rgba(255,255,255,0.2)', zIndex:10, background:'#24242E' }} />
-      )}
+      <video ref={localVideoRef} autoPlay playsInline muted style={{ position:'absolute', top:60, right:16, width:100, height:140, objectFit:'cover', borderRadius:16, border:'2px solid rgba(255,255,255,0.2)', zIndex:10, background:'#24242E' }} />
       <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:20, padding:'56px 20px 20px', textAlign:'center' }}>
-        {type !== 'video' && (
-          <div style={{ width:110, height:110, borderRadius:'50%', padding:3, background:'conic-gradient(#2E7BFF,#0B5FFF,#2E7BFF)', margin:'0 auto 20px', animation:status==='calling'?'storyRing 4s linear infinite':'' }}>
-            <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:'#1a0a0a', padding:2, display:'flex', alignItems:'center', justifyContent:'center' }}>
-              <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:'#0B5FFF', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:42 }}>
-                {contactAvatar || '?'}
-              </div>
-            </div>
-          </div>
-        )}
         <div style={{ color:'white', fontSize:22, fontWeight:800, fontFamily:"'Inter',sans-serif" }}>@{contactName}</div>
         <div style={{ color:'rgba(255,255,255,0.5)', fontSize:13, marginTop:6 }}>{statusLabel}</div>
       </div>
@@ -7447,16 +7492,14 @@ cleanupCall();
             <line x1="23" y1="1" x2="1" y2="23"/>
           </svg>
         </button>
-        {type === 'video' && (
-          <button onClick={toggleCam} style={{ background:isCamOff?COLORS.danger:'rgba(255,255,255,0.12)', border:'none', borderRadius:'50%', width:60, height:60, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-              {isCamOff
-                ? <><line x1="1" y1="1" x2="23" y2="23"/><path d="M21 21H3a2 2 0 01-2-2V8a2 2 0 012-2h3m3-3h6l2 3h4a2 2 0 012 2v9.34m-7.72-2.06a4 4 0 11-5.56-5.56"/></>
-                : <><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></>
-              }
-            </svg>
-          </button>
-        )}
+        <button onClick={toggleCam} style={{ background:isCamOff?COLORS.danger:'rgba(255,255,255,0.12)', border:'none', borderRadius:'50%', width:60, height:60, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+            {isCamOff
+              ? <><line x1="1" y1="1" x2="23" y2="23"/><path d="M21 21H3a2 2 0 01-2-2V8a2 2 0 012-2h3m3-3h6l2 3h4a2 2 0 012 2v9.34m-7.72-2.06a4 4 0 11-5.56-5.56"/></>
+              : <><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></>
+            }
+          </svg>
+        </button>
       </div>
     </div>
   );
@@ -9627,8 +9670,8 @@ setBlockedUsers(profile.blockedUsers||[]);
     try {
       const permission = await Notification.requestPermission();
       if(permission === 'granted') {
-        await registerNotifServiceWorker();
-        const token = messaging ? await getToken(messaging, { vapidKey: VAPID_KEY }) : null;
+        const swReg = await registerNotifServiceWorker();
+        const token = messaging ? await getToken(messaging, swReg ? { vapidKey: VAPID_KEY, serviceWorkerRegistration: swReg } : { vapidKey: VAPID_KEY }) : null;
         if(token) await updateDoc(doc(db,'users',profile.id),{ fcmToken: token });
       }
     } catch(e) { console.log('Push notification setup failed:', e); }
