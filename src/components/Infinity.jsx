@@ -959,24 +959,25 @@ const useIntersectionObserver = (ref, options={}) => {
   },[]);
   return isIntersecting;
 };
-/* ─────────────── CLOUDINARY UPLOAD ─────────────── */
+/* ─────────────── CLOUDINARY UPLOAD (SIGNED) ─────────────── */
+// Signed uploads keep the API secret server-side (never shipped to the browser) and
+// gate every upload behind requireAuth + rate limiting in /api/cloudinary-sign.
+// Deliberately signs *only* `timestamp` — no upload_preset — since a preset is one
+// more thing that has to exist, match "signed" mode, and be spelled identically on
+// both ends; dropping it removes that whole class of "Invalid Signature"/"preset not
+// found" failures. The upload itself goes to the bare `/upload` endpoint (no
+// resource_type segment), which auto-detects image vs video — the same endpoint
+// shape already proven to work for both media types.
 const uploadToCloudinary = async (file, onProgress) => {
-  // Tell the signing endpoint exactly which extra param this upload will send
-  // (upload_preset) so it signs the same string Cloudinary reconstructs on its end.
-  const { signature, timestamp, apiKey, cloudName } = await apiFetch('/api/cloudinary-sign', {
-    method: 'POST',
-    body: JSON.stringify({ params: { upload_preset: 'infinity_uploads' } }),
-  });
+  const { signature, timestamp, apiKey, cloudName } = await apiFetch('/api/cloudinary-sign', { method: 'POST' });
 
   const formData = new FormData();
   formData.append('file', file);
   formData.append('api_key', apiKey);
   formData.append('timestamp', timestamp);
   formData.append('signature', signature);
-  formData.append('upload_preset', 'infinity_uploads');
 
-  const resourceType = file.type?.startsWith('video/') ? 'video' : 'image';
-  const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`;
+  const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/upload`;
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -999,7 +1000,7 @@ const uploadToCloudinary = async (file, onProgress) => {
         reject(new Error(message));
       }
     };
-    xhr.onerror = () => reject(new Error('Upload error'));
+    xhr.onerror = () => reject(new Error('Upload error — check your connection and try again'));
     xhr.open('POST', uploadUrl);
     xhr.send(formData);
   });
@@ -5158,20 +5159,10 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal' }) => {
   const sendVoice = async () => {
      if (!blobRef.current) return;
      try {
-       const { signature, timestamp, apiKey, cloudName } = await apiFetch('/api/cloudinary-sign', { method: 'POST' });
-       const fd = new FormData();
-       fd.append('file', blobRef.current, 'voice.webm');
-       fd.append('api_key', apiKey);
-       fd.append('timestamp', timestamp);
-       fd.append('signature', signature);
-       fd.append('resource_type', 'video');
-       const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/upload`, { method: 'POST', body: fd });
-       const data = await res.json();
-       if (data.secure_url) {
-         onSend({ type: 'voice', url: data.secure_url, duration });
-         showToast?.('Voice message sent 🎤', 'success');
-       }
-     } catch { showToast?.('Failed to send voice', 'error'); }
+       const url = await uploadToCloudinary(blobRef.current);
+       onSend({ type: 'voice', url, duration });
+       showToast?.('Voice message sent 🎤', 'success');
+     } catch (e) { showToast?.(e?.message || 'Failed to send voice', 'error'); }
      cancelRecording();
    };
 
