@@ -122,7 +122,7 @@ const SUPPORT_EMAIL = 'supportinfinity@gmail.com';
 /* ─────────────── CONSTANTS ─────────────── */
 const LOGIN_METHODS = [
   { id: 'google', name: 'Google', icon: '🌐', color: '#4285f4' },
-  { id: 'email', name: 'Email', icon: '📧', color: '#FF2156' },
+  { id: 'email', name: 'Email', icon: '📧', color: '#0B5FFF' },
 ];
 
 const VIRTUAL_GIFTS = [
@@ -273,7 +273,7 @@ const PollWidget = ({ poll, currentUser, videoId, showToast }) => {
         return (
           <div key={i} onClick={() => handleVote(i)} style={{ marginBottom: 8, cursor: voted === null ? 'pointer' : 'default' }}>
             <div style={{ position: 'relative', background: COLORS.surface, borderRadius: 10, overflow: 'hidden', border: isChosen ? `1.5px solid ${COLORS.brand}` : `1.5px solid ${COLORS.border}` }}>
-              {voted !== null && <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${pct}%`, background: isChosen ? 'rgba(139,92,246,0.18)' : COLORS.surfaceAlt, transition: 'width 0.4s ease' }} />}
+              {voted !== null && <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${pct}%`, background: isChosen ? 'rgba(11,95,255,0.18)' : COLORS.surfaceAlt, transition: 'width 0.4s ease' }} />}
               <div style={{ position: 'relative', padding: '9px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ color: COLORS.textPrimary, fontSize: 13, fontWeight: isChosen ? 700 : 500 }}>{opt}</span>
                 {voted !== null && <span style={{ color: COLORS.textTertiary, fontSize: 12, fontWeight: 700 }}>{pct}%</span>}
@@ -426,7 +426,7 @@ const StickerPicker = ({ onSelect, onClose }) => {
     <div style={{ background: '#1C1C24', borderRadius: 20, padding: 14, border: '1px solid rgba(255,255,255,0.08)' }}>
       <div style={{ display: 'flex', gap: 8, marginBottom: 10, overflowX: 'auto' }}>
         {STICKER_PACKS.map((pack, i) => (
-          <button key={pack.id} onClick={() => setActivePack(i)} style={{ background: i === activePack ? 'rgba(255,45,85,0.2)' : 'transparent', border: i === activePack ? '1px solid rgba(255,45,85,0.4)' : '1px solid transparent', borderRadius: 20, padding: '4px 12px', color: i === activePack ? '#FF2156' : 'rgba(255,255,255,0.4)', fontSize: 12, cursor: 'pointer', flexShrink: 0 }}>
+          <button key={pack.id} onClick={() => setActivePack(i)} style={{ background: i === activePack ? 'rgba(11,95,255,0.2)' : 'transparent', border: i === activePack ? '1px solid rgba(11,95,255,0.4)' : '1px solid transparent', borderRadius: 20, padding: '4px 12px', color: i === activePack ? '#0B5FFF' : 'rgba(255,255,255,0.4)', fontSize: 12, cursor: 'pointer', flexShrink: 0 }}>
             {pack.name}
           </button>
         ))}
@@ -447,7 +447,7 @@ const StickerPicker = ({ onSelect, onClose }) => {
 const TrendingHashtags = ({ onSearch }) => (
   <div style={{ padding: '10px 0', overflowX: 'auto', display: 'flex', gap: 8 }}>
     {TRENDING_HASHTAGS.map(tag => (
-      <button key={tag} onClick={() => onSearch?.(tag)} style={{ background: 'rgba(255,45,85,0.1)', border: '1px solid rgba(255,45,85,0.2)', borderRadius: 20, padding: '6px 14px', color: '#FF2156', fontSize: 12, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>
+      <button key={tag} onClick={() => onSearch?.(tag)} style={{ background: 'rgba(11,95,255,0.1)', border: '1px solid rgba(11,95,255,0.2)', borderRadius: 20, padding: '6px 14px', color: '#0B5FFF', fontSize: 12, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>
         {tag}
       </button>
     ))}
@@ -593,7 +593,7 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack }) => {
           <div style={{ position:'absolute', inset:0, background:COLORS.bg, zIndex:60, display:'flex', flexDirection:'column' }}>
             <div style={{ padding:'20px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', borderBottom:`1px solid ${COLORS.overlaySubtle}` }}>
               <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:18 }}>{groupCallOpen==='video'?'📹':'📞'} Group {groupCallOpen==='video'?'Video':'Voice'} Call</div>
-              <button onClick={()=>setGroupCallOpen(null)} style={{ background:'rgba(139,92,246,0.15)', border:'1px solid rgba(255,45,85,0.3)', borderRadius:'50%', width:36, height:36, color:COLORS.brand, cursor:'pointer', fontSize:18 }}>✕</button>
+              <button onClick={()=>setGroupCallOpen(null)} style={{ background:'rgba(11,95,255,0.15)', border:'1px solid rgba(11,95,255,0.3)', borderRadius:'50%', width:36, height:36, color:COLORS.brand, cursor:'pointer', fontSize:18 }}>✕</button>
             </div>
             <div style={{ flex:1, overflowY:'auto', padding:16, display:'flex', flexWrap:'wrap', gap:12, alignContent:'flex-start', justifyContent:'center' }}>
               {groupMembers.map(u=>(
@@ -720,7 +720,7 @@ const SavedPostsPage = ({ currentUser, onClose, showToast }) => {
         <button onClick={onClose} style={{ background: COLORS.border, border: 'none', borderRadius: '50%', width: 32, height: 32, color: COLORS.textPrimary, cursor: 'pointer', fontSize: 16 }}>✕</button>
       </div>
       <div style={{ flex: 1, overflowY: 'auto', padding: 12 }}>
-        {loading && <div style={{ textAlign: 'center', padding: 40 }}><div style={{ width: 28, height: 28, border: '3px solid rgba(255,45,85,0.3)', borderTop: `3px solid ${COLORS.brand}`, borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto' }} /></div>}
+        {loading && <div style={{ textAlign: 'center', padding: 40 }}><div style={{ width: 28, height: 28, border: '3px solid rgba(11,95,255,0.3)', borderTop: `3px solid ${COLORS.brand}`, borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto' }} /></div>}
         {!loading && saved.length === 0 && (
           <div style={{ textAlign: 'center', padding: 60, color: COLORS.borderStrong }}>
             <div style={{ fontSize: 44, marginBottom: 12 }}>🔖</div>
@@ -774,9 +774,9 @@ const MessageTranslate = ({ text, targetLang, isMine }) => {
 /* ─────────────── STATUS / BROADCAST (v4 — like WhatsApp Status) ─────────────── */
 const BroadcastPage = ({ currentUser, users, showToast, onClose }) => {
   const [text, setText] = useState('');
-  const [bgColor, setBgColor] = useState('#FF2156');
+  const [bgColor, setBgColor] = useState('#0B5FFF');
   const [posting, setPosting] = useState(false);
-  const colors = ['#FF2156','#9D4EDD','#0A84FF','#FFB100','#2ED573','#00A9D6','#FF453A'];
+  const colors = ['#0B5FFF','#2E7BFF','#083FB0','#FFB100','#2ED573','#00A9D6','#FF453A'];
 
   const postStatus = async () => {
     if (!text.trim()) { showToast?.('Write something first', 'error'); return; }
@@ -840,7 +840,7 @@ const DiscoverPage = ({ videos, users, onViewProfile, showToast, onClose }) => {
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           {filters.map(([id, label]) => (
-            <button key={id} onClick={() => setActiveFilter(id)} style={{ background: activeFilter === id ? 'rgba(139,92,246,0.15)' : COLORS.overlaySubtle, border: `1px solid ${activeFilter === id ? 'rgba(139,92,246,0.4)' : COLORS.border}`, borderRadius: 20, padding: '6px 14px', color: activeFilter === id ? COLORS.brand : COLORS.textTertiary, fontSize: 12, fontWeight: activeFilter === id ? 700 : 400, cursor: 'pointer' }}>{label}</button>
+            <button key={id} onClick={() => setActiveFilter(id)} style={{ background: activeFilter === id ? 'rgba(11,95,255,0.15)' : COLORS.overlaySubtle, border: `1px solid ${activeFilter === id ? 'rgba(11,95,255,0.4)' : COLORS.border}`, borderRadius: 20, padding: '6px 14px', color: activeFilter === id ? COLORS.brand : COLORS.textTertiary, fontSize: 12, fontWeight: activeFilter === id ? 700 : 400, cursor: 'pointer' }}>{label}</button>
           ))}
         </div>
       </div>
@@ -1165,30 +1165,28 @@ const getUserProfile = async (uid) => {
 const GlobalStyles = () => (
   <style>{`
     /* ── DESIGN TOKENS (reference) ──────────────────────────────────────
-       Brand accent     #FF2156   |  Secondary/purple  #9D4EDD
-       Success          #2ED573   |  Warning            #FFB100
-       Danger           #FF453A   |  Info               #0A84FF
-       Indigo           #5E5CE6   |  Gold/coins          #FFD60A
-       Teal (gradient)  #00E6B4 → #00A9D6   |  Verified check  #2F9BFF
-       Surface scale    base #0B0B0F → elev-1 #15151C → elev-2 #1C1C24 → elev-3 #24242E
-       Borders/dividers #34343E   |  Muted text/icon    #5A5A66
-       These values are the single source of truth for the app's palette —
-       update here first if the brand colors ever need to evolve.
+       Brand (only)     #0B5FFF → #083FB0 (blue)
+       Live (only)      #E11D2E — reserved exclusively for LIVE indicators
+       Success          #22C55E   |  Warning            #F59E0B
+       Danger           #EF4444   |  Info               #0B5FFF
+       Text             black/near-black on white surfaces
+       No purple, no pink, anywhere — see src/lib/theme.js COLORS as the
+       single source of truth for the app's palette.
     ──────────────────────────────────────────────────────────────────── */
     :root{
-      --accent:#8B5CF6; --accent-2:#EC4899;
+      --accent:#0B5FFF; --accent-2:#0B5FFF;
       --success:#22C55E; --warning:#F59E0B; --danger:#EF4444; --info:#3B82F6; --indigo:#6366F1;
       --gold:#FBBF24; --teal:#22D3EE; --teal-2:#3B82F6; --verified:#3B82F6;
-      --bg-base:#F7F5FC; --bg-elev-1:#FFFFFF; --bg-elev-2:#F5F1FB; --bg-elev-3:#EFE8FA;
-      --border-strong:rgba(139,92,246,0.22); --text-muted:rgba(30,27,46,0.45);
+      --bg-base:#F5F8FF; --bg-elev-1:#FFFFFF; --bg-elev-2:#F3F6FD; --bg-elev-3:#EAF0FC;
+      --border-strong:rgba(11,95,255,0.22); --text-muted:rgba(11,15,25,0.45);
     }
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
     *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
     html{scroll-behavior:smooth}
-    body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;overscroll-behavior:none;touch-action:manipulation;background:#F7F5FC}
+    body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;overscroll-behavior:none;touch-action:manipulation;background:#F5F8FF}
     ::-webkit-scrollbar{display:none}
     *{scrollbar-width:none;-ms-overflow-style:none}
-    ::selection{background:rgba(139,92,246,0.25);color:#1E1B2E}
+    ::selection{background:rgba(11,95,255,0.25);color:#0B0F19}
     @keyframes heartBurst{0%{transform:scale(0.4) translateY(0);opacity:1}100%{transform:scale(1.8) translateY(-80px);opacity:0}}
     @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
     @keyframes slideDown{from{transform:translateY(-20px);opacity:0}to{transform:translateY(0);opacity:1}}
@@ -1218,7 +1216,7 @@ const GlobalStyles = () => (
     input,textarea{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif}
     input:focus,textarea:focus{outline:none;box-shadow:none}
     .tab-active-indicator{animation:tabPop 0.25s ease}
-    .story-avatar-ring{background:conic-gradient(#8B5CF6,#EC4899,#F59E0B,#3B82F6,#8B5CF6);padding:2.5px;border-radius:50%}
+    .story-avatar-ring{background:conic-gradient(#0B5FFF,#2E7BFF,#0B5FFF);padding:2.5px;border-radius:50%}
     .skeleton{background:linear-gradient(90deg,rgba(255,255,255,0.04) 25%,rgba(255,255,255,0.1) 50%,rgba(255,255,255,0.04) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite}
     .ripple-btn{position:relative;overflow:hidden}
     .ripple-btn::after{content:'';position:absolute;border-radius:50%;background:rgba(255,255,255,0.3);width:100px;height:100px;margin-top:-50px;margin-left:-50px;top:var(--y,50%);left:var(--x,50%);animation:ripple 0.6s linear;opacity:0}
@@ -1430,20 +1428,20 @@ const NotifPopup = ({ notif, user, onClose, onTap }) => {
         boxShadow:'0 8px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05)',
         opacity: 1 - (swipeX / 200) }}>
       <div style={{ position:'relative', flexShrink:0 }}>
-        <div style={{ width:44, height:44, borderRadius:'50%', background:user?.avatarColor||'#FF2156', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:18, overflow:'hidden' }}>
+        <div style={{ width:44, height:44, borderRadius:'50%', background:user?.avatarColor||'#0B5FFF', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:18, overflow:'hidden' }}>
           {user?.avatarUrl ? <img src={user.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/> : (user?.avatar||'?')}
         </div>
         <div style={{ position:'absolute', bottom:-2, right:-2, width:18, height:18, borderRadius:'50%', background:'#1C1C24', display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, border:'1.5px solid rgba(255,255,255,0.1)' }}>{icons[notif?.type]||'🔔'}</div>
       </div>
       <div style={{ flex:1, minWidth:0 }}>
         <div style={{ color:'white', fontSize:13, fontWeight:600, lineHeight:1.35, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-          <span style={{ color:'#FF2156' }}>@{user?.username||'someone'}</span>{' '}{notif?.message}
+          <span style={{ color:'#0B5FFF' }}>@{user?.username||'someone'}</span>{' '}{notif?.message}
         </div>
         <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11, marginTop:2 }}>Just now · Swipe to dismiss</div>
       </div>
       <button onClick={e=>{e.stopPropagation();onClose();}} style={{ background:'rgba(255,255,255,0.08)', border:'none', borderRadius:'50%', width:26, height:26, color:'rgba(255,255,255,0.5)', cursor:'pointer', fontSize:14, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>✕</button>
       <div style={{ position:'absolute', bottom:0, left:0, right:0, height:2, background:'rgba(255,255,255,0.06)', borderRadius:'0 0 20px 20px', overflow:'hidden' }}>
-        <div style={{ height:'100%', background:'linear-gradient(90deg,#FF2156,#9D4EDD)', animation:'notifBar 4.5s linear forwards' }}/>
+        <div style={{ height:'100%', background:'linear-gradient(90deg,#2E7BFF,#0B5FFF)', animation:'notifBar 4.5s linear forwards' }}/>
       </div>
     </div>
   );
@@ -1452,10 +1450,10 @@ const NotifPopup = ({ notif, user, onClose, onTap }) => {
 const Toast = ({ message, type, onClose }) => {
   useEffect(() => { const t = setTimeout(onClose, 2800); return () => clearTimeout(t); }, [onClose]);
   const configs = {
-    success: { bg: 'linear-gradient(135deg,#00E6B4,#00A9D6)', icon: '✓' },
-    error: { bg: 'linear-gradient(135deg,#FF2156,#FF8552)', icon: '✕' },
-    info: { bg: 'linear-gradient(135deg,#0A84FF,#5E5CE6)', icon: 'i' },
-    warning: { bg: 'linear-gradient(135deg,#FFB100,#FF8552)', icon: '!' },
+    success: { bg: `linear-gradient(135deg,${COLORS.success},#16A34A)`, icon: '✓' },
+    error: { bg: `linear-gradient(135deg,${COLORS.danger},#B91C1C)`, icon: '✕' },
+    info: { bg: COLORS.gradient, icon: 'i' },
+    warning: { bg: `linear-gradient(135deg,${COLORS.warning},#D97706)`, icon: '!' },
   };
   const c = configs[type] || configs.info;
   return (
@@ -1612,7 +1610,7 @@ const TelegramStoryViewer = ({ storyGroups, startGroupIdx, currentUser, onClose,
       <div style={{ position:'absolute', top:20, left:0, right:0, zIndex:20, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 14px' }}>
         <div style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer' }}
           onClick={() => { if (currentGroup.userId) { onViewProfile?.(currentGroup.userId); onClose(); } }}>
-          <div style={{ width:42, height:42, borderRadius:'50%', background:currentGroup.avatarColor||'#FF2156',
+          <div style={{ width:42, height:42, borderRadius:'50%', background:currentGroup.avatarColor||'#0B5FFF',
             display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:17,
             overflow:'hidden', border:'2.5px solid white' }}>
             {currentGroup.avatarUrl
@@ -1651,7 +1649,7 @@ const TelegramStoryViewer = ({ storyGroups, startGroupIdx, currentUser, onClose,
           ? <video src={currentStory.mediaUrl} autoPlay loop playsInline style={{ width:'100%', height:'100%', objectFit:'cover' }} />
           : currentStory.mediaUrl
             ? <img src={currentStory.mediaUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
-            : <div style={{ width:'100%', height:'100%', background:currentStory.bgColor||'#FF2156', display:'flex', alignItems:'center', justifyContent:'center', padding:40 }}>
+            : <div style={{ width:'100%', height:'100%', background:currentStory.bgColor||'#0B5FFF', display:'flex', alignItems:'center', justifyContent:'center', padding:40 }}>
                 <div style={{ color:'white', fontSize:28, fontWeight:700, textAlign:'center', lineHeight:1.4 }}>{currentStory.text}</div>
               </div>}
         {/* Text overlay on media */}
@@ -1680,7 +1678,7 @@ const TelegramStoryViewer = ({ storyGroups, startGroupIdx, currentUser, onClose,
             <div style={{ display:'flex', gap:4 }}>
               {['❤️','😂','😮','🔥','👏'].map(emoji=>(
                 <button key={emoji} onClick={e=>{e.stopPropagation(); toggleLike(emoji);}}
-                  style={{ background: liked[currentStory?.id]===emoji ? 'rgba(255,45,85,0.35)' : 'rgba(255,255,255,0.1)', backdropFilter:'blur(12px)', border:'none', borderRadius:'50%', width:38, height:38, fontSize:18, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', transform: liked[currentStory?.id]===emoji ? 'scale(1.3)' : 'scale(1)', transition:'transform 0.15s' }}>
+                  style={{ background: liked[currentStory?.id]===emoji ? 'rgba(11,95,255,0.35)' : 'rgba(255,255,255,0.1)', backdropFilter:'blur(12px)', border:'none', borderRadius:'50%', width:38, height:38, fontSize:18, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', transform: liked[currentStory?.id]===emoji ? 'scale(1.3)' : 'scale(1)', transition:'transform 0.15s' }}>
                   {emoji}
                 </button>
               ))}
@@ -1693,7 +1691,7 @@ const TelegramStoryViewer = ({ storyGroups, startGroupIdx, currentUser, onClose,
                 style={{ flex:1, background:'none', border:'none', outline:'none', color:'white', fontSize:14, padding:'12px 0' }} />
               {replyText.trim() && (
                 <button onClick={e=>{e.stopPropagation(); sendReply();}}
-                  style={{ background:'#FF2156', border:'none', borderRadius:'50%', width:32, height:32, color:'white', cursor:'pointer', fontSize:16, display:'flex', alignItems:'center', justifyContent:'center' }}>➤</button>
+                  style={{ background:'#0B5FFF', border:'none', borderRadius:'50%', width:32, height:32, color:'white', cursor:'pointer', fontSize:16, display:'flex', alignItems:'center', justifyContent:'center' }}>➤</button>
               )}
             </div>
           </div>
@@ -1715,7 +1713,7 @@ const TelegramStoryViewer = ({ storyGroups, startGroupIdx, currentUser, onClose,
                 {(currentStory.seenBy || []).slice(0,6).map((uid,i)=>{
                   const viewer = [{ id: currentUser?.id }].find(u=>u.id===uid) || { id:uid };
                   return (
-                    <div key={uid} style={{ width:28, height:28, borderRadius:'50%', background:'#FF2156', border:'2px solid #000', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontSize:11, fontWeight:'bold', marginLeft: i>0?-8:0 }}>
+                    <div key={uid} style={{ width:28, height:28, borderRadius:'50%', background:'#0B5FFF', border:'2px solid #000', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontSize:11, fontWeight:'bold', marginLeft: i>0?-8:0 }}>
                       {uid[0]?.toUpperCase()}
                     </div>
                   );
@@ -1731,7 +1729,7 @@ const TelegramStoryViewer = ({ storyGroups, startGroupIdx, currentUser, onClose,
       {/* Replay overlay — shown instead of auto-closing when the last story ends */}
       {finished && (
         <div style={{ position:'fixed', inset:0, zIndex:40, background:'rgba(0,0,0,0.85)', backdropFilter:'blur(6px)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:18, animation:'fadeIn 0.25s ease' }}>
-          <div style={{ width:76, height:76, borderRadius:'50%', background:currentGroup.avatarColor||'#FF2156', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:28, overflow:'hidden', border:'3px solid white' }}>
+          <div style={{ width:76, height:76, borderRadius:'50%', background:currentGroup.avatarColor||'#0B5FFF', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:28, overflow:'hidden', border:'3px solid white' }}>
             {currentGroup.avatarUrl ? <img src={currentGroup.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : (currentGroup.username||'?')[0].toUpperCase()}
           </div>
           <div style={{ color:'white', fontWeight:700, fontSize:16 }}>You've seen all stories</div>
@@ -1740,7 +1738,7 @@ const TelegramStoryViewer = ({ storyGroups, startGroupIdx, currentUser, onClose,
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
               Replay
             </button>
-            <button onClick={onClose} style={{ background:'linear-gradient(135deg,#FF2156,#9D4EDD)', border:'none', borderRadius:24, padding:'12px 26px', color:'white', fontWeight:700, fontSize:14, cursor:'pointer' }}>Close</button>
+            <button onClick={onClose} style={{ background:'linear-gradient(135deg,#2E7BFF,#0B5FFF)', border:'none', borderRadius:24, padding:'12px 26px', color:'white', fontWeight:700, fontSize:14, cursor:'pointer' }}>Close</button>
           </div>
         </div>
       )}
@@ -1811,7 +1809,7 @@ const Stories = ({ users, currentUser, onViewStory, onCreateStory, followed, liv
       )}
       <div style={{ position:'absolute', inset:0, background: isAddCard ? 'linear-gradient(to top,rgba(0,0,0,0.05),transparent 55%)' : 'linear-gradient(to top,rgba(0,0,0,0.75) 0%,rgba(0,0,0,0.05) 45%,transparent 65%)' }} />
       {isLive && (
-        <div style={{ position:'absolute', top:8, left:8, background:'#FF2156', borderRadius:6, padding:'2px 7px', fontSize:9, fontWeight:800, color:'white', letterSpacing:0.4 }}>LIVE</div>
+        <div style={{ position:'absolute', top:8, left:8, background:COLORS.live, borderRadius:6, padding:'2px 7px', fontSize:9, fontWeight:800, color:'white', letterSpacing:0.4 }}>LIVE</div>
       )}
       {isAddCard ? (
         <>
@@ -1822,7 +1820,7 @@ const Stories = ({ users, currentUser, onViewStory, onCreateStory, followed, liv
         </>
       ) : (
         <>
-          <div style={{ position:'absolute', top:8, left:8, width:30, height:30, borderRadius:'50%', background: isLive ? 'linear-gradient(135deg,#FF2156,#FF7A00)' : `linear-gradient(135deg,${COLORS.brand},${COLORS.brandSecondary})`, padding:2.5, boxSizing:'border-box' }}>
+          <div style={{ position:'absolute', top:8, left:8, width:30, height:30, borderRadius:'50%', background: isLive ? `linear-gradient(135deg,${COLORS.live},#B3121F)` : `linear-gradient(135deg,${COLORS.brand},${COLORS.brandSecondary})`, padding:2.5, boxSizing:'border-box' }}>
             <div style={{ width:'100%', height:'100%', borderRadius:'50%', background: avatarColor || COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, fontSize:12, overflow:'hidden' }}>
               {avatarUrl ? <img src={avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : initial}
             </div>
@@ -2020,7 +2018,7 @@ const StoriesPage = ({ users, currentUser, onClose, onViewStory, onCreateStory, 
 const CreateStoryModal = ({ currentUser, onClose, showToast }) => {
   const [mode, setMode] = useState(null);
   const [storyText, setStoryText] = useState('');
-  const [bgColor, setBgColor] = useState('#FF2156');
+  const [bgColor, setBgColor] = useState('#0B5FFF');
   const [selectedFile, setSelectedFile] = useState(null);
   const [cameraActive, setCameraActive] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -2031,7 +2029,7 @@ const CreateStoryModal = ({ currentUser, onClose, showToast }) => {
   const recorderRef = useRef(null);
   const chunksRef = useRef([]);
   const fileInputRef = useRef(null);
-  const colors = ['#FF2156','#9D4EDD','#0A84FF','#FFB100','#2ED573','#00A9D6','#FF453A','#5E5CE6'];
+  const colors = ['#0B5FFF','#2E7BFF','#083FB0','#FFB100','#2ED573','#00A9D6','#FF453A','#5E5CE6'];
 
   const startCamera = async () => {
     try { const s = await navigator.mediaDevices.getUserMedia({video:true}); streamRef.current=s; if(videoRef.current) videoRef.current.srcObject=s; setCameraActive(true); }
@@ -2069,10 +2067,10 @@ const CreateStoryModal = ({ currentUser, onClose, showToast }) => {
       await addDoc(collection(db, 'stories'), {
         userId: currentUser.id,
         username: currentUser.username || '',
-        avatarColor: currentUser.avatarColor || '#FF2156',
+        avatarColor: currentUser.avatarColor || '#0B5FFF',
         avatarUrl: currentUser.avatarUrl || null,
         text: storyText || '',
-        bgColor: bgColor || '#FF2156',
+        bgColor: bgColor || '#0B5FFF',
         mediaUrl: mediaUrl || null,
         mediaType: mediaType || null,
         createdAt: serverTimestamp(),
@@ -2093,7 +2091,7 @@ const CreateStoryModal = ({ currentUser, onClose, showToast }) => {
         <div style={{ width:36, height:4, background:'rgba(255,255,255,0.15)', borderRadius:2, margin:'0 auto 24px' }} />
         <div style={{ color:'white', fontWeight:800, fontSize:20, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Create Story</div>
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-          {[{id:'camera',icon:'📷',label:'Camera',sub:'Photo or video',color:'#FF2156'},{id:'file',icon:'🖼️',label:'Gallery',sub:'From device',color:'#9D4EDD'},{id:'text',icon:'✏️',label:'Text',sub:'Write a story',color:'#0A84FF'},{id:'audio',icon:'🎙️',label:'Audio',sub:'Voice story',color:'#2ED573'}].map(opt=>(
+          {[{id:'camera',icon:'📷',label:'Camera',sub:'Photo or video',color:'#0B5FFF'},{id:'file',icon:'🖼️',label:'Gallery',sub:'From device',color:'#0B5FFF'},{id:'text',icon:'✏️',label:'Text',sub:'Write a story',color:'#0A84FF'},{id:'audio',icon:'🎙️',label:'Audio',sub:'Voice story',color:'#2ED573'}].map(opt=>(
             <button key={opt.id} onClick={()=>{if(opt.id==='file') fileInputRef.current?.click(); else setMode(opt.id);}} style={{ background:'rgba(255,255,255,0.04)', border:`1px solid ${opt.color}30`, borderRadius:22, padding:'18px 14px', display:'flex', flexDirection:'column', alignItems:'center', gap:8, cursor:'pointer' }}>
               <div style={{ width:52, height:52, borderRadius:'50%', background:opt.color+'18', display:'flex', alignItems:'center', justifyContent:'center', fontSize:26 }}>{opt.icon}</div>
               <div style={{ color:'white', fontWeight:700, fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{opt.label}</div>
@@ -2110,7 +2108,7 @@ const CreateStoryModal = ({ currentUser, onClose, showToast }) => {
       <div style={{ padding:'16px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
         <button onClick={()=>{stopCamera(); onClose();}} style={{ background:'rgba(255,255,255,0.1)', border:'none', borderRadius:20, padding:'8px 16px', color:'white', cursor:'pointer', fontSize:13 }}>Cancel</button>
         <span style={{ color:'white', fontWeight:700, fontSize:15, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Story</span>
-        <button onClick={handlePost} disabled={uploading} style={{ background:'linear-gradient(135deg,#FF2156,#9D4EDD)', border:'none', borderRadius:20, padding:'8px 16px', color:'white', fontWeight:700, cursor:'pointer', fontSize:13, opacity:uploading?0.6:1 }}>{uploading?'Posting...':'Post'}</button>
+        <button onClick={handlePost} disabled={uploading} style={{ background:'linear-gradient(135deg,#2E7BFF,#0B5FFF)', border:'none', borderRadius:20, padding:'8px 16px', color:'white', fontWeight:700, cursor:'pointer', fontSize:13, opacity:uploading?0.6:1 }}>{uploading?'Posting...':'Post'}</button>
       </div>
       <div style={{ flex:1, position:'relative', overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center' }}>
         {mode==='camera' && (
@@ -2133,7 +2131,7 @@ const CreateStoryModal = ({ currentUser, onClose, showToast }) => {
             {audioBlob ? (
               <><audio src={URL.createObjectURL(audioBlob)} controls style={{ width:'100%' }} /><button onClick={()=>setAudioBlob(null)} style={{ background:'#34343E', border:'none', borderRadius:20, padding:'10px 20px', color:'white', cursor:'pointer' }}>Re-record</button></>
             ) : (
-              <button onMouseDown={startAudio} onMouseUp={stopAudio} onTouchStart={startAudio} onTouchEnd={stopAudio} style={{ background:isRecording?'#FF2156':'#34343E', border:'none', borderRadius:'50%', width:90, height:90, fontSize:36, cursor:'pointer' }}>{isRecording?'⏹':'🎙️'}</button>
+              <button onMouseDown={startAudio} onMouseUp={stopAudio} onTouchStart={startAudio} onTouchEnd={stopAudio} style={{ background:isRecording?'#0B5FFF':'#34343E', border:'none', borderRadius:'50%', width:90, height:90, fontSize:36, cursor:'pointer' }}>{isRecording?'⏹':'🎙️'}</button>
             )}
             <p style={{ color:'#888', fontSize:13 }}>{isRecording?'Recording... release to stop':'Hold to record'}</p>
           </div>
@@ -2180,19 +2178,19 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
           <button onClick={onClose} style={{ background:'rgba(255,255,255,0.08)', border:'none', borderRadius:'50%', width:34, height:34, color:'white', cursor:'pointer', fontSize:16 }}>✕</button>
         </div>
         <div style={{ textAlign:'center', padding:'4px 20px 20px' }}>
-          <div style={{ width:90, height:90, borderRadius:'50%', padding:2.5, margin:'0 auto 14px', background: isLive ? 'linear-gradient(135deg,#FF2156,#FF7A00)' : 'conic-gradient(#FF2156,#FFB100,#9D4EDD,#FF2156)', position:'relative' }}>
+          <div style={{ width:90, height:90, borderRadius:'50%', padding:2.5, margin:'0 auto 14px', background: isLive ? `linear-gradient(135deg,${COLORS.live},#B3121F)` : `conic-gradient(${COLORS.brand},${COLORS.brandSecondary},${COLORS.brand})`, position:'relative' }}>
             <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:'#0d0d0d', padding:2 }}>
               <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:user?.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:32, overflow:'hidden' }}>
                 {avatarSrc ? <img src={avatarSrc} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : user?.avatar}
               </div>
             </div>
             {isLive && (
-              <div style={{ position:'absolute', bottom:-2, left:'50%', transform:'translateX(-50%)', background:'#FF2156', borderRadius:6, padding:'2px 8px', fontSize:9, fontWeight:800, color:'white', letterSpacing:0.4, whiteSpace:'nowrap' }}>LIVE</div>
+              <div style={{ position:'absolute', bottom:-2, left:'50%', transform:'translateX(-50%)', background:COLORS.live, borderRadius:6, padding:'2px 8px', fontSize:9, fontWeight:800, color:'white', letterSpacing:0.4, whiteSpace:'nowrap' }}>LIVE</div>
             )}
           </div>
           <div style={{ color:'white', fontWeight:800, fontSize:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{user?.fullName || user?.username}</div>
           {isLive && (
-            <button onClick={()=>onJoinLive?.(user)} style={{ marginTop:10, background:'linear-gradient(135deg,#FF2156,#FF7A00)', border:'none', borderRadius:20, padding:'9px 20px', color:'white', fontWeight:700, fontSize:13, cursor:'pointer', display:'inline-flex', alignItems:'center', gap:6 }}>
+            <button onClick={()=>onJoinLive?.(user)} style={{ marginTop:10, background:`linear-gradient(135deg,${COLORS.live},#B3121F)`, border:'none', borderRadius:20, padding:'9px 20px', color:'white', fontWeight:700, fontSize:13, cursor:'pointer', display:'inline-flex', alignItems:'center', gap:6 }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
               Join Live
             </button>
@@ -2214,7 +2212,7 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
         {!isOwn && (
           <div style={{ display:'flex', gap:8, padding:'0 16px 16px' }}>
             <button onClick={()=>{onFollow?.(user.id); onClose();}}
-  style={{ flex:1, background:isFollowing?'rgba(255,255,255,0.06)':'linear-gradient(135deg,#FF2156,#9D4EDD)', border:isFollowing?'1px solid rgba(255,45,85,0.4)':'none', borderRadius:14, padding:'12px', color:isFollowing?'#FF2156':'white', fontWeight:700, cursor:'pointer', fontSize:14 }}>
+  style={{ flex:1, background:isFollowing?'rgba(255,255,255,0.06)':'linear-gradient(135deg,#2E7BFF,#0B5FFF)', border:isFollowing?'1px solid rgba(11,95,255,0.4)':'none', borderRadius:14, padding:'12px', color:isFollowing?'#0B5FFF':'white', fontWeight:700, cursor:'pointer', fontSize:14 }}>
   {isFollowing ? 'Following' : '+ Follow'}
 </button>
 <button
@@ -2229,14 +2227,14 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
             <button onClick={()=>{onVoiceCall?.(user.id); onClose();}} style={{ background:'rgba(52,199,89,0.12)', border:'1px solid rgba(52,199,89,0.2)', borderRadius:14, padding:'12px 14px', color:'#2ED573', cursor:'pointer', fontSize:18 }}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2ED573" strokeWidth="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8a19.79 19.79 0 01-3.07-8.67A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>
             </button>
-            <button onClick={()=>{onVideoCall?.(user.id); onClose();}} style={{ background:'rgba(175,82,222,0.12)', border:'1px solid rgba(175,82,222,0.2)', borderRadius:14, padding:'12px 14px', color:'#9D4EDD', cursor:'pointer', fontSize:18 }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9D4EDD" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+            <button onClick={()=>{onVideoCall?.(user.id); onClose();}} style={{ background:'rgba(175,82,222,0.12)', border:'1px solid rgba(175,82,222,0.2)', borderRadius:14, padding:'12px 14px', color:'#0B5FFF', cursor:'pointer', fontSize:18 }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B5FFF" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
             </button>
           </div>
         )}
         <div style={{ display:'flex', borderTop:'1px solid rgba(255,255,255,0.06)' }}>
           {[{id:'posts',icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>},{id:'saved',icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>},{id:'drafts',icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>}].map(t=>(
-            <button key={t.id} onClick={()=>setTab(t.id)} style={{ flex:1, background:'none', border:'none', borderTop:tab===t.id?'2px solid #FF2156':'2px solid transparent', padding:'14px 0', color:tab===t.id?'white':'rgba(255,255,255,0.3)', cursor:'pointer', display:'flex', justifyContent:'center' }}>{t.icon}</button>
+            <button key={t.id} onClick={()=>setTab(t.id)} style={{ flex:1, background:'none', border:'none', borderTop:tab===t.id?'2px solid #0B5FFF':'2px solid transparent', padding:'14px 0', color:tab===t.id?'white':'rgba(255,255,255,0.3)', cursor:'pointer', display:'flex', justifyContent:'center' }}>{t.icon}</button>
           ))}
         </div>
         <div style={{ padding:2 }}>
@@ -2299,7 +2297,7 @@ const LiveChatMessage = ({ msg, targetLang }) => {
   return (
     <div style={{ background: msg.isGift ? 'rgba(255,214,10,0.16)' : 'rgba(0,0,0,0.4)', border: msg.isGift ? '1px solid rgba(255,214,10,0.35)' : 'none', backdropFilter:'blur(10px)', borderRadius:20, padding:'6px 12px', display:'inline-flex', flexDirection:'column', gap:2, maxWidth:'85%', alignSelf:'flex-start' }}>
       <div style={{ display:'flex', gap:7, alignItems:'baseline' }}>
-        <span style={{ color: msg.isGift ? '#FFD60A' : '#FF2156', fontSize:11, fontWeight:700 }}>@{msg.user}</span>
+        <span style={{ color: msg.isGift ? '#FFD60A' : '#0B5FFF', fontSize:11, fontWeight:700 }}>@{msg.user}</span>
         <span style={{ color: msg.isGift ? '#FFD60A' : 'white', fontSize:11, fontWeight: msg.isGift?700:400 }}>{(translated && !showOriginal) ? translated : msg.text}</span>
       </div>
       {eligible && (
@@ -2359,7 +2357,7 @@ const LiveViewerVideo = ({ remoteStream, connected }) => {
       <video ref={videoRef} autoPlay playsInline style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',background:'#000'}}/>
       {!connected && (
         <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:12 }}>
-          <div style={{ width:36, height:36, border:'3px solid rgba(255,255,255,0.25)', borderTop:'3px solid #FF2156', borderRadius:'50%', animation:'spin 1s linear infinite' }} />
+          <div style={{ width:36, height:36, border:'3px solid rgba(255,255,255,0.25)', borderTop:'3px solid #0B5FFF', borderRadius:'50%', animation:'spin 1s linear infinite' }} />
           <span style={{ color:'rgba(255,255,255,0.6)', fontSize:13 }}>Connecting to stream...</span>
         </div>
       )}
@@ -2651,10 +2649,10 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
 
   return (
     <div style={{ position:'fixed', inset:0, background:'linear-gradient(160deg,#0d0025,#160d00)', zIndex:2000, display:'flex', flexDirection:'column' }}>
-      <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse at 30% 40%,rgba(255,45,85,0.15),transparent 60%)' }} />
+      <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse at 30% 40%,rgba(11,95,255,0.15),transparent 60%)' }} />
       <div style={{ padding:'14px 16px', display:'flex', justifyContent:'space-between', alignItems:'center', zIndex:10 }}>
         <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-          <div style={{ background:'linear-gradient(135deg,#FF2156,#FF5A7A)', borderRadius:20, padding:'4px 12px', display:'flex', alignItems:'center', gap:6, boxShadow:'0 4px 14px rgba(255,33,86,0.45)' }}>
+          <div style={{ background:`linear-gradient(135deg,${COLORS.live},#B3121F)`, borderRadius:20, padding:'4px 12px', display:'flex', alignItems:'center', gap:6, boxShadow:'0 4px 14px rgba(225,29,46,0.45)' }}>
             <div style={{ width:7, height:7, borderRadius:'50%', background:'white', animation:'pulse 1s infinite' }} />
             <span style={{ color:'white', fontSize:13, fontWeight:700, letterSpacing:0.3 }}>LIVE</span>
           </div>
@@ -2705,7 +2703,7 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
         {!isHost && (
           <button onClick={()=>setShowGiftPicker(v=>!v)} style={{ background: showGiftPicker ? 'rgba(255,214,10,0.25)' : 'rgba(255,255,255,0.08)', border:'1px solid rgba(255,214,10,0.3)', borderRadius:'50%', width:42, height:42, color:'#FFD60A', cursor:'pointer', fontSize:18, flexShrink:0 }}>🎁</button>
         )}
-        <button onClick={sendMessage} style={{ background:'linear-gradient(135deg,#FF2156,#9D4EDD)', border:'none', borderRadius:'50%', width:42, height:42, color:'white', cursor:'pointer', fontSize:16, flexShrink:0 }}>↑</button>
+        <button onClick={sendMessage} style={{ background:'linear-gradient(135deg,#2E7BFF,#0B5FFF)', border:'none', borderRadius:'50%', width:42, height:42, color:'white', cursor:'pointer', fontSize:16, flexShrink:0 }}>↑</button>
       </div>
     </div>
   );
@@ -2726,7 +2724,7 @@ const VideoProgressBar = ({ videoRef, isActive, isImage }) => {
   if(isImage) return null;
   return (
     <div style={{ position:'absolute', top:0, left:0, right:0, height:2, background:'rgba(255,255,255,0.15)', zIndex:20 }}>
-      <div style={{ height:'100%', background:'linear-gradient(90deg,#FF2156,#9D4EDD)', width:`${progress}%`, transition:'width 0.5s linear' }} />
+      <div style={{ height:'100%', background:'linear-gradient(90deg,#2E7BFF,#0B5FFF)', width:`${progress}%`, transition:'width 0.5s linear' }} />
     </div>
   );
 };
@@ -2914,7 +2912,7 @@ const CommentsModal = ({ video, currentUser, onClose, showToast, onViewProfile }
           <div style={{ display:'flex', alignItems:'center', gap:10, background:COLORS.overlaySubtle, borderRadius:14, padding:'8px 12px' }}>
             {cmAttachment.type?.startsWith('image') && <img src={cmAttachment.url} alt="" style={{ height:44, width:44, objectFit:'cover', borderRadius:8 }}/>}
             {cmAttachment.type?.startsWith('video') && <video src={cmAttachment.url} style={{ height:44, width:60, objectFit:'cover', borderRadius:8 }}/>}
-            <button onClick={()=>setCmAttachment(null)} style={{ marginLeft:'auto', background:'rgba(255,45,85,0.2)', border:'none', borderRadius:'50%', width:22, height:22, color:COLORS.brand, cursor:'pointer', fontSize:13 }}>✕</button>
+            <button onClick={()=>setCmAttachment(null)} style={{ marginLeft:'auto', background:'rgba(11,95,255,0.2)', border:'none', borderRadius:'50%', width:22, height:22, color:COLORS.brand, cursor:'pointer', fontSize:13 }}>✕</button>
           </div>
         </div>
       )}
@@ -3162,10 +3160,10 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
     {showOptions && <PostOptionsMenu video={video} currentUser={currentUser} onClose={()=>setShowOptions(false)} showToast={showToast} onDelete={onDelete} onBlock={onBlock} />}
     <div style={{ background:COLORS.surface, borderRadius:RADIUS.lg, padding:14, marginBottom:0, boxShadow:SHADOW.card, border:`1px solid ${COLORS.border}`, transition:TRANSITION.base }}>
       <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:10 }}>
-        <div onClick={()=>onViewProfile?.(video.userId)} style={{ width:44, height:44, borderRadius:'50%', background:video.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, fontSize:17, overflow:'hidden', cursor:'pointer', flexShrink:0, position:'relative', border: isLive ? '2px solid #FF2156' : `2px solid ${COLORS.surface}`, boxShadow: isLive ? SHADOW.glow('#FF2156') : SHADOW.xs, transition:TRANSITION.fast }}>
+        <div onClick={()=>onViewProfile?.(video.userId)} style={{ width:44, height:44, borderRadius:'50%', background:video.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, fontSize:17, overflow:'hidden', cursor:'pointer', flexShrink:0, position:'relative', border: isLive ? `2px solid ${COLORS.live}` : `2px solid ${COLORS.surface}`, boxShadow: isLive ? SHADOW.glow(COLORS.live) : SHADOW.xs, transition:TRANSITION.fast }}>
           {video.avatarUrl ? <img src={video.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : (video.username||'?')[0]?.toUpperCase()}
           {isLive && (
-            <div style={{ position:'absolute', bottom:-3, left:'50%', transform:'translateX(-50%)', background:'#FF2156', borderRadius:6, padding:'1px 5px', fontSize:7, fontWeight:800, color:'white', letterSpacing:0.3, whiteSpace:'nowrap' }}>LIVE</div>
+            <div style={{ position:'absolute', bottom:-3, left:'50%', transform:'translateX(-50%)', background:COLORS.live, borderRadius:6, padding:'1px 5px', fontSize:7, fontWeight:800, color:'white', letterSpacing:0.3, whiteSpace:'nowrap' }}>LIVE</div>
           )}
         </div>
         <div style={{ flex:1, minWidth:0, display:'flex', flexDirection:'column', overflow:'hidden', cursor:'pointer' }} onClick={()=>onViewProfile?.(video.userId)}>
@@ -3284,17 +3282,19 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
           )}
         </div>
       )}
-      {/* ── Action bar — one line of glowing circular icon buttons on a dark
-          pill, matching the reference mockup, but recolored to the app's own
-          violet→pink brand gradient instead of a mixed rainbow so it still
-          reads as "Infinity" rather than a generic multicolor toolbar. ── */}
+      {/* ── Action bar — laid out directly on the post's own white surface
+          (no separate pill/background/border of its own), so it reads as
+          part of the same card instead of a bolted-on widget. One accent
+          colour only: the app's blue brand colour on active states; every
+          icon is otherwise a plain dark outline, exactly like the rest of
+          the post's typography and iconography. ── */}
       <div style={{ marginTop:10 }}>
         {/* Stats row: reaction bubble + count, comments/shares as tappable text on the right */}
         {(likeCount > 0 || video.comments > 0 || video.shares > 0) && (
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 2px 10px' }}>
             <div onClick={()=>likeCount>0 && setShowLikes(true)} style={{ display:'flex', alignItems:'center', gap:6, cursor: likeCount>0 ? 'pointer' : 'default' }}>
               {likeCount > 0 && (
-                <div style={{ width:20, height:20, borderRadius:'50%', background:'linear-gradient(135deg,#FF3B5C,#EC4899)', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:`0 0 0 2px ${COLORS.surface}` }}>
+                <div style={{ width:20, height:20, borderRadius:'50%', background:COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', boxShadow:`0 0 0 2px ${COLORS.surface}` }}>
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="white"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
                 </div>
               )}
@@ -3308,64 +3308,56 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
         )}
 
         {(() => {
-          const gid = `pillbrand-${video.id}`;
-          const strokeUrl = `url(#${gid})`;
-          // One consistent look, two states — no per-icon color-swapping (that was
-          // the "mixed" look). Neutral = a surface-colored chip with the brand
-          // gradient traced through the icon outline. Active (liked/saved) = the
-          // chip fills solid with the same brand gradient and the icon turns white,
-          // so the only thing that changes on tap is outline→filled, never hue.
-          const orb = (active) => ({
-            width:38, height:38, borderRadius:'50%',
-            background: active ? COLORS.gradient : COLORS.surface,
-            border: `1px solid ${active ? 'transparent' : COLORS.border}`,
+          // Flat icon button sitting directly on the card's own white surface —
+          // no chip, no fill, no border. Neutral = dark outline matching the
+          // card's own text colour. Active (liked/saved) = the same icon turns
+          // solid brand blue. That's the only thing that ever changes: colour
+          // of the stroke/fill, never a background shape appearing around it.
+          const iconBtn = () => ({
+            background:'none', border:'none', padding:8, margin:-8,
             display:'flex', alignItems:'center', justifyContent:'center',
-            cursor:'pointer', flexShrink:0, transition:TRANSITION.fast,
-            boxShadow: active ? SHADOW.glow(COLORS.brand) : SHADOW.xs,
+            cursor:'pointer', flexShrink:0, transition:TRANSITION.fast, borderRadius:10,
           });
-          const press = e => e.currentTarget.style.transform = 'scale(0.9)';
+          const press = e => e.currentTarget.style.transform = 'scale(0.88)';
           const unpress = e => e.currentTarget.style.transform = 'scale(1)';
+          const neutral = COLORS.textSecondary;
           return (
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', background:`linear-gradient(135deg, ${COLORS.brand}14, ${COLORS.brandSecondary}14)`, borderRadius:28, padding:'8px 9px', border:`1px solid ${COLORS.border}`, boxShadow:SHADOW.sm }}>
-              <svg width="0" height="0" style={{ position:'absolute' }}><defs>
-                <linearGradient id={gid} x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor={COLORS.brand} /><stop offset="100%" stopColor={COLORS.brandSecondary} /></linearGradient>
-              </defs></svg>
-
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', borderTop:`1px solid ${COLORS.border}`, paddingTop:8 }}>
               {/* Views */}
-              <button onClick={()=>showToast?.(`${formatNumber(video.views||0)} views`,'info')} onMouseDown={press} onMouseUp={unpress} onMouseLeave={unpress} style={orb(false)}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={strokeUrl} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <button onClick={()=>showToast?.(`${formatNumber(video.views||0)} views`,'info')} onMouseDown={press} onMouseUp={unpress} onMouseLeave={unpress} style={iconBtn()}>
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={neutral} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
               </button>
 
               {/* Like */}
-              <button onClick={toggleLike} onDoubleClick={()=>setShowLikes(true)} onMouseDown={press} onMouseUp={unpress} onMouseLeave={unpress} style={orb(liked)}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill={liked?'white':'none'} stroke={liked?'white':strokeUrl} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: liked ? 'likeHeart 0.35s ease' : 'none' }}>
+              <button onClick={toggleLike} onDoubleClick={()=>setShowLikes(true)} onMouseDown={press} onMouseUp={unpress} onMouseLeave={unpress} style={iconBtn()}>
+                <svg width="19" height="19" viewBox="0 0 24 24" fill={liked?COLORS.brand:'none'} stroke={liked?COLORS.brand:neutral} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: liked ? 'likeHeart 0.35s ease' : 'none' }}>
                   <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
                 </svg>
               </button>
 
               {/* Comment */}
-              <button onClick={()=>{ setShowComments(true); onOpenComments?.(video); }} onMouseDown={press} onMouseUp={unpress} onMouseLeave={unpress} style={orb(false)}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={strokeUrl} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+              <button onClick={()=>{ setShowComments(true); onOpenComments?.(video); }} onMouseDown={press} onMouseUp={unpress} onMouseLeave={unpress} style={iconBtn()}>
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={neutral} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
               </button>
 
               {/* Share */}
-              <button onClick={()=>{ setShowShare(true); onShare?.(video); }} onMouseDown={press} onMouseUp={unpress} onMouseLeave={unpress} style={orb(false)}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={strokeUrl} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              <button onClick={()=>{ setShowShare(true); onShare?.(video); }} onMouseDown={press} onMouseUp={unpress} onMouseLeave={unpress} style={iconBtn()}>
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={neutral} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
               </button>
 
               {/* Download */}
-              <button onClick={handleDownload} onMouseDown={press} onMouseUp={unpress} onMouseLeave={unpress} style={orb(false)}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={strokeUrl} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <button onClick={handleDownload} onMouseDown={press} onMouseUp={unpress} onMouseLeave={unpress} style={iconBtn()}>
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={neutral} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               </button>
 
               {/* Save */}
-              <button onClick={toggleSave} onMouseDown={press} onMouseUp={unpress} onMouseLeave={unpress} style={orb(saved)}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill={saved?'white':'none'} stroke={saved?'white':strokeUrl} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+              <button onClick={toggleSave} onMouseDown={press} onMouseUp={unpress} onMouseLeave={unpress} style={iconBtn()}>
+                <svg width="19" height="19" viewBox="0 0 24 24" fill={saved?COLORS.brand:'none'} stroke={saved?COLORS.brand:neutral} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
               </button>
 
               {/* More */}
-              <button onClick={()=>setShowOptions(true)} onMouseDown={press} onMouseUp={unpress} onMouseLeave={unpress} style={orb(false)}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={strokeUrl} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+              <button onClick={()=>setShowOptions(true)} onMouseDown={press} onMouseUp={unpress} onMouseLeave={unpress} style={iconBtn()}>
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={neutral} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
               </button>
             </div>
           );
@@ -3664,14 +3656,14 @@ const HomeFeed = ({ t, videos, videosLoading, onLike, onComment, onShare, onFoll
             {icon:(<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.info} strokeWidth="2"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="M21 15l-5-5L5 19"/></svg>), label:'Photo', active:false, action:()=>composerFileInputRef.current?.click()},
             {icon:(<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.brand} strokeWidth="2"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>), label:'Poll', active:showPollBuilder, action:()=>setShowPollBuilder(v=>!v)},
             {icon:(<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.warning} strokeWidth="2"><circle cx="12" cy="12" r="9"/><path d="M9 10h.01M15 10h.01M8 15s1.5 2 4 2 4-2 4-2"/></svg>), label:'Feeling', active:showFeelingPicker, action:()=>setShowFeelingPicker(v=>!v)},
-            {icon:(<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF2156" strokeWidth="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>), label:'Live', active:false, action:()=>onWatchLive?.(currentUser)},
+            {icon:(<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.live} strokeWidth="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>), label:'Live', active:false, action:()=>onWatchLive?.(currentUser)},
           ].map(btn=>(
             <button key={btn.label} onClick={e=>{ e.stopPropagation(); btn.action(); }} style={{ display:'flex', alignItems:'center', gap:6, background:btn.active?COLORS.surface2:COLORS.surfaceAlt, border:`1px solid ${btn.active?COLORS.brand:'transparent'}`, borderRadius:14, padding:'7px 12px', color:COLORS.textSecondary, fontSize:12, fontWeight:600, cursor:'pointer' }}>
               {btn.icon}{btn.label}
             </button>
           ))}
           {composerHasContent && (
-            <button onClick={submitQuickPost} disabled={composerPosting} style={{ marginLeft:'auto', background:'linear-gradient(135deg,#FF2156,#9D4EDD)', border:'none', borderRadius:14, padding:'8px 16px', color:'white', fontSize:12.5, fontWeight:700, cursor:composerPosting?'default':'pointer', opacity:composerPosting?0.7:1 }}>
+            <button onClick={submitQuickPost} disabled={composerPosting} style={{ marginLeft:'auto', background:'linear-gradient(135deg,#2E7BFF,#0B5FFF)', border:'none', borderRadius:14, padding:'8px 16px', color:'white', fontSize:12.5, fontWeight:700, cursor:composerPosting?'default':'pointer', opacity:composerPosting?0.7:1 }}>
               {composerPosting ? 'Posting…' : 'Post'}
             </button>
           )}
@@ -3898,7 +3890,7 @@ const FEELINGS = [
   { emoji:'🤔', text:'thoughtful' }, { emoji:'😂', text:'amused' }, { emoji:'❤️', text:'thankful' },
 ];
 
-const POST_BG_COLORS = ['#FF2156','#9D4EDD','#0A84FF','#FFB100','#2ED573','#00A9D6','#FF453A','#5E5CE6'];
+const POST_BG_COLORS = ['#0B5FFF','#2E7BFF','#083FB0','#FFB100','#2ED573','#00A9D6','#FF453A','#5E5CE6'];
 const CreateScreen = ({ onOpenCamera, onShowSoundLibrary, showToast, t, currentUser, users, onPosted, onClose, autoFocusText }) => {
   const [text, setText] = useState('');
   const [media, setMedia] = useState([]); // [{url,file,type}]
@@ -4330,7 +4322,7 @@ const WalletPage = ({ user, setCurrentUser, showToast, onBack }) => {
         </div>
         <div style={{ display:'flex', gap:4, marginBottom:16, background:COLORS.overlaySubtle, borderRadius:18, padding:4, border:`1px solid ${COLORS.overlaySubtle}` }}>
           {['overview','deposit','withdraw','convert'].map(t=>(
-            <button key={t} onClick={()=>setActiveTab(t)} style={{ flex:1, background:activeTab===t?'rgba(255,45,85,0.9)':'none', border:'none', borderRadius:14, padding:'8px 4px', color:COLORS.textPrimary, cursor:'pointer', fontSize:11, fontWeight:activeTab===t?700:400, textTransform:'capitalize' }}>{t}</button>
+            <button key={t} onClick={()=>setActiveTab(t)} style={{ flex:1, background:activeTab===t?'rgba(11,95,255,0.9)':'none', border:'none', borderRadius:14, padding:'8px 4px', color:COLORS.textPrimary, cursor:'pointer', fontSize:11, fontWeight:activeTab===t?700:400, textTransform:'capitalize' }}>{t}</button>
           ))}
         </div>
         {activeTab==='overview' && (
@@ -4338,7 +4330,7 @@ const WalletPage = ({ user, setCurrentUser, showToast, onBack }) => {
             {transactions.length===0&&<div style={{textAlign:'center',padding:40,color:COLORS.borderStrong}}>No transactions yet</div>}
             {transactions.map(tx=>(
               <div key={tx.id} style={{ background:COLORS.overlaySubtle, borderRadius:16, padding:'13px 14px', marginBottom:8, display:'flex', alignItems:'center', gap:12, border:`1px solid ${COLORS.overlaySubtle}` }}>
-                <div style={{ width:40, height:40, borderRadius:'50%', background:tx.type==='credit'?'rgba(6,214,160,0.12)':'rgba(255,45,85,0.12)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>{tx.type==='credit'?'⬆️':'⬇️'}</div>
+                <div style={{ width:40, height:40, borderRadius:'50%', background:tx.type==='credit'?'rgba(6,214,160,0.12)':'rgba(11,95,255,0.12)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>{tx.type==='credit'?'⬆️':'⬇️'}</div>
                 <div style={{ flex:1 }}><div style={{ color:COLORS.textPrimary, fontSize:12 }}>{tx.label}</div><div style={{ color:COLORS.textTertiary, fontSize:10, marginTop:2 }}>{tx.date?.toLocaleDateString?.()}</div></div>
                 <div style={{ color:tx.type==='credit'?COLORS.brand:COLORS.brand, fontWeight:700, fontSize:15 }}>{tx.type==='credit'?'+':'-'}{tx.amount}{tx.coins?'🪙':'$'}</div>
               </div>
@@ -4353,7 +4345,7 @@ const WalletPage = ({ user, setCurrentUser, showToast, onBack }) => {
             </div>
             <div style={{ display:'flex', gap:8, marginBottom:14 }}>
               {(activeTab==='deposit' ? [100,550,1200,6500] : [100,500,1000,5000]).map(v=>(
-                <button key={v} onClick={()=>setAmount(String(v))} style={{ flex:1, background:amount===String(v)?'rgba(255,45,85,0.9)':COLORS.overlaySubtle, border:'none', borderRadius:10, padding:'8px', color:COLORS.textPrimary, cursor:'pointer', fontSize:12, fontWeight:600 }}>{v}</button>
+                <button key={v} onClick={()=>setAmount(String(v))} style={{ flex:1, background:amount===String(v)?'rgba(11,95,255,0.9)':COLORS.overlaySubtle, border:'none', borderRadius:10, padding:'8px', color:COLORS.textPrimary, cursor:'pointer', fontSize:12, fontWeight:600 }}>{v}</button>
               ))}
             </div>
             <button onClick={activeTab==='deposit'?doDeposit:activeTab==='withdraw'?doWithdraw:convertCoins} style={{ width:'100%', background:`linear-gradient(135deg,${COLORS.brand},${COLORS.brandSecondary})`, border:'none', borderRadius:24, padding:'14px', color:'white', fontWeight:700, cursor:'pointer', fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>
@@ -4372,12 +4364,12 @@ const EditProfileModal = ({ user, onClose, onSave, showToast }) => {
   const [bio, setBio] = useState(user?.bio||'');
   const [link, setLink] = useState(user?.link||'');
   const [gender, setGender] = useState(user?.gender||'');
-  const [avatarColor, setAvatarColor] = useState(user?.avatarColor||'#FF2156');
+  const [avatarColor, setAvatarColor] = useState(user?.avatarColor||'#0B5FFF');
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(user?.avatarUrl||null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
-  const colors = ['#FF2156','#9D4EDD','#0A84FF','#FFB100','#2ED573','#00A9D6','#FF453A','#5E5CE6','#00A9D6','#FF7A6B'];
+  const colors = ['#0B5FFF','#2E7BFF','#083FB0','#FFB100','#2ED573','#00A9D6','#FF453A','#5E5CE6','#00A9D6','#5CA0FF'];
 
   const handleAvatarChange = (e) => {
     const f = e.target.files[0];
@@ -4415,7 +4407,7 @@ const EditProfileModal = ({ user, onClose, onSave, showToast }) => {
         <div style={{ width:36, height:4, background:'rgba(255,255,255,0.12)', borderRadius:2, margin:'0 auto 20px' }} />
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24 }}>
           <span style={{ color:'white', fontWeight:800, fontSize:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Edit Profile</span>
-          <button onClick={handleSave} disabled={uploading} style={{ background:'linear-gradient(135deg,#FF2156,#9D4EDD)', border:'none', borderRadius:20, padding:'9px 20px', color:'white', fontWeight:700, cursor:'pointer', fontSize:14, opacity:uploading?0.6:1 }}>{uploading?'Saving...':'Save'}</button>
+          <button onClick={handleSave} disabled={uploading} style={{ background:'linear-gradient(135deg,#2E7BFF,#0B5FFF)', border:'none', borderRadius:20, padding:'9px 20px', color:'white', fontWeight:700, cursor:'pointer', fontSize:14, opacity:uploading?0.6:1 }}>{uploading?'Saving...':'Save'}</button>
         </div>
         <div style={{ position:'relative', display:'inline-block' }}>
             <div style={{ width:90, height:90, borderRadius:'50%', background:avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:36, margin:'0 auto', border:'3px solid rgba(255,255,255,0.1)', overflow:'hidden' }}>
@@ -4957,7 +4949,7 @@ if(activeSubPage==='settings') return (
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
       </button>
       <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:22, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Premium</div>
-      {[{name:'Plus',price:'$4.99/mo',color:'#9D4EDD',features:['Ad-free experience','500 coins/month','Custom profile badge','Priority in search']},{name:'Pro',price:'$9.99/mo',color:'#FFD60A',features:['All Plus features','2000 coins/month','Advanced analytics','Priority support','Custom username']}].map(plan=>(
+      {[{name:'Plus',price:'$4.99/mo',color:'#0B5FFF',features:['Ad-free experience','500 coins/month','Custom profile badge','Priority in search']},{name:'Pro',price:'$9.99/mo',color:'#FFD60A',features:['All Plus features','2000 coins/month','Advanced analytics','Priority support','Custom username']}].map(plan=>(
         <div key={plan.name} style={{ background:COLORS.surface2, border:`1px solid ${plan.color}40`, borderRadius:24, padding:22, marginBottom:14 }}>
           <div style={{ color:plan.color, fontWeight:800, fontSize:20, marginBottom:4, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{plan.name}</div>
           <div style={{ color:COLORS.textPrimary, fontSize:28, fontWeight:800, marginBottom:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{plan.price}</div>
@@ -4975,7 +4967,7 @@ if(activeSubPage==='settings') return (
 
   const menuItems = [
     {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFD60A" strokeWidth="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>,label:t?.wallet||'Wallet',page:'wallet',color:'#FFD60A'},
-    {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9D4EDD" strokeWidth="1.8"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>,label:t?.badges||'Badges',page:'badges',color:'#9D4EDD'},
+    {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B5FFF" strokeWidth="1.8"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>,label:t?.badges||'Badges',page:'badges',color:'#0B5FFF'},
     {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFD60A" strokeWidth="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,label:t?.premium||'Premium',page:'premium',color:'#FFD60A'},
     {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00E6B4" strokeWidth="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,label:t?.analytics||'Analytics',page:'analytics',color:'#00E6B4'},
     {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>,label:'QR Code',page:'qrcode',color:'#fff'},
@@ -4985,7 +4977,7 @@ if(activeSubPage==='settings') return (
     <div data-main-scroll="true" onScroll={onFeedScroll} style={{ height:'100%', overflow:'auto', background:COLORS.bg, paddingBottom:'max(74px, calc(58px + env(safe-area-inset-bottom)))' }}>
       <div style={{ position:'relative', paddingBottom:20, background:COLORS.surface, borderRadius:'0 0 24px 24px', boxShadow:'0 2px 14px rgba(124,58,237,0.06)' }}>
         <div style={{ height:150, position:'absolute', top:0, left:0, right:0, overflow:'hidden', borderRadius:'0 0 24px 24px' }}>
-          <div style={{ width:'100%', height:'100%', background:'linear-gradient(135deg,#8B5CF6,#EC4899 55%,#3B82F6)' }} />
+          <div style={{ width:'100%', height:'100%', background:'linear-gradient(135deg,#2E7BFF,#0B5FFF 55%,#083FB0)' }} />
         </div>
         <div style={{ position:'relative', padding:'14px 16px 0' }}>
           <div style={{ display:'flex', justifyContent:'space-between' }}>
@@ -5124,7 +5116,7 @@ if(activeSubPage==='settings') return (
     }}
     style={{
       position: 'absolute', top: 4, right: 4,
-      background: 'rgba(255,45,85,0.8)', border: 'none',
+      background: 'rgba(11,95,255,0.8)', border: 'none',
       borderRadius: '50%', width: 22, height: 22,
       color: 'white', cursor: 'pointer', fontSize: 12,
       display: 'flex', alignItems: 'center', justifyContent: 'center'
@@ -5272,10 +5264,10 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal' }) => {
   if (state === 'preview') {
     return (
       <div style={{ display:'flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.06)', borderRadius:24, padding:'8px 12px', flex:1 }}>
-        <button onClick={cancelRecording} style={{ background:'rgba(255,45,85,0.15)', border:'none', borderRadius:'50%', width:32, height:32, color:'#FF2156', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}>✕</button>
+        <button onClick={cancelRecording} style={{ background:'rgba(11,95,255,0.15)', border:'none', borderRadius:'50%', width:32, height:32, color:'#0B5FFF', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}>✕</button>
         <audio src={audioUrl} controls style={{ flex:1, height:28, minWidth:0 }} />
         <span style={{ color:'rgba(255,255,255,0.4)', fontSize:12, flexShrink:0 }}>{fmtTime(duration)}</span>
-        <button onClick={sendVoice} style={{ background:'#FF2156', border:'none', borderRadius:'50%', width:36, height:36, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+        <button onClick={sendVoice} style={{ background:'#0B5FFF', border:'none', borderRadius:'50%', width:36, height:36, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
       </div>
@@ -5284,21 +5276,21 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal' }) => {
 
   // recording or paused
   return (
-    <div style={{ display:'flex', alignItems:'center', gap:8, flex:1, background:'rgba(255,45,85,0.06)', borderRadius:24, padding:'8px 12px', border:'1px solid rgba(255,45,85,0.15)' }}>
-      <button onClick={cancelRecording} style={{ background:'rgba(255,45,85,0.15)', border:'none', borderRadius:'50%', width:30, height:30, color:'#FF2156', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>✕</button>
+    <div style={{ display:'flex', alignItems:'center', gap:8, flex:1, background:'rgba(11,95,255,0.06)', borderRadius:24, padding:'8px 12px', border:'1px solid rgba(11,95,255,0.15)' }}>
+      <button onClick={cancelRecording} style={{ background:'rgba(11,95,255,0.15)', border:'none', borderRadius:'50%', width:30, height:30, color:'#0B5FFF', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>✕</button>
       {/* Waveform visualization */}
       <div style={{ flex:1, display:'flex', alignItems:'center', gap:1.5, height:28 }}>
         {waveform.length > 0 ? waveform.map((h,i)=>(
-          <div key={i} style={{ flex:1, background: state==='recording'?'#FF2156':'rgba(255,255,255,0.3)', borderRadius:2, height:`${Math.round(h*100)}%`, minHeight:2, transition:'height 0.05s', opacity: state==='paused'?0.5:1 }} />
+          <div key={i} style={{ flex:1, background: state==='recording'?'#0B5FFF':'rgba(255,255,255,0.3)', borderRadius:2, height:`${Math.round(h*100)}%`, minHeight:2, transition:'height 0.05s', opacity: state==='paused'?0.5:1 }} />
         )) : Array.from({length:30}).map((_,i)=>(
           <div key={i} style={{ flex:1, background:'rgba(255,255,255,0.15)', borderRadius:2, height:'20%' }} />
         ))}
       </div>
-      <span style={{ color: state==='paused'?'rgba(255,255,255,0.4)':'#FF2156', fontSize:12, fontWeight:700, fontVariantNumeric:'tabular-nums', flexShrink:0 }}>{fmtTime(duration)}</span>
+      <span style={{ color: state==='paused'?'rgba(255,255,255,0.4)':'#0B5FFF', fontSize:12, fontWeight:700, fontVariantNumeric:'tabular-nums', flexShrink:0 }}>{fmtTime(duration)}</span>
       {state === 'recording'
         ? <button onClick={pauseRecording} style={{ background:'rgba(255,255,255,0.1)', border:'none', borderRadius:'50%', width:30, height:30, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>⏸</button>
         : <button onClick={resumeRecording} style={{ background:'rgba(255,255,255,0.1)', border:'none', borderRadius:'50%', width:30, height:30, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>▶</button>}
-      <button onClick={stopRecording} style={{ background:'#FF2156', border:'none', borderRadius:'50%', width:34, height:34, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+      <button onClick={stopRecording} style={{ background:'#0B5FFF', border:'none', borderRadius:'50%', width:34, height:34, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
       </button>
     </div>
@@ -5498,7 +5490,7 @@ unsub = onSnapshot(q, (snap) => {
   if(!otherUser?.id || !conversationId || !currentUser?.id) {
   return (
     <div style={{height:'100%',background:'#0B0B0F',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:12}}>
-      <div style={{width:32,height:32,border:'3px solid rgba(255,45,85,0.3)',borderTop:'3px solid #FF2156',borderRadius:'50%',animation:'spin 1s linear infinite'}}/>
+      <div style={{width:32,height:32,border:'3px solid rgba(11,95,255,0.3)',borderTop:'3px solid #0B5FFF',borderRadius:'50%',animation:'spin 1s linear infinite'}}/>
       <div style={{color:'rgba(255,255,255,0.3)',fontSize:13}}>Loading conversation...</div>
       <button onClick={onBack} style={{background:'rgba(255,255,255,0.07)',border:'none',borderRadius:20,padding:'8px 20px',color:'rgba(255,255,255,0.5)',cursor:'pointer',fontSize:12,marginTop:8}}>← Back</button>
     </div>
@@ -5529,7 +5521,7 @@ unsub = onSnapshot(q, (snap) => {
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2ED573" strokeWidth="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-5.99-5.99 19.79 19.79 0 01-3.07-8.67A2 2 0 014 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>
           </button>
           <button onClick={()=>onVideoCall?.(otherUser?.id)} style={{background:'rgba(175,82,222,0.12)',border:'1px solid rgba(175,82,222,0.2)',borderRadius:'50%',width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9D4EDD" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B5FFF" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
           </button>
         </div>
       </div>
@@ -5554,7 +5546,7 @@ unsub = onSnapshot(q, (snap) => {
                 {msg.text && msg.type==='sticker' && !msg.deleted && (
                   <div style={{fontSize:56, lineHeight:1, padding:'2px 4px'}}>{msg.text}</div>
                 )}
-                {msg.text && msg.type!=='sticker' && <div style={{background: msg.deleted ? 'rgba(255,255,255,0.04)' : isMine?'linear-gradient(135deg,#FF2156,#9D4EDD)':'rgba(255,255,255,0.09)', borderRadius:isMine?'18px 18px 4px 18px':'18px 18px 18px 4px',padding:'9px 14px',marginBottom:msg.mediaUrl?4:0, boxShadow: isMine ? '0 2px 10px rgba(255,33,86,0.28)' : '0 1px 4px rgba(0,0,0,0.18)' }}>
+                {msg.text && msg.type!=='sticker' && <div style={{background: msg.deleted ? 'rgba(255,255,255,0.04)' : isMine?'linear-gradient(135deg,#2E7BFF,#0B5FFF)':'rgba(255,255,255,0.09)', borderRadius:isMine?'18px 18px 4px 18px':'18px 18px 18px 4px',padding:'9px 14px',marginBottom:msg.mediaUrl?4:0, boxShadow: isMine ? '0 2px 10px rgba(11,95,255,0.28)' : '0 1px 4px rgba(0,0,0,0.18)' }}>
   <span style={{color: msg.deleted ? 'rgba(255,255,255,0.3)':'white', fontSize:14, lineHeight:1.4, fontStyle: msg.deleted?'italic':'normal'}}>{msg.text}</span>
   {!msg.deleted && !isMine && <MessageTranslate text={msg.text} targetLang={currentUser?.language || 'en'} isMine={isMine} />}
 </div>}
@@ -5600,7 +5592,7 @@ unsub = onSnapshot(q, (snap) => {
                 {msg.mediaUrl&&msg.mediaType?.startsWith('image')&&<img src={msg.mediaUrl} alt="" style={{maxWidth:'100%',borderRadius:14,display:'block'}}/>}
                 {msg.mediaUrl&&msg.mediaType?.startsWith('video')&&<video src={msg.mediaUrl} controls style={{maxWidth:'100%',borderRadius:14,display:'block'}}/>}
                 {(msg.mediaUrl&&msg.mediaType?.startsWith('audio')) || msg.type==='voice'&&(msg.voiceUrl||msg.mediaUrl) ? (
-                  <div style={{display:'flex',alignItems:'center',gap:10,background:isMine?'linear-gradient(135deg,#FF2156,#9D4EDD)':'rgba(255,255,255,0.09)',borderRadius:20,padding:'10px 14px',minWidth:200}}>
+                  <div style={{display:'flex',alignItems:'center',gap:10,background:isMine?'linear-gradient(135deg,#2E7BFF,#0B5FFF)':'rgba(255,255,255,0.09)',borderRadius:20,padding:'10px 14px',minWidth:200}}>
                     <button onClick={e=>{
                       e.stopPropagation();
                       const url = msg.voiceUrl || msg.mediaUrl;
@@ -5629,7 +5621,7 @@ unsub = onSnapshot(q, (snap) => {
       deleted: true 
     });
   }
-}} style={{background:'none',border:'none',color:'rgba(255,45,85,0.4)',fontSize:10,cursor:'pointer',padding:'0 2px',alignSelf:'flex-end',marginBottom:2}}>✕</button>
+}} style={{background:'none',border:'none',color:'rgba(11,95,255,0.4)',fontSize:10,cursor:'pointer',padding:'0 2px',alignSelf:'flex-end',marginBottom:2}}>✕</button>
               )}
             </div>
           );
@@ -5658,7 +5650,7 @@ unsub = onSnapshot(q, (snap) => {
             {previewFile?.type?.startsWith('image')&&<img src={previewFile.url} alt="" style={{height:44,width:44,objectFit:'cover',borderRadius:8}}/>}
             {previewFile?.type?.startsWith('video')&&<video src={previewFile.url} style={{height:44,width:60,objectFit:'cover',borderRadius:8}}/>}
             {audioBlob&&!previewFile&&<audio src={URL.createObjectURL(audioBlob)} controls style={{height:28,flex:1}}/>}
-            <button onClick={clearAttach} style={{marginLeft:'auto',background:'rgba(255,45,85,0.2)',border:'none',borderRadius:'50%',width:22,height:22,color:'#FF2156',cursor:'pointer',fontSize:13}}>✕</button>
+            <button onClick={clearAttach} style={{marginLeft:'auto',background:'rgba(11,95,255,0.2)',border:'none',borderRadius:'50%',width:22,height:22,color:'#0B5FFF',cursor:'pointer',fontSize:13}}>✕</button>
           </div>
         </div>
       )}
@@ -5693,7 +5685,7 @@ unsub = onSnapshot(q, (snap) => {
         <input ref={fileInputRef} type="file" accept="image/*,video/*,audio/*" onChange={pickFile} style={{display:'none'}}/>
         <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={pickFile} style={{display:'none'}}/>
         {(text.trim() || previewFile || audioBlob) ? (
-          <button onClick={handleSend} style={{background:'linear-gradient(135deg,#FF2156,#9D4EDD)',border:'none',borderRadius:'50%',width:42,height:42,color:'white',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+          <button onClick={handleSend} style={{background:'linear-gradient(135deg,#2E7BFF,#0B5FFF)',border:'none',borderRadius:'50%',width:42,height:42,color:'white',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="1"><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           </button>
         ) : (
@@ -5987,7 +5979,7 @@ const IncomingCallScreen = ({ callData, onAnswer, onDecline }) => {
   <div style={{position:'fixed',inset:0,background:'linear-gradient(160deg,#0d0025,#001a0d)',zIndex:3000,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'space-between',padding:'80px 40px 80px'}}>
     <div style={{textAlign:'center'}}>
       <div style={{color:'rgba(255,255,255,0.5)',fontSize:14,marginBottom:16,letterSpacing:2,textTransform:'uppercase'}}>{callData.callType==='video'?'Incoming Video Call':'Incoming Voice Call'}</div>
-      <div style={{width:120,height:120,borderRadius:'50%',background:callData.callerColor||'#FF2156',display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontWeight:'bold',fontSize:48,margin:'0 auto 20px',border:'4px solid rgba(255,255,255,0.2)',boxShadow:'0 0 0 12px rgba(255,255,255,0.05),0 0 0 24px rgba(255,255,255,0.03)'}}>
+      <div style={{width:120,height:120,borderRadius:'50%',background:callData.callerColor||'#0B5FFF',display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontWeight:'bold',fontSize:48,margin:'0 auto 20px',border:'4px solid rgba(255,255,255,0.2)',boxShadow:'0 0 0 12px rgba(255,255,255,0.05),0 0 0 24px rgba(255,255,255,0.03)'}}>
         {callData.callerAvatar||'?'}
       </div>
       <div style={{color:'white',fontSize:28,fontWeight:800,fontFamily:"'Inter',sans-serif"}}>@{callData.callerName}</div>
@@ -5995,7 +5987,7 @@ const IncomingCallScreen = ({ callData, onAnswer, onDecline }) => {
     </div>
     <div style={{display:'flex',justifyContent:'space-around',width:'100%',alignItems:'center'}}>
       <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:12}}>
-        <button onClick={onDecline} style={{width:70,height:70,borderRadius:'50%',background:'#FF2156',border:'none',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',boxShadow:'0 8px 30px rgba(255,45,85,0.5)'}}>
+        <button onClick={onDecline} style={{width:70,height:70,borderRadius:'50%',background:COLORS.danger,border:'none',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',boxShadow:'0 8px 30px rgba(239,68,68,0.5)'}}>
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M10.68 13.31a16 16 0 003.41 2.6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7 2 2 0 011.72 2v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.42 19.42 0 01-3.33-2.67m-2.67-3.34a19.79 19.79 0 01-3.07-8.63A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91"/><line x1="23" y1="1" x2="1" y2="23"/></svg>
         </button>
         <span style={{color:'rgba(255,255,255,0.5)',fontSize:13}}>Decline</span>
@@ -6268,7 +6260,7 @@ cleanupCall();
       )}
       {status !== 'connected' && (
         <div style={{ position:'absolute', inset:0, background:'linear-gradient(160deg,#0a0a1a,#1a0a0a)', zIndex:1 }}>
-          <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse at 50% 30%,rgba(255,45,85,0.2),transparent 60%)' }} />
+          <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse at 50% 30%,rgba(11,95,255,0.2),transparent 60%)' }} />
         </div>
       )}
       {type === 'video' && (
@@ -6276,9 +6268,9 @@ cleanupCall();
       )}
       <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:20, padding:'56px 20px 20px', textAlign:'center' }}>
         {type !== 'video' && (
-          <div style={{ width:110, height:110, borderRadius:'50%', padding:3, background:'conic-gradient(#FF2156,#9D4EDD,#FF2156)', margin:'0 auto 20px', animation:status==='calling'?'storyRing 4s linear infinite':'' }}>
+          <div style={{ width:110, height:110, borderRadius:'50%', padding:3, background:'conic-gradient(#2E7BFF,#0B5FFF,#2E7BFF)', margin:'0 auto 20px', animation:status==='calling'?'storyRing 4s linear infinite':'' }}>
             <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:'#1a0a0a', padding:2, display:'flex', alignItems:'center', justifyContent:'center' }}>
-              <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:'#FF2156', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:42 }}>
+              <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:'#0B5FFF', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:42 }}>
                 {contactAvatar || '?'}
               </div>
             </div>
@@ -6288,7 +6280,7 @@ cleanupCall();
         <div style={{ color:'rgba(255,255,255,0.5)', fontSize:13, marginTop:6 }}>{statusLabel}</div>
       </div>
       <div style={{ position:'absolute', bottom:60, left:0, right:0, zIndex:20, display:'flex', justifyContent:'center', gap:20 }}>
-        <button onClick={toggleMute} style={{ background:isMuted?'rgba(255,45,85,0.9)':'rgba(255,255,255,0.12)', border:'none', borderRadius:'50%', width:60, height:60, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+        <button onClick={toggleMute} style={{ background:isMuted?COLORS.danger:'rgba(255,255,255,0.12)', border:'none', borderRadius:'50%', width:60, height:60, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
             {isMuted
               ? <><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 005.12 2.12M15 9.34V4a3 3 0 00-5.94-.6"/><path d="M17 16.95A7 7 0 015 12v-2m14 0v2a7 7 0 01-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></>
@@ -6296,14 +6288,14 @@ cleanupCall();
             }
           </svg>
         </button>
-        <button onClick={onClose} style={{ background:'#FF2156', border:'none', borderRadius:'50%', width:70, height:70, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', boxShadow:'0 0 30px rgba(255,45,85,0.5)' }}>
+        <button onClick={onClose} style={{ background:'#0B5FFF', border:'none', borderRadius:'50%', width:70, height:70, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', boxShadow:'0 0 30px rgba(11,95,255,0.5)' }}>
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
             <path d="M10.68 13.31a16 16 0 003.41 2.6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7 2 2 0 011.72 2v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.42 19.42 0 01-3.33-2.67m-2.67-3.34a19.79 19.79 0 01-3.07-8.63A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91"/>
             <line x1="23" y1="1" x2="1" y2="23"/>
           </svg>
         </button>
         {type === 'video' && (
-          <button onClick={toggleCam} style={{ background:isCamOff?'rgba(255,45,85,0.9)':'rgba(255,255,255,0.12)', border:'none', borderRadius:'50%', width:60, height:60, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+          <button onClick={toggleCam} style={{ background:isCamOff?COLORS.danger:'rgba(255,255,255,0.12)', border:'none', borderRadius:'50%', width:60, height:60, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
               {isCamOff
                 ? <><line x1="1" y1="1" x2="23" y2="23"/><path d="M21 21H3a2 2 0 01-2-2V8a2 2 0 012-2h3m3-3h6l2 3h4a2 2 0 012 2v9.34m-7.72-2.06a4 4 0 11-5.56-5.56"/></>
@@ -6378,7 +6370,7 @@ const SearchOverlay = ({ onClose, videos, users, onViewProfile }) => {
       {query.trim() && (
         <div style={{ display:'flex', padding:'8px 12px', gap:6, borderBottom:`1px solid ${COLORS.overlaySubtle}`, overflowX:'auto', scrollbarWidth:'none' }}>
           {SEARCH_TABS.map(t=>(
-            <button key={t.id} onClick={()=>setTab(t.id)} style={{ flexShrink:0, background:tab===t.id?'rgba(139,92,246,0.15)':COLORS.overlaySubtle, border:tab===t.id?'1px solid rgba(255,45,85,0.4)':`1px solid ${COLORS.border}`, padding:'6px 14px', color:tab===t.id?COLORS.brand:COLORS.textTertiary, cursor:'pointer', borderRadius:20, fontSize:12, fontWeight:700, transition:'all 0.15s' }}>{t.label}</button>
+            <button key={t.id} onClick={()=>setTab(t.id)} style={{ flexShrink:0, background:tab===t.id?'rgba(11,95,255,0.15)':COLORS.overlaySubtle, border:tab===t.id?'1px solid rgba(11,95,255,0.4)':`1px solid ${COLORS.border}`, padding:'6px 14px', color:tab===t.id?COLORS.brand:COLORS.textTertiary, cursor:'pointer', borderRadius:20, fontSize:12, fontWeight:700, transition:'all 0.15s' }}>{t.label}</button>
           ))}
         </div>
       )}
@@ -6497,7 +6489,7 @@ const SearchOverlay = ({ onClose, videos, users, onViewProfile }) => {
                 {tab==='all' && <div style={{ color:COLORS.textTertiary, fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:12 }}>Hashtags</div>}
                 {results.hashtags.map((h,i)=>(
                   <div key={i} onClick={()=>{ setQuery(h); addRecentSearch(h); }} style={{ display:'flex', alignItems:'center', gap:12, padding:'11px 12px', background:COLORS.overlaySubtle, borderRadius:14, marginBottom:6, cursor:'pointer', border:`1px solid ${COLORS.overlaySubtle}` }}>
-                    <div style={{ width:40, height:40, borderRadius:12, background:'rgba(139,92,246,0.12)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20 }}>#</div>
+                    <div style={{ width:40, height:40, borderRadius:12, background:'rgba(11,95,255,0.12)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20 }}>#</div>
                     <div>
                       <div style={{ color:COLORS.brand, fontWeight:700, fontSize:14 }}>{h}</div>
                       <div style={{ color:COLORS.textTertiary, fontSize:12 }}>{videos.filter(v=>v.hashtags?.includes(h)).length} posts</div>
@@ -6731,7 +6723,7 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
           username: currentUser.username || '',
           fullName: currentUser.fullName || currentUser.username || '',
           avatar: currentUser.avatar || (currentUser.username||'U')[0].toUpperCase(),
-          avatarColor: currentUser.avatarColor || '#FF2156',
+          avatarColor: currentUser.avatarColor || '#0B5FFF',
           avatarUrl: currentUser.avatarUrl || null,
           verified: currentUser.verified || false,
           description: description,
@@ -6753,7 +6745,7 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
           username: currentUser.username || '',
           fullName: currentUser.fullName || currentUser.username || '',
           avatar: currentUser.avatar || (currentUser.username||'U')[0].toUpperCase(),
-          avatarColor: currentUser.avatarColor || '#FF2156',
+          avatarColor: currentUser.avatarColor || '#0B5FFF',
           avatarUrl: currentUser.avatarUrl || null,
           verified: currentUser.verified || false,
           description: description,
@@ -6790,11 +6782,11 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
       <div style={{ padding:'14px 16px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
         <button onClick={()=>setSelectedFile(null)} style={{ background:'rgba(255,255,255,0.1)', border:'none', borderRadius:20, padding:'8px 16px', color:'white', cursor:'pointer', fontSize:13 }}>Retake</button>
         <span style={{ color:'white', fontWeight:800, fontSize:16, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>New Post</span>
-        <button onClick={handleUpload} disabled={uploading} style={{ background:'linear-gradient(135deg,#FF2156,#9D4EDD)', border:'none', borderRadius:20, padding:'8px 18px', color:'white', fontWeight:700, cursor:'pointer', fontSize:13, opacity:uploading?0.7:1 }}>
+        <button onClick={handleUpload} disabled={uploading} style={{ background:'linear-gradient(135deg,#2E7BFF,#0B5FFF)', border:'none', borderRadius:20, padding:'8px 18px', color:'white', fontWeight:700, cursor:'pointer', fontSize:13, opacity:uploading?0.7:1 }}>
           {uploading ? `${uploadProgress}%` : 'Post ✓'}
         </button>
       </div>
-      {uploading && <div style={{ height:3, background:'rgba(255,255,255,0.1)' }}><div style={{ height:'100%', background:'linear-gradient(90deg,#FF2156,#9D4EDD)', width:`${uploadProgress}%`, transition:'width 0.3s' }} /></div>}
+      {uploading && <div style={{ height:3, background:'rgba(255,255,255,0.1)' }}><div style={{ height:'100%', background:'linear-gradient(90deg,#2E7BFF,#0B5FFF)', width:`${uploadProgress}%`, transition:'width 0.3s' }} /></div>}
       <div style={{ flex:1, position:'relative', overflow:'hidden' }}>
         {selectedFile.type === 'image/multi' ? (
           <div style={{ display:'flex', width:'100%', height:'100%', overflowX:'auto', scrollSnapType:'x mandatory' }}>
@@ -6820,10 +6812,10 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
       <div style={{ padding:'10px 0', background:'rgba(0,0,0,0.8)', overflowX:'auto', display:'flex', gap:10, paddingLeft:16 }}>
         {FILTERS.map((f,i)=>(
           <div key={f.name} onClick={()=>setActiveFilter(i)} style={{ flexShrink:0, textAlign:'center', cursor:'pointer' }}>
-            <div style={{ width:56, height:56, borderRadius:14, overflow:'hidden', border: i===activeFilter?'2px solid #FF2156':'2px solid transparent' }}>
+            <div style={{ width:56, height:56, borderRadius:14, overflow:'hidden', border: i===activeFilter?'2px solid #0B5FFF':'2px solid transparent' }}>
               <img src={selectedFile.type==='image/multi' ? selectedFile.urls[0] : selectedFile.type.startsWith('image/')?selectedFile.url:'https://picsum.photos/56'} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', filter: f.css||'none' }} />
             </div>
-            <div style={{ color: i===activeFilter?'#FF2156':'rgba(255,255,255,0.5)', fontSize:9, marginTop:4, fontWeight:700 }}>{f.name}</div>
+            <div style={{ color: i===activeFilter?'#0B5FFF':'rgba(255,255,255,0.5)', fontSize:9, marginTop:4, fontWeight:700 }}>{f.name}</div>
           </div>
         ))}
       </div>
@@ -6842,7 +6834,7 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
         <div style={{ display:'flex', gap:10 }}>
           <button onClick={()=>setFlash(!flash)} style={{ background: flash?'rgba(255,215,0,0.3)':'rgba(0,0,0,0.5)', border:'none', borderRadius:'50%', width:40, height:40, color: flash?'#FFD60A':'white', cursor:'pointer', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center' }}>⚡</button>
           <button onClick={flipCamera} style={{ background:'rgba(0,0,0,0.5)', border:'none', borderRadius:'50%', width:40, height:40, color:'white', cursor:'pointer', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center' }}>🔄</button>
-          <button onClick={()=>setShowFilters(!showFilters)} style={{ background: showFilters?'rgba(255,45,85,0.5)':'rgba(0,0,0,0.5)', border:'none', borderRadius:'50%', width:40, height:40, color:'white', cursor:'pointer', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center' }}>✨</button>
+          <button onClick={()=>setShowFilters(!showFilters)} style={{ background: showFilters?'rgba(11,95,255,0.5)':'rgba(0,0,0,0.5)', border:'none', borderRadius:'50%', width:40, height:40, color:'white', cursor:'pointer', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center' }}>✨</button>
         </div>
       </div>
 
@@ -6855,7 +6847,7 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
         )}
         {/* Recording timer */}
         {recording && (
-          <div style={{ position:'absolute', top:60, left:'50%', transform:'translateX(-50%)', background:'rgba(255,45,85,0.9)', borderRadius:20, padding:'6px 16px', display:'flex', alignItems:'center', gap:8 }}>
+          <div style={{ position:'absolute', top:60, left:'50%', transform:'translateX(-50%)', background:'rgba(11,95,255,0.9)', borderRadius:20, padding:'6px 16px', display:'flex', alignItems:'center', gap:8 }}>
             <div style={{ width:8, height:8, borderRadius:'50%', background:'white', animation:'pulse 1s infinite' }} />
             <span style={{ color:'white', fontWeight:700, fontSize:14 }}>00:{String(recordSeconds).padStart(2,'0')} / 00:{String(MAX_RECORD_SECONDS).padStart(2,'0')}</span>
           </div>
@@ -6871,7 +6863,7 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
               step={zoomCaps.step}
               value={zoom}
               onChange={e=>applyZoom(parseFloat(e.target.value))}
-              style={{ writingMode:'vertical-lr', WebkitAppearance:'slider-vertical', height:120, width:24, accentColor:'#FF2156' }}
+              style={{ writingMode:'vertical-lr', WebkitAppearance:'slider-vertical', height:120, width:24, accentColor:'#0B5FFF' }}
             />
           </div>
         )}
@@ -6880,7 +6872,7 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
           <div onClick={e=>e.stopPropagation()} style={{ position:'absolute', bottom:0, left:0, right:0, padding:'10px 0 10px 16px', background:'linear-gradient(transparent,rgba(0,0,0,0.7))', overflowX:'auto', display:'flex', gap:10 }}>
             {FILTERS.map((f,i)=>(
               <div key={f.name} onClick={()=>setActiveFilter(i)} style={{ flexShrink:0, textAlign:'center', cursor:'pointer' }}>
-                <div style={{ width:52, height:52, borderRadius:12, background:'rgba(255,255,255,0.15)', border: i===activeFilter?'2px solid #FF2156':'2px solid transparent', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden' }}>
+                <div style={{ width:52, height:52, borderRadius:12, background:'rgba(255,255,255,0.15)', border: i===activeFilter?'2px solid #0B5FFF':'2px solid transparent', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden' }}>
                   <div style={{ width:'100%', height:'100%', background: i===0?'linear-gradient(135deg,#888,#34343E)':i===1?'linear-gradient(135deg,#ff6b6b,#ffa500)':i===2?'linear-gradient(135deg,#FFD60A,#ff8c00)':i===3?'linear-gradient(135deg,#00bfff,#1e90ff)':i===4?'linear-gradient(135deg,#888,#24242E)':i===5?'linear-gradient(135deg,#ddd,#aaa)':i===6?'linear-gradient(135deg,#34343E,#000)':i===7?'linear-gradient(135deg,#ffe,#ffd)':i===8?'linear-gradient(135deg,#ff00ff,#00ffff)':'linear-gradient(135deg,#c8a97e,#8b6f47)', display:'flex', alignItems:'center', justifyContent:'center' }}>
                     <span style={{ fontSize:9, color:'white', fontWeight:700 }}>{f.name}</span>
                   </div>
@@ -6896,7 +6888,7 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
         {/* Photo / Video toggle */}
         <div style={{ display:'flex', justifyContent:'center', gap:28, marginBottom: cameraMode==='video' && !recording ? 12 : 24 }}>
           {['photo','video'].map(m=>(
-            <button key={m} onClick={()=>setCameraMode(m)} style={{ background:'none', border:'none', color: cameraMode===m?'white':'rgba(255,255,255,0.35)', fontSize:13, fontWeight:700, cursor:'pointer', textTransform:'uppercase', letterSpacing:1, borderBottom: cameraMode===m?'2px solid #FF2156':'2px solid transparent', paddingBottom:4 }}>{m}</button>
+            <button key={m} onClick={()=>setCameraMode(m)} style={{ background:'none', border:'none', color: cameraMode===m?'white':'rgba(255,255,255,0.35)', fontSize:13, fontWeight:700, cursor:'pointer', textTransform:'uppercase', letterSpacing:1, borderBottom: cameraMode===m?'2px solid #0B5FFF':'2px solid transparent', paddingBottom:4 }}>{m}</button>
           ))}
         </div>
 
@@ -6904,7 +6896,7 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
         {cameraMode==='video' && !recording && (
           <div style={{ display:'flex', justifyContent:'center', gap:10, marginBottom:24 }}>
             {[0.5,1,2,3].map(sp=>(
-              <button key={sp} onClick={()=>setRecordSpeed(sp)} style={{ background: recordSpeed===sp?'rgba(255,45,85,0.25)':'rgba(255,255,255,0.08)', border: recordSpeed===sp?'1px solid #FF2156':'1px solid rgba(255,255,255,0.1)', borderRadius:16, padding:'5px 12px', color: recordSpeed===sp?'#FF2156':'rgba(255,255,255,0.6)', fontSize:12, fontWeight:700, cursor:'pointer' }}>{sp}x</button>
+              <button key={sp} onClick={()=>setRecordSpeed(sp)} style={{ background: recordSpeed===sp?'rgba(11,95,255,0.25)':'rgba(255,255,255,0.08)', border: recordSpeed===sp?'1px solid #0B5FFF':'1px solid rgba(255,255,255,0.1)', borderRadius:16, padding:'5px 12px', color: recordSpeed===sp?'#0B5FFF':'rgba(255,255,255,0.6)', fontSize:12, fontWeight:700, cursor:'pointer' }}>{sp}x</button>
             ))}
           </div>
         )}
@@ -6921,11 +6913,11 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
               <div style={{ position:'absolute', inset:4, borderRadius:'50%', background:'white' }} />
             </button>
           ) : (
-            <button onClick={recording?stopRecording:startRecording} style={{ width:76, height:76, borderRadius:'50%', background: recording?'#FF2156':'white', border:'5px solid rgba(255,255,255,0.3)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', position:'relative' }}>
+            <button onClick={recording?stopRecording:startRecording} style={{ width:76, height:76, borderRadius:'50%', background: recording?'#0B5FFF':'white', border:'5px solid rgba(255,255,255,0.3)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', position:'relative' }}>
               {recording && (
                 <svg width="86" height="86" viewBox="0 0 86 86" style={{ position:'absolute', top:-5, left:-5, transform:'rotate(-90deg)', pointerEvents:'none' }}>
                   <circle cx="43" cy="43" r="40" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="3" />
-                  <circle cx="43" cy="43" r="40" fill="none" stroke="#FF2156" strokeWidth="3"
+                  <circle cx="43" cy="43" r="40" fill="none" stroke="#0B5FFF" strokeWidth="3"
                     strokeDasharray={`${2*Math.PI*40}`}
                     strokeDashoffset={`${2*Math.PI*40*(1 - recordSeconds/MAX_RECORD_SECONDS)}`}
                     style={{ transition:'stroke-dashoffset 1s linear' }} />
@@ -6933,7 +6925,7 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
               )}
               {recording
                 ? <div style={{ width:24, height:24, borderRadius:4, background:'white' }} />
-                : <div style={{ width:76, height:76, borderRadius:'50%', background:'#FF2156' }} />
+                : <div style={{ width:76, height:76, borderRadius:'50%', background:'#0B5FFF' }} />
               }
             </button>
           )}
@@ -7014,7 +7006,7 @@ const CreatorAnalytics = ({ user, videos, onClose }) => {
           <div style={{ height:120, display:'flex', alignItems:'flex-end', gap:6 }}>
             {weeklyData.map((v,i)=>(
               <div key={i} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
-                <div style={{ width:'100%', height:`${Math.max((v/maxVal)*100,4)}%`, background:`linear-gradient(180deg,#FF2156,#9D4EDD)`, borderRadius:6 }} />
+                <div style={{ width:'100%', height:`${Math.max((v/maxVal)*100,4)}%`, background:`linear-gradient(180deg,#2E7BFF,#0B5FFF)`, borderRadius:6 }} />
                 <span style={{ color:COLORS.textTertiary, fontSize:9 }}>{['M','T','W','T','F','S','S'][i]}</span>
               </div>
             ))}
@@ -7051,7 +7043,7 @@ const QRCodePage = ({ user, onClose }) => (
       <h3 style={{ color:'white', marginBottom:4, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{user?.username}</h3>
       <p style={{ color:'rgba(255,255,255,0.35)', fontSize:12, marginBottom:20 }}>Scan to follow on Infinity</p>
       <button onClick={()=>navigator.share?.({title:'Infinity',text:`Follow @${user?.username} on Infinity`,url:`https://infinity-now.vercel.app`
-})} style={{ width:'100%', background:'linear-gradient(135deg,#FF2156,#9D4EDD)', border:'none', borderRadius:20, padding:13, color:'white', fontWeight:700, cursor:'pointer', fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Share Profile</button>
+})} style={{ width:'100%', background:'linear-gradient(135deg,#2E7BFF,#0B5FFF)', border:'none', borderRadius:20, padding:13, color:'white', fontWeight:700, cursor:'pointer', fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Share Profile</button>
     </div>
   </div>
 );
@@ -7112,7 +7104,7 @@ const GuestFeed = ({ onSignIn }) => {
         </div>
       ))}
       <div style={{ position:'absolute', bottom:28, left:0, right:0, display:'flex', justifyContent:'center', zIndex:20 }}>
-        <button onClick={onSignIn} style={{ background:'linear-gradient(135deg,#FF2156,#9D4EDD)', border:'none', borderRadius:28, padding:'14px 36px', color:'white', fontWeight:800, fontSize:15, cursor:'pointer', boxShadow:'0 4px 24px rgba(255,45,85,0.5)' }}>
+        <button onClick={onSignIn} style={{ background:'linear-gradient(135deg,#2E7BFF,#0B5FFF)', border:'none', borderRadius:28, padding:'14px 36px', color:'white', fontWeight:800, fontSize:15, cursor:'pointer', boxShadow:'0 4px 24px rgba(11,95,255,0.5)' }}>
           Sign in to interact 🚀
         </button>
       </div>
@@ -7401,9 +7393,9 @@ if(!result.user.emailVerified && !isNewAccount){
   if(step==='method') return (
     <div style={{ height:'100%', display:'flex', flexDirection:'column', background:COLORS.bg, overflow:'auto' }}>
       <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'40px 24px 20px', position:'relative' }}>
-        <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse at 50% 30%,rgba(139,92,246,0.14),rgba(236,72,153,0.08),transparent 65%)' }} />
+        <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse at 50% 30%,rgba(11,95,255,0.14),rgba(236,72,153,0.08),transparent 65%)' }} />
         <div style={{ position:'relative', textAlign:'center', marginBottom:40 }}>
-          <img src="https://res.cloudinary.com/dotvhzjmc/image/upload/znfksngv27boh3c1kxpv.png" style={{ width:80, height:80, borderRadius:24, objectFit:'cover', margin:'0 auto 20px', display:'block', boxShadow:'0 20px 60px rgba(139,92,246,0.25)' }} />
+          <img src="https://res.cloudinary.com/dotvhzjmc/image/upload/znfksngv27boh3c1kxpv.png" style={{ width:80, height:80, borderRadius:24, objectFit:'cover', margin:'0 auto 20px', display:'block', boxShadow:'0 20px 60px rgba(11,95,255,0.25)' }} />
           <p style={{ color:COLORS.textSecondary, fontSize:14, marginTop:10 }}>{isLogin?'Welcome back! 👋':'Join the community 🎉'}</p>
         </div>
         <div style={{ position:'relative', width:'100%', maxWidth:340 }}>
@@ -8011,7 +8003,7 @@ const InfinityPage = ({ t, videos, videosLoading, onShare, onFollow, onMessage, 
             </button>
           ))}
           {composerHasContent && (
-            <button onClick={submitQuickPost} disabled={composerPosting} style={{ marginLeft:'auto', background:'linear-gradient(135deg,#FF2156,#9D4EDD)', border:'none', borderRadius:14, padding:'8px 16px', color:'white', fontSize:12.5, fontWeight:700, cursor:composerPosting?'default':'pointer', opacity:composerPosting?0.7:1 }}>
+            <button onClick={submitQuickPost} disabled={composerPosting} style={{ marginLeft:'auto', background:'linear-gradient(135deg,#2E7BFF,#0B5FFF)', border:'none', borderRadius:14, padding:'8px 16px', color:'white', fontSize:12.5, fontWeight:700, cursor:composerPosting?'default':'pointer', opacity:composerPosting?0.7:1 }}>
               {composerPosting ? 'Posting…' : 'Post'}
             </button>
           )}
@@ -8052,7 +8044,7 @@ const InfinityPage = ({ t, videos, videosLoading, onShare, onFollow, onMessage, 
 
       {/* The one deliberate difference from Home: a floating dice button that reshuffles
           the post order (per-user seed), instead of Home's strict newest-first order. */}
-      <button onClick={reshuffle} aria-label="Surprise me" style={{ position:'fixed', right:'max(20px, calc((100vw - 430px)/2 + 20px))', bottom:'max(96px, calc(84px + env(safe-area-inset-bottom)))', width:52, height:52, borderRadius:'50%', background:COLORS.gradient, border:'none', boxShadow:'0 6px 20px rgba(139,92,246,0.45)', color:'#fff', fontSize:22, cursor:'pointer', zIndex:400, display:'flex', alignItems:'center', justifyContent:'center' }}>
+      <button onClick={reshuffle} aria-label="Surprise me" style={{ position:'fixed', right:'max(20px, calc((100vw - 430px)/2 + 20px))', bottom:'max(96px, calc(84px + env(safe-area-inset-bottom)))', width:52, height:52, borderRadius:'50%', background:COLORS.gradient, border:'none', boxShadow:'0 6px 20px rgba(11,95,255,0.45)', color:'#fff', fontSize:22, cursor:'pointer', zIndex:400, display:'flex', alignItems:'center', justifyContent:'center' }}>
         🎲
       </button>
     </div>
@@ -8080,8 +8072,8 @@ const TabGlyph = ({id, active, currentUser}) => {
   const defs = (
     <defs>
       <linearGradient id={gid} x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stopColor="#8B5CF6" />
-        <stop offset="100%" stopColor="#EC4899" />
+        <stop offset="0%" stopColor="#0B5FFF" />
+        <stop offset="100%" stopColor="#0B5FFF" />
       </linearGradient>
     </defs>
   );
@@ -8502,7 +8494,7 @@ const handleMessage = uid => {
       <GlobalStyles />
       {!isOnline && <OfflineBanner />}
       <img src="https://res.cloudinary.com/dotvhzjmc/image/upload/znfksngv27boh3c1kxpv.png" style={{ width:80, height:80, borderRadius:24, marginBottom:16 }} alt="Infinity" />
-      <div style={{ width:32, height:32, border:'3px solid rgba(139,92,246,0.25)', borderTop:`3px solid ${COLORS.brand}`, borderRadius:'50%', animation:'spin 1s linear infinite' }} />
+      <div style={{ width:32, height:32, border:'3px solid rgba(11,95,255,0.25)', borderTop:`3px solid ${COLORS.brand}`, borderRadius:'50%', animation:'spin 1s linear infinite' }} />
     </div>
   );
 
@@ -8660,7 +8652,7 @@ const handleMessage = uid => {
                 aria-label="Create"
                 style={{ flex:1, minWidth:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'flex-start', background:'none', border:'none', cursor:'pointer', padding:'2px 2px 6px' }}>
                 <div style={{ position:'relative', width:42, height:26, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                  <div style={{ width:38, height:26, borderRadius:9, background:COLORS.gradient, display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 4px 10px rgba(139,92,246,0.38)' }}>
+                  <div style={{ width:38, height:26, borderRadius:9, background:COLORS.gradient, display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 4px 10px rgba(11,95,255,0.38)' }}>
                     <svg viewBox="0 0 24 24" style={{ width:17,height:17,stroke:'white',fill:'none',strokeWidth:2.6,strokeLinecap:'round' }}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                   </div>
                 </div>
