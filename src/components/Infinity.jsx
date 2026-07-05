@@ -3284,7 +3284,10 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
           )}
         </div>
       )}
-      {/* ── Facebook-style engagement bar ── */}
+      {/* ── Action bar — one line of glowing circular icon buttons on a dark
+          pill, matching the reference mockup, but recolored to the app's own
+          violet→pink brand gradient instead of a mixed rainbow so it still
+          reads as "Infinity" rather than a generic multicolor toolbar. ── */}
       <div style={{ marginTop:10 }}>
         {/* Stats row: reaction bubble + count, comments/shares as tappable text on the right */}
         {(likeCount > 0 || video.comments > 0 || video.shares > 0) && (
@@ -3304,38 +3307,69 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
           </div>
         )}
 
-        {/* Primary action row — Facebook's signature 3 equal-width buttons */}
-        <div style={{ display:'flex', alignItems:'center', borderTop:`1px solid ${COLORS.border}`, borderBottom:`1px solid ${COLORS.border}`, padding:'2px 0' }}>
-          <button onClick={toggleLike} onDoubleClick={()=>setShowLikes(true)} onMouseDown={e=>e.currentTarget.style.background=COLORS.surfaceAlt} onMouseUp={e=>e.currentTarget.style.background='none'} onMouseLeave={e=>e.currentTarget.style.background='none'} style={{ flex:1, background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8, color:liked?'#FF3B5C':COLORS.textSecondary, fontWeight:700, fontSize:14, padding:'11px 0', borderRadius:10, margin:'0 2px', transition:TRANSITION.fast }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill={liked?'#FF3B5C':'none'} stroke={liked?'#FF3B5C':COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: liked ? 'likeHeart 0.35s ease' : 'none' }}>
-              <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
-            </svg>
-          </button>
-          <button onClick={()=>{ setShowComments(true); onOpenComments?.(video); }} onMouseDown={e=>e.currentTarget.style.background=COLORS.surfaceAlt} onMouseUp={e=>e.currentTarget.style.background='none'} onMouseLeave={e=>e.currentTarget.style.background='none'} style={{ flex:1, background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8, color:COLORS.textSecondary, fontWeight:700, fontSize:14, padding:'11px 0', borderRadius:10, margin:'0 2px', transition:TRANSITION.fast }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
-          </button>
-          <button onClick={()=>{ setShowShare(true); onShare?.(video); }} onMouseDown={e=>e.currentTarget.style.background=COLORS.surfaceAlt} onMouseUp={e=>e.currentTarget.style.background='none'} onMouseLeave={e=>e.currentTarget.style.background='none'} style={{ flex:1, background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8, color:COLORS.textSecondary, fontWeight:700, fontSize:14, padding:'11px 0', borderRadius:10, margin:'0 2px', transition:TRANSITION.fast }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-          </button>
-        </div>
+        {(() => {
+          const gid = `pillbrand-${video.id}`;
+          const strokeUrl = `url(#${gid})`;
+          // One consistent look, two states — no per-icon color-swapping (that was
+          // the "mixed" look). Neutral = a surface-colored chip with the brand
+          // gradient traced through the icon outline. Active (liked/saved) = the
+          // chip fills solid with the same brand gradient and the icon turns white,
+          // so the only thing that changes on tap is outline→filled, never hue.
+          const orb = (active) => ({
+            width:38, height:38, borderRadius:'50%',
+            background: active ? COLORS.gradient : COLORS.surface,
+            border: `1px solid ${active ? 'transparent' : COLORS.border}`,
+            display:'flex', alignItems:'center', justifyContent:'center',
+            cursor:'pointer', flexShrink:0, transition:TRANSITION.fast,
+            boxShadow: active ? SHADOW.glow(COLORS.brand) : SHADOW.xs,
+          });
+          const press = e => e.currentTarget.style.transform = 'scale(0.9)';
+          const unpress = e => e.currentTarget.style.transform = 'scale(1)';
+          return (
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', background:`linear-gradient(135deg, ${COLORS.brand}14, ${COLORS.brandSecondary}14)`, borderRadius:28, padding:'8px 9px', border:`1px solid ${COLORS.border}`, boxShadow:SHADOW.sm }}>
+              <svg width="0" height="0" style={{ position:'absolute' }}><defs>
+                <linearGradient id={gid} x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor={COLORS.brand} /><stop offset="100%" stopColor={COLORS.brandSecondary} /></linearGradient>
+              </defs></svg>
 
-        {/* Secondary utility row — views + save/download/more, kept out of the way of the main 3 */}
-        <div style={{ display:'flex', alignItems:'center', gap:2, paddingTop:8 }}>
-          <span style={{ display:'flex', alignItems:'center', gap:6, color:COLORS.textTertiary, fontWeight:600, fontSize:12.5, padding:'4px 6px 4px 4px' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-            {formatNumber(video.views||0)}
-          </span>
-          <div style={{ flex:1 }} />
-          <button onClick={toggleSave} style={{ background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:5, color:saved?COLORS.brand:COLORS.textSecondary, fontWeight:600, fontSize:12.5, padding:'6px 8px', borderRadius:12 }}>
-            <svg width="17" height="17" viewBox="0 0 24 24" fill={saved?COLORS.brand:'none'} stroke={saved?COLORS.brand:COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
-          </button>
-          <button onClick={handleDownload} style={{ background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:5, color:COLORS.textSecondary, fontWeight:600, fontSize:12.5, padding:'6px 8px', borderRadius:12 }}>
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          </button>
-          <button onClick={()=>setShowOptions(true)} style={{ background:'none', border:'none', cursor:'pointer', color:COLORS.textTertiary, display:'flex', alignItems:'center', padding:'6px 6px', borderRadius:12 }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
-          </button>
-        </div>
+              {/* Views */}
+              <button onClick={()=>showToast?.(`${formatNumber(video.views||0)} views`,'info')} onMouseDown={press} onMouseUp={unpress} onMouseLeave={unpress} style={orb(false)}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={strokeUrl} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+
+              {/* Like */}
+              <button onClick={toggleLike} onDoubleClick={()=>setShowLikes(true)} onMouseDown={press} onMouseUp={unpress} onMouseLeave={unpress} style={orb(liked)}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill={liked?'white':'none'} stroke={liked?'white':strokeUrl} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: liked ? 'likeHeart 0.35s ease' : 'none' }}>
+                  <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+                </svg>
+              </button>
+
+              {/* Comment */}
+              <button onClick={()=>{ setShowComments(true); onOpenComments?.(video); }} onMouseDown={press} onMouseUp={unpress} onMouseLeave={unpress} style={orb(false)}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={strokeUrl} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+              </button>
+
+              {/* Share */}
+              <button onClick={()=>{ setShowShare(true); onShare?.(video); }} onMouseDown={press} onMouseUp={unpress} onMouseLeave={unpress} style={orb(false)}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={strokeUrl} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              </button>
+
+              {/* Download */}
+              <button onClick={handleDownload} onMouseDown={press} onMouseUp={unpress} onMouseLeave={unpress} style={orb(false)}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={strokeUrl} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              </button>
+
+              {/* Save */}
+              <button onClick={toggleSave} onMouseDown={press} onMouseUp={unpress} onMouseLeave={unpress} style={orb(saved)}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill={saved?'white':'none'} stroke={saved?'white':strokeUrl} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+              </button>
+
+              {/* More */}
+              <button onClick={()=>setShowOptions(true)} onMouseDown={press} onMouseUp={unpress} onMouseLeave={unpress} style={orb(false)}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={strokeUrl} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+              </button>
+            </div>
+          );
+        })()}
       </div>
     </div>
     </>
