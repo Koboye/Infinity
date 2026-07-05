@@ -21,12 +21,17 @@ const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
   const title = payload.notification?.title || payload.data?.title || 'Infinity';
+  const type = payload.data?.type || 'notif';
   const options = {
     body: payload.notification?.body || payload.data?.body || 'You have a new notification',
     icon: 'https://res.cloudinary.com/dotvhzjmc/image/upload/znfksngv27boh3c1kxpv.png',
     badge: 'https://res.cloudinary.com/dotvhzjmc/image/upload/znfksngv27boh3c1kxpv.png',
+    vibrate: type === 'call' ? [300, 100, 300, 100, 300] : [200, 100, 200],
     data: payload.data || {},
-    tag: payload.data?.type || 'notif',
+    actions: type === 'call'
+      ? [{ action: 'answer', title: '✅ Answer' }, { action: 'decline', title: '❌ Decline' }]
+      : [{ action: 'open', title: 'Open' }],
+    tag: type,
     renotify: true,
   };
   self.registration.showNotification(title, options);
@@ -34,5 +39,6 @@ messaging.onBackgroundMessage((payload) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  event.waitUntil(clients.openWindow('/'));
+  const link = event.notification.data?.link || '/';
+  event.waitUntil(clients.openWindow(link));
 });
