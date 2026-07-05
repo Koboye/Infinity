@@ -6285,6 +6285,18 @@ unsub = onSnapshot(q, (snap) => {
   }));
   setMessages(msgs);
   setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 80);
+  // Mark incoming messages as seen. This was previously only done in the fallback
+  // branch below (triggered on a missing-index error) — so on the normal, indexed
+  // path (the common case) messages were NEVER marked seen and read receipts never
+  // worked at all. Also patches the conversation doc so the inbox list's tick icon
+  // can show "seen" without re-reading this subcollection per row.
+  const unseen = snap.docs.filter(d =>
+    d.data().from === otherUser.id && d.data().status !== 'seen'
+  );
+  if (unseen.length) {
+    unseen.forEach(d => updateDoc(d.ref, { status: 'seen' }).catch(()=>{}));
+    updateDoc(doc(db,'conversations',conversationId), { lastMessageStatus: 'seen' }).catch(()=>{});
+  }
 }, () => {
   if (usedFallback) return;
   usedFallback = true;
@@ -6299,10 +6311,10 @@ unsub = onSnapshot(q, (snap) => {
     const unseen2 = snap2.docs.filter(d =>
       d.data().from === otherUser.id && d.data().status !== 'seen'
     );
-    unseen2.forEach(d => updateDoc(d.ref, { status: 'seen' }).catch(()=>{}));
-    // Also mark on primary path
-    snap2.docs.filter(d => d.data().to === currentUser?.id && d.data().status !== 'seen')
-      .forEach(d => updateDoc(d.ref, { status: 'seen' }).catch(()=>{}));
+    if (unseen2.length) {
+      unseen2.forEach(d => updateDoc(d.ref, { status: 'seen' }).catch(()=>{}));
+      updateDoc(doc(db,'conversations',conversationId), { lastMessageStatus: 'seen' }).catch(()=>{});
+    }
   });
 });
     };
@@ -6360,11 +6372,20 @@ unsub = onSnapshot(q, (snap) => {
   createdAt: serverTimestamp(),
   status: 'sent'
 });
-      // Update conversation metadata
+      // Update conversation metadata. lastSenderId + lastMessageStatus let the inbox list
+      // show sent/delivered/seen ticks without re-reading the msgs subcollection per row;
+      // the preview text is media-aware (was just a generic '📎 Attachment' before, which
+      // looked identical for a photo, a video, or a PDF).
       await setDoc(doc(db,'conversations', conversationId),{ 
         participants: [currentUser.id, otherUser.id], 
-        lastMessage: mediaUrl ? (mediaType?.startsWith('audio') ? '🎙️ Voice message' : '📎 Attachment') : msg, 
+        lastMessage: mediaUrl ? (mediaType?.startsWith('audio') ? '🎙️ Voice message' : mediaType?.startsWith('video') ? '🎥 Video' : mediaType?.startsWith('image') ? '📷 Photo' : '📎 Attachment') : msg, 
         lastMessageAt: serverTimestamp(), 
+        lastSenderId: currentUser.id,
+        lastMessageStatus: 'sent',
+        // A fresh message means the chat is active again for both sides — clears any
+        // previous "delete chat" (hiddenFor) so it reappears in the recipient's inbox
+        // instead of staying hidden forever after they'd deleted it.
+        hiddenFor: [],
         [`unread_${otherUser.id}`]: increment(1) 
       },{ merge:true });
       clearAttach();
@@ -6401,6 +6422,9 @@ unsub = onSnapshot(q, (snap) => {
         participants: [currentUser.id, otherUser.id],
         lastMessage: `${sticker} Sticker`,
         lastMessageAt: serverTimestamp(),
+        lastSenderId: currentUser.id,
+        lastMessageStatus: 'sent',
+        hiddenFor: [],
         [`unread_${otherUser.id}`]: increment(1)
       },{ merge:true });
       addDoc(collection(db,'notifications'),{
@@ -6632,8 +6656,14 @@ unsub = onSnapshot(q, (snap) => {
                 });
                 await setDoc(doc(db,'conversations',conversationId), {
                   participants:[currentUser.id,otherUser?.id],
-                  lastMessage:'🎤 Voice message',
+                  lastMessage:'🎙️ Voice message',
                   lastMessageAt:serverTimestamp(),
+                  lastSenderId: currentUser.id,
+                  lastMessageStatus: 'sent',
+                  hiddenFor: [],
+                  // Was missing entirely before — a voice message never incremented the
+                  // recipient's unread count, so it silently never showed an unread badge.
+                  [`unread_${otherUser?.id}`]: increment(1),
                 },{merge:true});
                 await sendNotification(otherUser?.id, currentUser.id, 'message', `🎤 ${currentUser.username} sent a voice message`);
               } catch(e) { showToast?.('Failed to send voice','error'); }
@@ -6645,6 +6675,139 @@ unsub = onSnapshot(q, (snap) => {
   );
 };
 
+// Live online/last-seen status for one user, read from /presence/{uid}. Several inbox
+// rows subscribe to this independently (one listener per visible row) — fine at the
+// scale of a single person's chat list, same tradeoff the app already makes for typing
+// indicators and per-conversation listeners elsewhere.
+const usePresence = (uid) => {
+  const [presence, setPresence] = useState(null);
+  useEffect(() => {
+    if (!uid) { setPresence(null); return; }
+    const unsub = onSnapshot(doc(db, 'presence', uid), snap => setPresence(snap.data() || null), () => {});
+    return () => unsub();
+  }, [uid]);
+  return presence;
+};
+
+// Small checkmark cluster mirroring the sent → delivered → seen progression used in the
+// chat bubbles themselves, so the inbox list and the open conversation agree with each
+// other about a message's status.
+const MessageStatusTicks = ({ status }) => {
+  const color = status === 'seen' ? COLORS.brand : COLORS.textTertiary;
+  return (
+    <svg width="15" height="10" viewBox="0 0 15 10" fill="none" style={{ flexShrink:0 }}>
+      <path d="M1 5l2.7 3L9 2" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      {status !== 'sent' && <path d="M6 5l2.7 3L14 2" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />}
+    </svg>
+  );
+};
+
+// One row in the chat list. Pulled out to its own component so each row can own its
+// presence + typing subscriptions without re-subscribing every other row on every render.
+const ConversationRow = ({ u, conv, currentUser, onOpen, onLongPress }) => {
+  const presence = usePresence(u.id);
+  const isOnline = !!presence?.online;
+  const [isTyping, setIsTyping] = useState(false);
+  const convId = conv?.id;
+  const pressTimer = useRef(null);
+  const pressFired = useRef(false);
+
+  useEffect(() => {
+    if (!convId) return;
+    const unsub = onSnapshot(doc(db, 'typing', convId), snap => {
+      const ts = snap.data()?.[u.id]?.toMillis?.();
+      setIsTyping(!!(ts && Date.now() - ts < 4000));
+    }, () => {});
+    return () => unsub();
+  }, [convId, u.id]);
+
+  const unread = conv?.[`unread_${currentUser.id}`] || 0;
+  const muted = !!conv?.[`muted_${currentUser.id}`];
+  const isMine = conv?.lastSenderId === currentUser.id;
+  const lastAt = tsToDate(conv?.lastMessageAt);
+
+  const previewText = isTyping
+    ? 'typing…'
+    : conv?.lastMessage || 'Tap to start chatting';
+
+  const startPress = () => {
+    pressFired.current = false;
+    pressTimer.current = setTimeout(() => {
+      pressFired.current = true;
+      haptic('medium');
+      onLongPress(u, conv);
+    }, 480);
+  };
+  const cancelPress = () => { clearTimeout(pressTimer.current); };
+  const handleClick = () => {
+    if (pressFired.current) { pressFired.current = false; return; }
+    onOpen(u.id);
+  };
+
+  return (
+    <div
+      onClick={handleClick}
+      onMouseDown={startPress}
+      onMouseUp={cancelPress}
+      onMouseLeave={e=>{ cancelPress(); e.currentTarget.style.background='transparent'; }}
+      onTouchStart={startPress}
+      onTouchEnd={cancelPress}
+      onTouchMove={cancelPress}
+      onMouseEnter={e=>e.currentTarget.style.background=COLORS.surfaceAlt}
+      onContextMenu={e=>{ e.preventDefault(); onLongPress(u, conv); }}
+      style={{ display:'flex', alignItems:'center', gap:14, padding:'11px 16px', cursor:'pointer', borderRadius:16, transition:TRANSITION.fast, userSelect:'none', WebkitUserSelect:'none' }}
+    >
+      <div style={{ position:'relative', flexShrink:0 }}>
+        <div style={{ width:52, height:52, borderRadius:'50%', background:u.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, fontSize:20, overflow:'hidden', boxShadow:SHADOW.xs }}>
+          {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : u.avatar}
+        </div>
+        {/* Real presence — was a hardcoded green dot on every row before regardless of
+            whether that person was actually online. */}
+        {isOnline && <div style={{ position:'absolute', bottom:1, right:1, width:13, height:13, background:COLORS.success, borderRadius:'50%', border:`2.5px solid ${COLORS.surface}` }} />}
+      </div>
+      <div style={{ flex:1, minWidth:0 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:4 }}>
+          <div style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:14.5, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{u.fullName || u.username}</div>
+          {u.verified && (
+            <svg width="13" height="13" viewBox="0 0 24 24" fill={COLORS.brand} style={{flexShrink:0}}><path d="M12 2l2.4 2.4 3.3-.7 1 3.2 3.2 1-.7 3.3L23.6 14l-2.4 2.4.7 3.3-3.2 1-1 3.2-3.3-.7L12 26l-2.4-2.4-3.3.7-1-3.2-3.2-1 .7-3.3L0 14l2.4-2.4-.7-3.3 3.2-1 1-3.2 3.3.7z" transform="translate(0,-2) scale(0.92)"/><path d="M8.5 12.2l2.3 2.3 4.5-4.7" stroke="white" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          )}
+          {muted && (
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2" style={{flexShrink:0}}><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="1" x2="1" y2="23"/></svg>
+          )}
+        </div>
+        <div style={{ display:'flex', alignItems:'center', gap:4, marginTop:2 }}>
+          {isMine && !isTyping && conv?.lastMessageStatus && <MessageStatusTicks status={conv.lastMessageStatus} />}
+          <div style={{ color:isTyping?COLORS.brand:unread>0?COLORS.textPrimary:COLORS.textTertiary, fontWeight:unread>0?600:400, fontSize:12.5, fontStyle:isTyping?'italic':'normal', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{previewText}</div>
+        </div>
+      </div>
+      <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:6, flexShrink:0 }}>
+        <div style={{ color:unread>0?COLORS.brand:COLORS.textTertiary, fontSize:11, fontWeight:unread>0?700:400 }}>{lastAt ? timeAgo(lastAt) : ''}</div>
+        {unread>0 && <div style={{ minWidth:19, height:19, borderRadius:10, background:COLORS.gradient, color:'white', fontSize:10.5, fontWeight:800, display:'flex', alignItems:'center', justifyContent:'center', padding:'0 5px', boxShadow:SHADOW.glow(COLORS.brand) }}>{unread>9?'9+':unread}</div>}
+      </div>
+    </div>
+  );
+};
+
+// Avatar in the horizontal "contacts" strip at the top of the inbox. Only shows the
+// green ring/dot when that person is genuinely online (via /presence), not unconditionally.
+const InboxStripAvatar = ({ u, onClick }) => {
+  const presence = usePresence(u.id);
+  const isOnline = !!presence?.online;
+  return (
+    <div onClick={onClick} style={{ textAlign:'center', flexShrink:0, cursor:'pointer' }}>
+      <div style={{ position:'relative' }}>
+        <div className={isOnline ? 'story-avatar-ring' : ''} style={{ width:50, height:50, borderRadius:'50%', border: isOnline ? undefined : `2px solid ${COLORS.border}`, padding: isOnline ? undefined : 2 }}>
+          <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:u.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, overflow:'hidden' }}>
+            {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/> : u.avatar}
+          </div>
+        </div>
+        {isOnline && <div style={{ position:'absolute', bottom:1, right:1, width:12, height:12, background:COLORS.success, borderRadius:'50%', border:`2px solid ${COLORS.surface}` }} />}
+      </div>
+      <div style={{ color:COLORS.textSecondary, fontSize:10.5, marginTop:4, maxWidth:50, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{u.username}</div>
+    </div>
+  );
+};
+
 const InboxPage = ({ t, users, currentUser, showToast, onViewProfile, initialTargetId, onClearTarget, persistedConversation, onSetConversation, onVoiceCall, onVideoCall, openGroupsSignal, onFeedScroll }) => {
   const [activeConversation, setActiveConversation] = useState(persistedConversation || null);
   const [conversations, setConversations] = useState([]);
@@ -6652,6 +6815,8 @@ const InboxPage = ({ t, users, currentUser, showToast, onViewProfile, initialTar
   const [inboxSearch, setInboxSearch] = useState('');
   const [convLoadError, setConvLoadError] = useState(false);
   const [convLoading, setConvLoading] = useState(true);
+  const [inboxTab, setInboxTab] = useState('all'); // 'all' | 'unread'
+  const [actionSheetUser, setActionSheetUser] = useState(null); // {id, convId, muted} | null
   useEffect(()=>{
     if(openGroupsSignal){ setShowGroupsView(true); }
   },[openGroupsSignal]);
@@ -6701,7 +6866,12 @@ snap.docs.forEach(async conv => {
     where('to','==',currentUser.id), 
     where('status','==','sent'))
   );
-  msgSnap.docs.forEach(d => updateDoc(d.ref, { status: 'delivered' }).catch(()=>{}));
+  if (!msgSnap.empty) {
+    msgSnap.docs.forEach(d => updateDoc(d.ref, { status: 'delivered' }).catch(()=>{}));
+    if (conv.data().lastMessageStatus !== 'seen') {
+      updateDoc(doc(db,'conversations',convId), { lastMessageStatus: 'delivered' }).catch(()=>{});
+    }
+  }
 });
     }, (error)=>{
       console.error('Conversations index error:', error);
@@ -6726,7 +6896,12 @@ snap.docs.forEach(async conv => {
             where('to','==',currentUser.id),
             where('status','==','sent'))
           );
-          msgSnap.docs.forEach(d => updateDoc(d.ref, { status: 'delivered' }).catch(()=>{}));
+          if (!msgSnap.empty) {
+            msgSnap.docs.forEach(d => updateDoc(d.ref, { status: 'delivered' }).catch(()=>{}));
+            if (conv.data().lastMessageStatus !== 'seen') {
+              updateDoc(doc(db,'conversations',convId), { lastMessageStatus: 'delivered' }).catch(()=>{});
+            }
+          }
         } catch(e) {}
       });
       }, (error2)=>{
@@ -6748,7 +6923,28 @@ snap.docs.forEach(async conv => {
     setDoc(doc(db, 'conversations', convId), {
       participants: [currentUser.id, otherUserId],
       lastMessageAt: serverTimestamp(),
+      // Clear the badge the moment the conversation is opened — previously nothing
+      // ever reset this field, so the unread count (and the Inbox tab's red badge,
+      // which reads this same field) only ever grew.
+      [`unread_${currentUser.id}`]: 0,
     }, { merge: true }).catch(() => {});
+  };
+
+  // Mute silences future notification sound/toast for this conversation, scoped to just
+  // the current user (mirrors the unread_{uid} per-user field pattern already used above).
+  const toggleMuteConversation = (convId, currentlyMuted) => {
+    setDoc(doc(db,'conversations', convId), { [`muted_${currentUser.id}`]: !currentlyMuted }, { merge: true }).catch(()=>{
+      showToast?.('Could not update mute setting', 'error');
+    });
+  };
+
+  // "Delete" only removes the conversation from THIS user's inbox list — the other
+  // participant still sees it and the underlying messages aren't touched. Matches how
+  // Telegram/WhatsApp "delete chat" behaves (not delete-for-everyone).
+  const hideConversation = (convId) => {
+    setDoc(doc(db,'conversations', convId), { hiddenFor: arrayUnion(currentUser.id) }, { merge: true })
+      .then(()=>showToast?.('Chat deleted', 'success'))
+      .catch(()=>showToast?.('Could not delete chat', 'error'));
   };
 
   const convUsers = useMemo(()=>{
@@ -6756,7 +6952,12 @@ snap.docs.forEach(async conv => {
     return users.filter(u=>{
       if(u.id===currentUser.id) return false;
       const convId = getConversationId(currentUser.id, u.id);
-      return conversations.some(c=>c.id===convId);
+      const conv = conversations.find(c=>c.id===convId);
+      if (!conv) return false;
+      // Hide conversations this user deleted — see hideConversation(). They reappear
+      // automatically the moment a new message resets hiddenFor (see handleSend etc).
+      if (conv.hiddenFor?.includes(currentUser.id)) return false;
+      return true;
     }).sort((a,b)=>{
       const convA = conversations.find(c=>c.id===getConversationId(currentUser.id,a.id));
       const convB = conversations.find(c=>c.id===getConversationId(currentUser.id,b.id));
@@ -6797,46 +6998,44 @@ snap.docs.forEach(async conv => {
   }
 
   return (
-    <div style={{ height:'100%', display:'flex', flexDirection:'column', background:COLORS.bg }}>
+    <div style={{ height:'100%', display:'flex', flexDirection:'column', background:COLORS.bg, position:'relative' }}>
       <div style={{ padding:'14px 16px 0', background:COLORS.surface, borderBottom:`1px solid ${COLORS.border}` }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
-          <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:18 }}>Chat</div>
-          <button onClick={()=>setShowGroupsView(true)} style={{ background:'none', border:'none', width:34, height:34, display:'flex', alignItems:'center', justifyContent:'center', color:COLORS.brand, cursor:'pointer' }}>
-            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:20 }}>Chats</div>
+          <button onClick={()=>setShowGroupsView(true)} aria-label="New group" style={{ background:COLORS.surfaceAlt, border:'none', width:36, height:36, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', color:COLORS.brand, cursor:'pointer' }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
           </button>
         </div>
         {/* Inline search */}
         <div style={{ display:'flex', alignItems:'center', background:COLORS.surfaceAlt, borderRadius:14, padding:'9px 12px', gap:8, marginBottom:12 }}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input
-            placeholder="Search messages"
+            placeholder="Search chats"
             value={inboxSearch||''}
             onChange={e=>setInboxSearch?.(e.target.value)}
             style={{ flex:1, background:'none', border:'none', color:COLORS.textPrimary, outline:'none', fontSize:14 }} />
+          {inboxSearch && (
+            <button onClick={()=>setInboxSearch('')} style={{ background:'none', border:'none', cursor:'pointer', color:COLORS.textTertiary, display:'flex', padding:2 }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          )}
         </div>
-        {/* Online / recent avatars strip */}
-        {convUsers.length>0 && (
+        {/* Online now strip — InboxStripAvatar shows a real presence dot per contact,
+            instead of every recent contact getting a hardcoded green dot regardless
+            of whether they're actually online. */}
+        {convUsers.length>0 && !inboxSearch && (
           <div style={{ display:'flex', gap:16, overflowX:'auto', paddingBottom:12 }}>
-            {convUsers.slice(0,8).map(u=>(
-              <div key={u.id} onClick={()=>openConversation(u.id)} style={{ textAlign:'center', flexShrink:0, cursor:'pointer' }}>
-                <div style={{ position:'relative' }}>
-                  <div className="story-avatar-ring" style={{ width:50, height:50 }}>
-                    <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:u.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, overflow:'hidden' }}>
-                      {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/> : u.avatar}
-                    </div>
-                  </div>
-                  <div style={{ position:'absolute', bottom:1, right:1, width:11, height:11, background:COLORS.success, borderRadius:'50%', border:`2px solid ${COLORS.surface}` }} />
-                </div>
-                <div style={{ color:COLORS.textSecondary, fontSize:10.5, marginTop:4, maxWidth:50, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{u.username}</div>
-              </div>
+            {convUsers.slice(0,10).map(u=>(
+              <InboxStripAvatar key={u.id} u={u} onClick={()=>openConversation(u.id)} />
             ))}
           </div>
         )}
-        {/* Tabs */}
+        {/* Tabs — now actually filter the list instead of just changing color */}
         <div style={{ display:'flex', gap:20 }}>
-          {['All','Primary','Requests','Groups'].map((tab,i)=>(
-            <button key={tab} onClick={tab==='Groups'?()=>setShowGroupsView(true):undefined} style={{ background:'none', border:'none', borderBottom:i===1?`2px solid ${COLORS.brand}`:'2px solid transparent', padding:'0 0 10px', color:i===1?COLORS.brand:COLORS.textTertiary, fontSize:13.5, fontWeight:700, cursor:'pointer' }}>{tab}</button>
+          {[{id:'all',label:'All'},{id:'unread',label:'Unread'}].map(tab=>(
+            <button key={tab.id} onClick={()=>setInboxTab(tab.id)} style={{ background:'none', border:'none', borderBottom:inboxTab===tab.id?`2px solid ${COLORS.brand}`:'2px solid transparent', padding:'0 0 10px', color:inboxTab===tab.id?COLORS.brand:COLORS.textTertiary, fontSize:13.5, fontWeight:700, cursor:'pointer' }}>{tab.label}</button>
           ))}
+          <button onClick={()=>setShowGroupsView(true)} style={{ background:'none', border:'none', borderBottom:'2px solid transparent', padding:'0 0 10px', color:COLORS.textTertiary, fontSize:13.5, fontWeight:700, cursor:'pointer' }}>Groups</button>
         </div>
       </div>
       <div data-main-scroll="true" onScroll={onFeedScroll} style={{ flex:1, overflowY:'auto', paddingBottom:'max(74px, calc(58px + env(safe-area-inset-bottom)))' }}>
@@ -6852,43 +7051,66 @@ snap.docs.forEach(async conv => {
             <button onClick={()=>{ setConvLoading(true); setConvLoadError(false); }} style={{ background:COLORS.gradient, border:'none', borderRadius:20, padding:'10px 22px', color:'#fff', fontWeight:700, fontSize:13, cursor:'pointer' }}>Retry</button>
           </div>
         ) : (() => {
-          const filteredConvUsers = inboxSearch
+          let filteredConvUsers = inboxSearch
             ? convUsers.filter(u => u.username?.toLowerCase().includes(inboxSearch.toLowerCase()) || u.fullName?.toLowerCase().includes(inboxSearch.toLowerCase()))
             : convUsers;
+          if (inboxTab === 'unread') {
+            filteredConvUsers = filteredConvUsers.filter(u => {
+              const conv = conversations.find(c=>c.id===getConversationId(currentUser.id,u.id));
+              return (conv?.[`unread_${currentUser.id}`]||0) > 0;
+            });
+          }
           if (filteredConvUsers.length === 0) return (
             <div style={{textAlign:'center',padding:60,color:COLORS.textTertiary}}>
-              <div style={{fontSize:44,marginBottom:12}}>💬</div>
-              <div style={{fontSize:14}}>{inboxSearch ? `No chats matching "${inboxSearch}"` : t?.noMessages||'No messages yet'}</div>
-              {!inboxSearch && <div style={{fontSize:12,marginTop:6,color:COLORS.textDisabled}}>{t?.startChat||'Go to a profile and tap Message to start'}</div>}
+              <div style={{fontSize:44,marginBottom:12}}>{inboxTab==='unread' ? '✅' : '💬'}</div>
+              <div style={{fontSize:14}}>
+                {inboxSearch ? `No chats matching "${inboxSearch}"` : inboxTab==='unread' ? "You're all caught up" : (t?.noMessages||'No messages yet')}
+              </div>
+              {!inboxSearch && inboxTab==='all' && <div style={{fontSize:12,marginTop:6,color:COLORS.textDisabled}}>{t?.startChat||'Go to a profile and tap Message to start'}</div>}
             </div>
           );
           return filteredConvUsers.map(u=>{
-          const convId = getConversationId(currentUser.id, u.id);
-          const conv = conversations.find(c=>c.id===convId);
-          return (
-            <div key={u.id} onClick={()=>openConversation(u.id)}
-              onMouseEnter={e=>e.currentTarget.style.background=COLORS.surfaceAlt}
-              onMouseLeave={e=>e.currentTarget.style.background='transparent'}
-              style={{ display:'flex', alignItems:'center', gap:14, padding:'12px 16px', cursor:'pointer', borderRadius:16, transition:TRANSITION.fast }}>
-              <div style={{ position:'relative', flexShrink:0 }}>
-                <div style={{ width:48, height:48, borderRadius:'50%', background:u.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, fontSize:19, overflow:'hidden', boxShadow:SHADOW.xs }}>
-                  {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : u.avatar}
-                </div>
-                <div style={{ position:'absolute', bottom:1, right:1, width:12, height:12, background:COLORS.success, borderRadius:'50%', border:`2px solid ${COLORS.surface}` }} />
-              </div>
-              <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:14 }}>{u.fullName || u.username}</div>
-                <div style={{ color:conv?.unread>0?COLORS.textPrimary:COLORS.textTertiary, fontWeight:conv?.unread>0?600:400, fontSize:12.5, marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{conv?.lastMessage||'Tap to start chatting'}</div>
-              </div>
-              <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:6, flexShrink:0 }}>
-                <div style={{ color:COLORS.textTertiary, fontSize:11 }}>{conv?.lastMessageAt?'Now':''}</div>
-                {conv?.unread>0 && <div style={{ minWidth:18, height:18, borderRadius:9, background:COLORS.gradient, color:'white', fontSize:10, fontWeight:800, display:'flex', alignItems:'center', justifyContent:'center', padding:'0 5px', boxShadow:SHADOW.glow(COLORS.brand) }}>{conv.unread}</div>}
-              </div>
-            </div>
-          );
-        });
+            const convId = getConversationId(currentUser.id, u.id);
+            const conv = conversations.find(c=>c.id===convId);
+            return (
+              <ConversationRow
+                key={u.id}
+                u={u}
+                conv={conv}
+                currentUser={currentUser}
+                onOpen={openConversation}
+                onLongPress={(user, conv)=>setActionSheetUser({ id:user.id, name:user.fullName||user.username, convId:conv?.id||getConversationId(currentUser.id,user.id), muted: !!conv?.[`muted_${currentUser.id}`] })}
+              />
+            );
+          });
         })()}
       </div>
+
+      {/* Long-press action sheet: mute / delete-for-me. Triggered from ConversationRow's
+          long-press (mobile) or right-click (desktop), same pattern as message reactions
+          already use elsewhere in this component (msgLongTimer). */}
+      {actionSheetUser && (
+        <div onClick={()=>setActionSheetUser(null)} style={{ position:'fixed', inset:0, zIndex:2600, background:'rgba(11,15,25,0.45)', display:'flex', alignItems:'flex-end', animation:'fadeIn 0.15s ease' }}>
+          <div onClick={e=>e.stopPropagation()} style={{ width:'100%', maxWidth:430, margin:'0 auto', background:COLORS.surface, borderTopLeftRadius:24, borderTopRightRadius:24, padding:'10px 8px calc(20px + env(safe-area-inset-bottom))', boxShadow:SHADOW.modal }}>
+            <div style={{ width:36, height:4, background:COLORS.border, borderRadius:2, margin:'4px auto 10px' }} />
+            <div style={{ padding:'4px 14px 12px', color:COLORS.textTertiary, fontSize:12.5, fontWeight:700 }}>{actionSheetUser.name}</div>
+            <button onClick={()=>{ toggleMuteConversation(actionSheetUser.convId, actionSheetUser.muted); setActionSheetUser(null); }}
+              style={{ width:'100%', background:'none', border:'none', display:'flex', alignItems:'center', gap:12, padding:'13px 14px', borderRadius:14, color:COLORS.textPrimary, fontSize:14.5, fontWeight:600, cursor:'pointer', textAlign:'left' }}>
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2">{actionSheetUser.muted ? <><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 010 7"/></> : <><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="1" x2="1" y2="23"/></>}</svg>
+              {actionSheetUser.muted ? 'Unmute notifications' : 'Mute notifications'}
+            </button>
+            <button onClick={()=>{ hideConversation(actionSheetUser.convId); setActionSheetUser(null); }}
+              style={{ width:'100%', background:'none', border:'none', display:'flex', alignItems:'center', gap:12, padding:'13px 14px', borderRadius:14, color:COLORS.danger, fontSize:14.5, fontWeight:600, cursor:'pointer', textAlign:'left' }}>
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={COLORS.danger} strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+              Delete chat
+            </button>
+            <button onClick={()=>setActionSheetUser(null)}
+              style={{ width:'100%', background:COLORS.surfaceAlt, border:'none', borderRadius:14, padding:'13px 14px', color:COLORS.textSecondary, fontSize:14.5, fontWeight:700, cursor:'pointer', marginTop:6 }}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
