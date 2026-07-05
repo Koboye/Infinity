@@ -6,6 +6,31 @@ import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, si
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 import { COLORS, TYPE, RADIUS, applyTheme, getStoredTheme, subscribeTheme } from '@/lib/theme';
 
+/* ─────────────── SHARED ELEVATION / MOTION SYSTEM ───────────────
+   A small, consistent set of shadow + transition tokens used across every
+   card, sheet, avatar and control in the app. Real social apps (Instagram,
+   Facebook, Threads) don't hand-tune shadows per-screen — they draw from one
+   scale so a card on the Home feed reads as the same "material" as a card in
+   Inbox or Profile. These are plain JS objects (not COLORS.* additions) so
+   they work without touching the external theme module. */
+const SHADOW = {
+  xs: '0 1px 2px rgba(20,16,32,0.06)',
+  sm: '0 2px 8px rgba(20,16,32,0.07)',
+  card: '0 4px 16px rgba(20,16,32,0.08), 0 1px 3px rgba(20,16,32,0.06)',
+  raised: '0 8px 28px rgba(20,16,32,0.12), 0 2px 6px rgba(20,16,32,0.07)',
+  modal: '0 24px 64px rgba(12,10,20,0.28), 0 4px 16px rgba(12,10,20,0.14)',
+  glow: (color) => `0 4px 20px ${color}40`,
+};
+const EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
+const TRANSITION = {
+  fast: `all 0.15s ${EASE}`,
+  base: `all 0.22s ${EASE}`,
+  slow: `all 0.35s ${EASE}`,
+};
+// Consistent press/hover feedback for tappable surfaces (cards, avatars, buttons).
+// Spread this onto a style object, then swap transform on active/hover state.
+const pressable = { transition: TRANSITION.fast, cursor: 'pointer' };
+
 // Normalizes a createdAt value (Firestore Timestamp, plain number, or Date) to millis,
 // then sorts newest-first. Used everywhere the videos collection is fetched so post
 // order is consistent regardless of which timestamp shape a given doc has.
@@ -1772,7 +1797,13 @@ const Stories = ({ users, currentUser, onViewStory, onCreateStory, followed, liv
   // over a gradient scrim, and the person's avatar overlaps the top-left corner.
   const CARD_W = 104, CARD_H = 172;
   const StoryCard = ({ cover, avatarUrl, avatarColor, initial, label, isLive, isAddCard, onClick }) => (
-    <button onClick={onClick} style={{ position:'relative', width:CARD_W, height:CARD_H, flexShrink:0, borderRadius:14, overflow:'hidden', border:'none', padding:0, cursor:'pointer', background:COLORS.surfaceAlt }}>
+    <button
+      onClick={onClick}
+      onMouseDown={e=>e.currentTarget.style.transform='scale(0.96)'}
+      onMouseUp={e=>e.currentTarget.style.transform='scale(1)'}
+      onMouseLeave={e=>e.currentTarget.style.transform='scale(1)'}
+      style={{ position:'relative', width:CARD_W, height:CARD_H, flexShrink:0, borderRadius:14, overflow:'hidden', border:'none', padding:0, cursor:'pointer', background:COLORS.surfaceAlt, boxShadow:SHADOW.sm, transition:TRANSITION.fast }}
+    >
       {cover ? (
         <img src={cover} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
       ) : (
@@ -2623,21 +2654,21 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
       <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse at 30% 40%,rgba(255,45,85,0.15),transparent 60%)' }} />
       <div style={{ padding:'14px 16px', display:'flex', justifyContent:'space-between', alignItems:'center', zIndex:10 }}>
         <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-          <div style={{ background:'#FF2156', borderRadius:20, padding:'4px 12px', display:'flex', alignItems:'center', gap:6 }}>
+          <div style={{ background:'linear-gradient(135deg,#FF2156,#FF5A7A)', borderRadius:20, padding:'4px 12px', display:'flex', alignItems:'center', gap:6, boxShadow:'0 4px 14px rgba(255,33,86,0.45)' }}>
             <div style={{ width:7, height:7, borderRadius:'50%', background:'white', animation:'pulse 1s infinite' }} />
-            <span style={{ color:'white', fontSize:13, fontWeight:700 }}>LIVE</span>
+            <span style={{ color:'white', fontSize:13, fontWeight:700, letterSpacing:0.3 }}>LIVE</span>
           </div>
           {!isHost && (
-            <div style={{ background:'rgba(0,0,0,0.4)', borderRadius:20, padding:'4px 12px' }}>
+            <div style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', borderRadius:20, padding:'4px 12px', border:'1px solid rgba(255,255,255,0.08)' }}>
               <span style={{ color:'white', fontSize:12, fontWeight:700 }}>@{streamer?.username || 'streamer'}</span>
             </div>
           )}
-          <div style={{ background:'rgba(0,0,0,0.4)', borderRadius:20, padding:'4px 12px', display:'flex', alignItems:'center', gap:5 }}>
+          <div style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', borderRadius:20, padding:'4px 12px', display:'flex', alignItems:'center', gap:5, border:'1px solid rgba(255,255,255,0.08)' }}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="rgba(255,255,255,0.7)"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
             <span style={{ color:'rgba(255,255,255,0.7)', fontSize:12 }}>{formatNumber(viewers)}</span>
           </div>
         </div>
-        <button onClick={onClose} style={{ background:'rgba(255,255,255,0.12)', border:'none', borderRadius:'50%', width:36, height:36, color:'white', cursor:'pointer', fontSize:16 }}>✕</button>
+        <button onClick={onClose} style={{ background:'rgba(255,255,255,0.12)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'50%', width:36, height:36, color:'white', cursor:'pointer', fontSize:16, transition:TRANSITION.fast }}>✕</button>
       </div>
       {isHost ? <LiveHostVideo streamRef={localStreamRef} /> : <LiveViewerVideo remoteStream={remoteStream} connected={connected} />}
       {floatingGifts.map(g=>(
@@ -3004,6 +3035,15 @@ let __activeFeedVideoEl = null;
 const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onShare, users, onFollow, followed, showToast, onDelete, onBlock, isLive }) => {
   const [liked, setLiked] = useState((video.likedBy||[]).includes(currentUser?.id));
   const [likeCount, setLikeCount] = useState(video.likes||0);
+  // Author lookup — the video doc doesn't carry a denormalized `verified` flag, so we
+  // check the live users list (same one Home/Infinity already have in hand) to show a
+  // verified badge next to the name, exactly like Instagram/Facebook/X do.
+  const author = useMemo(()=> (users||[]).find(u=>u.id===video.userId), [users, video.userId]);
+  // Double-tap-to-like — Instagram's signature interaction. A double tap on the media
+  // always likes (never unlikes) and shows a brief heart-burst overlay; burstKey forces
+  // the CSS animation to restart on every tap instead of only playing once ever.
+  const [burstKey, setBurstKey] = useState(0);
+  const burstTimeoutRef = useRef(null);
   // Re-sync from the live Firestore snapshot whenever it changes (e.g. someone else
   // likes/unlikes this post) so the count updates in real time for every viewer,
   // TikTok-style, instead of freezing at whatever it was when this card first mounted.
@@ -3024,8 +3064,6 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
   const mediaSrc = (Array.isArray(video.images) && video.images[0]) || video.videoUrl;
   const mediaWrapRef = useRef(null);
   const videoElRef = useRef(null);
-  const [muted, setMuted] = useState(true);
-  const [zoomed, setZoomed] = useState(false);
   const [videoPaused, setVideoPaused] = useState(false);
   const viewCountedRef = useRef(false);
   const isVisible = useIntersectionObserver(mediaWrapRef, { threshold: 0.6 });
@@ -3075,6 +3113,15 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
     finally { likeActionPendingRef.current = false; }
   };
 
+  const handleMediaDoubleClick = () => {
+    if (!liked) toggleLike();
+    haptic('light');
+    setBurstKey(k => k + 1);
+    if (burstTimeoutRef.current) clearTimeout(burstTimeoutRef.current);
+    burstTimeoutRef.current = setTimeout(() => setBurstKey(0), 800);
+  };
+  useEffect(() => () => { if (burstTimeoutRef.current) clearTimeout(burstTimeoutRef.current); }, []);
+
   const toggleSave = async () => {
     const nowSaved = !saved;
     setSaved(nowSaved);
@@ -3113,9 +3160,9 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
     {showShare && <ShareSheet video={video} currentUser={currentUser} onClose={()=>setShowShare(false)} showToast={showToast} />}
     {showSaveConfirm && <SaveConfirmSheet onClose={()=>setShowSaveConfirm(false)} onViewCollections={()=>{ setShowSaveConfirm(false); showToast?.('Opening collections…','info'); }} />}
     {showOptions && <PostOptionsMenu video={video} currentUser={currentUser} onClose={()=>setShowOptions(false)} showToast={showToast} onDelete={onDelete} onBlock={onBlock} />}
-    <div style={{ background:COLORS.surface, borderRadius:RADIUS.lg, padding:14, marginBottom:0, boxShadow:'0 2px 14px rgba(124,58,237,0.06)', border:`1px solid ${COLORS.border}` }}>
+    <div style={{ background:COLORS.surface, borderRadius:RADIUS.lg, padding:14, marginBottom:0, boxShadow:SHADOW.card, border:`1px solid ${COLORS.border}`, transition:TRANSITION.base }}>
       <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:10 }}>
-        <div onClick={()=>onViewProfile?.(video.userId)} style={{ width:44, height:44, borderRadius:'50%', background:video.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, fontSize:17, overflow:'hidden', cursor:'pointer', flexShrink:0, position:'relative', border: isLive ? '2px solid #FF2156' : 'none' }}>
+        <div onClick={()=>onViewProfile?.(video.userId)} style={{ width:44, height:44, borderRadius:'50%', background:video.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, fontSize:17, overflow:'hidden', cursor:'pointer', flexShrink:0, position:'relative', border: isLive ? '2px solid #FF2156' : `2px solid ${COLORS.surface}`, boxShadow: isLive ? SHADOW.glow('#FF2156') : SHADOW.xs, transition:TRANSITION.fast }}>
           {video.avatarUrl ? <img src={video.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : (video.username||'?')[0]?.toUpperCase()}
           {isLive && (
             <div style={{ position:'absolute', bottom:-3, left:'50%', transform:'translateX(-50%)', background:'#FF2156', borderRadius:6, padding:'1px 5px', fontSize:7, fontWeight:800, color:'white', letterSpacing:0.3, whiteSpace:'nowrap' }}>LIVE</div>
@@ -3128,12 +3175,19 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
               shown, but it's rendered as a plain name (no "@") either way. */}
           {video.fullName && video.fullName !== video.username ? (
             <>
-              <span style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:14, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{video.fullName}{video.feeling && <span style={{ color:COLORS.textSecondary, fontWeight:500 }}> is feeling {video.feeling.emoji} {video.feeling.text}</span>}</span>
+              <span style={{ display:'inline-flex', alignItems:'center', gap:4, whiteSpace:'nowrap', overflow:'hidden' }}>
+                <span style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:14, overflow:'hidden', textOverflow:'ellipsis' }}>{video.fullName}</span>
+                {author?.verified && <svg width="14" height="14" viewBox="0 0 24 24" fill={COLORS.info} style={{flexShrink:0}}><path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>}
+                {video.feeling && <span style={{ color:COLORS.textSecondary, fontWeight:500, fontSize:14 }}> is feeling {video.feeling.emoji} {video.feeling.text}</span>}
+              </span>
               <span style={{ color:COLORS.textTertiary, fontSize:12, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{timeAgo(tsToDate(video.createdAt))}</span>
             </>
           ) : (
             <span style={{ display:'flex', alignItems:'baseline', gap:6, overflow:'hidden', flexWrap:'wrap' }}>
-              <span style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:14, whiteSpace:'nowrap' }}>{video.username}</span>
+              <span style={{ display:'inline-flex', alignItems:'center', gap:4 }}>
+                <span style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:14, whiteSpace:'nowrap' }}>{video.username}</span>
+                {author?.verified && <svg width="13" height="13" viewBox="0 0 24 24" fill={COLORS.info} style={{flexShrink:0}}><path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>}
+              </span>
               {video.feeling && <span style={{ color:COLORS.textSecondary, fontSize:12.5, fontWeight:500, whiteSpace:'nowrap' }}>is feeling {video.feeling.emoji} {video.feeling.text}</span>}
               <span style={{ color:COLORS.textTertiary, fontSize:12, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>· {timeAgo(tsToDate(video.createdAt))}</span>
             </span>
@@ -3189,7 +3243,7 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
         );
       })()}
       {mediaSrc && (
-        <div ref={mediaWrapRef} style={{ position:'relative', borderRadius:16, overflow:'hidden', marginBottom:10, background:'#000' }}>
+        <div ref={mediaWrapRef} onDoubleClick={handleMediaDoubleClick} style={{ position:'relative', borderRadius:16, overflow:'hidden', marginBottom:10, background:'#000', boxShadow:SHADOW.sm }}>
           {isVideo ? (
             <>
               <div onClick={()=>{
@@ -3202,8 +3256,8 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
                   src={mediaSrc}
                   loop
                   playsInline
-                  muted={muted}
-                  style={{ width:'100%', maxHeight:520, display:'block', objectFit: zoomed ? 'contain' : 'cover', background:'#000', transform: zoomed ? 'scale(1.15)' : 'scale(1)', transition:'transform 0.25s ease' }}
+                  muted={false}
+                  style={{ width:'100%', maxHeight:520, display:'block', objectFit:'cover', background:'#000' }}
                 />
               </div>
               {/* Top progress line — mirrors the swipeable feed's video progress style */}
@@ -3215,25 +3269,18 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
                   </div>
                 </div>
               )}
-              {/* TikTok-style side controls: sound, zoom, download */}
-              <div style={{ position:'absolute', right:10, bottom:10, display:'flex', flexDirection:'column', gap:10, zIndex:20 }}>
-                <button onClick={e=>{ e.stopPropagation(); setMuted(m=>!m); }} style={{ background:'rgba(0,0,0,0.45)', backdropFilter:'blur(6px)', border:'none', borderRadius:'50%', width:34, height:34, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
-                  {muted ? (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
-                  ) : (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg>
-                  )}
-                </button>
-                <button onClick={e=>{ e.stopPropagation(); setZoomed(z=>!z); }} style={{ background:'rgba(0,0,0,0.45)', backdropFilter:'blur(6px)', border:'none', borderRadius:'50%', width:34, height:34, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>{zoomed ? <line x1="8" y1="11" x2="14" y2="11"/> : <><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></>}</svg>
-                </button>
-                <button onClick={e=>{ e.stopPropagation(); handleDownload(); }} style={{ background:'rgba(0,0,0,0.45)', backdropFilter:'blur(6px)', border:'none', borderRadius:'50%', width:34, height:34, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                </button>
-              </div>
             </>
           ) : (
             <img src={mediaSrc} alt="" style={{ width:'100%', maxHeight:420, display:'block', objectFit:'cover' }} />
+          )}
+          {/* Double-tap heart burst — Instagram's signature like gesture, purely visual
+              (the actual like state/count is handled by handleMediaDoubleClick). */}
+          {burstKey > 0 && (
+            <div key={burstKey} style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', pointerEvents:'none' }}>
+              <svg width="90" height="90" viewBox="0 0 24 24" fill="#fff" style={{ filter:'drop-shadow(0 4px 18px rgba(0,0,0,0.35))', animation:'heartBurst 0.7s cubic-bezier(0.2,0.8,0.3,1) forwards' }}>
+                <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+              </svg>
+            </div>
           )}
         </div>
       )}
@@ -3259,19 +3306,16 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
 
         {/* Primary action row — Facebook's signature 3 equal-width buttons */}
         <div style={{ display:'flex', alignItems:'center', borderTop:`1px solid ${COLORS.border}`, borderBottom:`1px solid ${COLORS.border}`, padding:'2px 0' }}>
-          <button onClick={toggleLike} onDoubleClick={()=>setShowLikes(true)} style={{ flex:1, background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8, color:liked?'#FF3B5C':COLORS.textSecondary, fontWeight:700, fontSize:14, padding:'11px 0', borderRadius:10 }}>
+          <button onClick={toggleLike} onDoubleClick={()=>setShowLikes(true)} onMouseDown={e=>e.currentTarget.style.background=COLORS.surfaceAlt} onMouseUp={e=>e.currentTarget.style.background='none'} onMouseLeave={e=>e.currentTarget.style.background='none'} style={{ flex:1, background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8, color:liked?'#FF3B5C':COLORS.textSecondary, fontWeight:700, fontSize:14, padding:'11px 0', borderRadius:10, margin:'0 2px', transition:TRANSITION.fast }}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill={liked?'#FF3B5C':'none'} stroke={liked?'#FF3B5C':COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: liked ? 'likeHeart 0.35s ease' : 'none' }}>
               <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
             </svg>
-            Like
           </button>
-          <button onClick={()=>{ setShowComments(true); onOpenComments?.(video); }} style={{ flex:1, background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8, color:COLORS.textSecondary, fontWeight:700, fontSize:14, padding:'11px 0', borderRadius:10 }}>
+          <button onClick={()=>{ setShowComments(true); onOpenComments?.(video); }} onMouseDown={e=>e.currentTarget.style.background=COLORS.surfaceAlt} onMouseUp={e=>e.currentTarget.style.background='none'} onMouseLeave={e=>e.currentTarget.style.background='none'} style={{ flex:1, background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8, color:COLORS.textSecondary, fontWeight:700, fontSize:14, padding:'11px 0', borderRadius:10, margin:'0 2px', transition:TRANSITION.fast }}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
-            Comment
           </button>
-          <button onClick={()=>{ setShowShare(true); onShare?.(video); }} style={{ flex:1, background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8, color:COLORS.textSecondary, fontWeight:700, fontSize:14, padding:'11px 0', borderRadius:10 }}>
+          <button onClick={()=>{ setShowShare(true); onShare?.(video); }} onMouseDown={e=>e.currentTarget.style.background=COLORS.surfaceAlt} onMouseUp={e=>e.currentTarget.style.background='none'} onMouseLeave={e=>e.currentTarget.style.background='none'} style={{ flex:1, background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8, color:COLORS.textSecondary, fontWeight:700, fontSize:14, padding:'11px 0', borderRadius:10, margin:'0 2px', transition:TRANSITION.fast }}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-            Share
           </button>
         </div>
 
@@ -3284,11 +3328,9 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
           <div style={{ flex:1 }} />
           <button onClick={toggleSave} style={{ background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:5, color:saved?COLORS.brand:COLORS.textSecondary, fontWeight:600, fontSize:12.5, padding:'6px 8px', borderRadius:12 }}>
             <svg width="17" height="17" viewBox="0 0 24 24" fill={saved?COLORS.brand:'none'} stroke={saved?COLORS.brand:COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
-            Save
           </button>
           <button onClick={handleDownload} style={{ background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:5, color:COLORS.textSecondary, fontWeight:600, fontSize:12.5, padding:'6px 8px', borderRadius:12 }}>
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Download
           </button>
           <button onClick={()=>setShowOptions(true)} style={{ background:'none', border:'none', cursor:'pointer', color:COLORS.textTertiary, display:'flex', alignItems:'center', padding:'6px 6px', borderRadius:12 }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
@@ -3438,6 +3480,17 @@ const HomeFeed = ({ t, videos, videosLoading, onLike, onComment, onShare, onFoll
 
   return (
     <div data-main-scroll="true" onScroll={onFeedScroll} style={{ height:'100%', overflowY:'auto', background:COLORS.bg, padding:'10px 14px max(74px, calc(58px + env(safe-area-inset-bottom)))' }}>
+      {/* Masthead — the app's wordmark, top-left, the way Instagram/Facebook/Threads
+          anchor their brand at the top of the main feed. Rendered in the same brand
+          gradient used everywhere else (nav active state, buttons) so it reads as
+          part of one cohesive identity rather than a bolted-on label. */}
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10, padding:'2px 2px 0' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:5 }}>
+          <span style={{ fontSize:15 }}>♾️</span>
+          <span style={{ fontSize:20, fontWeight:900, letterSpacing:-0.6, background:COLORS.gradient, WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text' }}>Infinity</span>
+        </div>
+      </div>
+
       {/* Top search bar — expands and filters in place; tapping a result acts immediately,
           nothing here navigates to a separate search page. */}
       <div style={{ position:'relative', marginBottom:10 }}>
@@ -3461,8 +3514,9 @@ const HomeFeed = ({ t, videos, videosLoading, onLike, onComment, onShare, onFoll
           <NotificationBellButton onOpenNotifications={onOpenNotifications} currentUser={currentUser} />
         </div>
 
+
         {searchOpen && searchQuery.trim() && (
-          <div style={{ position:'absolute', top:'calc(100% + 6px)', left:50, right:0, background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:16, boxShadow:'0 12px 32px rgba(30,27,46,0.18)', zIndex:40, maxHeight:320, overflowY:'auto', padding:8 }}>
+          <div style={{ position:'absolute', top:'calc(100% + 6px)', left:50, right:0, background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:16, boxShadow:SHADOW.raised, zIndex:40, maxHeight:320, overflowY:'auto', padding:8 }}>
             {!searchResults.users.length && !searchResults.posts.length && (
               <div style={{ padding:'14px 10px', color:COLORS.textTertiary, fontSize:12.5, textAlign:'center' }}>No matches for "{searchQuery}"</div>
             )}
@@ -3713,7 +3767,7 @@ const FriendsDiscoveryPage = ({ currentUser, users, followed, onFollow, onViewPr
           </div>
           <div style={{ display:'flex', gap:10, overflowX:'auto', paddingBottom:16, marginBottom:6 }}>
             {suggestions.map(u=>(
-              <div key={u.id} style={{ position:'relative', flexShrink:0, width:132, background:COLORS.surfaceAlt, borderRadius:12, overflow:'hidden', border:`1px solid ${COLORS.border}` }}>
+              <div key={u.id} style={{ position:'relative', flexShrink:0, width:132, background:COLORS.surfaceAlt, borderRadius:14, overflow:'hidden', border:`1px solid ${COLORS.border}`, boxShadow:SHADOW.card, transition:TRANSITION.base }}>
                 <div onClick={()=>onViewProfile?.(u.id)} style={{ height:110, background:u.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', overflow:'hidden' }}>
                   {u.avatarUrl ? <img src={u.avatarUrl} style={{ width:'100%', height:'100%', objectFit:'cover' }} alt="" /> : <span style={{ color:'white', fontWeight:800, fontSize:32 }}>{u.avatar||u.username?.[0]?.toUpperCase()}</span>}
                 </div>
@@ -3753,7 +3807,11 @@ const FriendsDiscoveryPage = ({ currentUser, users, followed, onFollow, onViewPr
               {label:'Nearby', icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>)},
               {label:'Groups', icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>), action:()=>setTab('groups')},
             ].map(item=>(
-              <button key={item.label} onClick={item.action} style={{ background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:16, padding:'14px 6px', display:'flex', flexDirection:'column', alignItems:'center', gap:6, cursor:'pointer' }}>
+              <button key={item.label} onClick={item.action}
+                onMouseDown={e=>e.currentTarget.style.transform='scale(0.95)'}
+                onMouseUp={e=>e.currentTarget.style.transform='scale(1)'}
+                onMouseLeave={e=>e.currentTarget.style.transform='scale(1)'}
+                style={{ background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:16, padding:'14px 6px', display:'flex', flexDirection:'column', alignItems:'center', gap:6, cursor:'pointer', boxShadow:SHADOW.xs, transition:TRANSITION.fast }}>
                 {item.icon}
                 <span style={{ color:COLORS.textSecondary, fontSize:10.5, fontWeight:600 }}>{item.label}</span>
               </button>
@@ -4935,15 +4993,15 @@ if(activeSubPage==='settings') return (
             </div>
           )}
           <div style={{ position:'relative', display:'inline-block', marginTop:8, marginBottom:12, textAlign:'center', width:'100%' }}>
-            <div onClick={()=>setShowAvatarViewer(true)} style={{cursor:'pointer'}}>
-              <div style={{ width:88, height:88, borderRadius:'50%', padding:3, background:COLORS.surface, margin:'0 auto', cursor:'pointer', boxShadow:'0 4px 16px rgba(0,0,0,0.15)' }}>
-                <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:user?.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:32, overflow:'hidden' }}>
+            <div onClick={()=>setShowAvatarViewer(true)} style={{cursor:'pointer', transition:TRANSITION.fast}} onMouseDown={e=>e.currentTarget.style.transform='scale(0.97)'} onMouseUp={e=>e.currentTarget.style.transform='scale(1)'} onMouseLeave={e=>e.currentTarget.style.transform='scale(1)'}>
+              <div style={{ width:92, height:92, borderRadius:'50%', padding:3, background:COLORS.gradient, margin:'0 auto', cursor:'pointer', boxShadow:SHADOW.raised }}>
+                <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:user?.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:32, overflow:'hidden', border:`3px solid ${COLORS.surface}` }}>
                   {user?.avatarUrl ? <img src={user.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : user?.avatar}
                 </div>
               </div>
             </div>
             {user?.verified && (
-              <div style={{ position:'absolute', bottom:0, right:'calc(50% - 44px)', background:COLORS.info, border:`2px solid ${COLORS.surface}`, borderRadius:'50%', width:24, height:24, display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <div style={{ position:'absolute', bottom:0, right:'calc(50% - 46px)', background:COLORS.info, border:`2px solid ${COLORS.surface}`, borderRadius:'50%', width:24, height:24, display:'flex', alignItems:'center', justifyContent:'center', boxShadow:SHADOW.xs }}>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
               </div>
             )}
@@ -4985,8 +5043,8 @@ if(activeSubPage==='settings') return (
             </div>
           </div>
           <div style={{ display:'flex', gap:10, marginTop:16, padding:'0 16px' }}>
-            <button onClick={(e)=>{e.stopPropagation(); setShowEditProfile(true);}} style={{ flex:1, background:COLORS.gradient, border:'none', borderRadius:16, padding:'12px 0', color:'white', fontWeight:700, cursor:'pointer', fontSize:14 }}>Edit Profile</button>
-            <button onClick={()=>setShowFollowersList('following')} style={{ background:COLORS.surfaceAlt, border:'none', borderRadius:16, width:46, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+            <button onClick={(e)=>{e.stopPropagation(); setShowEditProfile(true);}} onMouseDown={e=>e.currentTarget.style.transform='scale(0.98)'} onMouseUp={e=>e.currentTarget.style.transform='scale(1)'} onMouseLeave={e=>e.currentTarget.style.transform='scale(1)'} style={{ flex:1, background:COLORS.gradient, border:'none', borderRadius:16, padding:'12px 0', color:'white', fontWeight:700, cursor:'pointer', fontSize:14, boxShadow:SHADOW.glow(COLORS.brand), transition:TRANSITION.fast }}>Edit Profile</button>
+            <button onClick={()=>setShowFollowersList('following')} onMouseDown={e=>e.currentTarget.style.transform='scale(0.94)'} onMouseUp={e=>e.currentTarget.style.transform='scale(1)'} onMouseLeave={e=>e.currentTarget.style.transform='scale(1)'} style={{ background:COLORS.surfaceAlt, border:'none', borderRadius:16, width:46, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', transition:TRANSITION.fast }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
             </button>
           </div>
@@ -5462,7 +5520,7 @@ unsub = onSnapshot(q, (snap) => {
                 {msg.text && msg.type==='sticker' && !msg.deleted && (
                   <div style={{fontSize:56, lineHeight:1, padding:'2px 4px'}}>{msg.text}</div>
                 )}
-                {msg.text && msg.type!=='sticker' && <div style={{background: msg.deleted ? 'rgba(255,255,255,0.04)' : isMine?'linear-gradient(135deg,#FF2156,#9D4EDD)':'rgba(255,255,255,0.09)', borderRadius:isMine?'18px 18px 4px 18px':'18px 18px 18px 4px',padding:'9px 14px',marginBottom:msg.mediaUrl?4:0}}>
+                {msg.text && msg.type!=='sticker' && <div style={{background: msg.deleted ? 'rgba(255,255,255,0.04)' : isMine?'linear-gradient(135deg,#FF2156,#9D4EDD)':'rgba(255,255,255,0.09)', borderRadius:isMine?'18px 18px 4px 18px':'18px 18px 18px 4px',padding:'9px 14px',marginBottom:msg.mediaUrl?4:0, boxShadow: isMine ? '0 2px 10px rgba(255,33,86,0.28)' : '0 1px 4px rgba(0,0,0,0.18)' }}>
   <span style={{color: msg.deleted ? 'rgba(255,255,255,0.3)':'white', fontSize:14, lineHeight:1.4, fontStyle: msg.deleted?'italic':'normal'}}>{msg.text}</span>
   {!msg.deleted && !isMine && <MessageTranslate text={msg.text} targetLang={currentUser?.language || 'en'} isMine={isMine} />}
 </div>}
@@ -5851,20 +5909,23 @@ snap.docs.forEach(async conv => {
           const convId = getConversationId(currentUser.id, u.id);
           const conv = conversations.find(c=>c.id===convId);
           return (
-            <div key={u.id} onClick={()=>openConversation(u.id)} style={{ display:'flex', alignItems:'center', gap:14, padding:'12px 16px', cursor:'pointer' }}>
+            <div key={u.id} onClick={()=>openConversation(u.id)}
+              onMouseEnter={e=>e.currentTarget.style.background=COLORS.surfaceAlt}
+              onMouseLeave={e=>e.currentTarget.style.background='transparent'}
+              style={{ display:'flex', alignItems:'center', gap:14, padding:'12px 16px', cursor:'pointer', borderRadius:16, transition:TRANSITION.fast }}>
               <div style={{ position:'relative', flexShrink:0 }}>
-                <div style={{ width:48, height:48, borderRadius:'50%', background:u.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, fontSize:19, overflow:'hidden' }}>
+                <div style={{ width:48, height:48, borderRadius:'50%', background:u.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, fontSize:19, overflow:'hidden', boxShadow:SHADOW.xs }}>
                   {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : u.avatar}
                 </div>
                 <div style={{ position:'absolute', bottom:1, right:1, width:12, height:12, background:COLORS.success, borderRadius:'50%', border:`2px solid ${COLORS.surface}` }} />
               </div>
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:14 }}>{u.fullName || u.username}</div>
-                <div style={{ color:COLORS.textTertiary, fontSize:12.5, marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{conv?.lastMessage||'Tap to start chatting'}</div>
+                <div style={{ color:conv?.unread>0?COLORS.textPrimary:COLORS.textTertiary, fontWeight:conv?.unread>0?600:400, fontSize:12.5, marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{conv?.lastMessage||'Tap to start chatting'}</div>
               </div>
               <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:6, flexShrink:0 }}>
                 <div style={{ color:COLORS.textTertiary, fontSize:11 }}>{conv?.lastMessageAt?'Now':''}</div>
-                {conv?.unread>0 && <div style={{ minWidth:18, height:18, borderRadius:9, background:COLORS.brand, color:'white', fontSize:10, fontWeight:800, display:'flex', alignItems:'center', justifyContent:'center', padding:'0 5px' }}>{conv.unread}</div>}
+                {conv?.unread>0 && <div style={{ minWidth:18, height:18, borderRadius:9, background:COLORS.gradient, color:'white', fontSize:10, fontWeight:800, display:'flex', alignItems:'center', justifyContent:'center', padding:'0 5px', boxShadow:SHADOW.glow(COLORS.brand) }}>{conv.unread}</div>}
               </div>
             </div>
           );
@@ -6313,7 +6374,11 @@ const SearchOverlay = ({ onClose, videos, users, onViewProfile }) => {
               <div style={{ color:COLORS.textTertiary, fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:14 }}>🔥 Trending</div>
               <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
                 {trendingSearches.map((tag,i)=>(
-                  <button key={i} onClick={()=>{ setQuery(tag); addRecentSearch(tag); }} style={{ background:COLORS.overlaySubtle, border:`1px solid ${COLORS.border}`, borderRadius:20, padding:'8px 14px', color:COLORS.textTertiary, fontSize:13, cursor:'pointer', fontWeight:600 }}>{tag}</button>
+                  <button key={i} onClick={()=>{ setQuery(tag); addRecentSearch(tag); }}
+                    onMouseDown={e=>e.currentTarget.style.transform='scale(0.95)'}
+                    onMouseUp={e=>e.currentTarget.style.transform='scale(1)'}
+                    onMouseLeave={e=>e.currentTarget.style.transform='scale(1)'}
+                    style={{ background:COLORS.overlaySubtle, border:`1px solid ${COLORS.border}`, borderRadius:20, padding:'8px 14px', color:COLORS.textSecondary, fontSize:13, cursor:'pointer', fontWeight:600, transition:TRANSITION.fast }}>{tag}</button>
                 ))}
               </div>
             </div>
@@ -7585,8 +7650,12 @@ const NotificationsPage = ({ currentUser, users, videos, onClose, onViewProfile,
     const suffixIcon = {like:'❤️', comment:'', follow:'', mention:'', gift:'🎁', live:'', story:'', message:'', jobApplication:'', applicationReceived:'', applicationUpdate:''}[n.type] || '';
     const actionText = typeLabelRef.current[n.type] || n.message;
     return (
-      <div key={n.id} onClick={()=>handleNotifTap(n)} style={{ display:'flex', alignItems:'flex-start', gap:12, padding:'12px 16px', cursor:'pointer', background:n.read?'transparent':COLORS.overlaySubtle }}>
-        <div style={{ width:44, height:44, borderRadius:'50%', background:fromUser?.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, fontSize:16, overflow:'hidden', flexShrink:0 }}>
+      <div key={n.id} onClick={()=>handleNotifTap(n)}
+        onMouseEnter={e=>e.currentTarget.style.background=COLORS.surfaceAlt}
+        onMouseLeave={e=>e.currentTarget.style.background=n.read?'transparent':COLORS.overlaySubtle}
+        style={{ display:'flex', alignItems:'flex-start', gap:12, padding:'12px 16px', cursor:'pointer', background:n.read?'transparent':COLORS.overlaySubtle, position:'relative', transition:TRANSITION.fast }}>
+        {!n.read && <div style={{ position:'absolute', left:0, top:10, bottom:10, width:3, borderRadius:2, background:COLORS.gradient }} />}
+        <div style={{ width:44, height:44, borderRadius:'50%', background:fromUser?.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, fontSize:16, overflow:'hidden', flexShrink:0, boxShadow:SHADOW.xs }}>
           {fromUser?.avatarUrl ? <img src={fromUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : (fromUser?.avatar||fromUser?.username?.[0]||'?')}
         </div>
         <div style={{ flex:1, minWidth:0 }}>
@@ -7596,7 +7665,7 @@ const NotificationsPage = ({ currentUser, users, videos, onClose, onViewProfile,
             {suffixIcon && <span> {suffixIcon}</span>}
           </div>
           {n.type==='follow' && (
-            <button onClick={e=>{e.stopPropagation(); showToastRef.current?.('Followed back!','success');}} style={{ marginTop:8, background:'none', border:`1px solid ${COLORS.brand}`, color:COLORS.brand, borderRadius:14, padding:'5px 14px', fontSize:12, fontWeight:700, cursor:'pointer' }}>Follow back</button>
+            <button onClick={e=>{e.stopPropagation(); showToastRef.current?.('Followed back!','success');}} style={{ marginTop:8, background:COLORS.gradient, border:'none', color:'white', borderRadius:14, padding:'6px 16px', fontSize:12, fontWeight:700, cursor:'pointer', boxShadow:SHADOW.glow(COLORS.brand), transition:TRANSITION.fast }}>Follow back</button>
           )}
         </div>
         <div style={{ color:COLORS.textTertiary, fontSize:11.5, flexShrink:0, paddingTop:2 }}>{timeAgoShort(n.date)}</div>
@@ -7673,132 +7742,74 @@ const infinityHash = (str, seed=0) => {
   return h;
 };
 
-const InfinityPostCard = ({ item, currentUser, followed, onFollow, onViewProfile, onMessage, showToast }) => {
-  const v = item.data;
-  const isFollowing = followed?.includes(v.userId || v.uid);
-  const targetId = v.userId || v.uid;
+// InfinityPage mirrors HomeFeed exactly — identical header (profile drawer button,
+// inline search with the same live results, notification bell), identical Stories
+// row, identical inline quick-composer, and the same FeedPostCard for every post.
+// The one intentional difference is the post order: instead of strict newest-first,
+// posts are shuffled via a per-user seed, with a floating dice button to reshuffle.
+const InfinityPage = ({ t, videos, videosLoading, onShare, onFollow, onMessage, followed, showToast, currentUser, onViewProfile, onOpenNotifications, onOpenStories, onCreateStory, onViewStory, blockedUsers, onBlock, users, onOpenProfileDrawer, onFeedScroll }) => {
+  const liveUserIds = useLiveStreamerIds(currentUser);
+  // Inline "quick search" — filters users/posts in place instead of navigating to Discover.
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const searchResults = useMemo(()=>{
+    const q = searchQuery.trim().toLowerCase();
+    if(!q) return { users:[], posts:[] };
+    const matchedUsers = (users||[]).filter(u=>u.id!==currentUser?.id && (u.username?.toLowerCase().includes(q) || u.fullName?.toLowerCase().includes(q))).slice(0,5);
+    const matchedPosts = (videos||[]).filter(v=>v.description?.toLowerCase().includes(q)).slice(0,5);
+    return { users:matchedUsers, posts:matchedPosts };
+  },[searchQuery, users, videos, currentUser?.id]);
 
-  // Same like/save/download mechanics as the main feed's FeedPostCard, kept local to
-  // this card so Infinity doesn't need to touch/depend on that component.
-  const [liked, setLiked] = useState((v.likedBy||[]).includes(currentUser?.id));
-  const [likeCount, setLikeCount] = useState(v.likes||0);
-  const [saved, setSaved] = useState((v.savedBy||[]).includes(currentUser?.id));
-  const [showComments, setShowComments] = useState(false);
-  const [showShare, setShowShare] = useState(false);
-  const isVideoMedia = v.mediaType?.startsWith('video') || /\.(mp4|webm|mov)(\?|$)/i.test(v.videoUrl||'');
-  const mediaSrc = (Array.isArray(v.images) && v.images[0]) || v.videoUrl;
+  // Inline quick composer — Photo/Video/Poll/Feeling all act directly on this card
+  // (single tap, no separate page). Mirrors CreateScreen's post-submission logic.
+  const [composerText, setComposerText] = useState('');
+  const [composerMedia, setComposerMedia] = useState([]);
+  const [composerPosting, setComposerPosting] = useState(false);
+  const [showFeelingPicker, setShowFeelingPicker] = useState(false);
+  const [feeling, setFeeling] = useState(null);
+  const [showPollBuilder, setShowPollBuilder] = useState(false);
+  const [pollQuestion, setPollQuestion] = useState('');
+  const [pollOptions, setPollOptions] = useState(['', '']);
+  const composerFileInputRef = useRef(null);
 
-  const toggleLike = async () => {
-    if (!v.id) return;
-    const nowLiked = !liked;
-    setLiked(nowLiked); setLikeCount(c=>c+(nowLiked?1:-1)); haptic('light');
+  const pickComposerFiles = e => {
+    const files = Array.from(e.target.files||[]);
+    setComposerMedia(m => [...m, ...files.map(f=>({ url:URL.createObjectURL(f), file:f, type:f.type }))].slice(0,4));
+    e.target.value = '';
+  };
+  const removeComposerMedia = idx => setComposerMedia(m => m.filter((_,i)=>i!==idx));
+  const setPollOption = (idx, val) => setPollOptions(opts => opts.map((o,i)=>i===idx?val:o));
+  const addPollOption = () => setPollOptions(opts => [...opts, '']);
+  const removePollOption = idx => setPollOptions(opts => opts.length>2 ? opts.filter((_,i)=>i!==idx) : opts);
+  const closePollBuilder = () => { setShowPollBuilder(false); setPollQuestion(''); setPollOptions(['','']); };
+  const pollIsValid = pollQuestion.trim() && pollOptions.filter(o=>o.trim()).length>=2;
+  const composerHasContent = composerText.trim() || composerMedia.length || pollIsValid || feeling;
+
+  const submitQuickPost = async () => {
+    if(!composerHasContent || composerPosting) return;
+    setComposerPosting(true);
     try {
-      await updateDoc(doc(db,'videos', v.id), { likes: increment(nowLiked?1:-1), likedBy: nowLiked ? arrayUnion(currentUser?.id) : arrayRemove(currentUser?.id) });
-    } catch(e) {}
+      let uploadedUrls = [];
+      for (const m of composerMedia) {
+        try {
+          uploadedUrls.push(await uploadToCloudinary(m.file));
+        } catch (uploadErr) {
+          console.error('Media upload failed:', uploadErr);
+          showToast?.(uploadErr?.message || 'Failed to upload photo/video — please try again', 'error');
+          setComposerPosting(false);
+          return;
+        }
+      }
+      const payload = { description: composerText, ...buildMediaFields(composerMedia, uploadedUrls), hashtags: (composerText||'').match(/#\w+/g) || [] };
+      if (pollIsValid) payload.poll = { question: pollQuestion.trim(), options: pollOptions.map(o=>o.trim()).filter(Boolean), votes:{}, voters:{} };
+      if (feeling) payload.feeling = feeling;
+      const data = await apiFetch('/api/videos/create', { method:'POST', body: JSON.stringify(payload) });
+      showToast?.(data.moderationStatus === 'pending' ? 'Posted — under review' : 'Posted!', 'success');
+      setComposerText(''); setComposerMedia([]); setFeeling(null); setShowFeelingPicker(false); closePollBuilder();
+    } catch (e) { showToast?.(e?.message || 'Failed to post', 'error'); }
+    setComposerPosting(false);
   };
 
-  const toggleSave = async () => {
-    if (!v.id) return;
-    const nowSaved = !saved;
-    setSaved(nowSaved); haptic('light');
-    try {
-      await updateDoc(doc(db,'videos', v.id), { savedBy: nowSaved ? arrayUnion(currentUser?.id) : arrayRemove(currentUser?.id) });
-      showToast?.(nowSaved ? 'Saved to your collection' : 'Removed from saved', 'success');
-    } catch(e) {}
-  };
-
-  const handleDownload = async () => {
-    if (!mediaSrc) { showToast?.('No media to download', 'error'); return; }
-    haptic('light');
-    try {
-      const res = await fetch(mediaSrc);
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const ext = isVideoMedia ? 'mp4' : 'jpg';
-      const a = document.createElement('a');
-      a.href = url; a.download = `infinity_${v.id || Date.now()}.${ext}`;
-      document.body.appendChild(a); a.click(); a.remove();
-      URL.revokeObjectURL(url);
-      showToast?.('Downloaded! 📥', 'success');
-    } catch(e) { showToast?.('Download failed', 'error'); }
-  };
-
-  const actionBtnStyle = { flex:1, minWidth:0, background:'none', border:'none', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:2, padding:'7px 2px', borderRadius:10 };
-  const actionLabelStyle = { fontSize:10.5, fontWeight:700 };
-
-  return (
-    <>
-    {showComments && <CommentsModal video={v} currentUser={currentUser} onClose={()=>setShowComments(false)} showToast={showToast} onViewProfile={onViewProfile} />}
-    {showShare && <ShareSheet video={v} currentUser={currentUser} onClose={()=>setShowShare(false)} showToast={showToast} />}
-    <div style={{ position:'relative', background:COLORS.surface, borderRadius:20, overflow:'hidden', border:`1px solid ${COLORS.border}`, boxShadow:'0 4px 18px rgba(30,27,46,0.08)' }}>
-      <div style={{ position:'relative', width:'100%', height:200, background:COLORS.surfaceAlt }}>
-        {(v.videoUrl || (v.images && v.images[0])) ? (
-          isVideoMedia ? (
-            <video src={mediaSrc} style={{ width:'100%', height:'100%', objectFit:'cover' }} muted />
-          ) : (
-            <img src={mediaSrc} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
-          )
-        ) : (
-          <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:34 }}>🎬</div>
-        )}
-      </div>
-
-      <div style={{ padding:'12px 14px 6px' }}>
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
-          <button onClick={()=>onViewProfile?.(targetId)} style={{ display:'flex', alignItems:'center', gap:8, background:'none', border:'none', cursor:'pointer', padding:0 }}>
-            <div style={{ width:28, height:28, borderRadius:'50%', background:v.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:800, fontSize:12, overflow:'hidden', flexShrink:0 }}>
-              {v.avatarUrl ? <img src={v.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} /> : (v.username||'U')[0].toUpperCase()}
-            </div>
-            <span style={{ fontSize:12.5, fontWeight:700, color:COLORS.textPrimary }}>{v.username}</span>
-          </button>
-          <div style={{ display:'flex', gap:6 }}>
-            {targetId && targetId !== currentUser?.id && (
-              <button onClick={()=>onFollow?.(targetId)} style={{ background: isFollowing ? COLORS.surface2 : COLORS.gradient, border: isFollowing ? `1px solid ${COLORS.border}` : 'none', borderRadius:14, padding:'6px 12px', color: isFollowing ? COLORS.textSecondary : '#fff', fontWeight:700, fontSize:11.5, cursor:'pointer' }}>
-                {isFollowing ? 'Following' : '+ Follow'}
-              </button>
-            )}
-            {targetId && targetId !== currentUser?.id && (
-              <button onClick={()=>onMessage?.(targetId)} style={{ background:COLORS.surface2, border:`1px solid ${COLORS.border}`, borderRadius:14, padding:'6px 10px', color:COLORS.textSecondary, fontWeight:700, fontSize:11.5, cursor:'pointer' }}>💬</button>
-            )}
-          </div>
-        </div>
-        {v.description && <div style={{ fontSize:13, color:COLORS.textPrimary, lineHeight:1.45, marginBottom:4 }}>{v.description}</div>}
-      </div>
-
-      {/* Single-row action bar: Like · Comment · Views · Share · Download · Save — all six
-          together, evenly spaced. Like/Comment/Views keep numeric counts; Share/Download/Save
-          are icon-only (no text labels) so all six comfortably fit on one line. */}
-      <div style={{ display:'flex', alignItems:'stretch', borderTop:`1px solid ${COLORS.border}`, padding:'2px 6px 6px' }}>
-        <button onClick={toggleLike} style={{ ...actionBtnStyle, color: liked?'#FF3B5C':COLORS.textSecondary }}>
-          <svg width="17" height="17" viewBox="0 0 24 24" fill={liked?'#FF3B5C':'none'} stroke={liked?'#FF3B5C':COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: liked ? 'likeHeart 0.35s ease' : 'none' }}>
-            <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
-          </svg>
-          <span style={actionLabelStyle}>{formatNumber(likeCount)}</span>
-        </button>
-        <button onClick={()=>setShowComments(true)} style={{ ...actionBtnStyle, color:COLORS.textSecondary }}>
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
-          <span style={actionLabelStyle}>{formatNumber(v.comments||0)}</span>
-        </button>
-        <div style={{ ...actionBtnStyle, cursor:'default', color:COLORS.textTertiary }}>
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-          <span style={actionLabelStyle}>{formatNumber(v.views||0)}</span>
-        </div>
-        <button onClick={()=>setShowShare(true)} style={{ ...actionBtnStyle, color:COLORS.textSecondary }} aria-label="Share">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-        </button>
-        <button onClick={handleDownload} style={{ ...actionBtnStyle, color:COLORS.textSecondary }} aria-label="Download">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        </button>
-        <button onClick={toggleSave} style={{ ...actionBtnStyle, color: saved?COLORS.brand:COLORS.textSecondary }} aria-label="Save">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill={saved?COLORS.brand:'none'} stroke={saved?COLORS.brand:COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
-        </button>
-      </div>
-    </div>
-    </>
-  );
-};
-
-const InfinityPage = ({ onFeedScroll, showToast, currentUser, onCreate, videos, videosLoading, followed, onFollow, onViewProfile, onMessage }) => {
   // Seed mixes the current user's id into the hash so the shuffle order is unique
   // per person, not just per click — two different users tapping the dice at the
   // same moment still land on two different orders.
@@ -7810,41 +7821,203 @@ const InfinityPage = ({ onFeedScroll, showToast, currentUser, onCreate, videos, 
     showToast?.('Curating something new for you…', 'info');
   };
 
-  // Real posts only — the same `videos` feed Home uses, just reshuffled into a
+  // Same real posts + same blocked-user filtering as Home, just reshuffled into a
   // fresh, unique order every time the dice is tapped (and different per user,
   // since the seed is mixed with currentUser.id above).
-  const cards = useMemo(() => {
-    return (videos||[])
-      .map(v => ({ id:'p_'+v.id, data:v, sortKey: infinityHash(v.id, seed) }))
-      .sort((a,b)=>a.sortKey-b.sortKey);
-  }, [videos, seed]);
+  const filteredVideos = useMemo(()=>{
+    const base = sortByNewest(videos.filter(v=>!(blockedUsers||[]).includes(v.userId)));
+    return base
+      .map(v => ({ v, sortKey: infinityHash(v.id, seed) }))
+      .sort((a,b)=>a.sortKey-b.sortKey)
+      .map(x=>x.v);
+  },[videos, blockedUsers, seed]);
 
   return (
-    <div data-main-scroll="true" onScroll={onFeedScroll} style={{ height:'100%', overflowY:'auto', background:COLORS.bg, padding:'10px 16px max(74px, calc(58px + env(safe-area-inset-bottom)))', position:'relative' }}>
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
-        <div style={{ fontSize:23, fontWeight:800, color:COLORS.textPrimary, display:'flex', alignItems:'center', gap:6 }}>
-          <span style={{ background:COLORS.gradient, WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text' }}>♾️ Infinity</span>
+    <div data-main-scroll="true" onScroll={onFeedScroll} style={{ height:'100%', overflowY:'auto', background:COLORS.bg, padding:'10px 14px max(74px, calc(58px + env(safe-area-inset-bottom)))', position:'relative' }}>
+      {/* Top search bar — expands and filters in place; tapping a result acts immediately,
+          nothing here navigates to a separate search page. */}
+      <div style={{ position:'relative', marginBottom:10 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+          <button onClick={onOpenProfileDrawer} style={{ width:40, height:40, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:14, cursor:'pointer' }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+          <div style={{ flex:1, display:'flex', alignItems:'center', gap:8, background:COLORS.surface, border:`1px solid ${searchOpen?COLORS.brand:COLORS.border}`, borderRadius:20, padding:'10px 14px' }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2" style={{flexShrink:0}}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input
+              value={searchQuery}
+              onFocus={()=>setSearchOpen(true)}
+              onChange={e=>{ setSearchQuery(e.target.value); setSearchOpen(true); }}
+              placeholder="Search"
+              style={{ flex:1, minWidth:0, background:'none', border:'none', outline:'none', color:COLORS.textPrimary, fontSize:13, fontFamily:'inherit' }}
+            />
+            {searchOpen && (
+              <span onClick={()=>{ setSearchOpen(false); setSearchQuery(''); }} style={{ cursor:'pointer', color:COLORS.textTertiary, fontSize:12, flexShrink:0 }}>✕</span>
+            )}
+          </div>
+          <NotificationBellButton onOpenNotifications={onOpenNotifications} currentUser={currentUser} />
         </div>
-        <button onClick={()=>{ onCreate?.(); }} style={{ background:COLORS.gradient, border:'none', borderRadius:16, padding:'7px 14px', color:'#fff', fontWeight:700, fontSize:12.5, cursor:'pointer' }}>+ Add</button>
+
+        {searchOpen && searchQuery.trim() && (
+          <div style={{ position:'absolute', top:'calc(100% + 6px)', left:50, right:0, background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:16, boxShadow:SHADOW.raised, zIndex:40, maxHeight:320, overflowY:'auto', padding:8 }}>
+            {!searchResults.users.length && !searchResults.posts.length && (
+              <div style={{ padding:'14px 10px', color:COLORS.textTertiary, fontSize:12.5, textAlign:'center' }}>No matches for "{searchQuery}"</div>
+            )}
+            {searchResults.users.map(u=>(
+              <div key={u.id} onClick={()=>{ onViewProfile?.(u.id); setSearchOpen(false); setSearchQuery(''); }} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 6px', borderRadius:10, cursor:'pointer' }}>
+                <div style={{ width:32, height:32, borderRadius:'50%', background:u.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, fontSize:13, overflow:'hidden', flexShrink:0 }}>
+                  {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/> : (u.username||'?')[0]?.toUpperCase()}
+                </div>
+                <div style={{ minWidth:0 }}>
+                  <div style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:13, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>@{u.username}</div>
+                  {u.fullName && <div style={{ color:COLORS.textTertiary, fontSize:11 }}>{u.fullName}</div>}
+                </div>
+              </div>
+            ))}
+            {searchResults.posts.map(v=>(
+              <div key={v.id} onClick={()=>{ onViewProfile?.(v.userId); setSearchOpen(false); setSearchQuery(''); }} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 6px', borderRadius:10, cursor:'pointer' }}>
+                <div style={{ width:32, height:32, borderRadius:8, background:COLORS.surfaceAlt, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="M21 15l-5-5L5 19"/></svg>
+                </div>
+                <div style={{ color:COLORS.textSecondary, fontSize:12.5, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{v.description}</div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {videosLoading && cards.length===0 ? (
-        <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
-          <VideoSkeleton /><VideoSkeleton />
+      {/* Stories row — same Stories component as Home, so tapping an avatar opens that
+          user's story instead of their profile, and "+" opens the story composer. */}
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:2 }}>
+        <span style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:14 }}>Stories</span>
+        <span onClick={onOpenStories} style={{ color:COLORS.brand, fontSize:12, fontWeight:700, cursor:'pointer' }}>See all</span>
+      </div>
+      <div style={{ margin:'0 -14px 6px' }}>
+        <Stories users={users} currentUser={currentUser} onViewStory={onViewStory} onCreateStory={onCreateStory} followed={followed} liveUserIds={liveUserIds} />
+      </div>
+
+      {/* Post composer — fully inline: typing, attaching a photo, building a poll and
+          picking a feeling all happen right here in one tap each, nothing navigates away. */}
+      <div style={{ background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:RADIUS.lg, padding:14, marginBottom:0 }}>
+        <input ref={composerFileInputRef} type="file" accept="image/*,video/*" multiple onChange={pickComposerFiles} style={{ display:'none' }} />
+        <div style={{ display:'flex', alignItems:'flex-start', gap:10, marginBottom:12 }}>
+          <div style={{ width:38, height:38, borderRadius:'50%', background:currentUser?.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, overflow:'hidden', flexShrink:0 }}>
+            {currentUser?.avatarUrl ? <img src={currentUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/> : (currentUser?.username||'?')[0]?.toUpperCase()}
+          </div>
+          <textarea
+            value={composerText}
+            onChange={e=>setComposerText(e.target.value)}
+            placeholder="What's on your mind?"
+            rows={1}
+            style={{ flex:1, minWidth:0, background:'none', border:'none', outline:'none', resize:'none', color:COLORS.textPrimary, fontSize:13.5, fontFamily:'inherit', paddingTop:8 }}
+          />
         </div>
-      ) : cards.length===0 ? (
-        <div style={{ textAlign:'center', color:COLORS.textTertiary, fontSize:13, padding:'50px 20px' }}>
-          Nothing here yet — tap <b>+ Add</b> to be the first thing someone discovers.
-        </div>
-      ) : (
-        <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
-          {cards.map(item => (
-            <InfinityPostCard key={item.id} item={item} currentUser={currentUser} followed={followed} onFollow={onFollow}
-              onViewProfile={onViewProfile} onMessage={onMessage} showToast={showToast} />
+
+        {feeling && (
+          <div style={{ display:'inline-flex', alignItems:'center', gap:6, background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:12, padding:'5px 10px', fontSize:12, fontWeight:600, color:COLORS.textSecondary, marginBottom:10 }}>
+            feeling {feeling.emoji} {feeling.text}
+            <span onClick={()=>setFeeling(null)} style={{ cursor:'pointer', color:COLORS.textTertiary, fontWeight:800 }}>✕</span>
+          </div>
+        )}
+
+        {composerMedia.length>0 && (
+          <div style={{ display:'flex', gap:8, marginBottom:12, overflowX:'auto' }}>
+            {composerMedia.map((m,i)=>(
+              <div key={i} style={{ position:'relative', width:64, height:64, borderRadius:12, overflow:'hidden', background:COLORS.surfaceAlt, flexShrink:0 }}>
+                {m.type?.startsWith('video') ? <video src={m.url} style={{ width:'100%', height:'100%', objectFit:'cover' }} /> : <img src={m.url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />}
+                <button onClick={()=>removeComposerMedia(i)} style={{ position:'absolute', top:3, right:3, width:18, height:18, borderRadius:'50%', background:'rgba(0,0,0,0.55)', color:'#fff', border:'none', cursor:'pointer', fontSize:11, display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {showFeelingPicker && (
+          <div style={{ background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:14, padding:12, marginBottom:12 }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
+              <span style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:12.5 }}>How are you feeling?</span>
+              <span onClick={()=>setShowFeelingPicker(false)} style={{ cursor:'pointer', color:COLORS.textTertiary }}>✕</span>
+            </div>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
+              {FEELINGS.map(f=>(
+                <button key={f.text} onClick={()=>{ setFeeling(f); setShowFeelingPicker(false); }} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4, background:feeling?.text===f.text?COLORS.surface2:COLORS.surface, border:`1px solid ${feeling?.text===f.text?COLORS.brand:COLORS.border}`, borderRadius:12, padding:'8px 4px', cursor:'pointer' }}>
+                  <span style={{ fontSize:18 }}>{f.emoji}</span>
+                  <span style={{ fontSize:9.5, color:COLORS.textSecondary, fontWeight:600 }}>{f.text}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {showPollBuilder && (
+          <div style={{ background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:14, padding:12, marginBottom:12 }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
+              <span style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:12.5 }}>📊 Create a poll</span>
+              <span onClick={closePollBuilder} style={{ cursor:'pointer', color:COLORS.textTertiary }}>✕</span>
+            </div>
+            <input value={pollQuestion} onChange={e=>setPollQuestion(e.target.value)} placeholder="Ask a question…" style={{ width:'100%', background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:12, padding:'9px 12px', color:COLORS.textPrimary, outline:'none', fontSize:13, marginBottom:8, boxSizing:'border-box' }} />
+            {pollOptions.map((opt,i)=>(
+              <div key={i} style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
+                <input value={opt} onChange={e=>setPollOption(i,e.target.value)} placeholder={`Option ${i+1}`} style={{ flex:1, background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:12, padding:'8px 12px', color:COLORS.textPrimary, outline:'none', fontSize:12.5, boxSizing:'border-box' }} />
+                {pollOptions.length>2 && (
+                  <span onClick={()=>removePollOption(i)} style={{ cursor:'pointer', color:COLORS.textTertiary, fontSize:13, padding:4 }}>✕</span>
+                )}
+              </div>
+            ))}
+            <button onClick={addPollOption} style={{ background:'none', border:'none', color:COLORS.brand, fontWeight:700, fontSize:12, cursor:'pointer', padding:'2px 0' }}>+ Add option</button>
+          </div>
+        )}
+
+        <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
+          {[
+            {icon:(<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.info} strokeWidth="2"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="M21 15l-5-5L5 19"/></svg>), label:'Photo', active:false, action:()=>composerFileInputRef.current?.click()},
+            {icon:(<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.brand} strokeWidth="2"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>), label:'Poll', active:showPollBuilder, action:()=>setShowPollBuilder(v=>!v)},
+            {icon:(<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.warning} strokeWidth="2"><circle cx="12" cy="12" r="9"/><path d="M9 10h.01M15 10h.01M8 15s1.5 2 4 2 4-2 4-2"/></svg>), label:'Feeling', active:showFeelingPicker, action:()=>setShowFeelingPicker(v=>!v)},
+          ].map(btn=>(
+            <button key={btn.label} onClick={e=>{ e.stopPropagation(); btn.action(); }} style={{ display:'flex', alignItems:'center', gap:6, background:btn.active?COLORS.surface2:COLORS.surfaceAlt, border:`1px solid ${btn.active?COLORS.brand:'transparent'}`, borderRadius:14, padding:'7px 12px', color:COLORS.textSecondary, fontSize:12, fontWeight:600, cursor:'pointer' }}>
+              {btn.icon}{btn.label}
+            </button>
           ))}
+          {composerHasContent && (
+            <button onClick={submitQuickPost} disabled={composerPosting} style={{ marginLeft:'auto', background:'linear-gradient(135deg,#FF2156,#9D4EDD)', border:'none', borderRadius:14, padding:'8px 16px', color:'white', fontSize:12.5, fontWeight:700, cursor:composerPosting?'default':'pointer', opacity:composerPosting?0.7:1 }}>
+              {composerPosting ? 'Posting…' : 'Post'}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {videosLoading && !filteredVideos.length && (
+        <>
+          <FeedSkeletonCard />
+          <FeedSkeletonCard />
+          <FeedSkeletonCard />
+        </>
+      )}
+
+      {!videosLoading && !filteredVideos.length && (
+        <div style={{ textAlign:'center', padding:'60px 20px', color:COLORS.textTertiary }}>
+          <div style={{ fontSize:44, marginBottom:10 }}>📭</div>
+          <div>{t?.noVideos||'No posts yet. Be the first to post!'}</div>
         </div>
       )}
 
+      {filteredVideos.map(video=>(
+        <FeedPostCard
+          key={video.id}
+          video={video}
+          currentUser={currentUser}
+          onViewProfile={onViewProfile}
+          onOpenComments={()=>{}}
+          onShare={onShare}
+          users={users}
+          onFollow={onFollow}
+          followed={followed}
+          showToast={showToast}
+          onBlock={onBlock}
+          isLive={liveUserIds?.has(video.userId)}
+        />
+      ))}
+
+      {/* The one deliberate difference from Home: a floating dice button that reshuffles
+          the post order (per-user seed), instead of Home's strict newest-first order. */}
       <button onClick={reshuffle} aria-label="Surprise me" style={{ position:'fixed', right:'max(20px, calc((100vw - 430px)/2 + 20px))', bottom:'max(96px, calc(84px + env(safe-area-inset-bottom)))', width:52, height:52, borderRadius:'50%', background:COLORS.gradient, border:'none', boxShadow:'0 6px 20px rgba(139,92,246,0.45)', color:'#fff', fontSize:22, cursor:'pointer', zIndex:400, display:'flex', alignItems:'center', justifyContent:'center' }}>
         🎲
       </button>
@@ -8427,8 +8600,12 @@ const handleMessage = uid => {
   onCreateStory={()=>setShowCreateStory(true)} onViewStory={(payload)=>setShowStoryViewer(payload)}
   onOpenProfileDrawer={()=>setShowProfileDrawer(true)} onFeedScroll={handleFeedScroll}
   blockedUsers={blockedUsers} onBlock={uid=>setBlockedUsers(p=>[...p,uid])} users={users} onOpenCamera={()=>setShowCamera(true)} onOpenComposer={()=>setShowTextComposer(true)} />}
-            {activeTab==='infinity' && <InfinityPage onFeedScroll={handleFeedScroll} showToast={showToast} currentUser={currentUser} onCreate={()=>setActiveTab('create')}
-  videos={videos} videosLoading={videosLoading} followed={followed} onFollow={toggleFollow} onViewProfile={handleViewProfile} onMessage={handleMessage} />}
+            {activeTab==='infinity' && <InfinityPage t={t} onFeedScroll={handleFeedScroll} showToast={showToast} currentUser={currentUser}
+  videos={videos} videosLoading={videosLoading} followed={followed} onFollow={toggleFollow} onViewProfile={handleViewProfile} onMessage={handleMessage}
+  onShare={(v)=>setShowShareSheet(v)} users={users} blockedUsers={blockedUsers} onBlock={uid=>setBlockedUsers(p=>[...p,uid])}
+  onOpenNotifications={()=>setShowNotifications(true)} onOpenStories={()=>setShowStoriesPage(true)}
+  onCreateStory={()=>setShowCreateStory(true)} onViewStory={(payload)=>setShowStoryViewer(payload)}
+  onOpenProfileDrawer={()=>setShowProfileDrawer(true)} />}
             {activeTab==='friends' && <FriendsDiscoveryPage currentUser={currentUser} users={users} followed={followed} onFollow={toggleFollow} onViewProfile={handleViewProfile} onOpenSearch={()=>setShowDiscover(true)} onFeedScroll={handleFeedScroll} onCreateStory={()=>setShowCreateStory(true)} onViewStory={(payload)=>setShowStoryViewer(payload)} onOpenStories={()=>setShowStoriesPage(true)} />}
             {activeTab==='create' && <CreateScreen onOpenCamera={()=>setShowCamera(true)} onShowSoundLibrary={()=>setShowSoundLibrary(true)} showToast={showToast} t={t} currentUser={currentUser} users={users} onPosted={()=>setActiveTab('home')} />}
             {activeTab==='inbox' && <InboxPage t={t} users={users} currentUser={currentUser} showToast={showToast} onViewProfile={handleViewProfile} initialTargetId={inboxTargetId} onClearTarget={()=>setInboxTargetId(null)} persistedConversation={activeConversation} openGroupsSignal={inboxOpenGroups} onSetConversation={(conv)=>{ setActiveConversation(conv); }} onFeedScroll={handleFeedScroll}
@@ -8440,7 +8617,7 @@ const handleMessage = uid => {
         )}
       </div>
 
-      <div style={{ display:'flex', alignItems:'stretch', background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderBottom:'none', borderRadius:'20px 20px 0 0', boxShadow:'0 -4px 20px rgba(30,27,46,0.06)', paddingTop:4, paddingBottom:'max(4px, env(safe-area-inset-bottom))', position:'absolute', left:14, right:14, bottom:0, zIndex:500, transform: navVisible ? 'translateY(0)' : 'translateY(100%)', transition:'transform 0.25s cubic-bezier(0.4,0,0.2,1)' }}>
+      <div style={{ display:'flex', alignItems:'stretch', background:COLORS.surface, backdropFilter:'blur(20px) saturate(1.6)', WebkitBackdropFilter:'blur(20px) saturate(1.6)', border:`1px solid ${COLORS.border}`, borderBottom:'none', borderRadius:'20px 20px 0 0', boxShadow:'0 -8px 28px rgba(20,16,32,0.10), 0 -1px 0 rgba(255,255,255,0.4) inset', paddingTop:4, paddingBottom:'max(4px, env(safe-area-inset-bottom))', position:'absolute', left:14, right:14, bottom:0, zIndex:500, transform: navVisible ? 'translateY(0)' : 'translateY(100%)', transition:'transform 0.25s cubic-bezier(0.4,0,0.2,1)' }}>
         {tabs.map(tab=>{
           if(tab.id==='create') {
             return (
