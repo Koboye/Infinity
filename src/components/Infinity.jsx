@@ -211,6 +211,56 @@ const REPORT_REASONS = [
   'Nudity or sexual content','Suicide or self-harm','Impersonation','Other',
 ];
 
+// How urgently a report reason should bubble to the top of the moderation queue.
+// Used only by ModerationPage to sort/flag — does not affect the reporting UI itself.
+const REASON_SEVERITY = {
+  'Suicide or self-harm': 'high', 'Violence or dangerous acts': 'high',
+  'Nudity or sexual content': 'high', 'Hate speech or harassment': 'high',
+  'Impersonation': 'med', 'Misinformation': 'med', 'Intellectual property violation': 'med',
+  'Spam or misleading': 'low', 'Inappropriate content': 'med', 'Other': 'low',
+};
+
+// Suspension length presets offered from the moderation queue.
+const SUSPENSION_OPTIONS = [
+  { label: '24 hours', days: 1 }, { label: '3 days', days: 3 },
+  { label: '7 days', days: 7 }, { label: '30 days', days: 30 },
+];
+
+// Field on the `reports` doc that identifies the target, per report type.
+const REPORT_TARGET_FIELD = { user: 'reportedUserId', comment: 'commentId', video: 'videoId' };
+
+/* Shared report submission used by every report entry point (profile, post, comment).
+   Two responsibilities that used to live nowhere:
+   1. Duplicate-report protection — without this, one person mashing "Report" (or
+      reporting the same post from two screens) silently inflated the report count
+      and could make a borderline case look far more urgent than it really is.
+   2. A single write path so every report type is shaped consistently for the
+      Moderation Center's grouping logic. */
+const submitReport = async (type, targetId, reporterId, payload = {}) => {
+  if (!targetId || !reporterId) throw new Error('Missing report target');
+  const field = REPORT_TARGET_FIELD[type] || 'videoId';
+  try {
+    const dupQ = query(
+      collection(db, 'reports'),
+      where('type', '==', type),
+      where(field, '==', targetId),
+      where('reportedBy', '==', reporterId),
+    );
+    const existing = await getDocs(dupQ);
+    if (!existing.empty) {
+      const err = new Error("You've already reported this — thanks for flagging it");
+      err.duplicate = true;
+      throw err;
+    }
+  } catch (e) {
+    if (e.duplicate) throw e;
+    // Index/permission hiccup on the dedup check shouldn't block a legitimate report.
+  }
+  await addDoc(collection(db, 'reports'), {
+    type, reportedBy: reporterId, createdAt: serverTimestamp(), ...payload,
+  });
+};
+
 const STICKER_PACKS = [
   { id:'fun', name:'Fun', stickers:['😂','🤣','😎','🥳','🎉','🎊','✨','🔥','💯','👏'] },
   { id:'love', name:'Love', stickers:['❤️','🥰','😍','💕','💖','💗','💘','💝','😘','🫶'] },
@@ -390,7 +440,7 @@ const ShareSheet = ({ video, currentUser, onClose, showToast }) => {
     { label:'SMS', bg:COLORS.success, action:()=>{ recordShare(); window.open(`sms:?body=${encodeURIComponent((video?.description||'')+' '+shareUrl)}`); }, icon:(<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>) },
   ];
   return (
-    <div style={{ position:'fixed', inset:0, zIndex:5000, background:'rgba(20,15,35,0.45)', display:'flex', alignItems:'flex-end' }} onClick={onClose}>
+    <div style={{ position:'fixed', inset:0, zIndex:5000, background:'rgba(20,15,35,0.45)', display:'flex', alignItems:'flex-end', animation:'fadeIn 0.2s ease' }} onClick={onClose}>
       <div onClick={e=>e.stopPropagation()} style={{ width:'100%', maxHeight:'86vh', overflowY:'auto', background:COLORS.surface, borderTopLeftRadius:26, borderTopRightRadius:26, paddingBottom:'max(20px, env(safe-area-inset-bottom))' }}>
         <SheetBackHeader title="Share" onClose={onClose} />
         <div style={{ padding:'16px' }}>
@@ -1002,7 +1052,11 @@ const uploadToCloudinary = async (file, onProgress) => {
   formData.append('timestamp', timestamp);
   formData.append('signature', signature);
 
-  const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/upload`;
+  // Must include the resource_type segment (Cloudinary requires it — a bare
+  // `/upload` with nothing before it is not a valid endpoint path). `auto` lets
+  // Cloudinary detect image vs video vs raw itself, so this one endpoint handles
+  // every upload type used in this app (photos, videos, audio notes).
+  const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`;
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -1189,6 +1243,8 @@ const GlobalStyles = () => (
     ::selection{background:rgba(11,95,255,0.25);color:#0B0F19}
     @keyframes heartBurst{0%{transform:scale(0.4) translateY(0);opacity:1}100%{transform:scale(1.8) translateY(-80px);opacity:0}}
     @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
+    @keyframes toastIn{from{transform:translateX(-50%) translateY(100%);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}
+    @keyframes toastOut{from{transform:translateX(-50%) translateY(0);opacity:1}to{transform:translateX(-50%) translateY(16px);opacity:0}}
     @keyframes slideDown{from{transform:translateY(-20px);opacity:0}to{transform:translateY(0);opacity:1}}
     @keyframes slideLeft{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
     @keyframes floatUp{0%{transform:translateY(0) scale(1);opacity:1}100%{transform:translateY(-120px) scale(1.5);opacity:0}}
@@ -1448,7 +1504,16 @@ const NotifPopup = ({ notif, user, onClose, onTap }) => {
 };
 /* ─────────────── TOAST ─────────────── */
 const Toast = ({ message, type, onClose }) => {
-  useEffect(() => { const t = setTimeout(onClose, 2800); return () => clearTimeout(t); }, [onClose]);
+  const [leaving, setLeaving] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setLeaving(true), 2500);
+    return () => clearTimeout(t);
+  }, []);
+  useEffect(() => {
+    if (!leaving) return;
+    const t = setTimeout(onClose, 250);
+    return () => clearTimeout(t);
+  }, [leaving, onClose]);
   const configs = {
     success: { bg: `linear-gradient(135deg,${COLORS.success},#16A34A)`, icon: '✓' },
     error: { bg: `linear-gradient(135deg,${COLORS.danger},#B91C1C)`, icon: '✕' },
@@ -1457,7 +1522,7 @@ const Toast = ({ message, type, onClose }) => {
   };
   const c = configs[type] || configs.info;
   return (
-    <div style={{ position:'fixed', bottom:110, left:'50%', transform:'translateX(-50%)', zIndex:9999, animation:'slideUp 0.3s ease', display:'flex', alignItems:'center', gap:10, background:'rgba(15,15,15,0.95)', backdropFilter:'blur(20px)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:40, padding:'10px 18px 10px 10px', boxShadow:'0 8px 32px rgba(0,0,0,0.5)', whiteSpace:'nowrap' }}>
+    <div style={{ position:'fixed', bottom:110, left:'50%', zIndex:9999, animation: leaving ? 'toastOut 0.25s ease forwards' : 'toastIn 0.3s cubic-bezier(0.22,1,0.36,1) forwards', display:'flex', alignItems:'center', gap:10, background:'rgba(15,15,15,0.95)', backdropFilter:'blur(20px)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:40, padding:'10px 18px 10px 10px', boxShadow:'0 8px 32px rgba(0,0,0,0.5)', whiteSpace:'nowrap' }}>
       <div style={{ width:26, height:26, borderRadius:'50%', background:c.bg, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:800, fontSize:13, flexShrink:0 }}>{c.icon}</div>
       <span style={{ color:'white', fontSize:13, fontWeight:500, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{message}</span>
     </div>
@@ -2086,7 +2151,7 @@ const CreateStoryModal = ({ currentUser, onClose, showToast }) => {
   };
 
   if (!mode) return (
-    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.9)', zIndex:3500, display:'flex', alignItems:'flex-end' }} onClick={onClose}>
+    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.9)', zIndex:3500, display:'flex', alignItems:'flex-end', animation:'fadeIn 0.2s ease' }} onClick={onClose}>
       <div onClick={e=>e.stopPropagation()} style={{ width:'100%', background:'#15151C', borderTopLeftRadius:32, borderTopRightRadius:32, padding:'20px 20px 44px', border:'1px solid rgba(255,255,255,0.06)' }}>
         <div style={{ width:36, height:4, background:'rgba(255,255,255,0.15)', borderRadius:2, margin:'0 auto 24px' }} />
         <div style={{ color:'white', fontWeight:800, fontSize:20, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Create Story</div>
@@ -2144,6 +2209,166 @@ const CreateStoryModal = ({ currentUser, onClose, showToast }) => {
   );
 };
 
+/* ─────────────── DONATION SHEET (real-money, Flutterwave) ───────────────
+   Separate rail from the coins/gift economy above (VIRTUAL_GIFTS, sendGift,
+   WalletPage) — those move in-app coins that were already purchased through
+   /api/wallet. This moves real money directly from a supporter's card/bank
+   to a creator's wallet via /api/donations/{init,verify,webhook}, which is
+   why it's a distinct component: different backend, different trust model
+   (server mints tx_ref, verifies with Flutterwave directly, settles once).
+   Reused as-is from both UserProfileModal (profile → Donate) and LiveStream
+   (live chat → 💝) — same component, different `recipient`. Uses the file's
+   module-level `apiFetch` (Firebase-ID-token-authed) rather than a prop,
+   matching how sendGift/WalletPage already call apiFetch above. */
+let flwScriptPromise = null;
+const loadFlutterwaveScript = () => {
+  if (window.FlutterwaveCheckout) return Promise.resolve();
+  if (!flwScriptPromise) {
+    flwScriptPromise = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://checkout.flutterwave.com/v3.js';
+      s.onload = resolve;
+      s.onerror = reject;
+      document.body.appendChild(s);
+    });
+  }
+  return flwScriptPromise;
+};
+
+const DONATION_PRESETS = [500, 1000, 2500, 5000]; // smallest sensible unit for `currency`, e.g. NGN
+
+const DonationSheet = ({ recipient, currentUser, onClose, showToast, currency = 'NGN', onSuccess }) => {
+  const [amount, setAmount] = useState(DONATION_PRESETS[1]);
+  const [customAmount, setCustomAmount] = useState('');
+  const [status, setStatus] = useState('idle'); // idle | opening | verifying | success | error
+
+  useEffect(() => { loadFlutterwaveScript().catch(() => showToast?.('Could not load payment gateway', 'error')); }, []);
+
+  const effectiveAmount = customAmount ? Number(customAmount) : amount;
+
+  const startDonation = async () => {
+    if (!effectiveAmount || effectiveAmount <= 0) { showToast?.('Enter a valid amount', 'error'); return; }
+    setStatus('opening');
+    try {
+      await loadFlutterwaveScript();
+      // Server mints tx_ref + hands back the public key — never let the client
+      // forge its own reference for something money-related (see /api/donations/init).
+      const { tx_ref, public_key } = await apiFetch('/api/donations/init', {
+        method: 'POST',
+        body: JSON.stringify({ amount: effectiveAmount, currency, recipientId: recipient.id }),
+      });
+
+      window.FlutterwaveCheckout({
+        public_key,
+        tx_ref,
+        amount: effectiveAmount,
+        currency,
+        payment_options: 'card,banktransfer,ussd',
+        customer: {
+          email: currentUser.email || `${currentUser.username}@donor.infinity`,
+          name: currentUser.fullName || currentUser.username,
+        },
+        customizations: {
+          title: `Support @${recipient.username}`,
+          description: 'In-app donation',
+          logo: 'https://res.cloudinary.com/dotvhzjmc/image/upload/znfksngv27boh3c1kxpv.png',
+        },
+        callback: async (payment) => {
+          setStatus('verifying');
+          try {
+            // Server-side verify against Flutterwave's API is the source of truth —
+            // this callback payload is just a UX hint that lets us poll sooner.
+            const result = await apiFetch('/api/donations/verify', {
+              method: 'POST',
+              body: JSON.stringify({ tx_ref, transaction_id: payment.transaction_id }),
+            });
+            if (result.verified) {
+              setStatus('success');
+              showToast?.(`Sent ${currency} ${effectiveAmount.toLocaleString()} to @${recipient.username}!`, 'success');
+              onSuccess?.(effectiveAmount);
+            } else {
+              setStatus('error');
+              showToast?.('Payment could not be verified', 'error');
+            }
+          } catch (e) {
+            setStatus('error');
+            showToast?.(e.message || 'Verification failed', 'error');
+          }
+        },
+        onclose: () => {
+          // Fires on both success and plain dismissal — only reset to idle
+          // if we're not already mid-verify or settled.
+          setStatus(s => (s === 'success' || s === 'error' || s === 'verifying') ? s : 'idle');
+        },
+      });
+    } catch (e) {
+      setStatus('error');
+      showToast?.(e.message || 'Could not start donation', 'error');
+    }
+  };
+
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 6000, background: 'rgba(15,10,25,0.55)', display: 'flex', alignItems: 'flex-end', maxWidth: 430, margin: '0 auto' }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: '100%', background: '#15151C', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: '20px 20px max(24px, env(safe-area-inset-bottom))' }}>
+        <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.15)', margin: '0 auto 18px' }} />
+
+        {status === 'success' ? (
+          <div style={{ textAlign: 'center', padding: '20px 0' }}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>🎉</div>
+            <div style={{ color: 'white', fontWeight: 800, fontSize: 18, marginBottom: 6 }}>Thank you!</div>
+            <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13.5, marginBottom: 20 }}>
+              Your donation to @{recipient.username} was received.
+            </div>
+            <button onClick={onClose} style={{ width: '100%', background: 'white', border: 'none', borderRadius: 16, padding: 14, color: '#0B0B0F', fontWeight: 700, cursor: 'pointer' }}>Done</button>
+          </div>
+        ) : (
+          <>
+            <div style={{ color: 'white', fontWeight: 800, fontSize: 18, marginBottom: 4, textAlign: 'center' }}>
+              💝 Support @{recipient.username}
+            </div>
+            <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12.5, marginBottom: 18, textAlign: 'center' }}>
+              100% goes straight to their creator wallet
+            </div>
+
+            <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+              {DONATION_PRESETS.map(a => (
+                <button key={a} onClick={() => { setAmount(a); setCustomAmount(''); }}
+                  style={{
+                    flex: '1 1 70px', padding: '12px 8px', borderRadius: 14, fontWeight: 700, fontSize: 13.5, cursor: 'pointer',
+                    background: amount === a && !customAmount ? 'white' : 'rgba(255,255,255,0.08)',
+                    color: amount === a && !customAmount ? '#0B0B0F' : 'white',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                  }}>
+                  {currency} {a.toLocaleString()}
+                </button>
+              ))}
+            </div>
+
+            <input
+              value={customAmount}
+              onChange={e => setCustomAmount(e.target.value.replace(/[^0-9]/g, ''))}
+              placeholder={`Custom amount (${currency})`}
+              inputMode="numeric"
+              style={{ width: '100%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 14, padding: 14, color: 'white', fontSize: 14, outline: 'none', marginBottom: 16, boxSizing: 'border-box' }}
+            />
+
+            <button
+              onClick={startDonation}
+              disabled={status === 'opening' || status === 'verifying'}
+              style={{
+                width: '100%', background: 'linear-gradient(135deg,#0B5FFF,#6E4CF5)', border: 'none', borderRadius: 16,
+                padding: 15, color: 'white', fontWeight: 700, fontSize: 15,
+                cursor: status === 'idle' ? 'pointer' : 'default', opacity: status === 'idle' ? 1 : 0.7,
+              }}>
+              {status === 'opening' ? 'Opening…' : status === 'verifying' ? 'Confirming…' : `Donate ${currency} ${effectiveAmount ? effectiveAmount.toLocaleString() : ''}`}
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
 /* ─────────────── USER PROFILE MODAL ─────────────── */
 const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onVoiceCall, onVideoCall, followed, showToast, userVideos, isLive, onJoinLive }) => {
   const isFollowing = followed?.includes(user?.id);
@@ -2152,26 +2377,24 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
   const mockVideos = userVideos || [];
   const avatarSrc = user?.avatarUrl;
   const [showReportSheet, setShowReportSheet] = useState(false);
+  const [showDonate, setShowDonate] = useState(false);
   const submitUserReport = async (reason) => {
     try {
-      await addDoc(collection(db, 'reports'), {
-        type: 'user',
+      await submitReport('user', user.id, currentUser.id, {
         reportedUserId: user.id,
         reportedUsername: user?.username || null,
-        reportedBy: currentUser.id,
         reporterUsername: currentUser?.username || currentUser?.fullName || null,
         reason,
-        createdAt: serverTimestamp(),
       });
       showToast?.('User reported — thanks for letting us know', 'success');
     } catch (e) {
-      showToast?.('Could not submit report', 'error');
+      showToast?.(e.message || 'Could not submit report', e.duplicate ? 'info' : 'error');
     }
     setShowReportSheet(false);
   };
 
   return (
-    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.85)', zIndex:3000, display:'flex', alignItems:'flex-end' }} onClick={onClose}>
+    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.85)', zIndex:3000, display:'flex', alignItems:'flex-end', animation:'fadeIn 0.2s ease' }} onClick={onClose}>
       <div onClick={e=>e.stopPropagation()} style={{ width:'100%', background:'#15151C', borderTopLeftRadius:24, borderTopRightRadius:24, maxHeight:'90vh', overflowY:'auto' }}>
         <div style={{ width:36, height:4, background:'rgba(255,255,255,0.12)', borderRadius:2, margin:'16px auto 0' }} />
         <div style={{ display:'flex', justifyContent:'flex-end', padding:'10px 16px 0' }}>
@@ -2210,26 +2433,30 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
           </div>
         </div>
         {!isOwn && (
-          <div style={{ display:'flex', gap:8, padding:'0 16px 16px' }}>
-            <button onClick={()=>{onFollow?.(user.id); onClose();}}
-  style={{ flex:1, background:isFollowing?'rgba(255,255,255,0.06)':'linear-gradient(135deg,#2E7BFF,#0B5FFF)', border:isFollowing?'1px solid rgba(11,95,255,0.4)':'none', borderRadius:14, padding:'12px', color:isFollowing?'#0B5FFF':'white', fontWeight:700, cursor:'pointer', fontSize:14 }}>
-  {isFollowing ? 'Following' : '+ Follow'}
-</button>
-<button
-  onClick={() => setShowReportSheet(true)}
-  style={{
-    background: 'rgba(255,150,0,0.1)', border: '1px solid rgba(255,150,0,0.3)',
-    borderRadius: 14, padding: '12px', color: '#FFB100',
-    fontWeight: 600, cursor: 'pointer', fontSize: 13
-  }}
->Report</button>
-            <button onClick={()=>{onMessage?.(user.id); onClose();}} style={{ flex:1, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:'12px', color:'white', fontWeight:600, cursor:'pointer', fontSize:14 }}>Message</button>
-            <button onClick={()=>{onVoiceCall?.(user.id); onClose();}} style={{ background:'rgba(52,199,89,0.12)', border:'1px solid rgba(52,199,89,0.2)', borderRadius:14, padding:'12px 14px', color:'#2ED573', cursor:'pointer', fontSize:18 }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2ED573" strokeWidth="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8a19.79 19.79 0 01-3.07-8.67A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>
-            </button>
-            <button onClick={()=>{onVideoCall?.(user.id); onClose();}} style={{ background:'rgba(175,82,222,0.12)', border:'1px solid rgba(175,82,222,0.2)', borderRadius:14, padding:'12px 14px', color:'#0B5FFF', cursor:'pointer', fontSize:18 }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B5FFF" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
-            </button>
+          <div style={{ padding:'0 16px 16px', display:'flex', flexDirection:'column', gap:8 }}>
+            <div style={{ display:'flex', gap:8 }}>
+              <button onClick={()=>{onFollow?.(user.id); onClose();}}
+                style={{ flex:1, background:isFollowing?'rgba(255,255,255,0.06)':'linear-gradient(135deg,#2E7BFF,#0B5FFF)', border:isFollowing?'1px solid rgba(11,95,255,0.4)':'none', borderRadius:14, padding:'12px', color:isFollowing?'#0B5FFF':'white', fontWeight:700, cursor:'pointer', fontSize:14 }}>
+                {isFollowing ? 'Following' : '+ Follow'}
+              </button>
+              <button onClick={()=>{onMessage?.(user.id); onClose();}} style={{ flex:1, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:'12px', color:'white', fontWeight:600, cursor:'pointer', fontSize:14 }}>Message</button>
+              <button
+                onClick={() => setShowDonate(true)}
+                style={{ flex:1, background:'rgba(255,214,10,0.12)', border:'1px solid rgba(255,214,10,0.3)', borderRadius:14, padding:'12px', color:'#FFD60A', fontWeight:700, cursor:'pointer', fontSize:14 }}
+              >💝 Donate</button>
+            </div>
+            <div style={{ display:'flex', gap:8 }}>
+              <button onClick={()=>{onVoiceCall?.(user.id); onClose();}} style={{ flex:1, background:'rgba(52,199,89,0.12)', border:'1px solid rgba(52,199,89,0.2)', borderRadius:14, padding:'12px', color:'#2ED573', cursor:'pointer', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2ED573" strokeWidth="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8a19.79 19.79 0 01-3.07-8.67A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>
+              </button>
+              <button onClick={()=>{onVideoCall?.(user.id); onClose();}} style={{ flex:1, background:'rgba(175,82,222,0.12)', border:'1px solid rgba(175,82,222,0.2)', borderRadius:14, padding:'12px', color:'#0B5FFF', cursor:'pointer', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B5FFF" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+              </button>
+              <button
+                onClick={() => setShowReportSheet(true)}
+                style={{ flex:1, background:'rgba(255,150,0,0.1)', border:'1px solid rgba(255,150,0,0.3)', borderRadius:14, padding:'12px', color:'#FFB100', fontWeight:600, cursor:'pointer', fontSize:13 }}
+              >Report</button>
+            </div>
           </div>
         )}
         <div style={{ display:'flex', borderTop:'1px solid rgba(255,255,255,0.06)' }}>
@@ -2271,6 +2498,14 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
           title={`Report @${user?.username||'user'}`}
           onClose={()=>setShowReportSheet(false)}
           onSubmit={submitUserReport}
+        />
+      )}
+      {showDonate && (
+        <DonationSheet
+          recipient={user}
+          currentUser={currentUser}
+          onClose={() => setShowDonate(false)}
+          showToast={showToast}
         />
       )}
     </div>
@@ -2384,6 +2619,7 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
   const [message, setMessage] = useState('');
   const [floatingGifts, setFloatingGifts] = useState([]);
   const [showGiftPicker, setShowGiftPicker] = useState(false);
+  const [showDonate, setShowDonate] = useState(false); // real-money tip, separate from coin gifts below
   const localStreamRef = useRef(null);
   const liveIdRef = useRef(null);
   const heartbeatIntervalRef = useRef(null);
@@ -2647,6 +2883,26 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
     } catch(e){ showToast?.('Failed to send gift','error'); }
   };
 
+  // Called once /api/donations/verify confirms a real-money tip. The money itself
+  // already landed in the streamer's walletBalance server-side (settleDonation) —
+  // this just gives it the same floating-emoji + chat-announcement treatment as a
+  // coin gift so cash tips feel native to the live room, not bolted on.
+  const onCashDonation = async (amountSent) => {
+    const fid = Date.now()+Math.random();
+    setFloatingGifts(g=>[...g, { id:fid, emoji:'💝', x: 20+Math.random()*60 }]);
+    setTimeout(()=>setFloatingGifts(g=>g.filter(x=>x.id!==fid)), 1500);
+    if (!liveId) return;
+    try {
+      await addDoc(collection(db,'liveMessages'),{
+        liveId,
+        user: currentUser?.username||'viewer',
+        text: `sent a NGN ${amountSent.toLocaleString()} tip`,
+        isGift: true,
+        createdAt: serverTimestamp(),
+      });
+    } catch(e) { /* announcement is best-effort — the donation itself already settled */ }
+  };
+
   return (
     <div style={{ position:'fixed', inset:0, background:'linear-gradient(160deg,#0d0025,#160d00)', zIndex:2000, display:'flex', flexDirection:'column' }}>
       <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse at 30% 40%,rgba(11,95,255,0.15),transparent 60%)' }} />
@@ -2703,8 +2959,22 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
         {!isHost && (
           <button onClick={()=>setShowGiftPicker(v=>!v)} style={{ background: showGiftPicker ? 'rgba(255,214,10,0.25)' : 'rgba(255,255,255,0.08)', border:'1px solid rgba(255,214,10,0.3)', borderRadius:'50%', width:42, height:42, color:'#FFD60A', cursor:'pointer', fontSize:18, flexShrink:0 }}>🎁</button>
         )}
+        {!isHost && (
+          // Real-money tip straight to the streamer's wallet, alongside (not instead
+          // of) the coin-based gifts above — same DonationSheet used from profiles.
+          <button onClick={()=>setShowDonate(true)} title="Send a cash tip" style={{ background:'rgba(11,95,255,0.14)', border:'1px solid rgba(11,95,255,0.35)', borderRadius:'50%', width:42, height:42, color:'#6E4CF5', cursor:'pointer', fontSize:18, flexShrink:0 }}>💝</button>
+        )}
         <button onClick={sendMessage} style={{ background:'linear-gradient(135deg,#2E7BFF,#0B5FFF)', border:'none', borderRadius:'50%', width:42, height:42, color:'white', cursor:'pointer', fontSize:16, flexShrink:0 }}>↑</button>
       </div>
+      {showDonate && (
+        <DonationSheet
+          recipient={streamer}
+          currentUser={currentUser}
+          onClose={() => setShowDonate(false)}
+          showToast={showToast}
+          onSuccess={onCashDonation}
+        />
+      )}
     </div>
   );
 };
@@ -2854,6 +3124,46 @@ const CommentsModal = ({ video, currentUser, onClose, showToast, onViewProfile }
     try { await updateDoc(doc(db, 'comments', id), { likes: increment(1) }); } catch {}
   };
 
+  // Comment moderation: report (anyone but the author) or delete (author or admin).
+  // Comments previously had zero moderation surface — no way to flag one, and no
+  // way for the person who wrote it (or an admin) to take it down.
+  const [reportTarget, setReportTarget] = useState(null); // comment being reported
+  const [openMenuFor, setOpenMenuFor] = useState(null); // comment id with the ⋯ menu open
+
+  const submitCommentReport = async (reason) => {
+    const c = reportTarget;
+    if (!c) return;
+    try {
+      await submitReport('comment', c.id, currentUser.id, {
+        commentId: c.id,
+        commentText: c.text || '',
+        commentUserId: c.userId || null,
+        commentUsername: c.username || null,
+        videoId: video?.id || null,
+        videoThumbUrl: video?.thumbUrl || video?.thumbnailUrl || video?.url || null,
+        reporterUsername: currentUser?.username || currentUser?.fullName || null,
+        reason,
+      });
+      showToast?.('Comment reported — thanks for letting us know', 'success');
+    } catch (e) {
+      showToast?.(e.message || 'Could not submit report', e.duplicate ? 'info' : 'error');
+    }
+    setReportTarget(null);
+  };
+
+  const deleteComment = async (c) => {
+    if (!window.confirm('Delete this comment? This cannot be undone.')) return;
+    try {
+      await deleteDoc(doc(db, 'comments', c.id));
+      await updateDoc(doc(db, 'videos', video.id), { comments: increment(-1) }).catch(()=>{});
+      setComments(prev => prev.filter(x => x.id !== c.id));
+      showToast?.('Comment deleted', 'success');
+    } catch (e) {
+      showToast?.('Could not delete comment', 'error');
+    }
+    setOpenMenuFor(null);
+  };
+
   const send = async () => {
     if (!commentText.trim() && !cmAttachment) return;
     try {
@@ -2884,7 +3194,10 @@ const CommentsModal = ({ video, currentUser, onClose, showToast, onViewProfile }
         {loading && <div style={{ textAlign:'center', color:COLORS.textTertiary, padding:'40px 0', fontSize:13 }}>Loading comments…</div>}
         {!loading && loadError && <div style={{ textAlign:'center', color:COLORS.textTertiary, padding:'40px 0', fontSize:13 }}>Couldn't load comments. Pull down to try again.</div>}
         {!loading && !loadError && !comments.length && <div style={{ textAlign:'center', color:COLORS.textTertiary, padding:'40px 0', fontSize:13 }}>Be the first to comment</div>}
-        {comments.map(c => (
+        {comments.map(c => {
+          const isOwn = c.userId === currentUser?.id;
+          const canModerate = isOwn || currentUser?.isAdmin;
+          return (
           <div key={c.id} style={{ display:'flex', gap:10, marginBottom:18 }}>
             <div onClick={()=>onViewProfile?.(c.userId)} style={{ width:38, height:38, borderRadius:'50%', background:c.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, fontSize:13, overflow:'hidden', flexShrink:0, cursor:'pointer' }}>
               {c.avatarUrl ? <img src={c.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : (c.avatar||'U')}
@@ -2893,6 +3206,21 @@ const CommentsModal = ({ video, currentUser, onClose, showToast, onViewProfile }
               <div style={{ display:'flex', alignItems:'baseline', gap:8 }}>
                 <span style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:13.5 }}>{c.username}</span>
                 <span style={{ color:COLORS.textTertiary, fontSize:11.5, marginLeft:'auto' }}>{c.createdAt?.toDate ? timeAgo(c.createdAt.toDate()) : 'now'}</span>
+                <div style={{ position:'relative' }}>
+                  <button onClick={()=>setOpenMenuFor(m=>m===c.id?null:c.id)} style={{ background:'none', border:'none', cursor:'pointer', color:COLORS.textTertiary, padding:'2px 4px', display:'flex' }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>
+                  </button>
+                  {openMenuFor === c.id && (
+                    <div style={{ position:'absolute', top:'calc(100% + 4px)', right:0, background:COLORS.surface3, border:`1px solid ${COLORS.border}`, borderRadius:12, padding:4, zIndex:10, minWidth:120, boxShadow:'0 8px 24px rgba(0,0,0,0.3)' }}>
+                      {!isOwn && (
+                        <div onClick={()=>{ setReportTarget(c); setOpenMenuFor(null); }} style={{ padding:'8px 10px', borderRadius:8, color:COLORS.textPrimary, fontSize:12.5, cursor:'pointer' }}>Report</div>
+                      )}
+                      {canModerate && (
+                        <div onClick={()=>deleteComment(c)} style={{ padding:'8px 10px', borderRadius:8, color:COLORS.danger, fontSize:12.5, cursor:'pointer' }}>Delete</div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
               <div style={{ color:COLORS.textSecondary, fontSize:13.5, lineHeight:1.45, marginTop:2 }}>{c.text}</div>
               <div style={{ display:'flex', alignItems:'center', gap:16, marginTop:6 }}>
@@ -2905,8 +3233,16 @@ const CommentsModal = ({ video, currentUser, onClose, showToast, onViewProfile }
               <span style={{ fontSize:11 }}>{c.likes||0}</span>
             </button>
           </div>
-        ))}
+          );
+        })}
       </div>
+      {reportTarget && (
+        <ReportReasonSheet
+          title="Report Comment"
+          onClose={()=>setReportTarget(null)}
+          onSubmit={submitCommentReport}
+        />
+      )}
       {cmAttachment && (
         <div style={{ padding:'0 16px 6px' }}>
           <div style={{ display:'flex', alignItems:'center', gap:10, background:COLORS.overlaySubtle, borderRadius:14, padding:'8px 12px' }}>
@@ -2944,7 +3280,7 @@ const CommentsModal = ({ video, currentUser, onClose, showToast, onViewProfile }
 
 /* ─────────────── SAVE CONFIRM SHEET (image 11) ─────────────── */
 const SaveConfirmSheet = ({ onClose, onViewCollections }) => (
-  <div style={{ position:'fixed', inset:0, zIndex:5000, background:'rgba(20,15,35,0.45)', display:'flex', alignItems:'flex-end' }} onClick={onClose}>
+  <div style={{ position:'fixed', inset:0, zIndex:5000, background:'rgba(20,15,35,0.45)', display:'flex', alignItems:'flex-end', animation:'fadeIn 0.2s ease' }} onClick={onClose}>
     <div onClick={e=>e.stopPropagation()} style={{ width:'100%', background:COLORS.surface, borderTopLeftRadius:26, borderTopRightRadius:26, paddingBottom:'max(24px, env(safe-area-inset-bottom))' }}>
       <SheetBackHeader title="Save" onClose={onClose} />
       <div style={{ textAlign:'center', padding:'34px 24px 8px' }}>
@@ -2966,10 +3302,8 @@ const PostOptionsMenu = ({ video, currentUser, onClose, showToast, onDelete, onB
   const [showReportSheet, setShowReportSheet] = useState(false);
   const submitPostReport = async (reason) => {
     try {
-      await addDoc(collection(db, 'reports'), {
-        type: 'video',
+      await submitReport('video', video?.id, currentUser.id, {
         videoId: video?.id || null,
-        reportedBy: currentUser.id,
         reporterUsername: currentUser.username || currentUser.fullName || null,
         reason,
         // Denormalized snapshot so the moderation screen can show what was reported
@@ -2978,11 +3312,10 @@ const PostOptionsMenu = ({ video, currentUser, onClose, showToast, onDelete, onB
         videoUserId: video?.userId || null,
         videoCaption: video?.description || video?.caption || null,
         videoThumbUrl: video?.thumbUrl || video?.thumbnailUrl || video?.url || null,
-        createdAt: serverTimestamp(),
       });
       showToast?.('Post reported — thanks for letting us know', 'success');
     } catch (e) {
-      showToast?.('Could not submit report', 'error');
+      showToast?.(e.message || 'Could not submit report', e.duplicate ? 'info' : 'error');
     }
     setShowReportSheet(false);
     onClose();
@@ -3005,7 +3338,7 @@ const PostOptionsMenu = ({ video, currentUser, onClose, showToast, onDelete, onB
       }, icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>) },
   ].filter(i => i.show);
   return (
-    <div style={{ position:'fixed', inset:0, zIndex:5000, background:'rgba(20,15,35,0.45)', display:'flex', alignItems:'flex-end' }} onClick={onClose}>
+    <div style={{ position:'fixed', inset:0, zIndex:5000, background:'rgba(20,15,35,0.45)', display:'flex', alignItems:'flex-end', animation:'fadeIn 0.2s ease' }} onClick={onClose}>
       <div onClick={e=>e.stopPropagation()} style={{ width:'100%', maxHeight:'86vh', overflowY:'auto', background:COLORS.surface, borderTopLeftRadius:26, borderTopRightRadius:26, paddingBottom:'max(20px, env(safe-area-inset-bottom))' }}>
         <SheetBackHeader title="More Options" onClose={onClose} />
         <div style={{ padding:'6px 8px' }}>
@@ -4402,7 +4735,7 @@ const EditProfileModal = ({ user, onClose, onSave, showToast }) => {
   };
 
   return (
-    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.9)', zIndex:4000, display:'flex', alignItems:'flex-end' }} onClick={onClose}>
+    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.9)', zIndex:4000, display:'flex', alignItems:'flex-end', animation:'fadeIn 0.2s ease' }} onClick={onClose}>
       <div onClick={e=>e.stopPropagation()} style={{ width:'100%', background:'#15151C', borderTopLeftRadius:32, borderTopRightRadius:32, padding:'20px 20px 44px', maxHeight:'92vh', overflowY:'auto', border:'1px solid rgba(255,255,255,0.07)' }}>
         <div style={{ width:36, height:4, background:'rgba(255,255,255,0.12)', borderRadius:2, margin:'0 auto 20px' }} />
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24 }}>
@@ -4475,14 +4808,142 @@ const PrivacyToggles = ({ user, showToast }) => {
   );
 };
 
+/* ─────────────── ENFORCEMENT ─────────────── */
+/* Actual enforcement for bans/suspensions. Before this, `accountStatus` was set by the
+   Moderation Center but nothing ever read it back on the client — a banned or suspended
+   user could keep using the app exactly as before. getEnforcementStatus + EnforcementScreen
+   replace the whole app with a block screen for any signed-in user currently restricted,
+   with a one-shot appeal flow underneath.
+   IMPORTANT: this is a client-side gate for UX (clear messaging instead of a silent block
+   or a blank screen). It is NOT a substitute for firestore.rules — writes from a banned or
+   suspended uid must also be denied server-side, since a client can always be bypassed by
+   calling Firestore directly. Add a rule along the lines of:
+     match /videos/{id}  { allow create: if !(get(/databases/$(database)/documents/users/$(request.auth.uid)).data.accountStatus in ['banned','suspended']); }
+   (and equivalently for /comments, /reports, /messages, etc.) so the ban is real everywhere
+   a request could originate, not just inside this UI. */
+const getEnforcementStatus = (user) => {
+  if (!user) return null;
+  if (user.accountStatus === 'banned') return { kind: 'banned' };
+  if (user.accountStatus === 'suspended') {
+    const until = tsToDate(user.suspendedUntil);
+    if (until && until.getTime() > Date.now()) return { kind: 'suspended', until };
+    return null; // window has passed — caller (root effect) reinstates
+  }
+  return null;
+};
+
+// Lets a restricted user ask for a second look. One pending appeal at a time —
+// once submitted, the form is replaced by a status readout until it's resolved.
+const AppealForm = ({ user, showToast }) => {
+  const [existingAppeal, setExistingAppeal] = useState(undefined); // undefined = still loading
+  const [message, setMessage] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const q = query(collection(db, 'appeals'), where('userId', '==', user.id), orderBy('createdAt', 'desc'), limit(1));
+    getDocs(q).then(snap => {
+      setExistingAppeal(snap.empty ? null : { id: snap.docs[0].id, ...snap.docs[0].data() });
+    }).catch(() => setExistingAppeal(null));
+  }, [user?.id]);
+
+  const submit = async () => {
+    if (!message.trim()) { showToast?.('Tell us why you think this was a mistake', 'error'); return; }
+    setSubmitting(true);
+    try {
+      await addDoc(collection(db, 'appeals'), {
+        userId: user.id, username: user.username || null,
+        accountStatus: user.accountStatus, violationReason: user.lastModerationAction?.reason || null,
+        message: message.trim(), status: 'pending', createdAt: serverTimestamp(),
+      });
+      setExistingAppeal({ status: 'pending', message: message.trim() });
+      showToast?.("Appeal submitted — we'll review it soon", 'success');
+    } catch (e) {
+      showToast?.('Could not submit appeal, try again later', 'error');
+    }
+    setSubmitting(false);
+  };
+
+  if (existingAppeal === undefined) {
+    return <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>Loading…</div>;
+  }
+
+  if (existingAppeal) {
+    const statusText = {
+      pending: "Your appeal is under review. We'll notify you once it's been decided.",
+      approved: 'Your appeal was approved — refresh the app to continue.',
+      denied: 'Your appeal was reviewed and the original decision was upheld.',
+    }[existingAppeal.status || 'pending'];
+    const statusLabel = (existingAppeal.status || 'pending');
+    return (
+      <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 16, padding: '16px 18px', textAlign: 'left' }}>
+        <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: 13.5, fontWeight: 700, marginBottom: 6 }}>
+          Appeal status: {statusLabel[0].toUpperCase() + statusLabel.slice(1)}
+        </div>
+        <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12.5, lineHeight: 1.5 }}>{statusText}</div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ textAlign: 'left' }}>
+      <textarea value={message} onChange={e => setMessage(e.target.value)} rows={4}
+        placeholder="Explain why you think this decision was a mistake…"
+        style={{ width: '100%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 14, padding: 12, color: 'white', fontSize: 13.5, outline: 'none', resize: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }} />
+      <button onClick={submit} disabled={submitting} style={{ width: '100%', marginTop: 10, background: 'white', border: 'none', borderRadius: 14, padding: '12px', color: '#0B0B0F', fontWeight: 700, fontSize: 14, cursor: submitting ? 'default' : 'pointer', opacity: submitting ? 0.6 : 1 }}>
+        {submitting ? 'Submitting…' : 'Submit appeal'}
+      </button>
+    </div>
+  );
+};
+
+// Full-screen block shown instead of the app for any banned/suspended account.
+const EnforcementScreen = ({ user, onSignOut, showToast }) => {
+  const status = getEnforcementStatus(user);
+  if (!status) return null;
+  const isBanned = status.kind === 'banned';
+  return (
+    <div style={{ maxWidth: 430, margin: '0 auto', height: '100dvh', background: '#0B0B0F', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 28px', textAlign: 'center', overflow: 'auto' }}>
+      <div style={{ width: 64, height: 64, borderRadius: '50%', background: isBanned ? 'rgba(255,69,58,0.15)' : 'rgba(255,159,10,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20, flexShrink: 0 }}>
+        <span style={{ fontSize: 28 }}>{isBanned ? '🚫' : '⏸'}</span>
+      </div>
+      <div style={{ color: 'white', fontWeight: 800, fontSize: 20, marginBottom: 8 }}>
+        {isBanned ? 'Account banned' : 'Account suspended'}
+      </div>
+      <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13.5, lineHeight: 1.6, marginBottom: 6, maxWidth: 320 }}>
+        {isBanned
+          ? 'Your account was permanently banned for violating our community guidelines.'
+          : `Your account is suspended until ${status.until ? status.until.toLocaleString() : 'the suspension period ends'}.`}
+      </div>
+      {user?.lastModerationAction?.reason && (
+        <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12.5, marginBottom: 24 }}>Reason: {user.lastModerationAction.reason}</div>
+      )}
+      <div style={{ width: '100%', maxWidth: 340, marginTop: 8, marginBottom: 20 }}>
+        <AppealForm user={user} showToast={showToast} />
+      </div>
+      <button onClick={onSignOut} style={{ background: 'none', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 14, padding: '11px 22px', color: 'rgba(255,255,255,0.8)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Sign out</button>
+    </div>
+  );
+};
+
 /* ─────────────── PROFILE PAGE ─────────────── */
-/* Lightweight owner-only moderation view for the `reports` collection. Nothing else in
-   the app ever reads reports before this — they were write-only into a black hole. */
+/* Moderation Center — groups every report by the account or post it targets so admins see
+   report VOLUME (not just a flat list), the full context of who/what is being reported, and
+   a real set of actions (warn / suspend / ban / remove content) instead of just "dismiss".
+   Every action is written to `moderationActions` as an audit trail. */
 const ModerationPage = ({ user, users, allVideos, showToast, onBack }) => {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [flagged, setFlagged] = useState([]);
   const [flaggedLoading, setFlaggedLoading] = useState(true);
+  const [actionLog, setActionLog] = useState([]);
+  const [appeals, setAppeals] = useState([]);
+  const [tab, setTab] = useState('reports'); // 'reports' | 'flagged' | 'appeals' | 'log'
+  const [typeFilter, setTypeFilter] = useState('all'); // 'all' | 'user' | 'post' | 'comment'
+  const [urgentOnly, setUrgentOnly] = useState(false);
+  const [search, setSearch] = useState('');
+  const [openDurationFor, setOpenDurationFor] = useState(null); // group key with the suspend picker open
+  const [busyKey, setBusyKey] = useState(null); // group key (or `appeal:{id}`) currently processing an action
 
   useEffect(()=>{
     const q = query(collection(db,'reports'), orderBy('createdAt','desc'));
@@ -4492,6 +4953,24 @@ const ModerationPage = ({ user, users, allVideos, showToast, onBack }) => {
     }, ()=>setLoading(false));
     return ()=>unsub();
   },[]);
+
+  useEffect(()=>{
+    const q = query(collection(db,'moderationActions'), orderBy('createdAt','desc'), limit(60));
+    const unsub = onSnapshot(q, snap=>{
+      setActionLog(snap.docs.map(d=>({id:d.id,...d.data()})));
+    }, ()=>{});
+    return ()=>unsub();
+  },[]);
+
+  // Ban/suspension appeals submitted from the enforcement screen (see AppealForm).
+  useEffect(()=>{
+    const q = query(collection(db,'appeals'), orderBy('createdAt','desc'), limit(100));
+    const unsub = onSnapshot(q, snap=>{
+      setAppeals(snap.docs.map(d=>({id:d.id,...d.data()})));
+    }, ()=>{});
+    return ()=>unsub();
+  },[]);
+  const pendingAppeals = useMemo(()=>appeals.filter(a=>a.status==='pending'), [appeals]);
 
   const loadFlagged = async () => {
     setFlaggedLoading(true);
@@ -4515,110 +4994,561 @@ const ModerationPage = ({ user, users, allVideos, showToast, onBack }) => {
     }
   };
 
-  const dismiss = async (reportId) => {
-    await deleteDoc(doc(db,'reports',reportId));
-    showToast?.('Report dismissed','info');
+  // ── Group raw report docs by the account/post they target ────────────────────────────
+  const groups = useMemo(() => {
+    const map = new Map();
+    for (const r of reports) {
+      // reportKind replaces the old boolean isUserReport now that there are three
+      // distinct target types to group by (account / post / comment). isUserReport
+      // is kept alongside it so existing account-only checks below don't all need
+      // rewriting — it's just `reportKind==='user'`.
+      const reportKind = r.type === 'user' ? 'user' : r.type === 'comment' ? 'comment' : 'post';
+      const isUserReport = reportKind === 'user';
+      const key = reportKind === 'user' ? `user:${r.reportedUserId || r.userId || 'unknown'}`
+        : reportKind === 'comment' ? `comment:${r.commentId || r.id}`
+        : `post:${r.videoId || r.id}`;
+      if (!map.has(key)) {
+        map.set(key, {
+          key, isUserReport, reportKind,
+          targetId: reportKind === 'user' ? (r.reportedUserId || r.userId) : reportKind === 'comment' ? r.commentId : r.videoId,
+          reports: [], reporters: new Set(), reasonCounts: {}, firstAt: null, lastAt: null,
+        });
+      }
+      const g = map.get(key);
+      g.reports.push(r);
+      g.reporters.add(r.reporterUsername || r.reportedBy || 'unknown');
+      const reason = r.reason || 'Not specified';
+      g.reasonCounts[reason] = (g.reasonCounts[reason] || 0) + 1;
+      const at = r.createdAt?.toDate ? r.createdAt.toDate() : null;
+      if (at && (!g.firstAt || at < g.firstAt)) g.firstAt = at;
+      if (at && (!g.lastAt || at > g.lastAt)) g.lastAt = at;
+    }
+
+    return Array.from(map.values()).map(g => {
+      const sample = g.reports[0];
+      const topReason = Object.entries(g.reasonCounts).sort((a,b)=>b[1]-a[1])[0]?.[0] || 'Not specified';
+      const severity = g.reports.reduce((worst, r) => {
+        const s = REASON_SEVERITY[r.reason] || 'low';
+        const rank = { high:3, med:2, low:1 };
+        return rank[s] > rank[worst] ? s : worst;
+      }, 'low');
+      const urgent = severity === 'high' || g.reports.length >= 5;
+
+      if (g.isUserReport) {
+        const targetUser = users?.find(u => u.id === g.targetId);
+        return {
+          ...g, topReason, severity, urgent,
+          targetUser,
+          label: `@${sample.reportedUsername || targetUser?.username || g.targetId || 'unknown'}`,
+        };
+      }
+      if (g.reportKind === 'comment') {
+        const parentVideo = allVideos?.find(v => v.id === sample.videoId);
+        const author = sample.commentUsername || sample.commentUserId || 'unknown';
+        return {
+          ...g, topReason, severity, urgent,
+          author,
+          videoId: sample.videoId || null,
+          caption: sample.commentText ?? '(comment removed)',
+          thumb: sample.videoThumbUrl || parentVideo?.thumbUrl || parentVideo?.thumbnailUrl,
+          label: `@${author}`,
+        };
+      }
+      const targetVideo = allVideos?.find(v => v.id === g.targetId);
+      const author = sample.videoUsername || targetVideo?.username || sample.videoUserId || 'unknown';
+      return {
+        ...g, topReason, severity, urgent,
+        targetVideo,
+        author,
+        caption: sample.videoCaption ?? targetVideo?.description ?? targetVideo?.caption ?? '(no caption)',
+        thumb: sample.videoThumbUrl || targetVideo?.thumbUrl || targetVideo?.thumbnailUrl,
+        label: `@${author}`,
+      };
+    });
+  }, [reports, users, allVideos]);
+
+  const filteredGroups = useMemo(() => {
+    let list = groups;
+    if (typeFilter !== 'all') list = list.filter(g => g.reportKind === typeFilter);
+    if (urgentOnly) list = list.filter(g => g.urgent);
+    if (search.trim()) {
+      const q = search.trim().toLowerCase().replace(/^@/,'');
+      list = list.filter(g => g.label.toLowerCase().includes(q));
+    }
+    const rank = { high:3, med:2, low:1 };
+    return [...list].sort((a,b) => {
+      if (a.urgent !== b.urgent) return a.urgent ? -1 : 1;
+      if (rank[b.severity] !== rank[a.severity]) return rank[b.severity]-rank[a.severity];
+      if (b.reports.length !== a.reports.length) return b.reports.length - a.reports.length;
+      return (b.lastAt||0) - (a.lastAt||0);
+    });
+  }, [groups, typeFilter, urgentOnly, search]);
+
+  const totalReports = reports.length;
+  const urgentCount = groups.filter(g=>g.urgent).length;
+  const actionsToday = actionLog.filter(a => {
+    const at = a.createdAt?.toDate ? a.createdAt.toDate() : null;
+    return at && (Date.now() - at.getTime()) < 86400000;
+  }).length;
+
+  const logAction = async (group, action, extra = {}) => {
+    try {
+      await addDoc(collection(db, 'moderationActions'), {
+        targetType: group.reportKind || (group.isUserReport ? 'user' : 'post'),
+        targetId: group.targetId, targetLabel: group.label,
+        action, reportCount: group.reports.length,
+        actorId: user?.id, actorUsername: user?.username || 'admin',
+        createdAt: serverTimestamp(), ...extra,
+      });
+    } catch (e) { /* audit log failure shouldn't block the moderation action itself */ }
   };
 
-  const deleteReportedVideo = async (report) => {
-    if(!report.videoId) return;
-    if(!window.confirm('Delete this reported post? This cannot be undone.')) return;
-    await deleteDoc(doc(db,'videos',report.videoId));
-    await deleteDoc(doc(db,'reports',report.id));
-    showToast?.('Post removed','success');
+  const resolveGroupReports = async (group) => {
+    await Promise.all(group.reports.map(r => deleteDoc(doc(db,'reports',r.id)).catch(()=>{})));
+  };
+
+  const runAction = async (group, fn) => {
+    setBusyKey(group.key);
+    try { await fn(); } catch(e) { showToast?.(e.message || 'Action failed', 'error'); }
+    setBusyKey(null);
+    setOpenDurationFor(null);
+  };
+
+  const dismissGroup = (group) => runAction(group, async () => {
+    await resolveGroupReports(group);
+    await logAction(group, 'dismiss');
+    showToast?.('Report dismissed', 'info');
+  });
+
+  const deletePostGroup = (group) => runAction(group, async () => {
+    if (!group.targetId) return;
+    if (!window.confirm('Delete this reported post? This cannot be undone.')) return;
+    await deleteDoc(doc(db,'videos',group.targetId)).catch(()=>{});
+    await resolveGroupReports(group);
+    await logAction(group, 'delete_post');
+    showToast?.('Post removed', 'success');
+  });
+
+  const deleteCommentGroup = (group) => runAction(group, async () => {
+    if (!group.targetId) return;
+    if (!window.confirm('Delete this reported comment? This cannot be undone.')) return;
+    await deleteDoc(doc(db,'comments',group.targetId)).catch(()=>{});
+    // Keep the parent post's comment count in sync — it's incremented on post,
+    // so a moderation-removed comment needs the matching decrement.
+    if (group.videoId) {
+      await updateDoc(doc(db,'videos',group.videoId), { comments: increment(-1) }).catch(()=>{});
+    }
+    await resolveGroupReports(group);
+    await logAction(group, 'delete_comment');
+    showToast?.('Comment removed', 'success');
+  });
+
+  const warnUser = (group) => runAction(group, async () => {
+    if (!group.targetId) return;
+    await updateDoc(doc(db,'users',group.targetId), {
+      accountStatus: 'warned', strikeCount: increment(1),
+      lastModerationAction: { action:'warn', at: new Date(), reason: group.topReason },
+    });
+    await sendNotification(group.targetId, user?.id, 'moderation',
+      `You've received a warning for: ${group.topReason}. Please review our community guidelines.`);
+    await resolveGroupReports(group);
+    await logAction(group, 'warn', { reason: group.topReason });
+    showToast?.('User warned', 'success');
+  });
+
+  const suspendUser = (group, days) => runAction(group, async () => {
+    if (!group.targetId) return;
+    const until = new Date(Date.now() + days*86400000);
+    await updateDoc(doc(db,'users',group.targetId), {
+      accountStatus: 'suspended', suspendedUntil: until, strikeCount: increment(1),
+      lastModerationAction: { action:'suspend', at: new Date(), reason: group.topReason, days },
+    });
+    await sendNotification(group.targetId, user?.id, 'moderation',
+      `Your account has been suspended for ${days} day${days===1?'':'s'} for: ${group.topReason}.`);
+    await resolveGroupReports(group);
+    await logAction(group, 'suspend', { reason: group.topReason, days });
+    showToast?.(`User suspended for ${days} day${days===1?'':'s'}`, 'success');
+  });
+
+  const banUser = (group) => runAction(group, async () => {
+    if (!group.targetId) return;
+    if (!window.confirm('Permanently ban this account? This cannot be undone from here.')) return;
+    await updateDoc(doc(db,'users',group.targetId), {
+      accountStatus: 'banned', suspendedUntil: null,
+      lastModerationAction: { action:'ban', at: new Date(), reason: group.topReason },
+    });
+    await sendNotification(group.targetId, user?.id, 'moderation',
+      `Your account has been banned for violating our community guidelines: ${group.topReason}.`);
+    await resolveGroupReports(group);
+    await logAction(group, 'ban', { reason: group.topReason });
+    showToast?.('User banned', 'success');
+  });
+
+  const reinstateUser = (group) => runAction(group, async () => {
+    if (!group.targetId) return;
+    await updateDoc(doc(db,'users',group.targetId), { accountStatus:'active', suspendedUntil:null });
+    await logAction(group, 'reinstate');
+    showToast?.('Account reinstated', 'success');
+  });
+
+  // ── Appeals ────────────────────────────────────────────────────────────────
+  // Runs an action keyed by the appeal's own id rather than a report group's key,
+  // since appeal actions (approve/deny) aren't tied to a report group at all.
+  const runAppealAction = async (appeal, fn) => {
+    setBusyKey(`appeal:${appeal.id}`);
+    try { await fn(); } catch(e) { showToast?.(e.message || 'Action failed', 'error'); }
+    setBusyKey(null);
+  };
+
+  const logAppealAction = async (appeal, action) => {
+    try {
+      await addDoc(collection(db, 'moderationActions'), {
+        targetType: 'user', targetId: appeal.userId, targetLabel: `@${appeal.username || 'unknown'}`,
+        action, actorId: user?.id, actorUsername: user?.username || 'admin',
+        reason: appeal.violationReason || null, createdAt: serverTimestamp(),
+      });
+    } catch (e) { /* audit log failure shouldn't block the appeal decision */ }
+  };
+
+  const approveAppeal = (appeal) => runAppealAction(appeal, async () => {
+    if (!appeal.userId) return;
+    await updateDoc(doc(db,'users',appeal.userId), { accountStatus:'active', suspendedUntil:null });
+    await updateDoc(doc(db,'appeals',appeal.id), {
+      status:'approved', resolvedAt: serverTimestamp(), resolvedBy: user?.id,
+    });
+    await sendNotification(appeal.userId, user?.id, 'moderation',
+      `Your appeal was reviewed and your account has been reinstated.`);
+    await logAppealAction(appeal, 'appeal_approved');
+    showToast?.('Appeal approved — account reinstated', 'success');
+  });
+
+  const denyAppeal = (appeal) => runAppealAction(appeal, async () => {
+    if (!appeal.id) return;
+    if (!window.confirm('Deny this appeal? The account will remain restricted.')) return;
+    await updateDoc(doc(db,'appeals',appeal.id), {
+      status:'denied', resolvedAt: serverTimestamp(), resolvedBy: user?.id,
+    });
+    await sendNotification(appeal.userId, user?.id, 'moderation',
+      `Your appeal was reviewed and the original decision has been upheld.`);
+    await logAppealAction(appeal, 'appeal_denied');
+    showToast?.('Appeal denied', 'info');
+  });
+
+  const severityColor = s => s==='high' ? COLORS.danger : s==='med' ? COLORS.warning : COLORS.textTertiary;
+
+  const StatCard = ({ label, value, color }) => (
+    <div style={{ flex:1, minWidth:90, background:COLORS.surface2, border:`1px solid ${COLORS.border}`, borderRadius:16, padding:'12px 14px' }}>
+      <div style={{ color: color||COLORS.textPrimary, fontWeight:800, fontSize:20 }}>{value}</div>
+      <div style={{ color:COLORS.textTertiary, fontSize:11, marginTop:2 }}>{label}</div>
+    </div>
+  );
+
+  const TabButton = ({ id, label, count }) => (
+    <button onClick={()=>setTab(id)} style={{
+      background: tab===id ? COLORS.brand : 'transparent', color: tab===id ? '#fff' : COLORS.textSecondary,
+      border:`1px solid ${tab===id ? COLORS.brand : COLORS.border}`, borderRadius:20, padding:'7px 14px',
+      fontSize:12.5, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap',
+    }}>{label}{typeof count==='number' ? ` (${count})` : ''}</button>
+  );
+
+  const ReporterChips = ({ group }) => {
+    const names = Array.from(group.reporters);
+    const shown = names.slice(0,3);
+    const rest = names.length - shown.length;
+    return (
+      <div style={{ color:COLORS.textTertiary, fontSize:11.5, marginTop:4 }}>
+        Reported by <span style={{color:COLORS.textSecondary,fontWeight:600}}>{shown.map(n=>`@${n}`).join(', ')}</span>
+        {rest>0 ? ` +${rest} more` : ''}
+        {group.lastAt ? ` · last ${timeAgo(group.lastAt)}` : ''}
+      </div>
+    );
+  };
+
+  const ReasonBreakdown = ({ group }) => (
+    <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginTop:8 }}>
+      {Object.entries(group.reasonCounts).sort((a,b)=>b[1]-a[1]).map(([reason,count]) => (
+        <span key={reason} style={{
+          display:'inline-flex', alignItems:'center', gap:4,
+          background:`${severityColor(REASON_SEVERITY[reason]||'low')}14`,
+          color: severityColor(REASON_SEVERITY[reason]||'low'),
+          fontSize:11, fontWeight:700, padding:'3px 9px', borderRadius:10,
+        }}>{reason} · {count}</span>
+      ))}
+    </div>
+  );
+
+  const AccountStatusChip = ({ targetUser }) => {
+    if (!targetUser || !targetUser.accountStatus || targetUser.accountStatus==='active') return null;
+    const map = {
+      warned: { bg: COLORS.warning, label: `⚠ Warned${targetUser.strikeCount?` · ${targetUser.strikeCount} strike${targetUser.strikeCount===1?'':'s'}`:''}` },
+      suspended: { bg: COLORS.warning, label: `⏸ Suspended${targetUser.suspendedUntil?.toDate ? ` until ${targetUser.suspendedUntil.toDate().toLocaleDateString()}` : ''}` },
+      banned: { bg: COLORS.danger, label: '🚫 Banned' },
+    };
+    const cfg = map[targetUser.accountStatus];
+    if (!cfg) return null;
+    return <span style={{ background:`${cfg.bg}1A`, color:cfg.bg, fontSize:10.5, fontWeight:700, padding:'3px 8px', borderRadius:10 }}>{cfg.label}</span>;
+  };
+
+  const GroupCard = ({ group }) => {
+    const busy = busyKey === group.key;
+    const durationOpen = openDurationFor === group.key;
+    return (
+      <div style={{
+        background:COLORS.surface2, borderRadius:18, padding:'14px 16px', marginBottom:12,
+        border:`1px solid ${group.urgent ? `${COLORS.danger}66` : COLORS.border}`,
+        opacity: busy ? 0.6 : 1, pointerEvents: busy ? 'none' : 'auto',
+      }}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:6, gap:10 }}>
+          <div style={{ display:'flex', gap:10, alignItems:'flex-start', minWidth:0 }}>
+            {group.isUserReport ? (
+              <div style={{ width:44, height:44, borderRadius:'50%', background:group.targetUser?.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:700, fontSize:16, overflow:'hidden', flexShrink:0 }}>
+                {group.targetUser?.avatarUrl ? <img src={group.targetUser.avatarUrl} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/> : (group.targetUser?.avatar || group.label[1] || '?')}
+              </div>
+            ) : (
+              group.thumb ? <img src={group.thumb} alt="" style={{ width:44, height:44, borderRadius:10, objectFit:'cover', flexShrink:0 }} />
+                : <div style={{ width:44, height:44, borderRadius:10, background:COLORS.surface3, flexShrink:0 }} />
+            )}
+            <div style={{ minWidth:0 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:6, flexWrap:'wrap' }}>
+                <div style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:14 }}>
+                  {group.isUserReport ? 'Account' : group.reportKind === 'comment' ? 'Comment' : 'Post'} — {group.label}
+                </div>
+                {group.isUserReport && group.targetUser?.verified && <span style={{color:COLORS.brand,fontSize:12}}>✓</span>}
+                <AccountStatusChip targetUser={group.targetUser} />
+              </div>
+              {group.isUserReport ? (
+                <div style={{ color:COLORS.textTertiary, fontSize:11.5, marginTop:2 }}>
+                  {formatNumber(group.targetUser?.followers?.length||0)} followers
+                  {group.targetUser?.createdAt?.toDate ? ` · joined ${group.targetUser.createdAt.toDate().toLocaleDateString()}` : ''}
+                </div>
+              ) : group.reportKind === 'comment' ? (
+                <div style={{ color:COLORS.textSecondary, fontSize:12, marginTop:2, maxWidth:260, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                  "{group.caption}"
+                </div>
+              ) : (
+                <>
+                  <div style={{ color:COLORS.textSecondary, fontSize:12, marginTop:2, maxWidth:260, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                    "{group.caption}"
+                  </div>
+                  <div style={{ color:COLORS.textTertiary, fontSize:11, marginTop:2 }}>
+                    {formatNumber(group.targetVideo?.views||0)} views · {formatNumber(group.targetVideo?.likes||0)} likes
+                  </div>
+                </>
+              )}
+              <ReporterChips group={group} />
+            </div>
+          </div>
+          <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:6, flexShrink:0 }}>
+            {group.urgent && (
+              <span style={{ background:`${COLORS.danger}1A`, color:COLORS.danger, fontSize:10, fontWeight:800, padding:'3px 8px', borderRadius:10 }}>URGENT</span>
+            )}
+            <span style={{ background:`${COLORS.brand}1A`, color:COLORS.brand, fontSize:16, fontWeight:800, padding:'2px 10px', borderRadius:12, lineHeight:1.4 }}>
+              {group.reports.length}
+            </span>
+            <span style={{ color:COLORS.textTertiary, fontSize:9.5 }}>report{group.reports.length===1?'':'s'}</span>
+          </div>
+        </div>
+
+        <ReasonBreakdown group={group} />
+
+        <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginTop:12 }}>
+          <button onClick={()=>dismissGroup(group)} style={{ flex:'1 1 90px', background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:14, padding:'9px', color:COLORS.textSecondary, fontWeight:600, fontSize:12.5, cursor:'pointer' }}>Dismiss</button>
+
+          {group.reportKind === 'post' && group.targetId && (
+            <button onClick={()=>deletePostGroup(group)} style={{ flex:'1 1 110px', background:`${COLORS.danger}1A`, border:`1px solid ${COLORS.danger}4D`, borderRadius:14, padding:'9px', color:COLORS.danger, fontWeight:700, fontSize:12.5, cursor:'pointer' }}>Delete post</button>
+          )}
+
+          {group.reportKind === 'comment' && group.targetId && (
+            <button onClick={()=>deleteCommentGroup(group)} style={{ flex:'1 1 110px', background:`${COLORS.danger}1A`, border:`1px solid ${COLORS.danger}4D`, borderRadius:14, padding:'9px', color:COLORS.danger, fontWeight:700, fontSize:12.5, cursor:'pointer' }}>Delete comment</button>
+          )}
+
+          {group.isUserReport && group.targetId && (
+            <>
+              <button onClick={()=>warnUser(group)} style={{ flex:'1 1 90px', background:`${COLORS.warning}1A`, border:`1px solid ${COLORS.warning}4D`, borderRadius:14, padding:'9px', color:COLORS.warning, fontWeight:700, fontSize:12.5, cursor:'pointer' }}>Warn</button>
+
+              <div style={{ position:'relative', flex:'1 1 110px' }}>
+                <button onClick={()=>setOpenDurationFor(durationOpen?null:group.key)} style={{ width:'100%', background:`${COLORS.warning}1A`, border:`1px solid ${COLORS.warning}4D`, borderRadius:14, padding:'9px', color:COLORS.warning, fontWeight:700, fontSize:12.5, cursor:'pointer' }}>Suspend ▾</button>
+                {durationOpen && (
+                  <div style={{ position:'absolute', bottom:'calc(100% + 6px)', left:0, right:0, background:COLORS.surface3, border:`1px solid ${COLORS.border}`, borderRadius:12, padding:6, zIndex:5, boxShadow:'0 8px 24px rgba(0,0,0,0.3)' }}>
+                    {SUSPENSION_OPTIONS.map(opt => (
+                      <div key={opt.days} onClick={()=>suspendUser(group, opt.days)} style={{ padding:'8px 10px', borderRadius:8, color:COLORS.textPrimary, fontSize:12.5, cursor:'pointer' }}
+                        onMouseEnter={e=>e.currentTarget.style.background=COLORS.surface2} onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
+                        {opt.label}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <button onClick={()=>banUser(group)} style={{ flex:'1 1 90px', background:`${COLORS.danger}1A`, border:`1px solid ${COLORS.danger}4D`, borderRadius:14, padding:'9px', color:COLORS.danger, fontWeight:700, fontSize:12.5, cursor:'pointer' }}>Ban</button>
+
+              {(group.targetUser?.accountStatus==='suspended' || group.targetUser?.accountStatus==='banned' || group.targetUser?.accountStatus==='warned') && (
+                <button onClick={()=>reinstateUser(group)} style={{ flex:'1 1 110px', background:`${COLORS.success}1A`, border:`1px solid ${COLORS.success}4D`, borderRadius:14, padding:'9px', color:COLORS.success, fontWeight:700, fontSize:12.5, cursor:'pointer' }}>Reinstate</button>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    );
   };
 
   return (
     <div style={{ height:'100%', overflow:'auto', background:COLORS.bg, padding:16 }}>
-      <button onClick={onBack} style={{ background:COLORS.surface2, border:`1px solid ${COLORS.border}`, borderRadius:20, padding:'8px 16px', color:COLORS.textPrimary, cursor:'pointer', fontSize:13, marginBottom:20, display:'flex', alignItems:'center', gap:6 }}>
+      <button onClick={onBack} style={{ background:COLORS.surface2, border:`1px solid ${COLORS.border}`, borderRadius:20, padding:'8px 16px', color:COLORS.textPrimary, cursor:'pointer', fontSize:13, marginBottom:16, display:'flex', alignItems:'center', gap:6 }}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
       </button>
 
-      <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:22, marginBottom:6 }}>Auto-flagged posts</div>
-      <div style={{ color:COLORS.textTertiary, fontSize:12.5, marginBottom:16 }}>{flagged.length} pending review — caught by automated content moderation on post</div>
-      {flaggedLoading && <div style={{ textAlign:'center', color:COLORS.textTertiary, padding:24 }}>Loading…</div>}
-      {!flaggedLoading && flagged.length===0 && (
-        <div style={{ textAlign:'center', padding:32, color:COLORS.textTertiary }}>
-          <div style={{ fontSize:32, marginBottom:8 }}>✅</div>
-          <div>Nothing flagged right now</div>
-        </div>
-      )}
-      {flagged.map(v=>(
-        <div key={v.id} style={{ background:COLORS.surface2, borderRadius:18, padding:'14px 16px', marginBottom:10, border:`1px solid ${COLORS.border}` }}>
-          <div style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:14, marginBottom:4 }}>@{v.username||'unknown'}</div>
-          <div style={{ color:COLORS.textSecondary, fontSize:12.5, marginBottom:6 }}>{v.description || '(no caption)'}</div>
-          <div style={{ color:COLORS.warning, fontSize:11, marginBottom:10 }}>Flagged: {(v.moderationCategories||[]).join(', ')||'review'}</div>
-          <div style={{ display:'flex', gap:8 }}>
-            <button onClick={()=>reviewFlagged(v.id,'approve')} style={{ flex:1, background:`${COLORS.success}1A`, border:`1px solid ${COLORS.success}4D`, borderRadius:14, padding:'9px', color:COLORS.success, fontWeight:700, fontSize:12.5, cursor:'pointer' }}>Approve</button>
-            <button onClick={()=>reviewFlagged(v.id,'reject')} style={{ flex:1, background:`${COLORS.danger}1A`, border:`1px solid ${COLORS.danger}4D`, borderRadius:14, padding:'9px', color:COLORS.danger, fontWeight:700, fontSize:12.5, cursor:'pointer' }}>Remove</button>
+      <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:24, marginBottom:4 }}>Moderation Center</div>
+      <div style={{ color:COLORS.textTertiary, fontSize:12.5, marginBottom:16 }}>Review reports, take action, and track outcomes</div>
+
+      <div style={{ display:'flex', gap:10, flexWrap:'wrap', marginBottom:18 }}>
+        <StatCard label="Open reports" value={totalReports} />
+        <StatCard label="Urgent" value={urgentCount} color={urgentCount>0?COLORS.danger:COLORS.textPrimary} />
+        <StatCard label="Auto-flagged" value={flagged.length} color={COLORS.warning} />
+        <StatCard label="Actions today" value={actionsToday} color={COLORS.success} />
+      </div>
+
+      <div style={{ display:'flex', gap:8, marginBottom:16, overflowX:'auto' }}>
+        <TabButton id="reports" label="User reports" count={groups.length} />
+        <TabButton id="flagged" label="Auto-flagged" count={flagged.length} />
+        <TabButton id="appeals" label="Appeals" count={pendingAppeals.length} />
+        <TabButton id="log" label="Action log" />
+      </div>
+
+      {tab === 'reports' && (
+        <>
+          <div style={{ display:'flex', gap:8, marginBottom:14, flexWrap:'wrap', alignItems:'center' }}>
+            <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search by @username…"
+              style={{ flex:'1 1 180px', background:COLORS.surface2, border:`1px solid ${COLORS.border}`, borderRadius:14, padding:'9px 12px', color:COLORS.textPrimary, fontSize:12.5, outline:'none' }} />
+            <select value={typeFilter} onChange={e=>setTypeFilter(e.target.value)}
+              style={{ background:COLORS.surface2, border:`1px solid ${COLORS.border}`, borderRadius:14, padding:'9px 10px', color:COLORS.textPrimary, fontSize:12.5 }}>
+              <option value="all">All types</option>
+              <option value="user">Accounts</option>
+              <option value="post">Posts</option>
+              <option value="comment">Comments</option>
+            </select>
+            <button onClick={()=>setUrgentOnly(u=>!u)} style={{
+              background: urgentOnly ? `${COLORS.danger}1A` : COLORS.surface2,
+              border:`1px solid ${urgentOnly ? `${COLORS.danger}66` : COLORS.border}`,
+              color: urgentOnly ? COLORS.danger : COLORS.textSecondary,
+              borderRadius:14, padding:'9px 12px', fontSize:12.5, fontWeight:700, cursor:'pointer',
+            }}>Urgent only</button>
           </div>
-        </div>
-      ))}
 
-      <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:22, margin:'24px 0 6px' }}>User reports</div>
-      <div style={{ color:COLORS.textTertiary, fontSize:12.5, marginBottom:20 }}>{reports.length} open report{reports.length===1?'':'s'}</div>
-
-      {loading && <div style={{ textAlign:'center', color:COLORS.textTertiary, padding:40 }}>Loading…</div>}
-      {!loading && reports.length===0 && (
-        <div style={{ textAlign:'center', padding:48, color:COLORS.textTertiary }}>
-          <div style={{ fontSize:40, marginBottom:10 }}>✅</div>
-          <div>No open reports</div>
-        </div>
+          {loading && <div style={{ textAlign:'center', color:COLORS.textTertiary, padding:40 }}>Loading…</div>}
+          {!loading && filteredGroups.length===0 && (
+            <div style={{ textAlign:'center', padding:48, color:COLORS.textTertiary }}>
+              <div style={{ fontSize:40, marginBottom:10 }}>✅</div>
+              <div>No open reports</div>
+            </div>
+          )}
+          {filteredGroups.map(g => <GroupCard key={g.key} group={g} />)}
+        </>
       )}
-      {reports.map(r=>{
-        const isUserReport = r.type==='user';
-        const reportedUser = users.find(u=>u.id===(r.reportedUserId||r.userId));
-        const reporter = users.find(u=>u.id===r.reportedBy);
-        const reporterLabel = r.reporterUsername || reporter?.username || r.reportedBy || 'unknown';
-        const reportedVideo = !isUserReport ? allVideos?.find(v=>v.id===r.videoId) : null;
-        // Prefer the denormalized snapshot captured at report-time (still correct even if the
-        // post/user was later edited or deleted); fall back to a live lookup for older reports
-        // created before those fields existed.
-        const postCaption = r.videoCaption ?? reportedVideo?.description ?? reportedVideo?.caption ?? '(no caption)';
-        const postAuthor = r.videoUsername || reportedVideo?.username || r.videoUserId || 'unknown';
-        const postThumb = r.videoThumbUrl || reportedVideo?.thumbUrl || reportedVideo?.thumbnailUrl;
-        const targetLabel = isUserReport
-          ? `@${r.reportedUsername || reportedUser?.username || r.reportedUserId || 'unknown'}`
-          : `@${postAuthor}`;
-        return (
-          <div key={r.id} style={{ background:COLORS.surface2, borderRadius:18, padding:'14px 16px', marginBottom:10, border:`1px solid ${COLORS.border}` }}>
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:10 }}>
-              <div style={{ display:'flex', gap:10, alignItems:'flex-start' }}>
-                {!isUserReport && postThumb && (
-                  <img src={postThumb} alt="" style={{ width:44, height:44, borderRadius:10, objectFit:'cover', flexShrink:0 }} />
+
+      {tab === 'flagged' && (
+        <>
+          <div style={{ color:COLORS.textTertiary, fontSize:12.5, marginBottom:16 }}>{flagged.length} pending review — caught by automated content moderation on post</div>
+          {flaggedLoading && <div style={{ textAlign:'center', color:COLORS.textTertiary, padding:24 }}>Loading…</div>}
+          {!flaggedLoading && flagged.length===0 && (
+            <div style={{ textAlign:'center', padding:32, color:COLORS.textTertiary }}>
+              <div style={{ fontSize:32, marginBottom:8 }}>✅</div>
+              <div>Nothing flagged right now</div>
+            </div>
+          )}
+          {flagged.map(v=>(
+            <div key={v.id} style={{ background:COLORS.surface2, borderRadius:18, padding:'14px 16px', marginBottom:10, border:`1px solid ${COLORS.border}` }}>
+              <div style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:14, marginBottom:4 }}>@{v.username||'unknown'}</div>
+              <div style={{ color:COLORS.textSecondary, fontSize:12.5, marginBottom:6 }}>{v.description || '(no caption)'}</div>
+              <div style={{ color:COLORS.warning, fontSize:11, marginBottom:10 }}>Flagged: {(v.moderationCategories||[]).join(', ')||'review'}</div>
+              <div style={{ display:'flex', gap:8 }}>
+                <button onClick={()=>reviewFlagged(v.id,'approve')} style={{ flex:1, background:`${COLORS.success}1A`, border:`1px solid ${COLORS.success}4D`, borderRadius:14, padding:'9px', color:COLORS.success, fontWeight:700, fontSize:12.5, cursor:'pointer' }}>Approve</button>
+                <button onClick={()=>reviewFlagged(v.id,'reject')} style={{ flex:1, background:`${COLORS.danger}1A`, border:`1px solid ${COLORS.danger}4D`, borderRadius:14, padding:'9px', color:COLORS.danger, fontWeight:700, fontSize:12.5, cursor:'pointer' }}>Remove</button>
+              </div>
+            </div>
+          ))}
+        </>
+      )}
+
+      {tab === 'appeals' && (
+        <>
+          <div style={{ color:COLORS.textTertiary, fontSize:12.5, marginBottom:16 }}>
+            {pendingAppeals.length} pending — accounts asking for a second look at a suspension or ban
+          </div>
+          {appeals.length===0 && (
+            <div style={{ textAlign:'center', padding:48, color:COLORS.textTertiary }}>
+              <div style={{ fontSize:40, marginBottom:10 }}>📨</div>
+              <div>No appeals yet</div>
+            </div>
+          )}
+          {appeals.map(a => {
+            const busy = busyKey === `appeal:${a.id}`;
+            const statusChip = {
+              pending: { bg: COLORS.warning, label: 'Pending' },
+              approved: { bg: COLORS.success, label: 'Approved' },
+              denied: { bg: COLORS.danger, label: 'Denied' },
+            }[a.status || 'pending'];
+            return (
+              <div key={a.id} style={{
+                background:COLORS.surface2, borderRadius:18, padding:'14px 16px', marginBottom:12,
+                border:`1px solid ${COLORS.border}`, opacity: busy?0.6:1, pointerEvents: busy?'none':'auto',
+              }}>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:10, marginBottom:6 }}>
+                  <div style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:14 }}>@{a.username || 'unknown'}</div>
+                  <span style={{ background:`${statusChip.bg}1A`, color:statusChip.bg, fontSize:10.5, fontWeight:700, padding:'3px 9px', borderRadius:10 }}>{statusChip.label}</span>
+                </div>
+                <div style={{ color:COLORS.textTertiary, fontSize:11.5, marginBottom:8 }}>
+                  {a.accountStatus === 'banned' ? '🚫 Banned' : '⏸ Suspended'}
+                  {a.violationReason ? ` for: ${a.violationReason}` : ''}
+                  {a.createdAt?.toDate ? ` · appealed ${timeAgo(a.createdAt.toDate())}` : ''}
+                </div>
+                <div style={{ color:COLORS.textSecondary, fontSize:13, lineHeight:1.5, background:COLORS.surface3, borderRadius:12, padding:'10px 12px', marginBottom:12 }}>
+                  "{a.message || '(no message provided)'}"
+                </div>
+                {a.status === 'pending' && (
+                  <div style={{ display:'flex', gap:8 }}>
+                    <button onClick={()=>approveAppeal(a)} style={{ flex:1, background:`${COLORS.success}1A`, border:`1px solid ${COLORS.success}4D`, borderRadius:14, padding:'9px', color:COLORS.success, fontWeight:700, fontSize:12.5, cursor:'pointer' }}>Approve &amp; reinstate</button>
+                    <button onClick={()=>denyAppeal(a)} style={{ flex:1, background:`${COLORS.danger}1A`, border:`1px solid ${COLORS.danger}4D`, borderRadius:14, padding:'9px', color:COLORS.danger, fontWeight:700, fontSize:12.5, cursor:'pointer' }}>Deny</button>
+                  </div>
                 )}
-                <div>
-                  <div style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:14 }}>
-                    {isUserReport ? 'Reported user' : 'Reported post'} — {targetLabel}
+              </div>
+            );
+          })}
+        </>
+      )}
+
+      {tab === 'log' && (
+        <>
+          <div style={{ color:COLORS.textTertiary, fontSize:12.5, marginBottom:16 }}>Most recent moderation actions taken</div>
+          {actionLog.length===0 && (
+            <div style={{ textAlign:'center', padding:48, color:COLORS.textTertiary }}>
+              <div style={{ fontSize:40, marginBottom:10 }}>📋</div>
+              <div>No actions logged yet</div>
+            </div>
+          )}
+          {actionLog.map(a => {
+            const actionLabels = {
+              dismiss:'Dismissed report', delete_post:'Deleted post', delete_comment:'Deleted comment', warn:'Warned account',
+              suspend:`Suspended account${a.days?` (${a.days}d)`:''}`, ban:'Banned account', reinstate:'Reinstated account',
+              appeal_approved:'Approved appeal (reinstated)', appeal_denied:'Denied appeal',
+            };
+            const actionColors = { dismiss:COLORS.textSecondary, delete_post:COLORS.danger, delete_comment:COLORS.danger, warn:COLORS.warning, suspend:COLORS.warning, ban:COLORS.danger, reinstate:COLORS.success, appeal_approved:COLORS.success, appeal_denied:COLORS.danger };
+            return (
+              <div key={a.id} style={{ background:COLORS.surface2, borderRadius:14, padding:'12px 14px', marginBottom:8, border:`1px solid ${COLORS.border}`, display:'flex', justifyContent:'space-between', alignItems:'center', gap:10 }}>
+                <div style={{ minWidth:0 }}>
+                  <div style={{ color:COLORS.textPrimary, fontSize:13, fontWeight:600 }}>
+                    {actionLabels[a.action] || a.action} — {a.targetLabel}
                   </div>
-                  {!isUserReport && (
-                    <div style={{ color:COLORS.textSecondary, fontSize:12, marginTop:2, maxWidth:220 }}>
-                      "{postCaption}"
-                    </div>
-                  )}
-                  <div style={{ color:COLORS.textTertiary, fontSize:11.5, marginTop:4 }}>
-                    Reported by <span style={{color:COLORS.textSecondary,fontWeight:600}}>@{reporterLabel}</span>
-                    {r.createdAt?.toDate ? ` · ${timeAgo(r.createdAt.toDate())}` : ''}
-                  </div>
-                  <div style={{ marginTop:6, display:'inline-flex', alignItems:'center', gap:4, background:`${COLORS.danger}14`, color:COLORS.danger, fontSize:11, fontWeight:700, padding:'3px 9px', borderRadius:10 }}>
-                    Reason: {r.reason || 'Not specified'}
+                  <div style={{ color:COLORS.textTertiary, fontSize:11, marginTop:2 }}>
+                    by @{a.actorUsername || 'admin'}{a.reason ? ` · ${a.reason}` : ''}{a.createdAt?.toDate ? ` · ${timeAgo(a.createdAt.toDate())}` : ''}
                   </div>
                 </div>
+                <span style={{ background:`${actionColors[a.action]||COLORS.textTertiary}1A`, color:actionColors[a.action]||COLORS.textTertiary, fontSize:10.5, fontWeight:700, padding:'3px 8px', borderRadius:10, flexShrink:0 }}>{a.reportCount ?? ''}</span>
               </div>
-              <span style={{ background:`${COLORS.warning}1A`, color:COLORS.warning, fontSize:10.5, fontWeight:700, padding:'3px 8px', borderRadius:10, flexShrink:0 }}>{r.type||'report'}</span>
-            </div>
-            <div style={{ display:'flex', gap:8 }}>
-              <button onClick={()=>dismiss(r.id)} style={{ flex:1, background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:14, padding:'9px', color:COLORS.textSecondary, fontWeight:600, fontSize:12.5, cursor:'pointer' }}>Dismiss</button>
-              {r.videoId && (
-                <button onClick={()=>deleteReportedVideo(r)} style={{ flex:1, background:`${COLORS.danger}1A`, border:`1px solid ${COLORS.danger}4D`, borderRadius:14, padding:'9px', color:COLORS.danger, fontWeight:700, fontSize:12.5, cursor:'pointer' }}>Delete post</button>
-              )}
-              {isUserReport && r.reportedUserId && (
-                <button onClick={()=>{ showToast?.('Open their profile from Users search to take action','info'); }} style={{ flex:1, background:`${COLORS.warning}1A`, border:`1px solid ${COLORS.warning}4D`, borderRadius:14, padding:'9px', color:COLORS.warning, fontWeight:700, fontSize:12.5, cursor:'pointer' }}>View profile</button>
-              )}
-            </div>
-          </div>
-        );
-      })}
+            );
+          })}
+        </>
+      )}
     </div>
   );
 };
@@ -5758,6 +6688,7 @@ const InboxPage = ({ t, users, currentUser, showToast, onViewProfile, initialTar
       where('participants','array-contains',currentUser.id),
       orderBy('lastMessageAt','desc')
     );
+    let fallbackUnsub = null;
     const unsub = onSnapshot(q, snap=>{
       setConversations(snap.docs.map(d=>({id:d.id,...d.data()})));
       setConvLoading(false);
@@ -5779,7 +6710,7 @@ snap.docs.forEach(async conv => {
       // a real failure and the inbox should say so instead of silently looking
       // like "no messages yet" forever.
       const q2 = query(collection(db,'conversations'), where('participants','array-contains',currentUser.id));
-      onSnapshot(q2, snap2=>{
+      fallbackUnsub = onSnapshot(q2, snap2=>{
         const sorted = snap2.docs
           .map(d=>({id:d.id,...d.data()}))
           .sort((a,b)=>(b.lastMessageAt?.seconds||0)-(a.lastMessageAt?.seconds||0));
@@ -5804,7 +6735,7 @@ snap.docs.forEach(async conv => {
         setConvLoadError(true);
       });
     });
-    return ()=>unsub();
+    return () => { unsub(); fallbackUnsub?.(); };
   },[currentUser?.id]);
 
   const getConversationId = (uid1,uid2) => [uid1,uid2].sort().join('_');
@@ -7035,7 +7966,7 @@ const QRCodePage = ({ user, onClose }) => (
       <div style={{ color:'white', fontWeight:800, fontSize:18, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>My QR Code</div>
       <div style={{ width:180, height:180, margin:'0 auto 20px', borderRadius:20, overflow:'hidden', background:'white', display:'flex', alignItems:'center', justifyContent:'center' }}>
   <img
-    src={`https://chart.googleapis.com/chart?chs=160x160&cht=qr&chl=${encodeURIComponent('https://infinity-now.vercel.app/user/' + user?.username)}&choe=UTF-8`}
+    src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent('https://infinity-now.vercel.app/user/' + user?.username)}`}
     alt="QR Code"
     style={{ width:160, height:160 }}
   />
@@ -7395,7 +8326,7 @@ if(!result.user.emailVerified && !isNewAccount){
       <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'40px 24px 20px', position:'relative' }}>
         <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse at 50% 30%,rgba(11,95,255,0.14),rgba(236,72,153,0.08),transparent 65%)' }} />
         <div style={{ position:'relative', textAlign:'center', marginBottom:40 }}>
-          <img src="https://res.cloudinary.com/dotvhzjmc/image/upload/znfksngv27boh3c1kxpv.png" style={{ width:80, height:80, borderRadius:24, objectFit:'cover', margin:'0 auto 20px', display:'block', boxShadow:'0 20px 60px rgba(11,95,255,0.25)' }} />
+          <img src="https://res.cloudinary.com/dotvhzjmc/image/upload/znfksngv27boh3c1kxpv.png" alt="Infinity" style={{ width:80, height:80, borderRadius:24, objectFit:'cover', margin:'0 auto 20px', display:'block', boxShadow:'0 20px 60px rgba(11,95,255,0.25)' }} />
           <p style={{ color:COLORS.textSecondary, fontSize:14, marginTop:10 }}>{isLogin?'Welcome back! 👋':'Join the community 🎉'}</p>
         </div>
         <div style={{ position:'relative', width:'100%', maxWidth:340 }}>
@@ -7610,7 +8541,7 @@ return (
   );
 };
 /* ─────────────── NOTIFICATIONS — REAL-TIME INSTAGRAM/TELEGRAM GRADE ─────────────── */
-const NotificationsPage = ({ currentUser, users, videos, onClose, onViewProfile, t, onNavigate }) => {
+const NotificationsPage = ({ currentUser, users, videos, onClose, onViewProfile, onFollow, followed, showToast, t, onNavigate }) => {
   const [notifs, setNotifs] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -7648,8 +8579,6 @@ const NotificationsPage = ({ currentUser, users, videos, onClose, onViewProfile,
   };
 
   const typeLabelRef = { current: { like:'liked your post.', comment:'commented on your post.', follow:'started following you.', mention:'mentioned you in a comment.', gift:'sent a gift.', live:'went live.', story:'posted a new story.', message:'sent a message.', jobApplication:'applied to your job.', applicationReceived:'application update.', applicationUpdate:'application update.' } };
-  const showToastRef = { current: null };
-
   const [activeFilter, setActiveFilter] = useState('all');
   const NOTIF_FILTERS = [
     {id:'all', label:'All'},
@@ -7690,8 +8619,12 @@ const NotificationsPage = ({ currentUser, users, videos, onClose, onViewProfile,
             <span style={{ color:COLORS.textSecondary }}>{actionText}</span>
             {suffixIcon && <span> {suffixIcon}</span>}
           </div>
-          {n.type==='follow' && (
-            <button onClick={e=>{e.stopPropagation(); showToastRef.current?.('Followed back!','success');}} style={{ marginTop:8, background:COLORS.gradient, border:'none', color:'white', borderRadius:14, padding:'6px 16px', fontSize:12, fontWeight:700, cursor:'pointer', boxShadow:SHADOW.glow(COLORS.brand), transition:TRANSITION.fast }}>Follow back</button>
+          {n.type==='follow' && n.fromUserId !== currentUser?.id && (
+            (followed||[]).includes(n.fromUserId) ? (
+              <button onClick={e=>{ e.stopPropagation(); onFollow?.(n.fromUserId); }} style={{ marginTop:8, background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, color:COLORS.textSecondary, borderRadius:14, padding:'6px 16px', fontSize:12, fontWeight:700, cursor:'pointer', transition:TRANSITION.fast }}>Following</button>
+            ) : (
+              <button onClick={async e=>{ e.stopPropagation(); await onFollow?.(n.fromUserId); showToast?.('Followed back!','success'); }} style={{ marginTop:8, background:COLORS.gradient, border:'none', color:'white', borderRadius:14, padding:'6px 16px', fontSize:12, fontWeight:700, cursor:'pointer', boxShadow:SHADOW.glow(COLORS.brand), transition:TRANSITION.fast }}>Follow back</button>
+            )
           )}
         </div>
         <div style={{ color:COLORS.textTertiary, fontSize:11.5, flexShrink:0, paddingTop:2 }}>{timeAgoShort(n.date)}</div>
@@ -8132,6 +9065,12 @@ const TabGlyph = ({id, active, currentUser}) => {
 
 /* ─────────────── MAIN APP ─────────────── */
 export default function DaguV3App() {
+  // Holds the currently-registered presence 'beforeunload' handler so handleLogin can
+  // remove the previous one before adding a new one. Without this, switching accounts
+  // (or re-authenticating) in the same tab stacked up duplicate listeners, each holding
+  // a stale profile.id in its closure and each firing on unload — noisy writes and one
+  // more listener leaked per login.
+  const presenceUnloadHandlerRef = useRef(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [users, setUsers] = useState([]);
@@ -8333,6 +9272,18 @@ const [blockedUsers, setBlockedUsers] = useState([]);
     });
     return ()=>unsub();
   },[]);
+  // Auto-reinstate: once a suspension's window has passed, the account shouldn't
+  // stay gated on a stale `accountStatus:'suspended'` flag waiting for an admin to
+  // notice. getEnforcementStatus already treats an expired suspension as "not
+  // enforced" for rendering purposes; this effect clears the flag itself (locally
+  // and in Firestore) so the badge and any other reads of accountStatus catch up.
+  useEffect(()=>{
+    if (currentUser?.accountStatus !== 'suspended') return;
+    const until = tsToDate(currentUser.suspendedUntil);
+    if (!until || until.getTime() > Date.now()) return;
+    updateDoc(doc(db,'users',currentUser.id), { accountStatus:'active', suspendedUntil:null }).catch(()=>{});
+    setCurrentUser(u => u ? { ...u, accountStatus:'active', suspendedUntil:null } : u);
+  }, [currentUser?.accountStatus, currentUser?.suspendedUntil, currentUser?.id]);
 // Clean up expired stories
   useEffect(()=>{
     const cleanup = async () => {
@@ -8359,6 +9310,20 @@ const [blockedUsers, setBlockedUsers] = useState([]);
     });
     return ()=>unsub();
   },[]);
+
+  // Mirrors accountStatus/suspendedUntil/lastModerationAction from the live users
+  // collection onto currentUser. Without this, a ban or suspension applied while
+  // someone is actively using the app wouldn't take effect until their next login —
+  // the enforcement gate reads currentUser, and currentUser was otherwise only ever
+  // set once at sign-in.
+  useEffect(()=>{
+    if (!currentUser?.id) return;
+    const live = users.find(u => u.id === currentUser.id);
+    if (!live) return;
+    if (live.accountStatus !== currentUser.accountStatus || live.suspendedUntil !== currentUser.suspendedUntil) {
+      setCurrentUser(u => u ? { ...u, accountStatus: live.accountStatus, suspendedUntil: live.suspendedUntil, lastModerationAction: live.lastModerationAction, strikeCount: live.strikeCount } : u);
+    }
+  }, [users, currentUser?.id, currentUser?.accountStatus, currentUser?.suspendedUntil]);
 
   // Update friends when followed or users change
   useEffect(()=>{
@@ -8429,9 +9394,14 @@ setBlockedUsers(profile.blockedUsers||[]);
     }
     showToast(`Welcome back, @${profile.username}! 👋`,'success');
     setDoc(doc(db,'presence',profile.id),{online:true,lastSeen:serverTimestamp()},{merge:true}).catch(()=>{});
-    window.addEventListener('beforeunload',()=>{
+    if (presenceUnloadHandlerRef.current) {
+      window.removeEventListener('beforeunload', presenceUnloadHandlerRef.current);
+    }
+    const onUnload = () => {
       setDoc(doc(db,'presence',profile.id),{online:false,lastSeen:serverTimestamp()},{merge:true}).catch(()=>{});
-    });
+    };
+    presenceUnloadHandlerRef.current = onUnload;
+    window.addEventListener('beforeunload', onUnload);
     try {
       const permission = await Notification.requestPermission();
       if(permission === 'granted') {
@@ -8442,6 +9412,13 @@ setBlockedUsers(profile.blockedUsers||[]);
     } catch(e) { console.log('Push notification setup failed:', e); }
   };
 const handleLogout = async () => {
+    if (currentUser?.id) {
+      await setDoc(doc(db,'presence',currentUser.id),{online:false,lastSeen:serverTimestamp()},{merge:true}).catch(()=>{});
+    }
+    if (presenceUnloadHandlerRef.current) {
+      window.removeEventListener('beforeunload', presenceUnloadHandlerRef.current);
+      presenceUnloadHandlerRef.current = null;
+    }
     await signOut(auth);
     setCurrentUser(null);
     showToast('Logged out','info');
@@ -8514,6 +9491,17 @@ const handleMessage = uid => {
     </div>
   );
 
+  // Enforcement gate — a banned or suspended account never reaches the app itself.
+  // This is the piece that was missing: accountStatus previously only drove a badge
+  // in the Moderation Center, nothing actually stopped the account from being used.
+  if(getEnforcementStatus(currentUser)) return (
+    <>
+      <GlobalStyles />
+      <EnforcementScreen user={currentUser} onSignOut={handleLogout} showToast={showToast} />
+      {toast && <Toast {...toast} onClose={()=>setToast(null)} />}
+    </>
+  );
+
   return (
     <div style={{ maxWidth:430, margin:'0 auto', height:'100dvh', background:COLORS.bg, display:'flex', flexDirection:'column', position:'relative', overflow:'hidden' }}>
       <GlobalStyles />
@@ -8556,7 +9544,7 @@ const handleMessage = uid => {
 
       {showSoundLibrary && <SoundLibraryPage onSelectSound={s=>{showToast?.(`Selected: ${s.name}`,'success'); setShowSoundLibrary(false);}} onClose={()=>setShowSoundLibrary(false)} />}
       {showQRCode && <QRCodePage user={currentUser} onClose={()=>setShowQRCode(false)} />}
-      {showNotifications && <NotificationsPage currentUser={currentUser} users={users} videos={videos} onClose={()=>setShowNotifications(false)} onViewProfile={uid=>{handleViewProfile(uid); setShowNotifications(false);}} t={t} onNavigate={(tab, opts)=>{ setShowNotifications(false); if(tab==='inbox'){ setActiveTab('inbox'); if(opts?.targetUserId) setInboxTargetId(opts.targetUserId); } else if(tab==='jobs'){ setActiveTab('friends'); } else { setActiveTab(tab||'home'); } }} />}
+      {showNotifications && <NotificationsPage currentUser={currentUser} users={users} videos={videos} onClose={()=>setShowNotifications(false)} onViewProfile={uid=>{handleViewProfile(uid); setShowNotifications(false);}} onFollow={toggleFollow} followed={followed} showToast={showToast} t={t} onNavigate={(tab, opts)=>{ setShowNotifications(false); if(tab==='inbox'){ setActiveTab('inbox'); if(opts?.targetUserId) setInboxTargetId(opts.targetUserId); } else if(tab==='jobs'){ setActiveTab('friends'); } else { setActiveTab(tab||'home'); } }} />}
       {showAnalytics && <CreatorAnalytics user={currentUser} videos={videos} onClose={()=>setShowAnalytics(false)} />}
       {showCreateStory && <CreateStoryModal currentUser={currentUser} onClose={()=>setShowCreateStory(false)} showToast={showToast} />}
       {showStoriesPage && (
