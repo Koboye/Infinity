@@ -1,6 +1,7 @@
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
+import { getMessaging } from 'firebase-admin/messaging';
 
 // Server-only. Never import this file from a 'use client' component.
 // Requires FIREBASE_PROJECT_ID / FIREBASE_CLIENT_EMAIL / FIREBASE_PRIVATE_KEY
@@ -26,6 +27,7 @@ function initAdmin() {
 const app = initAdmin();
 export const adminDb = getFirestore(app);
 export const adminAuth = getAuth(app);
+export const adminMessaging = getMessaging(app);
 
 // Verifies the Firebase ID token sent by the client in an Authorization: Bearer <token> header.
 // Throws if missing/invalid. Use in every route that needs to know who's calling.
