@@ -15,8 +15,9 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Too many upload requests. Try again later.' }, { status: 429 });
     }
 
-    if (!process.env.CLOUDINARY_API_SECRET || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_CLOUD_NAME) {
-      return NextResponse.json({ error: 'Uploads are not configured on this server.' }, { status: 503 });
+    const missing = ['CLOUDINARY_API_SECRET', 'CLOUDINARY_API_KEY', 'CLOUDINARY_CLOUD_NAME'].filter(k => !process.env[k]);
+    if (missing.length) {
+      return NextResponse.json({ error: `Uploads are not configured on this server. Missing: ${missing.join(', ')}` }, { status: 503 });
     }
 
     // Cloudinary requires every non-file param the client will actually upload with
