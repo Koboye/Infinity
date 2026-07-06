@@ -4,8 +4,8 @@
   "description": "Infinity — share, discover, and connect.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#F7F5FC",
-  "theme_color": "#8B5CF6",
+  "background_color": "#F5F8FF",
+  "theme_color": "#0B5FFF",
   "orientation": "portrait",
   "icons": [
     {
