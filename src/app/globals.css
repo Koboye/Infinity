@@ -6,7 +6,24 @@ html,
 body {
   padding: 0;
   margin: 0;
-  background: #F6F5FB;
+  /* Was #F6F5FB (a leftover purple-tinted grey) — now matches COLORS.bg from
+     src/lib/theme.js so there's no mismatched flash behind the app's real UI. */
+  background: #F5F8FF;
+}
+
+html {
+  /* Mobile browsers (mainly iOS Safari and some Android WebViews) silently bump text
+     size up on some pages to "improve readability", independent of any font-size the
+     app sets. That's the other half of why the same text could look a different size
+     device to device — the viewport fix in layout.tsx handles the scaling half, this
+     handles the auto-inflation half. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* One consistent font stack at the root so the (majority of) inline styles that don't
+     set their own fontFamily inherit this instead of each OS's differently-sized default
+     sans-serif (Roboto/San Francisco/Segoe UI all render noticeably different sizes at
+     the same px value) — same stack already used by the app's own headings. */
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
 }
 
 * {
