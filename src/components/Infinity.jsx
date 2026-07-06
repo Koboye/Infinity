@@ -12,7 +12,7 @@ import { COLORS, TYPE, RADIUS, applyTheme, getStoredTheme, subscribeTheme } from
 // This is a drop-in async replacement: same call signature/semantics as window.confirm
 // (`if (await confirmDialog('message')) { ... }`) but resolves via a real React modal
 // styled with the app's own COLORS/RADIUS tokens instead. ConfirmDialogHost (rendered
-// once, near the root, in DaguV3App) registers itself into the module-level handler
+// once, near the root, in InfinityV1app) registers itself into the module-level handler
 // below so confirmDialog can be called from any component or plain async function in
 // this file without threading a prop/context through every call site — the same
 // "just works from anywhere" ergonomics window.confirm had, but themed.
@@ -295,7 +295,7 @@ const useLiveTranslation = (text, targetLang) => {
 
 /* ─────────────── EXTRA CONSTANTS (v4) ─────────────── */
 const TRENDING_HASHTAGS = [
-  '#dagu', '#infinity', '#trending', '#viral', '#fyp', '#ethiopia', '#addisababa',
+  '#Infinity', '#infinity', '#trending', '#viral', '#fyp', '#ethiopia', '#addisababa',
   '#africa', '#music', '#dance', '#comedy', '#fashion', '#food', '#travel', '#tech',
 ];
 
@@ -1063,7 +1063,7 @@ const DiscoverPage = ({ videos, users, onViewProfile, showToast, onClose }) => {
 // (Previously an unfinished useTheme() hook lived here — it computed its own isDark/colors
 // object but nothing ever read them, and its toggleTheme wrote to Firestore but never fed
 // back into the actual COLORS tokens the rest of the app renders with. Removed in favor of
-// the applyTheme()/COLORS_DARK system in src/lib/theme.js, wired up in DaguV3App below.)
+// the applyTheme()/COLORS_DARK system in src/lib/theme.js, wired up in InfinityV1app below.)
 
 /* ─────────────── SEND NOTIFICATION HELPER (v4 — already defined below, re-export alias) ─────────────── */
 // Title shown by the OS notification (lock screen / notification tray) per type — kept
@@ -8107,7 +8107,7 @@ const SearchOverlay = ({ onClose, videos, users, onViewProfile }) => {
   const [query, setQuery] = useState('');
   const [tab, setTab] = useState('all');
   const [recentSearches, setRecentSearches] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('dagu_recent_searches') || '[]'); } catch { return []; }
+    try { return JSON.parse(localStorage.getItem('Infinity_recent_searches') || '[]'); } catch { return []; }
   });
   const [trendingSearches] = useState(['#viral', '#ethiopia', '#music', '#dance', '#comedy', '#travel', '#food', '#fashion']);
 
@@ -8115,12 +8115,12 @@ const SearchOverlay = ({ onClose, videos, users, onViewProfile }) => {
     if (!term.trim()) return;
     const updated = [term, ...recentSearches.filter(r => r !== term)].slice(0, 8);
     setRecentSearches(updated);
-    try { localStorage.setItem('dagu_recent_searches', JSON.stringify(updated)); } catch {}
+    try { localStorage.setItem('Infinity_recent_searches', JSON.stringify(updated)); } catch {}
   };
 
   const clearRecentSearches = () => {
     setRecentSearches([]);
-    try { localStorage.removeItem('dagu_recent_searches'); } catch {}
+    try { localStorage.removeItem('Infinity_recent_searches'); } catch {}
   };
 
   const results = useMemo(()=>{
@@ -8184,7 +8184,7 @@ const SearchOverlay = ({ onClose, videos, users, onViewProfile }) => {
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><polyline points="12 8 12 12 14 14"/><circle cx="12" cy="12" r="10"/></svg>
                     </div>
                     <span style={{ color:COLORS.textTertiary, fontSize:14, flex:1 }}>{term}</span>
-                    <button onClick={e=>{e.stopPropagation(); const u=[...recentSearches]; u.splice(i,1); setRecentSearches(u); try{localStorage.setItem('dagu_recent_searches',JSON.stringify(u));}catch{}}} style={{ background:'none', border:'none', color:COLORS.textTertiary, cursor:'pointer', fontSize:16 }}>✕</button>
+                    <button onClick={e=>{e.stopPropagation(); const u=[...recentSearches]; u.splice(i,1); setRecentSearches(u); try{localStorage.setItem('Infinity_recent_searches',JSON.stringify(u));}catch{}}} style={{ background:'none', border:'none', color:COLORS.textTertiary, cursor:'pointer', fontSize:16 }}>✕</button>
                   </div>
                 ))}
               </div>
@@ -9929,7 +9929,7 @@ const TabGlyph = ({id, active, currentUser}) => {
 };
 
 /* ─────────────── MAIN APP ─────────────── */
-export default function DaguV3App() {
+export default function InfinityV1app() {
   // Holds the currently-registered presence 'beforeunload' handler so handleLogin can
   // remove the previous one before adding a new one. Without this, switching accounts
   // (or re-authenticating) in the same tab stacked up duplicate listeners, each holding
