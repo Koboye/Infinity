@@ -1,10 +1,69 @@
-// DaguV3.jsx — FULLY REAL: Firebase Auth + Firestore + Cloudinary + EmailJS
+// InfinityV1.jsx — FULLY REAL: Firebase Auth + Firestore + Cloudinary + EmailJS
 import React, { useState, useEffect, useRef, useCallback, memo, useMemo } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot, increment, serverTimestamp, arrayUnion, arrayRemove, limit, startAfter, Timestamp } from 'firebase/firestore';
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithCustomToken, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, updateProfile, sendPasswordResetEmail, sendEmailVerification, getIdTokenResult } from 'firebase/auth';
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 import { COLORS, TYPE, RADIUS, applyTheme, getStoredTheme, subscribeTheme } from '@/lib/theme';
+
+/* ─────────────── IN-APP CONFIRM DIALOG (replaces window.confirm) ─────────────── */
+// window.confirm() renders the browser's own native dialog — shows the raw domain
+// ("infinity-now.vercel.app says"), ignores all app styling, and can't be customized.
+// This is a drop-in async replacement: same call signature/semantics as window.confirm
+// (`if (await confirmDialog('message')) { ... }`) but resolves via a real React modal
+// styled with the app's own COLORS/RADIUS tokens instead. ConfirmDialogHost (rendered
+// once, near the root, in DaguV3App) registers itself into the module-level handler
+// below so confirmDialog can be called from any component or plain async function in
+// this file without threading a prop/context through every call site — the same
+// "just works from anywhere" ergonomics window.confirm had, but themed.
+let _confirmHandler = null;
+function confirmDialog(message, options = {}) {
+  return new Promise((resolve) => {
+    if (_confirmHandler) {
+      _confirmHandler({ message, resolve, ...options });
+    } else {
+      // Fallback if the host hasn't mounted yet (shouldn't normally happen).
+      resolve(window.confirm(message));
+    }
+  });
+}
+
+function ConfirmDialogHost() {
+  const [req, setReq] = useState(null); // { message, resolve, danger, confirmLabel, cancelLabel }
+  useEffect(() => {
+    _confirmHandler = (r) => setReq(r);
+    return () => { _confirmHandler = null; };
+  }, []);
+  if (!req) return null;
+  const finish = (result) => { req.resolve(result); setReq(null); };
+  return (
+    <div
+      onClick={() => finish(false)}
+      style={{ position:'fixed', inset:0, zIndex:10000, background:'rgba(11,15,25,0.5)', display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{ background:COLORS.surface, borderRadius:RADIUS.lg, padding:'22px 20px', width:'100%', maxWidth:340, boxShadow:'0 20px 60px rgba(11,15,25,0.25)' }}
+      >
+        <div style={{ fontSize:TYPE.md, color:COLORS.textPrimary, lineHeight:1.4, marginBottom:20 }}>{req.message}</div>
+        <div style={{ display:'flex', gap:10, justifyContent:'flex-end' }}>
+          <button
+            onClick={() => finish(false)}
+            style={{ padding:'10px 18px', borderRadius:RADIUS.pill, border:'none', background:COLORS.surfaceAlt, color:COLORS.textSecondary, fontSize:TYPE.base, fontWeight:600, cursor:'pointer' }}
+          >
+            {req.cancelLabel || 'Cancel'}
+          </button>
+          <button
+            onClick={() => finish(true)}
+            style={{ padding:'10px 18px', borderRadius:RADIUS.pill, border:'none', background:req.danger === false ? COLORS.brand : COLORS.danger, color:'#FFFFFF', fontSize:TYPE.base, fontWeight:600, cursor:'pointer' }}
+          >
+            {req.confirmLabel || 'OK'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /* ─────────────── SHARED ELEVATION / MOTION SYSTEM ───────────────
    A small, consistent set of shadow + transition tokens used across every
@@ -3228,7 +3287,7 @@ const CommentsModal = ({ video, currentUser, onClose, showToast, onViewProfile }
   };
 
   const deleteComment = async (c) => {
-    if (!window.confirm('Delete this comment? This cannot be undone.')) return;
+    if (!(await confirmDialog('Delete this comment? This cannot be undone.'))) return;
     try {
       await deleteDoc(doc(db, 'comments', c.id));
       await updateDoc(doc(db, 'videos', video.id), { comments: increment(-1) }).catch(()=>{});
@@ -3407,7 +3466,7 @@ const PostOptionsMenu = ({ video, currentUser, onClose, showToast, onDelete, onB
     { label:`Block ${name}`, show:!isMine, action:()=>{ onBlock?.(video?.userId); showToast?.(`Blocked ${name} — their posts are now hidden`,'info'); }, icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="4.9" y1="4.9" x2="19.1" y2="19.1"/></svg>) },
     { label:'Report', show:!isMine, danger:true, keepOpen:true, action:()=>{ setShowReportSheet(true); }, icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 9v4M12 17h.01"/><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>) },
     { label:'Delete Post', show:isMine, danger:true, sep:true, action:async()=>{
-        if(!window.confirm('Delete this post? This cannot be undone.')) return;
+        if(!(await confirmDialog('Delete this post? This cannot be undone.'))) return;
         try{ await deleteDoc(doc(db,'videos',video.id)); showToast?.('Post deleted','success'); }
         catch(e){ showToast?.('Could not delete post','error'); }
         onDelete?.(video?.id); onClose();
@@ -5218,7 +5277,7 @@ const ModerationPage = ({ user, users, allVideos, showToast, onBack }) => {
 
   const deletePostGroup = (group) => runAction(group, async () => {
     if (!group.targetId) return;
-    if (!window.confirm('Delete this reported post? This cannot be undone.')) return;
+    if (!(await confirmDialog('Delete this reported post? This cannot be undone.'))) return;
     await deleteDoc(doc(db,'videos',group.targetId)).catch(()=>{});
     await resolveGroupReports(group);
     await logAction(group, 'delete_post');
@@ -5227,7 +5286,7 @@ const ModerationPage = ({ user, users, allVideos, showToast, onBack }) => {
 
   const deleteCommentGroup = (group) => runAction(group, async () => {
     if (!group.targetId) return;
-    if (!window.confirm('Delete this reported comment? This cannot be undone.')) return;
+    if (!(await confirmDialog('Delete this reported comment? This cannot be undone.'))) return;
     await deleteDoc(doc(db,'comments',group.targetId)).catch(()=>{});
     // Keep the parent post's comment count in sync — it's incremented on post,
     // so a moderation-removed comment needs the matching decrement.
@@ -5268,7 +5327,7 @@ const ModerationPage = ({ user, users, allVideos, showToast, onBack }) => {
 
   const banUser = (group) => runAction(group, async () => {
     if (!group.targetId) return;
-    if (!window.confirm('Permanently ban this account? This cannot be undone from here.')) return;
+    if (!(await confirmDialog('Permanently ban this account? This cannot be undone from here.'))) return;
     await updateDoc(doc(db,'users',group.targetId), {
       accountStatus: 'banned', suspendedUntil: null,
       lastModerationAction: { action:'ban', at: new Date(), reason: group.topReason },
@@ -5320,7 +5379,7 @@ const ModerationPage = ({ user, users, allVideos, showToast, onBack }) => {
 
   const denyAppeal = (appeal) => runAppealAction(appeal, async () => {
     if (!appeal.id) return;
-    if (!window.confirm('Deny this appeal? The account will remain restricted.')) return;
+    if (!(await confirmDialog('Deny this appeal? The account will remain restricted.'))) return;
     await updateDoc(doc(db,'appeals',appeal.id), {
       status:'denied', resolvedAt: serverTimestamp(), resolvedBy: user?.id,
     });
@@ -5903,7 +5962,7 @@ if(activeSubPage==='settings') return (
         </div>
         {/* RESET ACCOUNT — paste here */}
 <div onClick={async()=>{
-  if(window.confirm('Reset account? This will delete all your posts, comments and likes but keep your account.')){
+  if(await confirmDialog('Reset account? This will delete all your posts, comments and likes but keep your account.')){
     try {
       const vSnap = await getDocs(query(collection(db,'videos'),where('userId','==',user.id)));
       await Promise.all(vSnap.docs.map(d=>deleteDoc(doc(db,'videos',d.id))));
@@ -5931,7 +5990,7 @@ if(activeSubPage==='settings') return (
         </div>
 
         <div onClick={async()=>{
-          if(window.confirm('Delete account? This cannot be undone.')){
+          if(await confirmDialog('Delete account? This cannot be undone.')){
             try{
               const vSnap = await getDocs(query(collection(db,'videos'),where('userId','==',user.id)));
               await Promise.all(vSnap.docs.map(d=>deleteDoc(doc(db,'videos',d.id))));
@@ -6180,7 +6239,7 @@ if(activeSubPage==='settings') return (
   <button
     onClick={async (e) => {
       e.stopPropagation();
-      if (window.confirm('Delete this post?')) {
+      if (await confirmDialog('Delete this post?')) {
         await deleteDoc(doc(db, 'videos', v.id));
         showToast?.('Post deleted', 'success');
       }
@@ -6882,7 +6941,7 @@ unsub = onSnapshot(q, (snap) => {
               </div>
               {isMine && (
                 <button onClick={async()=>{
-  const choice = window.confirm('Delete for everyone?');
+  const choice = await confirmDialog('Delete for everyone?');
   if(choice){
     await updateDoc(doc(db,'messages',conversationId,'msgs',msg.id), { 
       text: '🚫 Message deleted', 
@@ -8925,6 +8984,7 @@ const AuthScreen = ({ onLogin }) => {
   const [step, setStep] = useState('method');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
   const [pendingOtp, setPendingOtp] = useState('');
   const [pendingCreds, setPendingCreds] = useState(null);
   const [otpInput, setOtpInput] = useState('');
@@ -9303,6 +9363,7 @@ return (
             </div>
           </div>
           {error && <div style={{background:`${COLORS.danger}1A`,border:`1px solid ${COLORS.danger}4D`,borderRadius:12,padding:'10px 14px',color:COLORS.danger,fontSize:12,marginBottom:12}}>{error}</div>}
+          {successMsg && <div style={{background:`${COLORS.success}1A`,border:`1px solid ${COLORS.success}4D`,borderRadius:12,padding:'10px 14px',color:COLORS.success,fontSize:12,marginBottom:12}}>{successMsg}</div>}
           {!isLogin && <>
             <input placeholder="Full Name" value={fullName} onChange={e=>setFullName(e.target.value)} style={{ width:'100%', background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:14, padding:'13px 16px', color:COLORS.textPrimary, marginBottom:10, outline:'none', fontSize:14, boxSizing:'border-box' }} />
             <input placeholder="Username" value={username} onChange={e=>setUsername(e.target.value)} style={{ width:'100%', background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:14, padding:'13px 16px', color:COLORS.textPrimary, marginBottom:10, outline:'none', fontSize:14, boxSizing:'border-box' }} />
@@ -9324,8 +9385,9 @@ return (
       try {
         await sendPasswordResetEmail(auth, identifier);
         setError('');
-        alert('Password reset email sent! Check your inbox.');
+        setSuccessMsg('Password reset email sent! Check your inbox.');
       } catch (e) {
+        setSuccessMsg('');
         setError('Could not send reset email: ' + e.message);
       }
     }}
@@ -10308,6 +10370,7 @@ const handleMessage = uid => {
   return (
     <div style={{ maxWidth:430, margin:'0 auto', height:'100dvh', background:COLORS.bg, display:'flex', flexDirection:'column', position:'relative', overflow:'hidden' }}>
       <GlobalStyles />
+      <ConfirmDialogHost />
       {!isOnline && <OfflineBanner />}
 {incomingCall && !showCall && (
         <IncomingCallScreen
