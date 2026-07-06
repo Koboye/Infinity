@@ -4,7 +4,7 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot, increment, serverTimestamp, arrayUnion, arrayRemove, limit, startAfter, Timestamp } from 'firebase/firestore';
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithCustomToken, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, updateProfile, sendPasswordResetEmail, sendEmailVerification, getIdTokenResult } from 'firebase/auth';
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
-import { COLORS, TYPE, RADIUS, applyTheme, getStoredTheme, subscribeTheme } from '@/lib/theme';
+import { COLORS, TYPE, RADIUS, applyTheme, getStoredTheme, subscribeTheme, resolveAvatarColor, pickAvatarColor } from '@/lib/theme';
 
 /* ─────────────── IN-APP CONFIRM DIALOG (replaces window.confirm) ─────────────── */
 // window.confirm() renders the browser's own native dialog — shows the raw domain
@@ -625,7 +625,10 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack }) => {
     // Sort client-side instead.
     const q = query(collection(db, 'groups'), where('members', 'array-contains', currentUser.id));
     const unsub = onSnapshot(q, snap => {
-      const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const list = snap.docs.map(d => {
+        const data = d.data();
+        return { id: d.id, ...data, avatarColor: resolveAvatarColor(data.avatarColor, d.id) };
+      });
       list.sort((a, b) => (b.lastMessageAt?.toMillis?.() || 0) - (a.lastMessageAt?.toMillis?.() || 0));
       setGroups(list);
     }, (err) => {
@@ -654,7 +657,7 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack }) => {
     if (!groupName.trim() || selectedMembers.length === 0) { showToast?.('Add a name and at least one member', 'error'); return; }
     const members = [currentUser.id, ...selectedMembers];
     const avatar = groupName.trim()[0].toUpperCase();
-    const avatarColor = `hsl(${Math.floor(Math.random() * 360)},70%,60%)`;
+    const avatarColor = pickAvatarColor(groupName.trim() + Date.now());
     try {
       const ref = await addDoc(collection(db, 'groups'), {
         name: groupName.trim(), members, admin: currentUser.id,
@@ -1268,7 +1271,7 @@ const buildDefaultProfile = (uid, data = {}) => ({
   email: data.email || '', // kept public/queryable — Google sign-in account-linking looks
                             // up existing users by email and there's no backend to proxy that
   avatar: (data.username || data.fullName || data.email || 'U')[0].toUpperCase(),
-  avatarColor: data.avatarColor || `hsl(${Math.floor(Math.random()*360)},70%,60%)`,
+  avatarColor: data.avatarColor || pickAvatarColor(uid),
   avatarUrl: data.avatarUrl || null,
   bio: data.bio || 'New to Infinity! 🎬',
   link: '',
@@ -3505,6 +3508,7 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
   // check the live users list (same one Home/Infinity already have in hand) to show a
   // verified badge next to the name, exactly like Instagram/Facebook/X do.
   const author = useMemo(()=> (users||[]).find(u=>u.id===video.userId), [users, video.userId]);
+  const displayName = author?.fullName || video.fullName || author?.username || video.username || 'user';
   // Double-tap-to-like — Instagram's signature interaction. A double tap on the media
   // always likes (never unlikes) and shows a brief heart-burst overlay; burstKey forces
   // the CSS animation to restart on every tap instead of only playing once ever.
@@ -3629,35 +3633,25 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
     <div style={{ background:COLORS.surface, borderRadius:RADIUS.lg, padding:14, marginBottom:0, boxShadow:SHADOW.card, border:`1px solid ${COLORS.border}`, transition:TRANSITION.base }}>
       <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:10 }}>
         <div onClick={()=>onViewProfile?.(video.userId)} style={{ width:44, height:44, borderRadius:'50%', background:video.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, fontSize:17, overflow:'hidden', cursor:'pointer', flexShrink:0, position:'relative', border: isLive ? `2px solid ${COLORS.live}` : `2px solid ${COLORS.surface}`, boxShadow: isLive ? SHADOW.glow(COLORS.live) : SHADOW.xs, transition:TRANSITION.fast }}>
-          {video.avatarUrl ? <img src={video.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : (video.username||'?')[0]?.toUpperCase()}
+          {(author?.avatarUrl || video.avatarUrl) ? <img src={author?.avatarUrl || video.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : (displayName||'?')[0]?.toUpperCase()}
           {isLive && (
             <div style={{ position:'absolute', bottom:-3, left:'50%', transform:'translateX(-50%)', background:COLORS.live, borderRadius:6, padding:'1px 5px', fontSize:7, fontWeight:800, color:'white', letterSpacing:0.3, whiteSpace:'nowrap' }}>LIVE</div>
           )}
         </div>
         <div style={{ flex:1, minWidth:0, display:'flex', flexDirection:'column', overflow:'hidden', cursor:'pointer' }} onClick={()=>onViewProfile?.(video.userId)}>
-          {/* Posts now show only the person's display name — the @username handle
-              underneath/alongside it has been removed per request. Falls back to the
-              username itself only when no fullName was ever set, so something is still
-              shown, but it's rendered as a plain name (no "@") either way. */}
-          {video.fullName && video.fullName !== video.username ? (
-            <>
-              <span style={{ display:'inline-flex', alignItems:'center', gap:4, whiteSpace:'nowrap', overflow:'hidden' }}>
-                <span style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:14, overflow:'hidden', textOverflow:'ellipsis' }}>{video.fullName}</span>
-                {author?.verified && <svg width="14" height="14" viewBox="0 0 24 24" fill={COLORS.info} style={{flexShrink:0}}><path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>}
-                {video.feeling && <span style={{ color:COLORS.textSecondary, fontWeight:500, fontSize:14 }}> is feeling {video.feeling.emoji} {video.feeling.text}</span>}
-              </span>
-              <span style={{ color:COLORS.textTertiary, fontSize:12, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{timeAgo(tsToDate(video.createdAt))}</span>
-            </>
-          ) : (
-            <span style={{ display:'flex', alignItems:'baseline', gap:6, overflow:'hidden', flexWrap:'wrap' }}>
-              <span style={{ display:'inline-flex', alignItems:'center', gap:4 }}>
-                <span style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:14, whiteSpace:'nowrap' }}>{video.username}</span>
-                {author?.verified && <svg width="13" height="13" viewBox="0 0 24 24" fill={COLORS.info} style={{flexShrink:0}}><path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>}
-              </span>
-              {video.feeling && <span style={{ color:COLORS.textSecondary, fontSize:12.5, fontWeight:500, whiteSpace:'nowrap' }}>is feeling {video.feeling.emoji} {video.feeling.text}</span>}
-              <span style={{ color:COLORS.textTertiary, fontSize:12, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>· {timeAgo(tsToDate(video.createdAt))}</span>
-            </span>
-          )}
+          {/* Posts show only the person's current display name (full name), read live
+              from `users` via `author` — not the username/fullName that was snapshotted
+              onto the video doc at the moment it was posted. Using the snapshot meant the
+              same person's older and newer posts could show two different names/handles
+              after they ever changed their profile name. Falls back to the post's own
+              snapshot only for the rare case the author's live profile hasn't loaded yet
+              (e.g. they were removed), and to username only if no full name exists at all. */}
+          <span style={{ display:'inline-flex', alignItems:'center', gap:4, whiteSpace:'nowrap', overflow:'hidden' }}>
+            <span style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:14, overflow:'hidden', textOverflow:'ellipsis' }}>{displayName}</span>
+            {author?.verified && <svg width="14" height="14" viewBox="0 0 24 24" fill={COLORS.info} style={{flexShrink:0}}><path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>}
+            {video.feeling && <span style={{ color:COLORS.textSecondary, fontWeight:500, fontSize:14 }}> is feeling {video.feeling.emoji} {video.feeling.text}</span>}
+          </span>
+          <span style={{ color:COLORS.textTertiary, fontSize:12, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{timeAgo(tsToDate(video.createdAt))}</span>
         </div>
         <button onClick={()=>setShowOptions(true)} style={{ background:'none', border:'none', cursor:'pointer', color:COLORS.textTertiary, fontSize:16, padding:4, flexShrink:0 }}>•••</button>
       </div>
@@ -4849,6 +4843,13 @@ const EditProfileModal = ({ user, onClose, onSave, showToast }) => {
     try {
       let avatarUrl = user?.avatarUrl || null;
       if (username.toLowerCase() !== (user.username||'').toLowerCase()) {
+  // Same 5-32 char, lowercase letter/digit/underscore, starts-with-a-letter rule
+  // used to auto-generate usernames at sign-up (see generateUsername/isValidUsername).
+  if (!isValidUsername(username.toLowerCase())) {
+    showToast?.('Username must be 5-32 characters: lowercase letters, numbers, or underscore, starting with a letter', 'error');
+    setUploading(false);
+    return;
+  }
   // Case-insensitive: @Bob and @bob are the same handle, matching WhatsApp/Instagram.
   const snap = await getDocs(query(collection(db, 'users'), where('usernameLower', '==', username.toLowerCase())));
   if (!snap.empty) {
@@ -8972,6 +8973,30 @@ const InlineDateSelect = ({ value, onChange, minYear, maxYear, futureOk }) => {
   );
 };
 
+/* ─────────────── USERNAME RULES (Telegram-style) ───────────────
+   - 5-32 characters
+   - lowercase letters, digits, underscore only
+   - must start with a letter (not a digit/underscore)
+   Used to (a) auto-generate a default username at signup instead of asking
+   for one, and (b) validate edits made later from Edit Profile. */
+const USERNAME_RE = /^[a-z][a-z0-9_]{4,31}$/;
+const isValidUsername = (u) => USERNAME_RE.test(String(u || ''));
+
+// Builds a candidate username from a display name / email, e.g. "Getachew Shambel"
+// -> "getachewshambel482". Always starts with a letter and is at least 5 chars;
+// a random numeric suffix is added both to pad short names out to the minimum
+// length and to make collisions with an existing username unlikely. Callers
+// should still check availability and regenerate on conflict (see AuthScreen).
+const generateUsername = (seedText) => {
+  let base = String(seedText || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (!base || !/^[a-z]/.test(base)) base = 'user' + base;
+  base = base.slice(0, 20);
+  const suffix = String(Math.floor(1000 + Math.random() * 90000));
+  let candidate = (base + suffix).slice(0, 32);
+  if (candidate.length < 5) candidate = candidate.padEnd(5, '0');
+  return candidate;
+};
+
 /* ─────────────── AUTH SCREEN (REAL FIREBASE) ─────────────── */
 const AuthScreen = ({ onLogin }) => {
   const [isLogin, setIsLogin] = useState(true);
@@ -8991,7 +9016,6 @@ const AuthScreen = ({ onLogin }) => {
   const [otpExpiry, setOtpExpiry] = useState(()=>Date.now() + 10*60*1000);
   // Google users land here for a moment before an account is created — see handleGoogleLogin.
   const [pendingGoogleUser, setPendingGoogleUser] = useState(null);
-  const [googleUsername, setGoogleUsername] = useState('');
   const [googleFullName, setGoogleFullName] = useState('');
   const [googleBirthdate, setGoogleBirthdate] = useState('');
 
@@ -9010,13 +9034,10 @@ const AuthScreen = ({ onLogin }) => {
     setLoading(false);
     return;
   } else {
-    // Brand-new account: don't silently create it with an auto-generated username.
-    // Ask the person to confirm/choose a username and date of birth first, the same
-    // way the email sign-up flow does, instead of the app deciding for them.
-    const baseUsername = (fbUser.displayName||fbUser.email||'user')
-      .split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g,'') || 'user';
+    // Brand-new account: username is generated automatically (see generateUsername),
+    // not collected from the person — only full name and date of birth are confirmed
+    // before the account is created.
     setPendingGoogleUser(fbUser);
-    setGoogleUsername(baseUsername + fbUser.uid.slice(-4));
     setGoogleFullName(fbUser.displayName||'');
     setGoogleBirthdate('');
     setStep('google_onboarding');
@@ -9064,29 +9085,35 @@ if(!result.user.emailVerified && !isNewAccount){
       }
       onLogin({...profile, id:result.user.uid});
     } else {
-      if(!username){ setError('Username required'); setLoading(false); return; }
       if(!fullName){ setError('Full name required'); setLoading(false); return; }
       if(!birthdate){ setError('Date of birth is required'); setLoading(false); return; }
       const ageMs = Date.now() - new Date(birthdate).getTime();
       if(ageMs < 13*365.25*24*60*60*1000){ setError('You must be at least 13 years old to sign up'); setLoading(false); return; }
 
-      // Username and email uniqueness are now checked server-side inside /api/auth/send-otp
-      // and /api/auth/verify-otp (both use the Admin SDK, which bypasses firestore.rules).
-      // This used to run as a direct getDocs() query against /users from the client, but
-      // that collection requires request.auth != null to read, and at this point in the
-      // sign-up flow there's no auth session yet — the account isn't created until OTP
-      // verification succeeds. That mismatch is exactly what caused the "Missing or
-      // insufficient permissions" error on the sign-up screen (case-insensitive handles,
-      // i.e. @Bob == @bob, are still enforced — just on the server now).
-      //
-      // OTP is generated, hashed, and stored server-side (see /api/auth/send-otp).
-      // The client never sees the code and can't read or forge it via devtools/state —
-      // verification happens against Firestore on the server in the 'otp' step below.
-      await apiFetch('/api/auth/send-otp', {
-        method: 'POST',
-        body: JSON.stringify({ email: identifier, username }),
-      });
-      setPendingCreds({ email: identifier, password, username, fullName, birthdate });
+      // Username is no longer collected from the person at sign-up — it's generated
+      // automatically from their full name (they can change it any time afterward from
+      // Edit Profile). /api/auth/send-otp still checks availability server-side; on the
+      // rare collision, regenerate a new candidate and retry a few times before giving up.
+      let autoUsername = generateUsername(fullName);
+      let sent = false;
+      for (let attempt = 0; attempt < 5 && !sent; attempt++) {
+        try {
+          await apiFetch('/api/auth/send-otp', {
+            method: 'POST',
+            body: JSON.stringify({ email: identifier, username: autoUsername }),
+          });
+          sent = true;
+        } catch (e) {
+          if (e.message === 'Username already taken') {
+            autoUsername = generateUsername(fullName);
+          } else {
+            throw e;
+          }
+        }
+      }
+      if (!sent) { setError('Could not generate a username right now. Please try again.'); setLoading(false); return; }
+      setUsername(autoUsername);
+      setPendingCreds({ email: identifier, password, username: autoUsername, fullName, birthdate });
       setOtpExpiry(Date.now() + 10*60*1000);
       setStep('otp');
       setLoading(false);
@@ -9134,11 +9161,10 @@ if(!result.user.emailVerified && !isNewAccount){
             </div>
           </div>
           <div style={{ color:COLORS.textSecondary, fontSize:13, lineHeight:1.5, marginBottom:16 }}>
-            Almost done — pick a username and confirm a few details before we create your account.
+            Almost done — confirm a few details before we create your account.
           </div>
           {error && <div style={{background:`${COLORS.danger}1A`,border:`1px solid ${COLORS.danger}4D`,borderRadius:12,padding:'10px 14px',color:COLORS.danger,fontSize:12,marginBottom:12}}>{error}</div>}
           <input placeholder="Full Name" value={googleFullName} onChange={e=>setGoogleFullName(e.target.value)} style={{ width:'100%', background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:14, padding:'13px 16px', color:COLORS.textPrimary, marginBottom:10, outline:'none', fontSize:14, boxSizing:'border-box' }} />
-          <input placeholder="Username" value={googleUsername} onChange={e=>setGoogleUsername(e.target.value.replace(/\s/g,''))} style={{ width:'100%', background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:14, padding:'13px 16px', color:COLORS.textPrimary, marginBottom:10, outline:'none', fontSize:14, boxSizing:'border-box' }} />
           <div style={{marginBottom:16}}>
             <div style={{color:COLORS.textTertiary,fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:0.5,marginBottom:7}}>Date of Birth *</div>
             <InlineDateSelect value={googleBirthdate} onChange={setGoogleBirthdate} maxYear={new Date().getFullYear()-13} minYear={new Date().getFullYear()-100} />
@@ -9146,28 +9172,33 @@ if(!result.user.emailVerified && !isNewAccount){
           </div>
           <button onClick={async()=>{
             setError('');
-            if(!googleUsername.trim()){ setError('Username is required'); return; }
             if(!googleFullName.trim()){ setError('Full name is required'); return; }
             if(!googleBirthdate){ setError('Date of birth is required'); return; }
             const ageMs = Date.now() - new Date(googleBirthdate).getTime();
             if(ageMs < 13*365.25*24*60*60*1000){ setError('You must be at least 13 years old to sign up'); return; }
             setLoading(true);
             try {
-              const usernameLower = googleUsername.trim().toLowerCase();
-              const existing = await getDocs(query(collection(db,'users'), where('usernameLower','==',usernameLower)));
-              if(!existing.empty){ setError('Username already taken'); setLoading(false); return; }
               const fbUser = pendingGoogleUser;
+              // Username is generated from their full name rather than asked for — retry
+              // a few times on the (rare) chance the generated handle is already taken.
+              let finalUsername = null;
+              for (let attempt = 0; attempt < 5 && !finalUsername; attempt++) {
+                const candidate = generateUsername(googleFullName.trim());
+                const existing = await getDocs(query(collection(db,'users'), where('usernameLower','==',candidate)));
+                if (existing.empty) finalUsername = candidate;
+              }
+              if (!finalUsername) { setError('Could not generate a username right now. Please try again.'); setLoading(false); return; }
               await createUserProfile(fbUser.uid,{
-                username: googleUsername.trim(),
+                username: finalUsername,
                 fullName: googleFullName.trim(),
                 email: fbUser.email||'',
                 birthdate: googleBirthdate,
                 avatarUrl: fbUser.photoURL||null,
-                avatarColor: `hsl(${Math.floor(Math.random()*360)},70%,60%)`,
+                avatarColor: pickAvatarColor(fbUser.uid),
               });
               const profile = await getUserProfile(fbUser.uid);
               onLogin(profile ? {...profile, id:fbUser.uid} : buildDefaultProfile(fbUser.uid, {
-                username: googleUsername.trim(), fullName: googleFullName.trim(), email: fbUser.email||'',
+                username: finalUsername, fullName: googleFullName.trim(), email: fbUser.email||'',
               }));
             } catch(e){
               setError(e.message || 'Could not finish setting up your account.');
@@ -9366,7 +9397,6 @@ return (
           {successMsg && <div style={{background:`${COLORS.success}1A`,border:`1px solid ${COLORS.success}4D`,borderRadius:12,padding:'10px 14px',color:COLORS.success,fontSize:12,marginBottom:12}}>{successMsg}</div>}
           {!isLogin && <>
             <input placeholder="Full Name" value={fullName} onChange={e=>setFullName(e.target.value)} style={{ width:'100%', background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:14, padding:'13px 16px', color:COLORS.textPrimary, marginBottom:10, outline:'none', fontSize:14, boxSizing:'border-box' }} />
-            <input placeholder="Username" value={username} onChange={e=>setUsername(e.target.value)} style={{ width:'100%', background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:14, padding:'13px 16px', color:COLORS.textPrimary, marginBottom:10, outline:'none', fontSize:14, boxSizing:'border-box' }} />
             <div style={{marginBottom:10}}>
               <div style={{color:COLORS.textTertiary,fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:0.5,marginBottom:7}}>Date of Birth *</div>
               <InlineDateSelect value={birthdate} onChange={setBirthdate} maxYear={new Date().getFullYear()-13} minYear={new Date().getFullYear()-100} />
@@ -10115,7 +10145,7 @@ const [blockedUsers, setBlockedUsers] = useState([]);
           isAdmin = tokenResult.claims?.admin === true;
         } catch {}
         if(profile) {
-  setCurrentUser({...profile, id:fbUser.uid, language: profile.language || 'en', isAdmin});
+  setCurrentUser({...profile, id:fbUser.uid, language: profile.language || 'en', isAdmin, avatarColor: resolveAvatarColor(profile.avatarColor, fbUser.uid)});
   setFollowed(profile.following||[]);
   setBlockedUsers(profile.blockedUsers||[]);
 } else {
@@ -10171,7 +10201,10 @@ const [blockedUsers, setBlockedUsers] = useState([]);
   // Real-time users from Firestore
   useEffect(()=>{
     const unsub = onSnapshot(collection(db,'users'), snap=>{
-      setUsers(snap.docs.map(d=>({id:d.id,...d.data()})));
+      setUsers(snap.docs.map(d=>{
+        const data = d.data();
+        return { id:d.id, ...data, avatarColor: resolveAvatarColor(data.avatarColor, d.id) };
+      }));
     });
     return ()=>unsub();
   },[]);
