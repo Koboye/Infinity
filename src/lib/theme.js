@@ -142,3 +142,49 @@ export const TYPE = {
 export const RADIUS = {
   sm: 8, md: 14, lg: 20, xl: 24, pill: 999,
 };
+
+/**
+ * ------------------------------------------------------------------
+ * Avatar color palette
+ * ------------------------------------------------------------------
+ * Fallback ("initials") avatars used to get `hsl(random 0-360, 70%, 60%)`
+ * assigned at account/group creation. That meant any hue at all — including
+ * oranges, greens, purples — could show up next to each other in a single
+ * chat list, clashing with the app's single-brand blue/white design system
+ * described above. This is the same palette already offered in the "Profile
+ * color" picker (EditProfileModal), so a fallback avatar and a deliberately
+ * chosen one are visually indistinguishable.
+ *
+ * Colors are assigned deterministically (hashed from the user/group id), not
+ * randomly, so the same account always renders with the same color instead
+ * of flickering between hues on every reload.
+ */
+export const AVATAR_PALETTE = [
+  '#0B5FFF', '#2E7BFF', '#083FB0', '#00A9D6',
+  '#5E5CE6', '#2ED573', '#5CA0FF', '#FFB100',
+];
+
+const hashSeed = (seed) => {
+  const str = String(seed || 'user');
+  let h = 0;
+  for (let i = 0; i < str.length; i++) { h = (h * 31 + str.charCodeAt(i)) | 0; }
+  return Math.abs(h);
+};
+
+// Pick a stable, on-brand color for a given id/username. Use this instead of
+// `Math.random()` anywhere a new user/group avatar color is generated.
+export const pickAvatarColor = (seed) => AVATAR_PALETTE[hashSeed(seed) % AVATAR_PALETTE.length];
+
+// Normalize a stored avatarColor value for display:
+// - Legacy `hsl(...)` values (the old random generator) are replaced with a
+//   stable on-brand palette color, keyed off `seed` so it doesn't shift on
+//   every render.
+// - Any other value (a hex the person deliberately picked in Edit Profile,
+//   or already-migrated data) is left untouched.
+// - Missing/falsy values fall back to a palette color too.
+export const resolveAvatarColor = (color, seed) => {
+  if (!color || (typeof color === 'string' && color.startsWith('hsl('))) {
+    return pickAvatarColor(seed);
+  }
+  return color;
+};
