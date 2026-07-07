@@ -305,6 +305,25 @@ const SUPPORTED_LANGUAGES = [
   ['Русский','Russian','ru'],['Türkçe','Turkish','tr'],['日本語','Japanese','ja'],['한국어','Korean','ko'],['Italiano','Italian','it'],
 ];
 
+// Languages selectable for auto-translated video captions (Settings → Video Captions).
+// This is intentionally much broader than SUPPORTED_LANGUAGES (the app's UI-chrome
+// language list, which is capped at the languages that have hand-written TRANSLATIONS
+// dictionaries above) — caption translation is just a Gemini text call per language,
+// so there's no dictionary to maintain and we can offer close to "any" language.
+const CAPTION_LANGUAGES = [
+  ['English','English','en'],['አማርኛ','Amharic','am'],['العربية','Arabic','ar'],['Français','French','fr'],['Español','Spanish','es'],
+  ['Português','Portuguese','pt'],['हिन्दी','Hindi','hi'],['中文','Chinese (Simplified)','zh'],['繁體中文','Chinese (Traditional)','zh-TW'],
+  ['Kiswahili','Swahili','sw'],['Deutsch','German','de'],['Русский','Russian','ru'],['Türkçe','Turkish','tr'],['日本語','Japanese','ja'],
+  ['한국어','Korean','ko'],['Italiano','Italian','it'],['Oromoo','Oromo','om'],['ትግርኛ','Tigrinya','ti'],['Soomaali','Somali','so'],
+  ['اردو','Urdu','ur'],['বাংলা','Bengali','bn'],['ਪੰਜਾਬੀ','Punjabi','pa'],['தமிழ்','Tamil','ta'],['తెలుగు','Telugu','te'],
+  ['मराठी','Marathi','mr'],['ગુજરાતી','Gujarati','gu'],['ಕನ್ನಡ','Kannada','kn'],['മലയാളം','Malayalam','ml'],['ไทย','Thai','th'],
+  ['Tiếng Việt','Vietnamese','vi'],['Bahasa Indonesia','Indonesian','id'],['Bahasa Melayu','Malay','ms'],['Filipino','Filipino','tl'],
+  ['Nederlands','Dutch','nl'],['Polski','Polish','pl'],['Українська','Ukrainian','uk'],['Ελληνικά','Greek','el'],['Svenska','Swedish','sv'],
+  ['Norsk','Norwegian','no'],['Dansk','Danish','da'],['Suomi','Finnish','fi'],['Čeština','Czech','cs'],['Magyar','Hungarian','hu'],
+  ['Română','Romanian','ro'],['עברית','Hebrew','he'],['فارسی','Persian','fa'],['Hausa','Hausa','ha'],['Yorùbá','Yoruba','yo'],
+  ['Igbo','Igbo','ig'],['isiZulu','Zulu','zu'],['Kinyarwanda','Kinyarwanda','rw'],
+];
+
 const REPORT_REASONS = [
   'Spam or misleading','Inappropriate content','Hate speech or harassment',
   'Violence or dangerous acts','Misinformation','Intellectual property violation',
@@ -3965,57 +3984,71 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
   const viewCountedRef = useRef(false);
   const isVisible = useIntersectionObserver(mediaWrapRef, { threshold: 0.6 });
 
-  // ── Bilingual (Amharic/English) auto-captions, TikTok-style ──
-  // Captions are generated once per video (server-side, cached on the video doc via
-  // Firestore admin write) then reused by every viewer. `video.captions` arrives
-  // through the normal Firestore snapshot the parent feed already subscribes to, so
-  // once it lands here everyone sees it without re-requesting Gemini.
-  const [ccOn, setCcOn] = useState(false);
-  const [ccLang, setCcLang] = useState('en'); // 'en' | 'am'
-  const [ccLoading, setCcLoading] = useState(false);
-  const [localCaptions, setLocalCaptions] = useState(null); // fallback if snapshot hasn't caught up yet
+  // ── Auto-translated video captions, TikTok/Facebook-style ──
+  // No per-video button: whether captions show at all, and in which language, is a
+  // single global choice made once in Settings → Video Captions (currentUser.captionsEnabled
+  // / currentUser.captionLanguage). Turning it on here just makes captions appear
+  // automatically on every video from then on, matching how TikTok's Accessibility
+  // "Auto-captions" and Facebook's auto-translate settings behave.
+  //
+  // Storage: the video doc caches a `captions.source` transcript (original spoken
+  // language, generated once via Gemini video transcription) plus a
+  // `captions.translations.{langCode}` map, filled in lazily the first time *any*
+  // viewer requests that language (cheap text-only Gemini translation of the cached
+  // source — no re-fetching/re-sending the video). So the very first viewer of a
+  // clip in each language pays a small one-time cost; everyone after gets the cached
+  // track instantly, and effectively any language Gemini can translate to is supported.
+  const captionsWanted = !!currentUser?.captionsEnabled;
+  const captionLang = currentUser?.captionLanguage || 'en';
+  const [localCaptionTrack, setLocalCaptionTrack] = useState(null); // fallback if snapshot hasn't caught up
+  const [captionsLoading, setCaptionsLoading] = useState(false);
   const [activeCaptionText, setActiveCaptionText] = useState('');
-  const captions = video.captions || localCaptions;
+  const captionTrack = video.captions?.translations?.[captionLang]
+    || (video.captions?.source?.language === captionLang ? video.captions.source.segments : null)
+    || localCaptionTrack;
 
-  const requestCaptions = async () => {
-    if (!isVideo || ccLoading || captions) return;
-    setCcLoading(true);
-    try {
-      const data = await apiFetch('/api/ai/captions', {
-        method: 'POST',
-        body: JSON.stringify({ videoId: video.id, videoUrl: mediaSrc }),
-      });
-      if (data?.captions) setLocalCaptions(data.captions);
-    } catch (e) {
-      showToast?.(e.message || 'Could not generate captions', 'error');
-      setCcOn(false);
-    } finally {
-      setCcLoading(false);
-    }
-  };
+  useEffect(() => {
+    if (!isVideo || !captionsWanted || !isVisible || captionTrack || captionsLoading) return;
+    let cancelled = false;
+    (async () => {
+      setCaptionsLoading(true);
+      try {
+        const data = await apiFetch('/api/ai/captions', {
+          method: 'POST',
+          body: JSON.stringify({ videoId: video.id, videoUrl: mediaSrc, targetLang: captionLang }),
+        });
+        if (!cancelled && data?.track) setLocalCaptionTrack(data.track);
+      } catch (e) {
+        // Fail quietly here — auto-captions shouldn't interrupt playback with an error toast
+        // for every video in the feed; the CC-less overlay just stays empty.
+        console.error('auto-captions failed:', e.message);
+      } finally {
+        if (!cancelled) setCaptionsLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [isVideo, captionsWanted, isVisible, captionLang, captionTrack]);
 
-  const toggleCaptions = () => {
-    const next = !ccOn;
-    setCcOn(next);
-    if (next && !captions) requestCaptions();
-  };
+  // Reset the local fallback when the viewer's chosen language changes, so a stale
+  // track in the old language doesn't keep showing while the new one loads.
+  useEffect(() => { setLocalCaptionTrack(null); }, [captionLang]);
 
   // Drive the on-screen caption text off the video's actual playback time so it stays
   // in sync even after the user scrubs the progress bar above.
   useEffect(() => {
-    if (!ccOn || !captions) { setActiveCaptionText(''); return; }
+    if (!captionsWanted || !captionTrack) { setActiveCaptionText(''); return; }
     const el = videoElRef.current;
     if (!el) return;
-    const track = captions[ccLang] || [];
     const update = () => {
       const t = el.currentTime;
-      const seg = track.find(s => t >= s.start && t <= s.end);
+      const seg = captionTrack.find(s => t >= s.start && t <= s.end);
       setActiveCaptionText(seg?.text || '');
     };
     update();
     el.addEventListener('timeupdate', update);
     return () => el.removeEventListener('timeupdate', update);
-  }, [ccOn, ccLang, captions]);
+  }, [captionsWanted, captionTrack]);
+
 
   // Count a view once per viewer per video, the first time the post is actually scrolled
   // into view. BUG FIX: this used to only guard with a per-mount ref, so the exact same
@@ -4241,32 +4274,10 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
               </div>
               {/* Bottom progress line — draggable to seek, mirrors TikTok/Reels scrubbing */}
               <VideoProgressBar videoRef={videoElRef} isActive={isVisible} isImage={false} />
-              {/* CC toggle — top-right corner over the video */}
-              <button
-                onClick={e => { e.stopPropagation(); toggleCaptions(); }}
-                title="Captions"
-                style={{
-                  position:'absolute', top:10, right:10, zIndex:21,
-                  display:'flex', alignItems:'center', gap:5,
-                  background: ccOn ? 'rgba(11,95,255,0.85)' : 'rgba(0,0,0,0.45)',
-                  border:'none', borderRadius:14, padding:'5px 9px',
-                  color:'white', fontSize:11, fontWeight:800, cursor:'pointer',
-                }}
-              >
-                {ccLoading ? (
-                  <span style={{ width:11, height:11, border:'2px solid rgba(255,255,255,0.4)', borderTopColor:'#fff', borderRadius:'50%', animation:'spin 0.7s linear infinite', display:'inline-block' }} />
-                ) : 'CC'}
-                {ccOn && captions && (
-                  <span
-                    onClick={e => { e.stopPropagation(); setCcLang(l => l === 'en' ? 'am' : 'en'); }}
-                    style={{ background:'rgba(255,255,255,0.25)', borderRadius:8, padding:'1px 6px', fontSize:10 }}
-                  >
-                    {ccLang === 'en' ? 'EN' : 'አማ'}
-                  </span>
-                )}
-              </button>
-              {/* Caption text overlay — sits just above the bottom progress bar */}
-              {ccOn && activeCaptionText && (
+              {/* Caption text overlay — sits just above the bottom progress bar. No button here
+                  by design: whether this shows, and in what language, is decided once in
+                  Settings → Video Captions, TikTok/Facebook-style, not per video. */}
+              {captionsWanted && activeCaptionText && (
                 <div style={{
                   position:'absolute', left:0, right:0, bottom:22, zIndex:20,
                   display:'flex', justifyContent:'center', padding:'0 16px', pointerEvents:'none',
@@ -6377,6 +6388,53 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
     </div>
   );
 
+  if(activeSubPage==='captions') return (
+    <div style={{height:'100%',overflow:'auto',background:COLORS.bg,padding:16}}>
+      <button onClick={()=>setActiveSubPage('settings')} style={{background:COLORS.surface2,border:`1px solid ${COLORS.border}`,borderRadius:20,padding:'8px 16px',color:COLORS.textPrimary,cursor:'pointer',fontSize:13,marginBottom:20,display:'flex',alignItems:'center',gap:6}}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
+      </button>
+      <div style={{color:COLORS.textPrimary,fontWeight:800,fontSize:22,marginBottom:8,fontFamily:"'Inter',sans-serif"}}>Video Captions</div>
+      <div style={{color:COLORS.textTertiary,fontSize:12.5,lineHeight:1.5,marginBottom:20}}>
+        Automatically transcribe and translate spoken audio in videos, TikTok-style. Turn this on and pick your language once here — captions then just appear on every video, no per-video toggle needed.
+      </div>
+      <div style={{background:COLORS.surface2,borderRadius:20,overflow:'hidden',marginBottom:20,border:`1px solid ${COLORS.border}`}}>
+        <div onClick={async()=>{
+            const next = !user?.captionsEnabled;
+            await updateDoc(doc(db,'users',user.id),{ captionsEnabled: next });
+            setCurrentUser(u=>({...u, captionsEnabled: next}));
+          }} style={{padding:'15px 16px',display:'flex',alignItems:'center',gap:14,cursor:'pointer'}}>
+          <div style={{width:36,height:36,borderRadius:12,background:COLORS.surface2,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>💬</div>
+          <div style={{flex:1}}>
+            <div style={{color:COLORS.textPrimary,fontSize:14}}>Automatic Captions</div>
+            <div style={{color:COLORS.textTertiary,fontSize:11,marginTop:2}}>Show translated captions automatically while watching</div>
+          </div>
+          <div style={{width:46,height:26,background:user?.captionsEnabled?COLORS.brand:COLORS.surface3,borderRadius:13,position:'relative',transition:'background 0.2s',flexShrink:0}}>
+            <div style={{width:20,height:20,background:'white',borderRadius:'50%',position:'absolute',top:3,left:user?.captionsEnabled?23:3,transition:'left 0.2s'}} />
+          </div>
+        </div>
+      </div>
+      <div style={{color:COLORS.textTertiary,fontSize:11,fontWeight:700,marginBottom:8,textTransform:'uppercase',letterSpacing:1.2}}>Caption Language</div>
+      <div style={{background:COLORS.surface2,borderRadius:20,overflow:'hidden',border:`1px solid ${COLORS.border}`, opacity:user?.captionsEnabled?1:0.5, pointerEvents:user?.captionsEnabled?'auto':'none'}}>
+        {CAPTION_LANGUAGES.map(([label,sub,code],i,arr)=>{
+          const selected = (user?.captionLanguage||'en')===code;
+          return (
+            <div key={code} onClick={async()=>{
+                await updateDoc(doc(db,'users',user.id),{captionLanguage:code});
+                setCurrentUser(u=>({...u,captionLanguage:code}));
+                showToast?.(`Captions will show in ${label}`,'success');
+              }} style={{padding:'15px 16px',borderBottom:i<arr.length-1?`1px solid ${COLORS.border}`:'',display:'flex',alignItems:'center',justifyContent:'space-between',cursor:'pointer'}}>
+              <div>
+                <div style={{color:COLORS.textPrimary,fontSize:14,fontWeight:selected?700:400}}>{label}</div>
+                <div style={{color:COLORS.textTertiary,fontSize:11,marginTop:2}}>{sub}</div>
+              </div>
+              {selected && <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.brand} strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+
   if(activeSubPage==='language') return (
     <div style={{height:'100%',overflow:'auto',background:COLORS.bg,padding:16}}>
       <button onClick={()=>setActiveSubPage('settings')} style={{background:COLORS.surface2,border:`1px solid ${COLORS.border}`,borderRadius:20,padding:'8px 16px',color:COLORS.textPrimary,cursor:'pointer',fontSize:13,marginBottom:20,display:'flex',alignItems:'center',gap:6}}>
@@ -6481,6 +6539,14 @@ if(activeSubPage==='settings') return (
           <div style={{ padding:'15px 16px', borderTop:`1px solid ${COLORS.border}`, display:'flex', alignItems:'center', gap:14, cursor:'pointer' }} onClick={()=>setActiveSubPage('language')}>
             <div style={{ width:36, height:36, borderRadius:12, background:COLORS.surface2, display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>🌐</div>
             <span style={{ color:COLORS.textPrimary, flex:1, fontSize:14 }}>Language & Translation</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+          <div style={{ padding:'15px 16px', borderTop:`1px solid ${COLORS.border}`, display:'flex', alignItems:'center', gap:14, cursor:'pointer' }} onClick={()=>setActiveSubPage('captions')}>
+            <div style={{ width:36, height:36, borderRadius:12, background:COLORS.surface2, display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>💬</div>
+            <div style={{ flex:1 }}>
+              <div style={{ color:COLORS.textPrimary, fontSize:14 }}>Video Captions</div>
+              <div style={{ color:COLORS.textTertiary, fontSize:11, marginTop:2 }}>{user?.captionsEnabled ? `On · ${(CAPTION_LANGUAGES.find(l=>l[2]===(user?.captionLanguage||'en'))||[])[0]||'English'}` : 'Off'}</div>
+            </div>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
           </div>
           <div style={{ padding:'15px 16px', borderTop:`1px solid ${COLORS.border}`, display:'flex', alignItems:'center', gap:14, cursor:'pointer' }} onClick={()=>showToast?.('Notification settings','info')}>
