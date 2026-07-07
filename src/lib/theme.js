@@ -128,6 +128,24 @@ export const applyTheme = (theme) => {
   Object.assign(COLORS, theme === 'dark' ? COLORS_DARK : COLORS_LIGHT);
   if (typeof window !== 'undefined') {
     try { localStorage.setItem(THEME_STORAGE_KEY, theme); } catch {}
+    // BUG FIX: the app's own components (COLORS.xxx read in inline styles) repainted
+    // fine on toggle, but <html>/<body> background was a hardcoded hex in globals.css
+    // and never got the memo — so the strip behind/around the app (overscroll bounce,
+    // safe-area insets, any gap before the app tree mounts) stayed light-mode white
+    // even after switching to dark. This looked exactly like "theme change doesn't
+    // work" even though every in-app surface actually had switched correctly.
+    // Setting a CSS custom property here (read by globals.css via var(--app-bg)) keeps
+    // the document-level background in sync with COLORS.bg on every toggle.
+    try {
+      document.documentElement.style.setProperty('--app-bg', COLORS.bg);
+      let meta = document.querySelector('meta[name="theme-color"]');
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.setAttribute('name', 'theme-color');
+        document.head.appendChild(meta);
+      }
+      meta.setAttribute('content', COLORS.bg);
+    } catch {}
   }
   themeListeners.forEach(fn => { try { fn(theme); } catch {} });
 };
