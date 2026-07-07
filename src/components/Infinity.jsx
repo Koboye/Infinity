@@ -5480,7 +5480,7 @@ const WalletPage = ({ user, setCurrentUser, showToast, onBack }) => {
     return ()=>unsub();
   },[user?.id]);
 
-  // Fixed catalog lives server-side (src/app/api/wallet/route.js) so the client can't submit
+  // Fixed catalog lives server-side (src/lib/coinTopups.js) so the client can't submit
   // an arbitrary coins-per-dollar rate — the preset buttons below map to these package ids.
   const TOPUP_PACKAGES = { 100:'small', 550:'medium', 1200:'large', 6500:'mega' };
   const nearestPackage = (n) => {
@@ -5488,16 +5488,61 @@ const WalletPage = ({ user, setCurrentUser, showToast, onBack }) => {
     const closest = keys.reduce((a,b)=>Math.abs(b-n)<Math.abs(a-n)?b:a);
     return TOPUP_PACKAGES[closest];
   };
+  const [depositStatus, setDepositStatus] = useState('idle'); // idle | opening | verifying
 
+  // Real money: mints a tx_ref server-side, opens Flutterwave's inline checkout,
+  // then verifies the payment against Flutterwave's server API before crediting
+  // any coins (same trust model as the DonationSheet component below — the
+  // webhook at /api/wallet/topup/webhook is the authoritative settlement path,
+  // this call is just for instant UI feedback).
   const doDeposit = async () => {
     const n=parseInt(amount); if(!n||n<=0){showToast?.('Enter valid amount','error'); return;}
+    setDepositStatus('opening');
     try {
+      await loadFlutterwaveScript();
       const pkg = nearestPackage(n);
-      const data = await apiFetch('/api/wallet', { method:'POST', body: JSON.stringify({ type:'topup', package: pkg }) });
-      setCurrentUser(u=>({...u, coins:data.coins}));
-      showToast?.(`Added coins! 🎉`,'success');
-      setAmount('');
+      const { tx_ref, public_key, amount: usd, currency } = await apiFetch('/api/wallet/topup/init', {
+        method:'POST', body: JSON.stringify({ package: pkg }),
+      });
+
+      window.FlutterwaveCheckout({
+        public_key,
+        tx_ref,
+        amount: usd,
+        currency,
+        payment_options: 'card,banktransfer,ussd',
+        customer: {
+          email: user.email || `${user.username}@buyer.infinity`,
+          name: user.fullName || user.username,
+        },
+        customizations: {
+          title: 'Buy Infinity Coins',
+          description: `${pkg} coin package`,
+          logo: 'https://res.cloudinary.com/dotvhzjmc/image/upload/znfksngv27boh3c1kxpv.png',
+        },
+        callback: async (payment) => {
+          setDepositStatus('verifying');
+          try {
+            const result = await apiFetch('/api/wallet/topup/verify', {
+              method:'POST', body: JSON.stringify({ tx_ref, transaction_id: payment.transaction_id }),
+            });
+            if (result.verified) {
+              setCurrentUser(u=>({...u, coins:result.coins}));
+              showToast?.('Added coins! 🎉','success');
+              setAmount('');
+            } else {
+              showToast?.('Payment could not be verified','error');
+            }
+          } catch(e) {
+            showToast?.(e.message || 'Verification failed','error');
+          } finally {
+            setDepositStatus('idle');
+          }
+        },
+        onclose: () => setDepositStatus(s => s === 'verifying' ? s : 'idle'),
+      });
     } catch(e) {
+      setDepositStatus('idle');
       showToast?.('Transaction failed: '+e.message,'error');
     }
   };
