@@ -11076,14 +11076,13 @@ export default function InfinityV1app() {
   const enqueueNotifPopup = useCallback((item) => setNotifQueue(q => [...q, item]), []);
   const dismissNotifPopup = useCallback(() => setNotifQueue(q => q.slice(1)), []);
   const notifPopup = notifQueue[0] || null;
-  const openNotifTarget = useCallback((notif) => {
-    if (notif?.type === 'message' || notif?.type === 'call') {
-      setActiveTab('inbox');
-      if (notif?.fromUserId) setInboxTargetId(notif.fromUserId);
-    } else {
-      handleViewProfile(notif?.fromUserId);
-    }
-  }, [handleViewProfile]);
+  // NOTE: openNotifTarget itself is declared further down (right after handleViewProfile /
+  // setInboxTargetId are defined) — see the "openNotifTarget" const near handleMessage.
+  // It used to live here, but its dependency array referenced `handleViewProfile`, a const
+  // declared ~380 lines later in this same component. A useCallback's dependency array is
+  // evaluated immediately (unlike the callback body, which only runs later), so this threw
+  // "Cannot access 'handleViewProfile' before initialization" on first render — the
+  // ReferenceError reported in production (minified there as a short mangled name).
   const [showSearch, setShowSearch] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [showTextComposer, setShowTextComposer] = useState(false);
@@ -11465,6 +11464,14 @@ const handleLogout = async () => {
 
   const handleViewProfile = uid => { const user=users.find(u=>u.id===uid); if(user) setViewingProfile(user); };
   const [inboxTargetId, setInboxTargetId] = useState(null);
+  const openNotifTarget = useCallback((notif) => {
+    if (notif?.type === 'message' || notif?.type === 'call') {
+      setActiveTab('inbox');
+      if (notif?.fromUserId) setInboxTargetId(notif.fromUserId);
+    } else {
+      handleViewProfile(notif?.fromUserId);
+    }
+  }, [handleViewProfile]);
 const [inboxOpenGroups, setInboxOpenGroups] = useState(0);
 const [activeConversation, setActiveConversation] = useState(null);
 const [quickConversation, setQuickConversation] = useState(null);
