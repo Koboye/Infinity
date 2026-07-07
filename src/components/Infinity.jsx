@@ -1071,6 +1071,63 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack }) => {
                   )}
                 </div>
               ))}
+
+              {/* Group Actions — scoped to this group's own info panel (its "home"),
+                  never shown on the account-level Settings page. Mirrors the shape of
+                  Settings' Account Actions (Leave = Log Out equivalent, Delete Group
+                  = Delete Account equivalent, admin-only). */}
+              <div style={{ color:COLORS.textTertiary, fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, margin:'20px 0 12px' }}>Group Actions</div>
+              <div
+                onClick={async()=>{
+                  const isLast = (activeGroup.members||[]).length <= 1;
+                  if(!(await confirmDialog(isLast ? 'Leave and delete this group?' : 'Leave this group?', { danger:true, confirmLabel:'Leave' }))) return;
+                  try {
+                    if(isLast){
+                      const msgsSnap = await getDocs(collection(db,'groups',activeGroup.id,'msgs'));
+                      await Promise.all(msgsSnap.docs.map(d=>deleteDoc(doc(db,'groups',activeGroup.id,'msgs',d.id))));
+                      await deleteDoc(doc(db,'groups',activeGroup.id));
+                    } else {
+                      const nm = (activeGroup.members||[]).filter(id=>id!==currentUser.id);
+                      const patch = { members: nm };
+                      if(activeGroup.admin === currentUser.id) patch.admin = nm[0];
+                      await updateDoc(doc(db,'groups',activeGroup.id), patch);
+                    }
+                    setShowGroupInfo(false);
+                    setActiveGroup(null);
+                    showToast?.('Left the group','info');
+                  } catch(e) {
+                    showToast?.('Could not leave group: '+e.message,'error');
+                  }
+                }}
+                style={{ padding:'13px 14px', borderRadius:14, background:COLORS.surface, marginBottom:8, display:'flex', alignItems:'center', gap:12, cursor:'pointer' }}>
+                <div style={{ width:32, height:32, borderRadius:10, background:COLORS.overlaySubtle, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.warning} strokeWidth="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                </div>
+                <span style={{ color:COLORS.warning, fontSize:14, fontWeight:600 }}>Leave Group</span>
+              </div>
+
+              {currentUser?.id===activeGroup?.admin && (
+                <div
+                  onClick={async()=>{
+                    if(!(await confirmDialog('Delete this group for everyone? This cannot be undone.', { danger:true, confirmLabel:'Delete' }))) return;
+                    try {
+                      const msgsSnap = await getDocs(collection(db,'groups',activeGroup.id,'msgs'));
+                      await Promise.all(msgsSnap.docs.map(d=>deleteDoc(doc(db,'groups',activeGroup.id,'msgs',d.id))));
+                      await deleteDoc(doc(db,'groups',activeGroup.id));
+                      setShowGroupInfo(false);
+                      setActiveGroup(null);
+                      showToast?.('Group deleted','info');
+                    } catch(e) {
+                      showToast?.('Could not delete group: '+e.message,'error');
+                    }
+                  }}
+                  style={{ padding:'13px 14px', borderRadius:14, background:COLORS.surface, display:'flex', alignItems:'center', gap:12, cursor:'pointer' }}>
+                  <div style={{ width:32, height:32, borderRadius:10, background:COLORS.overlaySubtle, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.danger} strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+                  </div>
+                  <span style={{ color:COLORS.danger, fontSize:14, fontWeight:600 }}>Delete Group</span>
+                </div>
+              )}
             </div>
           </div>
         )}
