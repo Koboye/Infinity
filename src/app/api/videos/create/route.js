@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { FieldValue } from 'firebase-admin/firestore';
 import { adminDb, requireAuth } from '@/lib/firebase-admin';
 import { rateLimit, clientIp } from '@/lib/rate-limit';
+import { moderateText, HARD_BLOCK_CATEGORIES } from '@/lib/moderation';
 
 // Fields the client is allowed to set. Everything else (userId, username, verified badge,
 // counts, moderation status, timestamps...) is either stripped or overwritten from the
@@ -13,41 +14,6 @@ const ALLOWED_FIELDS = [
 ];
 
 const MAX_TEXT_LEN = 2200;
-
-async function moderateText(text) {
-  // Soft-fail open if no API key configured (dev) rather than blocking all posts, but log
-  // loudly so it's obvious in prod logs that moderation isn't actually running.
-  if (!process.env.OPENAI_API_KEY || !text || !text.trim()) {
-    return { flagged: false, categories: [] };
-  }
-  try {
-    const res = await fetch('https://api.openai.com/v1/moderations', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-      },
-      body: JSON.stringify({ model: 'omni-moderation-latest', input: text }),
-    });
-    if (!res.ok) {
-      console.error('Moderation API error', res.status, await res.text());
-      return { flagged: false, categories: [], error: true };
-    }
-    const data = await res.json();
-    const result = data.results?.[0];
-    if (!result) return { flagged: false, categories: [] };
-    const categories = Object.entries(result.categories || {}).filter(([, v]) => v).map(([k]) => k);
-    return { flagged: result.flagged, categories };
-  } catch (e) {
-    console.error('Moderation call failed', e);
-    return { flagged: false, categories: [], error: true };
-  }
-}
-
-// Categories severe enough to hard-block outright rather than route to human review.
-const HARD_BLOCK_CATEGORIES = [
-  'sexual/minors', 'self-harm/intent', 'self-harm/instructions', 'violence/graphic',
-];
 
 export async function POST(req) {
   try {
@@ -100,7 +66,7 @@ export async function POST(req) {
       avatarUrl: userData.avatarUrl || null,
       verified: userData.verified === true,
       likes: 0, comments: 0, shares: 0, saves: 0, views: 0,
-      likedBy: [], savedBy: [],
+      likedBy: [], savedBy: [], viewedBy: [],
       hashtags: (description.match(/#\w+/g) || []),
       moderationStatus,
       moderationCategories: moderation.categories,
