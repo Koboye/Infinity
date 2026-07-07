@@ -604,6 +604,283 @@ const TrendingHashtags = ({ onSearch }) => (
   </div>
 );
 
+/* ─────────────── GROUP CALL (real WebRTC mesh — replaces the old call UI mockup) ───────────────
+   Previously "Group Call" just opened an overlay with static avatars and buttons that only fired
+   showToast('Muted') / showToast('Camera toggled') — there was never any getUserMedia, any
+   RTCPeerConnection, any signaling at all, so nobody was ever actually connected to anyone.
+   This is a real N-way mesh call: every participant holds one RTCPeerConnection per other
+   participant, signaled through Firestore under groups/{groupId}/call/state.
+
+   Role assignment per pair is deterministic so both sides agree on who offers without a
+   handshake: whoever's participant doc has the earlier (server-resolved) joinedAt is the
+   offerer for that pair. That covers both "everyone joins a fresh call" and "someone joins a
+   call already in progress" with the same logic. */
+const CALL_ICE_SERVERS = [
+  { urls: 'stun:stun.relay.metered.ca:80' },
+  { urls: 'turn:global.relay.metered.ca:80', username: 'f5e29fd91b8ea2fc485c24ac', credential: 'FZlzkJ5GJJUyYocD' },
+  { urls: 'turn:global.relay.metered.ca:80?transport=tcp', username: 'f5e29fd91b8ea2fc485c24ac', credential: 'FZlzkJ5GJJUyYocD' },
+  { urls: 'turn:global.relay.metered.ca:443', username: 'f5e29fd91b8ea2fc485c24ac', credential: 'FZlzkJ5GJJUyYocD' },
+  { urls: 'turns:global.relay.metered.ca:443?transport=tcp', username: 'f5e29fd91b8ea2fc485c24ac', credential: 'FZlzkJ5GJJUyYocD' },
+];
+
+const groupCallPairId = (a, b) => [a, b].sort().join('_');
+
+const GroupCallOverlay = ({ groupId, groupName, callType, currentUser, users, showToast, onClose }) => {
+  const [roster, setRoster] = useState([]); // [{uid, username, avatar, avatarColor, joinedAt}]
+  const [remoteStreams, setRemoteStreams] = useState({}); // uid -> MediaStream
+  const [connectedIds, setConnectedIds] = useState({}); // uid -> bool
+  const [micOn, setMicOn] = useState(true);
+  const [camOn, setCamOn] = useState(callType === 'video');
+  const [joining, setJoining] = useState(true);
+
+  const localStreamRef = useRef(null);
+  const localVideoRef = useRef(null);
+  const myJoinedAtRef = useRef(null);
+  const peersRef = useRef({}); // uid -> { pc, role, processedCallerCands, processedCalleeCands, signalUnsub }
+  const rosterUnsubRef = useRef(null);
+  const myParticipantUnsubRef = useRef(null);
+  const leavingRef = useRef(false);
+
+  const callStateRef = () => doc(db, 'groups', groupId, 'call', 'state');
+  const participantsCol = () => collection(db, 'groups', groupId, 'call', 'state', 'participants');
+  const participantRef = (uid) => doc(db, 'groups', groupId, 'call', 'state', 'participants', uid);
+  const signalRef = (pairId) => doc(db, 'groups', groupId, 'call', 'state', 'signals', pairId);
+
+  const closePeer = (uid) => {
+    const p = peersRef.current[uid];
+    if (!p) return;
+    try { p.signalUnsub?.(); } catch {}
+    try { p.pc?.close(); } catch {}
+    delete peersRef.current[uid];
+    setRemoteStreams(prev => { const n = { ...prev }; delete n[uid]; return n; });
+    setConnectedIds(prev => { const n = { ...prev }; delete n[uid]; return n; });
+  };
+
+  const setupPeer = (uid, role) => {
+    if (peersRef.current[uid]) return; // already connecting/connected to this peer
+    const pc = new RTCPeerConnection({ iceServers: CALL_ICE_SERVERS });
+    const pairId = groupCallPairId(currentUser.id, uid);
+    const myRole = role; // 'caller' | 'callee'
+    peersRef.current[uid] = { pc, role: myRole, processedCallerCands: 0, processedCalleeCands: 0, signalUnsub: null };
+
+    localStreamRef.current?.getTracks().forEach(track => pc.addTrack(track, localStreamRef.current));
+
+    pc.ontrack = (e) => {
+      setRemoteStreams(prev => ({ ...prev, [uid]: e.streams[0] }));
+      setConnectedIds(prev => ({ ...prev, [uid]: true }));
+    };
+    pc.onconnectionstatechange = () => {
+      if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected' || pc.connectionState === 'closed') {
+        setConnectedIds(prev => ({ ...prev, [uid]: false }));
+      }
+    };
+    pc.onicecandidate = (e) => {
+      if (!e.candidate) return;
+      const field = myRole === 'caller' ? 'callerCandidates' : 'calleeCandidates';
+      updateDoc(signalRef(pairId), { [field]: arrayUnion(e.candidate.toJSON()) }).catch(() => {
+        setDoc(signalRef(pairId), { [field]: [e.candidate.toJSON()] }, { merge: true }).catch(() => {});
+      });
+    };
+
+    const unsub = onSnapshot(signalRef(pairId), async (snap) => {
+      const data = snap.data();
+      if (!data) return;
+      try {
+        if (myRole === 'caller') {
+          if (data.answer && pc.signalingState === 'have-local-offer') {
+            await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+          }
+          const cands = data.calleeCandidates || [];
+          const p = peersRef.current[uid];
+          if (p) {
+            for (let i = p.processedCalleeCands; i < cands.length; i++) {
+              try { await pc.addIceCandidate(new RTCIceCandidate(cands[i])); } catch {}
+            }
+            p.processedCalleeCands = cands.length;
+          }
+        } else {
+          if (data.offer && pc.signalingState === 'stable' && !pc.currentRemoteDescription) {
+            await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            await updateDoc(signalRef(pairId), { answer: { type: answer.type, sdp: answer.sdp } });
+          }
+          const cands = data.callerCandidates || [];
+          const p = peersRef.current[uid];
+          if (p) {
+            for (let i = p.processedCallerCands; i < cands.length; i++) {
+              try { await pc.addIceCandidate(new RTCIceCandidate(cands[i])); } catch {}
+            }
+            p.processedCallerCands = cands.length;
+          }
+        }
+      } catch (e) { console.error('group call signal handling error:', e); }
+    });
+    peersRef.current[uid].signalUnsub = unsub;
+
+    if (myRole === 'caller') {
+      (async () => {
+        try {
+          const offer = await pc.createOffer();
+          await pc.setLocalDescription(offer);
+          await setDoc(signalRef(pairId), {
+            callerId: currentUser.id, calleeId: uid,
+            offer: { type: offer.type, sdp: offer.sdp },
+            callerCandidates: [], calleeCandidates: [],
+          }, { merge: true });
+        } catch (e) { console.error('group call offer error:', e); }
+      })();
+    }
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    const start = async () => {
+      try {
+        const constraints = callType === 'video' ? { audio: true, video: { facingMode: 'user' } } : { audio: true, video: false };
+        let stream;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia(constraints);
+        } catch (e) {
+          if (callType === 'video') {
+            stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            setCamOn(false);
+            showToast?.('Camera unavailable — joined with audio only', 'info');
+          } else throw e;
+        }
+        if (cancelled) { stream.getTracks().forEach(t => t.stop()); return; }
+        localStreamRef.current = stream;
+        if (localVideoRef.current) { localVideoRef.current.srcObject = stream; localVideoRef.current.play().catch(() => {}); }
+
+        // Ensure a call-state doc exists (first joiner starts it; later joiners just join).
+        await setDoc(callStateRef(), { active: true, type: callType, groupId, updatedAt: serverTimestamp() }, { merge: true });
+
+        // Announce myself, then wait for the server to resolve my own joinedAt before
+        // negotiating with anyone — otherwise the caller/callee comparison below could
+        // race against a still-pending local timestamp estimate.
+        await setDoc(participantRef(currentUser.id), {
+          uid: currentUser.id, username: currentUser.username || '', avatar: currentUser.avatar || '?',
+          avatarColor: currentUser.avatarColor || COLORS.brand, joinedAt: serverTimestamp(),
+        });
+
+        myParticipantUnsubRef.current = onSnapshot(participantRef(currentUser.id), (snap) => {
+          const d = snap.data();
+          if (d?.joinedAt && !snap.metadata.hasPendingWrites) {
+            myJoinedAtRef.current = d.joinedAt.toMillis ? d.joinedAt.toMillis() : Date.now();
+          }
+        });
+
+        rosterUnsubRef.current = onSnapshot(participantsCol(), (snap) => {
+          const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+          const others = list.filter(p => p.id !== currentUser.id);
+          setRoster(others);
+          setJoining(false);
+
+          // Anyone who left: tear down their connection.
+          const currentIds = new Set(others.map(p => p.id));
+          Object.keys(peersRef.current).forEach(uid => { if (!currentIds.has(uid)) closePeer(uid); });
+
+          // Re-scanning the full roster (rather than only reacting to docChanges) on every
+          // snapshot deliberately covers the case where this snapshot fires before my own
+          // joinedAt has resolved from the server — my own doc updating from pending to
+          // confirmed is itself a change within this same collection, so this listener
+          // re-fires naturally once myJoinedAtRef is ready, and nobody gets silently skipped.
+          if (myJoinedAtRef.current == null) return;
+          others.forEach(p => {
+            if (peersRef.current[p.id] || !p.joinedAt) return;
+            const theirMillis = p.joinedAt.toMillis ? p.joinedAt.toMillis() : Date.now();
+            const role = myJoinedAtRef.current <= theirMillis ? 'caller' : 'callee';
+            setupPeer(p.id, role);
+          });
+        });
+      } catch (e) {
+        console.error('Group call start error:', e);
+        if (e?.name === 'NotAllowedError') showToast?.('Camera/mic access was denied', 'error');
+        else if (e?.name === 'NotFoundError') showToast?.('No camera or microphone found on this device', 'error');
+        else showToast?.('Could not start the group call', 'error');
+        onClose?.();
+      }
+    };
+    start();
+
+    return () => {
+      cancelled = true;
+      leavingRef.current = true;
+      rosterUnsubRef.current?.();
+      myParticipantUnsubRef.current?.();
+      Object.keys(peersRef.current).forEach(closePeer);
+      localStreamRef.current?.getTracks().forEach(t => t.stop());
+      const cleanup = async () => {
+        try {
+          await deleteDoc(participantRef(currentUser.id));
+          const remaining = await getDocs(participantsCol());
+          if (remaining.empty) {
+            const signals = await getDocs(collection(db, 'groups', groupId, 'call', 'state', 'signals'));
+            await Promise.all(signals.docs.map(d => deleteDoc(d.ref)));
+            await updateDoc(callStateRef(), { active: false }).catch(() => {});
+          }
+        } catch {}
+      };
+      cleanup();
+    };
+  }, []);
+
+  const toggleMic = () => {
+    const next = !micOn;
+    localStreamRef.current?.getAudioTracks().forEach(t => { t.enabled = next; });
+    setMicOn(next);
+  };
+  const toggleCam = () => {
+    if (callType !== 'video') return;
+    const next = !camOn;
+    localStreamRef.current?.getVideoTracks().forEach(t => { t.enabled = next; });
+    setCamOn(next);
+  };
+
+  const tileFor = (uid, name, avatar, avatarColor, isMe) => {
+    const stream = isMe ? localStreamRef.current : remoteStreams[uid];
+    const connected = isMe ? true : !!connectedIds[uid];
+    const showVideo = callType === 'video' && stream && stream.getVideoTracks().length > 0 && (isMe ? camOn : true);
+    return (
+      <div key={uid} style={{ width: 'calc(50% - 6px)', aspectRatio: '1/1', background: COLORS.overlaySubtle, borderRadius: 20, position: 'relative', overflow: 'hidden', border: `1px solid ${COLORS.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {showVideo ? (
+          <video autoPlay playsInline muted={isMe} ref={el => { if (el && el.srcObject !== stream) el.srcObject = stream; }} style={{ width: '100%', height: '100%', objectFit: 'cover', transform: isMe ? 'scaleX(-1)' : 'none' }} />
+        ) : (
+          <div style={{ width: 64, height: 64, borderRadius: '50%', background: avatarColor || COLORS.brand, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: 24 }}>{avatar || '?'}</div>
+        )}
+        {!isMe && callType === 'audio' && stream && (
+          <audio autoPlay ref={el => { if (el && el.srcObject !== stream) el.srcObject = stream; }} />
+        )}
+        <div style={{ position: 'absolute', bottom: 8, left: 10, right: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ color: 'white', fontSize: 12, fontWeight: 700, textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>{isMe ? 'You' : `@${name}`}</span>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: connected ? COLORS.success : COLORS.warning }} />
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div style={{ position: 'absolute', inset: 0, background: COLORS.bg, zIndex: 60, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ padding: '20px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: `1px solid ${COLORS.overlaySubtle}` }}>
+        <div>
+          <div style={{ color: COLORS.textPrimary, fontWeight: 800, fontSize: 18 }}>{callType === 'video' ? '📹' : '📞'} {groupName}</div>
+          <div style={{ color: COLORS.textTertiary, fontSize: 12 }}>{joining ? 'Joining…' : `${roster.length + 1} in call`}</div>
+        </div>
+        <button onClick={onClose} style={{ background: 'rgba(11,95,255,0.15)', border: '1px solid rgba(11,95,255,0.3)', borderRadius: '50%', width: 36, height: 36, color: COLORS.brand, cursor: 'pointer', fontSize: 18 }}>✕</button>
+      </div>
+      <div style={{ flex: 1, overflowY: 'auto', padding: 16, display: 'flex', flexWrap: 'wrap', gap: 12, alignContent: 'flex-start', justifyContent: 'center' }}>
+        {tileFor(currentUser.id, currentUser.username, currentUser.avatar, currentUser.avatarColor, true)}
+        {roster.map(p => tileFor(p.id, p.username, p.avatar, p.avatarColor, false))}
+      </div>
+      <div style={{ padding: '16px 20px 32px', display: 'flex', justifyContent: 'center', gap: 20, borderTop: `1px solid ${COLORS.overlaySubtle}` }}>
+        <button onClick={toggleMic} style={{ width: 56, height: 56, borderRadius: '50%', background: micOn ? COLORS.border : COLORS.danger, border: 'none', color: micOn ? COLORS.textPrimary : 'white', fontSize: 22, cursor: 'pointer' }}>{micOn ? '🎤' : '🔇'}</button>
+        {callType === 'video' && <button onClick={toggleCam} style={{ width: 56, height: 56, borderRadius: '50%', background: camOn ? COLORS.border : COLORS.danger, border: 'none', color: camOn ? COLORS.textPrimary : 'white', fontSize: 22, cursor: 'pointer' }}>{camOn ? '📷' : '🚫'}</button>}
+        <button onClick={onClose} style={{ width: 56, height: 56, borderRadius: '50%', background: COLORS.danger, border: 'none', color: 'white', fontSize: 22, cursor: 'pointer' }}>📵</button>
+      </div>
+    </div>
+  );
+};
+
 /* ─────────────── GROUP CHAT (v4 — like WhatsApp/Telegram groups) ─────────────── */
 const GroupChatPage = ({ currentUser, users, showToast, onBack }) => {
   const [groups, setGroups] = useState([]);
@@ -741,31 +1018,17 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack }) => {
             </div>
           </div>
         )}
-        {/* Group Call Overlay */}
+        {/* Group Call Overlay — real WebRTC mesh call, see GroupCallOverlay above */}
         {groupCallOpen && (
-          <div style={{ position:'absolute', inset:0, background:COLORS.bg, zIndex:60, display:'flex', flexDirection:'column' }}>
-            <div style={{ padding:'20px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', borderBottom:`1px solid ${COLORS.overlaySubtle}` }}>
-              <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:18 }}>{groupCallOpen==='video'?'📹':'📞'} Group {groupCallOpen==='video'?'Video':'Voice'} Call</div>
-              <button onClick={()=>setGroupCallOpen(null)} style={{ background:'rgba(11,95,255,0.15)', border:'1px solid rgba(11,95,255,0.3)', borderRadius:'50%', width:36, height:36, color:COLORS.brand, cursor:'pointer', fontSize:18 }}>✕</button>
-            </div>
-            <div style={{ flex:1, overflowY:'auto', padding:16, display:'flex', flexWrap:'wrap', gap:12, alignContent:'flex-start', justifyContent:'center' }}>
-              {groupMembers.map(u=>(
-                <div key={u.id} style={{ width:'calc(50% - 6px)', background:COLORS.overlaySubtle, borderRadius:20, padding:'18px 12px', display:'flex', flexDirection:'column', alignItems:'center', gap:8, border:`1px solid ${COLORS.border}` }}>
-                  <div style={{ width:56, height:56, borderRadius:'50%', background:u.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:COLORS.textPrimary, fontWeight:'bold', fontSize:22, overflow:'hidden', border:'2px solid rgba(52,199,89,0.4)' }}>
-                    {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : u.avatar}
-                  </div>
-                  <div style={{ color:COLORS.textPrimary, fontSize:12, fontWeight:700 }}>@{u.username}</div>
-                  {u.id===currentUser?.id && <div style={{ color:COLORS.success, fontSize:10 }}>You</div>}
-                  <div style={{ width:8, height:8, borderRadius:'50%', background:COLORS.success, animation:'pulse 1.5s ease infinite' }} />
-                </div>
-              ))}
-            </div>
-            <div style={{ padding:'16px 20px 32px', display:'flex', justifyContent:'center', gap:20, borderTop:`1px solid ${COLORS.overlaySubtle}` }}>
-              <button onClick={()=>showToast?.('Muted','info')} style={{ width:56, height:56, borderRadius:'50%', background:COLORS.border, border:'none', color:COLORS.textPrimary, fontSize:22, cursor:'pointer' }}>🎤</button>
-              {groupCallOpen==='video' && <button onClick={()=>showToast?.('Camera toggled','info')} style={{ width:56, height:56, borderRadius:'50%', background:COLORS.border, border:'none', color:COLORS.textPrimary, fontSize:22, cursor:'pointer' }}>📷</button>}
-              <button onClick={()=>setGroupCallOpen(null)} style={{ width:56, height:56, borderRadius:'50%', background:COLORS.brand, border:'none', color:'white', fontSize:22, cursor:'pointer' }}>📵</button>
-            </div>
-          </div>
+          <GroupCallOverlay
+            groupId={activeGroup.id}
+            groupName={activeGroup.name}
+            callType={groupCallOpen}
+            currentUser={currentUser}
+            users={groupMembers}
+            showToast={showToast}
+            onClose={() => setGroupCallOpen(null)}
+          />
         )}
         <div style={{ flex: 1, overflowY: 'auto', padding: '10px 14px' }}>
           {groupMessages.map(msg => {
@@ -3305,6 +3568,22 @@ const CommentsModal = ({ video, currentUser, onClose, showToast, onViewProfile }
   const send = async () => {
     if (!commentText.trim() && !cmAttachment) return;
     try {
+      // AI content check — the only moderation that previously existed anywhere in the
+      // app was on video-post captions; comments (the most common place for one user to
+      // harass another) went straight to Firestore unchecked. Same OpenAI moderation
+      // model as post creation; requires OPENAI_API_KEY to be set to actually run.
+      if (commentText.trim()) {
+        try {
+          const modResult = await apiFetch('/api/moderation/check', { method: 'POST', body: JSON.stringify({ text: commentText }) });
+          if (modResult?.blocked) {
+            showToast?.('This comment looks like it may violate our community guidelines and was not posted.', 'error');
+            return;
+          }
+        } catch (e) {
+          // Fail open on a moderation-service hiccup — don't block a legitimate comment
+          // just because the check itself errored (network blip, rate limit, etc.).
+        }
+      }
       let mediaUrl = null, mediaType = null;
       if (cmAttachment?.file) {
         try { mediaUrl = await uploadToCloudinary(cmAttachment.file); mediaType = cmAttachment.type; }
@@ -3529,6 +3808,18 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
   const [showShare, setShowShare] = useState(false);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
+  const [showMediaActions, setShowMediaActions] = useState(false);
+  const mediaPressTimer = useRef(null);
+  const mediaPressFired = useRef(false);
+  const startMediaPress = () => {
+    mediaPressFired.current = false;
+    mediaPressTimer.current = setTimeout(() => {
+      mediaPressFired.current = true;
+      haptic('medium');
+      setShowMediaActions(true);
+    }, 480);
+  };
+  const cancelMediaPress = () => clearTimeout(mediaPressTimer.current);
   const [descExpanded, setDescExpanded] = useState(false);
   const isVideo = video?.mediaType?.startsWith('video') || /\.(mp4|webm|mov)(\?|$)/i.test(video?.videoUrl||'');
   const mediaSrc = (Array.isArray(video.images) && video.images[0]) || video.videoUrl;
@@ -3538,12 +3829,24 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
   const viewCountedRef = useRef(false);
   const isVisible = useIntersectionObserver(mediaWrapRef, { threshold: 0.6 });
 
-  // Count a view once per mount, the first time the post is actually scrolled into view
+  // Count a view once per viewer per video, the first time the post is actually scrolled
+  // into view. BUG FIX: this used to only guard with a per-mount ref, so the exact same
+  // viewer inflated the count every time the card remounted — switching between the
+  // Home and Infinity feed tabs, pull-to-refresh, scrolling a video off-screen and back,
+  // etc. all silently added another view for one person. It also never had any real
+  // per-user dedup, so "views" didn't mean "people who watched" — it meant "renders".
+  // Now we check+record the viewer's id in `viewedBy` on the video doc itself, so a
+  // repeat viewer (any tab, any remount, any session) is only ever counted once, and the
+  // local ref just prevents a redundant write within the same mount.
   useEffect(() => {
-    if (!isVisible || viewCountedRef.current || !video?.id) return;
+    if (!isVisible || viewCountedRef.current || !video?.id || !currentUser?.id) return;
     viewCountedRef.current = true;
-    updateDoc(doc(db, 'videos', video.id), { views: increment(1) }).catch(() => {});
-  }, [isVisible, video?.id]);
+    if ((video.viewedBy || []).includes(currentUser.id)) return;
+    updateDoc(doc(db, 'videos', video.id), {
+      views: increment(1),
+      viewedBy: arrayUnion(currentUser.id),
+    }).catch(() => {});
+  }, [isVisible, video?.id, currentUser?.id]);
 
   // TikTok-style single-active playback: autoplay when in view, pause when scrolled away,
   // and pause any other feed video that was already playing so only one plays at once.
@@ -3629,6 +3932,21 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
     {showComments && <CommentsModal video={video} currentUser={currentUser} onClose={()=>setShowComments(false)} showToast={showToast} onViewProfile={onViewProfile} />}
     {showShare && <ShareSheet video={video} currentUser={currentUser} onClose={()=>setShowShare(false)} showToast={showToast} />}
     {showSaveConfirm && <SaveConfirmSheet onClose={()=>setShowSaveConfirm(false)} onViewCollections={()=>{ setShowSaveConfirm(false); showToast?.('Opening collections…','info'); }} />}
+    {showMediaActions && (
+      <div onClick={()=>setShowMediaActions(false)} style={{ position:'fixed', inset:0, zIndex:6000, background:'rgba(15,10,25,0.5)', display:'flex', alignItems:'flex-end', maxWidth:430, margin:'0 auto' }}>
+        <div onClick={e=>e.stopPropagation()} style={{ width:'100%', background:COLORS.surface, borderTopLeftRadius:24, borderTopRightRadius:24, padding:'10px 8px 28px' }}>
+          <div style={{ width:36, height:4, background:COLORS.border, borderRadius:2, margin:'0 auto 14px' }} />
+          <button onClick={()=>{ toggleSave(); setShowMediaActions(false); }} style={{ width:'100%', display:'flex', alignItems:'center', gap:14, padding:'14px 12px', background:'none', border:'none', cursor:'pointer', borderBottom:`1px solid ${COLORS.border}` }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill={saved?COLORS.brand:'none'} stroke={saved?COLORS.brand:COLORS.textPrimary} strokeWidth="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+            <span style={{ color:COLORS.textPrimary, fontSize:15, fontWeight:600 }}>{saved ? 'Remove from Saved' : 'Save'}</span>
+          </button>
+          <button onClick={()=>{ handleDownload(); setShowMediaActions(false); }} style={{ width:'100%', display:'flex', alignItems:'center', gap:14, padding:'14px 12px', background:'none', border:'none', cursor:'pointer' }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span style={{ color:COLORS.textPrimary, fontSize:15, fontWeight:600 }}>Download</span>
+          </button>
+        </div>
+      </div>
+    )}
     {showOptions && <PostOptionsMenu video={video} currentUser={currentUser} onClose={()=>setShowOptions(false)} showToast={showToast} onDelete={onDelete} onBlock={onBlock} />}
     <div style={{ background:COLORS.surface, borderRadius:RADIUS.lg, padding:14, marginBottom:0, boxShadow:SHADOW.card, border:`1px solid ${COLORS.border}`, transition:TRANSITION.base }}>
       <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:10 }}>
@@ -3688,14 +4006,15 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
         const shown = descExpanded || !isLong ? video.description : video.description.slice(0, DESC_LIMIT).trimEnd();
         const bg = video.bgColor && video.mediaType==='text';
         return (
-          <div style={bg ? {
+          <div onClick={()=>isLong && setDescExpanded(v=>!v)} style={bg ? {
             background:video.bgColor, borderRadius:16, padding:'28px 18px', marginBottom:12,
             display:'flex', alignItems:'center', justifyContent:'center', textAlign:'center', minHeight:120,
             color:'#fff', fontSize:18, fontWeight:700, lineHeight:1.4, whiteSpace:'pre-wrap', wordBreak:'break-word',
-          } : { color:COLORS.textPrimary, fontSize:14, lineHeight:1.5, marginBottom:12, whiteSpace:'pre-wrap', wordBreak:'break-word' }}>
+            cursor: isLong ? 'pointer' : 'default',
+          } : { color:COLORS.textPrimary, fontSize:14, lineHeight:1.5, marginBottom:12, whiteSpace:'pre-wrap', wordBreak:'break-word', cursor: isLong ? 'pointer' : 'default' }}>
             {shown}{isLong && !descExpanded && '…'}
             {isLong && (
-              <span onClick={()=>setDescExpanded(v=>!v)} style={{ color:bg?'rgba(255,255,255,0.85)':COLORS.textTertiary, fontWeight:700, cursor:'pointer', marginLeft:5 }}>
+              <span onClick={e=>{ e.stopPropagation(); setDescExpanded(v=>!v); }} style={{ color:bg?'rgba(255,255,255,0.85)':COLORS.textTertiary, fontWeight:700, cursor:'pointer', marginLeft:5 }}>
                 {descExpanded ? 'Show less' : 'See more'}
               </span>
             )}
@@ -3703,10 +4022,22 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
         );
       })()}
       {mediaSrc && (
-        <div ref={mediaWrapRef} onDoubleClick={handleMediaDoubleClick} style={{ position:'relative', borderRadius:16, overflow:'hidden', marginBottom:10, background:'#000', boxShadow:SHADOW.sm }}>
+        <div
+          ref={mediaWrapRef}
+          onDoubleClick={handleMediaDoubleClick}
+          onMouseDown={startMediaPress}
+          onMouseUp={cancelMediaPress}
+          onMouseLeave={cancelMediaPress}
+          onTouchStart={startMediaPress}
+          onTouchEnd={cancelMediaPress}
+          onTouchMove={cancelMediaPress}
+          onContextMenu={e=>{ e.preventDefault(); haptic('medium'); setShowMediaActions(true); }}
+          style={{ position:'relative', borderRadius:16, overflow:'hidden', marginBottom:10, background:'#000', boxShadow:SHADOW.sm }}
+        >
           {isVideo ? (
             <>
               <div onClick={()=>{
+                  if (mediaPressFired.current) { mediaPressFired.current = false; return; }
                   const el = videoElRef.current; if (!el) return;
                   if (el.paused) { el.play().then(()=>setVideoPaused(false)).catch(()=>{}); }
                   else { el.pause(); setVideoPaused(true); }
@@ -3805,16 +4136,6 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
               {/* Share */}
               <button onClick={()=>{ setShowShare(true); onShare?.(video); }} onMouseDown={press} onMouseUp={unpress} onMouseLeave={unpress} style={iconBtn()}>
                 <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={neutral} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-              </button>
-
-              {/* Download */}
-              <button onClick={handleDownload} onMouseDown={press} onMouseUp={unpress} onMouseLeave={unpress} style={iconBtn()}>
-                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={neutral} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              </button>
-
-              {/* Save */}
-              <button onClick={toggleSave} onMouseDown={press} onMouseUp={unpress} onMouseLeave={unpress} style={iconBtn()}>
-                <svg width="19" height="19" viewBox="0 0 24 24" fill={saved?COLORS.brand:'none'} stroke={saved?COLORS.brand:neutral} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
               </button>
 
               {/* More */}
@@ -7283,10 +7604,10 @@ const ConversationRow = ({ u, conv, currentUser, onOpen, onLongPress }) => {
       onTouchMove={cancelPress}
       onMouseEnter={e=>e.currentTarget.style.background=COLORS.surfaceAlt}
       onContextMenu={e=>{ e.preventDefault(); onLongPress(u, conv); }}
-      style={{ display:'flex', alignItems:'center', gap:14, padding:'11px 16px', cursor:'pointer', borderRadius:16, transition:TRANSITION.fast, userSelect:'none', WebkitUserSelect:'none' }}
+      style={{ display:'flex', alignItems:'center', gap:14, padding:'11px 16px', cursor:'pointer', borderRadius:16, transition:TRANSITION.fast, userSelect:'none', WebkitUserSelect:'none', background: unread>0 ? `${COLORS.brand}0A` : 'transparent' }}
     >
       <div style={{ position:'relative', flexShrink:0 }}>
-        <div style={{ width:52, height:52, borderRadius:'50%', background:u.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, fontSize:20, overflow:'hidden', boxShadow:SHADOW.xs }}>
+        <div style={{ width:52, height:52, borderRadius:'50%', background:u.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, fontSize:20, overflow:'hidden', boxShadow: isOnline ? SHADOW.glow(COLORS.success) : SHADOW.xs, border: unread>0 ? `2px solid ${COLORS.brand}` : 'none' }}>
           {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : u.avatar}
         </div>
         {/* Real presence — was a hardcoded green dot on every row before regardless of
@@ -10490,7 +10811,7 @@ const handleMessage = uid => {
             onViewProfile={uid=>{ setQuickConversation(null); handleViewProfile(uid); }}
             onVoiceCall={uid=>{const u=users.find(uu=>uu.id===uid); const callDocId=[currentUser.id,uid].sort().join('_'); setShowCall({type:'audio',contactName:u?.username||quickConversation.otherUser?.username,contactAvatar:u?.avatar||quickConversation.otherUser?.avatar,contactId:uid,callDocId});}}
             onVideoCall={uid=>{const u=users.find(uu=>uu.id===uid); const callDocId=[currentUser.id,uid].sort().join('_'); setShowCall({type:'video',contactName:u?.username||quickConversation.otherUser?.username,contactAvatar:u?.avatar||quickConversation.otherUser?.avatar,contactId:uid,callDocId});}}
-            onBlock={uid=>setBlockedUsers(p=>[...p,uid])}
+            onBlock={uid=>{ setBlockedUsers(p=>p.includes(uid)?p:[...p,uid]); setCurrentUser(cu=>cu ? ({...cu, blockedUsers:(cu.blockedUsers||[]).includes(uid)?cu.blockedUsers:[...(cu.blockedUsers||[]),uid]}) : cu); }}
           />
         </div>
       )}
@@ -10525,7 +10846,7 @@ const handleMessage = uid => {
             {activeTab==='inbox' && <InboxPage t={t} users={users} currentUser={currentUser} showToast={showToast} onViewProfile={handleViewProfile} initialTargetId={inboxTargetId} onClearTarget={()=>setInboxTargetId(null)} persistedConversation={activeConversation} openGroupsSignal={inboxOpenGroups} onSetConversation={(conv)=>{ setActiveConversation(conv); }} onFeedScroll={handleFeedScroll}
   onVoiceCall={uid=>{ const u=users.find(uu=>uu.id===uid); const callDocId=[currentUser.id,uid].sort().join('_'); setShowCall({type:'audio',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
   onVideoCall={uid=>{ const u=users.find(uu=>uu.id===uid); const callDocId=[currentUser.id,uid].sort().join('_'); setShowCall({type:'video',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
-  onBlock={uid=>setBlockedUsers(p=>[...p,uid])}
+  onBlock={uid=>{ setBlockedUsers(p=>p.includes(uid)?p:[...p,uid]); setCurrentUser(cu=>cu ? ({...cu, blockedUsers:(cu.blockedUsers||[]).includes(uid)?cu.blockedUsers:[...(cu.blockedUsers||[]),uid]}) : cu); }}
 />}
             {(activeTab==='profile'||activeTab==='settings') && <ProfilePage user={currentUser} setCurrentUser={setCurrentUser} onLogout={handleLogout} users={users} showToast={showToast} onShowAnalytics={()=>setShowAnalytics(true)} onShowQRCode={()=>setShowQRCode(true)} allVideos={videos} setBlockedUsers={setBlockedUsers} onShowSavedPosts={()=>setShowSavedPosts(true)} onGoToGroups={()=>{ setActiveTab('inbox'); setInboxOpenGroups(n=>n+1); }} onShowBroadcast={()=>setShowBroadcast(true)} onViewProfile={handleViewProfile} settingsSignal={activeTab==='settings'?settingsSignal:0} onFeedScroll={handleFeedScroll} t={t} theme={theme} onToggleTheme={toggleTheme} />}
           </>
