@@ -2953,9 +2953,16 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
         {!isOwn && (
           <div style={{ padding:'0 16px 16px', display:'flex', flexDirection:'column', gap:8 }}>
             <div style={{ display:'flex', gap:8 }}>
-              <button onClick={()=>{onFollow?.(user.id); onClose();}}
-                style={{ flex:1, background:isFollowing?'rgba(255,255,255,0.06)':'linear-gradient(135deg,#2E7BFF,#0B5FFF)', border:isFollowing?'1px solid rgba(11,95,255,0.4)':'none', borderRadius:14, padding:'12px', color:isFollowing?'#0B5FFF':'white', fontWeight:700, cursor:'pointer', fontSize:14 }}>
-                {isFollowing ? 'Following' : '+ Follow'}
+              <button
+                onClick={()=>{onFollow?.(user.id);}}
+                aria-label={isFollowing ? 'Unfollow' : 'Follow'}
+                title={isFollowing ? 'Unfollow' : 'Follow'}
+                style={{ flex:'0 0 auto', width:48, height:48, display:'flex', alignItems:'center', justifyContent:'center', background:isFollowing?'rgba(255,255,255,0.06)':'linear-gradient(135deg,#2E7BFF,#0B5FFF)', border:isFollowing?'1px solid rgba(255,255,255,0.15)':'none', borderRadius:'50%', color:isFollowing?'rgba(255,255,255,0.7)':'white', cursor:'pointer', padding:0 }}>
+                {isFollowing ? (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                ) : (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                )}
               </button>
               <button onClick={()=>{onMessage?.(user.id); onClose();}} style={{ flex:1, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:'12px', color:'white', fontWeight:600, cursor:'pointer', fontSize:14 }}>Message</button>
               <button
