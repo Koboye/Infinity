@@ -520,7 +520,7 @@ const ShareIconBtn = ({ bg, fg='#fff', label, onClick, children }) => (
 
 const ShareSheet = ({ video, currentUser, onClose, showToast }) => {
   const shareUrl = `https://infinity-now.vercel.app/video/${video?.id}`;
-  const mediaSrc = (Array.isArray(video?.images) && video.images[0]) || video?.videoUrl;
+  const shareText = video?.description || `Check out @${video?.username || 'this'} on Infinity`;
   // Every share action below previously did nothing to the post's actual share count —
   // the "shares" number shown in the feed never moved no matter how many times someone
   // shared. Now each action bumps it, TikTok-style.
@@ -529,44 +529,77 @@ const ShareSheet = ({ video, currentUser, onClose, showToast }) => {
     updateDoc(doc(db, 'videos', video.id), { shares: increment(1) }).catch(() => {});
   };
   const copyLink = async () => { try { await navigator.clipboard.writeText(shareUrl); recordShare(); showToast?.('Link copied!', 'success'); } catch { showToast?.('Copy failed', 'error'); } };
-  const shareTo = [
-    { label:'Copy link', bg:COLORS.surfaceAlt, fg:COLORS.brand, action:copyLink, icon:(<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 007.07 0l2.83-2.83a5 5 0 00-7.07-7.07l-1.5 1.5"/><path d="M14 11a5 5 0 00-7.07 0L4.1 13.83a5 5 0 007.07 7.07l1.5-1.5"/></svg>) },
-    { label:'Facebook', bg:'#1877F2', action:()=>{ recordShare(); window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`); }, icon:(<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 10-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.5 1.49-3.89 3.78-3.89 1.1 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.89h-2.34v6.99A10 10 0 0022 12z"/></svg>) },
-    { label:'Messenger', bg:'linear-gradient(135deg,#00B2FF,#006AFF)', action:()=>{ recordShare(); showToast?.('Opening Messenger…','info'); }, icon:(<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.15 2 11.25c0 2.9 1.45 5.49 3.72 7.19V22l3.4-1.87c.91.25 1.87.38 2.88.38 5.52 0 10-4.15 10-9.26C22 6.15 17.52 2 12 2zm1.02 12.47l-2.55-2.72-4.98 2.72 5.48-5.83 2.61 2.72 4.92-2.72-5.48 5.83z"/></svg>) },
-    { label:'TikTok', bg:'#000', action:()=>{ recordShare(); showToast?.('Opening TikTok…','info'); }, icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M16.6 5.82a4.28 4.28 0 01-3.15-1.4V15.3a5.4 5.4 0 11-4.68-5.35v2.68a2.72 2.72 0 102.28 2.68V2h2.6a4.28 4.28 0 003.9 3.8z"/></svg>) },
-    { label:'More', bg:COLORS.surfaceAlt, fg:COLORS.textPrimary, action:async()=>{ try { await navigator.share({ title:`@${video?.username} on Infinity`, text:video?.description, url:shareUrl }); recordShare(); } catch {} }, icon:(<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>) },
+
+  // ── PRE-CODED APP LIST ──────────────────────────────────────────────────
+  // Same fixed roster, same order, same 5-column grid TikTok uses for its "Share to"
+  // panel. Where a platform exposes a public web share/deeplink target (WhatsApp,
+  // Telegram, Facebook, Messenger, X, Snapchat, LINE, Email, SMS) we open it for real;
+  // there's no public API to actually attach media to most of these from a browser,
+  // so — same as TikTok's own web share sheet — they open pre-filled with the link.
+  const shareApps = [
+    { label:'WhatsApp', bg:'#25D366', action:()=>{ recordShare(); window.open(`https://wa.me/?text=${encodeURIComponent(shareText+' '+shareUrl)}`,'_blank'); },
+      icon:(<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 00-8.5 15.2L2 22l4.9-1.4A10 10 0 1012 2zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.3-.5.1-1 .1-3.3-.7-2.8-1-4.6-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.8 0-1.3.7-2 .9-2.2.2-.2.5-.3.7-.3h.5c.2 0 .4 0 .6.5.2.5.7 1.8.8 1.9.1.2.1.4 0 .6-.1.2-.2.3-.4.5-.2.2-.4.4-.5.6-.2.2-.4.4-.2.7.2.4.9 1.5 2 2.4 1.4 1.2 2.5 1.6 2.9 1.8.4.2.6.1.8-.1.2-.2.9-1 1.1-1.4.2-.4.5-.3.8-.2.3.1 1.9.9 2.3 1 .3.2.5.2.6.4.1.2.1.9-.2 1.5z"/></svg>) },
+    { label:'Telegram', bg:'#29B6F6', action:()=>{ recordShare(); window.open(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`,'_blank'); },
+      icon:(<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M21.05 3.87L2.7 11.1c-1.26.5-1.25 1.2-.23 1.52l4.7 1.47 1.8 5.6c.22.6.44.85.9.85.35 0 .5-.16.7-.36l1.7-1.65 4.7 3.45c.87.48 1.5.23 1.72-.8L22.7 5.03c.32-1.27-.5-1.83-1.65-1.16zM8.6 13.6l9.5-6c.45-.27.86-.12.52.18l-7.8 7.1-.3 3.24-1.4-4.5z"/></svg>) },
+    { label:'Facebook', bg:'#1877F2', action:()=>{ recordShare(); window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,'_blank'); },
+      icon:(<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 10-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.5 1.49-3.89 3.78-3.89 1.1 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.89h-2.34v6.99A10 10 0 0022 12z"/></svg>) },
+    { label:'Messenger', bg:'linear-gradient(135deg,#00B2FF,#006AFF)', action:()=>{ recordShare(); window.open(`https://www.facebook.com/dialog/send?link=${encodeURIComponent(shareUrl)}&redirect_uri=${encodeURIComponent(shareUrl)}&app_id=0`,'_blank'); },
+      icon:(<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.15 2 11.25c0 2.9 1.45 5.49 3.72 7.19V22l3.4-1.87c.91.25 1.87.38 2.88.38 5.52 0 10-4.15 10-9.26C22 6.15 17.52 2 12 2zm1.02 12.47l-2.55-2.72-4.98 2.72 5.48-5.83 2.61 2.72 4.92-2.72-5.48 5.83z"/></svg>) },
+    { label:'X', bg:'#000', action:()=>{ recordShare(); window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`,'_blank'); },
+      icon:(<svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M18.9 2H22l-7.5 8.57L23.3 22H16.7l-5.2-6.8L5.5 22H2.4l8-9.15L1.4 2H8.2l4.7 6.2L18.9 2zm-1.15 18h1.72L6.35 3.9H4.5L17.75 20z"/></svg>) },
+    { label:'Snapchat', bg:'#FFFC00', fg:'#000', action:()=>{ recordShare(); window.open(`https://www.snapchat.com/scan?attachmentUrl=${encodeURIComponent(shareUrl)}`,'_blank'); },
+      icon:(<svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.2c2.6 0 4.3 2.1 4.4 4.6.05 1 .02 1.9 0 2.5.5.3 1.2.2 1.7-.1.4-.2.9-.1 1.1.3.2.4 0 .9-.4 1.1-.6.3-1.3.6-1.6.9-.1.6.5 1.4 1.4 2.1.7.5 1.5.8 2.1 1-.1.6-.7 1-1.3 1.1-.5.1-1 .1-1.3.3-.2.2-.2.6-.4 1-.2.5-.7.7-1.3.6-.7-.1-1.4-.3-2.2-.1-.7.2-1.3.7-2.2.7-.9 0-1.5-.5-2.2-.7-.8-.2-1.5 0-2.2.1-.6.1-1.1-.1-1.3-.6-.2-.4-.2-.8-.4-1-.3-.2-.8-.2-1.3-.3-.6-.1-1.2-.5-1.3-1.1.6-.2 1.4-.5 2.1-1 .9-.7 1.5-1.5 1.4-2.1-.3-.3-1-.6-1.6-.9-.4-.2-.6-.7-.4-1.1.2-.4.7-.5 1.1-.3.5.3 1.2.4 1.7.1-.02-.6-.05-1.5 0-2.5.1-2.5 1.8-4.6 4.4-4.6z"/></svg>) },
+    { label:'LINE', bg:'#00C300', action:()=>{ recordShare(); window.open(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(shareUrl)}`,'_blank'); },
+      icon:(<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.5 2 2 5.8 2 10.4c0 4.1 3.6 7.5 8.4 8.2.3.1.8.2.9.5.1.3.06.7 0 1l-.15 1c-.05.3-.2 1.1.95.6 1.15-.5 6.2-3.65 8.5-6.25C21.9 13.9 22 12.2 22 10.4 22 5.8 17.5 2 12 2zm-3.2 11h-1.9c-.3 0-.5-.2-.5-.5v-4c0-.3.2-.5.5-.5s.5.2.5.5v3.5h1.4c.3 0 .5.2.5.5s-.2.5-.5.5zm2 0c-.3 0-.5-.2-.5-.5v-4c0-.3.2-.5.5-.5s.5.2.5.5v4c0 .3-.2.5-.5.5zm5 0c-.15 0-.3-.06-.4-.18l-1.9-2.6v2.28c0 .3-.2.5-.5.5s-.5-.2-.5-.5v-4c0-.25.15-.45.4-.5.25-.05.5.05.6.25l1.9 2.6V8.5c0-.3.2-.5.5-.5s.5.2.5.5v4c0 .25-.15.45-.4.5h-.2zm3.7-3.5h-1.4v.9h1.4c.3 0 .5.2.5.5s-.2.5-.5.5h-1.4v.9h1.4c.3 0 .5.2.5.5s-.2.5-.5.5h-1.9c-.3 0-.5-.2-.5-.5v-4c0-.3.2-.5.5-.5h1.9c.3 0 .5.2.5.5s-.2.5-.5.5z"/></svg>) },
+    { label:'Email', bg:COLORS.surfaceAlt, fg:COLORS.textPrimary, action:()=>{ recordShare(); window.open(`mailto:?subject=${encodeURIComponent('Check this out on Infinity')}&body=${encodeURIComponent(shareText+' '+shareUrl)}`,'_self'); },
+      icon:(<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 6l-10 7L2 6"/></svg>) },
+    { label:'SMS', bg:COLORS.success, action:()=>{ recordShare(); window.open(`sms:?body=${encodeURIComponent(shareText+' '+shareUrl)}`,'_self'); },
+      icon:(<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>) },
+    { label:'Copy link', bg:COLORS.surfaceAlt, fg:COLORS.brand, action:copyLink,
+      icon:(<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 007.07 0l2.83-2.83a5 5 0 00-7.07-7.07l-1.5 1.5"/><path d="M14 11a5 5 0 00-7.07 0L4.1 13.83a5 5 0 007.07 7.07l1.5-1.5"/></svg>) },
   ];
-  const moreWays = [
-    { label:'Repost', bg:COLORS.surfaceAlt, fg:COLORS.textPrimary, action:()=>{ recordShare(); showToast?.('Reposted to your profile','success'); }, icon:(<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>) },
-    { label:'Stories', bg:COLORS.gradient, action:()=>{ recordShare(); showToast?.('Open Create to add to story','info'); }, icon:(<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="12" cy="12" r="4"/></svg>) },
-    { label:'WhatsApp', bg:'#25D366', action:()=>{ recordShare(); window.open(`https://wa.me/?text=${encodeURIComponent((video?.description||'')+' '+shareUrl)}`); }, icon:(<svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 00-8.5 15.2L2 22l4.9-1.4A10 10 0 1012 2zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.3-.5.1-1 .1-3.3-.7-2.8-1-4.6-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.8 0-1.3.7-2 .9-2.2.2-.2.5-.3.7-.3h.5c.2 0 .4 0 .6.5.2.5.7 1.8.8 1.9.1.2.1.4 0 .6-.1.2-.2.3-.4.5-.2.2-.4.4-.5.6-.2.2-.4.4-.2.7.2.4.9 1.5 2 2.4 1.4 1.2 2.5 1.6 2.9 1.8.4.2.6.1.8-.1.2-.2.9-1 1.1-1.4.2-.4.5-.3.8-.2.3.1 1.9.9 2.3 1 .3.2.5.2.6.4.1.2.1.9-.2 1.5z"/></svg>) },
-    { label:'Instagram Direct', bg:'linear-gradient(135deg,#F58529,#DD2A7B,#8134AF)', action:()=>{ recordShare(); showToast?.('Opening Instagram…','info'); }, icon:(<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg>) },
-    { label:'SMS', bg:COLORS.success, action:()=>{ recordShare(); window.open(`sms:?body=${encodeURIComponent((video?.description||'')+' '+shareUrl)}`); }, icon:(<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>) },
+
+  // TikTok's grey "More" row of in-app actions, sitting below the app grid — all
+  // monochrome circles (no brand colors) since these aren't external destinations.
+  const moreActions = [
+    { label:'Repost', action:()=>{ recordShare(); showToast?.('Reposted to your profile','success'); },
+      icon:(<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>) },
+    { label:'Favorite', action:()=>showToast?.('Added to favorites','success'),
+      icon:(<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>) },
+    { label:'Duet', action:()=>showToast?.('Opening duet editor…','info'),
+      icon:(<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="9" height="16" rx="2"/><rect x="13" y="4" width="9" height="16" rx="2"/></svg>) },
+    { label:'Stitch', action:()=>showToast?.('Opening stitch editor…','info'),
+      icon:(<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M8.5 8.2L19 18M19 6L8.5 15.8"/></svg>) },
+    { label:'Download', action:()=>showToast?.('Preparing download…','info'),
+      icon:(<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>) },
+    { label:'Not interested', action:()=>showToast?.("Got it — we'll show you less like this",'info'),
+      icon:(<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.94 10.94 0 0112 20c-7 0-11-8-11-8a21.6 21.6 0 015.06-6.06M9.9 4.24A10.4 10.4 0 0112 4c7 0 11 8 11 8a21.6 21.6 0 01-2.16 3.19"/><path d="M14.12 14.12a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>) },
+    { label:'Report', action:()=>showToast?.('Opening report…','info'),
+      icon:(<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 9v4M12 17h.01"/><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>) },
   ];
+
   return (
     <div style={{ position:'fixed', inset:0, zIndex:5000, background:'rgba(20,15,35,0.45)', display:'flex', alignItems:'flex-end', animation:'fadeIn 0.2s ease' }} onClick={onClose}>
-      <div onClick={e=>e.stopPropagation()} style={{ width:'100%', maxHeight:'86vh', overflowY:'auto', background:COLORS.surface, borderTopLeftRadius:26, borderTopRightRadius:26, paddingBottom:'max(20px, env(safe-area-inset-bottom))' }}>
-        <SheetBackHeader title="Share" onClose={onClose} />
-        <div style={{ padding:'16px' }}>
-          <div style={{ display:'flex', alignItems:'center', gap:12, background:COLORS.surface2, borderRadius:16, padding:10, marginBottom:22 }}>
-            <div style={{ width:52, height:52, borderRadius:12, overflow:'hidden', background:COLORS.surfaceAlt, flexShrink:0 }}>
-              {mediaSrc && <img src={mediaSrc} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />}
-            </div>
-            <div style={{ minWidth:0 }}>
-              <div style={{ color:COLORS.textPrimary, fontSize:13, fontWeight:600, lineHeight:1.35, overflow:'hidden', textOverflow:'ellipsis', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' }}>{video?.description || 'Shared post'}</div>
-              <div style={{ color:COLORS.textTertiary, fontSize:12, marginTop:3 }}>by {video?.fullName || video?.username}</div>
-            </div>
-          </div>
+      <div onClick={e=>e.stopPropagation()} style={{ width:'100%', maxHeight:'70vh', overflowY:'auto', background:COLORS.surface, borderTopLeftRadius:20, borderTopRightRadius:20, paddingBottom:'max(16px, env(safe-area-inset-bottom))' }}>
+        {/* Drag handle + centered title, no back-arrow — matches TikTok's actual share sheet chrome */}
+        <div style={{ display:'flex', justifyContent:'center', paddingTop:10 }}>
+          <div style={{ width:36, height:4, borderRadius:2, background:COLORS.border }} />
+        </div>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'center', position:'relative', padding:'10px 16px 4px' }}>
+          <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:15 }}>Share to</div>
+          <button onClick={onClose} style={{ position:'absolute', right:12, top:6, background:'none', border:'none', color:COLORS.textTertiary, cursor:'pointer', padding:6, display:'flex' }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
 
-          <div style={{ color:COLORS.textTertiary, fontSize:12.5, fontWeight:700, marginBottom:14 }}>Share to</div>
-          <div style={{ display:'flex', justifyContent:'space-between', marginBottom:24 }}>
-            {shareTo.map(o => <ShareIconBtn key={o.label} bg={o.bg} fg={o.fg} label={o.label} onClick={o.action}>{o.icon}</ShareIconBtn>)}
-          </div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(5, 1fr)', rowGap:18, padding:'10px 10px 6px', justifyItems:'center' }}>
+          {shareApps.map(o => <ShareIconBtn key={o.label} bg={o.bg} fg={o.fg} label={o.label} onClick={o.action}>{o.icon}</ShareIconBtn>)}
+        </div>
 
-          <div style={{ color:COLORS.textTertiary, fontSize:12.5, fontWeight:700, marginBottom:14 }}>More ways to share</div>
-          <div style={{ display:'flex', justifyContent:'space-between' }}>
-            {moreWays.map(o => <ShareIconBtn key={o.label} bg={o.bg} fg={o.fg} label={o.label} onClick={o.action}>{o.icon}</ShareIconBtn>)}
-          </div>
+        <div style={{ height:1, background:COLORS.border, margin:'10px 16px 16px' }} />
+
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(5, 1fr)', rowGap:18, padding:'0 10px 8px', justifyItems:'center' }}>
+          {moreActions.map(o => <ShareIconBtn key={o.label} bg={COLORS.surfaceAlt} fg={COLORS.textPrimary} label={o.label} onClick={o.action}>{o.icon}</ShareIconBtn>)}
         </div>
       </div>
     </div>
@@ -3386,20 +3419,119 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
 /* CommentItem and CommentInputBar removed — dead code. CommentsModal (used by
    FeedPostCard) hand-rolls its own comment list and input inline instead of
    reusing these; neither was ever rendered on its own. */
+// Bottom-anchored, tap-to-seek and drag-to-scrub progress bar — TikTok/Reels style.
+// A slim line by default, thickens to a full touch-friendly track while the user is
+// interacting so it's easy to grab on mobile without needing a permanently large hit area.
 const VideoProgressBar = ({ videoRef, isActive, isImage }) => {
   const [progress, setProgress] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const [dragTime, setDragTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const trackRef = useRef(null);
+  const draggingRef = useRef(false);
+
   useEffect(()=>{
-    if(isImage || !isActive) return;
+    if(isImage || !isActive || draggingRef.current) return;
     const tick = setInterval(()=>{
       const el = videoRef?.current;
-      if(el && el.duration) setProgress((el.currentTime / el.duration) * 100);
+      if(el && el.duration){
+        setProgress((el.currentTime / el.duration) * 100);
+        setDuration(el.duration);
+      }
     }, 500);
     return ()=>clearInterval(tick);
   },[isActive, isImage]);
+
+  const fmtTime = (s) => {
+    if (!isFinite(s) || s < 0) s = 0;
+    const m = Math.floor(s/60);
+    const sec = Math.floor(s%60);
+    return `${m}:${String(sec).padStart(2,'0')}`;
+  };
+
+  const seekFromClientX = (clientX) => {
+    const el = videoRef?.current;
+    const track = trackRef.current;
+    if (!el || !track || !el.duration) return;
+    const rect = track.getBoundingClientRect();
+    const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+    const time = ratio * el.duration;
+    setProgress(ratio * 100);
+    setDragTime(time);
+    setDuration(el.duration);
+    return time;
+  };
+
+  const getClientX = (e) => (e.touches?.[0]?.clientX ?? e.clientX);
+
+  const startDrag = (e) => {
+    e.stopPropagation(); // don't let the tap-to-pause handler underneath fire
+    draggingRef.current = true;
+    setDragging(true);
+    seekFromClientX(getClientX(e));
+  };
+  const moveDrag = (e) => {
+    if (!draggingRef.current) return;
+    e.stopPropagation();
+    seekFromClientX(getClientX(e));
+  };
+  const endDrag = (e) => {
+    if (!draggingRef.current) return;
+    e.stopPropagation();
+    const el = videoRef?.current;
+    const time = seekFromClientX(getClientX(e));
+    if (el && typeof time === 'number') el.currentTime = time;
+    draggingRef.current = false;
+    setDragging(false);
+  };
+
+  useEffect(() => {
+    if (!dragging) return;
+    const onMove = (e) => moveDrag(e);
+    const onUp = (e) => endDrag(e);
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    window.addEventListener('touchmove', onMove, { passive:false });
+    window.addEventListener('touchend', onUp);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      window.removeEventListener('touchmove', onMove);
+      window.removeEventListener('touchend', onUp);
+    };
+  }, [dragging]);
+
   if(isImage) return null;
+  const shownTime = dragging ? dragTime : (videoRef?.current?.currentTime || 0);
   return (
-    <div style={{ position:'absolute', top:0, left:0, right:0, height:2, background:'rgba(255,255,255,0.15)', zIndex:20 }}>
-      <div style={{ height:'100%', background:'linear-gradient(90deg,#2E7BFF,#0B5FFF)', width:`${progress}%`, transition:'width 0.5s linear' }} />
+    <div
+      ref={trackRef}
+      onMouseDown={startDrag}
+      onTouchStart={startDrag}
+      onClick={e=>e.stopPropagation()}
+      style={{
+        position:'absolute', left:0, right:0, bottom:0, zIndex:20,
+        height: dragging ? 22 : 14, display:'flex', alignItems:'center',
+        padding:'0 10px', cursor:'pointer', touchAction:'none',
+      }}
+    >
+      {dragging && (
+        <div style={{
+          position:'absolute', bottom:'100%', left:`calc(${progress}% )`, transform:'translateX(-50%)',
+          marginBottom:6, background:'rgba(0,0,0,0.75)', color:'white', fontSize:11, fontWeight:700,
+          padding:'3px 7px', borderRadius:6, whiteSpace:'nowrap', pointerEvents:'none',
+        }}>
+          {fmtTime(shownTime)} / {fmtTime(duration)}
+        </div>
+      )}
+      <div style={{ position:'relative', width:'100%', height: dragging ? 4 : 2.5, background:'rgba(255,255,255,0.25)', borderRadius:3, transition:'height 0.15s ease' }}>
+        <div style={{ position:'absolute', left:0, top:0, height:'100%', borderRadius:3, background:'linear-gradient(90deg,#2E7BFF,#0B5FFF)', width:`${progress}%`, transition: dragging ? 'none' : 'width 0.5s linear' }} />
+        <div style={{
+          position:'absolute', top:'50%', left:`${progress}%`, transform:'translate(-50%,-50%)',
+          width: dragging ? 13 : 0, height: dragging ? 13 : 0, borderRadius:'50%', background:'#fff',
+          boxShadow:'0 0 4px rgba(0,0,0,0.5)', transition:'width 0.15s ease, height 0.15s ease',
+        }} />
+      </div>
     </div>
   );
 };
@@ -3833,6 +3965,58 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
   const viewCountedRef = useRef(false);
   const isVisible = useIntersectionObserver(mediaWrapRef, { threshold: 0.6 });
 
+  // ── Bilingual (Amharic/English) auto-captions, TikTok-style ──
+  // Captions are generated once per video (server-side, cached on the video doc via
+  // Firestore admin write) then reused by every viewer. `video.captions` arrives
+  // through the normal Firestore snapshot the parent feed already subscribes to, so
+  // once it lands here everyone sees it without re-requesting Gemini.
+  const [ccOn, setCcOn] = useState(false);
+  const [ccLang, setCcLang] = useState('en'); // 'en' | 'am'
+  const [ccLoading, setCcLoading] = useState(false);
+  const [localCaptions, setLocalCaptions] = useState(null); // fallback if snapshot hasn't caught up yet
+  const [activeCaptionText, setActiveCaptionText] = useState('');
+  const captions = video.captions || localCaptions;
+
+  const requestCaptions = async () => {
+    if (!isVideo || ccLoading || captions) return;
+    setCcLoading(true);
+    try {
+      const data = await apiFetch('/api/ai/captions', {
+        method: 'POST',
+        body: JSON.stringify({ videoId: video.id, videoUrl: mediaSrc }),
+      });
+      if (data?.captions) setLocalCaptions(data.captions);
+    } catch (e) {
+      showToast?.(e.message || 'Could not generate captions', 'error');
+      setCcOn(false);
+    } finally {
+      setCcLoading(false);
+    }
+  };
+
+  const toggleCaptions = () => {
+    const next = !ccOn;
+    setCcOn(next);
+    if (next && !captions) requestCaptions();
+  };
+
+  // Drive the on-screen caption text off the video's actual playback time so it stays
+  // in sync even after the user scrubs the progress bar above.
+  useEffect(() => {
+    if (!ccOn || !captions) { setActiveCaptionText(''); return; }
+    const el = videoElRef.current;
+    if (!el) return;
+    const track = captions[ccLang] || [];
+    const update = () => {
+      const t = el.currentTime;
+      const seg = track.find(s => t >= s.start && t <= s.end);
+      setActiveCaptionText(seg?.text || '');
+    };
+    update();
+    el.addEventListener('timeupdate', update);
+    return () => el.removeEventListener('timeupdate', update);
+  }, [ccOn, ccLang, captions]);
+
   // Count a view once per viewer per video, the first time the post is actually scrolled
   // into view. BUG FIX: this used to only guard with a per-mount ref, so the exact same
   // viewer inflated the count every time the card remounted — switching between the
@@ -4055,8 +4239,47 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
                   style={{ width:'100%', maxHeight:520, display:'block', objectFit:'cover', background:'#000' }}
                 />
               </div>
-              {/* Top progress line — mirrors the swipeable feed's video progress style */}
+              {/* Bottom progress line — draggable to seek, mirrors TikTok/Reels scrubbing */}
               <VideoProgressBar videoRef={videoElRef} isActive={isVisible} isImage={false} />
+              {/* CC toggle — top-right corner over the video */}
+              <button
+                onClick={e => { e.stopPropagation(); toggleCaptions(); }}
+                title="Captions"
+                style={{
+                  position:'absolute', top:10, right:10, zIndex:21,
+                  display:'flex', alignItems:'center', gap:5,
+                  background: ccOn ? 'rgba(11,95,255,0.85)' : 'rgba(0,0,0,0.45)',
+                  border:'none', borderRadius:14, padding:'5px 9px',
+                  color:'white', fontSize:11, fontWeight:800, cursor:'pointer',
+                }}
+              >
+                {ccLoading ? (
+                  <span style={{ width:11, height:11, border:'2px solid rgba(255,255,255,0.4)', borderTopColor:'#fff', borderRadius:'50%', animation:'spin 0.7s linear infinite', display:'inline-block' }} />
+                ) : 'CC'}
+                {ccOn && captions && (
+                  <span
+                    onClick={e => { e.stopPropagation(); setCcLang(l => l === 'en' ? 'am' : 'en'); }}
+                    style={{ background:'rgba(255,255,255,0.25)', borderRadius:8, padding:'1px 6px', fontSize:10 }}
+                  >
+                    {ccLang === 'en' ? 'EN' : 'አማ'}
+                  </span>
+                )}
+              </button>
+              {/* Caption text overlay — sits just above the bottom progress bar */}
+              {ccOn && activeCaptionText && (
+                <div style={{
+                  position:'absolute', left:0, right:0, bottom:22, zIndex:20,
+                  display:'flex', justifyContent:'center', padding:'0 16px', pointerEvents:'none',
+                }}>
+                  <span style={{
+                    background:'rgba(0,0,0,0.65)', color:'#fff', fontSize:14, fontWeight:700,
+                    lineHeight:1.35, padding:'5px 10px', borderRadius:8, textAlign:'center',
+                    maxWidth:'100%', boxShadow:'0 2px 8px rgba(0,0,0,0.25)',
+                  }}>
+                    {activeCaptionText}
+                  </span>
+                </div>
+              )}
               {videoPaused && (
                 <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', pointerEvents:'none' }}>
                   <div style={{ width:56, height:56, borderRadius:'50%', background:'rgba(0,0,0,0.45)', display:'flex', alignItems:'center', justifyContent:'center' }}>
