@@ -11048,6 +11048,16 @@ export default function InfinityV1app() {
   const presenceUnloadHandlerRef = useRef(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  // True as soon as Firebase Auth confirms a signed-in user — set at the top of the
+  // onAuthStateChanged handler below, well before the Firestore profile fetch (which can
+  // take several seconds across its retry loop) resolves into `currentUser`. The
+  // videos/users listeners and the expired-stories cleanup all read collections whose
+  // firestore.rules require request.auth != null; gating them on this flag (instead of on
+  // `currentUser`, or not gating them at all) is what stops them from firing while nobody
+  // is signed in yet — e.g. on first paint of the auth screen, or during the brief window
+  // after refresh before onAuthStateChanged has resolved — which is what was surfacing as
+  // "Missing or insufficient permissions" in the console.
+  const [isAuthed, setIsAuthed] = useState(false);
   const [users, setUsers] = useState([]);
   const [videos, setVideos] = useState([]);
   const [videosLoading, setVideosLoading] = useState(true);
@@ -11249,10 +11259,15 @@ const [blockedUsers, setBlockedUsers] = useState([]);
   if(!isNewAccount){
     await signOut(auth);
     setCurrentUser(null);
+    setIsAuthed(false);
     setAuthLoading(false);
     return;
   }
 }
+        // Mark as authed now, not after the profile fetch below — request.auth is already
+        // populated at this point as far as Firestore's rules are concerned, so the
+        // videos/users listeners can safely start.
+        setIsAuthed(true);
         let profile = await getUserProfile(fbUser.uid);
         if(!profile){
           for(let i=0; i<5; i++){
@@ -11286,6 +11301,7 @@ const [blockedUsers, setBlockedUsers] = useState([]);
         }
       } else {
         setCurrentUser(null);
+        setIsAuthed(false);
       }
       setAuthLoading(false);
     });
@@ -11303,27 +11319,42 @@ const [blockedUsers, setBlockedUsers] = useState([]);
     updateDoc(doc(db,'users',currentUser.id), { accountStatus:'active', suspendedUntil:null }).catch(()=>{});
     setCurrentUser(u => u ? { ...u, accountStatus:'active', suspendedUntil:null } : u);
   }, [currentUser?.accountStatus, currentUser?.suspendedUntil, currentUser?.id]);
-// Clean up expired stories
+// Clean up expired stories. Gated on isAuthed: this used to fire unconditionally on
+  // mount, including on the auth screen before anyone had signed in, and stories/rules
+  // requires request.auth != null — the getDocs() call was rejecting with
+  // "Missing or insufficient permissions", and because nothing here caught that rejection,
+  // it surfaced as an uncaught promise error in the console.
   useEffect(()=>{
+    if (!isAuthed) return;
     const cleanup = async () => {
-      const now = new Date();
-      const snap = await getDocs(query(collection(db,'stories'), where('expiresAt','<=',now)));
-      await Promise.all(snap.docs.map(d=>deleteDoc(doc(db,'stories',d.id))));
+      try {
+        const now = new Date();
+        const snap = await getDocs(query(collection(db,'stories'), where('expiresAt','<=',now)));
+        await Promise.all(snap.docs.map(d=>deleteDoc(doc(db,'stories',d.id))));
+      } catch (e) {
+        console.error('Expired-stories cleanup failed:', e);
+      }
     };
     cleanup();
-  },[]);
-  // Real-time videos from Firestore
+  },[isAuthed]);
+  // Real-time videos from Firestore. Gated on isAuthed for the same reason as above —
+  // firestore.rules requires request.auth != null to read /videos, so subscribing before
+  // sign-in (or during the brief window on refresh before onAuthStateChanged resolves)
+  // produced a permission-denied error on every snapshot listener.
   useEffect(()=>{
+    if (!isAuthed) { setVideosLoading(false); return; }
     const q = query(collection(db,'videos'), orderBy('createdAt','desc'), limit(50));
     const unsub = onSnapshot(q, snap=>{
       setVideos(sortByNewest(snap.docs.map(d=>({id:d.id,...d.data()}))));
       setVideosLoading(false);
     }, ()=>setVideosLoading(false));
     return ()=>unsub();
-  },[]);
+  },[isAuthed]);
 
-  // Real-time users from Firestore
+  // Real-time users from Firestore. Same isAuthed gating — /users also requires
+  // request.auth != null to read.
   useEffect(()=>{
+    if (!isAuthed) { setUsers([]); return; }
     const unsub = onSnapshot(collection(db,'users'), snap=>{
       setUsers(snap.docs.map(d=>{
         const data = d.data();
@@ -11331,7 +11362,7 @@ const [blockedUsers, setBlockedUsers] = useState([]);
       }));
     });
     return ()=>unsub();
-  },[]);
+  },[isAuthed]);
 
   // Mirrors accountStatus/suspendedUntil/lastModerationAction from the live users
   // collection onto currentUser. Without this, a ban or suspension applied while
