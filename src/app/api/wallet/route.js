@@ -3,18 +3,6 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { adminDb, requireAuth } from '@/lib/firebase-admin';
 import { rateLimit, clientIp } from '@/lib/rate-limit';
 
-// Coin package catalog lives server-side so the client can't submit an arbitrary
-// coins-per-dollar rate. Wire real payment-provider verification (Stripe/RevenueCat/
-// App Store server notifications) into the 'topup' branch before launch — right now
-// it trusts that the request reached this route at all, which is NOT sufficient on
-// its own for real money; it only fixes the "client writes its own balance" hole.
-const TOPUP_PACKAGES = {
-  small: { coins: 100, usd: 0.99 },
-  medium: { coins: 550, usd: 4.99 },
-  large: { coins: 1200, usd: 9.99 },
-  mega: { coins: 6500, usd: 49.99 },
-};
-
 const MIN_WITHDRAW_COINS = 5000;
 
 export async function GET(req) {
@@ -41,24 +29,17 @@ export async function POST(req) {
     const { type } = body;
 
     if (type === 'topup') {
-      const pkg = TOPUP_PACKAGES[body.package];
-      if (!pkg) return NextResponse.json({ error: 'Invalid package' }, { status: 400 });
-      // TODO before launch: verify body.paymentToken / receipt with your payment
-      // provider here and return 402 if it doesn't check out. Without this, the
-      // route grants coins to anyone who can call it, which is only acceptable
-      // if top-ups are free/promotional.
-
-      const userRef = adminDb.collection('users').doc(decoded.uid);
-      await userRef.update({ coins: FieldValue.increment(pkg.coins) });
-      await adminDb.collection('users').doc(decoded.uid).collection('ledger').add({
-        type: 'topup',
-        coins: pkg.coins,
-        usd: pkg.usd,
-        package: body.package,
-        createdAt: Date.now(),
-      });
-      const snap = await userRef.get();
-      return NextResponse.json({ ok: true, coins: snap.data().coins });
+      // Real money now flows through /api/wallet/topup/init + /verify (client)
+      // and /api/wallet/topup/webhook (Flutterwave, authoritative), which
+      // verify the payment against Flutterwave's server API before crediting
+      // anything — see src/lib/coinTopups.js. This route no longer credits
+      // coins directly: doing so from a plain authenticated POST had no
+      // payment/receipt verification at all, so anyone with a valid login
+      // could mint themselves coins for free.
+      return NextResponse.json(
+        { error: 'Use /api/wallet/topup/init to start a coin purchase.' },
+        { status: 410 }
+      );
     }
 
     if (type === 'gift') {
