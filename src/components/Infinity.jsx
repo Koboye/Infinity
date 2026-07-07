@@ -1341,7 +1341,7 @@ const BroadcastPage = ({ currentUser, users, showToast, onClose }) => {
 };
 
 /* ─────────────── DISCOVER / EXPLORE PAGE (v4 — like TikTok Discover) ─────────────── */
-const DiscoverPage = ({ videos, users, onViewProfile, showToast, onClose }) => {
+const DiscoverPage = ({ videos, users, onViewProfile, showToast, onClose, currentUser, onFollow, followed }) => {
   const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
   const filters = [['all','All'],['video','Videos'],['people','People'],['hashtag','Tags']];
@@ -1383,14 +1383,19 @@ const DiscoverPage = ({ videos, users, onViewProfile, showToast, onClose }) => {
             <TrendingHashtags onSearch={t => setSearch(t)} />
             <div style={{ color: COLORS.textTertiary, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, margin: '20px 0 10px' }}>Suggested Creators</div>
             {users.slice(0, 6).map(u => (
-              <div key={u.id} onClick={() => { onViewProfile?.(u.id); onClose(); }} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: `1px solid ${COLORS.overlaySubtle}`, cursor: 'pointer' }}>
-                <div style={{ width: 44, height: 44, borderRadius: '50%', background: u.avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: COLORS.textPrimary, fontWeight: 'bold', fontSize: 18, overflow: 'hidden', flexShrink: 0 }}>
+              <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: `1px solid ${COLORS.overlaySubtle}` }}>
+                <div onClick={() => { onViewProfile?.(u.id); onClose(); }} style={{ width: 44, height: 44, borderRadius: '50%', background: u.avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: COLORS.textPrimary, fontWeight: 'bold', fontSize: 18, overflow: 'hidden', flexShrink: 0, cursor: 'pointer' }}>
                   {u.avatarUrl ? <img src={u.avatarUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : u.avatar}
                 </div>
-                <div style={{ flex: 1 }}>
+                <div onClick={() => { onViewProfile?.(u.id); onClose(); }} style={{ flex: 1, cursor: 'pointer' }}>
                   <div style={{ color: COLORS.textPrimary, fontWeight: 700, fontSize: 14 }}>@{u.username}</div>
                   <div style={{ color: COLORS.textTertiary, fontSize: 12 }}>{formatNumber(u.followers?.length || 0)} followers</div>
                 </div>
+                {u.id !== currentUser?.id && (
+                  <button onClick={e => { e.stopPropagation(); onFollow?.(u.id); }} style={{ flexShrink: 0, background: (followed || []).includes(u.id) ? COLORS.surfaceAlt : COLORS.gradient, color: (followed || []).includes(u.id) ? COLORS.textSecondary : '#fff', border: (followed || []).includes(u.id) ? `1px solid ${COLORS.border}` : 'none', borderRadius: 14, padding: '7px 16px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>
+                    {(followed || []).includes(u.id) ? 'Following' : 'Follow'}
+                  </button>
+                )}
               </div>
             ))}
           </>
@@ -1399,14 +1404,19 @@ const DiscoverPage = ({ videos, users, onViewProfile, showToast, onClose }) => {
           <>
             <div style={{ color: COLORS.textTertiary, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>People</div>
             {filteredUsers.map(u => (
-              <div key={u.id} onClick={() => { onViewProfile?.(u.id); onClose(); }} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: `1px solid ${COLORS.overlaySubtle}`, cursor: 'pointer' }}>
-                <div style={{ width: 44, height: 44, borderRadius: '50%', background: u.avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: COLORS.textPrimary, fontWeight: 'bold', fontSize: 18, overflow: 'hidden', flexShrink: 0 }}>
+              <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: `1px solid ${COLORS.overlaySubtle}` }}>
+                <div onClick={() => { onViewProfile?.(u.id); onClose(); }} style={{ width: 44, height: 44, borderRadius: '50%', background: u.avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: COLORS.textPrimary, fontWeight: 'bold', fontSize: 18, overflow: 'hidden', flexShrink: 0, cursor: 'pointer' }}>
                   {u.avatarUrl ? <img src={u.avatarUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : u.avatar}
                 </div>
-                <div>
+                <div onClick={() => { onViewProfile?.(u.id); onClose(); }} style={{ flex: 1, cursor: 'pointer' }}>
                   <div style={{ color: COLORS.textPrimary, fontWeight: 700, fontSize: 14 }}>@{u.username}</div>
                   {u.verified && <span style={{ color: COLORS.info, fontSize: 11 }}>✓ Verified</span>}
                 </div>
+                {u.id !== currentUser?.id && (
+                  <button onClick={e => { e.stopPropagation(); onFollow?.(u.id); }} style={{ flexShrink: 0, background: (followed || []).includes(u.id) ? COLORS.surfaceAlt : COLORS.gradient, color: (followed || []).includes(u.id) ? COLORS.textSecondary : '#fff', border: (followed || []).includes(u.id) ? `1px solid ${COLORS.border}` : 'none', borderRadius: 14, padding: '7px 16px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>
+                    {(followed || []).includes(u.id) ? 'Following' : 'Follow'}
+                  </button>
+                )}
               </div>
             ))}
           </>
@@ -2928,19 +2938,6 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
             {isLive && (
               <div style={{ position:'absolute', bottom:-2, left:'50%', transform:'translateX(-50%)', background:COLORS.live, borderRadius:6, padding:'2px 8px', fontSize:9, fontWeight:800, color:'white', letterSpacing:0.4, whiteSpace:'nowrap' }}>LIVE</div>
             )}
-            {!isOwn && (
-              <button
-                onClick={()=>onFollow?.(user.id)}
-                aria-label={isFollowing ? 'Unfollow' : 'Follow'}
-                title={isFollowing ? 'Unfollow' : 'Follow'}
-                style={{ position:'absolute', bottom:2, right:2, width:28, height:28, display:'flex', alignItems:'center', justifyContent:'center', borderRadius:'50%', padding:0, cursor:'pointer', border:'3px solid #15151C', background: isFollowing ? '#FF3B30' : '#2ED573', color:'white', boxShadow:SHADOW.xs }}>
-                {isFollowing ? (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                ) : (
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                )}
-              </button>
-            )}
           </div>
           <div style={{ color:'white', fontWeight:800, fontSize:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{user?.fullName || user?.username}</div>
           {isLive && (
@@ -2965,6 +2962,12 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
         </div>
         {!isOwn && (
           <div style={{ padding:'0 16px 16px', display:'flex', flexDirection:'column', gap:8 }}>
+            <button
+              onClick={()=>onFollow?.(user.id)}
+              aria-label={isFollowing ? 'Unfollow' : 'Follow'}
+              style={{ width:'100%', background: isFollowing ? 'rgba(255,255,255,0.06)' : `linear-gradient(135deg,${COLORS.brand},${COLORS.brandSecondary})`, border: isFollowing ? '1px solid rgba(255,255,255,0.14)' : 'none', borderRadius:14, padding:'13px', color: isFollowing ? 'white' : '#fff', fontWeight:700, fontSize:15, cursor:'pointer', transition:TRANSITION.fast, boxShadow: isFollowing ? 'none' : SHADOW.glow(COLORS.brand) }}>
+              {isFollowing ? 'Following' : 'Follow'}
+            </button>
             <div style={{ display:'flex', gap:8 }}>
               <button onClick={()=>{onMessage?.(user.id); onClose();}} style={{ flex:1, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:'12px', color:'white', fontWeight:600, cursor:'pointer', fontSize:14 }}>Message</button>
               <button
@@ -4303,19 +4306,6 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
           {isLive && (
             <div style={{ position:'absolute', bottom:-3, left:'50%', transform:'translateX(-50%)', background:COLORS.live, borderRadius:6, padding:'1px 5px', fontSize:7, fontWeight:800, color:'white', letterSpacing:0.3, whiteSpace:'nowrap' }}>LIVE</div>
           )}
-          {video.userId !== currentUser?.id && (
-            <button
-              onClick={e=>{ e.stopPropagation(); onFollow?.(video.userId); }}
-              aria-label={followed?.includes(video.userId) ? 'Unfollow' : 'Follow'}
-              title={followed?.includes(video.userId) ? 'Unfollow' : 'Follow'}
-              style={{ position:'absolute', bottom:-3, right:-3, width:20, height:20, display:'flex', alignItems:'center', justifyContent:'center', borderRadius:'50%', padding:0, cursor:'pointer', border:`2px solid ${COLORS.surface}`, background: followed?.includes(video.userId) ? '#FF3B30' : '#2ED573', color:'white', boxShadow:SHADOW.xs }}>
-              {followed?.includes(video.userId) ? (
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              ) : (
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-              )}
-            </button>
-          )}
         </div>
         <div style={{ flex:1, minWidth:0, display:'flex', flexDirection:'column', overflow:'hidden', cursor:'pointer' }} onClick={()=>onViewProfile?.(video.userId)}>
           {/* Posts show only the person's current display name (full name), read live
@@ -4332,6 +4322,14 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
           </span>
           <span style={{ color:COLORS.textTertiary, fontSize:12, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{timeAgo(tsToDate(video.createdAt))}</span>
         </div>
+        {video.userId !== currentUser?.id && (
+          <button
+            onClick={e=>{ e.stopPropagation(); onFollow?.(video.userId); }}
+            aria-label={followed?.includes(video.userId) ? 'Unfollow' : 'Follow'}
+            style={{ flexShrink:0, background: followed?.includes(video.userId) ? COLORS.surfaceAlt : COLORS.gradient, color: followed?.includes(video.userId) ? COLORS.textSecondary : '#fff', border: followed?.includes(video.userId) ? `1px solid ${COLORS.border}` : 'none', borderRadius:14, padding:'6px 14px', fontSize:12.5, fontWeight:700, cursor:'pointer', transition:TRANSITION.fast }}>
+            {followed?.includes(video.userId) ? 'Following' : 'Follow'}
+          </button>
+        )}
         <button onClick={()=>setShowOptions(true)} style={{ background:'none', border:'none', cursor:'pointer', color:COLORS.textTertiary, fontSize:16, padding:4, flexShrink:0 }}>•••</button>
       </div>
       {(video.location || video.taggedUsers?.length > 0) && (
@@ -9062,7 +9060,7 @@ cleanupCall();
 };
 
 /* ─────────────── SEARCH OVERLAY — TELEGRAM STANDARDS ─────────────── */
-const SearchOverlay = ({ onClose, videos, users, onViewProfile }) => {
+const SearchOverlay = ({ onClose, videos, users, onViewProfile, currentUser, onFollow, followed }) => {
   const [query, setQuery] = useState('');
   const [tab, setTab] = useState('all');
   const [recentSearches, setRecentSearches] = useState(() => {
@@ -9163,15 +9161,20 @@ const SearchOverlay = ({ onClose, videos, users, onViewProfile }) => {
             <div style={{ marginTop:24 }}>
               <div style={{ color:COLORS.textTertiary, fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:14 }}>Suggested People</div>
               {users.slice(0,5).map(u=>(
-                <div key={u.id} onClick={()=>{onViewProfile?.(u.id); addRecentSearch('@'+u.username); onClose();}} style={{ display:'flex', alignItems:'center', gap:12, padding:'11px 0', borderBottom:`1px solid ${COLORS.overlaySubtle}`, cursor:'pointer' }}>
-                  <div style={{ width:44, height:44, borderRadius:'50%', background:u.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:18, overflow:'hidden', flexShrink:0 }}>
+                <div key={u.id} style={{ display:'flex', alignItems:'center', gap:12, padding:'11px 0', borderBottom:`1px solid ${COLORS.overlaySubtle}` }}>
+                  <div onClick={()=>{onViewProfile?.(u.id); addRecentSearch('@'+u.username); onClose();}} style={{ width:44, height:44, borderRadius:'50%', background:u.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:18, overflow:'hidden', flexShrink:0, cursor:'pointer' }}>
                     {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : u.avatar}
                   </div>
-                  <div style={{ flex:1 }}>
+                  <div onClick={()=>{onViewProfile?.(u.id); addRecentSearch('@'+u.username); onClose();}} style={{ flex:1, cursor:'pointer' }}>
                     <div style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:14 }}>@{u.username}</div>
                     <div style={{ color:COLORS.textTertiary, fontSize:12, marginTop:1 }}>{u.bio?.substring(0,40)||'No bio'}</div>
                   </div>
                   {u.verified && <svg width="16" height="16" viewBox="0 0 24 24" fill={COLORS.info}><path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>}
+                  {u.id !== currentUser?.id && (
+                    <button onClick={e=>{e.stopPropagation(); onFollow?.(u.id);}} style={{ flexShrink:0, background:(followed||[]).includes(u.id)?COLORS.surfaceAlt:COLORS.gradient, color:(followed||[]).includes(u.id)?COLORS.textSecondary:'#fff', border:(followed||[]).includes(u.id)?`1px solid ${COLORS.border}`:'none', borderRadius:14, padding:'7px 16px', fontSize:12.5, fontWeight:700, cursor:'pointer' }}>
+                      {(followed||[]).includes(u.id) ? 'Following' : 'Follow'}
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -9194,14 +9197,14 @@ const SearchOverlay = ({ onClose, videos, users, onViewProfile }) => {
               <div style={{ marginBottom:20 }}>
                 {tab==='all' && <div style={{ color:COLORS.textTertiary, fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:12 }}>People</div>}
                 {results.users.map(u=>(
-                  <div key={u.id} onClick={()=>{onViewProfile?.(u.id); addRecentSearch('@'+u.username); onClose();}} style={{ display:'flex', alignItems:'center', gap:12, padding:'11px 12px', background:COLORS.overlaySubtle, borderRadius:16, marginBottom:6, cursor:'pointer', border:`1px solid ${COLORS.overlaySubtle}`, transition:'background 0.1s' }}>
-                    <div style={{ position:'relative', flexShrink:0 }}>
+                  <div key={u.id} style={{ display:'flex', alignItems:'center', gap:12, padding:'11px 12px', background:COLORS.overlaySubtle, borderRadius:16, marginBottom:6, border:`1px solid ${COLORS.overlaySubtle}`, transition:'background 0.1s' }}>
+                    <div onClick={()=>{onViewProfile?.(u.id); addRecentSearch('@'+u.username); onClose();}} style={{ position:'relative', flexShrink:0, cursor:'pointer' }}>
                       <div style={{ width:48, height:48, borderRadius:'50%', background:u.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:20, overflow:'hidden' }}>
                         {u.avatarUrl ? <img src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : u.avatar}
                       </div>
                       {u.isOnline && <div style={{ position:'absolute', bottom:1, right:1, width:12, height:12, background:COLORS.success, borderRadius:'50%', border:`2px solid ${COLORS.bg}` }} />}
                     </div>
-                    <div style={{ flex:1, minWidth:0 }}>
+                    <div onClick={()=>{onViewProfile?.(u.id); addRecentSearch('@'+u.username); onClose();}} style={{ flex:1, minWidth:0, cursor:'pointer' }}>
                       <div style={{ display:'flex', alignItems:'center', gap:6 }}>
                         <span style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:14 }}>@{u.username}</span>
                         {u.verified && <svg width="14" height="14" viewBox="0 0 24 24" fill={COLORS.info}><path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>}
@@ -9209,7 +9212,11 @@ const SearchOverlay = ({ onClose, videos, users, onViewProfile }) => {
                       <div style={{ color:COLORS.textTertiary, fontSize:12, marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{u.bio?.substring(0,50)||'No bio'}</div>
                       <div style={{ color:COLORS.textTertiary, fontSize:11, marginTop:1 }}>{(u.followers?.length||0).toLocaleString()} followers</div>
                     </div>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
+                    {u.id !== currentUser?.id && (
+                      <button onClick={e=>{e.stopPropagation(); onFollow?.(u.id);}} style={{ flexShrink:0, background:(followed||[]).includes(u.id)?COLORS.surfaceAlt:COLORS.gradient, color:(followed||[]).includes(u.id)?COLORS.textSecondary:'#fff', border:(followed||[]).includes(u.id)?`1px solid ${COLORS.border}`:'none', borderRadius:14, padding:'7px 14px', fontSize:12, fontWeight:700, cursor:'pointer' }}>
+                        {(followed||[]).includes(u.id) ? 'Following' : 'Follow'}
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -11645,7 +11652,7 @@ const handleMessage = uid => {
       {/* ── v4 NEW OVERLAYS ── */}
 
       {showSavedPosts && <SavedPostsPage currentUser={currentUser} showToast={showToast} onClose={()=>setShowSavedPosts(false)} />}
-      {showDiscover && <DiscoverPage videos={videos} users={users} onViewProfile={uid=>{handleViewProfile(uid);}} showToast={showToast} onClose={()=>setShowDiscover(false)} />}
+      {showDiscover && <DiscoverPage videos={videos} users={users} onViewProfile={uid=>{handleViewProfile(uid);}} showToast={showToast} onClose={()=>setShowDiscover(false)} currentUser={currentUser} onFollow={toggleFollow} followed={followed} />}
       {showShareSheet && <ShareSheet video={showShareSheet} currentUser={currentUser} onClose={()=>setShowShareSheet(null)} showToast={showToast} />}
       {showBroadcast && <BroadcastPage currentUser={currentUser} users={users} showToast={showToast} onClose={()=>setShowBroadcast(false)} />}
       {viewingProfile && (
@@ -11681,7 +11688,7 @@ const handleMessage = uid => {
       )}
 
       <div ref={contentWrapperRef} onTouchStart={handleTabTouchStart} onTouchEnd={handleTabTouchEnd} style={{ flex:1, overflow:'hidden', position:'relative', minHeight:0, height:'100%' }}>
-        {showSearch && <SearchOverlay onClose={()=>setShowSearch(false)} videos={videos} users={users} onViewProfile={uid=>{handleViewProfile(uid); setShowSearch(false);}} />}
+        {showSearch && <SearchOverlay onClose={()=>setShowSearch(false)} videos={videos} users={users} onViewProfile={uid=>{handleViewProfile(uid); setShowSearch(false);}} currentUser={currentUser} onFollow={toggleFollow} followed={followed} />}
         {showCamera && <CameraUpload onUpload={v=>{setVideos(prev=>[v,...prev]);}} onClose={()=>setShowCamera(false)} showToast={showToast} currentUser={currentUser} />}
         {showTextComposer && (
           <div style={{ position:'fixed', inset:0, zIndex:9500, background:COLORS.bg, maxWidth:430, margin:'0 auto' }}>
