@@ -4320,23 +4320,26 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
           icon is otherwise a plain dark outline, exactly like the rest of
           the post's typography and iconography. ── */}
       <div style={{ marginTop:10 }}>
-        {/* Stats row: reaction bubble + count, comments/shares as tappable text on the right */}
-        {(likeCount > 0 || video.comments > 0 || video.shares > 0) && (
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 2px 10px' }}>
-            <div onClick={()=>likeCount>0 && setShowLikes(true)} style={{ display:'flex', alignItems:'center', gap:6, cursor: likeCount>0 ? 'pointer' : 'default' }}>
-              {likeCount > 0 && (
-                <div style={{ width:20, height:20, borderRadius:'50%', background:COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', boxShadow:`0 0 0 2px ${COLORS.surface}` }}>
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="white"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
-                </div>
-              )}
-              <span style={{ color:COLORS.textTertiary, fontSize:13 }}>{likeCount > 0 ? formatNumber(likeCount) : ''}</span>
+        {/* Stats row: views, reaction bubble + count, comments/shares — always visible,
+            TikTok/Instagram-style, instead of only appearing once a post had likes. */}
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 2px 10px', flexWrap:'wrap', gap:6 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:14 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:5 }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <span style={{ color:COLORS.textTertiary, fontSize:13 }}>{formatNumber(video.views||0)}</span>
             </div>
-            <div style={{ display:'flex', gap:14 }}>
-              {video.comments > 0 && <span onClick={()=>{ setShowComments(true); onOpenComments?.(video); }} style={{ color:COLORS.textTertiary, fontSize:13, cursor:'pointer' }}>{formatNumber(video.comments)} comments</span>}
-              {video.shares > 0 && <span style={{ color:COLORS.textTertiary, fontSize:13 }}>{formatNumber(video.shares)} shares</span>}
+            <div onClick={()=>likeCount>0 && setShowLikes(true)} style={{ display:'flex', alignItems:'center', gap:6, cursor: likeCount>0 ? 'pointer' : 'default' }}>
+              <div style={{ width:20, height:20, borderRadius:'50%', background:likeCount>0?COLORS.brand:COLORS.surfaceAlt, display:'flex', alignItems:'center', justifyContent:'center', boxShadow:`0 0 0 2px ${COLORS.surface}` }}>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill={likeCount>0?'white':COLORS.textTertiary}><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+              </div>
+              <span style={{ color:COLORS.textTertiary, fontSize:13 }}>{formatNumber(likeCount)}</span>
             </div>
           </div>
-        )}
+          <div style={{ display:'flex', gap:14 }}>
+            <span onClick={()=>{ setShowComments(true); onOpenComments?.(video); }} style={{ color:COLORS.textTertiary, fontSize:13, cursor:'pointer' }}>{formatNumber(video.comments||0)} comments</span>
+            <span style={{ color:COLORS.textTertiary, fontSize:13 }}>{formatNumber(video.shares||0)} shares</span>
+          </div>
+        </div>
 
         {(() => {
           // Flat icon button sitting directly on the card's own white surface —
@@ -4911,6 +4914,31 @@ const FEELINGS = [
   { emoji:'🤔', text:'thoughtful' }, { emoji:'😂', text:'amused' }, { emoji:'❤️', text:'thankful' },
 ];
 
+const ACTIVITIES = [
+  { emoji:'🎬', text:'watching a movie' }, { emoji:'🎧', text:'listening to music' }, { emoji:'✈️', text:'traveling' },
+  { emoji:'🍔', text:'eating' }, { emoji:'💪', text:'working out' }, { emoji:'📚', text:'reading' },
+  { emoji:'🎮', text:'gaming' }, { emoji:'☕', text:'chilling' }, { emoji:'💻', text:'working' },
+  { emoji:'🎨', text:'creating' }, { emoji:'🏃', text:'running' }, { emoji:'🛍️', text:'shopping' },
+];
+
+const TEXT_STYLES = {
+  classic:    { label:'Classic',    fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", fontWeight:700, fontStyle:'normal', letterSpacing:'normal' },
+  bold:       { label:'Bold',       fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif", fontWeight:900, fontStyle:'normal', letterSpacing:'-0.5px' },
+  elegant:    { label:'Elegant',    fontFamily:"Georgia,'Times New Roman',serif", fontWeight:600, fontStyle:'italic', letterSpacing:'normal' },
+  typewriter: { label:'Typewriter', fontFamily:"'Courier New',Courier,monospace", fontWeight:700, fontStyle:'normal', letterSpacing:'0.5px' },
+};
+const TEXT_STYLE_ORDER = ['classic','bold','elegant','typewriter'];
+
+const VISIBILITY_OPTIONS = [
+  { value:'Everyone', label:'Everyone', desc:'Anyone on Infinity can see this post' },
+  { value:'Friends', label:'Friends', desc:'Only people you follow each other with' },
+  { value:'Only me', label:'Only me', desc:'Private — visible only to you' },
+];
+
+// Public Giphy beta/demo key intended by Giphy for development and testing.
+// Swap for your own production key (giphy.com/dashboard) before scaling this up.
+const GIPHY_API_KEY = 'dc6zaTOxFJmzC';
+
 const POST_BG_COLORS = ['#0B5FFF','#2E7BFF','#083FB0','#FFB100','#2ED573','#00A9D6','#FF453A','#5E5CE6'];
 const CreateScreen = ({ onOpenCamera, onShowSoundLibrary, showToast, t, currentUser, users, onPosted, onClose, autoFocusText }) => {
   const [text, setText] = useState('');
@@ -4934,11 +4962,73 @@ const CreateScreen = ({ onOpenCamera, onShowSoundLibrary, showToast, t, currentU
   const [showBgPicker, setShowBgPicker] = useState(false);
   const [bgColor, setBgColor] = useState(null); // null = normal post, hex = colored text card
   const [captionLoading, setCaptionLoading] = useState(false);
+  const [activity, setActivity] = useState(null);
+  const [moodTab, setMoodTab] = useState('feeling'); // 'feeling' | 'activity' — which list the picker shows
+  const [textStyle, setTextStyle] = useState('classic');
+  const [showVisibilityPicker, setShowVisibilityPicker] = useState(false);
+  const [showGifPicker, setShowGifPicker] = useState(false);
+  const [gifQuery, setGifQuery] = useState('');
+  const [gifResults, setGifResults] = useState([]);
+  const [gifLoading, setGifLoading] = useState(false);
+  const [locating, setLocating] = useState(false);
   const fileInputRef = useRef(null);
 
   const toggleTagUser = (u) => setTaggedUsers(list => list.some(x=>x.id===u.id) ? list.filter(x=>x.id!==u.id) : [...list, { id:u.id, username:u.username, avatarUrl:u.avatarUrl||null, avatarColor:u.avatarColor||COLORS.brand }]);
   const eventIsValid = eventTitle.trim() && eventDate.trim();
   const closeEventBuilder = () => setShowEventBuilder(false);
+
+  // GIF search — debounced against Giphy's search endpoint, falling back to trending
+  // when the box is empty. Runs only while the picker is open.
+  useEffect(() => {
+    if (!showGifPicker) return;
+    let cancelled = false;
+    const endpoint = gifQuery.trim()
+      ? `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(gifQuery.trim())}&limit=24&rating=pg-13`
+      : `https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_API_KEY}&limit=24&rating=pg-13`;
+    setGifLoading(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(endpoint);
+        const data = await res.json();
+        if (!cancelled) setGifResults(data?.data || []);
+      } catch (e) {
+        if (!cancelled) { console.error('GIF search failed:', e); setGifResults([]); }
+      }
+      if (!cancelled) setGifLoading(false);
+    }, gifQuery.trim() ? 350 : 0);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [showGifPicker, gifQuery]);
+
+  const pickGif = (gif) => {
+    const url = gif?.images?.original?.url || gif?.images?.fixed_height?.url;
+    if (!url) return;
+    setMedia(m => [...m, { url, file:null, type:'image/gif', isGif:true }].slice(0,4));
+    setShowGifPicker(false);
+    setGifQuery('');
+  };
+
+  const useCurrentLocation = () => {
+    if (!navigator.geolocation) { showToast?.('Location not supported on this device','error'); return; }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      try {
+        const { latitude, longitude } = pos.coords;
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`, { headers:{ 'Accept':'application/json' } });
+        const data = await res.json();
+        const place = data?.address || {};
+        const nice = [place.city || place.town || place.village || place.county, place.state, place.country].filter(Boolean).join(', ');
+        setLocation(nice || data?.display_name || `${latitude.toFixed(3)}, ${longitude.toFixed(3)}`);
+      } catch (e) {
+        console.error('Reverse geocoding failed:', e);
+        showToast?.('Could not resolve your location — try typing it instead','error');
+      }
+      setLocating(false);
+    }, (err) => {
+      console.error('Geolocation failed:', err);
+      showToast?.('Location permission denied','error');
+      setLocating(false);
+    }, { timeout:10000 });
+  };
 
   const pickFiles = e => {
     const files = Array.from(e.target.files||[]);
@@ -4957,21 +5047,21 @@ const CreateScreen = ({ onOpenCamera, onShowSoundLibrary, showToast, t, currentU
     { label:'Photo', color:COLORS.info, icon:(<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="M21 15l-5-5L5 19"/></svg>), action:()=>fileInputRef.current?.click() },
     { label:'Video', color:COLORS.brandSecondary, icon:(<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="M16 10l6-3v10l-6-3"/></svg>), action:()=>fileInputRef.current?.click() },
     { label:'Poll', color:COLORS.brand, icon:(<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>), action:()=>setShowPollBuilder(v=>!v) },
-    { label:'Feeling', color:COLORS.warning, icon:(<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9"/><path d="M9 10h.01M15 10h.01M8 15s1.5 2 4 2 4-2 4-2"/></svg>), action:()=>setShowFeelingPicker(v=>!v) },
+    { label:'Feeling', color:COLORS.warning, icon:(<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9"/><path d="M9 10h.01M15 10h.01M8 15s1.5 2 4 2 4-2 4-2"/></svg>), action:()=>{ setMoodTab('feeling'); setShowFeelingPicker(v=>!v); } },
   ];
   const gridActions = [
     { label:'Tag people', icon:(<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>), action:()=>setShowTagPicker(v=>!v) },
     { label:'Location', icon:(<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>), action:()=>setShowLocationInput(v=>!v) },
     { label:'Music', icon:(<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>), action:onShowSoundLibrary },
-    { label:'Activity', icon:(<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>), action:()=>setShowFeelingPicker(v=>!v) },
+    { label:'Activity', icon:(<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>), action:()=>{ setMoodTab('activity'); setShowFeelingPicker(v=>!v); } },
     { label:'Event', icon:(<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="3"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>), action:()=>setShowEventBuilder(v=>!v) },
-    { label:'GIF', icon:(<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M8 10v4M13 10h-2v4h2M16 10v4M16 12h1.5"/></svg>), action:()=>showToast?.('GIF search needs a Giphy/Tenor API key — not wired up yet','info') },
+    { label:'GIF', icon:(<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M8 10v4M13 10h-2v4h2M16 10v4M16 12h1.5"/></svg>), action:()=>setShowGifPicker(v=>!v) },
     { label:'Background', icon:(<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 19"/></svg>), action:()=>setShowBgPicker(v=>!v) },
-    { label:'Text', icon:(<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>), action:()=>setShowBgPicker(v=>!v) },
+    { label:'Text', icon:(<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>), action:()=>{ setShowBgPicker(true); setTextStyle(s=>TEXT_STYLE_ORDER[(TEXT_STYLE_ORDER.indexOf(s)+1)%TEXT_STYLE_ORDER.length]); showToast?.(`Text style: ${TEXT_STYLES[TEXT_STYLE_ORDER[(TEXT_STYLE_ORDER.indexOf(textStyle)+1)%TEXT_STYLE_ORDER.length]].label}`,'info'); } },
   ];
 
   const submitPost = async () => {
-    const hasContent = text.trim() || media.length || pollIsValid || eventIsValid || taggedUsers.length || location.trim();
+    const hasContent = text.trim() || media.length || pollIsValid || eventIsValid || taggedUsers.length || location.trim() || activity;
     if (!hasContent) return;
     setPosting(true);
     try {
@@ -4979,6 +5069,8 @@ const CreateScreen = ({ onOpenCamera, onShowSoundLibrary, showToast, t, currentU
       // See submitQuickPost's comment above — same fix: don't swallow upload errors,
       // stop and tell the user instead of quietly posting without their media.
       for (const m of media) {
+        // GIFs picked from the Giphy picker are already hosted — no upload needed.
+        if (!m.file) { uploadedUrls.push(m.url); continue; }
         try {
           uploadedUrls.push(await uploadToCloudinary(m.file));
         } catch (uploadErr) {
@@ -4996,16 +5088,18 @@ const CreateScreen = ({ onOpenCamera, onShowSoundLibrary, showToast, t, currentU
         payload.poll = { question: pollQuestion.trim(), options: pollOptions.map(o=>o.trim()).filter(Boolean), votes:{}, voters:{} };
       }
       if (feeling) payload.feeling = feeling;
+      if (activity) payload.activity = activity;
       if (location.trim()) payload.location = location.trim();
       if (taggedUsers.length) payload.taggedUsers = taggedUsers;
       if (eventIsValid) payload.event = { title: eventTitle.trim(), date: eventDate, location: eventLocation.trim() || null };
-      if (bgColor && !uploadedUrls.length) payload.bgColor = bgColor;
+      if (bgColor && !uploadedUrls.length) { payload.bgColor = bgColor; payload.textStyle = textStyle; }
+      payload.visibility = visibility;
       const data = await apiFetch('/api/videos/create', { method:'POST', body: JSON.stringify(payload) });
       showToast?.(data.moderationStatus === 'pending' ? 'Posted — under review' : 'Posted!', 'success');
-      setText(''); setMedia([]); closePollBuilder(); setFeeling(null); setShowFeelingPicker(false);
+      setText(''); setMedia([]); closePollBuilder(); setFeeling(null); setActivity(null); setShowFeelingPicker(false);
       setTaggedUsers([]); setShowTagPicker(false); setLocation(''); setShowLocationInput(false);
       setEventTitle(''); setEventDate(''); setEventLocation(''); setShowEventBuilder(false);
-      setBgColor(null); setShowBgPicker(false);
+      setBgColor(null); setShowBgPicker(false); setTextStyle('classic'); setVisibility('Everyone');
       onPosted?.();
     } catch (e) { showToast?.(e?.message || 'Failed to post', 'error'); }
     setPosting(false);
@@ -5031,7 +5125,7 @@ const CreateScreen = ({ onOpenCamera, onShowSoundLibrary, showToast, t, currentU
           </div>
           <div style={{ flex:1 }}>
             {bgColor ? (
-              <textarea value={text} onChange={e=>setText(e.target.value)} placeholder="What's on your mind?" rows={4} autoFocus style={{ width:'100%', background:bgColor, borderRadius:16, border:'none', outline:'none', resize:'none', color:'#fff', fontWeight:700, fontSize:17, textAlign:'center', fontFamily:'inherit', padding:'24px 14px', boxSizing:'border-box' }} />
+              <textarea value={text} onChange={e=>setText(e.target.value)} placeholder="What's on your mind?" rows={4} autoFocus style={{ width:'100%', background:bgColor, borderRadius:16, border:'none', outline:'none', resize:'none', color:'#fff', fontSize:17, textAlign:'center', padding:'24px 14px', boxSizing:'border-box', fontFamily:TEXT_STYLES[textStyle].fontFamily, fontWeight:TEXT_STYLES[textStyle].fontWeight, fontStyle:TEXT_STYLES[textStyle].fontStyle, letterSpacing:TEXT_STYLES[textStyle].letterSpacing }} />
             ) : (
               <textarea value={text} onChange={e=>setText(e.target.value)} placeholder="What's on your mind?" rows={3} autoFocus style={{ width:'100%', background:'none', border:'none', outline:'none', resize:'none', color:COLORS.textPrimary, fontSize:15, fontFamily:'inherit', paddingTop:8, boxSizing:'border-box' }} />
             )}
@@ -5040,6 +5134,12 @@ const CreateScreen = ({ onOpenCamera, onShowSoundLibrary, showToast, t, currentU
                 <div style={{ display:'inline-flex', alignItems:'center', gap:6, background:COLORS.surface2, border:`1px solid ${COLORS.border}`, borderRadius:12, padding:'5px 10px', fontSize:12.5, fontWeight:600, color:COLORS.textSecondary }}>
                   is feeling {feeling.emoji} {feeling.text}
                   <span onClick={()=>setFeeling(null)} style={{ cursor:'pointer', color:COLORS.textTertiary, fontWeight:800 }}>✕</span>
+                </div>
+              )}
+              {activity && (
+                <div style={{ display:'inline-flex', alignItems:'center', gap:6, background:COLORS.surface2, border:`1px solid ${COLORS.border}`, borderRadius:12, padding:'5px 10px', fontSize:12.5, fontWeight:600, color:COLORS.textSecondary }}>
+                  {activity.emoji} {activity.text}
+                  <span onClick={()=>setActivity(null)} style={{ cursor:'pointer', color:COLORS.textTertiary, fontWeight:800 }}>✕</span>
                 </div>
               )}
               {location && (
@@ -5064,20 +5164,28 @@ const CreateScreen = ({ onOpenCamera, onShowSoundLibrary, showToast, t, currentU
           </div>
         </div>
 
-        {/* Feeling picker */}
+        {/* Feeling / Activity picker — one panel, two tabs, so "Feeling" and "Activity"
+            actually behave like distinct features instead of both opening an identical list. */}
         {showFeelingPicker && (
           <div style={{ background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:16, padding:14, marginBottom:16 }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
-              <span style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:13.5 }}>How are you feeling?</span>
+              <div style={{ display:'flex', gap:6 }}>
+                <button onClick={()=>setMoodTab('feeling')} style={{ background:moodTab==='feeling'?COLORS.brand:COLORS.surfaceAlt, color:moodTab==='feeling'?'#fff':COLORS.textSecondary, border:'none', borderRadius:12, padding:'6px 12px', fontSize:12.5, fontWeight:700, cursor:'pointer' }}>Feeling</button>
+                <button onClick={()=>setMoodTab('activity')} style={{ background:moodTab==='activity'?COLORS.brand:COLORS.surfaceAlt, color:moodTab==='activity'?'#fff':COLORS.textSecondary, border:'none', borderRadius:12, padding:'6px 12px', fontSize:12.5, fontWeight:700, cursor:'pointer' }}>Activity</button>
+              </div>
               <span onClick={()=>setShowFeelingPicker(false)} style={{ cursor:'pointer', color:COLORS.textTertiary }}>✕</span>
             </div>
             <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
-              {FEELINGS.map(f=>(
-                <button key={f.text} onClick={()=>{ setFeeling(f); setShowFeelingPicker(false); }} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4, background:feeling?.text===f.text?COLORS.surface2:COLORS.surfaceAlt, border:`1px solid ${feeling?.text===f.text?COLORS.brand:COLORS.border}`, borderRadius:12, padding:'8px 4px', cursor:'pointer' }}>
-                  <span style={{ fontSize:20 }}>{f.emoji}</span>
-                  <span style={{ fontSize:10.5, color:COLORS.textSecondary, fontWeight:600 }}>{f.text}</span>
-                </button>
-              ))}
+              {(moodTab==='feeling' ? FEELINGS : ACTIVITIES).map(f=>{
+                const current = moodTab==='feeling' ? feeling : activity;
+                const setCurrent = moodTab==='feeling' ? setFeeling : setActivity;
+                return (
+                  <button key={f.text} onClick={()=>{ setCurrent(current?.text===f.text ? null : f); setShowFeelingPicker(false); }} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4, background:current?.text===f.text?COLORS.surface2:COLORS.surfaceAlt, border:`1px solid ${current?.text===f.text?COLORS.brand:COLORS.border}`, borderRadius:12, padding:'8px 4px', cursor:'pointer' }}>
+                    <span style={{ fontSize:20 }}>{f.emoji}</span>
+                    <span style={{ fontSize:10.5, color:COLORS.textSecondary, fontWeight:600, textAlign:'center' }}>{f.text}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
@@ -5159,16 +5267,6 @@ const CreateScreen = ({ onOpenCamera, onShowSoundLibrary, showToast, t, currentU
           <div style={{ color:COLORS.textTertiary, fontSize:12.5 }}>{captionLoading ? 'Thinking…' : 'Let AI suggest a caption based on your photo'}</div>
         </div>
 
-        {/* Mood / nature quick-insert row (the old "Leaf" stub) — inserts a decorative
-            sprig into the caption instead of doing nothing, since there's no separate
-            "nature mood" data model to build a whole feature around. */}
-        <div style={{ display:'flex', gap:10, marginBottom:22 }}>
-          <button onClick={()=>setText(v=>v ? `${v} 🌿` : '🌿')} style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:7, background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:14, padding:'11px 0', color:COLORS.textSecondary, fontSize:12.5, fontWeight:600, cursor:'pointer' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.success} strokeWidth="2"><path d="M11 20A7 7 0 019.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z"/><path d="M2 21c0-9 4-13 8-16"/></svg>
-            Leaf
-          </button>
-        </div>
-
         {/* Tag people panel */}
         {showTagPicker && (
           <div style={{ background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:16, padding:14, marginBottom:16 }}>
@@ -5213,7 +5311,13 @@ const CreateScreen = ({ onOpenCamera, onShowSoundLibrary, showToast, t, currentU
               <span onClick={()=>{ setShowLocationInput(false); }} style={{ cursor:'pointer', color:COLORS.textTertiary }}>✕</span>
             </div>
             <input value={location} onChange={e=>setLocation(e.target.value)} placeholder="e.g. Addis Ababa, Ethiopia" style={{ width:'100%', background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:12, padding:'10px 12px', color:COLORS.textPrimary, outline:'none', fontSize:13.5, boxSizing:'border-box' }} />
-            {location && <button onClick={()=>setLocation('')} style={{ background:'none', border:'none', color:COLORS.textTertiary, fontSize:12, cursor:'pointer', marginTop:8, padding:0 }}>Clear</button>}
+            <div style={{ display:'flex', alignItems:'center', gap:14, marginTop:8 }}>
+              <button onClick={useCurrentLocation} disabled={locating} style={{ background:'none', border:'none', color:COLORS.brand, fontSize:12, fontWeight:700, cursor:'pointer', padding:0, opacity:locating?0.6:1, display:'flex', alignItems:'center', gap:5 }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+                {locating ? 'Locating…' : 'Use my current location'}
+              </button>
+              {location && <button onClick={()=>setLocation('')} style={{ background:'none', border:'none', color:COLORS.textTertiary, fontSize:12, cursor:'pointer', padding:0 }}>Clear</button>}
+            </div>
           </div>
         )}
 
@@ -5249,14 +5353,50 @@ const CreateScreen = ({ onOpenCamera, onShowSoundLibrary, showToast, t, currentU
           </div>
         )}
 
+        {/* GIF panel */}
+        {showGifPicker && (
+          <div style={{ background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:16, padding:14, marginBottom:16 }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
+              <span style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:13.5 }}>Add a GIF</span>
+              <span onClick={()=>{ setShowGifPicker(false); setGifQuery(''); }} style={{ cursor:'pointer', color:COLORS.textTertiary }}>✕</span>
+            </div>
+            <input value={gifQuery} onChange={e=>setGifQuery(e.target.value)} placeholder="Search Giphy…" style={{ width:'100%', background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:12, padding:'9px 12px', color:COLORS.textPrimary, outline:'none', fontSize:13, marginBottom:10, boxSizing:'border-box' }} />
+            {gifLoading ? (
+              <div style={{ textAlign:'center', padding:20, color:COLORS.textTertiary, fontSize:12.5 }}>Loading…</div>
+            ) : (
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8, maxHeight:280, overflowY:'auto' }}>
+                {gifResults.map(g=>(
+                  <button key={g.id} onClick={()=>pickGif(g)} style={{ padding:0, border:'none', borderRadius:10, overflow:'hidden', cursor:'pointer', background:COLORS.surfaceAlt, aspectRatio:'1/1' }}>
+                    <img src={g.images?.fixed_height_small?.url || g.images?.fixed_height?.url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }} />
+                  </button>
+                ))}
+                {!gifResults.length && <div style={{ gridColumn:'1/-1', textAlign:'center', color:COLORS.textTertiary, fontSize:12.5, padding:20 }}>No GIFs found.</div>}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Visibility */}
-        <button onClick={()=>setVisibility(v=>v==='Everyone'?'Friends':'Everyone')} style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between', background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:16, padding:'13px 16px', cursor:'pointer' }}>
+        <button onClick={()=>setShowVisibilityPicker(v=>!v)} style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between', background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:16, padding:'13px 16px', cursor:'pointer', marginBottom:showVisibilityPicker?10:0 }}>
           <span style={{ color:COLORS.textPrimary, fontSize:13.5, fontWeight:600 }}>Who can see this?</span>
           <span style={{ display:'flex', alignItems:'center', gap:6, color:COLORS.textSecondary, fontSize:13, fontWeight:600 }}>
             {visibility}
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
           </span>
         </button>
+        {showVisibilityPicker && (
+          <div style={{ background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:16, padding:8 }}>
+            {VISIBILITY_OPTIONS.map(o=>(
+              <div key={o.value} onClick={()=>{ setVisibility(o.value); setShowVisibilityPicker(false); }} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 10px', borderRadius:12, cursor:'pointer', background:visibility===o.value?COLORS.surface2:'transparent' }}>
+                <div>
+                  <div style={{ color:COLORS.textPrimary, fontSize:13.5, fontWeight:700 }}>{o.label}</div>
+                  <div style={{ color:COLORS.textTertiary, fontSize:11.5, marginTop:1 }}>{o.desc}</div>
+                </div>
+                {visibility===o.value && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.brand} strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -6575,54 +6715,64 @@ if(activeSubPage==='settings') return (
             </div>
           ))}
         </div>
-        {/* RESET ACCOUNT — paste here */}
-<div onClick={async()=>{
-  if(await confirmDialog('Reset account? This will delete all your posts, comments and likes but keep your account.')){
-    try {
-      const vSnap = await getDocs(query(collection(db,'videos'),where('userId','==',user.id)));
-      await Promise.all(vSnap.docs.map(d=>deleteDoc(doc(db,'videos',d.id))));
-      const cSnap = await getDocs(query(collection(db,'comments'),where('userId','==',user.id)));
-      await Promise.all(cSnap.docs.map(d=>deleteDoc(doc(db,'comments',d.id))));
-      const lSnap = await getDocs(collection(db,'likes'));
-      await Promise.all(lSnap.docs.filter(d=>d.id.includes(user.id)).map(d=>deleteDoc(doc(db,'likes',d.id))));
-      await updateDoc(doc(db,'users',user.id),{
-        followers:[], following:[], coins:500, walletBalance:500, streak:1
-      });
-      setCurrentUser(u=>({...u,followers:[],following:[],coins:500,walletBalance:500,streak:1}));
-      showToast?.('Account reset successfully','success');
-    } catch(e){
-      showToast?.('Reset failed: '+e.message,'error');
-    }
-  }
-}} style={{ padding:'14px 16px', borderBottom:`1px solid ${COLORS.border}`, display:'flex', alignItems:'center', gap:12, cursor:'pointer' }}>
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFB100" strokeWidth="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
-  <span style={{ color:COLORS.warning, fontSize:14 }}>Reset Account</span>
-</div>
-
-<div onClick={onLogout} style={{ padding:'14px 16px', borderBottom:`1px solid ${COLORS.border}`, display:'flex', alignItems:'center', gap:12, cursor:'pointer' }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFB100" strokeWidth="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-          <span style={{ color:COLORS.warning, fontSize:14 }}>{t?.logOut||t?.logout||'Log Out'}</span>
-        </div>
-
-        <div onClick={async()=>{
-          if(await confirmDialog('Delete account? This cannot be undone.')){
-            try{
-              const vSnap = await getDocs(query(collection(db,'videos'),where('userId','==',user.id)));
-              await Promise.all(vSnap.docs.map(d=>deleteDoc(doc(db,'videos',d.id))));
-              const cSnap = await getDocs(query(collection(db,'comments'),where('userId','==',user.id)));
-              await Promise.all(cSnap.docs.map(d=>deleteDoc(doc(db,'comments',d.id))));
-              const nSnap = await getDocs(query(collection(db,'notifications'),where('toUserId','==',user.id)));
-              await Promise.all(nSnap.docs.map(d=>deleteDoc(doc(db,'notifications',d.id))));
-              await deleteDoc(doc(db,'users',user.id));
-              await auth.currentUser?.delete();
-              onLogout?.();
-            }catch(e){
-              showToast?.('Re-login required to delete','error');
+        {/* Account Actions — grouped into one card like every other settings section,
+            instead of dangling as three bare, borderless rows underneath Support. */}
+        <div style={{ color:COLORS.textTertiary, fontSize:11, fontWeight:700, marginBottom:8, textTransform:'uppercase', letterSpacing:1.2 }}>Account Actions</div>
+        <div style={{ background:COLORS.surface2, borderRadius:20, overflow:'hidden', marginBottom:20, border:`1px solid ${COLORS.border}` }}>
+          <div onClick={async()=>{
+            if(await confirmDialog('Reset account? This will delete all your posts, comments and likes but keep your account.')){
+              try {
+                const vSnap = await getDocs(query(collection(db,'videos'),where('userId','==',user.id)));
+                await Promise.all(vSnap.docs.map(d=>deleteDoc(doc(db,'videos',d.id))));
+                const cSnap = await getDocs(query(collection(db,'comments'),where('userId','==',user.id)));
+                await Promise.all(cSnap.docs.map(d=>deleteDoc(doc(db,'comments',d.id))));
+                const lSnap = await getDocs(collection(db,'likes'));
+                await Promise.all(lSnap.docs.filter(d=>d.id.includes(user.id)).map(d=>deleteDoc(doc(db,'likes',d.id))));
+                await updateDoc(doc(db,'users',user.id),{
+                  followers:[], following:[], coins:500, walletBalance:500, streak:1
+                });
+                setCurrentUser(u=>({...u,followers:[],following:[],coins:500,walletBalance:500,streak:1}));
+                showToast?.('Account reset successfully','success');
+              } catch(e){
+                showToast?.('Reset failed: '+e.message,'error');
+              }
             }
-          }
-        }} style={{ padding:'14px 16px', display:'flex', alignItems:'center', gap:12, cursor:'pointer' }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.danger} strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
-          <span style={{ color:COLORS.danger, fontSize:14 }}>Delete Account</span>
+          }} style={{ padding:'15px 16px', borderBottom:`1px solid ${COLORS.border}`, display:'flex', alignItems:'center', gap:14, cursor:'pointer' }}>
+            <div style={{ width:36, height:36, borderRadius:12, background:COLORS.surface2, display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.warning} strokeWidth="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+            </div>
+            <span style={{ color:COLORS.warning, flex:1, fontSize:14 }}>Reset Account</span>
+          </div>
+
+          <div onClick={onLogout} style={{ padding:'15px 16px', borderBottom:`1px solid ${COLORS.border}`, display:'flex', alignItems:'center', gap:14, cursor:'pointer' }}>
+            <div style={{ width:36, height:36, borderRadius:12, background:COLORS.surface2, display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.warning} strokeWidth="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            </div>
+            <span style={{ color:COLORS.warning, flex:1, fontSize:14 }}>{t?.logOut||t?.logout||'Log Out'}</span>
+          </div>
+
+          <div onClick={async()=>{
+            if(await confirmDialog('Delete account? This cannot be undone.')){
+              try{
+                const vSnap = await getDocs(query(collection(db,'videos'),where('userId','==',user.id)));
+                await Promise.all(vSnap.docs.map(d=>deleteDoc(doc(db,'videos',d.id))));
+                const cSnap = await getDocs(query(collection(db,'comments'),where('userId','==',user.id)));
+                await Promise.all(cSnap.docs.map(d=>deleteDoc(doc(db,'comments',d.id))));
+                const nSnap = await getDocs(query(collection(db,'notifications'),where('toUserId','==',user.id)));
+                await Promise.all(nSnap.docs.map(d=>deleteDoc(doc(db,'notifications',d.id))));
+                await deleteDoc(doc(db,'users',user.id));
+                await auth.currentUser?.delete();
+                onLogout?.();
+              }catch(e){
+                showToast?.('Re-login required to delete','error');
+              }
+            }
+          }} style={{ padding:'15px 16px', display:'flex', alignItems:'center', gap:14, cursor:'pointer' }}>
+            <div style={{ width:36, height:36, borderRadius:12, background:COLORS.surface2, display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.danger} strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+            </div>
+            <span style={{ color:COLORS.danger, flex:1, fontSize:14 }}>Delete Account</span>
+          </div>
         </div>
         <div style={{ textAlign:'center', color:COLORS.textDisabled, fontSize:11, marginBottom:16 }}>Infinity v3.0.0 • Made with ❤️</div>
       </div>
@@ -6722,7 +6872,14 @@ if(activeSubPage==='settings') return (
     <div data-main-scroll="true" onScroll={onFeedScroll} style={{ height:'100%', overflow:'auto', background:COLORS.bg, paddingBottom:'max(74px, calc(58px + env(safe-area-inset-bottom)))' }}>
       <div style={{ position:'relative', paddingBottom:20, background:COLORS.surface, borderRadius:'0 0 24px 24px', boxShadow:'0 2px 14px rgba(124,58,237,0.06)' }}>
         <div style={{ height:150, position:'absolute', top:0, left:0, right:0, overflow:'hidden', borderRadius:'0 0 24px 24px' }}>
-          <div style={{ width:'100%', height:'100%', background:'linear-gradient(135deg,#2E7BFF,#0B5FFF 55%,#083FB0)' }} />
+          {user?.avatarUrl ? (
+            <>
+              <div style={{ width:'100%', height:'100%', backgroundImage:`url(${user.avatarUrl})`, backgroundSize:'cover', backgroundPosition:'center', transform:'scale(1.15)', filter:'blur(18px) brightness(0.65)' }} />
+              <div style={{ position:'absolute', inset:0, background:'linear-gradient(180deg,rgba(11,95,255,0.35),rgba(8,63,176,0.55))' }} />
+            </>
+          ) : (
+            <div style={{ width:'100%', height:'100%', background:'linear-gradient(135deg,#2E7BFF,#0B5FFF 55%,#083FB0)' }} />
+          )}
         </div>
         <div style={{ position:'relative', padding:'14px 16px 0' }}>
           <div style={{ display:'flex', justifyContent:'space-between' }}>
