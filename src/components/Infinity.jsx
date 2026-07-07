@@ -461,32 +461,36 @@ const ReportReasonSheet = ({ title = 'Report', onClose, onSubmit }) => {
   const [submitting, setSubmitting] = useState(false);
   return (
     <div style={{ position:'fixed', inset:0, zIndex:6000, background:'rgba(20,15,35,0.55)', display:'flex', alignItems:'flex-end' }} onClick={e=>{ e.stopPropagation(); onClose(); }}>
-      <div onClick={e=>e.stopPropagation()} style={{ width:'100%', maxHeight:'86vh', overflowY:'auto', background:COLORS.surface, borderTopLeftRadius:26, borderTopRightRadius:26, paddingBottom:'max(20px, env(safe-area-inset-bottom))' }}>
+      {/* Capped at 70vh (was 86vh) and rows below are compact, so this sheet no longer
+          swallows the whole screen — there's a visible peek of the post behind it. */}
+      <div onClick={e=>e.stopPropagation()} style={{ width:'100%', maxHeight:'70vh', display:'flex', flexDirection:'column', background:COLORS.surface, borderTopLeftRadius:22, borderTopRightRadius:22, paddingBottom:'max(14px, env(safe-area-inset-bottom))' }}>
         <SheetBackHeader title={title} onClose={onClose} />
-        <div style={{ padding:'10px 16px 4px', color:COLORS.textTertiary, fontSize:12.5 }}>
+        <div style={{ padding:'8px 16px 2px', color:COLORS.textTertiary, fontSize:11.5, lineHeight:1.4 }}>
           Your report is anonymous, except if you're reporting an intellectual property infringement.
         </div>
-        <div style={{ padding:'10px 8px' }}>
-          {REPORT_REASONS.map(reason=>(
+        <div style={{ overflowY:'auto', padding:'4px 12px 0' }}>
+          {REPORT_REASONS.map((reason,i)=>(
             <button
               key={reason}
               disabled={submitting}
               onClick={()=>setSelected(reason)}
               style={{
                 width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between',
-                background: selected===reason ? `${COLORS.brand}14` : 'none',
-                border: selected===reason ? `1px solid ${COLORS.brand}55` : '1px solid transparent',
-                borderRadius:12, padding:'13px 12px', marginBottom:4,
-                color:COLORS.textPrimary, fontSize:14.5, fontWeight:600, cursor:submitting?'default':'pointer', textAlign:'left'
+                background:'none', border:'none',
+                borderBottom: i<REPORT_REASONS.length-1 ? `1px solid ${COLORS.border}` : 'none',
+                padding:'10px 4px',
+                color: selected===reason ? COLORS.brand : COLORS.textPrimary,
+                fontSize:13.5, fontWeight: selected===reason ? 700 : 500,
+                cursor:submitting?'default':'pointer', textAlign:'left'
               }}>
               {reason}
               {selected===reason && (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.brand} strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.brand} strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
               )}
             </button>
           ))}
         </div>
-        <div style={{ padding:'8px 16px 0' }}>
+        <div style={{ padding:'10px 16px 0' }}>
           <button
             disabled={!selected||submitting}
             onClick={async()=>{
@@ -496,8 +500,8 @@ const ReportReasonSheet = ({ title = 'Report', onClose, onSubmit }) => {
             }}
             style={{
               width:'100%', background: (!selected||submitting) ? COLORS.surfaceAlt : COLORS.gradient,
-              border:'none', borderRadius:20, padding:'14px', color: (!selected||submitting) ? COLORS.textTertiary : 'white',
-              fontWeight:700, fontSize:14.5, cursor:(!selected||submitting)?'default':'pointer'
+              border:'none', borderRadius:18, padding:'12px', color: (!selected||submitting) ? COLORS.textTertiary : 'white',
+              fontWeight:700, fontSize:13.5, cursor:(!selected||submitting)?'default':'pointer'
             }}>
             {submitting ? 'Submitting…' : 'Submit Report'}
           </button>
@@ -3756,11 +3760,11 @@ const PostOptionsMenu = ({ video, currentUser, onClose, showToast, onDelete, onB
   ].filter(i => i.show);
   return (
     <div style={{ position:'fixed', inset:0, zIndex:5000, background:'rgba(20,15,35,0.45)', display:'flex', alignItems:'flex-end', animation:'fadeIn 0.2s ease' }} onClick={onClose}>
-      <div onClick={e=>e.stopPropagation()} style={{ width:'100%', maxHeight:'86vh', overflowY:'auto', background:COLORS.surface, borderTopLeftRadius:26, borderTopRightRadius:26, paddingBottom:'max(20px, env(safe-area-inset-bottom))' }}>
+      <div onClick={e=>e.stopPropagation()} style={{ width:'100%', maxHeight:'70vh', overflowY:'auto', background:COLORS.surface, borderTopLeftRadius:22, borderTopRightRadius:22, paddingBottom:'max(14px, env(safe-area-inset-bottom))' }}>
         <SheetBackHeader title="More Options" onClose={onClose} />
-        <div style={{ padding:'6px 8px' }}>
+        <div style={{ padding:'4px 8px' }}>
           {items.map(item => (
-            <button key={item.label} onClick={()=>{ item.action(); if(!item.label.startsWith('Delete') && !item.keepOpen) onClose(); }} style={{ width:'100%', display:'flex', alignItems:'center', gap:14, background:'none', border:'none', borderTop:item.sep?`1px solid ${COLORS.border}`:'none', marginTop:item.sep?8:0, paddingTop:item.sep?16:12, padding:item.sep?'16px 12px 12px':'12px', color:item.danger?COLORS.danger:COLORS.textPrimary, fontSize:14.5, fontWeight:600, cursor:'pointer', textAlign:'left', borderRadius:12 }}>
+            <button key={item.label} onClick={()=>{ item.action(); if(!item.label.startsWith('Delete') && !item.keepOpen) onClose(); }} style={{ width:'100%', display:'flex', alignItems:'center', gap:12, background:'none', border:'none', borderTop:item.sep?`1px solid ${COLORS.border}`:'none', marginTop:item.sep?6:0, paddingTop:item.sep?12:9, padding:item.sep?'12px 10px 9px':'9px 10px', color:item.danger?COLORS.danger:COLORS.textPrimary, fontSize:13.5, fontWeight:600, cursor:'pointer', textAlign:'left', borderRadius:10 }}>
               {item.icon}{item.label}
             </button>
           ))}
