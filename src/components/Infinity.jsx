@@ -6952,15 +6952,12 @@ unsub = onSnapshot(q, (snap) => {
 
   const blockThisUser = async () => {
     if (!otherUser?.id) return;
-    try {
-      await updateDoc(doc(db,'users',currentUser.id), { blockedUsers: arrayUnion(otherUser.id) });
-      onBlock?.(otherUser.id);
-      showToast?.(`Blocked @${otherUser.username||'user'}`, 'info');
-      setShowChatInfo(false);
-      onBack?.();
-    } catch (e) {
-      showToast?.('Could not block user', 'error');
-    }
+    // The actual Firestore write + state sync now lives in the shared handleBlockUser
+    // (passed down as onBlock), so every "Block" entry point in the app behaves identically.
+    await onBlock?.(otherUser.id);
+    showToast?.(`Blocked @${otherUser.username||'user'}`, 'info');
+    setShowChatInfo(false);
+    onBack?.();
   };
 
   const submitUserReport = async (reason) => {
@@ -10324,6 +10321,27 @@ export default function InfinityV1app() {
   const [showCreateStory, setShowCreateStory] = useState(false);
   const [followed, setFollowed] = useState([]);
 const [blockedUsers, setBlockedUsers] = useState([]);
+  // BUG FIX: this used to be several different inline onBlock handlers scattered across
+  // Home/Infinity feeds, InboxPage, and quickConversation. Most of them only updated the
+  // local `blockedUsers` array (used to hide posts) and never touched `currentUser.blockedUsers`
+  // (what the Settings > Blocked Users screen reads) or Firestore at all — so blocking someone
+  // from a post's "..." menu looked like it worked but silently vanished on refresh and never
+  // showed up in the Blocked Users list. This single handler is now the only path: it updates
+  // both local state slices optimistically AND persists to Firestore, with rollback on failure.
+  const handleBlockUser = async (uid) => {
+    if (!currentUser?.id || !uid || uid === currentUser.id) return;
+    setBlockedUsers(p => p.includes(uid) ? p : [...p, uid]);
+    setCurrentUser(cu => cu ? ({ ...cu, blockedUsers: (cu.blockedUsers||[]).includes(uid) ? cu.blockedUsers : [...(cu.blockedUsers||[]), uid] }) : cu);
+    try {
+      await updateDoc(doc(db,'users',currentUser.id), { blockedUsers: arrayUnion(uid) });
+    } catch (e) {
+      console.error('Failed to persist block:', e);
+      showToast?.('Could not block user — please try again', 'error');
+      // Roll back the optimistic update since it didn't actually save.
+      setBlockedUsers(p => p.filter(id => id !== uid));
+      setCurrentUser(cu => cu ? ({ ...cu, blockedUsers: (cu.blockedUsers||[]).filter(id => id !== uid) }) : cu);
+    }
+  };
   const [incomingCall, setIncomingCall] = useState(null);
   const [viewingProfile, setViewingProfile] = useState(null);
   // ── v4 NEW STATE ──
@@ -10811,7 +10829,7 @@ const handleMessage = uid => {
             onViewProfile={uid=>{ setQuickConversation(null); handleViewProfile(uid); }}
             onVoiceCall={uid=>{const u=users.find(uu=>uu.id===uid); const callDocId=[currentUser.id,uid].sort().join('_'); setShowCall({type:'audio',contactName:u?.username||quickConversation.otherUser?.username,contactAvatar:u?.avatar||quickConversation.otherUser?.avatar,contactId:uid,callDocId});}}
             onVideoCall={uid=>{const u=users.find(uu=>uu.id===uid); const callDocId=[currentUser.id,uid].sort().join('_'); setShowCall({type:'video',contactName:u?.username||quickConversation.otherUser?.username,contactAvatar:u?.avatar||quickConversation.otherUser?.avatar,contactId:uid,callDocId});}}
-            onBlock={uid=>{ setBlockedUsers(p=>p.includes(uid)?p:[...p,uid]); setCurrentUser(cu=>cu ? ({...cu, blockedUsers:(cu.blockedUsers||[]).includes(uid)?cu.blockedUsers:[...(cu.blockedUsers||[]),uid]}) : cu); }}
+            onBlock={handleBlockUser}
           />
         </div>
       )}
@@ -10834,10 +10852,10 @@ const handleMessage = uid => {
   onOpenSearch={()=>setShowDiscover(true)} onOpenNotifications={()=>setShowNotifications(true)} onOpenStories={()=>setShowStoriesPage(true)}
   onCreateStory={()=>setShowCreateStory(true)} onViewStory={(payload)=>setShowStoryViewer(payload)}
   onOpenProfileDrawer={()=>setShowProfileDrawer(true)} onFeedScroll={handleFeedScroll}
-  blockedUsers={blockedUsers} onBlock={uid=>setBlockedUsers(p=>[...p,uid])} users={users} onOpenCamera={()=>setShowCamera(true)} onOpenComposer={()=>setShowTextComposer(true)} />}
+  blockedUsers={blockedUsers} onBlock={handleBlockUser} users={users} onOpenCamera={()=>setShowCamera(true)} onOpenComposer={()=>setShowTextComposer(true)} />}
             {activeTab==='infinity' && <InfinityPage t={t} onFeedScroll={handleFeedScroll} showToast={showToast} currentUser={currentUser}
   videos={videos} videosLoading={videosLoading} followed={followed} onFollow={toggleFollow} onViewProfile={handleViewProfile} onMessage={handleMessage}
-  onShare={(v)=>setShowShareSheet(v)} users={users} blockedUsers={blockedUsers} onBlock={uid=>setBlockedUsers(p=>[...p,uid])}
+  onShare={(v)=>setShowShareSheet(v)} users={users} blockedUsers={blockedUsers} onBlock={handleBlockUser}
   onOpenNotifications={()=>setShowNotifications(true)} onOpenStories={()=>setShowStoriesPage(true)}
   onCreateStory={()=>setShowCreateStory(true)} onViewStory={(payload)=>setShowStoryViewer(payload)}
   onOpenProfileDrawer={()=>setShowProfileDrawer(true)} />}
@@ -10846,7 +10864,7 @@ const handleMessage = uid => {
             {activeTab==='inbox' && <InboxPage t={t} users={users} currentUser={currentUser} showToast={showToast} onViewProfile={handleViewProfile} initialTargetId={inboxTargetId} onClearTarget={()=>setInboxTargetId(null)} persistedConversation={activeConversation} openGroupsSignal={inboxOpenGroups} onSetConversation={(conv)=>{ setActiveConversation(conv); }} onFeedScroll={handleFeedScroll}
   onVoiceCall={uid=>{ const u=users.find(uu=>uu.id===uid); const callDocId=[currentUser.id,uid].sort().join('_'); setShowCall({type:'audio',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
   onVideoCall={uid=>{ const u=users.find(uu=>uu.id===uid); const callDocId=[currentUser.id,uid].sort().join('_'); setShowCall({type:'video',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
-  onBlock={uid=>{ setBlockedUsers(p=>p.includes(uid)?p:[...p,uid]); setCurrentUser(cu=>cu ? ({...cu, blockedUsers:(cu.blockedUsers||[]).includes(uid)?cu.blockedUsers:[...(cu.blockedUsers||[]),uid]}) : cu); }}
+  onBlock={handleBlockUser}
 />}
             {(activeTab==='profile'||activeTab==='settings') && <ProfilePage user={currentUser} setCurrentUser={setCurrentUser} onLogout={handleLogout} users={users} showToast={showToast} onShowAnalytics={()=>setShowAnalytics(true)} onShowQRCode={()=>setShowQRCode(true)} allVideos={videos} setBlockedUsers={setBlockedUsers} onShowSavedPosts={()=>setShowSavedPosts(true)} onGoToGroups={()=>{ setActiveTab('inbox'); setInboxOpenGroups(n=>n+1); }} onShowBroadcast={()=>setShowBroadcast(true)} onViewProfile={handleViewProfile} settingsSignal={activeTab==='settings'?settingsSignal:0} onFeedScroll={handleFeedScroll} t={t} theme={theme} onToggleTheme={toggleTheme} />}
           </>
