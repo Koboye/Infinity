@@ -1206,6 +1206,9 @@ const SavedPostsPage = ({ currentUser, onClose, showToast }) => {
               {v.videoUrl?.match(/\.(jpg|jpeg|png|gif|webp)/i) || v.mediaType?.startsWith('image')
                 ? <ProgressiveImage src={v.videoUrl} alt="" style={{ width: '100%', height: '100%' }} />
                 : <video src={v.videoUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} muted />}
+              {Array.isArray(v.images) && v.images.length > 1 && (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="white" style={{ position:'absolute', top:6, right:6, filter:'drop-shadow(0 1px 2px rgba(0,0,0,0.6))' }}><path d="M4 3h13a2 2 0 012 2v13h-2V5H4V3zm3 4h11a2 2 0 012 2v11a2 2 0 01-2 2H7a2 2 0 01-2-2V9a2 2 0 012-2z"/></svg>
+              )}
               <div style={{ position: 'absolute', bottom: 4, left: 4, color: COLORS.textPrimary, fontSize: 10, fontWeight: 700, textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{v.likes || 0} ❤️</div>
             </div>
           ))}
@@ -1699,6 +1702,7 @@ const GlobalStyles = () => (
     @keyframes floatUp{0%{transform:translateY(0) scale(1);opacity:1}100%{transform:translateY(-120px) scale(1.5);opacity:0}}
     @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
     @keyframes focusPulse{0%{transform:scale(1.3);opacity:0.3}50%{transform:scale(1);opacity:1}100%{transform:scale(1);opacity:0.7}}
+    @keyframes countdownPulse{0%{transform:scale(1.6);opacity:0}30%{transform:scale(1);opacity:1}100%{transform:scale(1);opacity:1}}
     @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
     @keyframes shimmerLoad{0%{opacity:0.4}50%{opacity:0.8}100%{opacity:0.4}}
     @keyframes gradientShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
@@ -3554,6 +3558,62 @@ const VideoProgressBar = ({ videoRef, isActive, isImage }) => {
     </div>
   );
 };
+
+// Swipeable multi-photo carousel for "image/multi" posts (TikTok/Instagram-style
+// slideshow). Previously the feed only ever rendered `images[0]`, so a 2+ photo
+// post silently dropped every photo after the first — this is what actually shows
+// all of them, swipe-to-advance, with dot indicators and a "1/4" counter.
+const MediaCarousel = ({ images, onDoubleClick, maxHeight = 420 }) => {
+  const [index, setIndex] = useState(0);
+  const trackRef = useRef(null);
+  const draggingRef = useRef(false);
+
+  const goTo = (i) => {
+    const clamped = Math.max(0, Math.min(images.length - 1, i));
+    setIndex(clamped);
+    trackRef.current?.scrollTo({ left: clamped * trackRef.current.clientWidth, behavior: 'smooth' });
+  };
+
+  const onScroll = () => {
+    const el = trackRef.current;
+    if (!el || draggingRef.current) return;
+    const i = Math.round(el.scrollLeft / el.clientWidth);
+    if (i !== index) setIndex(i);
+  };
+
+  if (!images?.length) return null;
+  if (images.length === 1) {
+    return <img src={images[0]} alt="" onDoubleClick={onDoubleClick} style={{ width:'100%', maxHeight, display:'block', objectFit:'cover' }} />;
+  }
+
+  return (
+    <div style={{ position:'relative' }}>
+      <div
+        ref={trackRef}
+        onScroll={onScroll}
+        onDoubleClick={onDoubleClick}
+        style={{ display:'flex', width:'100%', maxHeight, overflowX:'auto', scrollSnapType:'x mandatory', WebkitOverflowScrolling:'touch', scrollbarWidth:'none' }}
+      >
+        {images.map((src, i) => (
+          <img key={i} src={src} alt="" draggable={false} style={{ flex:'0 0 100%', width:'100%', maxHeight, objectFit:'cover', scrollSnapAlign:'center', display:'block' }} />
+        ))}
+      </div>
+      {/* Tap zones on the sides let you advance/go back with a plain tap, not just a swipe */}
+      <div onClick={e=>{ e.stopPropagation(); goTo(index-1); }} style={{ position:'absolute', left:0, top:0, bottom:0, width:'28%', cursor: index>0?'pointer':'default' }} />
+      <div onClick={e=>{ e.stopPropagation(); goTo(index+1); }} style={{ position:'absolute', right:0, top:0, bottom:0, width:'28%', cursor: index<images.length-1?'pointer':'default' }} />
+      {/* Counter */}
+      <div style={{ position:'absolute', top:10, right:10, background:'rgba(0,0,0,0.55)', color:'#fff', fontSize:11, fontWeight:700, padding:'3px 9px', borderRadius:12, pointerEvents:'none' }}>
+        {index+1}/{images.length}
+      </div>
+      {/* Dot indicators */}
+      <div style={{ position:'absolute', bottom:10, left:0, right:0, display:'flex', justifyContent:'center', gap:5, pointerEvents:'none' }}>
+        {images.map((_,i)=>(
+          <div key={i} style={{ width: i===index?6:5, height: i===index?6:5, borderRadius:'50%', background: i===index?'#fff':'rgba(255,255,255,0.5)', boxShadow:'0 0 3px rgba(0,0,0,0.4)', transition:'all 0.15s ease' }} />
+        ))}
+      </div>
+    </div>
+  );
+};
 /* ─────────────── ENHANCED VIDEO CARD ─────────────── */
 /* EnhancedVideoCard removed — dead code, a fully-featured duplicate of the
    full-screen video card that was never rendered. FeedPostCard is the one
@@ -3977,7 +4037,8 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
   const cancelMediaPress = () => clearTimeout(mediaPressTimer.current);
   const [descExpanded, setDescExpanded] = useState(false);
   const isVideo = video?.mediaType?.startsWith('video') || /\.(mp4|webm|mov)(\?|$)/i.test(video?.videoUrl||'');
-  const mediaSrc = (Array.isArray(video.images) && video.images[0]) || video.videoUrl;
+  const galleryImages = Array.isArray(video.images) && video.images.length > 0 ? video.images : null;
+  const mediaSrc = (galleryImages && galleryImages[0]) || video.videoUrl;
   const mediaWrapRef = useRef(null);
   const videoElRef = useRef(null);
   const [videoPaused, setVideoPaused] = useState(false);
@@ -4299,6 +4360,8 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
                 </div>
               )}
             </>
+          ) : galleryImages ? (
+            <MediaCarousel images={galleryImages} maxHeight={420} />
           ) : (
             <img src={mediaSrc} alt="" style={{ width:'100%', maxHeight:420, display:'block', objectFit:'cover' }} />
           )}
@@ -9116,11 +9179,23 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
   const [zoomCaps, setZoomCaps] = useState(null);
   const [focusPoint, setFocusPoint] = useState(null);
   const [recordSpeed, setRecordSpeed] = useState(1);
+  const [timerMode, setTimerMode] = useState(0); // 0 | 3 | 10 (seconds before shutter/record fires)
+  const [countdown, setCountdown] = useState(0); // live countdown number shown on screen, 0 = not counting down
+  const [beautyOn, setBeautyOn] = useState(false);
+  // Multi-shot photo mode: each shutter tap adds one photo to this array instead of
+  // immediately finishing the post, so you can build a swipeable multi-photo post
+  // straight from the camera (matches the gallery's multi-select behavior).
+  const [capturedPhotos, setCapturedPhotos] = useState([]);
+  // Segmented ("TikTok-style") video recording: record a clip, stop, record another,
+  // and they're stitched into one final video — instead of one continuous take only.
+  const [segments, setSegments] = useState([]); // just for the UI (segment count / undo)
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const recorderRef = useRef(null);
   const chunksRef = useRef([]);
+  const recordMimeRef = useRef('video/webm');
   const timerRef = useRef(null);
+  const countdownTimerRef = useRef(null);
   const fileInputRef = useRef(null);
   const focusTimerRef = useRef(null);
   const MAX_RECORD_SECONDS = 60;
@@ -9179,7 +9254,7 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
     focusTimerRef.current = setTimeout(()=>setFocusPoint(null), 700);
   };
 
-  useEffect(() => { startCamera(); return () => { streamRef.current?.getTracks().forEach(t=>t.stop()); clearInterval(timerRef.current); clearTimeout(focusTimerRef.current); }; }, []);
+  useEffect(() => { startCamera(); return () => { try { if (recorderRef.current && recorderRef.current.state !== 'inactive') { recorderRef.current.onstop = null; recorderRef.current.stop(); } } catch {} streamRef.current?.getTracks().forEach(t=>t.stop()); clearInterval(timerRef.current); clearInterval(countdownTimerRef.current); clearTimeout(focusTimerRef.current); }; }, []);
 
   const flipCamera = () => {
     const next = facingMode==='user'?'environment':'user';
@@ -9187,7 +9262,21 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
     startCamera(next);
   };
 
-  const capturePhoto = () => {
+  // Runs the on-screen 3-2-1 countdown (when a timer is set) and then invokes `fire`.
+  // Skips straight to `fire` when the timer is off, so callers don't need to branch.
+  const runCountdown = (fire) => {
+    if (!timerMode) { fire(); return; }
+    clearInterval(countdownTimerRef.current);
+    setCountdown(timerMode);
+    countdownTimerRef.current = setInterval(() => {
+      setCountdown(c => {
+        if (c <= 1) { clearInterval(countdownTimerRef.current); setTimeout(fire, 0); return 0; }
+        return c - 1;
+      });
+    }, 1000);
+  };
+
+  const doCapturePhoto = () => {
     if(!videoRef.current){ showToast?.('Camera not ready yet — try again in a moment','error'); return; }
     // videoWidth/videoHeight are 0 until the stream has actually started decoding frames.
     // Capturing before that produces a blank/empty image with no error, which is exactly
@@ -9202,20 +9291,59 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
       c.height = videoRef.current.videoHeight;
       const ctx = c.getContext('2d');
       if(flash){ ctx.fillStyle='white'; ctx.fillRect(0,0,c.width,c.height); }
-      ctx.filter = FILTERS[activeFilter].css || 'none';
+      ctx.filter = filterStyle.filter || 'none';
       ctx.drawImage(videoRef.current, 0, 0);
       c.toBlob(blob => {
         if(!blob){ showToast?.('Could not capture photo — try again','error'); return; }
-        setSelectedFile({ file: new File([blob],'photo.jpg',{type:'image/jpeg'}), url: URL.createObjectURL(blob), type:'image/jpeg' });
+        const file = new File([blob],`photo_${Date.now()}.jpg`,{type:'image/jpeg'});
+        const url = URL.createObjectURL(blob);
+        // Multi-shot: every tap of the shutter adds another photo to the set instead of
+        // finishing the post immediately — tap ✓ (finishPhotoCapture) when done.
+        setCapturedPhotos(prev => [...prev, { file, url }]);
       }, 'image/jpeg');
     } catch (e) {
       showToast?.('Could not capture photo — try again','error');
     }
   };
+  const capturePhoto = () => runCountdown(doCapturePhoto);
 
-  const startRecording = () => {
+  const removeCapturedPhoto = (i) => setCapturedPhotos(prev => prev.filter((_,idx)=>idx!==i));
+
+  // Finish the multi-shot photo set: one photo → a normal single-image post,
+  // 2+ photos → a swipeable "image/multi" carousel post (same shape the gallery's
+  // multi-select already produces, so the rest of the upload/preview flow just works).
+  const finishPhotoCapture = () => {
+    if (!capturedPhotos.length) return;
+    if (capturedPhotos.length === 1) {
+      const p = capturedPhotos[0];
+      setSelectedFile({ file: p.file, url: p.url, type: 'image/jpeg' });
+    } else {
+      setSelectedFile({ files: capturedPhotos.map(p=>p.file), urls: capturedPhotos.map(p=>p.url), type: 'image/multi' });
+    }
+    setCapturedPhotos([]);
+  };
+
+  // Segmented recording uses ONE MediaRecorder for the whole take, paused/resumed
+  // between clips — not a separate recorder per segment. Each independent
+  // MediaRecorder.stop() produces its own complete, self-contained file; naively
+  // concatenating several of those into one Blob is not a valid media container and
+  // plays incorrectly (often just the first clip) in most browsers. pause()/resume()
+  // keeps everything inside one continuous, valid recording, and only the final
+  // stop() (finishVideoRecording) flushes it — this is the correct, widely-supported
+  // way to do "record a few clips, get one combined video" (Safari 14.1+, Chrome,
+  // Firefox all support MediaRecorder.pause/resume).
+  const doStartRecording = () => {
     if(!streamRef.current){ showToast?.('Camera not ready — try again in a moment','error'); return; }
     if(!streamRef.current.getVideoTracks().length){ showToast?.('No camera feed to record — check camera permission','error'); return; }
+
+    // Resuming an already-started (paused) take just continues it — no new recorder.
+    if (recorderRef.current && recorderRef.current.state === 'paused') {
+      recorderRef.current.resume();
+      setRecording(true);
+      timerRef.current = setInterval(() => setRecordSeconds(s => { if(s>=MAX_RECORD_SECONDS-1){ stopRecording(); return MAX_RECORD_SECONDS; } return s+1; }), 1000);
+      return;
+    }
+
     chunksRef.current = [];
     try {
       // Not every browser supports the same container/codec — Safari/iOS in particular
@@ -9227,28 +9355,63 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
       const mimeType = preferredTypes.find(mt => window.MediaRecorder?.isTypeSupported?.(mt));
       const r = mimeType ? new MediaRecorder(streamRef.current, { mimeType }) : new MediaRecorder(streamRef.current);
       const usedType = r.mimeType || mimeType || 'video/webm';
+      recordMimeRef.current = usedType;
       r.ondataavailable = e => { if(e.data && e.data.size > 0) chunksRef.current.push(e.data); };
       r.onerror = () => { showToast?.('Recording failed — try again','error'); setRecording(false); clearInterval(timerRef.current); };
       r.onstop = () => {
-        if(!chunksRef.current.length){ showToast?.('Recording was empty — try again','error'); return; }
+        if(!chunksRef.current.length){ showToast?.('That recording was empty — try again','error'); return; }
         const blob = new Blob(chunksRef.current, { type: usedType });
-        const ext = usedType.includes('mp4') ? 'mp4' : 'webm';
-        setSelectedFile({ file: new File([blob],`video.${ext}`,{type:usedType}), url: URL.createObjectURL(blob), type:usedType });
+        setSelectedFile({ file: new File([blob],`video.${usedType.includes('mp4')?'mp4':'webm'}`,{type:usedType}), url: URL.createObjectURL(blob), type:usedType });
+        recorderRef.current = null;
+        setSegments([]);
+        setRecordSeconds(0);
       };
       r.start();
       recorderRef.current = r;
       setRecording(true);
-      setRecordSeconds(0);
+      // Elapsed time is NOT reset here — it keeps counting across pause/resume so the
+      // progress ring/label reflect the combined take's total length, capped at
+      // MAX_RECORD_SECONDS overall rather than per-clip.
       timerRef.current = setInterval(() => setRecordSeconds(s => { if(s>=MAX_RECORD_SECONDS-1){ stopRecording(); return MAX_RECORD_SECONDS; } return s+1; }), 1000);
     } catch (e) {
       showToast?.('Recording is not supported on this device/browser','error');
     }
   };
+  const startRecording = () => runCountdown(doStartRecording);
 
+  // Pauses between clips (does NOT finalize) — recorderRef stays alive so the next
+  // tap of the record button resumes the same take via doStartRecording above.
   const stopRecording = () => {
-    try { if(recorderRef.current && recorderRef.current.state !== 'inactive') recorderRef.current.stop(); } catch {}
+    try {
+      if (recorderRef.current && recorderRef.current.state === 'recording') {
+        recorderRef.current.pause();
+        setSegments(s => [...s, true]); // just a count of clip boundaries for the UI
+      }
+    } catch {}
     setRecording(false);
     clearInterval(timerRef.current);
+  };
+
+  // Scraps the whole in-progress take (all clips so far) and resets back to a clean
+  // slate, camera preview still running. There's no partial "undo just the last clip"
+  // here on purpose — with a single continuous recorder there's no clip boundary left
+  // to cut at without re-encoding; starting over is the reliable option.
+  const discardRecording = () => {
+    try { if (recorderRef.current && recorderRef.current.state !== 'inactive') { recorderRef.current.onstop = null; recorderRef.current.stop(); } } catch {}
+    recorderRef.current = null;
+    chunksRef.current = [];
+    setSegments([]);
+    setRecordSeconds(0);
+    setRecording(false);
+    clearInterval(timerRef.current);
+  };
+
+  // Finalize: stop() flushes the final chunk and onstop (set up in doStartRecording)
+  // builds the one combined video and hands off to the preview screen.
+  const finishVideoRecording = () => {
+    try {
+      if (recorderRef.current && recorderRef.current.state !== 'inactive') recorderRef.current.stop();
+    } catch {}
   };
 
   const handleFileSelect = e => {
@@ -9336,7 +9499,11 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
     setUploading(false);
   };
 
-  const filterStyle = { filter: FILTERS[activeFilter].css || 'none' };
+  // Beauty mode is a separate soft-smoothing pass, stackable on top of whichever
+  // color filter is selected — a subtle skin-smoothing look (gentle blur + lifted
+  // brightness/saturation) rather than another item in the FILTERS list.
+  const BEAUTY_CSS = 'brightness(1.05) contrast(0.96) saturate(1.08) blur(0.4px)';
+  const filterStyle = { filter: [FILTERS[activeFilter].css, beautyOn ? BEAUTY_CSS : ''].filter(Boolean).join(' ') || 'none' };
 
   // Preview screen (after capture)
   if(selectedFile) return (
@@ -9394,6 +9561,8 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
       <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:10, padding:'50px 16px 16px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
         <button onClick={onClose} style={{ background:'rgba(0,0,0,0.5)', border:'none', borderRadius:'50%', width:40, height:40, color:'white', cursor:'pointer', fontSize:20, display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
         <div style={{ display:'flex', gap:10 }}>
+          <button onClick={()=>setTimerMode(m=>m===0?3:m===3?10:0)} style={{ background: timerMode?'rgba(11,95,255,0.5)':'rgba(0,0,0,0.5)', border:'none', borderRadius:'50%', width:40, height:40, color:'white', cursor:'pointer', fontSize: timerMode?11:18, fontWeight:800, display:'flex', alignItems:'center', justifyContent:'center' }}>{timerMode ? `${timerMode}s` : '⏱️'}</button>
+          <button onClick={()=>setBeautyOn(v=>!v)} style={{ background: beautyOn?'rgba(11,95,255,0.5)':'rgba(0,0,0,0.5)', border:'none', borderRadius:'50%', width:40, height:40, color:'white', cursor:'pointer', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center' }}>🪄</button>
           <button onClick={()=>setFlash(!flash)} style={{ background: flash?'rgba(255,215,0,0.3)':'rgba(0,0,0,0.5)', border:'none', borderRadius:'50%', width:40, height:40, color: flash?'#FFD60A':'white', cursor:'pointer', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center' }}>⚡</button>
           <button onClick={flipCamera} style={{ background:'rgba(0,0,0,0.5)', border:'none', borderRadius:'50%', width:40, height:40, color:'white', cursor:'pointer', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center' }}>🔄</button>
           <button onClick={()=>setShowFilters(!showFilters)} style={{ background: showFilters?'rgba(11,95,255,0.5)':'rgba(0,0,0,0.5)', border:'none', borderRadius:'50%', width:40, height:40, color:'white', cursor:'pointer', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center' }}>✨</button>
@@ -9407,11 +9576,18 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
         {focusPoint && (
           <div style={{ position:'absolute', left:focusPoint.x-28, top:focusPoint.y-28, width:56, height:56, borderRadius:'50%', border:'2px solid #FFD60A', pointerEvents:'none', animation:'focusPulse 0.6s ease-out' }} />
         )}
-        {/* Recording timer */}
+        {/* Countdown overlay — shown for the timerMode duration before the shutter/record actually fires */}
+        {countdown > 0 && (
+          <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', pointerEvents:'none' }}>
+            <span key={countdown} style={{ color:'white', fontSize:96, fontWeight:800, textShadow:'0 4px 24px rgba(0,0,0,0.6)', animation:'countdownPulse 1s ease-out' }}>{countdown}</span>
+          </div>
+        )}
+        {/* Recording timer + clip/segment count */}
         {recording && (
           <div style={{ position:'absolute', top:60, left:'50%', transform:'translateX(-50%)', background:'rgba(11,95,255,0.9)', borderRadius:20, padding:'6px 16px', display:'flex', alignItems:'center', gap:8 }}>
             <div style={{ width:8, height:8, borderRadius:'50%', background:'white', animation:'pulse 1s infinite' }} />
             <span style={{ color:'white', fontWeight:700, fontSize:14 }}>00:{String(recordSeconds).padStart(2,'0')} / 00:{String(MAX_RECORD_SECONDS).padStart(2,'0')}</span>
+            {segments.length > 0 && <span style={{ color:'rgba(255,255,255,0.85)', fontWeight:700, fontSize:12 }}>· clip {segments.length+1}</span>}
           </div>
         )}
         {/* Zoom slider */}
@@ -9450,7 +9626,13 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
         {/* Photo / Video toggle */}
         <div style={{ display:'flex', justifyContent:'center', gap:28, marginBottom: cameraMode==='video' && !recording ? 12 : 24 }}>
           {['photo','video'].map(m=>(
-            <button key={m} onClick={()=>setCameraMode(m)} style={{ background:'none', border:'none', color: cameraMode===m?'white':'rgba(255,255,255,0.35)', fontSize:13, fontWeight:700, cursor:'pointer', textTransform:'uppercase', letterSpacing:1, borderBottom: cameraMode===m?'2px solid #0B5FFF':'2px solid transparent', paddingBottom:4 }}>{m}</button>
+            <button key={m} onClick={()=>{
+              if (m !== cameraMode && (capturedPhotos.length > 0 || segments.length > 0)) {
+                showToast?.('Finish or undo your current shots before switching mode', 'info');
+                return;
+              }
+              setCameraMode(m);
+            }} style={{ background:'none', border:'none', color: cameraMode===m?'white':'rgba(255,255,255,0.35)', fontSize:13, fontWeight:700, cursor:'pointer', textTransform:'uppercase', letterSpacing:1, borderBottom: cameraMode===m?'2px solid #0B5FFF':'2px solid transparent', paddingBottom:4 }}>{m}</button>
           ))}
         </div>
 
@@ -9463,6 +9645,31 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
           </div>
         )}
 
+        {/* Multi-shot photo strip: every shutter tap while in photo mode adds here.
+            Tap the ✓ to finish — 1 photo posts normally, 2+ becomes a swipeable carousel. */}
+        {cameraMode==='photo' && capturedPhotos.length > 0 && (
+          <div style={{ display:'flex', alignItems:'center', gap:8, padding:'0 16px 14px', overflowX:'auto' }}>
+            {capturedPhotos.map((p,i)=>(
+              <div key={i} style={{ position:'relative', flexShrink:0 }}>
+                <img src={p.url} alt="" style={{ width:52, height:52, borderRadius:10, objectFit:'cover', border:'2px solid rgba(255,255,255,0.3)' }} />
+                <button onClick={()=>removeCapturedPhoto(i)} style={{ position:'absolute', top:-6, right:-6, width:18, height:18, borderRadius:'50%', background:'rgba(0,0,0,0.8)', border:'1px solid rgba(255,255,255,0.4)', color:'white', fontSize:11, lineHeight:1, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
+              </div>
+            ))}
+            <button onClick={finishPhotoCapture} style={{ flexShrink:0, width:52, height:52, borderRadius:'50%', background:'linear-gradient(135deg,#2E7BFF,#0B5FFF)', border:'none', color:'white', fontSize:20, fontWeight:800, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>✓</button>
+          </div>
+        )}
+
+        {/* Segmented recording controls: shown between clips (recording paused, at
+            least one segment banked). Undo removes the last clip; ✓ stitches them
+            all into one final video. */}
+        {cameraMode==='video' && !recording && segments.length > 0 && (
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:16, padding:'0 16px 14px' }}>
+            <span style={{ color:'rgba(255,255,255,0.7)', fontSize:12, fontWeight:700 }}>{segments.length} clip{segments.length>1?'s':''} recorded</span>
+            <button onClick={discardRecording} style={{ background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:16, padding:'6px 14px', color:'white', fontSize:12, fontWeight:700, cursor:'pointer' }}>🗑 Start over</button>
+            <button onClick={finishVideoRecording} style={{ background:'linear-gradient(135deg,#2E7BFF,#0B5FFF)', border:'none', borderRadius:16, padding:'6px 16px', color:'white', fontSize:12, fontWeight:800, cursor:'pointer' }}>Done ✓</button>
+          </div>
+        )}
+
         {/* Capture row */}
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', paddingLeft:60, paddingRight:60 }}>
           {/* Gallery */}
@@ -9471,11 +9678,11 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
 
           {/* Shutter / Record */}
           {cameraMode==='photo' ? (
-            <button onClick={capturePhoto} style={{ width:76, height:76, borderRadius:'50%', background:'white', border:'5px solid rgba(255,255,255,0.3)', cursor:'pointer', position:'relative' }}>
+            <button onClick={capturePhoto} disabled={countdown>0} style={{ width:76, height:76, borderRadius:'50%', background:'white', border:'5px solid rgba(255,255,255,0.3)', cursor: countdown>0 ? 'default' : 'pointer', opacity: countdown>0 ? 0.5 : 1, position:'relative' }}>
               <div style={{ position:'absolute', inset:4, borderRadius:'50%', background:'white' }} />
             </button>
           ) : (
-            <button onClick={recording?stopRecording:startRecording} style={{ width:76, height:76, borderRadius:'50%', background: recording?'#0B5FFF':'white', border:'5px solid rgba(255,255,255,0.3)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', position:'relative' }}>
+            <button onClick={recording?stopRecording:startRecording} disabled={countdown>0} style={{ width:76, height:76, borderRadius:'50%', background: recording?'#0B5FFF':'white', border:'5px solid rgba(255,255,255,0.3)', cursor: countdown>0 ? 'default' : 'pointer', opacity: countdown>0 ? 0.5 : 1, display:'flex', alignItems:'center', justifyContent:'center', position:'relative' }}>
               {recording && (
                 <svg width="86" height="86" viewBox="0 0 86 86" style={{ position:'absolute', top:-5, left:-5, transform:'rotate(-90deg)', pointerEvents:'none' }}>
                   <circle cx="43" cy="43" r="40" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="3" />
