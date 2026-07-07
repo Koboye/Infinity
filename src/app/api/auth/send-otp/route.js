@@ -4,9 +4,9 @@ import { adminDb } from '@/lib/firebase-admin';
 import { rateLimit, clientIp } from '@/lib/rate-limit';
 
 const OTP_TTL_MS = 10 * 60 * 1000;
-const EMAILJS_SERVICE = 'service_mtqmvbb';
-const EMAILJS_TEMPLATE = 'template_1k7wiqa';
-const EMAILJS_PUBLIC_KEY = 'U9fs25Bcx5oQ6A2ru';
+const EMAILJS_SERVICE = 'service_c0xotdn';
+const EMAILJS_TEMPLATE = 'template_vppithq';
+const EMAILJS_PUBLIC_KEY = '5Zn_mOJ0NA7-Mqmf5';
 
 function hashOtp(otp, email) {
   // Salted with the email + a server secret so a leaked Firestore doc alone isn't enough
