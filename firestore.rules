@@ -34,7 +34,7 @@ service cloud.firestore {
       allow update: if request.auth != null && (
         request.auth.uid == resource.data.userId
         || request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['likes', 'likedBy', 'views', 'shares', 'comments', 'savedBy', 'saves', 'poll'])
+             .hasOnly(['likes', 'likedBy', 'views', 'viewedBy', 'shares', 'comments', 'savedBy', 'saves', 'poll'])
         || (request.auth.token.admin == true
           && request.resource.data.diff(resource.data).affectedKeys()
                .hasOnly(['moderationStatus', 'moderatedAt', 'moderatedBy']))
@@ -119,6 +119,15 @@ service cloud.firestore {
         allow read: if request.auth != null &&
           get(/databases/$(database)/documents/groups/$(groupId)).data.members.hasAny([request.auth.uid]);
         allow create: if request.auth != null && request.auth.uid == request.resource.data.senderId &&
+          get(/databases/$(database)/documents/groups/$(groupId)).data.members.hasAny([request.auth.uid]);
+      }
+
+      // Group call signaling (state doc + participants/signals subcollections) — any
+      // member can read/write, same trust boundary as the group itself. Covers
+      // groups/{groupId}/call/state, .../call/state/participants/{uid}, and
+      // .../call/state/signals/{pairId} in one recursive rule.
+      match /call/{document=**} {
+        allow read, write: if request.auth != null &&
           get(/databases/$(database)/documents/groups/$(groupId)).data.members.hasAny([request.auth.uid]);
       }
     }
