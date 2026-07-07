@@ -186,7 +186,7 @@ const OfflineBanner = () => (
 /* ─────────────── EMAILJS CONFIG ─────────────── */
 const EMAILJS_SERVICE = 'service_mtqmvbb';
 const EMAILJS_TEMPLATE = 'template_1k7wiqa';
-const EMAILJS_PUBLIC_KEY = 'U9fs25Bcx5oQ6A2ru';
+const EMAILJS_PUBLIC_KEY = '5Zn_mOJ0NA7-Mqmf5';
 // Recipient for in-app "Report a Problem" submissions. Change in one place if the support inbox changes.
 const SUPPORT_EMAIL = 'supportinfinity@gmail.com';
 /* ─────────────── CONSTANTS ─────────────── */
