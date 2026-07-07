@@ -6,9 +6,11 @@ html,
 body {
   padding: 0;
   margin: 0;
-  /* Was #F6F5FB (a leftover purple-tinted grey) — now matches COLORS.bg from
-     src/lib/theme.js so there's no mismatched flash behind the app's real UI. */
-  background: #F5F8FF;
+  /* Was a hardcoded hex that never updated on theme toggle (see applyTheme() in
+     src/lib/theme.js) — now reads the same COLORS.bg value that toggle keeps in
+     sync via --app-bg, so dark mode actually covers the whole document instead of
+     leaving a light-mode strip behind/around the app. */
+  background: var(--app-bg, #F5F8FF);
 }
 
 html {
