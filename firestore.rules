@@ -114,11 +114,16 @@ service cloud.firestore {
     match /groups/{groupId} {
       allow read, update: if request.auth != null && resource.data.members.hasAny([request.auth.uid]);
       allow create: if request.auth != null && request.resource.data.members.hasAny([request.auth.uid]);
+      allow delete: if request.auth != null && request.auth.uid == resource.data.admin;
 
       match /msgs/{msgId} {
         allow read: if request.auth != null &&
           get(/databases/$(database)/documents/groups/$(groupId)).data.members.hasAny([request.auth.uid]);
         allow create: if request.auth != null && request.auth.uid == request.resource.data.senderId &&
+          get(/databases/$(database)/documents/groups/$(groupId)).data.members.hasAny([request.auth.uid]);
+        // Needed so Leave Group (as last member) and Delete Group (admin) can clear
+        // the thread's messages before removing the group doc itself.
+        allow delete: if request.auth != null &&
           get(/databases/$(database)/documents/groups/$(groupId)).data.members.hasAny([request.auth.uid]);
       }
 
