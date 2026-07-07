@@ -2928,6 +2928,19 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
             {isLive && (
               <div style={{ position:'absolute', bottom:-2, left:'50%', transform:'translateX(-50%)', background:COLORS.live, borderRadius:6, padding:'2px 8px', fontSize:9, fontWeight:800, color:'white', letterSpacing:0.4, whiteSpace:'nowrap' }}>LIVE</div>
             )}
+            {!isOwn && (
+              <button
+                onClick={()=>onFollow?.(user.id)}
+                aria-label={isFollowing ? 'Unfollow' : 'Follow'}
+                title={isFollowing ? 'Unfollow' : 'Follow'}
+                style={{ position:'absolute', bottom:2, right:2, width:28, height:28, display:'flex', alignItems:'center', justifyContent:'center', borderRadius:'50%', padding:0, cursor:'pointer', border:'3px solid #15151C', background: isFollowing ? '#FF3B30' : '#2ED573', color:'white', boxShadow:SHADOW.xs }}>
+                {isFollowing ? (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                ) : (
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                )}
+              </button>
+            )}
           </div>
           <div style={{ color:'white', fontWeight:800, fontSize:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{user?.fullName || user?.username}</div>
           {isLive && (
@@ -2953,17 +2966,6 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
         {!isOwn && (
           <div style={{ padding:'0 16px 16px', display:'flex', flexDirection:'column', gap:8 }}>
             <div style={{ display:'flex', gap:8 }}>
-              <button
-                onClick={()=>{onFollow?.(user.id);}}
-                aria-label={isFollowing ? 'Unfollow' : 'Follow'}
-                title={isFollowing ? 'Unfollow' : 'Follow'}
-                style={{ flex:'0 0 auto', width:48, height:48, display:'flex', alignItems:'center', justifyContent:'center', background:isFollowing?'rgba(255,255,255,0.06)':'linear-gradient(135deg,#2E7BFF,#0B5FFF)', border:isFollowing?'1px solid rgba(255,255,255,0.15)':'none', borderRadius:'50%', color:isFollowing?'rgba(255,255,255,0.7)':'white', cursor:'pointer', padding:0 }}>
-                {isFollowing ? (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                ) : (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                )}
-              </button>
               <button onClick={()=>{onMessage?.(user.id); onClose();}} style={{ flex:1, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:'12px', color:'white', fontWeight:600, cursor:'pointer', fontSize:14 }}>Message</button>
               <button
                 onClick={() => setShowDonate(true)}
@@ -4301,6 +4303,19 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
           {isLive && (
             <div style={{ position:'absolute', bottom:-3, left:'50%', transform:'translateX(-50%)', background:COLORS.live, borderRadius:6, padding:'1px 5px', fontSize:7, fontWeight:800, color:'white', letterSpacing:0.3, whiteSpace:'nowrap' }}>LIVE</div>
           )}
+          {video.userId !== currentUser?.id && (
+            <button
+              onClick={e=>{ e.stopPropagation(); onFollow?.(video.userId); }}
+              aria-label={followed?.includes(video.userId) ? 'Unfollow' : 'Follow'}
+              title={followed?.includes(video.userId) ? 'Unfollow' : 'Follow'}
+              style={{ position:'absolute', bottom:-3, right:-3, width:20, height:20, display:'flex', alignItems:'center', justifyContent:'center', borderRadius:'50%', padding:0, cursor:'pointer', border:`2px solid ${COLORS.surface}`, background: followed?.includes(video.userId) ? '#FF3B30' : '#2ED573', color:'white', boxShadow:SHADOW.xs }}>
+              {followed?.includes(video.userId) ? (
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              ) : (
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              )}
+            </button>
+          )}
         </div>
         <div style={{ flex:1, minWidth:0, display:'flex', flexDirection:'column', overflow:'hidden', cursor:'pointer' }} onClick={()=>onViewProfile?.(video.userId)}>
           {/* Posts show only the person's current display name (full name), read live
@@ -4317,19 +4332,6 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
           </span>
           <span style={{ color:COLORS.textTertiary, fontSize:12, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{timeAgo(tsToDate(video.createdAt))}</span>
         </div>
-        {video.userId !== currentUser?.id && (
-          <button
-            onClick={()=>onFollow?.(video.userId)}
-            aria-label={followed?.includes(video.userId) ? 'Unfollow' : 'Follow'}
-            title={followed?.includes(video.userId) ? 'Unfollow' : 'Follow'}
-            style={{ width:30, height:30, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', borderRadius:'50%', padding:0, cursor:'pointer', background: followed?.includes(video.userId) ? COLORS.surfaceAlt : 'linear-gradient(135deg,#2E7BFF,#0B5FFF)', border: followed?.includes(video.userId) ? `1px solid ${COLORS.border}` : 'none', color: followed?.includes(video.userId) ? COLORS.textSecondary : 'white' }}>
-            {followed?.includes(video.userId) ? (
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            ) : (
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            )}
-          </button>
-        )}
         <button onClick={()=>setShowOptions(true)} style={{ background:'none', border:'none', cursor:'pointer', color:COLORS.textTertiary, fontSize:16, padding:4, flexShrink:0 }}>•••</button>
       </div>
       {(video.location || video.taggedUsers?.length > 0) && (
