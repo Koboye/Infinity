@@ -1661,6 +1661,7 @@ const GlobalStyles = () => (
     @keyframes slideInLeft{from{transform:translateX(-100%)}to{transform:translateX(0)}}
     @keyframes scaleIn{from{transform:scale(0.95);opacity:0}to{transform:scale(1);opacity:1}}
     @keyframes likeHeart{0%{transform:scale(1)}15%{transform:scale(1.4)}30%{transform:scale(0.9)}45%{transform:scale(1.2)}60%{transform:scale(1)}}
+    @keyframes pulseGlow{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.75;transform:scale(1.12)}}
     @keyframes progressBar{from{width:0%}to{width:100%}}
     @keyframes bounceIn{0%{transform:scale(0.3);opacity:0}50%{transform:scale(1.1)}70%{transform:scale(0.9)}100%{transform:scale(1);opacity:1}}
     @keyframes swipeHint{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
@@ -4070,6 +4071,10 @@ const PostOptionsMenu = ({ video, currentUser, onClose, showToast, onDelete, onB
 
 // Ensures only one FeedPostCard video autoplays at a time (TikTok-style single active playback)
 let __activeFeedVideoEl = null;
+// Tracks the stop() function of whichever post is currently being read aloud, so
+// starting Read Aloud on a different post cancels the previous one — one voice at a
+// time, same idea as __activeFeedVideoEl above for video playback.
+let __activeReadingStop = null;
 // Shared sound preference across the whole feed session, TikTok/Reels-style: videos
 // autoplay muted (browsers block autoplay-with-sound without a real user gesture, so
 // starting unmuted just silently failed to play at all), and tapping the speaker icon
@@ -4117,6 +4122,80 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
   };
   const cancelMediaPress = () => clearTimeout(mediaPressTimer.current);
   const [descExpanded, setDescExpanded] = useState(false);
+  // ── Read Aloud — text-to-speech for post captions/text posts, via the browser's
+  // built-in SpeechSynthesis API (no server cost, works offline). Only one post reads
+  // at a time app-wide: starting a new one cancels whatever was already speaking,
+  // mirroring the single-active-video pattern used for feed playback below.
+  //
+  // readLang lets the viewer override the spoken language per post: 'auto' reads the
+  // post as-written (Ethiopic script gets an am-ET voice hint, everything else uses
+  // the device's language), while 'am' always speaks it in Amharic — translating the
+  // text first via the same liveTranslate() used for chat/caption translation when the
+  // post isn't already in Amharic, so an English caption is read out in Amharic rather
+  // than an Amharic voice trying (and failing) to pronounce English words.
+  const [isReading, setIsReading] = useState(false);
+  const [isTranslatingRead, setIsTranslatingRead] = useState(false);
+  const [readLang, setReadLang] = useState('auto'); // 'auto' | 'am'
+  const readUtteranceRef = useRef(null);
+  const readRequestIdRef = useRef(0);
+  const stopReading = () => {
+    readRequestIdRef.current += 1; // invalidates any in-flight translation
+    try { window.speechSynthesis?.cancel(); } catch {}
+    if (__activeReadingStop === stopReading) __activeReadingStop = null;
+    setIsReading(false);
+    setIsTranslatingRead(false);
+  };
+  const isAmharicScript = (s) => /[\u1200-\u137F]/.test(s || '');
+  const toggleReadAloud = async (e) => {
+    e.stopPropagation();
+    if (!('speechSynthesis' in window)) { showToast?.('Read aloud isn\'t supported on this device', 'error'); return; }
+    if (isReading || isTranslatingRead) { stopReading(); return; }
+    // Stop any other post currently being read before starting this one.
+    __activeReadingStop?.();
+    haptic('light');
+    const myRequestId = (readRequestIdRef.current += 1);
+    const original = video.description || '';
+    let text = original;
+    let lang = isAmharicScript(original) ? 'am-ET' : (navigator.language || 'en-US');
+    if (readLang === 'am') {
+      lang = 'am-ET';
+      if (!isAmharicScript(original)) {
+        setIsTranslatingRead(true);
+        try { text = await liveTranslate(original, 'am'); }
+        catch { text = original; }
+        setIsTranslatingRead(false);
+        if (myRequestId !== readRequestIdRef.current) return; // user cancelled while translating
+      }
+    }
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = lang;
+    // Prefer an actual installed Amharic voice when reading in Amharic (common on
+    // Ethiopian Android devices with Google's TTS language pack installed); falls
+    // back to the device default voice under the am-ET lang tag otherwise.
+    if (lang === 'am-ET') {
+      const voices = window.speechSynthesis.getVoices?.() || [];
+      const amVoice = voices.find(v => v.lang?.toLowerCase().startsWith('am'));
+      if (amVoice) utterance.voice = amVoice;
+    }
+    utterance.rate = 1;
+    utterance.onend = () => { setIsReading(false); if (__activeReadingStop === stopReading) __activeReadingStop = null; };
+    utterance.onerror = () => { setIsReading(false); if (__activeReadingStop === stopReading) __activeReadingStop = null; };
+    readUtteranceRef.current = utterance;
+    __activeReadingStop = stopReading;
+    setIsReading(true);
+    window.speechSynthesis.speak(utterance);
+  };
+  // Toggling the language preference always stops any in-progress reading (rather than
+  // silently switching mid-sentence) — tap Read Aloud again to hear it in the new language.
+  const toggleReadLang = (e) => {
+    e.stopPropagation();
+    if (isReading || isTranslatingRead) stopReading();
+    setReadLang(l => l === 'am' ? 'auto' : 'am');
+    haptic('light');
+  };
+  // Card-unmount cleanup for read-aloud; the "scrolled off-screen" stop is added
+  // below once isVisible exists.
+  useEffect(() => () => { if (isReading || isTranslatingRead) stopReading(); }, []);
   const isVideo = video?.mediaType?.startsWith('video') || /\.(mp4|webm|mov)(\?|$)/i.test(video?.videoUrl||'');
   const galleryImages = Array.isArray(video.images) && video.images.length > 0 ? video.images : null;
   const mediaSrc = (galleryImages && galleryImages[0]) || video.videoUrl;
@@ -4126,6 +4205,9 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
   const [muted, setMuted] = useState(!__feedSoundOn);
   const viewCountedRef = useRef(false);
   const isVisible = useIntersectionObserver(mediaWrapRef, { threshold: 0.6 });
+  // Stop reading if the post scrolls off-screen, so speech doesn't keep narrating a
+  // post the viewer has already scrolled past.
+  useEffect(() => { if (!isVisible && (isReading || isTranslatingRead)) stopReading(); }, [isVisible]);
 
   // ── Auto-translated video captions, TikTok/Facebook-style ──
   // No per-video button: whether captions show at all, and in which language, is a
@@ -4392,18 +4474,62 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
         const shown = descExpanded || !isLong ? video.description : video.description.slice(0, DESC_LIMIT).trimEnd();
         const bg = video.bgColor && video.mediaType==='text';
         return (
-          <div onClick={()=>isLong && setDescExpanded(v=>!v)} style={bg ? {
-            background:video.bgColor, borderRadius:16, padding:'28px 18px', marginBottom:12,
-            display:'flex', alignItems:'center', justifyContent:'center', textAlign:'center', minHeight:120,
-            color:'#fff', fontSize:18, fontWeight:700, lineHeight:1.4, whiteSpace:'pre-wrap', wordBreak:'break-word',
-            cursor: isLong ? 'pointer' : 'default',
-          } : { color:COLORS.textPrimary, fontSize:14, lineHeight:1.5, marginBottom:12, whiteSpace:'pre-wrap', wordBreak:'break-word', cursor: isLong ? 'pointer' : 'default' }}>
-            {shown}{isLong && !descExpanded && '…'}
-            {isLong && (
-              <span onClick={e=>{ e.stopPropagation(); setDescExpanded(v=>!v); }} style={{ color:bg?'rgba(255,255,255,0.85)':COLORS.textTertiary, fontWeight:700, cursor:'pointer', marginLeft:5 }}>
-                {descExpanded ? 'Show less' : 'See more'}
-              </span>
-            )}
+          <div style={{ position:'relative', marginBottom:12 }}>
+            <div onClick={()=>isLong && setDescExpanded(v=>!v)} style={bg ? {
+              background:video.bgColor, borderRadius:16, padding:'28px 18px',
+              display:'flex', alignItems:'center', justifyContent:'center', textAlign:'center', minHeight:120,
+              color:'#fff', fontSize:18, fontWeight:700, lineHeight:1.4, whiteSpace:'pre-wrap', wordBreak:'break-word',
+              cursor: isLong ? 'pointer' : 'default',
+            } : { color:COLORS.textPrimary, fontSize:14, lineHeight:1.5, whiteSpace:'pre-wrap', wordBreak:'break-word', cursor: isLong ? 'pointer' : 'default', paddingRight:74 }}>
+              {shown}{isLong && !descExpanded && '…'}
+              {isLong && (
+                <span onClick={e=>{ e.stopPropagation(); setDescExpanded(v=>!v); }} style={{ color:bg?'rgba(255,255,255,0.85)':COLORS.textTertiary, fontWeight:700, cursor:'pointer', marginLeft:5 }}>
+                  {descExpanded ? 'Show less' : 'See more'}
+                </span>
+              )}
+            </div>
+            {/* Read Aloud controls — a language toggle pill (forces Amharic playback,
+                translating first if the post isn't already in Amharic) plus the
+                speaker button itself. Icon swaps to a stop glyph while speaking, and
+                to a small spinner while translating. */}
+            <div style={{ position:'absolute', top: bg?10:0, right: bg?10:0, display:'flex', alignItems:'center', gap:6 }}>
+              <button
+                onClick={toggleReadLang}
+                aria-label={readLang === 'am' ? 'Reading in Amharic — tap to switch to original language' : 'Switch read-aloud to Amharic'}
+                title={readLang === 'am' ? 'Reads in Amharic' : 'Read in Amharic instead'}
+                style={{
+                  height:26, padding:'0 8px', borderRadius:13, border:'none', cursor:'pointer',
+                  display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
+                  fontSize:11, fontWeight:800, letterSpacing:0.2,
+                  background: readLang === 'am' ? COLORS.brand : (bg ? 'rgba(0,0,0,0.3)' : COLORS.surfaceAlt),
+                  color: readLang === 'am' ? '#fff' : (bg ? '#fff' : COLORS.textSecondary),
+                  transition:TRANSITION.fast,
+                }}>
+                አማ
+              </button>
+              <button
+                onClick={toggleReadAloud}
+                aria-label={isReading ? 'Stop reading' : (isTranslatingRead ? 'Translating…' : 'Read post aloud')}
+                disabled={isTranslatingRead}
+                style={{
+                  width:26, height:26, borderRadius:'50%', border:'none', cursor: isTranslatingRead ? 'default' : 'pointer',
+                  display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
+                  background: bg ? 'rgba(0,0,0,0.3)' : (isReading ? COLORS.brand : COLORS.surfaceAlt),
+                  animation: isReading ? 'pulseGlow 1.2s ease-in-out infinite' : 'none',
+                  transition:TRANSITION.fast,
+                }}>
+                {isTranslatingRead ? (
+                  <div style={{ width:12, height:12, border:`2px solid ${bg?'rgba(255,255,255,0.35)':COLORS.border}`, borderTop:`2px solid ${bg?'#fff':COLORS.brand}`, borderRadius:'50%', animation:'spin 0.8s linear infinite' }} />
+                ) : isReading ? (
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="#fff"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+                ) : (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={bg?'#fff':COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                    <path d="M15.54 8.46a5 5 0 010 7.07"/>
+                  </svg>
+                )}
+              </button>
+            </div>
           </div>
         );
       })()}
