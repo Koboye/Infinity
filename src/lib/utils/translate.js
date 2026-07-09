@@ -24,7 +24,7 @@ export const liveTranslate = async (text, targetLang = 'en') => {
 export const useLiveTranslation = (text, targetLang) => {
   const [translated, setTranslated] = useState(text);
   useEffect(() => {
-    if (!text || !targetLang || targetLang === 'en') { setTranslated(text); return; }
+    if (!text || !targetLang || targetLang === 'auto') { setTranslated(text); return; }
     liveTranslate(text, targetLang).then(setTranslated);
   }, [text, targetLang]);
   return translated;
