@@ -42,3 +42,33 @@ html {
   background-size: 800px 100%;
   animation: shimmerLoad 1.4s ease-in-out infinite;
 }
+
+/* Keyboard focus ring — visible only for keyboard/assistive-tech navigation,
+   never on mouse/touch tap (":focus-visible" already scopes that natively). */
+:focus-visible {
+  outline: 2px solid #0B5FFF;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Respect the OS-level "reduce motion" accessibility setting across the whole
+   app — spring/scale/slide animations collapse to an instant state change
+   instead of forcing motion on people who've explicitly opted out. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Tabular figures for stat counters (followers/following/posts) so digits
+   don't shift width as values change or animate. */
+.tnum { font-variant-numeric: tabular-nums; }
+
+/* Hide scrollbar on the horizontal quick-actions rail while keeping it
+   scrollable — the edge gradients (rendered inline) communicate
+   scrollability instead of a visible native scrollbar. */
+.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
