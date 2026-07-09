@@ -4862,22 +4862,27 @@ const HomeFeed = ({ t, videos, videosLoading, videosError, onLike, onComment, on
 
   return (
     <div data-main-scroll="true" onScroll={onFeedScroll} style={{ height:'100%', overflowY:'auto', background:COLORS.bg, padding:'10px 14px max(74px, calc(58px + env(safe-area-inset-bottom)))' }}>
-      {/* Masthead — the app's wordmark, top-left, the way Instagram/Facebook/Threads
-          anchor their brand at the top of the main feed. Rendered in the same brand
-          gradient used everywhere else (nav active state, buttons) so it reads as
-          part of one cohesive identity rather than a bolted-on label. */}
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10, padding:'2px 2px 0' }}>
-        <div style={{ display:'flex', alignItems:'center', gap:5 }}>
-          <span style={{ fontSize:15 }}>♾️</span>
-          <span style={{ fontSize:20, fontWeight:900, letterSpacing:-0.6, background:COLORS.gradient, WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text' }}>Infinity</span>
+      {/* Sticky header — masthead + search + notifications stay pinned while the feed
+          scrolls beneath, instead of disappearing off the top like a page section.
+          Solid COLORS.bg (not a translucent blur) so it reads correctly in both
+          light and dark mode without needing a separate alpha token. */}
+      <div style={{ position:'sticky', top:0, zIndex:Z.stickyHeader, background:COLORS.bg, margin:'-10px -14px 0', padding:'10px 14px 8px' }}>
+        {/* Masthead — the app's wordmark, top-left, the way Instagram/Facebook/Threads
+            anchor their brand at the top of the main feed. Rendered in the same brand
+            gradient used everywhere else (nav active state, buttons) so it reads as
+            part of one cohesive identity rather than a bolted-on label. */}
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10, padding:'2px 2px 0' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:5 }}>
+            <span style={{ fontSize:15 }}>♾️</span>
+            <span style={{ fontSize:20, fontWeight:900, letterSpacing:-0.6, background:COLORS.gradient, WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text' }}>Infinity</span>
+          </div>
         </div>
-      </div>
 
-      {/* Top search bar — expands and filters in place; tapping a result acts immediately,
-          nothing here navigates to a separate search page. */}
-      <div style={{ position:'relative', marginBottom:10 }}>
-        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-          <button onClick={onOpenProfileDrawer} aria-label="Open profile menu" style={{ width:40, height:40, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:14, cursor:'pointer' }}>
+        {/* Top search bar — expands and filters in place; tapping a result acts immediately,
+            nothing here navigates to a separate search page. */}
+        <div style={{ position:'relative' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+            <button onClick={onOpenProfileDrawer} aria-label="Open profile menu" style={{ width:40, height:40, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:14, cursor:'pointer' }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
           </button>
           <div style={{ flex:1, display:'flex', alignItems:'center', gap:8, background:COLORS.surface, border:`1px solid ${searchOpen?COLORS.brand:COLORS.border}`, borderRadius:20, padding:'10px 14px' }}>
@@ -4923,6 +4928,7 @@ const HomeFeed = ({ t, videos, videosLoading, videosError, onLike, onComment, on
             ))}
           </div>
         )}
+        </div>
       </div>
 
       {/* Stories row — reuses the same Stories component as the Friends feed, so
@@ -5009,17 +5015,18 @@ const HomeFeed = ({ t, videos, videosLoading, videosError, onLike, onComment, on
 
         <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
           {[
-            {icon:(<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.info} strokeWidth="2"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="M21 15l-5-5L5 19"/></svg>), label:'Photo', active:false, action:()=>composerFileInputRef.current?.click()},
-            {icon:(<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.brand} strokeWidth="2"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>), label:'Poll', active:showPollBuilder, action:()=>setShowPollBuilder(v=>!v)},
-            {icon:(<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.warning} strokeWidth="2"><circle cx="12" cy="12" r="9"/><path d="M9 10h.01M15 10h.01M8 15s1.5 2 4 2 4-2 4-2"/></svg>), label:'Feeling', active:showFeelingPicker, action:()=>setShowFeelingPicker(v=>!v)},
-            {icon:(<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.live} strokeWidth="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>), label:'Live', active:false, action:()=>onWatchLive?.(currentUser)},
+            {icon:(<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.info} strokeWidth="2"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="M21 15l-5-5L5 19"/></svg>), label:'Photo', active:false, color:COLORS.info, action:()=>composerFileInputRef.current?.click()},
+            {icon:(<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.brand} strokeWidth="2"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>), label:'Poll', active:showPollBuilder, color:COLORS.brand, action:()=>setShowPollBuilder(v=>!v)},
+            {icon:(<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.warning} strokeWidth="2"><circle cx="12" cy="12" r="9"/><path d="M9 10h.01M15 10h.01M8 15s1.5 2 4 2 4-2 4-2"/></svg>), label:'Feeling', active:showFeelingPicker, color:COLORS.warning, action:()=>setShowFeelingPicker(v=>!v)},
+            {icon:(<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.live} strokeWidth="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>), label:'Live', active:false, color:COLORS.live, action:()=>onWatchLive?.(currentUser)},
           ].map(btn=>(
-            <button key={btn.label} onClick={e=>{ e.stopPropagation(); btn.action(); }} style={{ display:'flex', alignItems:'center', gap:6, background:btn.active?COLORS.surface2:COLORS.surfaceAlt, border:`1px solid ${btn.active?COLORS.brand:'transparent'}`, borderRadius:14, padding:'7px 12px', color:COLORS.textSecondary, fontSize:12, fontWeight:600, cursor:'pointer' }}>
-              {btn.icon}{btn.label}
-            </button>
+            <motion.button key={btn.label} whileHover={{ y:-1 }} whileTap={{ scale:0.96 }} onClick={e=>{ e.stopPropagation(); btn.action(); }} style={{ display:'flex', alignItems:'center', gap:7, background:btn.active?`${btn.color}14`:COLORS.surfaceAlt, border:`1px solid ${btn.active?`${btn.color}40`:COLORS.border}`, borderRadius:RADIUS.md, padding:'6px 12px 6px 6px', color:btn.active?btn.color:COLORS.textSecondary, fontSize:12, fontWeight:700, cursor:'pointer', transition:TRANSITION.fast }}>
+              <span style={{ width:22, height:22, borderRadius:8, background:`${btn.color}1A`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>{btn.icon}</span>
+              {btn.label}
+            </motion.button>
           ))}
           {composerHasContent && (
-            <button onClick={submitQuickPost} disabled={composerPosting} style={{ marginLeft:'auto', background:COLORS.gradient, border:'none', borderRadius:14, padding:'8px 16px', color:'white', fontSize:12.5, fontWeight:700, cursor:composerPosting?'default':'pointer', opacity:composerPosting?0.7:1 }}>
+            <button onClick={submitQuickPost} disabled={composerPosting} style={{ marginLeft:'auto', background:COLORS.gradient, border:'none', borderRadius:14, padding:'8px 16px', color:'white', fontSize:12.5, fontWeight:700, cursor:composerPosting?'default':'pointer', opacity:composerPosting?0.7:1, boxShadow:SHADOW.glow(COLORS.brand) }}>
               {composerPosting ? 'Posting…' : 'Post'}
             </button>
           )}
