@@ -5,7 +5,7 @@ import { getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc, updateD
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithCustomToken, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, updateProfile, sendPasswordResetEmail, sendEmailVerification, getIdTokenResult } from 'firebase/auth';
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 import { motion, AnimatePresence } from 'framer-motion';
-import { toastVariants, modalVariants, backdropVariants, sheetVariants, pageVariants, fadeVariants, listItemVariants, listContainerVariants, tapScale, drawerVariants, springs, durations } from '@/lib/motion';
+import { toastVariants, modalVariants, backdropVariants, sheetVariants, pageVariants, fadeVariants, listItemVariants, listContainerVariants, tapScale, drawerVariants, springs, durations, bubbleVariants } from '@/lib/motion';
 import { COLORS, TYPE, RADIUS, SHADOW, EASE, TRANSITION, Z, ELEVATION, applyTheme, getStoredTheme, subscribeTheme, resolveAvatarColor, pickAvatarColor } from '@/lib/theme';
 import { tsToMillis, sortByNewest, tsToDate, formatNumber, safeProfileUrl, timeAgo, groupCallPairId, pushTitleForType, buildMediaFields } from '@/lib/utils/format';
 import { haptic, isWebRTCSupported, loadFlutterwaveScript, useNetworkStatus, useIntersectionObserver } from '@/lib/utils/browser';
@@ -1737,7 +1737,10 @@ const GlobalStyles = () => (
     @keyframes progressBar{from{width:0%}to{width:100%}}
     @keyframes bounceIn{0%{transform:scale(0.3);opacity:0}50%{transform:scale(1.1)}70%{transform:scale(0.9)}100%{transform:scale(1);opacity:1}}
     @keyframes swipeHint{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-    button{touch-action:manipulation}
+    @keyframes chatBgDrift{0%,100%{background-position:0% 0%, 0px 0px}50%{background-position:2% 3%, 4px 6px}}
+    .chat-wallpaper{animation:chatBgDrift 22s ease-in-out infinite;transition:background 0.6s ease,background-color 0.6s ease}
+    button{touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+    button:focus,button:focus-visible{outline:none}
     button:active{transform:scale(0.94)!important;transition:transform 0.1s}
     input,textarea{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif}
     input:focus,textarea:focus{outline:none;box-shadow:none}
@@ -8189,7 +8192,7 @@ unsub = onSnapshot(q, (snap) => {
 
   return (
     <div style={{height:'100%',display:'flex',flexDirection:'column',background:COLORS.bg}}>
-      <div style={{padding:'14px 16px',background:COLORS.surface,borderBottom:`1px solid ${COLORS.border}`,display:'flex',alignItems:'center',gap:12,boxShadow:'0 1px 0 rgba(11,95,255,0.04)'}}>
+      <div style={{padding:'14px 16px',background:COLORS.surface,backdropFilter:'blur(20px) saturate(1.4)',WebkitBackdropFilter:'blur(20px) saturate(1.4)',borderBottom:`1px solid ${COLORS.border}`,display:'flex',alignItems:'center',gap:12,boxShadow:'0 2px 12px rgba(11,95,255,0.06)',position:'relative',zIndex:2}}>
         <button onClick={onBack} aria-label="Back" style={{background:'none',border:'none',color:COLORS.textPrimary,cursor:'pointer',padding:'4px 0',display:'flex'}}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
@@ -8249,10 +8252,10 @@ unsub = onSnapshot(q, (snap) => {
         </div>
       )}
 
-      <div style={activeTheme.bgTint ? {
+      <div className="chat-wallpaper" style={activeTheme.bgTint ? {
               flex:1,overflowY:'auto',padding:'16px',backgroundColor:COLORS.bg,
               backgroundImage:`linear-gradient(${activeTheme.bgTint},${activeTheme.bgTint}), radial-gradient(${activeTheme.dotColor} 1px, transparent 1px)`,
-              backgroundSize:'cover, 18px 18px',
+              backgroundSize:'220% 220%, 18px 18px',
             } : {
               flex:1,overflowY:'auto',padding:'16px',backgroundColor:COLORS.bg,
               backgroundImage:`radial-gradient(${COLORS.border} 1px, transparent 1px)`,
@@ -8265,16 +8268,17 @@ unsub = onSnapshot(q, (snap) => {
         {(threadSearch.trim() ? messages.filter(m=>m.text?.toLowerCase().includes(threadSearch.toLowerCase())) : messages).map(msg=>{
           if (msg.type === 'system') {
             return (
-              <div key={msg.id} style={{ display:'flex', justifyContent:'center', margin:'10px 0' }}>
-                <div style={{ background:COLORS.surfaceAlt, color:COLORS.textTertiary, fontSize:11.5, fontWeight:600, padding:'6px 14px', borderRadius:14, textAlign:'center', maxWidth:'85%' }}>
+              <motion.div key={msg.id} initial={{ opacity:0, scale:0.9 }} animate={{ opacity:1, scale:1 }} transition={durations.fast} style={{ display:'flex', justifyContent:'center', margin:'8px 0' }}>
+                <div style={{ background:COLORS.surfaceAlt, color:COLORS.textTertiary, fontSize:11, fontWeight:600, padding:'5px 13px', borderRadius:14, textAlign:'center', maxWidth:'85%', opacity:0.85 }}>
                   {msg.text}
                 </div>
-              </div>
+              </motion.div>
             );
           }
           const isMine = msg.from===currentUser?.id;
           return (
-            <div key={msg.id}
+            <motion.div key={msg.id}
+              variants={bubbleVariants} initial="hidden" animate="visible"
               onTouchStart={()=>{ msgLongTimer.current=setTimeout(()=>{ haptic('heavy'); setShowMsgReactions(msg.id); },500); }}
               onTouchEnd={()=>clearTimeout(msgLongTimer.current)}
               onMouseDown={()=>{ msgLongTimer.current=setTimeout(()=>setShowMsgReactions(msg.id),500); }}
@@ -8372,7 +8376,7 @@ unsub = onSnapshot(q, (snap) => {
   }
 }} style={{background:'none',border:'none',color:COLORS.textDisabled,fontSize:10,cursor:'pointer',padding:'0 2px',alignSelf:'flex-end',marginBottom:2}}>✕</button>
               )}
-            </div>
+            </motion.div>
           );
         })}
         {otherTyping && (
@@ -8447,11 +8451,13 @@ unsub = onSnapshot(q, (snap) => {
         </div>
         <input ref={fileInputRef} type="file" accept="image/*,video/*,audio/*" onChange={pickFile} style={{display:'none'}}/>
         <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={pickFile} style={{display:'none'}}/>
+        <AnimatePresence mode="wait" initial={false}>
         {(text.trim() || previewFile || audioBlob) ? (
-          <button onClick={handleSend} aria-label="Send message" style={{background:myBubbleBg,border:'none',borderRadius:'50%',width:42,height:42,color:'white',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,boxShadow:myGlow}}>
+          <motion.button key="send" initial={{ scale:0.5, opacity:0 }} animate={{ scale:1, opacity:1 }} exit={{ scale:0.5, opacity:0 }} transition={springs.snappy} whileTap={tapScale} onClick={handleSend} aria-label="Send message" style={{background:myBubbleBg,border:'none',borderRadius:'50%',width:42,height:42,color:'white',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,boxShadow:myGlow}}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="1"><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-          </button>
+          </motion.button>
         ) : (
+          <motion.div key="voice" initial={{ scale:0.5, opacity:0 }} animate={{ scale:1, opacity:1 }} exit={{ scale:0.5, opacity:0 }} transition={springs.snappy}>
           <VoiceRecorderButton
             showToast={showToast}
             size="small"
@@ -8479,7 +8485,9 @@ unsub = onSnapshot(q, (snap) => {
               } catch(e) { showToast?.('Failed to send voice','error'); }
             }}
           />
+          </motion.div>
         )}
+        </AnimatePresence>
       </div>
 
       {/* Chat Info sheet — one-on-one counterpart to GroupChatPage's Group Info panel.
