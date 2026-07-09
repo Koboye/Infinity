@@ -2894,7 +2894,7 @@ const DonationSheet = ({ recipient, currentUser, onClose, showToast, currency = 
 };
 
 /* ─────────────── USER PROFILE MODAL ─────────────── */
-const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onVoiceCall, onVideoCall, followed, showToast, userVideos, isLive, onJoinLive }) => {
+const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onVoiceCall, onVideoCall, followed, showToast, userVideos, isLive, onJoinLive, users }) => {
   const isFollowing = followed?.includes(user?.id);
   const isOwn = user?.id === currentUser?.id;
   const [tab, setTab] = useState('posts');
@@ -2902,6 +2902,20 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
   const avatarSrc = user?.avatarUrl;
   const [showReportSheet, setShowReportSheet] = useState(false);
   const [showDonate, setShowDonate] = useState(false);
+  // "Followed by people you follow" — standard social-proof pattern. Intersect the viewed
+  // user's followers with the viewer's own following list, capped for the avatar cluster.
+  const mutuals = !isOwn ? (users || []).filter(u => user?.followers?.includes(u.id) && currentUser?.following?.includes(u.id)) : [];
+  const joinedLabel = user?.createdAt?.seconds
+    ? new Date(user.createdAt.seconds * 1000).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    : null;
+  const shareProfile = async () => {
+    const url = typeof window !== 'undefined' ? `${window.location.origin}/@${user?.username || ''}` : `@${user?.username || ''}`;
+    try {
+      if (navigator.share) { await navigator.share({ title: user?.fullName || user?.username, url }); return; }
+      await navigator.clipboard.writeText(url);
+      showToast?.('Profile link copied', 'success');
+    } catch {}
+  };
   const submitUserReport = async (reason) => {
     try {
       await submitReport('user', user.id, currentUser.id, {
@@ -2925,13 +2939,16 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
         variants={sheetVariants} initial="hidden" animate="visible" exit="exit"
         onClick={e=>e.stopPropagation()} style={{ width:'100%', background:COLORS.surface, borderTopLeftRadius:24, borderTopRightRadius:24, maxHeight:'90vh', overflowY:'auto', boxShadow:SHADOW.modal }}>
         <div style={{ width:36, height:4, background:COLORS.surfaceAlt, borderRadius:2, margin:'16px auto 0' }} />
-        <div style={{ display:'flex', justifyContent:'flex-end', padding:'10px 16px 0' }}>
+        <div style={{ display:'flex', justifyContent:'flex-end', gap:8, padding:'10px 16px 0' }}>
+          <motion.button whileHover={{ scale:1.06 }} whileTap={{ scale:0.9 }} onClick={shareProfile} aria-label="Share profile" style={{ background:COLORS.surfaceAlt, border:'none', borderRadius:'50%', width:34, height:34, color:COLORS.textSecondary, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.5" x2="15.4" y2="6.5"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/></svg>
+          </motion.button>
           <motion.button whileHover={{ scale:1.06 }} whileTap={{ scale:0.9 }} onClick={onClose} aria-label="Close profile" style={{ background:COLORS.surfaceAlt, border:'none', borderRadius:'50%', width:34, height:34, color:COLORS.textSecondary, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </motion.button>
         </div>
         <motion.div variants={listContainerVariants} initial="hidden" animate="visible" style={{ textAlign:'center', padding:'4px 20px 20px' }}>
-          <motion.div variants={listItemVariants} initial={{ scale:0.7, opacity:0 }} animate={{ scale:1, opacity:1 }} transition={springs.default} style={{ width:90, height:90, borderRadius:'50%', padding:2.5, margin:'0 auto 14px', background: isLive ? `linear-gradient(135deg,${COLORS.live},${COLORS.liveSecondary})` : `conic-gradient(${COLORS.brandLight},${COLORS.brandSecondary},${COLORS.brandLight})`, position:'relative', boxShadow:isLive?SHADOW.glow(COLORS.live):SHADOW.glow(COLORS.brand) }}>
+          <motion.div variants={listItemVariants} initial={{ scale:0.7, opacity:0 }} animate={{ scale:1, opacity:1 }} transition={springs.default} style={{ width:96, height:96, borderRadius:'50%', padding:2.5, margin:'0 auto 14px', background: isLive ? `linear-gradient(135deg,${COLORS.live},${COLORS.liveSecondary})` : `conic-gradient(${COLORS.brandLight},${COLORS.brandSecondary},${COLORS.brandLight})`, position:'relative', boxShadow:isLive?SHADOW.glow(COLORS.live):SHADOW.glow(COLORS.brand) }}>
             <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:COLORS.surface, padding:2 }}>
               <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:user?.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:COLORS.textOnBrand, fontWeight:'bold', fontSize:32, overflow:'hidden' }}>
                 {avatarSrc ? <img loading="lazy" decoding="async" src={avatarSrc} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : user?.avatar}
@@ -2956,6 +2973,12 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
             Verified
           </motion.div>}
           <motion.div variants={listItemVariants} style={{ color:COLORS.textSecondary, fontSize:13, marginTop:8, lineHeight:1.5 }}>{user?.bio}</motion.div>
+          {joinedLabel && (
+            <motion.div variants={listItemVariants} style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:4, color:COLORS.textTertiary, fontSize:11.5, marginTop:6 }}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              Joined {joinedLabel}
+            </motion.div>
+          )}
           <motion.div variants={listItemVariants} style={{ display:'flex', justifyContent:'center', gap:0, marginTop:18, background:COLORS.surfaceAlt, borderRadius:20, padding:'14px 0', border:`1px solid ${COLORS.border}` }} role="list">
             {[['Posts', profileVideos.length], ['Followers', user?.followers?.length||0], ['Following', user?.following?.length||0]].map(([label,val],i)=>(
               <div key={label} role="listitem" aria-label={`${formatNumber(val)} ${label}`} style={{ flex:1, textAlign:'center', borderRight:i<2?`1px solid ${COLORS.border}`:'' }}>
@@ -2964,6 +2987,20 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
               </div>
             ))}
           </motion.div>
+          {mutuals.length > 0 && (
+            <motion.div variants={listItemVariants} style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, marginTop:12 }}>
+              <div style={{ display:'flex' }}>
+                {mutuals.slice(0,3).map((u,i) => (
+                  <div key={u.id} style={{ width:22, height:22, borderRadius:'50%', background:u.avatarColor||COLORS.brand, border:`2px solid ${COLORS.surface}`, marginLeft:i>0?-8:0, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontSize:9, fontWeight:700, overflow:'hidden' }}>
+                    {u.avatarUrl ? <img loading="lazy" decoding="async" src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : u.avatar}
+                  </div>
+                ))}
+              </div>
+              <span style={{ color:COLORS.textTertiary, fontSize:12 }}>
+                Followed by {mutuals.slice(0,2).map(u=>u.username).join(', ')}{mutuals.length>2?` +${mutuals.length-2} more`:''}
+              </span>
+            </motion.div>
+          )}
         </motion.div>
         {!isOwn && (
           <motion.div initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} transition={{ ...durations.base, delay:0.08 }} style={{ padding:'0 16px 16px', display:'flex', flexDirection:'column', gap:8 }}>
@@ -3000,21 +3037,27 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
               <motion.button whileHover={{ scale:1.05 }} whileTap={{ scale:0.94 }} onClick={()=>{onVideoCall?.(user.id); onClose();}} aria-label="Start video call" style={{ flex:1, background:COLORS.overlaySubtle, border:`1px solid ${COLORS.border}`, borderRadius:14, padding:'12px', color:COLORS.brand, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={COLORS.brand} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
               </motion.button>
+              <motion.button whileHover={{ scale:1.05 }} whileTap={{ scale:0.94 }} onClick={shareProfile} aria-label="Share profile" style={{ flex:1, background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:14, padding:'12px', color:COLORS.textSecondary, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.5" x2="15.4" y2="6.5"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/></svg>
+              </motion.button>
               <motion.button
-                whileHover={{ scale:1.02 }}
-                whileTap={{ scale:0.97 }}
+                whileHover={{ scale:1.05 }}
+                whileTap={{ scale:0.94 }}
                 onClick={() => setShowReportSheet(true)}
                 aria-label="Report user"
-                style={{ flex:1, background:'rgba(245,158,11,0.1)', border:'1px solid rgba(245,158,11,0.3)', borderRadius:14, padding:'12px', color:COLORS.warningText, fontWeight:600, cursor:'pointer', fontSize:13 }}
-              >Report</motion.button>
+                style={{ flex:1, background:'rgba(245,158,11,0.1)', border:'1px solid rgba(245,158,11,0.3)', borderRadius:14, padding:'12px', color:COLORS.warningText, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}
+              >
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              </motion.button>
             </div>
           </motion.div>
         )}
-        <div role="tablist" aria-label="User content" style={{ display:'flex', borderTop:`1px solid ${COLORS.border}`, position:'relative' }}>
-          {[{id:'posts',icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>,label:'Posts'},{id:'saved',icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>,label:'Saved'},{id:'drafts',icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>,label:'Drafts'}].map(tb=>(
-            <button key={tb.id} role="tab" aria-selected={tab===tb.id} aria-label={tb.label} onClick={()=>{ haptic?.('light'); setTab(tb.id); }} style={{ flex:1, background:'none', border:'none', padding:'14px 0', color:tab===tb.id?COLORS.brand:COLORS.textTertiary, cursor:'pointer', display:'flex', justifyContent:'center', transition:TRANSITION.fast, position:'relative' }}>
+        <div role="tablist" aria-label="User content" style={{ display:'flex', gap:4, margin:'14px 16px 0', background:COLORS.surfaceAlt, borderRadius:RADIUS.lg, padding:4 }}>
+          {[{id:'posts',icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>,label:'Posts'},{id:'saved',icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>,label:'Saved'},{id:'drafts',icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>,label:'Drafts'}].map(tb=>(
+            <button key={tb.id} role="tab" aria-selected={tab===tb.id} aria-label={tb.label} onClick={()=>{ haptic?.('light'); setTab(tb.id); }} style={{ flex:1, position:'relative', background:'none', border:'none', padding:'9px 0', color:tab===tb.id?COLORS.brand:COLORS.textTertiary, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:6, borderRadius:RADIUS.md, transition:TRANSITION.fast, zIndex:1 }}>
+              {tab===tb.id && <motion.div layoutId="user-profile-tab-pill" transition={springs.snappy} style={{ position:'absolute', inset:0, background:COLORS.surface, borderRadius:RADIUS.md, boxShadow:SHADOW.xs, zIndex:-1 }} />}
               {tb.icon}
-              {tab===tb.id && <motion.div layoutId="user-profile-tab-indicator" transition={springs.snappy} style={{ position:'absolute', left:0, right:0, top:0, height:2, background:COLORS.brand }} />}
+              <span style={{ fontSize:12, fontWeight:700 }}>{tb.label}</span>
             </button>
           ))}
         </div>
@@ -7232,9 +7275,21 @@ if(activeSubPage==='settings') return (
             <motion.button whileHover={{ scale:1.06 }} whileTap={tapScale} onClick={()=>setActiveSubPage('settings')} aria-label="Settings" style={{ background:'rgba(255,255,255,0.25)', backdropFilter:'blur(10px)', border:'none', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
             </motion.button>
-            <motion.button whileHover={{ scale:1.06 }} whileTap={tapScale} onClick={onLogout} aria-label={t?.logOut||t?.logout||'Log Out'} title={t?.logOut||t?.logout||'Log Out'} style={{ background:'rgba(255,255,255,0.25)', backdropFilter:'blur(10px)', border:'none', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-            </motion.button>
+            <div style={{ display:'flex', gap:8 }}>
+              <motion.button whileHover={{ scale:1.06 }} whileTap={tapScale} onClick={async()=>{
+                const url = typeof window!=='undefined' ? `${window.location.origin}/@${user?.username||''}` : `@${user?.username||''}`;
+                try {
+                  if (navigator.share) { await navigator.share({ title:user?.fullName||user?.username, url }); return; }
+                  await navigator.clipboard.writeText(url);
+                  showToast?.('Profile link copied','success');
+                } catch {}
+              }} aria-label="Share profile" style={{ background:'rgba(255,255,255,0.25)', backdropFilter:'blur(10px)', border:'none', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.5" x2="15.4" y2="6.5"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/></svg>
+              </motion.button>
+              <motion.button whileHover={{ scale:1.06 }} whileTap={tapScale} onClick={onLogout} aria-label={t?.logOut||t?.logout||'Log Out'} title={t?.logOut||t?.logout||'Log Out'} style={{ background:'rgba(255,255,255,0.25)', backdropFilter:'blur(10px)', border:'none', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              </motion.button>
+            </div>
           </div>
           <AnimatePresence>{showFollowersList && (
             <motion.div
@@ -7325,9 +7380,9 @@ if(activeSubPage==='settings') return (
               {user.location}
             </div>
           )}
-          <motion.div variants={listItemVariants} style={{ display:'flex', justifyContent:'center', gap:0, marginTop:18 }} role="list">
-            {[['Posts',myVideos.length,null],[t?.followers||'Followers',user?.followers?.length||0,'followers'],[t?.following||'Following',user?.following?.length||0,'following']].map(([label,val,listKey])=>(
-              <motion.div key={label} role="listitem" whileTap={listKey?{ scale:0.94 }:{}} onClick={()=>listKey&&setShowFollowersList(listKey)} aria-label={`${formatNumber(val)} ${label}`} tabIndex={listKey?0:-1} onKeyDown={listKey?(e=>{ if(e.key==='Enter'){ setShowFollowersList(listKey); } }):undefined} style={{ flex:1, textAlign:'center', cursor:listKey?'pointer':'default', borderRadius:12, padding:'4px 0' }}>
+          <motion.div variants={listItemVariants} style={{ display:'flex', justifyContent:'center', gap:0, marginTop:18, background:COLORS.surfaceAlt, borderRadius:20, padding:'14px 4px', border:`1px solid ${COLORS.border}` }} role="list">
+            {[['Posts',myVideos.length,null],[t?.followers||'Followers',user?.followers?.length||0,'followers'],[t?.following||'Following',user?.following?.length||0,'following']].map(([label,val,listKey],i)=>(
+              <motion.div key={label} role="listitem" whileTap={listKey?{ scale:0.94 }:{}} onClick={()=>listKey&&setShowFollowersList(listKey)} aria-label={`${formatNumber(val)} ${label}`} tabIndex={listKey?0:-1} onKeyDown={listKey?(e=>{ if(e.key==='Enter'){ setShowFollowersList(listKey); } }):undefined} style={{ flex:1, textAlign:'center', cursor:listKey?'pointer':'default', borderRadius:12, padding:'4px 0', borderRight:i<2?`1px solid ${COLORS.border}`:'none' }}>
                 <div className="tnum" style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:TYPE.xl }}>{formatNumber(val)}</div>
                 <div style={{ color:COLORS.textTertiary, fontSize:11.5, marginTop:2 }}>{label}</div>
               </motion.div>
@@ -7368,8 +7423,8 @@ if(activeSubPage==='settings') return (
                   onKeyDown={e=>{ if(e.key==='Enter'){ setActiveSubPage(item.page); } }}
                   aria-label={item.label}
                   style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:6, cursor:'pointer', flexShrink:0, minWidth:56, scrollSnapAlign:'start' }}>
-                  <div style={{ width:48, height:48, borderRadius:16, background:`${item.color}14`, display:'flex', alignItems:'center', justifyContent:'center', border:`1px solid ${item.color}2E` }}>
-                    {item.icon}
+                  <div style={{ width:50, height:50, borderRadius:16, background:COLORS.surface, display:'flex', alignItems:'center', justifyContent:'center', border:`1px solid ${item.color}2E`, boxShadow:SHADOW.xs }}>
+                    <div style={{ width:32, height:32, borderRadius:11, background:`${item.color}14`, display:'flex', alignItems:'center', justifyContent:'center' }}>{item.icon}</div>
                   </div>
                   <span style={{ color:COLORS.textTertiary, fontSize:10.5, fontWeight:600, whiteSpace:'nowrap' }}>{item.label}</span>
                 </motion.div>
@@ -7381,30 +7436,31 @@ if(activeSubPage==='settings') return (
           </motion.div>
         </div>
       </motion.div>
-      <div role="tablist" aria-label="Profile content" style={{ display:'flex', marginTop:6, background:COLORS.surface, position:'relative' }}>
+      <div role="tablist" aria-label="Profile content" style={{ display:'flex', gap:4, margin:'10px 16px 0', background:COLORS.surfaceAlt, borderRadius:RADIUS.lg, padding:4 }}>
         {[
-          {id:'posts',label:t?.posts||'Posts',icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>},
-          {id:'saved',label:'Saved',icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>},
-          {id:'drafts',label:'Drafts',icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>},
+          {id:'posts',label:t?.posts||'Posts',icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>},
+          {id:'saved',label:'Saved',icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>},
+          {id:'drafts',label:'Drafts',icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>},
         ].map(tb=>(
-          <button key={tb.id} role="tab" aria-selected={profileTab===tb.id} aria-label={tb.label} onClick={()=>{ haptic?.('light'); setProfileTab(tb.id); }} style={{ flex:1, background:'none', border:'none', padding:'14px 0', color:profileTab===tb.id?COLORS.brand:COLORS.textTertiary, cursor:'pointer', display:'flex', justifyContent:'center', position:'relative', transition:TRANSITION.fast }}>
-            {tb.icon}
+          <button key={tb.id} role="tab" aria-selected={profileTab===tb.id} aria-label={tb.label} onClick={()=>{ haptic?.('light'); setProfileTab(tb.id); }} style={{ flex:1, position:'relative', background:'none', border:'none', padding:'9px 0', color:profileTab===tb.id?COLORS.brand:COLORS.textTertiary, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:6, borderRadius:RADIUS.md, transition:TRANSITION.fast, zIndex:1 }}>
             {profileTab===tb.id && (
-              <motion.div layoutId="profile-tab-indicator" transition={springs.snappy} style={{ position:'absolute', left:0, right:0, bottom:0, height:2, background:COLORS.brand }} />
+              <motion.div layoutId="profile-tab-pill" transition={springs.snappy} style={{ position:'absolute', inset:0, background:COLORS.surface, borderRadius:RADIUS.md, boxShadow:SHADOW.xs, zIndex:-1 }} />
             )}
+            {tb.icon}
+            <span style={{ fontSize:12.5, fontWeight:700 }}>{tb.label}</span>
           </button>
         ))}
       </div>
       <div style={{ padding:2 }}>
         {profileTab==='posts' && (
           myVideos.length===0 ? (
-            <div style={{ textAlign:'center', padding:'56px 24px' }}>
-              <div style={{ width:64, height:64, borderRadius:'50%', background:COLORS.surfaceAlt, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 14px' }}>
-                <span style={{ fontSize:28 }}>🎬</span>
+            <motion.div initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} transition={durations.base} style={{ textAlign:'center', padding:'48px 24px', margin:'8px 16px 0', background:COLORS.surfaceAlt, borderRadius:RADIUS.lg, border:`1px solid ${COLORS.border}` }}>
+              <div style={{ width:60, height:60, borderRadius:'50%', background:COLORS.surface, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 14px', boxShadow:SHADOW.xs }}>
+                <span style={{ fontSize:26 }}>🎬</span>
               </div>
               <div style={{ fontSize:15, fontWeight:700, color:COLORS.textSecondary }}>{t?.noVideos ? t.noVideos.split('.')[0] : 'No posts yet'}</div>
-              <div style={{ fontSize:13, marginTop:4, color:COLORS.textTertiary }}>Create your first video!</div>
-            </div>
+              <div style={{ fontSize:13, marginTop:4, color:COLORS.textTertiary }}>Your first post will show up here</div>
+            </motion.div>
           ) : (
             <motion.div variants={listContainerVariants} initial="hidden" animate="visible" style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:2 }}>
               {myVideos.map(v=>(
@@ -12356,7 +12412,7 @@ const handleMessage = uid => {
       <AnimatePresence>{showShareSheet && <ShareSheet video={showShareSheet} currentUser={currentUser} onClose={()=>setShowShareSheet(null)} showToast={showToast} />}</AnimatePresence>
       {showBroadcast && <BroadcastPage currentUser={currentUser} users={users} showToast={showToast} onClose={()=>setShowBroadcast(false)} />}
       <AnimatePresence>{viewingProfile && (
-        <UserProfileModal user={viewingProfile} currentUser={currentUser} onClose={()=>setViewingProfile(null)} onFollow={toggleFollow} onMessage={uid=>{handleMessage(uid); setViewingProfile(null);}} onVoiceCall={uid=>{const u=users.find(uu=>uu.id===uid); setShowCall({type:'audio',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid}); setViewingProfile(null);}}
+        <UserProfileModal user={viewingProfile} currentUser={currentUser} users={users} onClose={()=>setViewingProfile(null)} onFollow={toggleFollow} onMessage={uid=>{handleMessage(uid); setViewingProfile(null);}} onVoiceCall={uid=>{const u=users.find(uu=>uu.id===uid); setShowCall({type:'audio',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid}); setViewingProfile(null);}}
  onVideoCall={uid=>{const u=users.find(uu=>uu.id===uid); setShowCall({type:'video',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid}); setViewingProfile(null);}}
  followed={followed} showToast={showToast} userVideos={videos.filter(v=>v.userId===viewingProfile?.id)}
  isLive={liveStreamerIds?.has(viewingProfile?.id)} onJoinLive={u=>{ setShowLiveStream(u); setViewingProfile(null); }} />
