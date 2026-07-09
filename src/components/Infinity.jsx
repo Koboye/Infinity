@@ -2920,85 +2920,93 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
   return (
     <motion.div
       variants={backdropVariants} initial="hidden" animate="visible" exit="hidden"
-      style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.85)', zIndex:Z.page, display:'flex', alignItems:'flex-end' }} onClick={onClose}>
+      style={{ position:'fixed', inset:0, background:'rgba(11,15,25,0.55)', backdropFilter:'blur(4px)', zIndex:Z.page, display:'flex', alignItems:'flex-end' }} onClick={onClose}>
       <motion.div
         variants={sheetVariants} initial="hidden" animate="visible" exit="exit"
-        onClick={e=>e.stopPropagation()} style={{ width:'100%', background:'#15151C', borderTopLeftRadius:24, borderTopRightRadius:24, maxHeight:'90vh', overflowY:'auto' }}>
-        <div style={{ width:36, height:4, background:'rgba(255,255,255,0.12)', borderRadius:2, margin:'16px auto 0' }} />
+        onClick={e=>e.stopPropagation()} style={{ width:'100%', background:COLORS.surface, borderTopLeftRadius:24, borderTopRightRadius:24, maxHeight:'90vh', overflowY:'auto', boxShadow:SHADOW.modal }}>
+        <div style={{ width:36, height:4, background:COLORS.surfaceAlt, borderRadius:2, margin:'16px auto 0' }} />
         <div style={{ display:'flex', justifyContent:'flex-end', padding:'10px 16px 0' }}>
-          <button onClick={onClose} aria-label="Close" style={{ background:'rgba(255,255,255,0.08)', border:'none', borderRadius:'50%', width:34, height:34, color:'white', cursor:'pointer', fontSize:16 }}>✕</button>
+          <motion.button whileTap={{ scale:0.9 }} onClick={onClose} aria-label="Close" style={{ background:COLORS.surfaceAlt, border:'none', borderRadius:'50%', width:34, height:34, color:COLORS.textSecondary, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </motion.button>
         </div>
         <div style={{ textAlign:'center', padding:'4px 20px 20px' }}>
-          <div style={{ width:90, height:90, borderRadius:'50%', padding:2.5, margin:'0 auto 14px', background: isLive ? `linear-gradient(135deg,${COLORS.live},#B3121F)` : `conic-gradient(${COLORS.brand},${COLORS.brandSecondary},${COLORS.brand})`, position:'relative' }}>
-            <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:'#0d0d0d', padding:2 }}>
-              <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:user?.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:32, overflow:'hidden' }}>
+          <div style={{ width:90, height:90, borderRadius:'50%', padding:2.5, margin:'0 auto 14px', background: isLive ? `linear-gradient(135deg,${COLORS.live},${COLORS.liveSecondary})` : `conic-gradient(${COLORS.brandLight},${COLORS.brandSecondary},${COLORS.brandLight})`, position:'relative' }}>
+            <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:COLORS.surface, padding:2 }}>
+              <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:user?.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:COLORS.textOnBrand, fontWeight:'bold', fontSize:32, overflow:'hidden' }}>
                 {avatarSrc ? <img loading="lazy" decoding="async" src={avatarSrc} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : user?.avatar}
               </div>
             </div>
             {isLive && (
-              <div style={{ position:'absolute', bottom:-2, left:'50%', transform:'translateX(-50%)', background:COLORS.live, borderRadius:6, padding:'2px 8px', fontSize:9, fontWeight:800, color:'white', letterSpacing:0.4, whiteSpace:'nowrap' }}>LIVE</div>
+              <div style={{ position:'absolute', bottom:-2, left:'50%', transform:'translateX(-50%)', background:COLORS.live, borderRadius:6, padding:'2px 8px', fontSize:9, fontWeight:800, color:'#fff', letterSpacing:0.4, whiteSpace:'nowrap' }}>LIVE</div>
             )}
           </div>
-          <div style={{ color:'white', fontWeight:800, fontSize:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{user?.fullName || user?.username}</div>
+          <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{user?.fullName || user?.username}</div>
           {isLive && (
-            <button onClick={()=>onJoinLive?.(user)} style={{ marginTop:10, background:`linear-gradient(135deg,${COLORS.live},#B3121F)`, border:'none', borderRadius:20, padding:'9px 20px', color:'white', fontWeight:700, fontSize:13, cursor:'pointer', display:'inline-flex', alignItems:'center', gap:6 }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+            <motion.button whileTap={{ scale:0.94 }} onClick={()=>onJoinLive?.(user)} style={{ marginTop:10, background:`linear-gradient(135deg,${COLORS.live},${COLORS.liveSecondary})`, border:'none', borderRadius:20, padding:'9px 20px', color:'#fff', fontWeight:700, fontSize:13, cursor:'pointer', display:'inline-flex', alignItems:'center', gap:6 }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
               Join Live
-            </button>
+            </motion.button>
           )}
-          {user?.verified && <div style={{ display:'inline-flex', alignItems:'center', gap:4, color:'#2F9BFF', fontSize:12, marginTop:4, background:'rgba(29,155,240,0.1)', borderRadius:20, padding:'3px 10px' }}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="#2F9BFF"><path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          {user?.verified && <div style={{ display:'inline-flex', alignItems:'center', gap:4, color:COLORS.brand, fontSize:12, marginTop:4, background:COLORS.overlaySubtle, borderRadius:20, padding:'3px 10px' }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill={COLORS.brand}><path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             Verified
           </div>}
-          <div style={{ color:'rgba(255,255,255,0.55)', fontSize:13, marginTop:8, lineHeight:1.5 }}>{user?.bio}</div>
-          <div style={{ display:'flex', justifyContent:'center', gap:0, marginTop:18, background:'rgba(255,255,255,0.03)', borderRadius:20, padding:'14px 0', border:'1px solid rgba(255,255,255,0.06)' }}>
+          <div style={{ color:COLORS.textSecondary, fontSize:13, marginTop:8, lineHeight:1.5 }}>{user?.bio}</div>
+          <div style={{ display:'flex', justifyContent:'center', gap:0, marginTop:18, background:COLORS.surfaceAlt, borderRadius:20, padding:'14px 0', border:`1px solid ${COLORS.border}` }}>
             {[['Posts', profileVideos.length], ['Followers', user?.followers?.length||0], ['Following', user?.following?.length||0]].map(([label,val],i)=>(
-              <div key={label} style={{ flex:1, textAlign:'center', borderRight:i<2?'1px solid rgba(255,255,255,0.08)':'' }}>
-                <div style={{ color:'white', fontWeight:800, fontSize:18, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{formatNumber(val)}</div>
-                <div style={{ color:'rgba(255,255,255,0.4)', fontSize:11, marginTop:2 }}>{label}</div>
+              <div key={label} style={{ flex:1, textAlign:'center', borderRight:i<2?`1px solid ${COLORS.border}`:'' }}>
+                <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:18, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{formatNumber(val)}</div>
+                <div style={{ color:COLORS.textTertiary, fontSize:11, marginTop:2 }}>{label}</div>
               </div>
             ))}
           </div>
         </div>
         {!isOwn && (
           <div style={{ padding:'0 16px 16px', display:'flex', flexDirection:'column', gap:8 }}>
-            <button
+            <motion.button
+              whileTap={{ scale:0.98 }}
               onClick={()=>onFollow?.(user.id)}
               aria-label={isFollowing ? 'Unfollow' : 'Follow'}
-              style={{ width:'100%', background: isFollowing ? 'rgba(255,255,255,0.06)' : `linear-gradient(135deg,${COLORS.brand},${COLORS.brandSecondary})`, border: isFollowing ? '1px solid rgba(255,255,255,0.14)' : 'none', borderRadius:14, padding:'13px', color: isFollowing ? 'white' : '#fff', fontWeight:700, fontSize:15, cursor:'pointer', transition:TRANSITION.fast, boxShadow: isFollowing ? 'none' : SHADOW.glow(COLORS.brand) }}>
+              style={{ width:'100%', background: isFollowing ? COLORS.surfaceAlt : COLORS.gradient, border: isFollowing ? `1px solid ${COLORS.border}` : 'none', borderRadius:14, padding:'13px', color: isFollowing ? COLORS.textPrimary : COLORS.textOnBrand, fontWeight:700, fontSize:15, cursor:'pointer', transition:TRANSITION.fast, boxShadow: isFollowing ? 'none' : SHADOW.glow(COLORS.brand) }}>
               {isFollowing ? 'Following' : 'Follow'}
-            </button>
+            </motion.button>
             <div style={{ display:'flex', gap:8 }}>
-              <button onClick={()=>{onMessage?.(user.id); onClose();}} style={{ flex:1, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:'12px', color:'white', fontWeight:600, cursor:'pointer', fontSize:14 }}>Message</button>
-              <button
+              <motion.button whileTap={{ scale:0.97 }} onClick={()=>{onMessage?.(user.id); onClose();}} style={{ flex:1, background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:14, padding:'12px', color:COLORS.textPrimary, fontWeight:600, cursor:'pointer', fontSize:14 }}>Message</motion.button>
+              <motion.button
+                whileTap={{ scale:0.97 }}
                 onClick={() => setShowDonate(true)}
-                style={{ flex:1, background:'rgba(255,214,10,0.12)', border:'1px solid rgba(255,214,10,0.3)', borderRadius:14, padding:'12px', color:'#FFD60A', fontWeight:700, cursor:'pointer', fontSize:14 }}
-              >💝 Donate</button>
+                style={{ flex:1, background:'rgba(255,214,10,0.14)', border:'1px solid rgba(255,214,10,0.35)', borderRadius:14, padding:'12px', color:'#B8860B', fontWeight:700, cursor:'pointer', fontSize:14, display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill={COLORS.currency} stroke={COLORS.currency}><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+                Donate
+              </motion.button>
             </div>
             <div style={{ display:'flex', gap:8 }}>
-              <button onClick={()=>{onVoiceCall?.(user.id); onClose();}} aria-label="Start voice call" style={{ flex:1, background:'rgba(52,199,89,0.12)', border:'1px solid rgba(52,199,89,0.2)', borderRadius:14, padding:'12px', color:'#2ED573', cursor:'pointer', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2ED573" strokeWidth="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8a19.79 19.79 0 01-3.07-8.67A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>
-              </button>
-              <button onClick={()=>{onVideoCall?.(user.id); onClose();}} aria-label="Start video call" style={{ flex:1, background:'rgba(175,82,222,0.12)', border:'1px solid rgba(175,82,222,0.2)', borderRadius:14, padding:'12px', color:COLORS.brand, cursor:'pointer', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={COLORS.brand} strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
-              </button>
-              <button
+              <motion.button whileTap={{ scale:0.94 }} onClick={()=>{onVoiceCall?.(user.id); onClose();}} aria-label="Start voice call" style={{ flex:1, background:'rgba(34,197,94,0.1)', border:'1px solid rgba(34,197,94,0.25)', borderRadius:14, padding:'12px', color:COLORS.success, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={COLORS.success} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8a19.79 19.79 0 01-3.07-8.67A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>
+              </motion.button>
+              <motion.button whileTap={{ scale:0.94 }} onClick={()=>{onVideoCall?.(user.id); onClose();}} aria-label="Start video call" style={{ flex:1, background:COLORS.overlaySubtle, border:`1px solid ${COLORS.border}`, borderRadius:14, padding:'12px', color:COLORS.brand, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={COLORS.brand} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+              </motion.button>
+              <motion.button
+                whileTap={{ scale:0.97 }}
                 onClick={() => setShowReportSheet(true)}
-                style={{ flex:1, background:'rgba(255,150,0,0.1)', border:'1px solid rgba(255,150,0,0.3)', borderRadius:14, padding:'12px', color:'#FFB100', fontWeight:600, cursor:'pointer', fontSize:13 }}
-              >Report</button>
+                style={{ flex:1, background:'rgba(245,158,11,0.1)', border:'1px solid rgba(245,158,11,0.3)', borderRadius:14, padding:'12px', color:COLORS.warningText, fontWeight:600, cursor:'pointer', fontSize:13 }}
+              >Report</motion.button>
             </div>
           </div>
         )}
-        <div style={{ display:'flex', borderTop:'1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ display:'flex', borderTop:`1px solid ${COLORS.border}` }}>
           {[{id:'posts',icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>},{id:'saved',icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>},{id:'drafts',icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>}].map(t=>(
-            <button key={t.id} onClick={()=>setTab(t.id)} style={{ flex:1, background:'none', border:'none', borderTop:tab===t.id?`2px solid ${COLORS.brand}`:'2px solid transparent', padding:'14px 0', color:tab===t.id?'white':'rgba(255,255,255,0.3)', cursor:'pointer', display:'flex', justifyContent:'center' }}>{t.icon}</button>
+            <button key={t.id} onClick={()=>setTab(t.id)} style={{ flex:1, background:'none', border:'none', borderTop:tab===t.id?`2px solid ${COLORS.brand}`:'2px solid transparent', padding:'14px 0', color:tab===t.id?COLORS.brand:COLORS.textTertiary, cursor:'pointer', display:'flex', justifyContent:'center', transition:TRANSITION.fast }}>{t.icon}</button>
           ))}
         </div>
         <div style={{ padding:2 }}>
           {tab==='posts' && (
             profileVideos.length===0 ? (
-              <div style={{ textAlign:'center', padding:48, color:'rgba(255,255,255,0.25)' }}>
-                <div style={{ fontSize:40, marginBottom:10 }}>🎬</div>
+              <div style={{ textAlign:'center', padding:48, color:COLORS.textTertiary }}>
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ margin:'0 auto 10px', display:'block' }}><rect x="2" y="4" width="15" height="14" rx="2"/><path d="M17 9l5-3v12l-5-3"/></svg>
                 <div style={{ fontSize:14 }}>No posts yet</div>
               </div>
             ) : (
@@ -3006,20 +3014,20 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
                 {profileVideos.map(v => {
                   const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(v.videoUrl || '');
                   return (
-                    <div key={v.id} style={{ aspectRatio:'9/16', background:'#1C1C24', position:'relative', overflow:'hidden' }}>
+                    <div key={v.id} style={{ aspectRatio:'9/16', background:COLORS.surfaceAlt, position:'relative', overflow:'hidden' }}>
                       {isImage
                         ? <img loading="lazy" decoding="async" src={v.videoUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
                         : <video src={v.videoUrl} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
                       }
-                      <div style={{ position:'absolute', bottom:4, left:6, color:'white', fontSize:10, fontWeight:700, background:'rgba(0,0,0,0.6)', borderRadius:6, padding:'2px 6px' }}>{formatNumber(v.views)}</div>
+                      <div style={{ position:'absolute', bottom:4, left:6, color:'#fff', fontSize:10, fontWeight:700, background:'rgba(0,0,0,0.55)', borderRadius:6, padding:'2px 6px' }}>{formatNumber(v.views)}</div>
                     </div>
                   );
                 })}
               </div>
             )
           )}
-          {tab==='saved' && <div style={{ textAlign:'center', padding:48, color:'rgba(255,255,255,0.25)' }}><div style={{ fontSize:40, marginBottom:10 }}>🔖</div><div>No saved posts</div></div>}
-          {tab==='drafts' && <div style={{ textAlign:'center', padding:48, color:'rgba(255,255,255,0.25)' }}><div style={{ fontSize:40, marginBottom:10 }}>📝</div><div>No drafts</div></div>}
+          {tab==='saved' && <div style={{ textAlign:'center', padding:48, color:COLORS.textTertiary }}><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ margin:'0 auto 10px', display:'block' }}><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg><div>No saved posts</div></div>}
+          {tab==='drafts' && <div style={{ textAlign:'center', padding:48, color:COLORS.textTertiary }}><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ margin:'0 auto 10px', display:'block' }}><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><div>No drafts</div></div>}
         </div>
         <div style={{ height:30 }} />
       </motion.div>
@@ -5891,27 +5899,34 @@ const EditProfileModal = ({ user, onClose, onSave, showToast }) => {
   return (
     <motion.div
       variants={backdropVariants} initial="hidden" animate="visible" exit="hidden"
-      style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.9)', zIndex:Z.modal, display:'flex', alignItems:'flex-end' }} onClick={onClose}>
+      style={{ position:'fixed', inset:0, background:'rgba(11,15,25,0.55)', backdropFilter:'blur(4px)', zIndex:Z.modal, display:'flex', alignItems:'flex-end' }} onClick={onClose}>
       <motion.div
         variants={sheetVariants} initial="hidden" animate="visible" exit="exit"
-        onClick={e=>e.stopPropagation()} style={{ width:'100%', background:'#15151C', borderTopLeftRadius:32, borderTopRightRadius:32, padding:'20px 20px 44px', maxHeight:'92vh', overflowY:'auto', border:'1px solid rgba(255,255,255,0.07)' }}>
-        <div style={{ width:36, height:4, background:'rgba(255,255,255,0.12)', borderRadius:2, margin:'0 auto 20px' }} />
+        onClick={e=>e.stopPropagation()} style={{ width:'100%', background:COLORS.surface, borderTopLeftRadius:32, borderTopRightRadius:32, padding:'20px 20px 44px', maxHeight:'92vh', overflowY:'auto', boxShadow:SHADOW.modal }}>
+        <div style={{ width:36, height:4, background:COLORS.surfaceAlt, borderRadius:2, margin:'0 auto 20px' }} />
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24 }}>
-          <span style={{ color:'white', fontWeight:800, fontSize:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Edit Profile</span>
-          <button onClick={handleSave} disabled={uploading} style={{ background:COLORS.gradient, border:'none', borderRadius:20, padding:'9px 20px', color:'white', fontWeight:700, cursor:'pointer', fontSize:14, opacity:uploading?0.6:1 }}>{uploading?'Saving...':'Save'}</button>
+          <span style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Edit Profile</span>
+          <motion.button whileTap={{ scale:0.94 }} onClick={handleSave} disabled={uploading} style={{ background:COLORS.gradient, border:'none', borderRadius:20, padding:'9px 22px', color:COLORS.textOnBrand, fontWeight:700, cursor:'pointer', fontSize:14, opacity:uploading?0.7:1, display:'flex', alignItems:'center', gap:7, boxShadow:SHADOW.glow(COLORS.brand) }}>
+            {uploading && <AuthSpinner size={14} />}
+            {uploading?'Saving...':'Save'}
+          </motion.button>
         </div>
-        <div style={{ position:'relative', display:'inline-block' }}>
-            <div style={{ width:90, height:90, borderRadius:'50%', background:avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:36, margin:'0 auto', border:'3px solid rgba(255,255,255,0.1)', overflow:'hidden' }}>
-              {avatarPreview ? <img loading="lazy" decoding="async" src={avatarPreview} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : user?.avatar}
-            </div>
-            <div onClick={()=>fileInputRef.current?.click()} style={{ position:'absolute', bottom:0, right:0, background:'rgba(255,255,255,0.1)', border:'2px solid #15151C', borderRadius:'50%', width:32, height:32, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', backdropFilter:'blur(8px)' }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        <div style={{ position:'relative', display:'inline-block', margin:'0 auto', width:'100%', textAlign:'center' }}>
+            <div style={{ position:'relative', display:'inline-block' }}>
+              <div style={{ width:90, height:90, borderRadius:'50%', background:avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:COLORS.textOnBrand, fontWeight:'bold', fontSize:36, border:`3px solid ${COLORS.surfaceAlt}`, overflow:'hidden' }}>
+                {avatarPreview ? <img loading="lazy" decoding="async" src={avatarPreview} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : user?.avatar}
+              </div>
+              <motion.div whileTap={{ scale:0.9 }} onClick={()=>fileInputRef.current?.click()} style={{ position:'absolute', bottom:0, right:0, background:COLORS.gradient, border:`2px solid ${COLORS.surface}`, borderRadius:'50%', width:32, height:32, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', boxShadow:SHADOW.sm }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.textOnBrand} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </motion.div>
             </div>
           </div>
           <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarChange} style={{display:'none'}} />
-          <div style={{ color:'rgba(255,255,255,0.4)', fontSize:12, marginTop:12, marginBottom:12 }}>Profile color</div>
+          <div style={{ color:COLORS.textTertiary, fontSize:12, marginTop:14, marginBottom:12, textAlign:'center', fontWeight:600, textTransform:'uppercase', letterSpacing:0.5 }}>Profile color</div>
           <div style={{ display:'flex', gap:10, justifyContent:'center', flexWrap:'wrap' }}>
-            {colors.map(c=><div key={c} onClick={()=>setAvatarColor(c)} style={{ width:34, height:34, borderRadius:'50%', background:c, cursor:'pointer', border:c===avatarColor?'3px solid white':'3px solid transparent', transition:'all 0.15s' }} />)}
+            {colors.map(c=>(
+              <motion.div key={c} whileTap={{ scale:0.88 }} onClick={()=>setAvatarColor(c)} style={{ width:34, height:34, borderRadius:'50%', background:c, cursor:'pointer', border:c===avatarColor?`3px solid ${COLORS.textPrimary}`:'3px solid transparent', boxShadow:c===avatarColor?SHADOW.sm:'none', transition:TRANSITION.fast }} />
+            ))}
           </div>
         {[
           {label:'Username',value:username,set:setUsername,placeholder:'Your username',prefix:'@'},
@@ -5919,14 +5934,14 @@ const EditProfileModal = ({ user, onClose, onSave, showToast }) => {
           {label:'Website / Link',value:link,set:setLink,placeholder:'https://yourwebsite.com'},
           {label:'Gender',value:gender,set:setGender,placeholder:'e.g. Male, Female, Other'},
         ].map(field=>(
-          <div key={field.label} style={{ marginBottom:16 }}>
-            <div style={{ color:'rgba(255,255,255,0.4)', fontSize:12, marginBottom:7, fontWeight:600, textTransform:'uppercase', letterSpacing:0.5 }}>{field.label}</div>
+          <div key={field.label} style={{ marginTop:20 }}>
+            <div style={{ color:COLORS.textTertiary, fontSize:12, marginBottom:7, fontWeight:600, textTransform:'uppercase', letterSpacing:0.5 }}>{field.label}</div>
             {field.multiline ? (
-              <textarea value={field.value} onChange={e=>field.set(e.target.value)} placeholder={field.placeholder} style={{ width:'100%', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:16, padding:'12px 14px', color:'white', outline:'none', fontSize:14, resize:'none', minHeight:80, boxSizing:'border-box' }} />
+              <textarea value={field.value} onChange={e=>field.set(e.target.value)} placeholder={field.placeholder} style={{ width:'100%', background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:16, padding:'12px 14px', color:COLORS.textPrimary, outline:'none', fontSize:14, resize:'none', minHeight:80, boxSizing:'border-box', fontFamily:'inherit', transition:TRANSITION.fast }} />
             ) : (
-              <div style={{ display:'flex', alignItems:'center', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:16, padding:'12px 14px' }}>
-                {field.prefix && <span style={{ color:'rgba(255,255,255,0.3)', marginRight:4, fontSize:14 }}>{field.prefix}</span>}
-                <input value={field.value} onChange={e=>field.set(e.target.value)} placeholder={field.placeholder} style={{ flex:1, background:'none', border:'none', color:'white', outline:'none', fontSize:14 }} />
+              <div style={{ display:'flex', alignItems:'center', background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:16, padding:'12px 14px', transition:TRANSITION.fast }}>
+                {field.prefix && <span style={{ color:COLORS.textTertiary, marginRight:4, fontSize:14, fontWeight:600 }}>{field.prefix}</span>}
+                <input value={field.value} onChange={e=>field.set(e.target.value)} placeholder={field.placeholder} style={{ flex:1, background:'none', border:'none', color:COLORS.textPrimary, outline:'none', fontSize:14, fontFamily:'inherit' }} />
               </div>
             )}
           </div>
@@ -6798,12 +6813,12 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
       </button>
       <div style={{color:COLORS.textPrimary,fontWeight:800,fontSize:22,marginBottom:8,fontFamily:"'Inter',sans-serif"}}>Change Password</div>
       <div style={{color:COLORS.textTertiary,fontSize:13,marginBottom:24}}>A reset link will be sent to {user?.email}</div>
-      <button onClick={async()=>{
+      <motion.button whileTap={{ scale:0.98 }} onClick={async()=>{
         if(user?.email){ await sendPasswordResetEmail(auth,user.email); showToast?.('Reset link sent to '+user.email,'success'); setActiveSubPage('settings'); }
         else showToast?.('No email on account','error');
-      }} style={{width:'100%',background:COLORS.gradient,border:'none',borderRadius:24,padding:15,color:COLORS.textPrimary,fontWeight:700,cursor:'pointer',fontSize:15}}>
+      }} style={{width:'100%',background:COLORS.gradient,border:'none',borderRadius:24,padding:15,color:COLORS.textOnBrand,fontWeight:700,cursor:'pointer',fontSize:15,boxShadow:SHADOW.glow(COLORS.brand)}}>
         Send Reset Link to {user?.email}
-      </button>
+      </motion.button>
     </div>
   );
 
@@ -6866,7 +6881,9 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
             await updateDoc(doc(db,'users',user.id),{ captionsEnabled: next });
             setCurrentUser(u=>({...u, captionsEnabled: next}));
           }} style={{padding:'15px 16px',display:'flex',alignItems:'center',gap:14,cursor:'pointer'}}>
-          <div style={{width:36,height:36,borderRadius:12,background:COLORS.surface2,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>💬</div>
+          <div style={{width:36,height:36,borderRadius:12,background:COLORS.surface2,display:'flex',alignItems:'center',justifyContent:'center'}}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          </div>
           <div style={{flex:1}}>
             <div style={{color:COLORS.textPrimary,fontSize:14}}>Automatic Captions</div>
             <div style={{color:COLORS.textTertiary,fontSize:11,marginTop:2}}>Show translated captions automatically while watching</div>
@@ -6993,19 +7010,25 @@ if(activeSubPage==='settings') return (
         <div style={{ color:COLORS.textTertiary, fontSize:11, fontWeight:700, marginBottom:8, textTransform:'uppercase', letterSpacing:1.2 }}>Appearance</div>
         <div style={{ background:COLORS.surface2, borderRadius:20, overflow:'hidden', marginBottom:20, border:`1px solid ${COLORS.border}` }}>
           <div style={{ padding:'15px 16px', display:'flex', alignItems:'center', gap:14 }}>
-            <div style={{ width:36, height:36, borderRadius:12, background:COLORS.surface2, display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>🌙</div>
+            <div style={{ width:36, height:36, borderRadius:12, background:COLORS.surface2, display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+            </div>
             <span style={{ color:COLORS.textPrimary, flex:1, fontSize:14 }}>Dark Mode</span>
             <div onClick={()=>onToggleTheme?.()} style={{ width:46, height:26, background:theme==='dark'?COLORS.brand:COLORS.borderStrong, borderRadius:13, position:'relative', cursor:'pointer', transition:'background 0.2s' }}>
               <div style={{ width:20, height:20, background:'white', borderRadius:'50%', position:'absolute', top:3, left:theme==='dark'?23:3, transition:'left 0.2s' }} />
             </div>
           </div>
           <div style={{ padding:'15px 16px', borderTop:`1px solid ${COLORS.border}`, display:'flex', alignItems:'center', gap:14, cursor:'pointer' }} onClick={()=>setActiveSubPage('language')}>
-            <div style={{ width:36, height:36, borderRadius:12, background:COLORS.surface2, display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>🌐</div>
+            <div style={{ width:36, height:36, borderRadius:12, background:COLORS.surface2, display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+            </div>
             <span style={{ color:COLORS.textPrimary, flex:1, fontSize:14 }}>Language & Translation</span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
           </div>
           <div style={{ padding:'15px 16px', borderTop:`1px solid ${COLORS.border}`, display:'flex', alignItems:'center', gap:14, cursor:'pointer' }} onClick={()=>setActiveSubPage('captions')}>
-            <div style={{ width:36, height:36, borderRadius:12, background:COLORS.surface2, display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>💬</div>
+            <div style={{ width:36, height:36, borderRadius:12, background:COLORS.surface2, display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            </div>
             <div style={{ flex:1 }}>
               <div style={{ color:COLORS.textPrimary, fontSize:14 }}>Video Captions</div>
               <div style={{ color:COLORS.textTertiary, fontSize:11, marginTop:2 }}>{user?.captionsEnabled ? `On · ${(CAPTION_LANGUAGES.find(l=>l[2]===(user?.captionLanguage||'en'))||[])[0]||'English'}` : 'Off'}</div>
@@ -7042,7 +7065,7 @@ if(activeSubPage==='settings') return (
             instead of dangling as three bare, borderless rows underneath Support. */}
         <div style={{ color:COLORS.textTertiary, fontSize:11, fontWeight:700, marginBottom:8, textTransform:'uppercase', letterSpacing:1.2 }}>Account Actions</div>
         <div style={{ background:COLORS.surface2, borderRadius:20, overflow:'hidden', marginBottom:20, border:`1px solid ${COLORS.border}` }}>
-          <div onClick={async()=>{
+          <motion.div whileTap={{ scale:0.98 }} onClick={async()=>{
             if(await confirmDialog('Reset account? This will delete all your posts, comments and likes but keep your account.')){
               try {
                 const vSnap = await getDocs(query(collection(db,'videos'),where('userId','==',user.id)));
@@ -7061,20 +7084,20 @@ if(activeSubPage==='settings') return (
               }
             }
           }} style={{ padding:'15px 16px', borderBottom:`1px solid ${COLORS.border}`, display:'flex', alignItems:'center', gap:14, cursor:'pointer' }}>
-            <div style={{ width:36, height:36, borderRadius:12, background:COLORS.surface2, display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <div style={{ width:36, height:36, borderRadius:12, background:`${COLORS.warning}1A`, display:'flex', alignItems:'center', justifyContent:'center' }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.warning} strokeWidth="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
             </div>
             <span style={{ color:COLORS.warningText, flex:1, fontSize:14 }}>Reset Account</span>
-          </div>
+          </motion.div>
 
-          <div onClick={onLogout} style={{ padding:'15px 16px', borderBottom:`1px solid ${COLORS.border}`, display:'flex', alignItems:'center', gap:14, cursor:'pointer' }}>
-            <div style={{ width:36, height:36, borderRadius:12, background:COLORS.surface2, display:'flex', alignItems:'center', justifyContent:'center' }}>
+          <motion.div whileTap={{ scale:0.98 }} onClick={onLogout} style={{ padding:'15px 16px', borderBottom:`1px solid ${COLORS.border}`, display:'flex', alignItems:'center', gap:14, cursor:'pointer' }}>
+            <div style={{ width:36, height:36, borderRadius:12, background:`${COLORS.warning}1A`, display:'flex', alignItems:'center', justifyContent:'center' }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.warning} strokeWidth="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             </div>
             <span style={{ color:COLORS.warningText, flex:1, fontSize:14 }}>{t?.logOut||t?.logout||'Log Out'}</span>
-          </div>
+          </motion.div>
 
-          <div onClick={async()=>{
+          <motion.div whileTap={{ scale:0.98 }} onClick={async()=>{
             if(await confirmDialog('Delete account? This cannot be undone.')){
               try{
                 const vSnap = await getDocs(query(collection(db,'videos'),where('userId','==',user.id)));
@@ -7091,32 +7114,13 @@ if(activeSubPage==='settings') return (
               }
             }
           }} style={{ padding:'15px 16px', display:'flex', alignItems:'center', gap:14, cursor:'pointer' }}>
-            <div style={{ width:36, height:36, borderRadius:12, background:COLORS.surface2, display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <div style={{ width:36, height:36, borderRadius:12, background:`${COLORS.danger}1A`, display:'flex', alignItems:'center', justifyContent:'center' }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.danger} strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
             </div>
             <span style={{ color:COLORS.dangerText, flex:1, fontSize:14 }}>Delete Account</span>
-          </div>
+          </motion.div>
         </div>
         <div style={{ textAlign:'center', color:COLORS.textDisabled, fontSize:11, marginBottom:16 }}>Infinity v3.0.0 • Made with ❤️</div>
-      </div>
-    </div>
-  );
-
-  if(activeSubPage==='privacy') return (
-    <div style={{ height:'100%', overflow:'auto', background:COLORS.bg, padding:16 }}>
-      <button onClick={()=>setActiveSubPage(null)} style={{ background:COLORS.surface2, border:`1px solid ${COLORS.border}`, borderRadius:20, padding:'8px 16px', color:COLORS.textPrimary, cursor:'pointer', fontSize:13, marginBottom:20, display:'flex', alignItems:'center', gap:6 }}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
-      </button>
-      <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:22, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Privacy</div>
-      <div style={{ background:COLORS.surface2, borderRadius:20, overflow:'hidden', border:`1px solid ${COLORS.border}` }}>
-        {['Private Account','Show Activity','Allow Messages from Everyone','Allow Comments','Allow Duets','Show Liked Videos'].map((label,i,arr)=>(
-          <div key={label} style={{ padding:'14px 16px', borderBottom:i<arr.length-1?`1px solid ${COLORS.border}`:'', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-            <span style={{ color:COLORS.textPrimary, fontSize:13 }}>{label}</span>
-            <div style={{ width:46, height:26, background:COLORS.brand, borderRadius:13, position:'relative', cursor:'pointer' }}>
-              <div style={{ width:20, height:20, background:'white', borderRadius:'50%', position:'absolute', top:3, left:23 }} />
-            </div>
-          </div>
-        ))}
       </div>
     </div>
   );
@@ -7139,7 +7143,7 @@ if(activeSubPage==='settings') return (
           {u.id===user?.id && <span style={{ color:COLORS.brand, fontSize:12, fontWeight:700 }}>Active</span>}
         </div>
       ))}
-      <button style={{ width:'100%', background:COLORS.surface2, border:`1px dashed ${COLORS.border}`, borderRadius:18, padding:16, color:COLORS.textTertiary, cursor:'pointer', fontSize:14, marginTop:4 }}>+ Add Account</button>
+      <motion.button whileTap={{ scale:0.98 }} onClick={()=>showToast?.('Adding another account is coming soon','info')} style={{ width:'100%', background:COLORS.surface2, border:`1px dashed ${COLORS.border}`, borderRadius:18, padding:16, color:COLORS.textTertiary, cursor:'pointer', fontSize:14, marginTop:4 }}>+ Add Account</motion.button>
     </div>
   );
 
@@ -7184,16 +7188,16 @@ if(activeSubPage==='settings') return (
   );
 
   const menuItems = [
-    {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFD60A" strokeWidth="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>,label:t?.wallet||'Wallet',page:'wallet',color:'#FFD60A'},
+    {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={COLORS.currency} strokeWidth="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>,label:t?.wallet||'Wallet',page:'wallet',color:COLORS.currency},
     {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={COLORS.brand} strokeWidth="1.8"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>,label:t?.badges||'Badges',page:'badges',color:COLORS.brand},
-    {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFD60A" strokeWidth="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,label:t?.premium||'Premium',page:'premium',color:'#FFD60A'},
-    {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00E6B4" strokeWidth="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,label:t?.analytics||'Analytics',page:'analytics',color:'#00E6B4'},
-    {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>,label:'QR Code',page:'qrcode',color:'#fff'},
+    {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={COLORS.currency} strokeWidth="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,label:t?.premium||'Premium',page:'premium',color:COLORS.currency},
+    {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={COLORS.success} strokeWidth="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,label:t?.analytics||'Analytics',page:'analytics',color:COLORS.success},
+    {icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="1.8"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>,label:'QR Code',page:'qrcode',color:COLORS.textSecondary},
   ];
 
   return (
     <div data-main-scroll="true" onScroll={onFeedScroll} style={{ height:'100%', overflow:'auto', background:COLORS.bg, paddingBottom:'max(74px, calc(58px + env(safe-area-inset-bottom)))' }}>
-      <div style={{ position:'relative', paddingBottom:20, background:COLORS.surface, borderRadius:'0 0 24px 24px', boxShadow:'0 2px 14px rgba(124,58,237,0.06)' }}>
+      <div style={{ position:'relative', paddingBottom:20, background:COLORS.surface, borderRadius:'0 0 24px 24px', boxShadow:'0 2px 14px rgba(11,95,255,0.07)' }}>
         <div style={{ height:150, position:'absolute', top:0, left:0, right:0, overflow:'hidden', borderRadius:'0 0 24px 24px' }}>
           {user?.avatarUrl ? (
             <>
@@ -7288,15 +7292,15 @@ if(activeSubPage==='settings') return (
           </div>
           <div style={{ display:'flex', gap:8, marginTop:14, justifyContent:'center', flexWrap:'wrap' }}>
             <div style={{ background:COLORS.surfaceAlt, borderRadius:14, padding:'6px 14px', display:'flex', alignItems:'center', gap:6 }}>
-              <span style={{ fontSize:13 }}>⭐</span>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill={COLORS.brand}><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
               <span style={{ color:COLORS.textSecondary, fontSize:12, fontWeight:700 }}>Creator</span>
             </div>
             <div style={{ background:COLORS.surfaceAlt, borderRadius:14, padding:'6px 14px', display:'flex', alignItems:'center', gap:6 }}>
-              <span style={{ fontSize:13 }}>🏅</span>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={COLORS.brand} strokeWidth="2"><circle cx="12" cy="8" r="6"/><path d="M9 14.5L7 22l5-3 5 3-2-7.5"/></svg>
               <span style={{ color:COLORS.textSecondary, fontSize:12, fontWeight:700 }}>Level {user?.level || 24}</span>
             </div>
             <div style={{ background:COLORS.surfaceAlt, borderRadius:14, padding:'6px 14px', display:'flex', alignItems:'center', gap:6 }}>
-              <span style={{ fontSize:13 }}>🔥</span>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill={COLORS.warning}><path d="M12 23c-4.97 0-9-3.5-9-8 0-3 1.85-5.36 3.3-7.13.45-.55 1.28-.24 1.32.47.08 1.5.5 2.9 1.38 3.66-.2-2.3.6-5.02 2.6-6.9.5-.47 1.3-.15 1.34.55.1 1.9.9 3.6 2.36 5.02C17.1 12 19 13.8 19 16c0 4.5-3.03 7-7 7z"/></svg>
               <span style={{ color:COLORS.textSecondary, fontSize:12, fontWeight:700 }}>Streak {user?.streak || 15}</span>
             </div>
           </div>
@@ -7305,6 +7309,16 @@ if(activeSubPage==='settings') return (
             <motion.button whileTap={tapScale} onClick={()=>setShowFollowersList('following')} style={{ background:COLORS.surfaceAlt, border:'none', borderRadius:16, width:46, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
             </motion.button>
+          </div>
+          <div style={{ display:'flex', gap:10, marginTop:16, padding:'0 16px', overflowX:'auto' }}>
+            {menuItems.map(item=>(
+              <motion.div key={item.page} whileTap={{ scale:0.92 }} onClick={()=>setActiveSubPage(item.page)} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:6, cursor:'pointer', flexShrink:0, minWidth:56 }}>
+                <div style={{ width:48, height:48, borderRadius:16, background:COLORS.surfaceAlt, display:'flex', alignItems:'center', justifyContent:'center', border:`1px solid ${COLORS.border}` }}>
+                  {item.icon}
+                </div>
+                <span style={{ color:COLORS.textTertiary, fontSize:10.5, fontWeight:600, whiteSpace:'nowrap' }}>{item.label}</span>
+              </motion.div>
+            ))}
           </div>
           </div>
         </div>
