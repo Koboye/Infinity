@@ -7942,6 +7942,49 @@ const ConversationView = ({ currentUser, otherUser, conversationId, onBack, show
   const timerRef = useRef(null);
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
+  // ── In-app camera capture — the composer's camera button used to just trigger
+  // a hidden <input type="file" capture="environment">, which only opens the
+  // native camera on mobile browsers; on desktop (and some browsers generally)
+  // "capture" is ignored and it silently falls back to a plain file picker.
+  // This opens a real live getUserMedia preview instead, so "Take photo" always
+  // opens an actual camera. The hidden file input above is kept as a fallback
+  // for when getUserMedia itself isn't available/permitted.
+  const [showCameraCapture, setShowCameraCapture] = useState(false);
+  const chatCameraVideoRef = useRef(null);
+  const chatCameraStreamRef = useRef(null);
+  const openChatCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+      chatCameraStreamRef.current = stream;
+      setShowCameraCapture(true);
+    } catch {
+      // No camera / permission denied / API unavailable — fall back to the
+      // old file-picker behavior rather than leaving the button dead.
+      cameraInputRef.current?.click();
+    }
+  };
+  const closeChatCamera = () => {
+    chatCameraStreamRef.current?.getTracks().forEach(t => t.stop());
+    chatCameraStreamRef.current = null;
+    setShowCameraCapture(false);
+  };
+  useEffect(() => {
+    if (showCameraCapture && chatCameraVideoRef.current && chatCameraStreamRef.current) {
+      chatCameraVideoRef.current.srcObject = chatCameraStreamRef.current;
+    }
+  }, [showCameraCapture]);
+  const captureChatPhoto = () => {
+    const video = chatCameraVideoRef.current;
+    if (!video) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    canvas.toBlob(blob => {
+      if (blob) setPreviewFile({ url: URL.createObjectURL(blob), file: blob, type: 'image/jpeg' });
+      closeChatCamera();
+    }, 'image/jpeg', 0.92);
+  };
   const isReady = !!(otherUser?.id && conversationId && currentUser?.id);
 
   const timeAgo = (date) => {
@@ -8588,7 +8631,7 @@ unsub = onSnapshot(q, (snap) => {
           <button onClick={()=>fileInputRef.current?.click()} aria-label="Attach photo" style={{background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:6}}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
           </button>
-          <button onClick={()=>cameraInputRef.current?.click()} aria-label="Take photo" style={{background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:6}}>
+          <button onClick={openChatCamera} aria-label="Take photo" style={{background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:6}}>
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
           </button>
         </div>
@@ -8799,6 +8842,24 @@ unsub = onSnapshot(q, (snap) => {
               ))}
             </div>
           </motion.div>
+        </motion.div>
+      )}</AnimatePresence>
+
+      {/* Live camera capture for the composer's "Take photo" button — a real
+          getUserMedia preview + shutter, so it opens an actual camera instead of
+          falling back to a plain file picker (which is all a bare
+          <input capture> does outside mobile-browser contexts). */}
+      <AnimatePresence>{showCameraCapture && (
+        <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }} style={{ position:'fixed', inset:0, background:'#000', zIndex:Z.modal, display:'flex', flexDirection:'column' }}>
+          <div style={{ padding:16, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+            <button onClick={closeChatCamera} style={{ background:'rgba(255,255,255,0.12)', border:'none', borderRadius:20, padding:'8px 16px', color:'white', cursor:'pointer', fontSize:13 }}>Cancel</button>
+            <span style={{ color:'white', fontWeight:700, fontSize:15 }}>Camera</span>
+            <div style={{ width:70 }} />
+          </div>
+          <div style={{ flex:1, position:'relative', overflow:'hidden' }}>
+            <video ref={chatCameraVideoRef} autoPlay playsInline muted style={{ width:'100%', height:'100%', objectFit:'cover', transform:'scaleX(-1)' }} />
+            <button onClick={captureChatPhoto} aria-label="Capture photo" style={{ position:'absolute', bottom:30, left:'50%', transform:'translateX(-50%)', background:'white', border:'4px solid rgba(255,255,255,0.4)', borderRadius:'50%', width:72, height:72, cursor:'pointer' }} />
+          </div>
         </motion.div>
       )}</AnimatePresence>
     </div>
