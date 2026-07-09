@@ -4147,11 +4147,6 @@ let __activeFeedVideoEl = null;
 // starting Read Aloud on a different post cancels the previous one — one voice at a
 // time, same idea as __activeFeedVideoEl above for video playback.
 let __activeReadingStop = null;
-// Shared sound preference across the whole feed session, TikTok/Reels-style: videos
-// autoplay muted (browsers block autoplay-with-sound without a real user gesture, so
-// starting unmuted just silently failed to play at all), and tapping the speaker icon
-// on any one video unmutes it — and every video after — until the viewer mutes again.
-let __feedSoundOn = false;
 
 const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onShare, users, onFollow, followed, showToast, onDelete, onBlock, isLive }) => {
   const [liked, setLiked] = useState((video.likedBy||[]).includes(currentUser?.id));
@@ -4274,7 +4269,9 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
   const mediaWrapRef = useRef(null);
   const videoElRef = useRef(null);
   const [videoPaused, setVideoPaused] = useState(false);
-  const [muted, setMuted] = useState(!__feedSoundOn);
+  // Sound is always on and there's no per-video mute button anymore — matches
+  // how the rest of the app (stories, calls, live) always plays with audio.
+  const muted = false;
   const viewCountedRef = useRef(false);
   const isVisible = useIntersectionObserver(mediaWrapRef, { threshold: 0.6 });
   // Stop reading if the post scrolls off-screen, so speech doesn't keep narrating a
@@ -4426,16 +4423,6 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
     if (nowSaved) setShowSaveConfirm(true);
   };
 
-  const toggleMute = (e) => {
-    e.stopPropagation();
-    setMuted(m => {
-      const next = !m;
-      __feedSoundOn = !next;
-      return next;
-    });
-    haptic('light');
-  };
-
   const handleDownload = async () => {
     if (!mediaSrc) { showToast?.('No media to download', 'error'); return; }
     haptic('light');
@@ -4546,61 +4533,19 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
         const shown = descExpanded || !isLong ? video.description : video.description.slice(0, DESC_LIMIT).trimEnd();
         const bg = video.bgColor && video.mediaType==='text';
         return (
-          <div style={{ position:'relative', marginBottom:12 }}>
+          <div style={{ marginBottom:12 }}>
             <div onClick={()=>isLong && setDescExpanded(v=>!v)} style={bg ? {
               background:video.bgColor, borderRadius:16, padding:'28px 18px',
               display:'flex', alignItems:'center', justifyContent:'center', textAlign:'center', minHeight:120,
               color:'#fff', fontSize:18, fontWeight:700, lineHeight:1.4, whiteSpace:'pre-wrap', wordBreak:'break-word',
               cursor: isLong ? 'pointer' : 'default',
-            } : { color:COLORS.textPrimary, fontSize:14, lineHeight:1.5, whiteSpace:'pre-wrap', wordBreak:'break-word', cursor: isLong ? 'pointer' : 'default', paddingRight:74 }}>
+            } : { color:COLORS.textPrimary, fontSize:14, lineHeight:1.5, whiteSpace:'pre-wrap', wordBreak:'break-word', cursor: isLong ? 'pointer' : 'default' }}>
               {shown}{isLong && !descExpanded && '…'}
               {isLong && (
                 <span onClick={e=>{ e.stopPropagation(); setDescExpanded(v=>!v); }} style={{ color:bg?'rgba(255,255,255,0.85)':COLORS.textTertiary, fontWeight:700, cursor:'pointer', marginLeft:5 }}>
                   {descExpanded ? 'Show less' : 'See more'}
                 </span>
               )}
-            </div>
-            {/* Read Aloud controls — a language toggle pill (forces Amharic playback,
-                translating first if the post isn't already in Amharic) plus the
-                speaker button itself. Icon swaps to a stop glyph while speaking, and
-                to a small spinner while translating. */}
-            <div style={{ position:'absolute', top: bg?10:0, right: bg?10:0, display:'flex', alignItems:'center', gap:6 }}>
-              <button
-                onClick={toggleReadLang}
-                aria-label={readLang === 'am' ? 'Reading in Amharic — tap to switch to original language' : 'Switch read-aloud to Amharic'}
-                title={readLang === 'am' ? 'Reads in Amharic' : 'Read in Amharic instead'}
-                style={{
-                  height:26, padding:'0 8px', borderRadius:13, border:'none', cursor:'pointer',
-                  display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
-                  fontSize:11, fontWeight:800, letterSpacing:0.2,
-                  background: readLang === 'am' ? COLORS.brand : (bg ? 'rgba(0,0,0,0.3)' : COLORS.surfaceAlt),
-                  color: readLang === 'am' ? '#fff' : (bg ? '#fff' : COLORS.textSecondary),
-                  transition:TRANSITION.fast,
-                }}>
-                አማ
-              </button>
-              <button
-                onClick={toggleReadAloud}
-                aria-label={isReading ? 'Stop reading' : (isTranslatingRead ? 'Translating…' : 'Read post aloud')}
-                disabled={isTranslatingRead}
-                style={{
-                  width:26, height:26, borderRadius:'50%', border:'none', cursor: isTranslatingRead ? 'default' : 'pointer',
-                  display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
-                  background: bg ? 'rgba(0,0,0,0.3)' : (isReading ? COLORS.brand : COLORS.surfaceAlt),
-                  animation: isReading ? 'pulseGlow 1.2s ease-in-out infinite' : 'none',
-                  transition:TRANSITION.fast,
-                }}>
-                {isTranslatingRead ? (
-                  <div style={{ width:12, height:12, border:`2px solid ${bg?'rgba(255,255,255,0.35)':COLORS.border}`, borderTop:`2px solid ${bg?'#fff':COLORS.brand}`, borderRadius:'50%', animation:'spin 0.8s linear infinite' }} />
-                ) : isReading ? (
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="#fff"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
-                ) : (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={bg?'#fff':COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-                    <path d="M15.54 8.46a5 5 0 010 7.07"/>
-                  </svg>
-                )}
-              </button>
             </div>
           </div>
         );
@@ -4661,13 +4606,6 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
                   </div>
                 </div>
               )}
-              <button onClick={toggleMute} aria-label={muted ? 'Unmute' : 'Mute'} style={{ position:'absolute', top:10, right:10, width:32, height:32, borderRadius:'50%', background:'rgba(0,0,0,0.45)', border:'none', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', zIndex:20 }}>
-                {muted ? (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
-                ) : (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg>
-                )}
-              </button>
             </>
           ) : galleryImages ? (
             <MediaCarousel images={galleryImages} maxHeight={420} />
@@ -4692,11 +4630,47 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
           of duplicating the same stats in a separate row above. Post options
           (•••) live only in the header — not repeated here too. ── */}
       <div style={{ marginTop:10, display:'flex', alignItems:'center', justifyContent:'space-between', borderTop:`1px solid ${COLORS.border}`, paddingTop:10 }}>
-        {/* Views — plain display, not a button, since tapping it had no real
-            action beyond re-announcing the same number already on screen. */}
-        <div style={{ display:'flex', alignItems:'center', gap:5, color:COLORS.textTertiary }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-          <span style={{ fontSize:13 }}>{formatNumber(video.views||0)}</span>
+        {/* Read Aloud — replaces the old view-count display. Text-to-speech for the
+            post's caption (browser SpeechSynthesis, no server cost). The small አማ
+            chip forces Amharic playback, translating first if the caption isn't
+            already in Amharic. Disabled/greyed out when there's no caption to read. */}
+        <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+          <button
+            onClick={toggleReadLang}
+            disabled={!video.description}
+            aria-label={readLang === 'am' ? 'Reading in Amharic — tap to switch to original language' : 'Switch read-aloud to Amharic'}
+            title={readLang === 'am' ? 'Reads in Amharic' : 'Read in Amharic instead'}
+            style={{
+              height:24, padding:'0 7px', borderRadius:12, border:'none', cursor: video.description ? 'pointer' : 'default',
+              display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
+              fontSize:10.5, fontWeight:800, letterSpacing:0.2,
+              background: readLang === 'am' ? COLORS.brand : COLORS.surfaceAlt,
+              color: readLang === 'am' ? '#fff' : COLORS.textTertiary,
+              opacity: video.description ? 1 : 0.4,
+              transition:TRANSITION.fast,
+            }}>
+            አማ
+          </button>
+          <motion.button
+            whileTap={tapScale}
+            onClick={toggleReadAloud}
+            disabled={isTranslatingRead || !video.description}
+            aria-label={isReading ? 'Stop reading' : (isTranslatingRead ? 'Translating…' : 'Read post aloud')}
+            style={{
+              background:'none', border:'none', padding:8, margin:-8, display:'flex', alignItems:'center', gap:6,
+              cursor: (isTranslatingRead || !video.description) ? 'default' : 'pointer', transition:TRANSITION.fast, borderRadius:10,
+              opacity: video.description ? 1 : 0.4,
+            }}>
+            {isTranslatingRead ? (
+              <div style={{ width:15, height:15, border:`2px solid ${COLORS.border}`, borderTop:`2px solid ${COLORS.brand}`, borderRadius:'50%', animation:'spin 0.8s linear infinite' }} />
+            ) : (
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={isReading?COLORS.brand:COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: isReading ? 'pulseGlow 1.2s ease-in-out infinite' : 'none' }}>
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                {isReading ? <rect x="15" y="9" width="3" height="6" rx="1"/> : <path d="M15.54 8.46a5 5 0 010 7.07"/>}
+              </svg>
+            )}
+            <span style={{ fontSize:13, color: isReading?COLORS.brand:COLORS.textSecondary }}>{isReading ? 'Reading' : 'Read'}</span>
+          </motion.button>
         </div>
 
         {/* Like */}
@@ -4786,7 +4760,7 @@ const FeedSkeletonCard = () => (
    so the Facebook-style card design went there instead, in place, rather than duplicating
    the feature across tabs. */
 
-const HomeFeed = ({ t, videos, videosLoading, videosError, onLike, onComment, onShare, onFollow, onMessage, onVoiceCall, onVideoCall, onDuet, onStitch, onSaveSound, followed, showToast, onWatchLive, currentUser, onViewProfile, onOpenSearch, onOpenNotifications, onOpenStories, onCreateStory, onViewStory, blockedUsers, onBlock, users, onOpenProfileDrawer, onFeedScroll, onOpenCamera, onOpenComposer }) => {
+const HomeFeed = ({ t, videos, videosLoading, videosError, onLike, onComment, onShare, onFollow, onMessage, onVoiceCall, onVideoCall, onDuet, onStitch, onSaveSound, followed, showToast, onWatchLive, currentUser, onViewProfile, onOpenSearch, onOpenNotifications, onOpenStories, onCreateStory, onViewStory, blockedUsers, onBlock, users, onOpenProfileDrawer, onFeedScroll, onOpenCamera, onOpenComposer, navVisible }) => {
   const liveUserIds = useLiveStreamerIds(currentUser);
   // Inline "quick search" — filters users/posts in place instead of navigating to Discover.
   const [searchOpen, setSearchOpen] = useState(false);
@@ -4865,8 +4839,11 @@ const HomeFeed = ({ t, videos, videosLoading, videosError, onLike, onComment, on
       {/* Sticky header — masthead + search + notifications stay pinned while the feed
           scrolls beneath, instead of disappearing off the top like a page section.
           Solid COLORS.bg (not a translucent blur) so it reads correctly in both
-          light and dark mode without needing a separate alpha token. */}
-      <div style={{ position:'sticky', top:0, zIndex:Z.stickyHeader, background:COLORS.bg, margin:'-10px -14px 0', padding:'10px 14px 8px' }}>
+          light and dark mode without needing a separate alpha token. Slides away on
+          scroll-down and back on scroll-up, mirroring the bottom nav's behavior
+          (same navVisible flag, same transform/transition), so scrolling through the
+          feed gets the full screen instead of a header stuck in place forever. */}
+      <div style={{ position:'sticky', top:0, zIndex:Z.stickyHeader, background:COLORS.bg, margin:'-10px -14px 0', padding:'10px 14px 8px', transform: navVisible ? 'translateY(0)' : 'translateY(-100%)', transition:'transform 0.25s cubic-bezier(0.4,0,0.2,1)' }}>
         {/* Masthead — the app's wordmark, top-left, the way Instagram/Facebook/Threads
             anchor their brand at the top of the main feed. Rendered in the same brand
             gradient used everywhere else (nav active state, buttons) so it reads as
@@ -11497,7 +11474,7 @@ const infinityHash = (str, seed=0) => {
 // row, identical inline quick-composer, and the same FeedPostCard for every post.
 // The one intentional difference is the post order: instead of strict newest-first,
 // posts are shuffled via a per-user seed, with a floating dice button to reshuffle.
-const InfinityPage = ({ t, videos, videosLoading, videosError, onShare, onFollow, onMessage, followed, showToast, currentUser, onViewProfile, onOpenNotifications, onOpenStories, onCreateStory, onViewStory, blockedUsers, onBlock, users, onOpenProfileDrawer, onFeedScroll }) => {
+const InfinityPage = ({ t, videos, videosLoading, videosError, onShare, onFollow, onMessage, followed, showToast, currentUser, onViewProfile, onOpenNotifications, onOpenStories, onCreateStory, onViewStory, blockedUsers, onBlock, users, onOpenProfileDrawer, onFeedScroll, navVisible }) => {
   const liveUserIds = useLiveStreamerIds(currentUser);
   // Inline "quick search" — filters users/posts in place instead of navigating to Discover.
   const [searchOpen, setSearchOpen] = useState(false);
@@ -11584,6 +11561,10 @@ const InfinityPage = ({ t, videos, videosLoading, videosError, onShare, onFollow
 
   return (
     <div data-main-scroll="true" onScroll={onFeedScroll} style={{ height:'100%', overflowY:'auto', background:COLORS.bg, padding:'10px 14px max(74px, calc(58px + env(safe-area-inset-bottom)))', position:'relative' }}>
+      {/* Sticky header — same hide-on-scroll-down/show-on-scroll-up behavior as
+          Home's header and the bottom nav (same navVisible flag), instead of sitting
+          fixed in place no matter how far the feed is scrolled. */}
+      <div style={{ position:'sticky', top:0, zIndex:Z.stickyHeader, background:COLORS.bg, margin:'-10px -14px 0', padding:'10px 14px 8px', transform: navVisible ? 'translateY(0)' : 'translateY(-100%)', transition:'transform 0.25s cubic-bezier(0.4,0,0.2,1)' }}>
       {/* Top search bar — expands and filters in place; tapping a result acts immediately,
           nothing here navigates to a separate search page. */}
       <div style={{ position:'relative', marginBottom:10 }}>
@@ -11633,6 +11614,7 @@ const InfinityPage = ({ t, videos, videosLoading, videosError, onShare, onFollow
             ))}
           </div>
         )}
+      </div>
       </div>
 
       {/* Stories row — same Stories component as Home, so tapping an avatar opens that
@@ -12515,9 +12497,9 @@ const handleMessage = uid => {
   followed={followed} showToast={showToast} onWatchLive={(u)=>setShowLiveStream(u)} onViewProfile={handleViewProfile}
   onOpenSearch={()=>setShowDiscover(true)} onOpenNotifications={()=>setShowNotifications(true)} onOpenStories={()=>setShowStoriesPage(true)}
   onCreateStory={()=>setShowCreateStory(true)} onViewStory={(payload)=>setShowStoryViewer(payload)}
-  onOpenProfileDrawer={()=>setShowProfileDrawer(true)} onFeedScroll={handleFeedScroll}
+  onOpenProfileDrawer={()=>setShowProfileDrawer(true)} onFeedScroll={handleFeedScroll} navVisible={navVisible}
   blockedUsers={blockedUsers} onBlock={handleBlockUser} users={users} onOpenCamera={()=>setShowCamera(true)} onOpenComposer={()=>setShowTextComposer(true)} />}
-            {activeTab==='infinity' && <InfinityPage t={t} onFeedScroll={handleFeedScroll} showToast={showToast} currentUser={currentUser}
+            {activeTab==='infinity' && <InfinityPage t={t} onFeedScroll={handleFeedScroll} showToast={showToast} currentUser={currentUser} navVisible={navVisible}
   videos={videos} videosLoading={videosLoading} videosError={videosError} followed={followed} onFollow={toggleFollow} onViewProfile={handleViewProfile} onMessage={handleMessage}
   onShare={(v)=>setShowShareSheet(v)} users={users} blockedUsers={blockedUsers} onBlock={handleBlockUser}
   onOpenNotifications={()=>setShowNotifications(true)} onOpenStories={()=>setShowStoriesPage(true)}
