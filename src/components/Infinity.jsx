@@ -191,15 +191,19 @@ const EMOJI_LIST = ['😀','😂','😍','🥰','😎','🤔','😭','😱','�
    (a preset id) so BOTH participants see the same theme, mirroring how the
    feature works in real chat apps. 'default' means "no override" — falls back
    to whatever COLORS.gradient/COLORS.brand already resolve to. */
+// bgTint tints the message-list background (behind the dot-grid pattern) so a
+// theme change is visible on the whole conversation, not just on your own bubbles.
+// dotColor overrides the dot-grid dot color per theme so the dots stay visible
+// against darker/tinted backgrounds instead of disappearing or clashing.
 const CHAT_THEMES = [
-  { id: 'default', name: 'Default',    gradient: null,                                   accent: null },
-  { id: 'ocean',   name: 'Ocean',      gradient: COLORS.gradient, accent: COLORS.brand },
-  { id: 'sunset',  name: 'Sunset',     gradient: 'linear-gradient(135deg,#FF9A56,#FF6B6B)', accent: '#FF6B6B' },
-  { id: 'forest',  name: 'Forest',     gradient: 'linear-gradient(135deg,#34D399,#059669)', accent: '#059669' },
-  { id: 'grape',   name: 'Grape',      gradient: 'linear-gradient(135deg,#A78BFA,#7C3AED)', accent: '#7C3AED' },
-  { id: 'rose',    name: 'Rose',       gradient: 'linear-gradient(135deg,#FB7185,#E11D48)', accent: '#E11D48' },
-  { id: 'midnight',name: 'Midnight',   gradient: 'linear-gradient(135deg,#475569,#1E293B)', accent: '#1E293B' },
-  { id: 'gold',    name: 'Gold',       gradient: 'linear-gradient(135deg,#FCD34D,#D97706)', accent: '#D97706' },
+  { id: 'default', name: 'Default',    gradient: null,                                   accent: null,      bgTint: null,                dotColor: null },
+  { id: 'ocean',   name: 'Ocean',      gradient: 'linear-gradient(135deg,#22D3EE,#0891B2)', accent: '#0891B2', bgTint: 'rgba(8,145,178,0.07)',  dotColor: 'rgba(8,145,178,0.22)' },
+  { id: 'sunset',  name: 'Sunset',     gradient: 'linear-gradient(135deg,#FF9A56,#FF6B6B)', accent: '#FF6B6B', bgTint: 'rgba(255,107,107,0.07)', dotColor: 'rgba(255,107,107,0.22)' },
+  { id: 'forest',  name: 'Forest',     gradient: 'linear-gradient(135deg,#34D399,#059669)', accent: '#059669', bgTint: 'rgba(5,150,105,0.07)',  dotColor: 'rgba(5,150,105,0.22)' },
+  { id: 'grape',   name: 'Grape',      gradient: 'linear-gradient(135deg,#A78BFA,#7C3AED)', accent: '#7C3AED', bgTint: 'rgba(124,58,237,0.07)', dotColor: 'rgba(124,58,237,0.22)' },
+  { id: 'rose',    name: 'Rose',       gradient: 'linear-gradient(135deg,#FB7185,#E11D48)', accent: '#E11D48', bgTint: 'rgba(225,29,72,0.07)',  dotColor: 'rgba(225,29,72,0.22)' },
+  { id: 'midnight',name: 'Midnight',   gradient: 'linear-gradient(135deg,#475569,#1E293B)', accent: '#1E293B', bgTint: 'rgba(30,41,59,0.10)',   dotColor: 'rgba(30,41,59,0.28)' },
+  { id: 'gold',    name: 'Gold',       gradient: 'linear-gradient(135deg,#FCD34D,#D97706)', accent: '#D97706', bgTint: 'rgba(217,119,6,0.07)',  dotColor: 'rgba(217,119,6,0.22)' },
 ];
 const getChatTheme = (id) => CHAT_THEMES.find(t => t.id === id) || CHAT_THEMES[0];
 
@@ -4211,6 +4215,45 @@ let __activeFeedVideoEl = null;
 // starting Read Aloud on a different post cancels the previous one — one voice at a
 // time, same idea as __activeFeedVideoEl above for video playback.
 let __activeReadingStop = null;
+// speechSynthesis.getVoices() very often returns an empty array the first time it's
+// called — voice lists load asynchronously and fire the 'voiceschanged' event once
+// ready (Chrome in particular). Calling getVoices() synchronously on first tap, as
+// before, meant an installed Amharic (or any non-default) voice was never found even
+// when the device actually had one. This caches a promise that resolves once real
+// voices are available, so Read Aloud can await it before picking a voice.
+let __voicesReadyPromise = null;
+const getSpeechVoicesReady = () => {
+  if (__voicesReadyPromise) return __voicesReadyPromise;
+  __voicesReadyPromise = new Promise((resolve) => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) { resolve([]); return; }
+    const existing = window.speechSynthesis.getVoices();
+    if (existing && existing.length > 0) { resolve(existing); return; }
+    const onChange = () => {
+      const voices = window.speechSynthesis.getVoices();
+      if (voices && voices.length > 0) {
+        window.speechSynthesis.removeEventListener('voiceschanged', onChange);
+        resolve(voices);
+      }
+    };
+    window.speechSynthesis.addEventListener('voiceschanged', onChange);
+    // Fallback in case voiceschanged never fires on this browser (some WebViews).
+    setTimeout(() => resolve(window.speechSynthesis.getVoices() || []), 1500);
+  });
+  return __voicesReadyPromise;
+};
+// Maps a CAPTION_LANGUAGES code to a BCP47 locale tag SpeechSynthesis understands
+// better than a bare two-letter code (helps the browser/OS pick the right voice —
+// this is what was missing for Amharic, which needs 'am-ET' rather than just 'am').
+const READ_ALOUD_LOCALE = {
+  en:'en-US', am:'am-ET', ar:'ar-SA', fr:'fr-FR', es:'es-ES', pt:'pt-PT', hi:'hi-IN',
+  zh:'zh-CN', 'zh-TW':'zh-TW', sw:'sw-KE', de:'de-DE', ru:'ru-RU', tr:'tr-TR', ja:'ja-JP',
+  ko:'ko-KR', it:'it-IT', om:'om-ET', ti:'ti-ET', so:'so-SO', ur:'ur-PK', bn:'bn-BD',
+  pa:'pa-IN', ta:'ta-IN', te:'te-IN', mr:'mr-IN', gu:'gu-IN', kn:'kn-IN', ml:'ml-IN',
+  th:'th-TH', vi:'vi-VN', id:'id-ID', ms:'ms-MY', tl:'fil-PH', nl:'nl-NL', pl:'pl-PL',
+  uk:'uk-UA', el:'el-GR', sv:'sv-SE', no:'nb-NO', da:'da-DK', fi:'fi-FI', cs:'cs-CZ',
+  hu:'hu-HU', ro:'ro-RO', he:'he-IL', fa:'fa-IR', ha:'ha-NG', yo:'yo-NG', ig:'ig-NG',
+  zu:'zu-ZA', rw:'rw-RW',
+};
 
 const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onShare, users, onFollow, followed, showToast, onDelete, onBlock, isLive }) => {
   const [liked, setLiked] = useState((video.likedBy||[]).includes(currentUser?.id));
@@ -4258,15 +4301,17 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
   // at a time app-wide: starting a new one cancels whatever was already speaking,
   // mirroring the single-active-video pattern used for feed playback below.
   //
-  // readLang lets the viewer override the spoken language per post: 'auto' reads the
-  // post as-written (Ethiopic script gets an am-ET voice hint, everything else uses
-  // the device's language), while 'am' always speaks it in Amharic — translating the
-  // text first via the same liveTranslate() used for chat/caption translation when the
-  // post isn't already in Amharic, so an English caption is read out in Amharic rather
+  // readLang lets the viewer pick the spoken language per post from the full
+  // CAPTION_LANGUAGES list (same one used for video caption translation): 'auto'
+  // reads the post as-written (Ethiopic script gets an am-ET voice hint, everything
+  // else uses the device's language), while any other code always speaks it in that
+  // language — translating the text first via liveTranslate() when the post isn't
+  // already written in it, so e.g. an English caption is read out in Amharic rather
   // than an Amharic voice trying (and failing) to pronounce English words.
   const [isReading, setIsReading] = useState(false);
   const [isTranslatingRead, setIsTranslatingRead] = useState(false);
-  const [readLang, setReadLang] = useState('auto'); // 'auto' | 'am'
+  const [readLang, setReadLang] = useState('auto'); // 'auto' | any CAPTION_LANGUAGES code
+  const [showReadLangMenu, setShowReadLangMenu] = useState(false);
   const readUtteranceRef = useRef(null);
   const readRequestIdRef = useRef(0);
   const stopReading = () => {
@@ -4288,26 +4333,28 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
     const original = video.description || '';
     let text = original;
     let lang = isAmharicScript(original) ? 'am-ET' : (navigator.language || 'en-US');
-    if (readLang === 'am') {
-      lang = 'am-ET';
-      if (!isAmharicScript(original)) {
+    if (readLang !== 'auto') {
+      lang = READ_ALOUD_LOCALE[readLang] || readLang;
+      const alreadyInTargetScript = readLang === 'am' ? isAmharicScript(original) : false;
+      if (!alreadyInTargetScript) {
         setIsTranslatingRead(true);
-        try { text = await liveTranslate(original, 'am'); }
+        try { text = await liveTranslate(original, readLang); }
         catch { text = original; }
         setIsTranslatingRead(false);
         if (myRequestId !== readRequestIdRef.current) return; // user cancelled while translating
       }
     }
+    // Wait for the real voice list before building the utterance — getVoices() is
+    // frequently empty on the very first call (see getSpeechVoicesReady above),
+    // which was why an installed Amharic voice was never picked up.
+    const voices = await getSpeechVoicesReady();
+    if (myRequestId !== readRequestIdRef.current) return; // cancelled while voices loaded
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = lang;
-    // Prefer an actual installed Amharic voice when reading in Amharic (common on
-    // Ethiopian Android devices with Google's TTS language pack installed); falls
-    // back to the device default voice under the am-ET lang tag otherwise.
-    if (lang === 'am-ET') {
-      const voices = window.speechSynthesis.getVoices?.() || [];
-      const amVoice = voices.find(v => v.lang?.toLowerCase().startsWith('am'));
-      if (amVoice) utterance.voice = amVoice;
-    }
+    const baseLang = lang.split('-')[0].toLowerCase();
+    const exactVoice = voices.find(v => v.lang?.toLowerCase() === lang.toLowerCase());
+    const baseVoice = voices.find(v => v.lang?.toLowerCase().startsWith(baseLang));
+    if (exactVoice || baseVoice) utterance.voice = exactVoice || baseVoice;
     utterance.rate = 1;
     utterance.onend = () => { setIsReading(false); if (__activeReadingStop === stopReading) __activeReadingStop = null; };
     utterance.onerror = () => { setIsReading(false); if (__activeReadingStop === stopReading) __activeReadingStop = null; };
@@ -4316,12 +4363,13 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
     setIsReading(true);
     window.speechSynthesis.speak(utterance);
   };
-  // Toggling the language preference always stops any in-progress reading (rather than
-  // silently switching mid-sentence) — tap Read Aloud again to hear it in the new language.
-  const toggleReadLang = (e) => {
-    e.stopPropagation();
+  // Selecting a language always stops any in-progress reading (rather than silently
+  // switching mid-sentence) — tap the play button again to hear it in the new language.
+  const selectReadLang = (code, e) => {
+    e?.stopPropagation();
     if (isReading || isTranslatingRead) stopReading();
-    setReadLang(l => l === 'am' ? 'auto' : 'am');
+    setReadLang(code);
+    setShowReadLangMenu(false);
     haptic('light');
   };
   // Card-unmount cleanup for read-aloud; the "scrolled off-screen" stop is added
@@ -4340,7 +4388,7 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
   const isVisible = useIntersectionObserver(mediaWrapRef, { threshold: 0.6 });
   // Stop reading if the post scrolls off-screen, so speech doesn't keep narrating a
   // post the viewer has already scrolled past.
-  useEffect(() => { if (!isVisible && (isReading || isTranslatingRead)) stopReading(); }, [isVisible]);
+  useEffect(() => { if (!isVisible && (isReading || isTranslatingRead)) stopReading(); if (!isVisible) setShowReadLangMenu(false); }, [isVisible]);
 
   // ── Auto-translated video captions, TikTok/Facebook-style ──
   // No per-video button: whether captions show at all, and in which language, is a
@@ -4695,33 +4743,56 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
           (•••) live only in the header — not repeated here too. ── */}
       <div style={{ marginTop:10, display:'flex', alignItems:'center', justifyContent:'space-between', borderTop:`1px solid ${COLORS.border}`, paddingTop:10 }}>
         {/* Read Aloud — replaces the old view-count display. Text-to-speech for the
-            post's caption (browser SpeechSynthesis, no server cost). The small አማ
-            chip forces Amharic playback, translating first if the caption isn't
-            already in Amharic. Disabled/greyed out when there's no caption to read. */}
-        <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+            post's caption (browser SpeechSynthesis, no server cost). The language
+            chip opens a picker covering every language in CAPTION_LANGUAGES (not just
+            Amharic), translating the caption first via liveTranslate if it isn't
+            already written in the chosen language. Icon-only — no "Read"/"Reading"
+            text label, just the speaker glyph with an aria-label for accessibility.
+            Disabled/greyed out when there's no caption to read. */}
+        <div style={{ position:'relative', display:'flex', alignItems:'center', gap:6 }}>
           <button
-            onClick={toggleReadLang}
+            onClick={(e)=>{ e.stopPropagation(); if (video.description) setShowReadLangMenu(v=>!v); }}
             disabled={!video.description}
-            aria-label={readLang === 'am' ? 'Reading in Amharic — tap to switch to original language' : 'Switch read-aloud to Amharic'}
-            title={readLang === 'am' ? 'Reads in Amharic' : 'Read in Amharic instead'}
+            aria-label={readLang === 'auto' ? 'Choose read-aloud language' : `Reading in ${CAPTION_LANGUAGES.find(l=>l[2]===readLang)?.[1] || readLang} — tap to change language`}
+            title="Read-aloud language"
             style={{
-              height:24, padding:'0 7px', borderRadius:12, border:'none', cursor: video.description ? 'pointer' : 'default',
+              height:24, padding:'0 8px', borderRadius:12, border:'none', cursor: video.description ? 'pointer' : 'default',
               display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
               fontSize:10.5, fontWeight:800, letterSpacing:0.2,
-              background: readLang === 'am' ? COLORS.brand : COLORS.surfaceAlt,
-              color: readLang === 'am' ? '#fff' : COLORS.textTertiary,
+              background: readLang !== 'auto' ? COLORS.brand : COLORS.surfaceAlt,
+              color: readLang !== 'auto' ? '#fff' : COLORS.textTertiary,
               opacity: video.description ? 1 : 0.4,
               transition:TRANSITION.fast,
             }}>
-            አማ
+            {readLang === 'auto' ? 'Aa' : (CAPTION_LANGUAGES.find(l=>l[2]===readLang)?.[2] || readLang).toUpperCase()}
           </button>
+          <AnimatePresence>{showReadLangMenu && (
+            <>
+              <div onClick={(e)=>{ e.stopPropagation(); setShowReadLangMenu(false); }} style={{ position:'fixed', inset:0, zIndex:Z.popover-1 }} />
+              <motion.div
+                initial={{ opacity:0, y:-6, scale:0.97 }} animate={{ opacity:1, y:0, scale:1 }} exit={{ opacity:0, y:-6, scale:0.97 }} transition={{ duration:0.14 }}
+                onClick={e=>e.stopPropagation()}
+                style={{ position:'absolute', top:'calc(100% + 6px)', left:0, width:200, maxHeight:280, overflowY:'auto', background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:14, boxShadow:SHADOW.raised, zIndex:Z.popover, padding:6 }}>
+                <button onClick={(e)=>selectReadLang('auto', e)} style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between', gap:8, background: readLang==='auto' ? COLORS.surfaceAlt : 'none', border:'none', borderRadius:10, padding:'8px 10px', cursor:'pointer', textAlign:'left', fontSize:13, fontWeight:600, color:COLORS.textPrimary }}>
+                  Original (auto)
+                  {readLang==='auto' && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.brand} strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
+                </button>
+                {CAPTION_LANGUAGES.map(([native, english, code]) => (
+                  <button key={code} onClick={(e)=>selectReadLang(code, e)} style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between', gap:8, background: readLang===code ? COLORS.surfaceAlt : 'none', border:'none', borderRadius:10, padding:'8px 10px', cursor:'pointer', textAlign:'left', fontSize:13, fontWeight:600, color:COLORS.textPrimary }}>
+                    <span>{native} <span style={{ color:COLORS.textTertiary, fontWeight:500 }}>· {english}</span></span>
+                    {readLang===code && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.brand} strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
+                  </button>
+                ))}
+              </motion.div>
+            </>
+          )}</AnimatePresence>
           <motion.button
             whileTap={tapScale}
             onClick={toggleReadAloud}
             disabled={isTranslatingRead || !video.description}
             aria-label={isReading ? 'Stop reading' : (isTranslatingRead ? 'Translating…' : 'Read post aloud')}
             style={{
-              background:'none', border:'none', padding:8, margin:-8, display:'flex', alignItems:'center', gap:6,
+              background:'none', border:'none', padding:8, margin:-8, display:'flex', alignItems:'center',
               cursor: (isTranslatingRead || !video.description) ? 'default' : 'pointer', transition:TRANSITION.fast, borderRadius:10,
               opacity: video.description ? 1 : 0.4,
             }}>
@@ -4733,7 +4804,6 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
                 {isReading ? <rect x="15" y="9" width="3" height="6" rx="1"/> : <path d="M15.54 8.46a5 5 0 010 7.07"/>}
               </svg>
             )}
-            <span style={{ fontSize:13, color: isReading?COLORS.brand:COLORS.textSecondary }}>{isReading ? 'Reading' : 'Read'}</span>
           </motion.button>
         </div>
 
@@ -8179,7 +8249,15 @@ unsub = onSnapshot(q, (snap) => {
         </div>
       )}
 
-      <div style={{flex:1,overflowY:'auto',padding:'16px',backgroundImage:`radial-gradient(${COLORS.border} 1px, transparent 1px)`,backgroundSize:'18px 18px',backgroundColor:COLORS.bg}}>
+      <div style={activeTheme.bgTint ? {
+              flex:1,overflowY:'auto',padding:'16px',backgroundColor:COLORS.bg,
+              backgroundImage:`linear-gradient(${activeTheme.bgTint},${activeTheme.bgTint}), radial-gradient(${activeTheme.dotColor} 1px, transparent 1px)`,
+              backgroundSize:'cover, 18px 18px',
+            } : {
+              flex:1,overflowY:'auto',padding:'16px',backgroundColor:COLORS.bg,
+              backgroundImage:`radial-gradient(${COLORS.border} 1px, transparent 1px)`,
+              backgroundSize:'18px 18px',
+            }}>
         {messages.length===0&&<div style={{textAlign:'center',padding:40,color:COLORS.textTertiary,fontSize:13}}>Start a conversation! 👋</div>}
         {(threadSearch.trim() ? messages.filter(m=>m.text?.toLowerCase().includes(threadSearch.toLowerCase())) : messages).length===0 && threadSearch.trim() && (
           <div style={{textAlign:'center',padding:40,color:COLORS.textTertiary,fontSize:13}}>No messages matching "{threadSearch}"</div>
@@ -8529,7 +8607,11 @@ unsub = onSnapshot(q, (snap) => {
             <div style={{ padding:'4px 12px' }}>
               {CHAT_THEMES.map(theme => (
                 <button key={theme.id} onClick={()=>applyChatTheme(theme.id)} style={{ width:'100%', display:'flex', alignItems:'center', gap:14, background: theme.id===chatThemeId ? COLORS.surfaceAlt : 'none', border:'none', borderRadius:14, padding:'12px 12px', cursor:'pointer', textAlign:'left' }}>
-                  <div style={{ width:34, height:34, borderRadius:'50%', background: theme.gradient || COLORS.gradient, boxShadow: SHADOW.xs, flexShrink:0, border: theme.id==='default' ? `1px solid ${COLORS.border}` : 'none' }} />
+                  <div style={{ position:'relative', width:34, height:34, flexShrink:0 }}>
+                    <div style={{ width:34, height:34, borderRadius:'50%', background: theme.gradient || COLORS.gradient, boxShadow: SHADOW.xs, border: theme.id==='default' ? `1px solid ${COLORS.border}` : 'none' }} />
+                    {/* Small swatch showing the conversation background tint this theme applies, so it's clear the whole chat — not just your bubbles — changes. */}
+                    <div style={{ position:'absolute', bottom:-2, right:-2, width:14, height:14, borderRadius:'50%', background: theme.bgTint ? `linear-gradient(${theme.bgTint},${theme.bgTint}), ${COLORS.bg}` : COLORS.bg, border:`2px solid ${COLORS.surface}` }} />
+                  </div>
                   <span style={{ flex:1, color:COLORS.textPrimary, fontSize:14.5, fontWeight:600 }}>{theme.name}</span>
                   {theme.id===chatThemeId && (
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={theme.accent || COLORS.brand} strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
