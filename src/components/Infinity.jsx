@@ -12919,7 +12919,15 @@ const handleMessage = uid => {
           const glyphLabels = { home:'Home', infinity:'Infinity', friends:'Friends', inbox:'Messages' };
           return (
             <button key={tab.id}
-              onClick={()=>{ haptic('light'); navigateToTab(tab.id); }}
+              onClick={()=>{
+                haptic('light');
+                if (isActive && (tab.id === 'home' || tab.id === 'infinity')) {
+                  document.querySelector('[data-main-scroll="true"]')?.scrollTo({ top: 0, behavior: 'smooth' });
+                  refreshFeed();
+                  return;
+                }
+                navigateToTab(tab.id);
+              }}
               aria-label={glyphLabels[tab.id]}
               style={{ flex:1, minWidth:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'flex-start', gap:2, background:'none', border:'none', cursor:'pointer', padding:'4px 2px 6px' }}>
               <div style={{ position:'relative', display:'flex', alignItems:'center', justifyContent:'center', width:30, height:26 }}>
