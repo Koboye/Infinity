@@ -122,6 +122,15 @@ export const pageVariants = {
 };
 
 
+// Chat message bubble entrance — small pop-and-rise as a new message mounts.
+// Existing messages never replay this (React only mounts once per msg.id),
+// so re-renders from unrelated state (typing, reactions) don't cause bubbles
+// to "jump" — only genuinely new messages animate in.
+export const bubbleVariants = {
+  hidden: { opacity: 0, y: 10, scale: 0.92 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: springs.snappy },
+};
+
 // as `whileTap` directly: <motion.div whileTap={tapScale}>.
 export const tapScale = { scale: 0.96, transition: springs.snappy };
 
