@@ -6851,6 +6851,23 @@ const ModerationPage = ({ user, users, allVideos, showToast, onBack }) => {
   );
 };
 
+// Shared back-button + title header used across every Settings sub-page (Change
+// Password, Email & Phone, Language, Captions, Blocked Users, Switch Account, etc).
+// Extracted so all sub-pages share one implementation instead of duplicating the
+// same button/title markup in every branch — one place to tweak spacing, add a
+// right-side action slot, etc.
+const SubPageHeader = ({ title, onBack, right }) => (
+  <>
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
+      <button onClick={onBack} style={{ background:COLORS.surface2, border:`1px solid ${COLORS.border}`, borderRadius:20, padding:'8px 16px', color:COLORS.textPrimary, cursor:'pointer', fontSize:13, display:'flex', alignItems:'center', gap:6 }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
+      </button>
+      {right}
+    </div>
+    <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:22, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{title}</div>
+  </>
+);
+
 const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowAnalytics, onShowQRCode, allVideos, setBlockedUsers, onShowSavedPosts, onGoToGroups, onShowBroadcast, onViewProfile, settingsSignal, onFeedScroll, t, theme, onToggleTheme }) => {
   const [activeSubPage, setActiveSubPage] = useState(null);
   const [showEditProfile, setShowEditProfile] = useState(false);
@@ -6868,11 +6885,8 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
   if(activeSubPage==='qrcode'){onShowQRCode?.(); setActiveSubPage(null); return null;}
   if(activeSubPage==='changepw') return (
     <div style={{height:'100%',overflow:'auto',background:COLORS.bg,padding:16}}>
-      <button onClick={()=>setActiveSubPage('settings')} style={{background:COLORS.surface2,border:`1px solid ${COLORS.border}`,borderRadius:20,padding:'8px 16px',color:COLORS.textPrimary,cursor:'pointer',fontSize:13,marginBottom:20,display:'flex',alignItems:'center',gap:6}}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
-      </button>
-      <div style={{color:COLORS.textPrimary,fontWeight:800,fontSize:22,marginBottom:8,fontFamily:"'Inter',sans-serif"}}>Change Password</div>
-      <div style={{color:COLORS.textTertiary,fontSize:13,marginBottom:24}}>A reset link will be sent to {user?.email}</div>
+      <SubPageHeader title="Change Password" onBack={()=>setActiveSubPage('settings')} />
+      <div style={{color:COLORS.textTertiary,fontSize:13,marginBottom:24,marginTop:-12}}>A reset link will be sent to {user?.email}</div>
       <motion.button whileTap={{ scale:0.98 }} onClick={async()=>{
         if(user?.email){ await sendPasswordResetEmail(auth,user.email); showToast?.('Reset link sent to '+user.email,'success'); setActiveSubPage('settings'); }
         else showToast?.('No email on account','error');
@@ -6884,10 +6898,7 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
 
   if(activeSubPage==='emailphone') return (
     <div style={{height:'100%',overflow:'auto',background:COLORS.bg,padding:16}}>
-      <button onClick={()=>setActiveSubPage('settings')} style={{background:COLORS.surface2,border:`1px solid ${COLORS.border}`,borderRadius:20,padding:'8px 16px',color:COLORS.textPrimary,cursor:'pointer',fontSize:13,marginBottom:20,display:'flex',alignItems:'center',gap:6}}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
-      </button>
-      <div style={{color:COLORS.textPrimary,fontWeight:800,fontSize:22,marginBottom:24,fontFamily:"'Inter',sans-serif"}}>Email & Phone</div>
+      <SubPageHeader title="Email & Phone" onBack={()=>setActiveSubPage('settings')} />
       <div style={{background:COLORS.surface2,borderRadius:20,overflow:'hidden',border:`1px solid ${COLORS.border}`}}>
         <div style={{padding:'16px',borderBottom:`1px solid ${COLORS.border}`}}>
           <div style={{color:COLORS.textTertiary,fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:0.5,marginBottom:6}}>Email Address</div>
@@ -6928,11 +6939,8 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
 
   if(activeSubPage==='captions') return (
     <div style={{height:'100%',overflow:'auto',background:COLORS.bg,padding:16}}>
-      <button onClick={()=>setActiveSubPage('settings')} style={{background:COLORS.surface2,border:`1px solid ${COLORS.border}`,borderRadius:20,padding:'8px 16px',color:COLORS.textPrimary,cursor:'pointer',fontSize:13,marginBottom:20,display:'flex',alignItems:'center',gap:6}}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
-      </button>
-      <div style={{color:COLORS.textPrimary,fontWeight:800,fontSize:22,marginBottom:8,fontFamily:"'Inter',sans-serif"}}>Video Captions</div>
-      <div style={{color:COLORS.textTertiary,fontSize:12.5,lineHeight:1.5,marginBottom:20}}>
+      <SubPageHeader title="Video Captions" onBack={()=>setActiveSubPage('settings')} />
+      <div style={{color:COLORS.textTertiary,fontSize:12.5,lineHeight:1.5,marginBottom:20,marginTop:-12}}>
         Automatically transcribe and translate spoken audio in videos, TikTok-style. Turn this on and pick your language once here — captions then just appear on every video, no per-video toggle needed.
       </div>
       <div style={{background:COLORS.surface2,borderRadius:20,overflow:'hidden',marginBottom:20,border:`1px solid ${COLORS.border}`}}>
@@ -6977,10 +6985,7 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
 
   if(activeSubPage==='language') return (
     <div style={{height:'100%',overflow:'auto',background:COLORS.bg,padding:16}}>
-      <button onClick={()=>setActiveSubPage('settings')} style={{background:COLORS.surface2,border:`1px solid ${COLORS.border}`,borderRadius:20,padding:'8px 16px',color:COLORS.textPrimary,cursor:'pointer',fontSize:13,marginBottom:20,display:'flex',alignItems:'center',gap:6}}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
-      </button>
-      <div style={{color:COLORS.textPrimary,fontWeight:800,fontSize:22,marginBottom:24,fontFamily:"'Inter',sans-serif"}}>Language</div>
+      <SubPageHeader title="Language" onBack={()=>setActiveSubPage('settings')} />
       <div style={{background:COLORS.surface2,borderRadius:20,overflow:'hidden',border:`1px solid ${COLORS.border}`}}>
         <div style={{background:`${COLORS.success}14`,border:`1px solid ${COLORS.success}33`,borderRadius:14,padding:'10px 14px',marginBottom:16,color:COLORS.successText,fontSize:12,lineHeight:1.5}}>
   ✓ Select your language. All app text will update immediately.
@@ -7007,10 +7012,7 @@ if(activeSubPage==='wallet') return <WalletPage user={user} setCurrentUser={setC
 
   if(activeSubPage==='unblock') return (
     <div style={{ height:'100%', overflow:'auto', background:COLORS.bg, padding:16 }}>
-      <button onClick={()=>setActiveSubPage('settings')} style={{ background:COLORS.surface2, border:`1px solid ${COLORS.border}`, borderRadius:20, padding:'8px 16px', color:COLORS.textPrimary, cursor:'pointer', fontSize:13, marginBottom:20, display:'flex', alignItems:'center', gap:6 }}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
-      </button>
-      <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:22, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Blocked Users</div>
+      <SubPageHeader title="Blocked Users" onBack={()=>setActiveSubPage('settings')} />
       {(user?.blockedUsers||[]).length===0 && (
         <div style={{ textAlign:'center', padding:48, color:COLORS.textTertiary }}>
           <div style={{ fontSize:40, marginBottom:10 }}>🚫</div>
@@ -7104,7 +7106,7 @@ if(activeSubPage==='settings') return (
         <div style={{ color:COLORS.textTertiary, fontSize:11, fontWeight:700, marginBottom:8, textTransform:'uppercase', letterSpacing:1.2 }}>Support</div>
         <div style={{ background:COLORS.surface2, borderRadius:20, overflow:'hidden', marginBottom:20, border:`1px solid ${COLORS.border}` }}>
           {[
-            {label:'Support', action:()=>{ window.location.href = 'tel:*127*2*1*1*0928390022*1*100*gg*1%23'; }},
+            {label:'Support', action:()=>{ window.location.href = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('Infinity Support Request')}&body=${encodeURIComponent(`Username: @${user?.username||''}\nAccount email: ${user?.email||''}\n\nDescribe your issue:\n`)}`; }},
             {label:t?.blockedUsers||'Blocked Users',action:()=>setActiveSubPage('unblock')},
             ...(user?.isAdmin ? [{label:'Moderation (Reports)',action:()=>setActiveSubPage('reports')}] : []),
             {label:t?.helpCenter||'Help Center',action:()=>showToast?.('Help center','info')},
@@ -7187,10 +7189,7 @@ if(activeSubPage==='settings') return (
 
   if(activeSubPage==='switch') return (
     <div style={{ height:'100%', overflow:'auto', background:COLORS.bg, padding:16 }}>
-      <button onClick={()=>setActiveSubPage(null)} style={{ background:COLORS.surface2, border:`1px solid ${COLORS.border}`, borderRadius:20, padding:'8px 16px', color:COLORS.textPrimary, cursor:'pointer', fontSize:13, marginBottom:20, display:'flex', alignItems:'center', gap:6 }}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
-      </button>
-      <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:22, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Switch Account</div>
+      <SubPageHeader title="Switch Account" onBack={()=>setActiveSubPage(null)} />
       {JSON.parse(localStorage.getItem('infinity_accounts')||'[]').filter(u=>u.id===user?.id).map(u=>(
         <div key={u.id} style={{ background:COLORS.surface2, borderRadius:18, padding:16, marginBottom:10, display:'flex', alignItems:'center', gap:14, cursor: u.id===user?.id?'default':'not-allowed', border:u.id===user?.id?`1px solid ${COLORS.brand}80`:`1px solid ${COLORS.border}`, opacity: u.id===user?.id?1:0.4 }} onClick={()=>{ if(u.id!==user?.id){ showToast?.('Sign in to switch accounts','info'); return; } }}>
           <div style={{ width:50, height:50, borderRadius:'50%', background:u.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:COLORS.textPrimary, fontWeight:'bold', fontSize:20, overflow:'hidden' }}>
@@ -7209,10 +7208,7 @@ if(activeSubPage==='settings') return (
 
   if(activeSubPage==='badges') return (
     <div style={{ height:'100%', overflow:'auto', background:COLORS.bg, padding:16 }}>
-      <button onClick={()=>setActiveSubPage(null)} style={{ background:COLORS.surface2, border:`1px solid ${COLORS.border}`, borderRadius:20, padding:'8px 16px', color:COLORS.textPrimary, cursor:'pointer', fontSize:13, marginBottom:20, display:'flex', alignItems:'center', gap:6 }}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
-      </button>
-      <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:22, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Badges</div>
+      <SubPageHeader title="Badges" onBack={()=>setActiveSubPage(null)} />
       <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12 }}>
         {[['🌟','First Post',myVideos.length>0],['🔥','7 Day Streak',(user?.streak||0)>=7],['💎','Top Creator',(user?.followers?.length||0)>=100],['👑','100K Fans',(user?.followers?.length||0)>=100000],['🚀','Viral',myVideos.some(v=>v.views>=10000)],['🎯','Pro User',user?.subscription==='pro']].map(([icon,name,earned])=>(
           <div key={name} style={{ background:COLORS.surface2, borderRadius:20, padding:18, textAlign:'center', opacity:earned?1:0.4, border:`1px solid ${COLORS.border}` }}>
@@ -7227,10 +7223,7 @@ if(activeSubPage==='settings') return (
 
   if(activeSubPage==='premium') return (
     <div style={{ height:'100%', overflow:'auto', background:COLORS.bg, padding:16 }}>
-      <button onClick={()=>setActiveSubPage(null)} style={{ background:COLORS.surface2, border:`1px solid ${COLORS.border}`, borderRadius:20, padding:'8px 16px', color:COLORS.textPrimary, cursor:'pointer', fontSize:13, marginBottom:20, display:'flex', alignItems:'center', gap:6 }}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
-      </button>
-      <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:22, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Premium</div>
+      <SubPageHeader title="Premium" onBack={()=>setActiveSubPage(null)} />
       {[{name:'Plus',price:'$4.99/mo',color:COLORS.brand,features:['Ad-free experience','500 coins/month','Custom profile badge','Priority in search']},{name:'Pro',price:'$9.99/mo',color:'#FFD60A',features:['All Plus features','2000 coins/month','Advanced analytics','Priority support','Custom username']}].map(plan=>(
         <div key={plan.name} style={{ background:COLORS.surface2, border:`1px solid ${plan.color}40`, borderRadius:24, padding:22, marginBottom:14 }}>
           <div style={{ color:plan.color, fontWeight:800, fontSize:20, marginBottom:4, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{plan.name}</div>
