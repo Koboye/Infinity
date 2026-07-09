@@ -1656,6 +1656,10 @@ const GlobalStyles = () => (
     @keyframes tabPop{0%{transform:scaleX(0)}100%{transform:scaleX(1)}}
     @keyframes storyRing{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
     @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+    @keyframes shakeX{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(3px)}}
+    @keyframes authOrb1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(18px,-24px) scale(1.08)}}
+    @keyframes authOrb2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-16px,20px) scale(1.05)}}
+    @keyframes logoFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
     @keyframes notifBar{0%{width:100%}100%{width:0%}}
     @keyframes fadeIn{from{opacity:0}to{opacity:1}}
     @keyframes slideInLeft{from{transform:translateX(-100%)}to{transform:translateX(0)}}
@@ -10292,6 +10296,290 @@ const generateUsername = (seedText) => {
   return candidate;
 };
 
+/* ─────────────── AUTH — ICONOGRAPHY ───────────────
+   Small, dependency-free SVG icons used only by the auth flow. Kept local to
+   this section (rather than a shared icon file) since nothing else in the
+   app currently references them. */
+const AuthGoogleMark = ({ size = 20 }) => (
+  <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden="true">
+    <path fill="#4285F4" d="M45.12 24.5c0-1.56-.14-3.06-.4-4.5H24v8.51h11.84c-.51 2.75-2.06 5.08-4.39 6.64v5.52h7.11c4.16-3.83 6.56-9.47 6.56-16.17z"/>
+    <path fill="#34A853" d="M24 46c5.94 0 10.92-1.97 14.56-5.33l-7.11-5.52c-1.97 1.32-4.49 2.1-7.45 2.1-5.73 0-10.58-3.87-12.31-9.07H4.34v5.7C7.96 41.07 15.4 46 24 46z"/>
+    <path fill="#FBBC05" d="M11.69 28.18A13.96 13.96 0 0 1 10.9 24c0-1.45.25-2.86.69-4.18v-5.7H4.34A21.98 21.98 0 0 0 2 24c0 3.55.85 6.91 2.34 9.88l7.35-5.7z"/>
+    <path fill="#EA4335" d="M24 10.75c3.23 0 6.13 1.11 8.41 3.29l6.31-6.31C34.91 4.18 29.93 2 24 2 15.4 2 7.96 6.93 4.34 14.12l7.35 5.7c1.73-5.2 6.58-9.07 12.31-9.07z"/>
+  </svg>
+);
+const AuthMailIcon = ({ size = 18, color }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color || 'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <rect x="2" y="4" width="20" height="16" rx="3"/><path d="m22 7-8.97 6.02a2 2 0 0 1-2.06 0L2 7"/>
+  </svg>
+);
+const AuthLockIcon = ({ size = 18, color }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color || 'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <rect x="4" y="10.5" width="16" height="10.5" rx="2.5"/><path d="M7.5 10.5V7a4.5 4.5 0 0 1 9 0v3.5"/>
+  </svg>
+);
+const AuthUserIcon = ({ size = 18, color }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color || 'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <circle cx="12" cy="8" r="3.5"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/>
+  </svg>
+);
+const AuthEyeIcon = ({ size = 18, color, off }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color || 'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>
+    {off && <line x1="3" y1="21" x2="21" y2="3"/>}
+  </svg>
+);
+const AuthBackIcon = ({ size = 16, color, style }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color || 'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={style}>
+    <polyline points="15 18 9 12 15 6"/>
+  </svg>
+);
+const AuthAlertIcon = ({ size = 15, color }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color || 'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="13"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+  </svg>
+);
+const AuthCheckIcon = ({ size = 15, color }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color || 'currentColor'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <polyline points="20 6 9 17 4 12"/>
+  </svg>
+);
+const AuthSpinner = ({ size = 16, color = '#FFFFFF' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" style={{ animation:'spin 0.7s linear infinite' }} aria-hidden="true">
+    <circle cx="12" cy="12" r="9" stroke={color} strokeWidth="2.5" opacity="0.25" fill="none"/>
+    <path d="M21 12a9 9 0 0 0-9-9" stroke={color} strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+  </svg>
+);
+
+/* ─────────────── AUTH — SHARED PRIMITIVES ───────────────
+   A tiny, self-contained design kit for the auth flow: labeled inputs with
+   focus glow + error/shake state, a primary gradient button with a built-in
+   loading spinner, and inline banners — all pulling from the app's real
+   COLORS/RADIUS/TYPE/TRANSITION tokens so this reads as the same product as
+   the rest of Infinity, not a bolted-on login page. */
+const AuthField = ({ label, icon, error, rightElement, inputRef, ...inputProps }) => {
+  const [focused, setFocused] = useState(false);
+  return (
+    <div style={{ marginBottom: 14 }}>
+      {label && (
+        <div style={{ color:COLORS.textTertiary, fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:0.5, marginBottom:7 }}>
+          {label}
+        </div>
+      )}
+      <div style={{
+        display:'flex', alignItems:'center', gap:10,
+        background: COLORS.surfaceAlt,
+        border: `1.5px solid ${error ? COLORS.danger : (focused ? COLORS.brand : COLORS.border)}`,
+        borderRadius: RADIUS.md,
+        padding: '13px 14px',
+        boxShadow: focused ? `0 0 0 4px ${COLORS.brand}1A` : 'none',
+        transition: TRANSITION.fast,
+      }}>
+        {icon && <span style={{ display:'flex', color: focused ? COLORS.brand : COLORS.textTertiary, transition: TRANSITION.fast, flexShrink:0 }}>{icon}</span>}
+        <input
+          ref={inputRef}
+          {...inputProps}
+          onFocus={(e)=>{ setFocused(true); inputProps.onFocus?.(e); }}
+          onBlur={(e)=>{ setFocused(false); inputProps.onBlur?.(e); }}
+          style={{ flex:1, minWidth:0, background:'transparent', border:'none', outline:'none', color:COLORS.textPrimary, fontSize:14, fontWeight:500, fontFamily:'inherit' }}
+        />
+        {rightElement}
+      </div>
+    </div>
+  );
+};
+
+const AuthPrimaryButton = ({ children, loading, disabled, onClick, style }) => (
+  <motion.button
+    whileTap={!disabled && !loading ? tapScale : undefined}
+    onClick={onClick}
+    disabled={disabled || loading}
+    style={{
+      width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+      background: COLORS.gradient, border:'none', borderRadius: RADIUS.pill, padding:'15px',
+      color: COLORS.textOnBrand, fontWeight:700, fontSize:15, cursor: (disabled||loading) ? 'default' : 'pointer',
+      opacity: disabled ? 0.5 : 1, boxShadow: disabled ? 'none' : SHADOW.glow(COLORS.brand),
+      fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif",
+      transition: TRANSITION.fast, ...style,
+    }}
+  >
+    {loading && <AuthSpinner size={16} color={COLORS.textOnBrand} />}
+    {loading ? 'Please wait…' : children}
+  </motion.button>
+);
+
+const AuthGhostButton = ({ children, onClick, style, icon }) => (
+  <button
+    onClick={onClick}
+    style={{
+      width:'100%', background:'none', border:'none', color:COLORS.textTertiary, fontSize:13,
+      cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:6,
+      padding:'10px 0', fontFamily:'inherit', ...style,
+    }}
+  >
+    {icon}{children}
+  </button>
+);
+
+const AuthMethodButton = ({ icon, label, sub, onClick, disabled }) => (
+  <motion.button
+    whileTap={!disabled ? tapScale : undefined}
+    onClick={onClick}
+    disabled={disabled}
+    style={{
+      width:'100%', display:'flex', alignItems:'center', gap:12,
+      background: COLORS.surface, border:`1.5px solid ${COLORS.border}`, borderRadius: RADIUS.md,
+      padding:'13px 16px', cursor: disabled ? 'default' : 'pointer', opacity: disabled ? 0.5 : 1,
+      boxShadow: SHADOW.xs, transition: TRANSITION.fast, marginBottom:10,
+    }}
+  >
+    <span style={{ width:32, height:32, borderRadius:10, background:COLORS.surfaceAlt, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>{icon}</span>
+    <span style={{ textAlign:'left', flex:1 }}>
+      <div style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:14 }}>{label}</div>
+      {sub && <div style={{ color:COLORS.textTertiary, fontSize:11, marginTop:1 }}>{sub}</div>}
+    </span>
+    <AuthBackIcon size={14} color={COLORS.textTertiary} style={{ transform:'rotate(180deg)' }} />
+  </motion.button>
+);
+
+const AuthBanner = ({ type = 'error', children }) => {
+  if (!children) return null;
+  const tone = type === 'success'
+    ? { bg: `${COLORS.success}1A`, border: `${COLORS.success}4D`, text: COLORS.successText, Icon: AuthCheckIcon }
+    : { bg: `${COLORS.danger}1A`, border: `${COLORS.danger}4D`, text: COLORS.dangerText, Icon: AuthAlertIcon };
+  return (
+    <motion.div
+      key={String(children)}
+      initial={{ opacity:0, y:-4 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
+      style={{
+        display:'flex', alignItems:'flex-start', gap:8, background:tone.bg, border:`1px solid ${tone.border}`,
+        borderRadius: RADIUS.sm + 4, padding:'10px 14px', color:tone.text, fontSize:12.5, lineHeight:1.4,
+        marginBottom:12, animation:'shakeX 0.4s cubic-bezier(.36,.07,.19,.97)', fontWeight:500,
+      }}
+    >
+      <tone.Icon size={15} color={tone.text} />
+      <span style={{ flex:1 }}>{children}</span>
+    </motion.div>
+  );
+};
+
+const AuthDivider = ({ label }) => (
+  <div style={{ display:'flex', alignItems:'center', gap:10, margin:'18px 0' }}>
+    <div style={{ flex:1, height:1, background:COLORS.border }} />
+    <span style={{ color:COLORS.textTertiary, fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:0.6 }}>{label}</span>
+    <div style={{ flex:1, height:1, background:COLORS.border }} />
+  </div>
+);
+
+// Animated ambient background used behind every auth step for visual continuity —
+// two soft brand-colored orbs drifting slowly, purely decorative (pointer-events none).
+const AuthBackdrop = () => (
+  <div style={{ position:'absolute', inset:0, overflow:'hidden', pointerEvents:'none' }}>
+    <div style={{ position:'absolute', top:'-10%', left:'-15%', width:280, height:280, borderRadius:'50%', background:'radial-gradient(circle,rgba(11,95,255,0.16),transparent 70%)', animation:'authOrb1 9s ease-in-out infinite' }} />
+    <div style={{ position:'absolute', bottom:'-15%', right:'-15%', width:320, height:320, borderRadius:'50%', background:'radial-gradient(circle,rgba(236,72,153,0.10),transparent 70%)', animation:'authOrb2 11s ease-in-out infinite' }} />
+  </div>
+);
+
+// Six-box OTP entry — auto-advances focus as digits are typed, supports backspace
+// navigation and pasting a full 6-digit code in one go. Reports the joined string
+// back to the parent via onChange, same contract the old single <input> used.
+const AuthOtpInput = ({ value, onChange, error, disabled }) => {
+  const digits = value.split('').concat(Array(6).fill('')).slice(0, 6);
+  const refs = useRef([]);
+
+  const setDigit = (idx, char) => {
+    const next = digits.slice();
+    next[idx] = char;
+    onChange(next.join('').slice(0, 6));
+  };
+
+  const handleChange = (idx, raw) => {
+    const clean = raw.replace(/\D/g, '');
+    if (!clean) { setDigit(idx, ''); return; }
+    if (clean.length > 1) {
+      // Handles paste-into-single-box: distribute across remaining boxes.
+      const next = digits.slice();
+      clean.split('').slice(0, 6 - idx).forEach((c, i) => { next[idx + i] = c; });
+      onChange(next.join('').slice(0, 6));
+      const target = Math.min(idx + clean.length, 5);
+      refs.current[target]?.focus();
+      return;
+    }
+    setDigit(idx, clean);
+    if (idx < 5) refs.current[idx + 1]?.focus();
+  };
+
+  const handleKeyDown = (idx, e) => {
+    if (e.key === 'Backspace' && !digits[idx] && idx > 0) {
+      refs.current[idx - 1]?.focus();
+    }
+  };
+
+  const handlePaste = (e) => {
+    const text = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    if (!text) return;
+    e.preventDefault();
+    onChange(text);
+    setTimeout(() => refs.current[Math.min(text.length, 5)]?.focus(), 0);
+  };
+
+  return (
+    <div style={{ display:'flex', gap:8, justifyContent:'center' }} onPaste={handlePaste}>
+      {digits.map((d, idx) => (
+        <input
+          key={idx}
+          ref={el => { refs.current[idx] = el; }}
+          value={d}
+          disabled={disabled}
+          onChange={e => handleChange(idx, e.target.value)}
+          onKeyDown={e => handleKeyDown(idx, e)}
+          inputMode="numeric"
+          maxLength={1}
+          aria-label={`Digit ${idx + 1}`}
+          style={{
+            width:44, height:54, textAlign:'center', fontSize:22, fontWeight:800,
+            color:COLORS.textPrimary, background:COLORS.surfaceAlt,
+            border:`1.5px solid ${error ? COLORS.danger : (d ? COLORS.brand : COLORS.border)}`,
+            borderRadius:12, outline:'none', boxShadow: d ? `0 0 0 3px ${COLORS.brand}14` : 'none',
+            transition: TRANSITION.fast, fontFamily:'inherit',
+          }}
+        />
+      ))}
+    </div>
+  );
+};
+
+// mm:ss countdown, ticking once a second — used for both "code expires in…" and
+// the resend-code cooldown. Purely presentational; the parent owns the deadline.
+const useCountdown = (deadline) => {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const remainingMs = Math.max(0, (deadline || 0) - now);
+  const totalSec = Math.ceil(remainingMs / 1000);
+  const mm = String(Math.floor(totalSec / 60)).padStart(2, '0');
+  const ss = String(totalSec % 60).padStart(2, '0');
+  return { remainingMs, totalSec, label: `${mm}:${ss}` };
+};
+
+// Lightweight password strength read-out for the sign-up step — visual guidance
+// only, never blocks submission (the actual minimum is enforced server-side by
+// Firebase Auth's own 6-character rule, unchanged from before).
+const passwordStrength = (pw) => {
+  if (!pw) return { score: 0, label: '' };
+  let score = 0;
+  if (pw.length >= 6) score++;
+  if (pw.length >= 10) score++;
+  if (/[0-9]/.test(pw) && /[a-zA-Z]/.test(pw)) score++;
+  if (/[^a-zA-Z0-9]/.test(pw)) score++;
+  const labels = ['Too short', 'Weak', 'Fair', 'Good', 'Strong'];
+  return { score, label: labels[score] };
+};
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 /* ─────────────── AUTH SCREEN (REAL FIREBASE) ─────────────── */
 const AuthScreen = ({ onLogin }) => {
   const [isLogin, setIsLogin] = useState(true);
@@ -10313,6 +10601,17 @@ const AuthScreen = ({ onLogin }) => {
   const [pendingGoogleUser, setPendingGoogleUser] = useState(null);
   const [googleFullName, setGoogleFullName] = useState('');
   const [googleBirthdate, setGoogleBirthdate] = useState('');
+  // Presentation-only additions — password visibility + OTP resend cooldown.
+  const [showPassword, setShowPassword] = useState(false);
+  const [resendCooldownUntil, setResendCooldownUntil] = useState(0);
+  const otpCountdown = useCountdown(otpExpiry);
+  const resendCountdown = useCountdown(resendCooldownUntil);
+  const strength = useMemo(()=>passwordStrength(password), [password]);
+  const emailLooksInvalid = identifier.length > 3 && !EMAIL_RE.test(identifier);
+
+  useEffect(() => {
+    if (step === 'otp') setResendCooldownUntil(Date.now() + 180*1000);
+  }, [step]);
 
   const handleGoogleLogin = async () => {
     setLoading(true); setError('');
@@ -10435,299 +10734,371 @@ if(!result.user.emailVerified && !isNewAccount){
 
   const handleMethodSelect = m => {
     if(m.id==='google'){ handleGoogleLogin(); return; }
-    setSelectedMethod(m); setStep('credentials');
+    setSelectedMethod(m); setStep('credentials'); haptic('light');
   };
+
+  const handleResendOtp = async () => {
+    setLoading(true); setError('');
+    try {
+      await apiFetch('/api/auth/send-otp', {
+        method: 'POST',
+        body: JSON.stringify({ email: pendingCreds.email }),
+      });
+      setOtpExpiry(Date.now() + 10*60*1000);
+      setResendCooldownUntil(Date.now() + 180*1000);
+      setOtpInput('');
+    } catch(e) {
+      setError(e.message || 'Failed to resend code.');
+    }
+    setLoading(false);
+  };
+
+  const handleVerifyOtp = async () => {
+    if(Date.now() > otpExpiry){ setError('OTP expired. Please sign up again.'); return; }
+    if(otpInput.length !== 6){ setError('Enter the 6-digit code.'); return; }
+    setLoading(true); setError('');
+    try {
+      const data = await apiFetch('/api/auth/verify-otp', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: pendingCreds.email,
+          otp: otpInput,
+          password: pendingCreds.password,
+          username: pendingCreds.username,
+          fullName: pendingCreds.fullName,
+          birthdate: pendingCreds.birthdate,
+        }),
+      });
+      const result = await signInWithCustomToken(auth, data.customToken);
+      await sendEmailVerification(result.user).catch(()=>{});
+      const profile = await getUserProfile(result.user.uid);
+      if (profile) {
+        onLogin({ ...profile, id: result.user.uid });
+      } else {
+        const fallbackProfile = buildDefaultProfile(result.user.uid, {
+          username: pendingCreds.username,
+          fullName: pendingCreds.fullName,
+          email: pendingCreds.email,
+          birthdate: pendingCreds.birthdate || '',
+        });
+        onLogin(fallbackProfile);
+      }
+    } catch(e){
+      console.error('OTP verify error:', e.message);
+      setError(e.message || 'Account creation failed. Please try again.');
+    }
+    setLoading(false);
+  };
+
+  const handleFinishGoogleOnboarding = async () => {
+    setError('');
+    if(!googleFullName.trim()){ setError('Full name is required'); return; }
+    if(!googleBirthdate){ setError('Date of birth is required'); return; }
+    const ageMs = Date.now() - new Date(googleBirthdate).getTime();
+    if(ageMs < 13*365.25*24*60*60*1000){ setError('You must be at least 13 years old to sign up'); return; }
+    setLoading(true);
+    try {
+      const fbUser = pendingGoogleUser;
+      // Username is generated from their full name rather than asked for — retry
+      // a few times on the (rare) chance the generated handle is already taken.
+      let finalUsername = null;
+      for (let attempt = 0; attempt < 5 && !finalUsername; attempt++) {
+        const candidate = generateUsername(googleFullName.trim());
+        const existing = await getDocs(query(collection(db,'users'), where('usernameLower','==',candidate)));
+        if (existing.empty) finalUsername = candidate;
+      }
+      if (!finalUsername) { setError('Could not generate a username right now. Please try again.'); setLoading(false); return; }
+      await createUserProfile(fbUser.uid,{
+        username: finalUsername,
+        fullName: googleFullName.trim(),
+        email: fbUser.email||'',
+        birthdate: googleBirthdate,
+        avatarUrl: fbUser.photoURL||null,
+        avatarColor: pickAvatarColor(fbUser.uid),
+      });
+      const profile = await getUserProfile(fbUser.uid);
+      onLogin(profile ? {...profile, id:fbUser.uid} : buildDefaultProfile(fbUser.uid, {
+        username: finalUsername, fullName: googleFullName.trim(), email: fbUser.email||'',
+      }));
+    } catch(e){
+      setError(e.message || 'Could not finish setting up your account.');
+      setLoading(false);
+    }
+  };
+
+  const cardShell = (content, { maxWidth = 340, withBack = false, onBack } = {}) => (
+    <div style={{ height:'100%', position:'relative', display:'flex', alignItems:'center', justifyContent:'center', padding:24, background:COLORS.bg, overflow:'auto' }}>
+      <AuthBackdrop />
+      <div style={{ width:'100%', maxWidth, position:'relative' }}>
+        {withBack && (
+          <button onClick={onBack} style={{ background:'none', border:'none', color:COLORS.textSecondary, marginBottom:20, cursor:'pointer', fontSize:14, display:'flex', alignItems:'center', gap:6, padding:0, fontFamily:'inherit', fontWeight:600 }}>
+            <AuthBackIcon /> Back
+          </button>
+        )}
+        {content}
+      </div>
+    </div>
+  );
 
   if(step==='guest') return (
     <GuestFeed onSignIn={()=>setStep('method')} />
   );
 
-  if(step==='google_onboarding') return (
-    <div style={{ height:'100%', display:'flex', alignItems:'center', justifyContent:'center', padding:24, background:COLORS.bg }}>
-      <div style={{ width:'100%', maxWidth:340 }}>
-        <div style={{ background:COLORS.surface, borderRadius:24, padding:24, border:`1px solid ${COLORS.border}`, boxShadow:'0 4px 20px rgba(30,27,46,0.06)' }}>
-          <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:20 }}>
-            {pendingGoogleUser?.photoURL
-              ? <img loading="lazy" decoding="async" src={pendingGoogleUser.photoURL} alt="" style={{ width:52, height:52, borderRadius:16, objectFit:'cover' }} />
-              : <div style={{ width:52, height:52, borderRadius:16, background:`${COLORS.brand}22`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:28 }}>🌐</div>}
-            <div>
-              <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:16, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Finish setting up</div>
-              <div style={{ color:COLORS.textTertiary, fontSize:12 }}>{pendingGoogleUser?.email}</div>
-            </div>
-          </div>
-          <div style={{ color:COLORS.textSecondary, fontSize:13, lineHeight:1.5, marginBottom:16 }}>
-            Almost done — confirm a few details before we create your account.
-          </div>
-          {error && <div style={{background:`${COLORS.danger}1A`,border:`1px solid ${COLORS.danger}4D`,borderRadius:12,padding:'10px 14px',color:COLORS.dangerText,fontSize:12,marginBottom:12}}>{error}</div>}
-          <input placeholder="Full Name" value={googleFullName} onChange={e=>setGoogleFullName(e.target.value)} style={{ width:'100%', background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:14, padding:'13px 16px', color:COLORS.textPrimary, marginBottom:10, outline:'none', fontSize:14, boxSizing:'border-box' }} />
-          <div style={{marginBottom:16}}>
-            <div style={{color:COLORS.textTertiary,fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:0.5,marginBottom:7}}>Date of Birth *</div>
-            <InlineDateSelect value={googleBirthdate} onChange={setGoogleBirthdate} maxYear={new Date().getFullYear()-13} minYear={new Date().getFullYear()-100} />
-            <div style={{color:COLORS.textTertiary,fontSize:11,marginTop:6}}>You must be at least 13 years old.</div>
-          </div>
-          <button onClick={async()=>{
-            setError('');
-            if(!googleFullName.trim()){ setError('Full name is required'); return; }
-            if(!googleBirthdate){ setError('Date of birth is required'); return; }
-            const ageMs = Date.now() - new Date(googleBirthdate).getTime();
-            if(ageMs < 13*365.25*24*60*60*1000){ setError('You must be at least 13 years old to sign up'); return; }
-            setLoading(true);
-            try {
-              const fbUser = pendingGoogleUser;
-              // Username is generated from their full name rather than asked for — retry
-              // a few times on the (rare) chance the generated handle is already taken.
-              let finalUsername = null;
-              for (let attempt = 0; attempt < 5 && !finalUsername; attempt++) {
-                const candidate = generateUsername(googleFullName.trim());
-                const existing = await getDocs(query(collection(db,'users'), where('usernameLower','==',candidate)));
-                if (existing.empty) finalUsername = candidate;
-              }
-              if (!finalUsername) { setError('Could not generate a username right now. Please try again.'); setLoading(false); return; }
-              await createUserProfile(fbUser.uid,{
-                username: finalUsername,
-                fullName: googleFullName.trim(),
-                email: fbUser.email||'',
-                birthdate: googleBirthdate,
-                avatarUrl: fbUser.photoURL||null,
-                avatarColor: pickAvatarColor(fbUser.uid),
-              });
-              const profile = await getUserProfile(fbUser.uid);
-              onLogin(profile ? {...profile, id:fbUser.uid} : buildDefaultProfile(fbUser.uid, {
-                username: finalUsername, fullName: googleFullName.trim(), email: fbUser.email||'',
-              }));
-            } catch(e){
-              setError(e.message || 'Could not finish setting up your account.');
-              setLoading(false);
-            }
-          }} disabled={loading} style={{ width:'100%', background:COLORS.gradient, border:'none', borderRadius:24, padding:15, color:'white', fontWeight:700, cursor:'pointer', fontSize:15, opacity:loading?0.6:1, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>
-            {loading?'Creating account...':'Create Account'}
-          </button>
-          <button onClick={async()=>{ await signOut(auth).catch(()=>{}); setPendingGoogleUser(null); setStep('method'); setError(''); }} style={{ width:'100%', background:'none', border:'none', color:COLORS.textTertiary, fontSize:13, cursor:'pointer', marginTop:10, textDecoration:'underline' }}>
-            Cancel
-          </button>
+  if(step==='google_onboarding') return cardShell(
+    <motion.div variants={pageVariants} initial="hidden" animate="visible" exit="exit"
+      style={{ background:COLORS.surface, borderRadius:RADIUS.xl, padding:24, border:`1px solid ${COLORS.border}`, boxShadow:SHADOW.raised }}>
+      <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:20 }}>
+        {pendingGoogleUser?.photoURL
+          ? <img loading="lazy" decoding="async" src={pendingGoogleUser.photoURL} alt="" style={{ width:52, height:52, borderRadius:16, objectFit:'cover' }} />
+          : <div style={{ width:52, height:52, borderRadius:16, background:`${COLORS.brand}1A`, display:'flex', alignItems:'center', justifyContent:'center' }}><AuthUserIcon size={24} color={COLORS.brand} /></div>}
+        <div>
+          <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:17, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Finish setting up</div>
+          <div style={{ color:COLORS.textTertiary, fontSize:12 }}>{pendingGoogleUser?.email}</div>
         </div>
       </div>
-    </div>
+      <div style={{ color:COLORS.textSecondary, fontSize:13, lineHeight:1.5, marginBottom:18 }}>
+        Almost done — confirm a few details before we create your account.
+      </div>
+      <AnimatePresence mode="wait"><AuthBanner type="error">{error}</AuthBanner></AnimatePresence>
+      <AuthField label="Full Name" icon={<AuthUserIcon size={16} />} placeholder="Your full name" value={googleFullName} onChange={e=>setGoogleFullName(e.target.value)} />
+      <div style={{ marginBottom:18 }}>
+        <div style={{ color:COLORS.textTertiary, fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:0.5, marginBottom:7 }}>Date of Birth *</div>
+        <InlineDateSelect value={googleBirthdate} onChange={setGoogleBirthdate} maxYear={new Date().getFullYear()-13} minYear={new Date().getFullYear()-100} />
+        <div style={{ color:COLORS.textTertiary, fontSize:11, marginTop:6 }}>You must be at least 13 years old.</div>
+      </div>
+      <AuthPrimaryButton loading={loading} onClick={handleFinishGoogleOnboarding}>Create Account</AuthPrimaryButton>
+      <AuthGhostButton style={{ marginTop:10, textDecoration:'underline' }} onClick={async()=>{ await signOut(auth).catch(()=>{}); setPendingGoogleUser(null); setStep('method'); setError(''); }}>Cancel</AuthGhostButton>
+    </motion.div>
   );
 
-  if(step==='method') return (
-    <div style={{ height:'100%', display:'flex', flexDirection:'column', background:COLORS.bg, overflow:'auto' }}>
-      <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'40px 24px 20px', position:'relative' }}>
-        <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse at 50% 30%,rgba(11,95,255,0.14),rgba(236,72,153,0.08),transparent 65%)' }} />
-        <div style={{ position:'relative', textAlign:'center', marginBottom:40 }}>
-          <img loading="lazy" decoding="async" src="https://res.cloudinary.com/dotvhzjmc/image/upload/znfksngv27boh3c1kxpv.png" alt="Infinity" style={{ width:80, height:80, borderRadius:24, objectFit:'cover', margin:'0 auto 20px', display:'block', boxShadow:'0 20px 60px rgba(11,95,255,0.25)' }} />
-          <p style={{ color:COLORS.textSecondary, fontSize:14, marginTop:10 }}>{isLogin?'Welcome back! 👋':'Join the community 🎉'}</p>
+  if(step==='method') return cardShell(
+    <motion.div variants={pageVariants} initial="hidden" animate="visible" exit="exit">
+      <div style={{ textAlign:'center', marginBottom:32 }}>
+        <img loading="lazy" decoding="async" src="https://res.cloudinary.com/dotvhzjmc/image/upload/znfksngv27boh3c1kxpv.png" alt="Infinity" style={{ width:76, height:76, borderRadius:22, objectFit:'cover', margin:'0 auto 18px', display:'block', boxShadow:SHADOW.glow(COLORS.brand), animation:'logoFloat 4s ease-in-out infinite' }} />
+        <div style={{ color:COLORS.textPrimary, fontWeight:900, fontSize:22, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>
+          {isLogin ? 'Welcome back' : 'Join Infinity'}
         </div>
-        <div style={{ position:'relative', width:'100%', maxWidth:340 }}>
-          <div style={{ color:COLORS.textTertiary, fontSize:11, marginBottom:14, textAlign:'center', fontWeight:700, textTransform:'uppercase', letterSpacing:1 }}>{isLogin?'Sign in with':'Sign up with'}</div>
-          {error && error.trim().length > 1 && <div style={{background:`${COLORS.danger}1A`,border:`1px solid ${COLORS.danger}4D`,borderRadius:12,padding:'10px 14px',color:COLORS.dangerText,fontSize:12,marginBottom:12,textAlign:'center'}}>{error}</div>}
-          <div style={{ display:'flex', flexWrap:'wrap', gap:8, justifyContent:'center', marginBottom:24 }}>
-            {LOGIN_METHODS.map(m=>(
-              <button key={m.id} onClick={()=>handleMethodSelect(m)} disabled={loading} style={{ display:'inline-flex', alignItems:'center', gap:6, background:COLORS.surface2, border:`1px solid ${COLORS.border}`, borderRadius:30, padding:'8px 16px', cursor:'pointer', fontSize:13, color:COLORS.textPrimary, transition:'all 0.15s', opacity:loading?0.5:1 }}>
-                <span style={{ fontSize:16 }}>{m.icon}</span>{m.name}
-              </button>
-            ))}
-          </div>
-          {loading && <div style={{textAlign:'center',color:COLORS.textSecondary,fontSize:13,marginBottom:12}}>⏳ Signing in...</div>}
-          <button onClick={()=>setIsLogin(!isLogin)} style={{ width:'100%', background:'none', border:'none', color:COLORS.brand, fontSize:14, cursor:'pointer', fontWeight:600 }}>
-            {isLogin?"Don't have an account? Sign up →":"Already have an account? Sign in →"}
-          </button>
-          {isLogin && (
-            <button onClick={()=>setStep('resetpw')} style={{ width:'100%', background:'none', border:'none', color:COLORS.textTertiary, fontSize:13, cursor:'pointer', marginTop:10, textDecoration:'underline' }}>
-              Forgot password?
-            </button>
-          )}
-          <button onClick={()=>setStep('guest')} style={{ width:'100%', background:'none', border:'none', color:COLORS.textTertiary, fontSize:13, cursor:'pointer', marginTop:10 }}>
-            👁 Browse without account
-          </button>
-        </div>
+        <p style={{ color:COLORS.textSecondary, fontSize:13.5, marginTop:6 }}>{isLogin ? 'Sign in to keep the conversation going' : "Create an account — it only takes a minute"}</p>
       </div>
-      <div style={{ padding:'0 24px 40px', textAlign:'center', color:COLORS.textDisabled, fontSize:11 }}>
+
+      {/* Segmented Sign in / Sign up toggle */}
+      <div style={{ position:'relative', display:'flex', background:COLORS.surfaceAlt, borderRadius:RADIUS.pill, padding:4, marginBottom:24, border:`1px solid ${COLORS.border}` }}>
+        <div style={{
+          position:'absolute', top:4, bottom:4, left: isLogin ? 4 : '50%', width:'calc(50% - 4px)',
+          background:COLORS.surface, borderRadius:RADIUS.pill, boxShadow:SHADOW.sm, transition:TRANSITION.base,
+        }} />
+        {[{k:true,label:'Sign in'},{k:false,label:'Sign up'}].map(opt=>(
+          <button key={opt.label} onClick={()=>{setIsLogin(opt.k); setError('');}} style={{
+            position:'relative', flex:1, border:'none', background:'none', padding:'10px 0', cursor:'pointer',
+            fontWeight:700, fontSize:13.5, fontFamily:'inherit', zIndex:1,
+            color: isLogin===opt.k ? COLORS.textPrimary : COLORS.textTertiary, transition:TRANSITION.fast,
+          }}>{opt.label}</button>
+        ))}
+      </div>
+
+      <AnimatePresence mode="wait"><AuthBanner type="error">{error}</AuthBanner></AnimatePresence>
+
+      {LOGIN_METHODS.map(m=>(
+        <AuthMethodButton
+          key={m.id}
+          disabled={loading}
+          onClick={()=>handleMethodSelect(m)}
+          icon={m.id==='google' ? <AuthGoogleMark size={18} /> : <AuthMailIcon size={17} color={COLORS.brand} />}
+          label={`Continue with ${m.name}`}
+          sub={m.id==='google' ? 'Fastest way in' : 'Use your email address'}
+        />
+      ))}
+
+      {loading && (
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, color:COLORS.textSecondary, fontSize:13, margin:'4px 0 8px' }}>
+          <AuthSpinner size={14} color={COLORS.brand} /> Signing in…
+        </div>
+      )}
+
+      {isLogin && (
+        <AuthGhostButton style={{ marginTop:4, textDecoration:'underline' }} onClick={()=>setStep('resetpw')}>Forgot password?</AuthGhostButton>
+      )}
+      <AuthGhostButton onClick={()=>setStep('guest')}>Browse without an account</AuthGhostButton>
+
+      <div style={{ marginTop:20, textAlign:'center', color:COLORS.textDisabled, fontSize:11, lineHeight:1.6 }}>
         By continuing, you agree to our{' '}
         <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color:COLORS.textTertiary, textDecoration:'underline' }}>Terms of Service</a>
         {' & '}
         <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color:COLORS.textTertiary, textDecoration:'underline' }}>Privacy Policy</a>
       </div>
-    </div>
-  );
-if(step==='otp') return (
-    <div style={{height:'100%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:24,background:COLORS.bg}}>
-      <div style={{textAlign:'center',maxWidth:300,width:'100%'}}>
-        <div style={{fontSize:64,marginBottom:16}}>📲</div>
-        <div style={{color:COLORS.textPrimary,fontWeight:800,fontSize:22,marginBottom:10,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>Enter OTP</div>
-        <div style={{color:COLORS.textSecondary,fontSize:14,lineHeight:1.6,marginBottom:20}}>
-          We sent a 6-digit code to <strong style={{color:COLORS.textPrimary}}>{pendingCreds?.email}</strong>
-        </div>
-        {error && <div style={{background:`${COLORS.danger}1A`,border:`1px solid ${COLORS.danger}4D`,borderRadius:12,padding:'10px 14px',color:COLORS.dangerText,fontSize:12,marginBottom:12}}>{error}</div>}
-        <input
-          placeholder="000000"
-          value={otpInput}
-          onChange={e=>setOtpInput(e.target.value.replace(/\D/g,'').slice(0,6))}
-          style={{width:'100%',background:COLORS.surfaceAlt,border:`1px solid ${COLORS.border}`,borderRadius:14,padding:'16px',color:COLORS.textPrimary,marginBottom:12,outline:'none',fontSize:28,boxSizing:'border-box',textAlign:'center',letterSpacing:12,fontWeight:800}}
-          maxLength={6}
-        />
-        <button onClick={async()=>{
-          if(Date.now() > otpExpiry){ setError('OTP expired. Please sign up again.'); return; }
-          if(otpInput.length !== 6){ setError('Enter the 6-digit code.'); return; }
-          setLoading(true); setError('');
-          try {
-            const data = await apiFetch('/api/auth/verify-otp', {
-              method: 'POST',
-              body: JSON.stringify({
-                email: pendingCreds.email,
-                otp: otpInput,
-                password: pendingCreds.password,
-                username: pendingCreds.username,
-                fullName: pendingCreds.fullName,
-                birthdate: pendingCreds.birthdate,
-              }),
-            });
-            const result = await signInWithCustomToken(auth, data.customToken);
-            await sendEmailVerification(result.user).catch(()=>{});
-            const profile = await getUserProfile(result.user.uid);
-            if (profile) {
-              onLogin({ ...profile, id: result.user.uid });
-            } else {
-              const fallbackProfile = buildDefaultProfile(result.user.uid, {
-                username: pendingCreds.username,
-                fullName: pendingCreds.fullName,
-                email: pendingCreds.email,
-                birthdate: pendingCreds.birthdate || '',
-              });
-              onLogin(fallbackProfile);
-            }
-          } catch(e){
-            console.error('OTP verify error:', e.message);
-            setError(e.message || 'Account creation failed. Please try again.');
-          }
-          setLoading(false);
-        }} disabled={loading||otpInput.length!==6} style={{width:'100%',background:COLORS.gradient,border:'none',borderRadius:24,padding:15,color:'white',fontWeight:700,cursor:'pointer',fontSize:15,marginBottom:12,opacity:(loading||otpInput.length!==6)?0.5:1,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>
-          {loading?'Verifying...':'Verify & Create Account'}
-        </button>
-        <button onClick={async()=>{
-  setLoading(true); setError('');
-  try {
-    await apiFetch('/api/auth/send-otp', {
-      method: 'POST',
-      body: JSON.stringify({ email: pendingCreds.email }),
-    });
-    setOtpExpiry(Date.now() + 10*60*1000);
-    setOtpInput('');
-  } catch(e) {
-    setError(e.message || 'Failed to resend code.');
-  }
-  setLoading(false);
-}} style={{background:'none',border:'none',color:COLORS.textTertiary,fontSize:13,cursor:'pointer',textDecoration:'underline',marginBottom:8}}>
-          Resend code
-        </button>
-        <br/>
-        <button onClick={()=>{setStep('credentials');setError('');setOtpInput('');}} style={{background:'none',border:'none',color:COLORS.textTertiary,fontSize:13,cursor:'pointer',textDecoration:'underline'}}>
-          Back
-        </button>
-      </div>
-    </div>
-  );
-  if(step==='resetpw') return (
-    <div style={{height:'100%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:24,background:COLORS.bg}}>
-      <div style={{textAlign:'center',maxWidth:300,width:'100%'}}>
-        <div style={{fontSize:64,marginBottom:16}}>🔑</div>
-        <div style={{color:COLORS.textPrimary,fontWeight:800,fontSize:22,marginBottom:10,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>Reset Password</div>
-        <div style={{color:COLORS.textSecondary,fontSize:14,lineHeight:1.6,marginBottom:20}}>Enter your email and we'll send a reset link.</div>
-        {error && <div style={{background:`${COLORS.danger}1A`,border:`1px solid ${COLORS.danger}4D`,borderRadius:12,padding:'10px 14px',color:COLORS.dangerText,fontSize:12,marginBottom:12}}>{error}</div>}
-        <input placeholder="Your email" value={identifier} onChange={e=>setIdentifier(e.target.value)} style={{width:'100%',background:COLORS.surfaceAlt,border:`1px solid ${COLORS.border}`,borderRadius:14,padding:'13px 16px',color:COLORS.textPrimary,marginBottom:12,outline:'none',fontSize:14,boxSizing:'border-box'}}/>
-        <button onClick={async()=>{
-          if(!identifier){setError('Enter your email'); return;}
-          setLoading(true); setError('');
-          try{
-            await sendPasswordResetEmail(auth, identifier);
-            setStep('resetpw_sent');
-          }catch(e){
-            setError('Could not send reset email: '+(e.message||''));
-          }
-          setLoading(false);
-        }} disabled={loading} style={{width:'100%',background:COLORS.gradient,border:'none',borderRadius:24,padding:15,color:'white',fontWeight:700,cursor:'pointer',fontSize:15,marginBottom:12,opacity:loading?0.6:1,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>
-          {loading?'Sending...':'Send Reset Link'}
-        </button>
-        <button onClick={()=>{setStep('method');setError('');}} style={{background:'none',border:'none',color:COLORS.textTertiary,fontSize:13,cursor:'pointer',textDecoration:'underline'}}>Back to sign in</button>
-      </div>
-    </div>
+    </motion.div>
   );
 
-  if(step==='resetpw_sent') return (
-    <div style={{height:'100%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:24,background:COLORS.bg}}>
-      <div style={{textAlign:'center',maxWidth:300}}>
-        <div style={{fontSize:64,marginBottom:16}}>📬</div>
-        <div style={{color:COLORS.textPrimary,fontWeight:800,fontSize:22,marginBottom:10,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>Check your inbox</div>
-        <div style={{color:COLORS.textSecondary,fontSize:14,lineHeight:1.6,marginBottom:28}}>We sent a password reset link to <strong style={{color:COLORS.textPrimary}}>{identifier}</strong>.</div>
-        <button onClick={()=>{setStep('method');setError('');}} style={{width:'100%',background:COLORS.gradient,border:'none',borderRadius:24,padding:15,color:'white',fontWeight:700,cursor:'pointer',fontSize:15,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>Back to Sign In →</button>
+  if(step==='otp') return cardShell(
+    <motion.div variants={pageVariants} initial="hidden" animate="visible" exit="exit" style={{ textAlign:'center' }}>
+      <div style={{ width:64, height:64, borderRadius:20, background:`${COLORS.brand}14`, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 18px' }}>
+        <AuthMailIcon size={28} color={COLORS.brand} />
       </div>
-    </div>
+      <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:21, marginBottom:8, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Enter verification code</div>
+      <div style={{ color:COLORS.textSecondary, fontSize:13.5, lineHeight:1.6, marginBottom:22 }}>
+        We sent a 6-digit code to <strong style={{ color:COLORS.textPrimary }}>{pendingCreds?.email}</strong>
+      </div>
+      <AnimatePresence mode="wait"><AuthBanner type="error">{error}</AuthBanner></AnimatePresence>
+      <div style={{ marginBottom:14 }}>
+        <AuthOtpInput value={otpInput} onChange={setOtpInput} error={!!error} disabled={loading} />
+      </div>
+      <div style={{ color: otpCountdown.totalSec < 60 ? COLORS.dangerText : COLORS.textTertiary, fontSize:12, fontWeight:600, marginBottom:18 }}>
+        {otpCountdown.remainingMs > 0 ? `Code expires in ${otpCountdown.label}` : 'Code expired — request a new one'}
+      </div>
+      <AuthPrimaryButton loading={loading} disabled={otpInput.length!==6} onClick={handleVerifyOtp} style={{ marginBottom:14 }}>
+        Verify & Create Account
+      </AuthPrimaryButton>
+      <button
+        onClick={handleResendOtp}
+        disabled={resendCountdown.remainingMs > 0 || loading}
+        style={{
+          background:'none', border:'none', fontSize:13, cursor: resendCountdown.remainingMs>0 ? 'default' : 'pointer',
+          textDecoration: resendCountdown.remainingMs>0 ? 'none' : 'underline', marginBottom:10, fontFamily:'inherit', fontWeight:600,
+          color: resendCountdown.remainingMs>0 ? COLORS.textDisabled : COLORS.brand,
+        }}
+      >
+        {resendCountdown.remainingMs > 0 ? `Resend code in ${resendCountdown.label}` : 'Resend code'}
+      </button>
+      <br/>
+      <AuthGhostButton style={{ textDecoration:'underline', width:'auto', margin:'0 auto' }} onClick={()=>{setStep('credentials');setError('');setOtpInput('');}}>Back</AuthGhostButton>
+    </motion.div>
   );
 
-if(step==='verify') return (
-    <div style={{height:'100%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:24,background:COLORS.bg}}>
-      <div style={{textAlign:'center',maxWidth:300}}>
-        <div style={{fontSize:64,marginBottom:16}}>📧</div>
-        <div style={{color:COLORS.textPrimary,fontWeight:800,fontSize:22,marginBottom:10,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>Verify your email</div>
-        <div style={{color:COLORS.textSecondary,fontSize:14,lineHeight:1.6,marginBottom:28}}>We sent a link to <strong style={{color:COLORS.textPrimary}}>{identifier}</strong>. Click it then come back to sign in.</div>
-        <button onClick={()=>{setStep('method');setIsLogin(true);}} style={{width:'100%',background:COLORS.gradient,border:'none',borderRadius:24,padding:15,color:'white',fontWeight:700,cursor:'pointer',fontSize:15,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"}}>Go to Sign In →</button>
+  if(step==='resetpw') return cardShell(
+    <motion.div variants={pageVariants} initial="hidden" animate="visible" exit="exit" style={{ textAlign:'center' }}>
+      <div style={{ width:64, height:64, borderRadius:20, background:`${COLORS.brand}14`, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 18px' }}>
+        <AuthLockIcon size={28} color={COLORS.brand} />
       </div>
-    </div>
+      <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:21, marginBottom:8, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Reset password</div>
+      <div style={{ color:COLORS.textSecondary, fontSize:13.5, lineHeight:1.6, marginBottom:20 }}>Enter your email and we'll send you a reset link.</div>
+      <AnimatePresence mode="wait"><AuthBanner type="error">{error}</AuthBanner></AnimatePresence>
+      <AuthField icon={<AuthMailIcon size={16} />} placeholder="Your email" type="email" autoCapitalize="none" value={identifier} onChange={e=>setIdentifier(e.target.value)} />
+      <AuthPrimaryButton loading={loading} style={{ marginBottom:12 }} onClick={async()=>{
+        if(!identifier){setError('Enter your email'); return;}
+        setLoading(true); setError('');
+        try{
+          await sendPasswordResetEmail(auth, identifier);
+          setStep('resetpw_sent');
+        }catch(e){
+          setError('Could not send reset email: '+(e.message||''));
+        }
+        setLoading(false);
+      }}>Send Reset Link</AuthPrimaryButton>
+      <AuthGhostButton style={{ textDecoration:'underline', width:'auto', margin:'0 auto' }} onClick={()=>{setStep('method');setError('');}}>Back to sign in</AuthGhostButton>
+    </motion.div>
   );
-return (
-    <div style={{ height:'100%', display:'flex', alignItems:'center', justifyContent:'center', padding:24, background:COLORS.bg }}>
-      <div style={{ width:'100%', maxWidth:340 }}>
-        <button onClick={()=>setStep('method')} style={{ background:'none', border:'none', color:COLORS.textSecondary, marginBottom:24, cursor:'pointer', fontSize:14, display:'flex', alignItems:'center', gap:6 }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
-        </button>
-        <div style={{ background:COLORS.surface, borderRadius:24, padding:24, border:`1px solid ${COLORS.border}`, boxShadow:'0 4px 20px rgba(30,27,46,0.06)' }}>
-          <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:24 }}>
-            <div style={{ width:52, height:52, borderRadius:16, background:`${selectedMethod?.color}22`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:28 }}>{selectedMethod?.icon}</div>
-            <div>
-              <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:16, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{isLogin?'Sign in':'Sign up'}</div>
-              <div style={{ color:COLORS.textTertiary, fontSize:12 }}>with {selectedMethod?.name}</div>
-            </div>
+
+  if(step==='resetpw_sent') return cardShell(
+    <motion.div variants={pageVariants} initial="hidden" animate="visible" exit="exit" style={{ textAlign:'center' }}>
+      <div style={{ width:64, height:64, borderRadius:20, background:`${COLORS.success}14`, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 18px' }}>
+        <AuthCheckIcon size={26} color={COLORS.successText} />
+      </div>
+      <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:21, marginBottom:8, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Check your inbox</div>
+      <div style={{ color:COLORS.textSecondary, fontSize:13.5, lineHeight:1.6, marginBottom:26 }}>We sent a password reset link to <strong style={{ color:COLORS.textPrimary }}>{identifier}</strong>.</div>
+      <AuthPrimaryButton onClick={()=>{setStep('method');setError('');}}>Back to Sign In</AuthPrimaryButton>
+    </motion.div>
+  );
+
+  if(step==='verify') return cardShell(
+    <motion.div variants={pageVariants} initial="hidden" animate="visible" exit="exit" style={{ textAlign:'center' }}>
+      <div style={{ width:64, height:64, borderRadius:20, background:`${COLORS.brand}14`, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 18px' }}>
+        <AuthMailIcon size={28} color={COLORS.brand} />
+      </div>
+      <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:21, marginBottom:8, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Verify your email</div>
+      <div style={{ color:COLORS.textSecondary, fontSize:13.5, lineHeight:1.6, marginBottom:26 }}>We sent a link to <strong style={{ color:COLORS.textPrimary }}>{identifier}</strong>. Click it, then come back to sign in.</div>
+      <AuthPrimaryButton onClick={()=>{setStep('method');setIsLogin(true);}}>Go to Sign In</AuthPrimaryButton>
+    </motion.div>
+  );
+
+  // Default / fallback step: 'credentials' — email + password sign in or sign up.
+  return cardShell(
+    <motion.div variants={pageVariants} initial="hidden" animate="visible" exit="exit">
+      <div style={{ background:COLORS.surface, borderRadius:RADIUS.xl, padding:24, border:`1px solid ${COLORS.border}`, boxShadow:SHADOW.raised }}>
+        <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:22 }}>
+          <div style={{ width:48, height:48, borderRadius:14, background:`${COLORS.brand}14`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+            <AuthMailIcon size={22} color={COLORS.brand} />
           </div>
-          {error && <div style={{background:`${COLORS.danger}1A`,border:`1px solid ${COLORS.danger}4D`,borderRadius:12,padding:'10px 14px',color:COLORS.dangerText,fontSize:12,marginBottom:12}}>{error}</div>}
-          {successMsg && <div style={{background:`${COLORS.success}1A`,border:`1px solid ${COLORS.success}4D`,borderRadius:12,padding:'10px 14px',color:COLORS.successText,fontSize:12,marginBottom:12}}>{successMsg}</div>}
-          {!isLogin && <>
-            <input placeholder="Full Name" value={fullName} onChange={e=>setFullName(e.target.value)} style={{ width:'100%', background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:14, padding:'13px 16px', color:COLORS.textPrimary, marginBottom:10, outline:'none', fontSize:14, boxSizing:'border-box' }} />
-            <div style={{marginBottom:10}}>
-              <div style={{color:COLORS.textTertiary,fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:0.5,marginBottom:7}}>Date of Birth *</div>
-              <InlineDateSelect value={birthdate} onChange={setBirthdate} maxYear={new Date().getFullYear()-13} minYear={new Date().getFullYear()-100} />
-              <div style={{color:COLORS.textTertiary,fontSize:11,marginTop:6}}>You must be at least 13 years old.</div>
-            </div>
-          </>}
-          <input placeholder="Email" value={identifier} onChange={e=>setIdentifier(e.target.value)} style={{ width:'100%', background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:14, padding:'13px 16px', color:COLORS.textPrimary, marginBottom:10, outline:'none', fontSize:14, boxSizing:'border-box' }} />
-          <input type="password" placeholder="Password" value={password} onChange={e=>setPassword(e.target.value)} style={{ width:'100%', background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:14, padding:'13px 16px', color:COLORS.textPrimary, marginBottom:14, outline:'none', fontSize:14, boxSizing:'border-box' }} />
-          <button onClick={handleSubmit} disabled={loading} style={{ width:'100%', background:COLORS.gradient, border:'none', borderRadius:24, padding:15, color:'white', fontWeight:700, cursor:'pointer', fontSize:15, opacity:loading?0.6:1, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>
-            {loading?'Please wait...':'Continue'}
-          </button>
-          {isLogin && (
-  <button
-    onClick={async () => {
-      if (!identifier) { setError('Enter your email first'); return; }
-      try {
-        await sendPasswordResetEmail(auth, identifier);
-        setError('');
-        setSuccessMsg('Password reset email sent! Check your inbox.');
-      } catch (e) {
-        setSuccessMsg('');
-        setError('Could not send reset email: ' + e.message);
-      }
-    }}
-    style={{
-      width: '100%', background: 'none', border: 'none',
-      color: COLORS.textTertiary, fontSize: 13,
-      cursor: 'pointer', marginTop: 10, textDecoration: 'underline'
-    }}
-  >
-    Forgot password?
-  </button>
-)}
+          <div>
+            <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:17, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{isLogin?'Sign in':'Create your account'}</div>
+            <div style={{ color:COLORS.textTertiary, fontSize:12 }}>with {selectedMethod?.name || 'Email'}</div>
+          </div>
         </div>
+
+        <AnimatePresence mode="wait"><AuthBanner type="error">{error}</AuthBanner></AnimatePresence>
+        <AnimatePresence mode="wait"><AuthBanner type="success">{successMsg}</AuthBanner></AnimatePresence>
+
+        {!isLogin && (
+          <>
+            <AuthField icon={<AuthUserIcon size={16} />} placeholder="Full Name" value={fullName} onChange={e=>setFullName(e.target.value)} />
+            <div style={{ marginBottom:14 }}>
+              <div style={{ color:COLORS.textTertiary, fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:0.5, marginBottom:7 }}>Date of Birth *</div>
+              <InlineDateSelect value={birthdate} onChange={setBirthdate} maxYear={new Date().getFullYear()-13} minYear={new Date().getFullYear()-100} />
+              <div style={{ color:COLORS.textTertiary, fontSize:11, marginTop:6 }}>You must be at least 13 years old.</div>
+            </div>
+          </>
+        )}
+
+        <AuthField
+          icon={<AuthMailIcon size={16} />}
+          placeholder="Email"
+          type="email"
+          autoCapitalize="none"
+          value={identifier}
+          onChange={e=>setIdentifier(e.target.value)}
+          error={emailLooksInvalid}
+        />
+        {emailLooksInvalid && (
+          <div style={{ color:COLORS.dangerText, fontSize:11.5, marginTop:-8, marginBottom:12, fontWeight:500 }}>That doesn't look like a valid email yet.</div>
+        )}
+
+        <AuthField
+          icon={<AuthLockIcon size={16} />}
+          placeholder="Password"
+          type={showPassword ? 'text' : 'password'}
+          value={password}
+          onChange={e=>setPassword(e.target.value)}
+          onKeyDown={e=>{ if(e.key==='Enter') handleSubmit(); }}
+          rightElement={
+            <button type="button" onClick={()=>setShowPassword(s=>!s)} style={{ background:'none', border:'none', cursor:'pointer', display:'flex', color:COLORS.textTertiary, padding:0 }} aria-label={showPassword ? 'Hide password' : 'Show password'}>
+              <AuthEyeIcon size={17} off={showPassword} />
+            </button>
+          }
+        />
+
+        {!isLogin && password.length > 0 && (
+          <div style={{ marginTop:-8, marginBottom:16 }}>
+            <div style={{ display:'flex', gap:4, marginBottom:5 }}>
+              {[0,1,2,3].map(i=>(
+                <div key={i} style={{
+                  flex:1, height:3, borderRadius:2,
+                  background: i < strength.score ? [COLORS.danger, COLORS.warning, COLORS.brand, COLORS.success][strength.score-1] : COLORS.surfaceAlt,
+                  transition: TRANSITION.fast,
+                }} />
+              ))}
+            </div>
+            <div style={{ fontSize:11, color:COLORS.textTertiary, fontWeight:600 }}>{strength.label} {password.length < 6 && '· at least 6 characters'}</div>
+          </div>
+        )}
+
+        <AuthPrimaryButton loading={loading} onClick={handleSubmit} style={{ marginTop:2 }}>
+          {isLogin ? 'Sign In' : 'Continue'}
+        </AuthPrimaryButton>
+
+        {isLogin && (
+          <AuthGhostButton style={{ marginTop:12, textDecoration:'underline' }} onClick={async () => {
+            if (!identifier) { setError('Enter your email first'); return; }
+            try {
+              await sendPasswordResetEmail(auth, identifier);
+              setError('');
+              setSuccessMsg('Password reset email sent! Check your inbox.');
+            } catch (e) {
+              setSuccessMsg('');
+              setError('Could not send reset email: ' + e.message);
+            }
+          }}>Forgot password?</AuthGhostButton>
+        )}
       </div>
-    </div>
+    </motion.div>
   );
 };
 /* ─────────────── NOTIFICATIONS — REAL-TIME INSTAGRAM/TELEGRAM GRADE ─────────────── */
