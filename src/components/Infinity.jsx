@@ -4897,7 +4897,7 @@ const FeedSkeletonCard = () => (
    so the Facebook-style card design went there instead, in place, rather than duplicating
    the feature across tabs. */
 
-const HomeFeed = ({ t, videos, videosLoading, videosError, onLike, onComment, onShare, onFollow, onMessage, onVoiceCall, onVideoCall, onDuet, onStitch, onSaveSound, followed, showToast, onWatchLive, currentUser, onViewProfile, onOpenSearch, onOpenNotifications, onOpenStories, onCreateStory, onViewStory, blockedUsers, onBlock, users, onOpenProfileDrawer, onFeedScroll, onOpenCamera, onOpenComposer, navVisible }) => {
+const HomeFeed = ({ t, videos, videosLoading, videosError, onLike, onComment, onShare, onFollow, onMessage, onVoiceCall, onVideoCall, onDuet, onStitch, onSaveSound, followed, showToast, onWatchLive, currentUser, onViewProfile, onOpenSearch, onOpenNotifications, onOpenStories, onCreateStory, onViewStory, blockedUsers, onBlock, users, onOpenProfileDrawer, onFeedScroll, onOpenCamera, onOpenComposer, navVisible, onRefresh }) => {
   const liveUserIds = useLiveStreamerIds(currentUser);
   // Inline "quick search" — filters users/posts in place instead of navigating to Discover.
   const [searchOpen, setSearchOpen] = useState(false);
@@ -4971,8 +4971,59 @@ const HomeFeed = ({ t, videos, videosLoading, videosError, onLike, onComment, on
     return sortByNewest(videos.filter(v=>!(blockedUsers||[]).includes(v.userId)));
   },[videos, blockedUsers]);
 
+  // ── Pull-to-refresh — standard mobile-feed gesture (Instagram/TikTok/X-style).
+  // Only engages when the scroll container is already at the very top (scrollTop
+  // === 0), so it never fights with normal scrolling further down the feed. Tracks
+  // the raw touch distance, applies resistance past the trigger threshold so it
+  // doesn't feel like it's pulling forever, and calls the real onRefresh (which
+  // re-fetches from Firestore) once released past the threshold.
+  const feedScrollRef = useRef(null);
+  const [pullDistance, setPullDistance] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+  const pullStartY = useRef(null);
+  const PULL_TRIGGER = 64;
+  const handlePullStart = (e) => {
+    if (refreshing || (feedScrollRef.current?.scrollTop || 0) > 0) { pullStartY.current = null; return; }
+    pullStartY.current = e.touches[0].clientY;
+  };
+  const handlePullMove = (e) => {
+    if (pullStartY.current == null || refreshing) return;
+    const delta = e.touches[0].clientY - pullStartY.current;
+    if (delta <= 0) { setPullDistance(0); return; }
+    // Resistance curve — the further you pull, the less additional distance you get,
+    // so it feels elastic rather than a 1:1 linear drag.
+    setPullDistance(Math.min(100, delta * 0.5));
+  };
+  const handlePullEnd = async () => {
+    if (pullStartY.current == null) return;
+    pullStartY.current = null;
+    if (pullDistance >= PULL_TRIGGER && !refreshing) {
+      setRefreshing(true);
+      haptic?.('light');
+      try { await onRefresh?.(); } finally {
+        setTimeout(() => { setRefreshing(false); setPullDistance(0); }, 350);
+      }
+    } else {
+      setPullDistance(0);
+    }
+  };
+
   return (
-    <div data-main-scroll="true" onScroll={onFeedScroll} style={{ height:'100%', overflowY:'auto', background:COLORS.bg, padding:'10px 14px max(74px, calc(58px + env(safe-area-inset-bottom)))' }}>
+    <div ref={feedScrollRef} data-main-scroll="true" onScroll={onFeedScroll}
+      onTouchStart={handlePullStart} onTouchMove={handlePullMove} onTouchEnd={handlePullEnd}
+      style={{ height:'100%', overflowY:'auto', background:COLORS.bg, padding:'10px 14px max(74px, calc(58px + env(safe-area-inset-bottom)))' }}>
+      {/* Pull-to-refresh indicator — grows/rotates with pull distance, then spins
+          in place once refreshing (real re-fetch via onRefresh, not decorative). */}
+      {(pullDistance > 0 || refreshing) && (
+        <div style={{ display:'flex', justifyContent:'center', alignItems:'center', height: refreshing ? 44 : Math.min(44, pullDistance), overflow:'hidden', transition: refreshing ? 'height 0.2s ease' : 'none', marginBottom: (refreshing || pullDistance > 0) ? 6 : 0 }}>
+          <div style={{
+            width:24, height:24, borderRadius:'50%', border:`2.5px solid ${COLORS.border}`, borderTopColor:COLORS.brand,
+            opacity: Math.min(1, (refreshing ? 1 : pullDistance / PULL_TRIGGER)),
+            transform: refreshing ? 'none' : `rotate(${pullDistance * 3}deg)`,
+            animation: refreshing ? 'spin 0.7s linear infinite' : 'none',
+          }} />
+        </div>
+      )}
       {/* Sticky header — masthead + search + notifications stay pinned while the feed
           scrolls beneath, instead of disappearing off the top like a page section.
           Solid COLORS.bg (not a translucent blur) so it reads correctly in both
@@ -12476,6 +12527,23 @@ const [blockedUsers, setBlockedUsers] = useState([]);
     });
     return ()=>unsub();
   },[isAuthed]);
+  // Manual resync for pull-to-refresh. The feed already updates live via the
+  // onSnapshot listener above, so this isn't strictly required to see new posts —
+  // but a manual pull is a gesture people expect and reach for, and this gives it a
+  // real round-trip (not just a decorative spinner) plus an explicit signal if the
+  // fetch fails (e.g. offline), rather than pulling and having nothing visibly happen.
+  const refreshFeed = useCallback(async () => {
+    if (!isAuthed) return;
+    try {
+      const q = query(collection(db,'videos'), orderBy('createdAt','desc'), limit(50));
+      const snap = await getDocs(q);
+      setVideos(sortByNewest(snap.docs.map(d=>({id:d.id,...d.data()}))));
+      setVideosError(false);
+    } catch (e) {
+      console.error('Manual feed refresh failed:', e);
+      setVideosError(true);
+    }
+  }, [isAuthed]);
 
   // Real-time users from Firestore. Same isAuthed gating — /users also requires
   // request.auth != null to read.
@@ -12810,7 +12878,7 @@ const handleMessage = uid => {
   onOpenSearch={()=>setShowDiscover(true)} onOpenNotifications={()=>setShowNotifications(true)} onOpenStories={()=>setShowStoriesPage(true)}
   onCreateStory={()=>setShowCreateStory(true)} onViewStory={(payload)=>setShowStoryViewer(payload)}
   onOpenProfileDrawer={()=>setShowProfileDrawer(true)} onFeedScroll={handleFeedScroll} navVisible={navVisible}
-  blockedUsers={blockedUsers} onBlock={handleBlockUser} users={users} onOpenCamera={()=>setShowCamera(true)} onOpenComposer={()=>setShowTextComposer(true)} />}
+  blockedUsers={blockedUsers} onBlock={handleBlockUser} users={users} onOpenCamera={()=>setShowCamera(true)} onOpenComposer={()=>setShowTextComposer(true)} onRefresh={refreshFeed} />}
             {activeTab==='infinity' && <InfinityPage t={t} onFeedScroll={handleFeedScroll} showToast={showToast} currentUser={currentUser} navVisible={navVisible}
   videos={videos} videosLoading={videosLoading} videosError={videosError} followed={followed} onFollow={toggleFollow} onViewProfile={handleViewProfile} onMessage={handleMessage}
   onShare={(v)=>setShowShareSheet(v)} users={users} blockedUsers={blockedUsers} onBlock={handleBlockUser}
