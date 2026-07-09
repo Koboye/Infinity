@@ -207,6 +207,42 @@ const CHAT_THEMES = [
 ];
 const getChatTheme = (id) => CHAT_THEMES.find(t => t.id === id) || CHAT_THEMES[0];
 
+// WhatsApp-style palette used specifically for the 'default' chat theme (i.e. a
+// conversation where no custom Chat Theme has been picked) — light-green sent
+// bubbles, white/dark received bubbles, the tan/near-black wallpaper, and the
+// grey→blue read-receipt ticks from the reference design. Picking any other
+// preset from CHAT_THEMES above still fully overrides these, same as before.
+const WHATSAPP_LIGHT = {
+  sentBubble: '#D9FDD3',
+  sentText: '#111B21',
+  wallpaperBg: '#E5DDD5',
+  wallpaperDoodle: 'rgba(0,0,0,0.06)',
+  tickRead: '#53BDEB',
+  tickUnread: '#8696A0',
+};
+const WHATSAPP_DARK = {
+  sentBubble: '#005C4B',
+  sentText: '#E9EDEF',
+  wallpaperBg: '#0B141A',
+  wallpaperDoodle: 'rgba(255,255,255,0.05)',
+  tickRead: '#53BDEB',
+  tickUnread: '#8696A0',
+};
+const getWhatsAppPalette = () => (getStoredTheme() === 'dark' ? WHATSAPP_DARK : WHATSAPP_LIGHT);
+// Low-opacity tiled doodle (leaves + circles) approximating WhatsApp's wallpaper
+// texture, built as a data-URI so it needs no extra asset file.
+const whatsappWallpaperPattern = (doodleColor) => `url("data:image/svg+xml,${encodeURIComponent(
+  `<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'>
+    <g fill='none' stroke='${doodleColor}' stroke-width='1.4'>
+      <circle cx='18' cy='18' r='6'/>
+      <path d='M55 12c8 2 10 10 6 16-4 6-14 4-14-4 0-6 6-8 8-12z'/>
+      <path d='M78 55c-6 4-6 12 0 16s14-2 12-9-8-9-12-7z'/>
+      <circle cx='30' cy='75' r='4'/>
+      <path d='M8 55l6 6-6 6-6-6z'/>
+    </g>
+  </svg>`
+)}")`;
+
 /* ─────────────── DISAPPEARING MESSAGES DURATIONS ───────────────
    Mirrors the standard 24h / 7d / 90d options. Value is seconds; 0 means off.
    The actual deletion is enforced server-side via a Firestore TTL policy on the
@@ -4751,20 +4787,21 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
             Amharic), translating the caption first via liveTranslate if it isn't
             already written in the chosen language. Icon-only — no "Read"/"Reading"
             text label, just the speaker glyph with an aria-label for accessibility.
-            Disabled/greyed out when there's no caption to read. */}
+            The whole control is only rendered when the post actually has caption
+            text to read — posts with no text render nothing here at all (no greyed
+            out placeholder taking up space in the action bar). */}
+        {video.description && (
         <div style={{ position:'relative', display:'flex', alignItems:'center', gap:6 }}>
           <button
-            onClick={(e)=>{ e.stopPropagation(); if (video.description) setShowReadLangMenu(v=>!v); }}
-            disabled={!video.description}
+            onClick={(e)=>{ e.stopPropagation(); setShowReadLangMenu(v=>!v); }}
             aria-label={readLang === 'auto' ? 'Choose read-aloud language' : `Reading in ${CAPTION_LANGUAGES.find(l=>l[2]===readLang)?.[1] || readLang} — tap to change language`}
             title="Read-aloud language"
             style={{
-              height:24, padding:'0 8px', borderRadius:12, border:'none', cursor: video.description ? 'pointer' : 'default',
+              height:24, padding:'0 8px', borderRadius:12, border:'none', cursor:'pointer',
               display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
               fontSize:10.5, fontWeight:800, letterSpacing:0.2,
               background: readLang !== 'auto' ? COLORS.brand : COLORS.surfaceAlt,
               color: readLang !== 'auto' ? '#fff' : COLORS.textTertiary,
-              opacity: video.description ? 1 : 0.4,
               transition:TRANSITION.fast,
             }}>
             {readLang === 'auto' ? 'Aa' : (CAPTION_LANGUAGES.find(l=>l[2]===readLang)?.[2] || readLang).toUpperCase()}
@@ -4792,12 +4829,11 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
           <motion.button
             whileTap={tapScale}
             onClick={toggleReadAloud}
-            disabled={isTranslatingRead || !video.description}
+            disabled={isTranslatingRead}
             aria-label={isReading ? 'Stop reading' : (isTranslatingRead ? 'Translating…' : 'Read post aloud')}
             style={{
               background:'none', border:'none', padding:8, margin:-8, display:'flex', alignItems:'center',
-              cursor: (isTranslatingRead || !video.description) ? 'default' : 'pointer', transition:TRANSITION.fast, borderRadius:10,
-              opacity: video.description ? 1 : 0.4,
+              cursor: isTranslatingRead ? 'default' : 'pointer', transition:TRANSITION.fast, borderRadius:10,
             }}>
             {isTranslatingRead ? (
               <div style={{ width:15, height:15, border:`2px solid ${COLORS.border}`, borderTop:`2px solid ${COLORS.brand}`, borderRadius:'50%', animation:'spin 0.8s linear infinite' }} />
@@ -4809,6 +4845,7 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
             )}
           </motion.button>
         </div>
+        )}
 
         {/* Like */}
         <motion.button whileTap={tapScale} onClick={toggleLike} onDoubleClick={()=>setShowLikes(true)} style={{ background:'none', border:'none', padding:8, margin:-8, display:'flex', alignItems:'center', gap:6, cursor:'pointer', transition:TRANSITION.fast, borderRadius:10 }}>
@@ -8238,8 +8275,34 @@ unsub = onSnapshot(q, (snap) => {
   // Computed once per render, used by the composer's send button/voice bubble AND
   // the message list below, so both stay in sync with whatever theme is active.
   const activeTheme = getChatTheme(chatThemeId);
-  const myBubbleBg = activeTheme.gradient || COLORS.gradient;
-  const myGlow = SHADOW.glow(activeTheme.accent || COLORS.brand);
+  // No custom Chat Theme picked → this conversation renders the WhatsApp-style
+  // default look (flat light-green sent bubbles, no glow/gradient) instead of the
+  // app's blue brand gradient. Picking any preset from the theme picker still
+  // fully overrides this, exactly as before.
+  const isDefaultChatTheme = !activeTheme.gradient;
+  const wa = getWhatsAppPalette();
+  const myBubbleBg = activeTheme.gradient || wa.sentBubble;
+  const myBubbleTextColor = isDefaultChatTheme ? wa.sentText : COLORS.textOnBrand;
+  const myGlow = isDefaultChatTheme ? 'none' : SHADOW.glow(activeTheme.accent || COLORS.brand);
+  const tickColor = (seen) => {
+    if (!isDefaultChatTheme) return seen ? (activeTheme.accent || COLORS.brand) : COLORS.textTertiary;
+    return seen ? wa.tickRead : wa.tickUnread;
+  };
+  // WhatsApp-style "TODAY" / "YESTERDAY" / date divider label for the pill shown
+  // between messages sent on different calendar days.
+  const dateDividerLabel = (date) => {
+    if (!date) return '';
+    const startOfDay = d => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const now = new Date();
+    const diffDays = Math.round((startOfDay(now) - startOfDay(date)) / 86400000);
+    if (diffDays === 0) return 'TODAY';
+    if (diffDays === 1) return 'YESTERDAY';
+    return date.toLocaleDateString([], { day:'numeric', month:'long', year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined });
+  };
+  // The message list actually rendered — either everything, or the in-thread
+  // search results. Computed once here instead of re-filtering three separate
+  // times in the JSX below.
+  const visibleMessages = threadSearch.trim() ? messages.filter(m=>m.text?.toLowerCase().includes(threadSearch.toLowerCase())) : messages;
 
   return (
     <div style={{height:'100%',display:'flex',flexDirection:'column',background:COLORS.bg}}>
@@ -8308,27 +8371,44 @@ unsub = onSnapshot(q, (snap) => {
               backgroundImage:`linear-gradient(${activeTheme.bgTint},${activeTheme.bgTint}), radial-gradient(${activeTheme.dotColor} 1px, transparent 1px)`,
               backgroundSize:'220% 220%, 18px 18px',
             } : {
-              flex:1,overflowY:'auto',padding:'16px',backgroundColor:COLORS.bg,
-              backgroundImage:`radial-gradient(${COLORS.border} 1px, transparent 1px)`,
-              backgroundSize:'18px 18px',
+              flex:1,overflowY:'auto',padding:'16px',backgroundColor:wa.wallpaperBg,
+              backgroundImage:whatsappWallpaperPattern(wa.wallpaperDoodle),
+              backgroundSize:'100px 100px',
             }}>
         {messages.length===0&&<div style={{textAlign:'center',padding:40,color:COLORS.textTertiary,fontSize:13}}>Start a conversation! 👋</div>}
-        {(threadSearch.trim() ? messages.filter(m=>m.text?.toLowerCase().includes(threadSearch.toLowerCase())) : messages).length===0 && threadSearch.trim() && (
+        {visibleMessages.length===0 && threadSearch.trim() && (
           <div style={{textAlign:'center',padding:40,color:COLORS.textTertiary,fontSize:13}}>No messages matching "{threadSearch}"</div>
         )}
-        {(threadSearch.trim() ? messages.filter(m=>m.text?.toLowerCase().includes(threadSearch.toLowerCase())) : messages).map(msg=>{
+        {visibleMessages.map((msg, msgIdx)=>{
+          // WhatsApp-style date divider — rendered once above the first message of
+          // each new calendar day, computed from this message's date vs. the one
+          // right before it in the (possibly search-filtered) visible list.
+          const prevMsg = visibleMessages[msgIdx - 1];
+          const showDateDivider = !!msg.ts && (!prevMsg?.ts || msg.ts.toDateString() !== prevMsg.ts.toDateString());
+          const dateDivider = showDateDivider ? (
+            <div key={`divider-${msg.id}`} style={{ display:'flex', justifyContent:'center', margin:'12px 0' }}>
+              <div style={{ background:COLORS.surface, color:COLORS.textTertiary, fontSize:11.5, fontWeight:700, letterSpacing:0.3, padding:'5px 14px', borderRadius:10, boxShadow:SHADOW.xs }}>
+                {dateDividerLabel(msg.ts)}
+              </div>
+            </div>
+          ) : null;
           if (msg.type === 'system') {
             return (
-              <motion.div key={msg.id} initial={{ opacity:0, scale:0.9 }} animate={{ opacity:1, scale:1 }} transition={durations.fast} style={{ display:'flex', justifyContent:'center', margin:'8px 0' }}>
-                <div style={{ background:COLORS.surfaceAlt, color:COLORS.textTertiary, fontSize:11, fontWeight:600, padding:'5px 13px', borderRadius:14, textAlign:'center', maxWidth:'85%', opacity:0.85 }}>
-                  {msg.text}
-                </div>
-              </motion.div>
+              <React.Fragment key={msg.id}>
+                {dateDivider}
+                <motion.div initial={{ opacity:0, scale:0.9 }} animate={{ opacity:1, scale:1 }} transition={durations.fast} style={{ display:'flex', justifyContent:'center', margin:'8px 0' }}>
+                  <div style={{ background:COLORS.surfaceAlt, color:COLORS.textTertiary, fontSize:11, fontWeight:600, padding:'5px 13px', borderRadius:14, textAlign:'center', maxWidth:'85%', opacity:0.85 }}>
+                    {msg.text}
+                  </div>
+                </motion.div>
+              </React.Fragment>
             );
           }
           const isMine = msg.from===currentUser?.id;
           return (
-            <motion.div key={msg.id}
+            <React.Fragment key={msg.id}>
+            {dateDivider}
+            <motion.div
               variants={bubbleVariants} initial="hidden" animate="visible"
               onTouchStart={()=>{ msgLongTimer.current=setTimeout(()=>{ haptic('heavy'); setShowMsgReactions(msg.id); },500); }}
               onTouchEnd={()=>clearTimeout(msgLongTimer.current)}
@@ -8345,7 +8425,7 @@ unsub = onSnapshot(q, (snap) => {
                   <div style={{fontSize:56, lineHeight:1, padding:'2px 4px'}}>{msg.text}</div>
                 )}
                 {msg.text && msg.type!=='sticker' && <div style={{background: msg.deleted ? COLORS.surfaceAlt : isMine?myBubbleBg:COLORS.surface, borderRadius:isMine?'18px 18px 4px 18px':'18px 18px 18px 4px',padding:'9px 14px',marginBottom:msg.mediaUrl?4:0, boxShadow: isMine ? myGlow : SHADOW.xs, border: isMine ? 'none' : `1px solid ${COLORS.border}` }}>
-  <span style={{color: msg.deleted ? COLORS.textTertiary : isMine?COLORS.textOnBrand:COLORS.textPrimary, fontSize:14, lineHeight:1.4, fontStyle: msg.deleted?'italic':'normal'}}>{msg.text}</span>
+  <span style={{color: msg.deleted ? COLORS.textTertiary : isMine?myBubbleTextColor:COLORS.textPrimary, fontSize:14, lineHeight:1.4, fontStyle: msg.deleted?'italic':'normal'}}>{msg.text}</span>
   {!msg.deleted && !isMine && <MessageTranslate text={msg.text} targetLang={currentUser?.language || 'en'} isMine={isMine} />}
 </div>}
                 <div style={{ color:COLORS.textTertiary, fontSize:10.5, marginTop:3, textAlign:isMine?'right':'left', paddingLeft:isMine?0:2, paddingRight:isMine?2:0, display:'flex', alignItems:'center', justifyContent:isMine?'flex-end':'flex-start', gap:3 }}>
@@ -8357,7 +8437,7 @@ unsub = onSnapshot(q, (snap) => {
   )}
   <span>{msg.ts ? msg.ts.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : ''}</span>
   {isMine && (
-    <span style={{ fontSize:12, color: msg.status==='seen' ? (activeTheme.accent || COLORS.brand) : COLORS.textTertiary, letterSpacing:-2 }}>
+    <span style={{ fontSize:12, color: tickColor(msg.status==='seen'), letterSpacing:-2 }}>
       {msg.status === 'sent' ? '✓' : '✓✓'}
     </span>
   )}
@@ -8428,6 +8508,7 @@ unsub = onSnapshot(q, (snap) => {
 }} style={{background:'none',border:'none',color:COLORS.textDisabled,fontSize:10,cursor:'pointer',padding:'0 2px',alignSelf:'flex-end',marginBottom:2}}>✕</button>
               )}
             </motion.div>
+            </React.Fragment>
           );
         })}
         {otherTyping && (
