@@ -887,9 +887,16 @@ const GroupCallOverlay = ({ groupId, groupName, callType, currentUser, users, sh
 };
 
 /* ─────────────── GROUP CHAT (v4 — like WhatsApp/Telegram groups) ─────────────── */
-const GroupChatPage = ({ currentUser, users, showToast, onBack }) => {
+// `embedded` lets InboxPage host this component directly inside its own unified
+// Chats list instead of only via GroupChatPage's own internal group-list screen.
+// When embedded, this component never renders its internal list — it either shows
+// a specific group (openGroupId) or the create-group flow (startInCreate), and any
+// "back" action hands control back to the caller via onBack instead of falling
+// back to the internal list.
+const GroupChatPage = ({ currentUser, users, showToast, onBack, embedded=false, openGroupId=null, startInCreate=false }) => {
   const [groups, setGroups] = useState([]);
-  const [showCreate, setShowCreate] = useState(false);
+  const [groupsLoaded, setGroupsLoaded] = useState(false);
+  const [showCreate, setShowCreate] = useState(startInCreate);
   const [groupName, setGroupName] = useState('');
   const [selectedMembers, setSelectedMembers] = useState([]);
   const [activeGroup, setActiveGroup] = useState(null);
@@ -913,12 +920,32 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack }) => {
       });
       list.sort((a, b) => (b.lastMessageAt?.toMillis?.() || 0) - (a.lastMessageAt?.toMillis?.() || 0));
       setGroups(list);
+      setGroupsLoaded(true);
     }, (err) => {
       console.error('groups query error:', err);
       showToast?.('Failed to load groups: ' + err.message, 'error');
+      setGroupsLoaded(true);
     });
     return () => unsub();
   }, [currentUser?.id]);
+
+  // Embedded mode: resolve openGroupId into an activeGroup once the groups snapshot
+  // has loaded. If it's genuinely missing (deleted, left, or no target given at all),
+  // hand back to the caller rather than falling through to the internal list screen.
+  useEffect(() => {
+    if (!embedded || startInCreate || activeGroup || !groupsLoaded) return;
+    const found = openGroupId ? groups.find(g => g.id === openGroupId) : null;
+    if (found) setActiveGroup(found);
+    else onBack?.();
+  }, [embedded, startInCreate, activeGroup, groupsLoaded, groups, openGroupId]);
+
+  // Keep the open group's local copy in sync as the underlying doc changes
+  // (e.g. another member's edits, or this user's own read-state reset below).
+  useEffect(() => {
+    if (!activeGroup?.id) return;
+    const fresh = groups.find(g => g.id === activeGroup.id);
+    if (fresh && fresh !== activeGroup) setActiveGroup(fresh);
+  }, [groups]);
 
   useEffect(() => {
     if (!activeGroup) return;
@@ -930,21 +957,38 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack }) => {
     return () => unsub();
   }, [activeGroup?.id]);
 
+  // Reset this viewer's unread counter the moment a group is opened — mirrors the
+  // unread_{uid} pattern already used for 1:1 conversations.
+  useEffect(() => {
+    if (!activeGroup?.id || !currentUser?.id) return;
+    updateDoc(doc(db, 'groups', activeGroup.id), { [`unread_${currentUser.id}`]: 0 }).catch(() => {});
+  }, [activeGroup?.id]);
+
   useEffect(() => {
     setShowGroupInfo(false);
     setGroupCallOpen(null);
   }, [activeGroup?.id]);
+
+  // Exit a group conversation: in embedded mode this always hands control back to
+  // the caller's unified list (which owns navigation); standalone mode falls back
+  // to this component's own internal group-list screen.
+  const exitGroup = () => { if (embedded) onBack?.(); else setActiveGroup(null); };
 
   const createGroup = async () => {
     if (!groupName.trim() || selectedMembers.length === 0) { showToast?.('Add a name and at least one member', 'error'); return; }
     const members = [currentUser.id, ...selectedMembers];
     const avatar = groupName.trim()[0].toUpperCase();
     const avatarColor = pickAvatarColor(groupName.trim() + Date.now());
+    // Seed unread_{uid}:0 for every member up front so the field exists from
+    // creation — mirrors 1:1 conversations, and lets the unified Chats list and
+    // Unread filter treat groups exactly like DMs from the very first render.
+    const unreadFields = {};
+    members.forEach(uid => { unreadFields[`unread_${uid}`] = 0; });
     try {
       const ref = await addDoc(collection(db, 'groups'), {
         name: groupName.trim(), members, admin: currentUser.id,
         createdAt: serverTimestamp(), lastMessageAt: serverTimestamp(),
-        avatar, avatarColor
+        avatar, avatarColor, ...unreadFields
       });
       showToast?.('Group created! 🎉', 'success');
       setShowCreate(false); setGroupName(''); setSelectedMembers([]);
@@ -976,7 +1020,18 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack }) => {
       senderAvatarUrl: currentUser.avatarUrl || null,
       createdAt: serverTimestamp(),
     });
-    await updateDoc(doc(db, 'groups', activeGroup.id), { lastMessage: txt, lastMessageAt: serverTimestamp() });
+    // Increment every other member's unread_{uid} (never the sender's own), and
+    // record who sent it so the unified Chats list can show "Name: message" —
+    // matching the DM inbox's unread badge + preview behavior.
+    const unreadIncrements = {};
+    (activeGroup.members || []).forEach(uid => {
+      if (uid !== currentUser.id) unreadIncrements[`unread_${uid}`] = increment(1);
+    });
+    await updateDoc(doc(db, 'groups', activeGroup.id), {
+      lastMessage: txt, lastMessageAt: serverTimestamp(),
+      lastSenderId: currentUser.id, lastSenderName: currentUser.username,
+      ...unreadIncrements,
+    });
   };
 
   if (activeGroup) {
@@ -984,7 +1039,7 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack }) => {
     return (
       <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: COLORS.bg }}>
         <div style={{ padding: '14px 16px', borderBottom: `1px solid ${COLORS.overlaySubtle}`, display: 'flex', alignItems: 'center', gap: 12, background: COLORS.overlaySubtle }}>
-          <button onClick={() => setActiveGroup(null)} aria-label="Back" style={{ background: 'none', border: 'none', color: COLORS.textPrimary, cursor: 'pointer', fontSize: 18 }}>←</button>
+          <button onClick={exitGroup} aria-label="Back" style={{ background: 'none', border: 'none', color: COLORS.textPrimary, cursor: 'pointer', fontSize: 18 }}>←</button>
           <div onClick={()=>setShowGroupInfo(true)} style={{ display:'flex', alignItems:'center', gap:10, flex:1, cursor:'pointer' }}>
             <div style={{ width: 38, height: 38, borderRadius: '50%', background: activeGroup.avatarColor || COLORS.brand, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: 16 }}>{activeGroup.avatar || '👥'}</div>
             <div>
@@ -1053,7 +1108,7 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack }) => {
                       await updateDoc(doc(db,'groups',activeGroup.id), patch);
                     }
                     setShowGroupInfo(false);
-                    setActiveGroup(null);
+                    exitGroup();
                     showToast?.('Left the group','info');
                   } catch(e) {
                     showToast?.('Could not leave group: '+e.message,'error');
@@ -1075,7 +1130,7 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack }) => {
                       await Promise.all(msgsSnap.docs.map(d=>deleteDoc(doc(db,'groups',activeGroup.id,'msgs',d.id))));
                       await deleteDoc(doc(db,'groups',activeGroup.id));
                       setShowGroupInfo(false);
-                      setActiveGroup(null);
+                      exitGroup();
                       showToast?.('Group deleted','info');
                     } catch(e) {
                       showToast?.('Could not delete group: '+e.message,'error');
@@ -1137,7 +1192,7 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack }) => {
 
   if (showCreate) return (
     <div style={{ height: '100%', overflow: 'auto', background: COLORS.bg, padding: 16 }}>
-      <button onClick={() => setShowCreate(false)} style={{ background: COLORS.overlaySubtle, border: 'none', borderRadius: 20, padding: '8px 16px', color: COLORS.textPrimary, cursor: 'pointer', fontSize: 13, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 6 }}>← Back</button>
+      <button onClick={() => embedded ? onBack?.() : setShowCreate(false)} style={{ background: COLORS.overlaySubtle, border: 'none', borderRadius: 20, padding: '8px 16px', color: COLORS.textPrimary, cursor: 'pointer', fontSize: 13, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 6 }}>← Back</button>
       <div style={{ color: COLORS.textPrimary, fontWeight: 800, fontSize: 22, marginBottom: 20 }}>New Group</div>
       <input value={groupName} onChange={e => setGroupName(e.target.value)} placeholder="Group name" style={{ width: '100%', background: COLORS.overlaySubtle, border: `1px solid ${COLORS.border}`, borderRadius: 16, padding: '13px 16px', color: COLORS.textPrimary, outline: 'none', fontSize: 14, boxSizing: 'border-box', marginBottom: 16 }} />
       <div style={{ color: COLORS.textTertiary, fontSize: 12, marginBottom: 10, fontWeight: 600, textTransform: 'uppercase' }}>Add Members</div>
@@ -1153,6 +1208,15 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack }) => {
         </div>
       ))}
       <button onClick={createGroup} style={{ width: '100%', background: `linear-gradient(135deg,${COLORS.brand},${COLORS.brandSecondary})`, border: 'none', borderRadius: 24, padding: 15, color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: 15, marginTop: 20 }}>Create Group ({selectedMembers.length} members)</button>
+    </div>
+  );
+
+  // Embedded mode never owns the group list itself (InboxPage's unified Chats list
+  // does) — this is only a brief loading state while openGroupId resolves; the
+  // effect above hands back to the caller as soon as it's clear the group isn't found.
+  if (embedded) return (
+    <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: COLORS.bg, padding: 16 }}>
+      <SkeletonLoader count={3} />
     </div>
   );
 
@@ -8624,6 +8688,80 @@ const ConversationRow = ({ u, conv, currentUser, onOpen, onLongPress }) => {
   );
 };
 
+// Row for a group inside the unified Chats list — same visual language as
+// ConversationRow (avatar, bold name when unread, timestamp, unread badge) so
+// groups and DMs read as one consistent list instead of two different UIs. The
+// small people-icon badge on the avatar is the one deliberate visual difference,
+// so a group is still recognizable at a glance while sorted in amongst DMs.
+const GroupRow = ({ g, currentUser, onOpen, onLongPress }) => {
+  const unread = g?.[`unread_${currentUser.id}`] || 0;
+  const muted = !!g?.[`muted_${currentUser.id}`];
+  const pinned = !!g?.[`pinned_${currentUser.id}`];
+  const lastAt = tsToDate(g?.lastMessageAt);
+  const isMine = g?.lastSenderId === currentUser.id;
+  const previewText = g?.lastMessage
+    ? (isMine ? `You: ${g.lastMessage}` : g?.lastSenderName ? `${g.lastSenderName}: ${g.lastMessage}` : g.lastMessage)
+    : 'No messages yet';
+  const pressTimer = useRef(null);
+  const pressFired = useRef(false);
+
+  const startPress = () => {
+    pressFired.current = false;
+    pressTimer.current = setTimeout(() => {
+      pressFired.current = true;
+      haptic('medium');
+      onLongPress(g);
+    }, 480);
+  };
+  const cancelPress = () => { clearTimeout(pressTimer.current); };
+  const handleClick = () => {
+    if (pressFired.current) { pressFired.current = false; return; }
+    onOpen(g.id);
+  };
+
+  return (
+    <div
+      onClick={handleClick}
+      onMouseDown={startPress}
+      onMouseUp={cancelPress}
+      onMouseLeave={e=>{ cancelPress(); e.currentTarget.style.background='transparent'; }}
+      onTouchStart={startPress}
+      onTouchEnd={cancelPress}
+      onTouchMove={cancelPress}
+      onMouseEnter={e=>e.currentTarget.style.background=COLORS.surfaceAlt}
+      onContextMenu={e=>{ e.preventDefault(); onLongPress(g); }}
+      style={{ display:'flex', alignItems:'center', gap:14, padding:'11px 16px', cursor:'pointer', borderRadius:16, transition:TRANSITION.fast, userSelect:'none', WebkitUserSelect:'none', background: unread>0 ? `${COLORS.brand}0A` : 'transparent' }}
+    >
+      <div style={{ position:'relative', flexShrink:0 }}>
+        <div style={{ width:52, height:52, borderRadius:'50%', background:g.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, fontSize:20, overflow:'hidden', boxShadow:SHADOW.xs, border: unread>0 ? `2px solid ${COLORS.brand}` : 'none' }}>
+          {g.avatar || '👥'}
+        </div>
+        <div style={{ position:'absolute', bottom:-2, right:-2, width:18, height:18, borderRadius:'50%', background:COLORS.surface, border:`2px solid ${COLORS.surface}`, display:'flex', alignItems:'center', justifyContent:'center', boxShadow:SHADOW.xs }}>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        </div>
+      </div>
+      <div style={{ flex:1, minWidth:0 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:4 }}>
+          <div style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:14.5, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{g.name}</div>
+          {muted && (
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2" style={{flexShrink:0}}><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="1" x2="1" y2="23"/></svg>
+          )}
+          {pinned && (
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2.2" style={{flexShrink:0}}><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14l-1.4-7.5A3 3 0 0014.66 7H9.34a3 3 0 00-2.94 2.5z"/></svg>
+          )}
+        </div>
+        <div style={{ display:'flex', alignItems:'center', gap:4, marginTop:2 }}>
+          <div style={{ color:unread>0?COLORS.textPrimary:COLORS.textTertiary, fontWeight:unread>0?600:400, fontSize:12.5, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{previewText}</div>
+        </div>
+      </div>
+      <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:6, flexShrink:0 }}>
+        <div style={{ color:unread>0?COLORS.brand:COLORS.textTertiary, fontSize:11, fontWeight:unread>0?700:400 }}>{lastAt ? timeAgo(lastAt) : ''}</div>
+        {unread>0 && <div style={{ minWidth:19, height:19, borderRadius:10, background:COLORS.gradient, color:'white', fontSize:10.5, fontWeight:800, display:'flex', alignItems:'center', justifyContent:'center', padding:'0 5px', boxShadow:SHADOW.glow(COLORS.brand) }}>{unread>9?'9+':unread}</div>}
+      </div>
+    </div>
+  );
+};
+
 // Avatar in the horizontal "contacts" strip at the top of the inbox. Only shows the
 // green ring/dot when that person is genuinely online (via /presence), not unconditionally.
 const InboxStripAvatar = ({ u, onClick }) => {
@@ -8647,14 +8785,17 @@ const InboxStripAvatar = ({ u, onClick }) => {
 const InboxPage = ({ t, users, currentUser, showToast, onViewProfile, initialTargetId, onClearTarget, persistedConversation, onSetConversation, onVoiceCall, onVideoCall, openGroupsSignal, onFeedScroll, onBlock }) => {
   const [activeConversation, setActiveConversation] = useState(persistedConversation || null);
   const [conversations, setConversations] = useState([]);
-  const [showGroupsView, setShowGroupsView] = useState(false);
+  const [activeGroupId, setActiveGroupId] = useState(null);
+  const [showCreateGroup, setShowCreateGroup] = useState(false);
   const [inboxSearch, setInboxSearch] = useState('');
   const [convLoadError, setConvLoadError] = useState(false);
   const [convLoading, setConvLoading] = useState(true);
-  const [inboxTab, setInboxTab] = useState('all'); // 'all' | 'unread'
-  const [actionSheetUser, setActionSheetUser] = useState(null); // {id, convId, muted} | null
+  const [inboxTab, setInboxTab] = useState('all'); // 'all' | 'unread' | 'groups'
+  const [actionSheetUser, setActionSheetUser] = useState(null); // {kind:'dm'|'group', id, convId, name, muted, pinned} | null
+  // "My Groups" (Settings menu) just switches the unified list to the Groups
+  // filter now, rather than navigating to a separate full-page Groups screen.
   useEffect(()=>{
-    if(openGroupsSignal){ setShowGroupsView(true); }
+    if(openGroupsSignal){ setInboxTab('groups'); }
   },[openGroupsSignal]);
   useEffect(()=>{
     // Only clear an active conversation if it's malformed (no target user id).
@@ -8766,30 +8907,36 @@ snap.docs.forEach(async conv => {
     }, { merge: true }).catch(() => {});
   };
 
-  // Mute silences future notification sound/toast for this conversation, scoped to just
-  // the current user (mirrors the unread_{uid} per-user field pattern already used above).
-  const toggleMuteConversation = (convId, currentlyMuted) => {
-    setDoc(doc(db,'conversations', convId), { [`muted_${currentUser.id}`]: !currentlyMuted }, { merge: true }).catch(()=>{
+  // Mute/pin generalized across both conversations and groups — same per-user field
+  // pattern (muted_{uid}/pinned_{uid}), just pointed at whichever collection this
+  // chat item lives in, so groups get full parity with DMs instead of a second,
+  // more limited feature set.
+  const toggleMuteChat = (kind, id, currentlyMuted) => {
+    setDoc(doc(db, kind==='group'?'groups':'conversations', id), { [`muted_${currentUser.id}`]: !currentlyMuted }, { merge: true }).catch(()=>{
       showToast?.('Could not update mute setting', 'error');
     });
   };
 
-  // Pin keeps a chat pinned to the top of THIS user's inbox only — same per-user
-  // field pattern as muted_{uid}/unread_{uid} above, so it never affects what the
-  // other participant sees.
-  const togglePinConversation = (convId, currentlyPinned) => {
-    setDoc(doc(db,'conversations', convId), { [`pinned_${currentUser.id}`]: !currentlyPinned }, { merge: true }).catch(()=>{
+  const togglePinChat = (kind, id, currentlyPinned) => {
+    setDoc(doc(db, kind==='group'?'groups':'conversations', id), { [`pinned_${currentUser.id}`]: !currentlyPinned }, { merge: true }).catch(()=>{
       showToast?.('Could not update pin', 'error');
     });
   };
 
-  // Real count for the "Groups" shortcut badge — same query GroupChatPage itself
-  // runs, so the number always matches what's actually inside that screen.
-  const [groupsCount, setGroupsCount] = useState(0);
+  // Live groups list — used both to render group rows inline in the unified Chats
+  // list and to compute the Groups tab's count/unread badges.
+  const [groups, setGroups] = useState([]);
   useEffect(()=>{
     if(!currentUser?.id) return;
     const q = query(collection(db,'groups'), where('members','array-contains',currentUser.id));
-    const unsub = onSnapshot(q, snap=>setGroupsCount(snap.size), ()=>{});
+    const unsub = onSnapshot(q, snap=>{
+      const list = snap.docs.map(d=>{
+        const data = d.data();
+        return { id:d.id, ...data, avatarColor: resolveAvatarColor(data.avatarColor, d.id) };
+      });
+      list.sort((a,b)=>(b.lastMessageAt?.seconds||0)-(a.lastMessageAt?.seconds||0));
+      setGroups(list);
+    }, ()=>{});
     return ()=>unsub();
   },[currentUser?.id]);
 
@@ -8800,6 +8947,27 @@ snap.docs.forEach(async conv => {
     setDoc(doc(db,'conversations', convId), { hiddenFor: arrayUnion(currentUser.id) }, { merge: true })
       .then(()=>showToast?.('Chat deleted', 'success'))
       .catch(()=>showToast?.('Could not delete chat', 'error'));
+  };
+
+  // Leaving a group from the list's long-press sheet — same logic GroupChatPage's
+  // Group Info panel uses (delete-if-last-member, otherwise just drop membership).
+  const leaveGroupFromList = async (group) => {
+    try {
+      const isLast = (group.members||[]).length <= 1;
+      if(isLast){
+        const msgsSnap = await getDocs(collection(db,'groups',group.id,'msgs'));
+        await Promise.all(msgsSnap.docs.map(d=>deleteDoc(doc(db,'groups',group.id,'msgs',d.id))));
+        await deleteDoc(doc(db,'groups',group.id));
+      } else {
+        const nm = (group.members||[]).filter(id=>id!==currentUser.id);
+        const patch = { members: nm };
+        if(group.admin === currentUser.id) patch.admin = nm[0];
+        await updateDoc(doc(db,'groups',group.id), patch);
+      }
+      showToast?.('Left the group', 'info');
+    } catch(e) {
+      showToast?.('Could not leave group: '+e.message, 'error');
+    }
   };
 
   const convUsers = useMemo(()=>{
@@ -8820,16 +8988,57 @@ snap.docs.forEach(async conv => {
     });
   },[users, conversations, currentUser?.id]);
 
-  if(showGroupsView){
+  // Unified Chats list — DMs and Groups merged into one array, sorted by recency,
+  // each tagged with `kind` so rendering/filtering can branch per-item. This is what
+  // makes Groups a filter within the same list (Telegram/Messenger-style) rather
+  // than a separate destination the "Groups" pill used to navigate away to.
+  const chatItems = useMemo(()=>{
+    if(!currentUser?.id) return [];
+    const dmItems = convUsers.map(u=>{
+      const conv = conversations.find(c=>c.id===getConversationId(currentUser.id,u.id));
+      return {
+        kind:'dm', key:`dm:${u.id}`, id:u.id, user:u, conv,
+        lastMessageAt: conv?.lastMessageAt?.seconds||0,
+        unread: conv?.[`unread_${currentUser.id}`]||0,
+        pinned: !!conv?.[`pinned_${currentUser.id}`],
+      };
+    });
+    const groupItems = groups.map(g=>({
+      kind:'group', key:`group:${g.id}`, id:g.id, group:g,
+      lastMessageAt: g?.lastMessageAt?.seconds||0,
+      unread: g?.[`unread_${currentUser.id}`]||0,
+      pinned: !!g?.[`pinned_${currentUser.id}`],
+    }));
+    return [...dmItems, ...groupItems].sort((a,b)=>b.lastMessageAt-a.lastMessageAt);
+  },[convUsers, conversations, groups, currentUser?.id]);
+
+  if(activeGroupId){
     return (
-      <GroupChatPage
-        currentUser={currentUser}
-        users={users}
-        showToast={showToast}
-        onBack={()=>setShowGroupsView(false)}
-        onVoiceCall={onVoiceCall}
-        onVideoCall={onVideoCall}
-      />
+      <div style={{ position:'fixed', inset:0, zIndex:Z.page, background:'#0B0B0F', maxWidth:430, margin:'0 auto' }}>
+        <GroupChatPage
+          embedded
+          openGroupId={activeGroupId}
+          currentUser={currentUser}
+          users={users}
+          showToast={showToast}
+          onBack={()=>setActiveGroupId(null)}
+        />
+      </div>
+    );
+  }
+
+  if(showCreateGroup){
+    return (
+      <div style={{ position:'fixed', inset:0, zIndex:Z.page, background:'#0B0B0F', maxWidth:430, margin:'0 auto' }}>
+        <GroupChatPage
+          embedded
+          startInCreate
+          currentUser={currentUser}
+          users={users}
+          showToast={showToast}
+          onBack={()=>setShowCreateGroup(false)}
+        />
+      </div>
     );
   }
 
@@ -8858,7 +9067,7 @@ snap.docs.forEach(async conv => {
       <div style={{ padding:'14px 16px 0', background:COLORS.surface, borderBottom:`1px solid ${COLORS.border}` }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
           <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:20 }}>Chats</div>
-          <button onClick={()=>setShowGroupsView(true)} aria-label="New group" style={{ background:COLORS.surfaceAlt, border:'none', width:36, height:36, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', color:COLORS.brand, cursor:'pointer' }}>
+          <button onClick={()=>setShowCreateGroup(true)} aria-label="New group" style={{ background:COLORS.surfaceAlt, border:'none', width:36, height:36, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', color:COLORS.brand, cursor:'pointer' }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
           </button>
         </div>
@@ -8886,29 +9095,23 @@ snap.docs.forEach(async conv => {
             ))}
           </div>
         )}
-        {/* Tabs — badges are real counts derived from convUsers/conversations below,
-            not hardcoded numbers. */}
-        <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:12 }}>
-          <div role="tablist" aria-label="Inbox filter" style={{ display:'flex', gap:4, flex:1, background:COLORS.surfaceAlt, borderRadius:RADIUS.lg, padding:4 }}>
-            {[
-              {id:'all', label:'All', count: convUsers.length},
-              {id:'unread', label:'Unread', count: convUsers.filter(u=>{
-                const conv = conversations.find(c=>c.id===getConversationId(currentUser.id,u.id));
-                return (conv?.[`unread_${currentUser.id}`]||0) > 0;
-              }).length},
-            ].map(tab=>(
-              <button key={tab.id} role="tab" aria-selected={inboxTab===tab.id} onClick={()=>setInboxTab(tab.id)} style={{ flex:1, position:'relative', background:'none', border:'none', padding:'8px 0', color:inboxTab===tab.id?COLORS.brand:COLORS.textTertiary, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:6, borderRadius:RADIUS.md, transition:TRANSITION.fast, zIndex:1 }}>
-                {inboxTab===tab.id && <motion.div layoutId="inbox-tab-pill" transition={springs.snappy} style={{ position:'absolute', inset:0, background:COLORS.surface, borderRadius:RADIUS.md, boxShadow:SHADOW.xs, zIndex:-1 }} />}
-                <span style={{ fontSize:13, fontWeight:700 }}>{tab.label}</span>
-                {tab.count>0 && <span style={{ fontSize:10.5, fontWeight:700, color: inboxTab===tab.id?COLORS.brand:COLORS.textTertiary, background: inboxTab===tab.id?`${COLORS.brand}1A`:COLORS.surface3, borderRadius:10, padding:'1px 6px' }}>{tab.count}</span>}
-              </button>
-            ))}
-          </div>
-          <button onClick={()=>setShowGroupsView(true)} aria-label="Groups" style={{ background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:RADIUS.lg, padding:'9px 14px', color:COLORS.textPrimary, fontSize:13, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', gap:6 }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-            Groups
-            {groupsCount>0 && <span style={{ fontSize:10.5, color:COLORS.textTertiary }}>{groupsCount}</span>}
-          </button>
+        {/* Tabs — Groups is now a filter within the same list/segmented control
+            (Telegram/Messenger-style) instead of a separately-styled pill that
+            navigated away to its own screen — so switching between them reads as
+            "one inbox, three views" rather than two different UIs bolted together.
+            Badges are real counts derived from chatItems below, not hardcoded. */}
+        <div role="tablist" aria-label="Inbox filter" style={{ display:'flex', gap:4, background:COLORS.surfaceAlt, borderRadius:RADIUS.lg, padding:4, marginBottom:12 }}>
+          {[
+            {id:'all', label:'All', count: chatItems.length},
+            {id:'unread', label:'Unread', count: chatItems.filter(it=>it.unread>0).length},
+            {id:'groups', label:'Groups', count: groups.length},
+          ].map(tab=>(
+            <button key={tab.id} role="tab" aria-selected={inboxTab===tab.id} onClick={()=>setInboxTab(tab.id)} style={{ flex:1, position:'relative', background:'none', border:'none', padding:'8px 0', color:inboxTab===tab.id?COLORS.brand:COLORS.textTertiary, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:6, borderRadius:RADIUS.md, transition:TRANSITION.fast, zIndex:1 }}>
+              {inboxTab===tab.id && <motion.div layoutId="inbox-tab-pill" transition={springs.snappy} style={{ position:'absolute', inset:0, background:COLORS.surface, borderRadius:RADIUS.md, boxShadow:SHADOW.xs, zIndex:-1 }} />}
+              <span style={{ fontSize:13, fontWeight:700 }}>{tab.label}</span>
+              {tab.count>0 && <span style={{ fontSize:10.5, fontWeight:700, color: inboxTab===tab.id?COLORS.brand:COLORS.textTertiary, background: inboxTab===tab.id?`${COLORS.brand}1A`:COLORS.surface3, borderRadius:10, padding:'1px 6px' }}>{tab.count}</span>}
+            </button>
+          ))}
         </div>
       </div>
       <div data-main-scroll="true" onScroll={onFeedScroll} style={{ flex:1, overflowY:'auto', paddingBottom:'max(74px, calc(58px + env(safe-area-inset-bottom)))' }}>
@@ -8924,74 +9127,85 @@ snap.docs.forEach(async conv => {
             <button onClick={()=>{ setConvLoading(true); setConvLoadError(false); }} style={{ background:COLORS.gradient, border:'none', borderRadius:20, padding:'10px 22px', color:'#fff', fontWeight:700, fontSize:13, cursor:'pointer' }}>Retry</button>
           </div>
         ) : (() => {
-          let filteredConvUsers = inboxSearch
-            ? convUsers.filter(u => u.username?.toLowerCase().includes(inboxSearch.toLowerCase()) || u.fullName?.toLowerCase().includes(inboxSearch.toLowerCase()))
-            : convUsers;
-          if (inboxTab === 'unread') {
-            filteredConvUsers = filteredConvUsers.filter(u => {
-              const conv = conversations.find(c=>c.id===getConversationId(currentUser.id,u.id));
-              return (conv?.[`unread_${currentUser.id}`]||0) > 0;
-            });
-          }
-          if (filteredConvUsers.length === 0) return (
+          let filteredItems = inboxSearch
+            ? chatItems.filter(it => it.kind==='dm'
+                ? (it.user.username?.toLowerCase().includes(inboxSearch.toLowerCase()) || it.user.fullName?.toLowerCase().includes(inboxSearch.toLowerCase()))
+                : it.group.name?.toLowerCase().includes(inboxSearch.toLowerCase()))
+            : chatItems;
+          if (inboxTab === 'unread') filteredItems = filteredItems.filter(it => it.unread > 0);
+          if (inboxTab === 'groups') filteredItems = filteredItems.filter(it => it.kind === 'group');
+
+          if (filteredItems.length === 0) return (
             <div style={{textAlign:'center',padding:60,color:COLORS.textTertiary}}>
-              <div style={{fontSize:44,marginBottom:12}}>{inboxTab==='unread' ? '✅' : '💬'}</div>
+              <div style={{fontSize:44,marginBottom:12}}>{inboxTab==='unread' ? '✅' : inboxTab==='groups' ? '👥' : '💬'}</div>
               <div style={{fontSize:14}}>
-                {inboxSearch ? `No chats matching "${inboxSearch}"` : inboxTab==='unread' ? "You're all caught up" : (t?.noMessages||'No messages yet')}
+                {inboxSearch ? `No chats matching "${inboxSearch}"` : inboxTab==='unread' ? "You're all caught up" : inboxTab==='groups' ? 'No groups yet' : (t?.noMessages||'No messages yet')}
               </div>
               {!inboxSearch && inboxTab==='all' && <div style={{fontSize:12,marginTop:6,color:COLORS.textDisabled}}>{t?.startChat||'Go to a profile and tap Message to start'}</div>}
+              {!inboxSearch && inboxTab==='groups' && <div style={{fontSize:12,marginTop:6,color:COLORS.textDisabled}}>Tap the + icon above to start one</div>}
             </div>
           );
-          // Real pinned split — pinned_{uid} is a per-user field on the conversation
-          // doc (same pattern as muted_{uid}), so pinning never affects the other
-          // participant's inbox order.
-          const pinnedUsers = filteredConvUsers.filter(u=>{
-            const conv = conversations.find(c=>c.id===getConversationId(currentUser.id,u.id));
-            return !!conv?.[`pinned_${currentUser.id}`];
-          });
-          const restUsers = filteredConvUsers.filter(u=>!pinnedUsers.includes(u));
 
-          const renderRow = u => {
-            const convId = getConversationId(currentUser.id, u.id);
-            const conv = conversations.find(c=>c.id===convId);
-            return (
-              <ConversationRow
-                key={u.id}
-                u={u}
-                conv={conv}
-                currentUser={currentUser}
-                onOpen={openConversation}
-                onLongPress={(user, conv)=>setActionSheetUser({
-                  id:user.id,
-                  name:user.fullName||user.username,
-                  convId:conv?.id||getConversationId(currentUser.id,user.id),
-                  muted: !!conv?.[`muted_${currentUser.id}`],
-                  pinned: !!conv?.[`pinned_${currentUser.id}`],
-                })}
-              />
-            );
-          };
+          // Real pinned split — pinned_{uid} is a per-user field on the conversation/
+          // group doc (same pattern as muted_{uid}), so pinning never affects what
+          // other participants see, for either DMs or groups.
+          const pinnedItems = filteredItems.filter(it=>it.pinned);
+          const restItems = filteredItems.filter(it=>!it.pinned);
+
+          const renderItem = it => it.kind==='dm' ? (
+            <ConversationRow
+              key={it.key}
+              u={it.user}
+              conv={it.conv}
+              currentUser={currentUser}
+              onOpen={openConversation}
+              onLongPress={(user, conv)=>setActionSheetUser({
+                kind:'dm',
+                id:user.id,
+                name:user.fullName||user.username,
+                convId:conv?.id||getConversationId(currentUser.id,user.id),
+                muted: !!conv?.[`muted_${currentUser.id}`],
+                pinned: !!conv?.[`pinned_${currentUser.id}`],
+              })}
+            />
+          ) : (
+            <GroupRow
+              key={it.key}
+              g={it.group}
+              currentUser={currentUser}
+              onOpen={(id)=>setActiveGroupId(id)}
+              onLongPress={(group)=>setActionSheetUser({
+                kind:'group',
+                id:group.id,
+                name:group.name,
+                muted: !!group?.[`muted_${currentUser.id}`],
+                pinned: !!group?.[`pinned_${currentUser.id}`],
+                group,
+              })}
+            />
+          );
 
           return (
             <>
-              {pinnedUsers.length > 0 && (
+              {pinnedItems.length > 0 && (
                 <div style={{ marginBottom:4 }}>
                   <div style={{ padding:'10px 16px 4px', display:'flex', alignItems:'center', gap:6, color:COLORS.textTertiary, fontSize:11.5, fontWeight:700, textTransform:'uppercase', letterSpacing:0.4 }}>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2.2"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14l-1.4-7.5A3 3 0 0014.66 7H9.34a3 3 0 00-2.94 2.5z"/></svg>
                     Pinned
                   </div>
-                  {pinnedUsers.map(renderRow)}
+                  {pinnedItems.map(renderItem)}
                 </div>
               )}
-              {restUsers.map(renderRow)}
+              {restItems.map(renderItem)}
             </>
           );
         })()}
       </div>
 
-      {/* Long-press action sheet: mute / delete-for-me. Triggered from ConversationRow's
-          long-press (mobile) or right-click (desktop), same pattern as message reactions
-          already use elsewhere in this component (msgLongTimer). */}
+      {/* Long-press action sheet: pin / mute / delete-or-leave. Triggered from
+          ConversationRow/GroupRow's long-press (mobile) or right-click (desktop).
+          `kind` drives which collection pin/mute write to, and swaps the last
+          action between "Delete chat" (DMs) and "Leave group" (groups). */}
       <AnimatePresence>{actionSheetUser && (
         <motion.div
           variants={backdropVariants} initial="hidden" animate="visible" exit="hidden"
@@ -9001,21 +9215,29 @@ snap.docs.forEach(async conv => {
             onClick={e=>e.stopPropagation()} style={{ width:'100%', maxWidth:430, margin:'0 auto', background:COLORS.surface, borderTopLeftRadius:24, borderTopRightRadius:24, padding:'10px 8px calc(20px + env(safe-area-inset-bottom))', boxShadow:SHADOW.modal }}>
             <div style={{ width:36, height:4, background:COLORS.border, borderRadius:2, margin:'4px auto 10px' }} />
             <div style={{ padding:'4px 14px 12px', color:COLORS.textTertiary, fontSize:12.5, fontWeight:700 }}>{actionSheetUser.name}</div>
-            <button onClick={()=>{ togglePinConversation(actionSheetUser.convId, actionSheetUser.pinned); setActionSheetUser(null); }}
+            <button onClick={()=>{ togglePinChat(actionSheetUser.kind, actionSheetUser.kind==='group'?actionSheetUser.id:actionSheetUser.convId, actionSheetUser.pinned); setActionSheetUser(null); }}
               style={{ width:'100%', background:'none', border:'none', display:'flex', alignItems:'center', gap:12, padding:'13px 14px', borderRadius:14, color:COLORS.textPrimary, fontSize:14.5, fontWeight:600, cursor:'pointer', textAlign:'left' }}>
               <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14l-1.4-7.5A3 3 0 0014.66 7H9.34a3 3 0 00-2.94 2.5z"/></svg>
               {actionSheetUser.pinned ? 'Unpin chat' : 'Pin chat'}
             </button>
-            <button onClick={()=>{ toggleMuteConversation(actionSheetUser.convId, actionSheetUser.muted); setActionSheetUser(null); }}
+            <button onClick={()=>{ toggleMuteChat(actionSheetUser.kind, actionSheetUser.kind==='group'?actionSheetUser.id:actionSheetUser.convId, actionSheetUser.muted); setActionSheetUser(null); }}
               style={{ width:'100%', background:'none', border:'none', display:'flex', alignItems:'center', gap:12, padding:'13px 14px', borderRadius:14, color:COLORS.textPrimary, fontSize:14.5, fontWeight:600, cursor:'pointer', textAlign:'left' }}>
               <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2">{actionSheetUser.muted ? <><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 010 7"/></> : <><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="1" x2="1" y2="23"/></>}</svg>
               {actionSheetUser.muted ? 'Unmute notifications' : 'Mute notifications'}
             </button>
-            <button onClick={()=>{ hideConversation(actionSheetUser.convId); setActionSheetUser(null); }}
-              style={{ width:'100%', background:'none', border:'none', display:'flex', alignItems:'center', gap:12, padding:'13px 14px', borderRadius:14, color:COLORS.dangerText, fontSize:14.5, fontWeight:600, cursor:'pointer', textAlign:'left' }}>
-              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={COLORS.danger} strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-              Delete chat
-            </button>
+            {actionSheetUser.kind==='group' ? (
+              <button onClick={()=>{ leaveGroupFromList(actionSheetUser.group); setActionSheetUser(null); }}
+                style={{ width:'100%', background:'none', border:'none', display:'flex', alignItems:'center', gap:12, padding:'13px 14px', borderRadius:14, color:COLORS.dangerText, fontSize:14.5, fontWeight:600, cursor:'pointer', textAlign:'left' }}>
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={COLORS.danger} strokeWidth="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                Leave group
+              </button>
+            ) : (
+              <button onClick={()=>{ hideConversation(actionSheetUser.convId); setActionSheetUser(null); }}
+                style={{ width:'100%', background:'none', border:'none', display:'flex', alignItems:'center', gap:12, padding:'13px 14px', borderRadius:14, color:COLORS.dangerText, fontSize:14.5, fontWeight:600, cursor:'pointer', textAlign:'left' }}>
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={COLORS.danger} strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                Delete chat
+              </button>
+            )}
             <button onClick={()=>setActionSheetUser(null)}
               style={{ width:'100%', background:COLORS.surfaceAlt, border:'none', borderRadius:14, padding:'13px 14px', color:COLORS.textSecondary, fontSize:14.5, fontWeight:700, cursor:'pointer', marginTop:6 }}>
               Cancel
