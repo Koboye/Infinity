@@ -219,6 +219,9 @@ const WHATSAPP_LIGHT = {
   wallpaperDoodle: 'rgba(0,0,0,0.06)',
   tickRead: '#53BDEB',
   tickUnread: '#8696A0',
+  composerBarBg: '#F0F2F5',
+  composerPillBg: '#FFFFFF',
+  actionGreen: '#25D366',
 };
 const WHATSAPP_DARK = {
   sentBubble: '#005C4B',
@@ -227,6 +230,9 @@ const WHATSAPP_DARK = {
   wallpaperDoodle: 'rgba(255,255,255,0.05)',
   tickRead: '#53BDEB',
   tickUnread: '#8696A0',
+  composerBarBg: '#202C33',
+  composerPillBg: '#2A3942',
+  actionGreen: '#00A884',
 };
 const getWhatsAppPalette = () => (getStoredTheme() === 'dark' ? WHATSAPP_DARK : WHATSAPP_LIGHT);
 // Low-opacity tiled doodle (leaves + circles) approximating WhatsApp's wallpaper
@@ -7847,7 +7853,7 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal' }) => {
 
   if (state === 'idle') {
     return (
-      <button onPointerDown={startRecording} aria-label="Record voice message" style={{ background:'none', border:'none', cursor:'pointer', padding:size==='small'?6:8, display:'flex', alignItems:'center', justifyContent:'center', color:'rgba(255,255,255,0.5)', borderRadius:'50%', transition:'color 0.15s' }}>
+      <button onPointerDown={startRecording} aria-label="Record voice message" style={{ background:'none', border:'none', cursor:'pointer', padding:size==='small'?6:8, display:'flex', alignItems:'center', justifyContent:'center', color: size==='small' ? '#fff' : 'rgba(255,255,255,0.5)', borderRadius:'50%', transition:'color 0.15s' }}>
         <svg width={size==='small'?18:22} height={size==='small'?18:22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
       </button>
     );
@@ -8288,6 +8294,12 @@ unsub = onSnapshot(q, (snap) => {
     if (!isDefaultChatTheme) return seen ? (activeTheme.accent || COLORS.brand) : COLORS.textTertiary;
     return seen ? wa.tickRead : wa.tickUnread;
   };
+  // Composer bar colors — neutral WhatsApp light-grey bar + white pill + solid
+  // green action button for the default theme; falls back to the app's normal
+  // surface/brand colors when a custom Chat Theme is active.
+  const composerBarBg = isDefaultChatTheme ? wa.composerBarBg : COLORS.surface;
+  const composerPillBg = isDefaultChatTheme ? wa.composerPillBg : COLORS.surfaceAlt;
+  const actionButtonBg = isDefaultChatTheme ? wa.actionGreen : myBubbleBg;
   // WhatsApp-style "TODAY" / "YESTERDAY" / date divider label for the pill shown
   // between messages sent on different calendar days.
   const dateDividerLabel = (date) => {
@@ -8565,15 +8577,14 @@ unsub = onSnapshot(q, (snap) => {
           ))}
         </motion.div>
       )}
-      <div style={{padding:'10px 14px',paddingBottom:'max(28px, env(safe-area-inset-bottom))',background:COLORS.surface,borderTop:`1px solid ${COLORS.border}`,display:'flex',gap:8,alignItems:'center'}}>
-        <div style={{flex:1,minWidth:0,display:'flex',alignItems:'center',gap:2,background:COLORS.surfaceAlt,border:`1px solid ${COLORS.border}`,borderRadius:26,padding:'4px 6px 4px 12px'}}>
+      <div style={{padding:'10px 14px',paddingBottom:'max(28px, env(safe-area-inset-bottom))',background:composerBarBg,borderTop:`1px solid ${COLORS.border}`,display:'flex',gap:8,alignItems:'center'}}>
+        <div style={{flex:1,minWidth:0,display:'flex',alignItems:'center',gap:2,background:composerPillBg,borderRadius:26,padding:'4px 6px 4px 12px'}}>
           <button onClick={()=>setShowEmoji(v=>!v)} aria-label="Open emoji picker" style={{background:'none',border:'none',cursor:'pointer',flexShrink:0,fontSize:18,display:'flex',padding:4}}>😊</button>
-          <button onClick={()=>setShowStickers(v=>!v)} aria-label="Open sticker picker" style={{background:'none',border:'none',cursor:'pointer',flexShrink:0,fontSize:18,display:'flex',padding:4}}>🧩</button>
           <input value={text} onChange={e=>{
             setText(e.target.value);
             if (smartReplies.length) setSmartReplies([]);
             setDoc(doc(db,'typing',conversationId),{[currentUser.id]:serverTimestamp()},{merge:true}).catch(()=>{});
-          }} onKeyDown={e=>e.key==='Enter'&&handleSend()} placeholder={isRecording?`🔴 ${fmt(recordSecs)}`:'Message'} style={{flex:1,minWidth:0,background:'none',border:'none',outline:'none',color:COLORS.textPrimary,fontSize:13.5,padding:'9px 4px'}}/>
+          }} onKeyDown={e=>e.key==='Enter'&&handleSend()} placeholder={isRecording?`🔴 ${fmt(recordSecs)}`:'Type a message'} style={{flex:1,minWidth:0,background:'none',border:'none',outline:'none',color:COLORS.textPrimary,fontSize:13.5,padding:'9px 4px'}}/>
           <button onClick={()=>fileInputRef.current?.click()} aria-label="Attach photo" style={{background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:6}}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
           </button>
@@ -8585,11 +8596,12 @@ unsub = onSnapshot(q, (snap) => {
         <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={pickFile} style={{display:'none'}}/>
         <AnimatePresence mode="wait" initial={false}>
         {(text.trim() || previewFile || audioBlob) ? (
-          <motion.button key="send" initial={{ scale:0.5, opacity:0 }} animate={{ scale:1, opacity:1 }} exit={{ scale:0.5, opacity:0 }} transition={springs.snappy} whileTap={tapScale} onClick={handleSend} aria-label="Send message" style={{background:myBubbleBg,border:'none',borderRadius:'50%',width:42,height:42,color:'white',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,boxShadow:myGlow}}>
+          <motion.button key="send" initial={{ scale:0.5, opacity:0 }} animate={{ scale:1, opacity:1 }} exit={{ scale:0.5, opacity:0 }} transition={springs.snappy} whileTap={tapScale} onClick={handleSend} aria-label="Send message" style={{background:actionButtonBg,border:'none',borderRadius:'50%',width:42,height:42,color:'white',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,boxShadow:myGlow}}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="1"><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           </motion.button>
         ) : (
-          <motion.div key="voice" initial={{ scale:0.5, opacity:0 }} animate={{ scale:1, opacity:1 }} exit={{ scale:0.5, opacity:0 }} transition={springs.snappy}>
+          <motion.div key="voice" initial={{ scale:0.5, opacity:0 }} animate={{ scale:1, opacity:1 }} exit={{ scale:0.5, opacity:0 }} transition={springs.snappy}
+            style={{background:actionButtonBg,borderRadius:'50%',width:42,height:42,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,boxShadow:myGlow}}>
           <VoiceRecorderButton
             showToast={showToast}
             size="small"
