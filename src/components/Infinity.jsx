@@ -7710,6 +7710,13 @@ const ConversationView = ({ currentUser, otherUser, conversationId, onBack, show
   const msgLongTimer = useRef(null);
   const MSG_EMOJIS = ['❤️','😂','😮','😢','🔥','👏','💯','😍'];
   const [presenceData, setPresenceData] = useState(null);
+  // Smart Replies — short tappable suggestions generated from the last few messages,
+  // shown only when the most recent message is from the other person (replying to
+  // your own message doesn't make sense). Cleared whenever the person starts typing
+  // their own reply, or after a message is sent.
+  const [smartReplies, setSmartReplies] = useState([]);
+  const [smartRepliesLoading, setSmartRepliesLoading] = useState(false);
+  const smartReplyReqIdRef = useRef(0);
   const typingTimerRef = useRef(null);
   const [recordSecs, setRecordSecs] = useState(0);
   const [audioBlob, setAudioBlob] = useState(null);
@@ -7820,6 +7827,31 @@ unsub = onSnapshot(q, (snap) => {
     return ()=>{ unsub(); typingUnsub(); presenceUnsub(); muteUnsub(); };
   },[conversationId, currentUser?.id, otherUser?.id]);
 
+  // Fetch Smart Reply suggestions whenever the thread's last message is from the
+  // other person. reqId guards against an in-flight request from an older message
+  // list overwriting the suggestions for a newer one (e.g. two messages arrive close
+  // together) — only the response for the most recent request is applied.
+  useEffect(()=>{
+    if(!isReady || messages.length===0){ setSmartReplies([]); return; }
+    const last = messages[messages.length-1];
+    if(last.from !== otherUser.id || last.mediaUrl){ setSmartReplies([]); return; }
+    const reqId = ++smartReplyReqIdRef.current;
+    setSmartRepliesLoading(true);
+    apiFetch('/api/ai/smart-reply', {
+      method: 'POST',
+      body: JSON.stringify({
+        messages: messages.slice(-8).map(m=>({ from: m.from===currentUser.id?'me':'them', text: m.text })),
+      }),
+    }).then(data=>{
+      if (reqId !== smartReplyReqIdRef.current) return; // superseded by a newer message
+      setSmartReplies(data?.replies || []);
+    }).catch(()=>{
+      if (reqId === smartReplyReqIdRef.current) setSmartReplies([]);
+    }).finally(()=>{
+      if (reqId === smartReplyReqIdRef.current) setSmartRepliesLoading(false);
+    });
+  },[messages, isReady, otherUser?.id, currentUser?.id]);
+
   // Real "shared groups" count for the Chat Info sheet — queries the actual groups
   // collection (same one GroupChatPage uses) rather than showing a fabricated number.
   useEffect(()=>{
@@ -7923,7 +7955,7 @@ unsub = onSnapshot(q, (snap) => {
   const clearAttach = () => { setAudioBlob(null); setPreviewFile(null); };
   const fmt = s => `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
 
-  const handleSend = async () => {
+  const handleSend = async (overrideText) => {
     if(!conversationId || !currentUser?.id || !otherUser?.id) return;
     let mediaUrl=null, mediaType=null;
     if(previewFile?.file){ 
@@ -7933,8 +7965,7 @@ unsub = onSnapshot(q, (snap) => {
       try{ mediaUrl=await uploadToCloudinary(audioBlob); mediaType='audio/webm'; }
       catch{ showToast?.('Upload failed','error'); return; } 
     }
-    if(!text.trim() && !mediaUrl) return;
-    const msg = text.trim();
+    const msg = (overrideText ?? text).trim();
     if(!msg && !mediaUrl) return;
     // AI content check — same moderation model used for comments and post captions.
     // DMs previously went straight to Firestore unchecked even though this is the
@@ -7950,6 +7981,7 @@ unsub = onSnapshot(q, (snap) => {
       } catch (e) {}
     }
     setText('');
+    setSmartReplies([]);
     try {
       await addDoc(collection(db,'messages', conversationId,'msgs'),{
   from: currentUser.id, 
@@ -8257,12 +8289,27 @@ unsub = onSnapshot(q, (snap) => {
           <StickerPicker onSelect={sendSticker} onClose={()=>setShowStickers(false)} />
         </div>
       )}
+      {smartReplies.length > 0 && !text && !previewFile && !audioBlob && (
+        <motion.div initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }} style={{ display:'flex', gap:8, padding:'0 14px 8px', overflowX:'auto' }} className="no-scrollbar">
+          {smartReplies.map((reply,i)=>(
+            <motion.button
+              key={reply+i}
+              whileHover={{ scale:1.03 }} whileTap={{ scale:0.96 }}
+              onClick={()=>{ haptic?.('light'); setSmartReplies([]); handleSend(reply); }}
+              style={{ flexShrink:0, background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:18, padding:'8px 14px', color:COLORS.brand, fontSize:13, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap', display:'flex', alignItems:'center', gap:5 }}>
+              {i===0 && <svg width="12" height="12" viewBox="0 0 24 24" fill={COLORS.brand}><path d="M12 2l1.8 5.5L19 9l-5.2 1.5L12 16l-1.8-5.5L5 9l5.2-1.5L12 2z"/></svg>}
+              {reply}
+            </motion.button>
+          ))}
+        </motion.div>
+      )}
       <div style={{padding:'10px 14px',paddingBottom:'max(28px, env(safe-area-inset-bottom))',background:COLORS.surface,borderTop:`1px solid ${COLORS.border}`,display:'flex',gap:8,alignItems:'center'}}>
         <div style={{flex:1,minWidth:0,display:'flex',alignItems:'center',gap:2,background:COLORS.surfaceAlt,border:`1px solid ${COLORS.border}`,borderRadius:26,padding:'4px 6px 4px 12px'}}>
           <button onClick={()=>setShowEmoji(v=>!v)} aria-label="Open emoji picker" style={{background:'none',border:'none',cursor:'pointer',flexShrink:0,fontSize:18,display:'flex',padding:4}}>😊</button>
           <button onClick={()=>setShowStickers(v=>!v)} aria-label="Open sticker picker" style={{background:'none',border:'none',cursor:'pointer',flexShrink:0,fontSize:18,display:'flex',padding:4}}>🧩</button>
           <input value={text} onChange={e=>{
             setText(e.target.value);
+            if (smartReplies.length) setSmartReplies([]);
             setDoc(doc(db,'typing',conversationId),{[currentUser.id]:serverTimestamp()},{merge:true}).catch(()=>{});
           }} onKeyDown={e=>e.key==='Enter'&&handleSend()} placeholder={isRecording?`🔴 ${fmt(recordSecs)}`:'Message'} style={{flex:1,minWidth:0,background:'none',border:'none',outline:'none',color:COLORS.textPrimary,fontSize:13.5,padding:'9px 4px'}}/>
           <button onClick={()=>fileInputRef.current?.click()} aria-label="Attach photo" style={{background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:6}}>
@@ -8857,22 +8904,26 @@ snap.docs.forEach(async conv => {
         )}
         {/* Tabs — badges are real counts derived from convUsers/conversations below,
             not hardcoded numbers. */}
-        <div style={{ display:'flex', gap:20 }}>
-          {[
-            {id:'all', label:'All', count: convUsers.length},
-            {id:'unread', label:'Unread', count: convUsers.filter(u=>{
-              const conv = conversations.find(c=>c.id===getConversationId(currentUser.id,u.id));
-              return (conv?.[`unread_${currentUser.id}`]||0) > 0;
-            }).length},
-          ].map(tab=>(
-            <button key={tab.id} onClick={()=>setInboxTab(tab.id)} style={{ background:'none', border:'none', borderBottom:inboxTab===tab.id?`2px solid ${COLORS.brand}`:'2px solid transparent', padding:'0 0 10px', color:inboxTab===tab.id?COLORS.brand:COLORS.textTertiary, fontSize:13.5, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', gap:5 }}>
-              {tab.label}
-              {tab.count>0 && <span style={{ fontSize:11, color: tab.id==='unread'?COLORS.brand:COLORS.textTertiary }}>{tab.count}</span>}
-            </button>
-          ))}
-          <button onClick={()=>setShowGroupsView(true)} style={{ background:'none', border:'none', borderBottom:'2px solid transparent', padding:'0 0 10px', color:COLORS.textTertiary, fontSize:13.5, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', gap:5 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:12 }}>
+          <div role="tablist" aria-label="Inbox filter" style={{ display:'flex', gap:4, flex:1, background:COLORS.surfaceAlt, borderRadius:RADIUS.lg, padding:4 }}>
+            {[
+              {id:'all', label:'All', count: convUsers.length},
+              {id:'unread', label:'Unread', count: convUsers.filter(u=>{
+                const conv = conversations.find(c=>c.id===getConversationId(currentUser.id,u.id));
+                return (conv?.[`unread_${currentUser.id}`]||0) > 0;
+              }).length},
+            ].map(tab=>(
+              <button key={tab.id} role="tab" aria-selected={inboxTab===tab.id} onClick={()=>setInboxTab(tab.id)} style={{ flex:1, position:'relative', background:'none', border:'none', padding:'8px 0', color:inboxTab===tab.id?COLORS.brand:COLORS.textTertiary, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:6, borderRadius:RADIUS.md, transition:TRANSITION.fast, zIndex:1 }}>
+                {inboxTab===tab.id && <motion.div layoutId="inbox-tab-pill" transition={springs.snappy} style={{ position:'absolute', inset:0, background:COLORS.surface, borderRadius:RADIUS.md, boxShadow:SHADOW.xs, zIndex:-1 }} />}
+                <span style={{ fontSize:13, fontWeight:700 }}>{tab.label}</span>
+                {tab.count>0 && <span style={{ fontSize:10.5, fontWeight:700, color: inboxTab===tab.id?COLORS.brand:COLORS.textTertiary, background: inboxTab===tab.id?`${COLORS.brand}1A`:COLORS.surface3, borderRadius:10, padding:'1px 6px' }}>{tab.count}</span>}
+              </button>
+            ))}
+          </div>
+          <button onClick={()=>setShowGroupsView(true)} aria-label="Groups" style={{ background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:RADIUS.lg, padding:'9px 14px', color:COLORS.textPrimary, fontSize:13, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', gap:6 }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
             Groups
-            {groupsCount>0 && <span style={{ fontSize:11, color:COLORS.textTertiary }}>{groupsCount}</span>}
+            {groupsCount>0 && <span style={{ fontSize:10.5, color:COLORS.textTertiary }}>{groupsCount}</span>}
           </button>
         </div>
       </div>
