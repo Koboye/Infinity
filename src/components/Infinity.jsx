@@ -1,7 +1,7 @@
 // InfinityV1.jsx — FULLY REAL: Firebase Auth + Firestore + Cloudinary + EmailJS
 import React, { useState, useEffect, useRef, useCallback, memo, useMemo } from 'react';
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot, increment, serverTimestamp, arrayUnion, arrayRemove, limit, startAfter, Timestamp } from 'firebase/firestore';
+import { getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot, increment, serverTimestamp, arrayUnion, arrayRemove, deleteField, limit, startAfter, Timestamp } from 'firebase/firestore';
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithCustomToken, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, updateProfile, sendPasswordResetEmail, sendEmailVerification, getIdTokenResult } from 'firebase/auth';
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -521,6 +521,38 @@ const ReportReasonSheet = ({ title = 'Report', onClose, onSubmit }) => {
   );
 };
 
+/* ─────────────── REAL REPOST PERSISTENCE ───────────────
+   Repost used to be a fake toast — it never wrote anything anywhere, so a
+   reposted video never showed up on the reposting user's profile and the
+   repost count never moved. This is the real, toggleable version:
+   - `repostedBy` (array on the video doc) — who has reposted it, used both to
+     render the reposted post inside that user's own profile grid and to know
+     whether to show "Repost" or "Remove repost" next time.
+   - `reposts` (counter) — public repost count.
+   - `repostsMeta.{uid}` (per-user timestamp) — lets the profile sort a user's
+     reposts by when *they* reposted it, not by the original post date.
+   Reposting also counts as a share, same as TikTok/Twitter. */
+const toggleRepost = async (video, currentUser) => {
+  if (!video?.id || !currentUser?.id) return { reposted: false };
+  const alreadyReposted = (video.repostedBy || []).includes(currentUser.id);
+  const ref = doc(db, 'videos', video.id);
+  if (alreadyReposted) {
+    await updateDoc(ref, {
+      repostedBy: arrayRemove(currentUser.id),
+      reposts: increment(-1),
+      [`repostsMeta.${currentUser.id}`]: deleteField(),
+    });
+    return { reposted: false };
+  }
+  await updateDoc(ref, {
+    repostedBy: arrayUnion(currentUser.id),
+    reposts: increment(1),
+    shares: increment(1),
+    [`repostsMeta.${currentUser.id}`]: serverTimestamp(),
+  });
+  return { reposted: true };
+};
+
 const ShareIconBtn = ({ bg, fg='#fff', label, onClick, children }) => (
   <button onClick={onClick} style={{ background:'none', border:'none', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:7, width:60 }}>
     <div style={{ width:52, height:52, borderRadius:'50%', background:bg, display:'flex', alignItems:'center', justifyContent:'center', color:fg, flexShrink:0 }}>{children}</div>
@@ -531,60 +563,133 @@ const ShareIconBtn = ({ bg, fg='#fff', label, onClick, children }) => (
 const ShareSheet = ({ video, currentUser, onClose, showToast }) => {
   const shareUrl = `https://infinity-now.vercel.app/video/${video?.id}`;
   const shareText = video?.description || `Check out @${video?.username || 'this'} on Infinity`;
-  // Every share action below previously did nothing to the post's actual share count —
-  // the "shares" number shown in the feed never moved no matter how many times someone
-  // shared. Now each action bumps it, TikTok-style.
+  const [reposted, setReposted] = useState((video?.repostedBy || []).includes(currentUser?.id));
+  const [saved, setSaved] = useState((video?.savedBy || []).includes(currentUser?.id));
+  const [showReportSheet, setShowReportSheet] = useState(false);
+
+  // Every share action below writes to the post's actual share count — the
+  // "shares" number shown in the feed now really moves.
   const recordShare = () => {
     if (!video?.id) return;
     updateDoc(doc(db, 'videos', video.id), { shares: increment(1) }).catch(() => {});
   };
   const copyLink = async () => { try { await navigator.clipboard.writeText(shareUrl); recordShare(); showToast?.('Link copied!', 'success'); } catch { showToast?.('Copy failed', 'error'); } };
 
-  // ── PRE-CODED APP LIST ──────────────────────────────────────────────────
-  // Same fixed roster, same order, same 5-column grid TikTok uses for its "Share to"
-  // panel. Where a platform exposes a public web share/deeplink target (WhatsApp,
-  // Telegram, Facebook, Messenger, X, Snapchat, LINE, Email, SMS) we open it for real;
-  // there's no public API to actually attach media to most of these from a browser,
-  // so — same as TikTok's own web share sheet — they open pre-filled with the link.
-  const shareApps = [
-    { label:'WhatsApp', bg:'#25D366', action:()=>{ recordShare(); window.open(`https://wa.me/?text=${encodeURIComponent(shareText+' '+shareUrl)}`,'_blank'); },
-      icon:(<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 00-8.5 15.2L2 22l4.9-1.4A10 10 0 1012 2zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.3-.5.1-1 .1-3.3-.7-2.8-1-4.6-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.8 0-1.3.7-2 .9-2.2.2-.2.5-.3.7-.3h.5c.2 0 .4 0 .6.5.2.5.7 1.8.8 1.9.1.2.1.4 0 .6-.1.2-.2.3-.4.5-.2.2-.4.4-.5.6-.2.2-.4.4-.2.7.2.4.9 1.5 2 2.4 1.4 1.2 2.5 1.6 2.9 1.8.4.2.6.1.8-.1.2-.2.9-1 1.1-1.4.2-.4.5-.3.8-.2.3.1 1.9.9 2.3 1 .3.2.5.2.6.4.1.2.1.9-.2 1.5z"/></svg>) },
-    { label:'Telegram', bg:'#29B6F6', action:()=>{ recordShare(); window.open(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`,'_blank'); },
-      icon:(<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M21.05 3.87L2.7 11.1c-1.26.5-1.25 1.2-.23 1.52l4.7 1.47 1.8 5.6c.22.6.44.85.9.85.35 0 .5-.16.7-.36l1.7-1.65 4.7 3.45c.87.48 1.5.23 1.72-.8L22.7 5.03c.32-1.27-.5-1.83-1.65-1.16zM8.6 13.6l9.5-6c.45-.27.86-.12.52.18l-7.8 7.1-.3 3.24-1.4-4.5z"/></svg>) },
-    { label:'Facebook', bg:'#1877F2', action:()=>{ recordShare(); window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,'_blank'); },
-      icon:(<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 10-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.5 1.49-3.89 3.78-3.89 1.1 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.89h-2.34v6.99A10 10 0 0022 12z"/></svg>) },
-    { label:'Messenger', bg:'linear-gradient(135deg,#00B2FF,#006AFF)', action:()=>{ recordShare(); window.open(`https://www.facebook.com/dialog/send?link=${encodeURIComponent(shareUrl)}&redirect_uri=${encodeURIComponent(shareUrl)}&app_id=0`,'_blank'); },
-      icon:(<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.15 2 11.25c0 2.9 1.45 5.49 3.72 7.19V22l3.4-1.87c.91.25 1.87.38 2.88.38 5.52 0 10-4.15 10-9.26C22 6.15 17.52 2 12 2zm1.02 12.47l-2.55-2.72-4.98 2.72 5.48-5.83 2.61 2.72 4.92-2.72-5.48 5.83z"/></svg>) },
-    { label:'X', bg:'#000', action:()=>{ recordShare(); window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`,'_blank'); },
-      icon:(<svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M18.9 2H22l-7.5 8.57L23.3 22H16.7l-5.2-6.8L5.5 22H2.4l8-9.15L1.4 2H8.2l4.7 6.2L18.9 2zm-1.15 18h1.72L6.35 3.9H4.5L17.75 20z"/></svg>) },
-    { label:'Snapchat', bg:'#FFFC00', fg:'#000', action:()=>{ recordShare(); window.open(`https://www.snapchat.com/scan?attachmentUrl=${encodeURIComponent(shareUrl)}`,'_blank'); },
-      icon:(<svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.2c2.6 0 4.3 2.1 4.4 4.6.05 1 .02 1.9 0 2.5.5.3 1.2.2 1.7-.1.4-.2.9-.1 1.1.3.2.4 0 .9-.4 1.1-.6.3-1.3.6-1.6.9-.1.6.5 1.4 1.4 2.1.7.5 1.5.8 2.1 1-.1.6-.7 1-1.3 1.1-.5.1-1 .1-1.3.3-.2.2-.2.6-.4 1-.2.5-.7.7-1.3.6-.7-.1-1.4-.3-2.2-.1-.7.2-1.3.7-2.2.7-.9 0-1.5-.5-2.2-.7-.8-.2-1.5 0-2.2.1-.6.1-1.1-.1-1.3-.6-.2-.4-.2-.8-.4-1-.3-.2-.8-.2-1.3-.3-.6-.1-1.2-.5-1.3-1.1.6-.2 1.4-.5 2.1-1 .9-.7 1.5-1.5 1.4-2.1-.3-.3-1-.6-1.6-.9-.4-.2-.6-.7-.4-1.1.2-.4.7-.5 1.1-.3.5.3 1.2.4 1.7.1-.02-.6-.05-1.5 0-2.5.1-2.5 1.8-4.6 4.4-4.6z"/></svg>) },
-    { label:'LINE', bg:'#00C300', action:()=>{ recordShare(); window.open(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(shareUrl)}`,'_blank'); },
-      icon:(<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.5 2 2 5.8 2 10.4c0 4.1 3.6 7.5 8.4 8.2.3.1.8.2.9.5.1.3.06.7 0 1l-.15 1c-.05.3-.2 1.1.95.6 1.15-.5 6.2-3.65 8.5-6.25C21.9 13.9 22 12.2 22 10.4 22 5.8 17.5 2 12 2zm-3.2 11h-1.9c-.3 0-.5-.2-.5-.5v-4c0-.3.2-.5.5-.5s.5.2.5.5v3.5h1.4c.3 0 .5.2.5.5s-.2.5-.5.5zm2 0c-.3 0-.5-.2-.5-.5v-4c0-.3.2-.5.5-.5s.5.2.5.5v4c0 .3-.2.5-.5.5zm5 0c-.15 0-.3-.06-.4-.18l-1.9-2.6v2.28c0 .3-.2.5-.5.5s-.5-.2-.5-.5v-4c0-.25.15-.45.4-.5.25-.05.5.05.6.25l1.9 2.6V8.5c0-.3.2-.5.5-.5s.5.2.5.5v4c0 .25-.15.45-.4.5h-.2zm3.7-3.5h-1.4v.9h1.4c.3 0 .5.2.5.5s-.2.5-.5.5h-1.4v.9h1.4c.3 0 .5.2.5.5s-.2.5-.5.5h-1.9c-.3 0-.5-.2-.5-.5v-4c0-.3.2-.5.5-.5h1.9c.3 0 .5.2.5.5s-.2.5-.5.5z"/></svg>) },
-    { label:'Email', bg:COLORS.surfaceAlt, fg:COLORS.textPrimary, action:()=>{ recordShare(); window.open(`mailto:?subject=${encodeURIComponent('Check this out on Infinity')}&body=${encodeURIComponent(shareText+' '+shareUrl)}`,'_self'); },
-      icon:(<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 6l-10 7L2 6"/></svg>) },
-    { label:'SMS', bg:COLORS.success, action:()=>{ recordShare(); window.open(`sms:?body=${encodeURIComponent(shareText+' '+shareUrl)}`,'_self'); },
-      icon:(<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>) },
-    { label:'Copy link', bg:COLORS.surfaceAlt, fg:COLORS.brand, action:copyLink,
-      icon:(<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 007.07 0l2.83-2.83a5 5 0 00-7.07-7.07l-1.5 1.5"/><path d="M14 11a5 5 0 00-7.07 0L4.1 13.83a5 5 0 007.07 7.07l1.5-1.5"/></svg>) },
-  ];
+  // ── REAL SHARE, NOT A PRE-CODED APP LIST ────────────────────────────────
+  // The old grid hard-coded 10 specific apps (WhatsApp, Telegram, Facebook…)
+  // regardless of what's actually installed on the device. This instead hands
+  // off to the browser/OS's own native share sheet (Web Share API), which
+  // lists whatever the user genuinely has installed — Instagram, Messages,
+  // AirDrop, WhatsApp, or anything else — and lets the OS attach the link.
+  // navigator.share isn't available on every browser (mainly desktop), so we
+  // fall back to copying the link when it's missing.
+  const nativeShareSupported = typeof navigator !== 'undefined' && !!navigator.share;
+  const shareViaDevice = async () => {
+    if (nativeShareSupported) {
+      try {
+        await navigator.share({ title: 'Infinity', text: shareText, url: shareUrl });
+        recordShare();
+      } catch (e) {
+        // AbortError = user cancelled the native sheet — not an error worth surfacing.
+        if (e?.name !== 'AbortError') showToast?.('Could not open share sheet', 'error');
+      }
+    } else {
+      copyLink();
+    }
+  };
 
-  // TikTok's grey "More" row of in-app actions, sitting below the app grid — all
-  // monochrome circles (no brand colors) since these aren't external destinations.
+  const doToggleRepost = async () => {
+    if (!currentUser?.id) { showToast?.('Log in to repost', 'error'); return; }
+    const next = !reposted;
+    setReposted(next); // optimistic
+    try {
+      const { reposted: confirmed } = await toggleRepost(video, currentUser);
+      setReposted(confirmed);
+      showToast?.(confirmed ? 'Reposted to your profile' : 'Repost removed', 'success');
+    } catch (e) {
+      setReposted(!next); // revert on failure
+      showToast?.('Could not update repost', 'error');
+    }
+  };
+
+  const doToggleSave = async () => {
+    if (!video?.id || !currentUser?.id) return;
+    const next = !saved;
+    setSaved(next);
+    try {
+      await updateDoc(doc(db, 'videos', video.id), { savedBy: next ? arrayUnion(currentUser.id) : arrayRemove(currentUser.id) });
+      showToast?.(next ? 'Saved' : 'Removed from saved', 'success');
+    } catch {
+      setSaved(!next);
+      showToast?.('Could not update save', 'error');
+    }
+  };
+
+  const doDownload = async () => {
+    if (!video?.videoUrl) { showToast?.('Nothing to download', 'error'); return; }
+    try {
+      showToast?.('Downloading…', 'info');
+      const res = await fetch(video.videoUrl, { mode: 'cors' });
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = `infinity-${video.id || 'post'}`;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(blobUrl);
+      recordShare();
+    } catch {
+      // Cross-origin media without CORS headers can't be fetched into a blob —
+      // opening it directly still lets the user save it manually.
+      window.open(video.videoUrl, '_blank');
+    }
+  };
+
+  const doNotInterested = async () => {
+    if (!currentUser?.id || !video?.id) return;
+    try {
+      await updateDoc(doc(db, 'users', currentUser.id), { notInterested: arrayUnion(video.id) });
+      showToast?.("Got it — we'll show you less like this", 'success');
+    } catch {
+      showToast?.('Could not save your preference', 'error');
+    }
+  };
+
+  const submitVideoReport = async (reason) => {
+    try {
+      await submitReport('video', video?.id, currentUser.id, {
+        videoId: video?.id || null,
+        reporterUsername: currentUser?.username || currentUser?.fullName || null,
+        reason,
+        videoUsername: video?.username || null,
+        videoUserId: video?.userId || null,
+        videoCaption: video?.description || video?.caption || null,
+        videoThumbUrl: video?.thumbUrl || video?.thumbnailUrl || video?.url || null,
+      });
+      showToast?.('Post reported — thanks for letting us know', 'success');
+    } catch (e) {
+      showToast?.(e.message || 'Could not submit report', e.duplicate ? 'info' : 'error');
+    }
+    setShowReportSheet(false);
+    onClose();
+  };
+
+  // Real in-app actions — everything here actually persists to Firestore.
+  // Duet/Stitch were removed rather than faked: there's no real video-editing
+  // pipeline in this codebase to back them, and a toast that lies about
+  // "opening an editor" that doesn't exist isn't an improvement over nothing.
   const moreActions = [
-    { label:'Repost', action:()=>{ recordShare(); showToast?.('Reposted to your profile','success'); },
-      icon:(<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>) },
-    { label:'Favorite', action:()=>showToast?.('Added to favorites','success'),
-      icon:(<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>) },
-    { label:'Duet', action:()=>showToast?.('Opening duet editor…','info'),
-      icon:(<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="9" height="16" rx="2"/><rect x="13" y="4" width="9" height="16" rx="2"/></svg>) },
-    { label:'Stitch', action:()=>showToast?.('Opening stitch editor…','info'),
-      icon:(<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M8.5 8.2L19 18M19 6L8.5 15.8"/></svg>) },
-    { label:'Download', action:()=>showToast?.('Preparing download…','info'),
+    { label: reposted ? 'Remove repost' : 'Repost', action: doToggleRepost,
+      icon:(<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={reposted?COLORS.brand:'currentColor'} strokeWidth="2"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>) },
+    { label: saved ? 'Saved' : 'Save', action: doToggleSave,
+      icon:(<svg width="19" height="19" viewBox="0 0 24 24" fill={saved?COLORS.brand:'none'} stroke={saved?COLORS.brand:'currentColor'} strokeWidth="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>) },
+    { label:'Download', action:doDownload,
       icon:(<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>) },
-    { label:'Not interested', action:()=>showToast?.("Got it — we'll show you less like this",'info'),
+    { label:'Not interested', action:doNotInterested,
       icon:(<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.94 10.94 0 0112 20c-7 0-11-8-11-8a21.6 21.6 0 015.06-6.06M9.9 4.24A10.4 10.4 0 0112 4c7 0 11 8 11 8a21.6 21.6 0 01-2.16 3.19"/><path d="M14.12 14.12a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>) },
-    { label:'Report', action:()=>showToast?.('Opening report…','info'),
+    { label:'Copy link', action:copyLink,
+      icon:(<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 007.07 0l2.83-2.83a5 5 0 00-7.07-7.07l-1.5 1.5"/><path d="M14 11a5 5 0 00-7.07 0L4.1 13.83a5 5 0 007.07 7.07l1.5-1.5"/></svg>) },
+    { label:'Report', action:()=>setShowReportSheet(true),
       icon:(<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 9v4M12 17h.01"/><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>) },
   ];
 
@@ -600,22 +705,39 @@ const ShareSheet = ({ video, currentUser, onClose, showToast }) => {
           <div style={{ width:36, height:4, borderRadius:2, background:COLORS.border }} />
         </div>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'center', position:'relative', padding:'10px 16px 4px' }}>
-          <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:15 }}>Share to</div>
+          <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:15 }}>Share</div>
           <button onClick={onClose} aria-label="Close" style={{ position:'absolute', right:12, top:6, background:'none', border:'none', color:COLORS.textTertiary, cursor:'pointer', padding:6, display:'flex' }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
 
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(5, 1fr)', rowGap:18, padding:'10px 10px 6px', justifyItems:'center' }}>
-          {shareApps.map(o => <ShareIconBtn key={o.label} bg={o.bg} fg={o.fg} label={o.label} onClick={o.action}>{o.icon}</ShareIconBtn>)}
+        {/* Real share — hands off to the device's own share sheet (whatever apps
+            are actually installed), instead of a fixed, fake app roster. */}
+        <div style={{ padding:'12px 16px 4px' }}>
+          <motion.button whileTap={tapScale} onClick={shareViaDevice} style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:9, background:COLORS.gradient, border:'none', borderRadius:16, padding:'14px', color:'#fff', fontWeight:700, fontSize:14.5, cursor:'pointer' }}>
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            {nativeShareSupported ? 'Share via…' : 'Copy link to share'}
+          </motion.button>
+          {!nativeShareSupported && (
+            <div style={{ color:COLORS.textTertiary, fontSize:11.5, textAlign:'center', marginTop:8 }}>
+              Your browser doesn't support the native share sheet, so this copies the link instead.
+            </div>
+          )}
         </div>
 
-        <div style={{ height:1, background:COLORS.border, margin:'10px 16px 16px' }} />
+        <div style={{ height:1, background:COLORS.border, margin:'14px 16px 16px' }} />
 
         <div style={{ display:'grid', gridTemplateColumns:'repeat(5, 1fr)', rowGap:18, padding:'0 10px 8px', justifyItems:'center' }}>
           {moreActions.map(o => <ShareIconBtn key={o.label} bg={COLORS.surfaceAlt} fg={COLORS.textPrimary} label={o.label} onClick={o.action}>{o.icon}</ShareIconBtn>)}
         </div>
       </motion.div>
+      <AnimatePresence>{showReportSheet && (
+        <ReportReasonSheet
+          title="Report Post"
+          onClose={()=>{ setShowReportSheet(false); onClose(); }}
+          onSubmit={submitVideoReport}
+        />
+      )}</AnimatePresence>
     </motion.div>
   );
 };
@@ -4578,6 +4700,37 @@ const PostOptionsMenu = ({ video, currentUser, onClose, showToast, onDelete, onB
   const isMine = video?.userId === currentUser?.id;
   const name = video?.fullName || video?.username || 'User';
   const [showReportSheet, setShowReportSheet] = useState(false);
+  const alreadyReposted = (video?.repostedBy || []).includes(currentUser?.id);
+  const doRepost = async () => {
+    if (!currentUser?.id) { showToast?.('Log in to repost', 'error'); return; }
+    try {
+      const { reposted } = await toggleRepost(video, currentUser);
+      showToast?.(reposted ? 'Reposted to your profile' : 'Repost removed', 'success');
+    } catch {
+      showToast?.('Could not update repost', 'error');
+    }
+  };
+  const doPin = async () => {
+    if (!video?.id) return;
+    const next = !video.pinned;
+    try {
+      await updateDoc(doc(db, 'videos', video.id), { pinned: next });
+      showToast?.(next ? 'Pinned to profile' : 'Unpinned', 'success');
+    } catch {
+      showToast?.('Could not update pin', 'error');
+    }
+  };
+  const alreadySaved = (video?.savedBy || []).includes(currentUser?.id);
+  const doAddToCollection = async () => {
+    if (!video?.id || !currentUser?.id) return;
+    const next = !alreadySaved;
+    try {
+      await updateDoc(doc(db, 'videos', video.id), { savedBy: next ? arrayUnion(currentUser.id) : arrayRemove(currentUser.id) });
+      showToast?.(next ? 'Added to your saved collection' : 'Removed from saved collection', 'success');
+    } catch {
+      showToast?.('Could not update collection', 'error');
+    }
+  };
   const submitPostReport = async (reason) => {
     try {
       await submitReport('video', video?.id, currentUser.id, {
@@ -4599,12 +4752,10 @@ const PostOptionsMenu = ({ video, currentUser, onClose, showToast, onDelete, onB
     onClose();
   };
   const items = [
-    { label:'Edit Post', show:isMine, action:()=>{ showToast?.('Opening editor…','info'); }, icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4z"/></svg>) },
-    { label:'Pin Post', show:isMine, action:()=>{ showToast?.('Pinned to profile','success'); }, icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14l-1.4-7.5A3 3 0 0014.66 7H9.34a3 3 0 00-2.94 2.5z"/></svg>) },
+    { label: video?.pinned ? 'Unpin Post' : 'Pin Post', show:isMine, action:doPin, icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={video?.pinned?COLORS.brand:'currentColor'} strokeWidth="2"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14l-1.4-7.5A3 3 0 0014.66 7H9.34a3 3 0 00-2.94 2.5z"/></svg>) },
     { label:'Copy Link', show:true, action:async()=>{ try{ await navigator.clipboard.writeText(`https://infinity-now.vercel.app/video/${video?.id}`); showToast?.('Link copied!','success'); }catch{ showToast?.('Could not copy link','error'); } }, icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 007.07 0l2.83-2.83a5 5 0 00-7.07-7.07l-1.5 1.5"/><path d="M14 11a5 5 0 00-7.07 0L4.1 13.83a5 5 0 007.07 7.07l1.5-1.5"/></svg>) },
-    { label:'Repost', show:!isMine, action:()=>{ showToast?.('Reposted to your profile','success'); }, icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>) },
-    { label:'Send to Friends', show:true, action:()=>{ showToast?.('Open Messages to send','info'); }, icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>) },
-    { label:'Add to Collection', show:true, action:()=>{ showToast?.('Added to collection','success'); }, icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 2a2 2 0 00-2 2v18l8-6 8 6V4a2 2 0 00-2-2z"/></svg>) },
+    { label: alreadyReposted ? 'Remove repost' : 'Repost', show:!isMine, action:doRepost, icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={alreadyReposted?COLORS.brand:'currentColor'} strokeWidth="2"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>) },
+    { label: alreadySaved ? 'Remove from Collection' : 'Add to Collection', show:true, action:doAddToCollection, icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill={alreadySaved?COLORS.brand:'none'} stroke={alreadySaved?COLORS.brand:'currentColor'} strokeWidth="2"><path d="M6 2a2 2 0 00-2 2v18l8-6 8 6V4a2 2 0 00-2-2z"/></svg>) },
     { label:`Mute ${name}`, show:!isMine, action:()=>{ showToast?.(`Muted ${name}`,'info'); }, icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>) },
     { label:`Block ${name}`, show:!isMine, action:()=>{ onBlock?.(video?.userId); showToast?.(`Blocked ${name} — their posts are now hidden`,'info'); }, icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="4.9" y1="4.9" x2="19.1" y2="19.1"/></svg>) },
     { label:'Report', show:!isMine, danger:true, keepOpen:true, action:()=>{ setShowReportSheet(true); }, icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 9v4M12 17h.01"/><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>) },
@@ -7555,7 +7706,25 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
   const [showHamburger, setShowHamburger] = useState(false);
   const [showFollowersList, setShowFollowersList] = useState(null);
   const [settingsQuery, setSettingsQuery] = useState('');
-  const myVideos = allVideos?.filter(v=>v.userId===user?.id)||[];
+  // Profile grid now includes real reposts alongside original posts — a repost
+  // is any video where this user's id is in repostedBy but they didn't author
+  // it. Pinned posts (real `pinned` field, set from the post's "Pin Post"
+  // menu action) float to the top, then everything else sorts newest-first,
+  // using each user's own repost time (repostsMeta) for reposted items so a
+  // repost shows up based on when *they* reposted it, not the original post date.
+  const myVideos = useMemo(() => {
+    const own = (allVideos || []).filter(v => v.userId === user?.id).map(v => ({ ...v, isRepost:false }));
+    const reposts = (allVideos || [])
+      .filter(v => v.userId !== user?.id && (v.repostedBy || []).includes(user?.id))
+      .map(v => ({ ...v, isRepost:true, repostedAtMs: tsToMillis(v.repostsMeta?.[user?.id]) || 0 }));
+    const combined = [...own, ...reposts];
+    return combined.sort((a, b) => {
+      if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
+      const aTime = a.isRepost ? a.repostedAtMs : (tsToMillis(a.createdAt) || 0);
+      const bTime = b.isRepost ? b.repostedAtMs : (tsToMillis(b.createdAt) || 0);
+      return bTime - aTime;
+    });
+  }, [allVideos, user?.id]);
   const savedVideos = allVideos?.filter(v=>v.savedBy?.includes(user?.id))||[];
   const saveProfile = data=>setCurrentUser(u=>({...u,...data}));
   const { pct: completenessPct, missing: completenessMissing } = useMemo(()=>computeProfileCompleteness(user), [user?.avatarUrl, user?.bio, user?.link, user?.location, user?.gender]);
@@ -8196,6 +8365,17 @@ if(activeSubPage==='settings') return (
                     : <video src={v.videoUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} />
                   }
                   <div style={{ position:'absolute', inset:0, background:'linear-gradient(180deg, transparent 65%, rgba(0,0,0,0.45))', pointerEvents:'none' }} />
+                  {v.pinned && (
+                    <div style={{ position:'absolute', top:6, left:6, background:'rgba(11,15,25,0.55)', backdropFilter:'blur(4px)', borderRadius:8, padding:'3px 6px', display:'flex', alignItems:'center', gap:3 }}>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="white"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14l-1.4-7.5A3 3 0 0014.66 7H9.34a3 3 0 00-2.94 2.5z"/></svg>
+                    </div>
+                  )}
+                  {v.isRepost && (
+                    <div style={{ position:'absolute', top:6, left:v.pinned?32:6, background:'rgba(11,15,25,0.55)', backdropFilter:'blur(4px)', borderRadius:8, padding:'3px 6px', display:'flex', alignItems:'center', gap:3, color:'white', fontSize:9, fontWeight:700 }}>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+                      Reposted
+                    </div>
+                  )}
                   <div style={{ position:'absolute', bottom:6, left:6, color:'white', fontSize:10, fontWeight:700, display:'flex', alignItems:'center', gap:3 }}>
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                     <span className="tnum">{formatNumber(v.views)}</span>
@@ -8210,6 +8390,24 @@ if(activeSubPage==='settings') return (
                           await deleteDoc(doc(db, 'videos', v.id));
                           showToast?.('Post deleted', 'success');
                         }
+                      }}
+                      style={{
+                        position: 'absolute', top: 6, right: 6,
+                        background: 'rgba(11,15,25,0.55)', backdropFilter:'blur(4px)', border: 'none',
+                        borderRadius: '50%', width: 26, height: 26,
+                        color: 'white', cursor: 'pointer', fontSize: 12,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                      }}
+                    >✕</motion.button>
+                  )}
+                  {v.isRepost && (
+                    <motion.button
+                      whileHover={{ scale:1.08 }} whileTap={{ scale:0.9 }}
+                      aria-label="Remove repost"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        try { await toggleRepost(v, user); showToast?.('Repost removed', 'success'); }
+                        catch { showToast?.('Could not remove repost', 'error'); }
                       }}
                       style={{
                         position: 'absolute', top: 6, right: 6,
