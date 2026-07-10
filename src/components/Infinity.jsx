@@ -183,8 +183,6 @@ const SOUND_LIBRARY = [
   { id: 's5', name: 'Summer Love', artist: 'Pop Hits', duration: '3:02', popular: true, usage: 3456000 },
 ];
 
-const EMOJI_LIST = ['😀','😂','😍','🥰','😎','🤔','😭','😱','🔥','❤️','👍','🎉','✨','💯','🙌','👏','🤝','💪','🎵','📸'];
-
 /* ─────────────── CHAT THEME PRESETS ───────────────
    Per-conversation bubble/accent color, independent of the app-wide light/dark
    COLORS toggle in lib/theme.js. Stored on the conversation doc as `chatTheme`
@@ -963,7 +961,44 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack, embedded=false, 
   const cameraInputRef = useRef(null);
   const pickFile = e => { const f = e.target.files[0]; if (f) { setPreviewFile({ url: URL.createObjectURL(f), file: f, type: f.type }); } e.target.value = ''; };
   const clearAttach = () => setPreviewFile(null);
-  const [showEmoji, setShowEmoji] = useState(false);
+  // Real in-app camera capture (getUserMedia live preview + shutter) so "Take
+  // photo" always opens an actual camera instead of silently depending on
+  // <input capture> only working in some mobile browsers. Falls back to the
+  // hidden file input if getUserMedia isn't available/permitted.
+  const [showCameraCapture, setShowCameraCapture] = useState(false);
+  const groupCameraVideoRef = useRef(null);
+  const groupCameraStreamRef = useRef(null);
+  const openGroupCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+      groupCameraStreamRef.current = stream;
+      setShowCameraCapture(true);
+    } catch {
+      cameraInputRef.current?.click();
+    }
+  };
+  const closeGroupCamera = () => {
+    groupCameraStreamRef.current?.getTracks().forEach(t => t.stop());
+    groupCameraStreamRef.current = null;
+    setShowCameraCapture(false);
+  };
+  useEffect(() => {
+    if (showCameraCapture && groupCameraVideoRef.current && groupCameraStreamRef.current) {
+      groupCameraVideoRef.current.srcObject = groupCameraStreamRef.current;
+    }
+  }, [showCameraCapture]);
+  const captureGroupPhoto = () => {
+    const video = groupCameraVideoRef.current;
+    if (!video) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    canvas.toBlob(blob => {
+      if (blob) setPreviewFile({ url: URL.createObjectURL(blob), file: blob, type: 'image/jpeg' });
+      closeGroupCamera();
+    }, 'image/jpeg', 0.92);
+  };
 
   useEffect(() => {
     if (!currentUser?.id) return;
@@ -1333,21 +1368,13 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack, embedded=false, 
             </div>
           </div>
         )}
-        {showEmoji && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '10px 14px', background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 16, margin: '0 14px 4px', maxHeight: 180, overflowY: 'auto' }}>
-            {EMOJI_LIST.map(e => (
-              <button key={e} onClick={() => setMsgText(t => t + e)} aria-label={`Insert ${e}`} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', padding: 2 }}>{e}</button>
-            ))}
-          </div>
-        )}
         <div style={{ padding: '10px 14px', paddingBottom: 'max(28px, env(safe-area-inset-bottom))', background: COLORS.surface, borderTop: `1px solid ${COLORS.border}`, display: 'flex', gap: 8, alignItems: 'center' }}>
           <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 2, background: COLORS.surfaceAlt, borderRadius: 26, padding: '4px 6px 4px 12px' }}>
-            <button onClick={() => setShowEmoji(v => !v)} aria-label="Open emoji picker" style={{ background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0, fontSize: 18, display: 'flex', padding: 4 }}>😊</button>
             <input value={msgText} onChange={e => setMsgText(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendGroupMsg()} placeholder="Message group..." style={{ flex: 1, minWidth: 0, background: 'none', border: 'none', outline: 'none', color: COLORS.textPrimary, fontSize: 13.5, padding: '9px 4px' }} />
             <button onClick={() => fileInputRef.current?.click()} aria-label="Attach photo" style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, padding: 6 }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" /></svg>
             </button>
-            <button onClick={() => cameraInputRef.current?.click()} aria-label="Take photo" style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, padding: 6 }}>
+            <button onClick={openGroupCamera} aria-label="Take photo" style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, padding: 6 }}>
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" /><circle cx="12" cy="13" r="4" /></svg>
             </button>
           </div>
@@ -1366,6 +1393,19 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack, embedded=false, 
             )}
           </AnimatePresence>
         </div>
+        <AnimatePresence>{showCameraCapture && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: 'fixed', inset: 0, background: '#000', zIndex: Z.modal, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ padding: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <button onClick={closeGroupCamera} style={{ background: 'rgba(255,255,255,0.12)', border: 'none', borderRadius: 20, padding: '8px 16px', color: 'white', cursor: 'pointer', fontSize: 13 }}>Cancel</button>
+              <span style={{ color: 'white', fontWeight: 700, fontSize: 15 }}>Camera</span>
+              <div style={{ width: 70 }} />
+            </div>
+            <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+              <video ref={groupCameraVideoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)' }} />
+              <button onClick={captureGroupPhoto} aria-label="Capture photo" style={{ position: 'absolute', bottom: 30, left: '50%', transform: 'translateX(-50%)', background: 'white', border: '4px solid rgba(255,255,255,0.4)', borderRadius: '50%', width: 72, height: 72, cursor: 'pointer' }} />
+            </div>
+          </motion.div>
+        )}</AnimatePresence>
       </div>
     );
   }
@@ -4236,7 +4276,43 @@ const CommentsModal = ({ video, currentUser, onClose, showToast, onViewProfile }
   const cmCameraInputRef = useRef(null);
   const [cmAttachment, setCmAttachment] = useState(null);
   const cmPickFile = e => { const f=e.target.files[0]; if(f){setCmAttachment({url:URL.createObjectURL(f),file:f,type:f.type}); e.target.value='';} };
-  const [showEmoji, setShowEmoji] = useState(false);
+  // Real in-app camera capture, matching the composer's live getUserMedia flow
+  // elsewhere — "Take photo" always opens an actual camera instead of relying
+  // on <input capture>, which many desktop/browser contexts silently ignore.
+  const [showCameraCapture, setShowCameraCapture] = useState(false);
+  const cmCameraVideoRef = useRef(null);
+  const cmCameraStreamRef = useRef(null);
+  const openCmCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+      cmCameraStreamRef.current = stream;
+      setShowCameraCapture(true);
+    } catch {
+      cmCameraInputRef.current?.click();
+    }
+  };
+  const closeCmCamera = () => {
+    cmCameraStreamRef.current?.getTracks().forEach(t => t.stop());
+    cmCameraStreamRef.current = null;
+    setShowCameraCapture(false);
+  };
+  useEffect(() => {
+    if (showCameraCapture && cmCameraVideoRef.current && cmCameraStreamRef.current) {
+      cmCameraVideoRef.current.srcObject = cmCameraStreamRef.current;
+    }
+  }, [showCameraCapture]);
+  const captureCmPhoto = () => {
+    const video = cmCameraVideoRef.current;
+    if (!video) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    canvas.toBlob(blob => {
+      if (blob) setCmAttachment({ url: URL.createObjectURL(blob), file: blob, type: 'image/jpeg' });
+      closeCmCamera();
+    }, 'image/jpeg', 0.92);
+  };
   const sendCommentVoice = async (voiceMsg) => {
     try {
       await addDoc(collection(db, 'comments'), { videoId: video.id, userId: currentUser.id, username: currentUser.username, avatar: currentUser.avatar || (currentUser.username||'U')[0].toUpperCase(), avatarColor: currentUser.avatarColor || COLORS.brand, avatarUrl: currentUser.avatarUrl || null, text: '', mediaUrl: voiceMsg.url, mediaType: 'audio', duration: voiceMsg.duration, likes: 0, createdAt: serverTimestamp() });
@@ -4433,21 +4509,13 @@ const CommentsModal = ({ video, currentUser, onClose, showToast, onViewProfile }
           </div>
         </div>
       )}
-      {showEmoji && (
-        <div style={{ display:'flex', flexWrap:'wrap', gap:6, padding:'10px 16px', background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:16, margin:'0 16px 4px', maxHeight:180, overflowY:'auto' }}>
-          {EMOJI_LIST.map(e=>(
-            <button key={e} onClick={()=>setCommentText(t=>t+e)} aria-label={`Insert ${e}`} style={{ background:'none', border:'none', fontSize:22, cursor:'pointer', padding:2 }}>{e}</button>
-          ))}
-        </div>
-      )}
       <div style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 16px max(16px, env(safe-area-inset-bottom))', background:COLORS.surface, borderTop:`1px solid ${COLORS.border}` }}>
         <div style={{ flex:1, minWidth:0, display:'flex', alignItems:'center', gap:2, background:COLORS.surfaceAlt, borderRadius:26, padding:'4px 6px 4px 12px' }}>
-          <button onClick={()=>setShowEmoji(v=>!v)} aria-label="Open emoji picker" style={{ background:'none', border:'none', cursor:'pointer', flexShrink:0, fontSize:18, display:'flex', padding:4 }}>😊</button>
           <input ref={commentInputRef} value={commentText} onChange={e=>setCommentText(e.target.value)} onKeyDown={e=>e.key==='Enter'&&send()} placeholder="Add a comment..." style={{ flex:1, minWidth:0, background:'none', border:'none', outline:'none', color:COLORS.textPrimary, fontSize:13.5, padding:'9px 4px' }} />
           <button onClick={()=>cmFileInputRef.current?.click()} aria-label="Attach photo" style={{ background:'none', border:'none', cursor:'pointer', color:COLORS.textTertiary, flexShrink:0, display:'flex', padding:5 }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
           </button>
-          <button onClick={()=>cmCameraInputRef.current?.click()} aria-label="Take photo" style={{ background:'none', border:'none', cursor:'pointer', color:COLORS.textTertiary, flexShrink:0, display:'flex', padding:5 }}>
+          <button onClick={openCmCamera} aria-label="Take photo" style={{ background:'none', border:'none', cursor:'pointer', color:COLORS.textTertiary, flexShrink:0, display:'flex', padding:5 }}>
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
           </button>
         </div>
@@ -4466,6 +4534,19 @@ const CommentsModal = ({ video, currentUser, onClose, showToast, onViewProfile }
           )}
         </AnimatePresence>
       </div>
+      <AnimatePresence>{showCameraCapture && (
+        <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }} style={{ position:'fixed', inset:0, background:'#000', zIndex:Z.modal, display:'flex', flexDirection:'column' }}>
+          <div style={{ padding:16, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+            <button onClick={closeCmCamera} style={{ background:'rgba(255,255,255,0.12)', border:'none', borderRadius:20, padding:'8px 16px', color:'white', cursor:'pointer', fontSize:13 }}>Cancel</button>
+            <span style={{ color:'white', fontWeight:700, fontSize:15 }}>Camera</span>
+            <div style={{ width:70 }} />
+          </div>
+          <div style={{ flex:1, position:'relative', overflow:'hidden' }}>
+            <video ref={cmCameraVideoRef} autoPlay playsInline muted style={{ width:'100%', height:'100%', objectFit:'cover', transform:'scaleX(-1)' }} />
+            <button onClick={captureCmPhoto} aria-label="Capture photo" style={{ position:'absolute', bottom:30, left:'50%', transform:'translateX(-50%)', background:'white', border:'4px solid rgba(255,255,255,0.4)', borderRadius:'50%', width:72, height:72, cursor:'pointer' }} />
+          </div>
+        </motion.div>
+      )}</AnimatePresence>
       </motion.div>
     </motion.div>
   );
@@ -8046,13 +8127,14 @@ if(activeSubPage==='settings') return (
               </motion.div>
             </motion.div>
           )}</AnimatePresence>
+          {/* The standalone "Edit Profile" button that used to sit here was removed —
+              the pencil icon on the avatar above already opens the same Edit Profile
+              screen, so having both was a duplicated affordance. Find Friends now
+              takes the full row on its own. */}
           <motion.div variants={listItemVariants} style={{ display:'flex', gap:10, marginTop:16, padding:'0 16px' }}>
-            <motion.button whileHover={{ scale:1.015 }} whileTap={tapScale} onClick={(e)=>{e.stopPropagation(); setShowEditProfile(true);}} style={{ flex:1, background:COLORS.gradient, border:'none', borderRadius:16, padding:'12px 0', color:'white', fontWeight:700, cursor:'pointer', fontSize:14, boxShadow:SHADOW.glow(COLORS.brand), display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-              {t?.editProfile||'Edit Profile'}
-            </motion.button>
-            <motion.button whileHover={{ scale:1.06 }} whileTap={tapScale} onClick={()=>setShowFollowersList('following')} aria-label="Find friends" style={{ background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:16, width:46, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+            <motion.button whileHover={{ scale:1.015 }} whileTap={tapScale} onClick={()=>setShowFollowersList('following')} style={{ flex:1, background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:16, padding:'12px 0', color:COLORS.textPrimary, fontWeight:700, cursor:'pointer', fontSize:14, display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+              Find Friends
             </motion.button>
           </motion.div>
           <motion.div variants={listItemVariants} className="no-scrollbar" style={{ position:'relative', marginTop:16 }}>
@@ -8606,7 +8688,6 @@ const ConversationView = ({ currentUser, otherUser, conversationId, onBack, show
   const [disappearing, setDisappearing] = useState({ enabled: false, seconds: 0 });
   const [showDisappearingSheet, setShowDisappearingSheet] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
-  const [showEmoji, setShowEmoji] = useState(false);
   const [showStickers, setShowStickers] = useState(false);
   const [otherTyping, setOtherTyping] = useState(false);
   const [showMsgReactions, setShowMsgReactions] = useState(null);
@@ -9313,13 +9394,6 @@ unsub = onSnapshot(q, (snap) => {
         </div>
       )}
 
-{showEmoji && (
-        <div style={{display:'flex',flexWrap:'wrap',gap:6,padding:'10px 14px',background:COLORS.surface,border:`1px solid ${COLORS.border}`,borderRadius:16,margin:'0 14px 4px',maxHeight:180,overflowY:'auto'}}>
-          {EMOJI_LIST.map(e=>(
-            <button key={e} onClick={()=>setText(t=>t+e)} aria-label={`Insert ${e}`} style={{background:'none',border:'none',fontSize:22,cursor:'pointer',padding:2}}>{e}</button>
-          ))}
-        </div>
-      )}
       {showStickers && (
         <div style={{padding:'0 14px 4px'}}>
           <StickerPicker onSelect={sendSticker} onClose={()=>setShowStickers(false)} />
@@ -9341,7 +9415,6 @@ unsub = onSnapshot(q, (snap) => {
       )}
       <div style={{padding:'10px 14px',paddingBottom:'max(28px, env(safe-area-inset-bottom))',background:composerBarBg,borderTop:`1px solid ${COLORS.border}`,display:'flex',gap:8,alignItems:'center'}}>
         <div style={{flex:1,minWidth:0,display:'flex',alignItems:'center',gap:2,background:composerPillBg,borderRadius:26,padding:'4px 6px 4px 12px'}}>
-          <button onClick={()=>setShowEmoji(v=>!v)} aria-label="Open emoji picker" style={{background:'none',border:'none',cursor:'pointer',flexShrink:0,fontSize:18,display:'flex',padding:4}}>😊</button>
           <input value={text} onChange={e=>{
             setText(e.target.value);
             if (smartReplies.length) setSmartReplies([]);
