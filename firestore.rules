@@ -38,7 +38,10 @@ service cloud.firestore {
       allow update: if request.auth != null && (
         request.auth.uid == resource.data.userId
         || request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['likes', 'likedBy', 'views', 'viewedBy', 'shares', 'comments', 'savedBy', 'saves', 'poll'])
+             // repostedBy/reposts/repostsMeta added for the real Repost feature —
+             // any signed-in user (not just the post's owner) needs to be able to
+             // toggle these on someone else's post the same way likes/saves work.
+             .hasOnly(['likes', 'likedBy', 'views', 'viewedBy', 'shares', 'comments', 'savedBy', 'saves', 'poll', 'repostedBy', 'reposts', 'repostsMeta'])
         || (request.auth.token.admin == true
           && request.resource.data.diff(resource.data).affectedKeys()
                .hasOnly(['moderationStatus', 'moderatedAt', 'moderatedBy']))
@@ -202,6 +205,7 @@ service cloud.firestore {
         allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
       }
     }
+
     match /liveMessages/{msgId} {
       allow read, create: if request.auth != null;
     }
