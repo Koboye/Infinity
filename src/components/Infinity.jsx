@@ -2416,7 +2416,9 @@ const TelegramStoryViewer = ({ storyGroups, startGroupIdx, currentUser, onClose,
                 style={{ flex:1, background:'none', border:'none', outline:'none', color:'white', fontSize:14, padding:'12px 0' }} />
               {replyText.trim() && (
                 <button onClick={e=>{e.stopPropagation(); sendReply();}} aria-label="Send reply"
-                  style={{ background:COLORS.brand, border:'none', borderRadius:'50%', width:32, height:32, color:'white', cursor:'pointer', fontSize:16, display:'flex', alignItems:'center', justifyContent:'center' }}>➤</button>
+                  style={{ background:COLORS.gradient, border:'none', borderRadius:'50%', width:32, height:32, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="1"><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
               )}
             </div>
           </div>
@@ -2797,11 +2799,11 @@ const StoriesPage = ({ users, currentUser, onClose, onViewStory, onCreateStory, 
         <div style={{ position:'absolute', inset:0, background:'linear-gradient(180deg,rgba(0,0,0,0.05) 40%,rgba(0,0,0,0.65) 100%)' }} />
         <div style={{ position:'absolute', bottom:14, left:14, right:14, display:'flex', alignItems:'center', gap:10 }}>
           <input value={msg} onChange={e=>setMsg(e.target.value)} placeholder="Send message" style={{ flex:1, background:'rgba(255,255,255,0.15)', backdropFilter:'blur(8px)', border:'1px solid rgba(255,255,255,0.25)', borderRadius:22, padding:'10px 16px', color:'#fff', outline:'none', fontSize:13 }} />
-          <button onClick={sendStoryReaction} disabled={!msg.trim() || active?.mine} aria-label="Send reaction" style={{ width:38, height:38, borderRadius:'50%', background:'rgba(255,255,255,0.18)', border:'1px solid rgba(255,255,255,0.25)', color:'#fff', cursor: (!msg.trim() || active?.mine) ? 'default' : 'pointer', opacity: (!msg.trim() || active?.mine) ? 0.5 : 1, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+          <button onClick={sendStoryReaction} disabled={!msg.trim() || active?.mine} aria-label="Send reaction" style={{ width:38, height:38, borderRadius:'50%', background: msg.trim() && !active?.mine ? COLORS.gradient : 'rgba(255,255,255,0.18)', border: msg.trim() && !active?.mine ? 'none' : '1px solid rgba(255,255,255,0.25)', color:'#fff', cursor: (!msg.trim() || active?.mine) ? 'default' : 'pointer', opacity: (!msg.trim() || active?.mine) ? 0.5 : 1, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="1"><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           </button>
           <button onClick={()=> active && onViewStory?.({ groups: tiles, startIdx: activeIdx })} aria-label="View story" style={{ width:38, height:38, borderRadius:'50%', background:'rgba(255,255,255,0.18)', border:'1px solid rgba(255,255,255,0.25)', color:'#fff', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
           </button>
         </div>
       </div>
@@ -3937,9 +3939,11 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
         {!isHost && (
           // Real-money tip straight to the streamer's wallet, alongside (not instead
           // of) the coin-based gifts above — same DonationSheet used from profiles.
-          <button onClick={()=>setShowDonate(true)} title="Send a cash tip" style={{ background:'rgba(11,95,255,0.14)', border:'1px solid rgba(11,95,255,0.35)', borderRadius:'50%', width:42, height:42, color:'#6E4CF5', cursor:'pointer', fontSize:18, flexShrink:0 }}>💝</button>
+          <button onClick={()=>setShowDonate(true)} title="Send a cash tip" style={{ background:'rgba(11,95,255,0.14)', border:'1px solid rgba(11,95,255,0.35)', borderRadius:'50%', width:42, height:42, color:COLORS.brand, cursor:'pointer', fontSize:18, flexShrink:0 }}>💝</button>
         )}
-        <button onClick={sendMessage} aria-label="Send message" style={{ background:COLORS.gradient, border:'none', borderRadius:'50%', width:42, height:42, color:'white', cursor:'pointer', fontSize:16, flexShrink:0 }}>↑</button>
+        <button onClick={sendMessage} aria-label="Send message" style={{ background:COLORS.gradient, border:'none', borderRadius:'50%', width:42, height:42, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="1"><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
       </div>
       <AnimatePresence>{showDonate && (
         <DonationSheet
