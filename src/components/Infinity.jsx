@@ -955,6 +955,14 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack, embedded=false, 
   const [lastOpenedAt, setLastOpenedAt] = useState(undefined);
   const [catchUpDismissed, setCatchUpDismissed] = useState(false);
   const bottomRef = useRef(null);
+  // Composer attachments — same photo/camera/voice pattern as the 1:1
+  // ConversationView composer, so group chat isn't a stripped-down text-only
+  // version of the same feature.
+  const [previewFile, setPreviewFile] = useState(null);
+  const fileInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
+  const pickFile = e => { const f = e.target.files[0]; if (f) { setPreviewFile({ url: URL.createObjectURL(f), file: f, type: f.type }); } e.target.value = ''; };
+  const clearAttach = () => setPreviewFile(null);
 
   useEffect(() => {
     if (!currentUser?.id) return;
@@ -1064,21 +1072,30 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack, embedded=false, 
 
 
   const sendGroupMsg = async () => {
-    if (!msgText.trim() || !activeGroup) return;
+    if ((!msgText.trim() && !previewFile) || !activeGroup) return;
     const txt = msgText;
+    let mediaUrl = null, mediaType = null;
+    if (previewFile?.file) {
+      try { mediaUrl = await uploadToCloudinary(previewFile.file); mediaType = previewFile.type; }
+      catch { showToast?.('Upload failed', 'error'); return; }
+    }
     // AI content check — group messages have multiple witnesses, so this gap
     // matters at least as much as 1:1 DMs. Fail open on a moderation-service
     // hiccup so a network blip never blocks a legitimate message.
-    try {
-      const modResult = await apiFetch('/api/moderation/check', { method: 'POST', body: JSON.stringify({ text: txt }) });
-      if (modResult?.blocked) {
-        showToast?.('This message looks like it may violate our community guidelines and was not sent.', 'error');
-        return;
-      }
-    } catch (e) {}
+    if (txt.trim()) {
+      try {
+        const modResult = await apiFetch('/api/moderation/check', { method: 'POST', body: JSON.stringify({ text: txt }) });
+        if (modResult?.blocked) {
+          showToast?.('This message looks like it may violate our community guidelines and was not sent.', 'error');
+          return;
+        }
+      } catch (e) {}
+    }
     setMsgText('');
+    clearAttach();
     await addDoc(collection(db, 'groups', activeGroup.id, 'msgs'), {
-      text: txt, senderId: currentUser.id, senderName: currentUser.username,
+      text: txt, mediaUrl: mediaUrl || null, mediaType: mediaType || null,
+      senderId: currentUser.id, senderName: currentUser.username,
       senderAvatar: currentUser.avatar, senderAvatarColor: currentUser.avatarColor,
       senderAvatarUrl: currentUser.avatarUrl || null,
       createdAt: serverTimestamp(),
@@ -1091,10 +1108,36 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack, embedded=false, 
       if (uid !== currentUser.id) unreadIncrements[`unread_${uid}`] = increment(1);
     });
     await updateDoc(doc(db, 'groups', activeGroup.id), {
-      lastMessage: txt, lastMessageAt: serverTimestamp(),
+      lastMessage: mediaUrl ? (mediaType?.startsWith('video') ? '🎥 Video' : mediaType?.startsWith('image') ? '📷 Photo' : '📎 Attachment') : txt,
+      lastMessageAt: serverTimestamp(),
       lastSenderId: currentUser.id, lastSenderName: currentUser.username,
       ...unreadIncrements,
     });
+  };
+
+  // Voice notes reuse the same VoiceRecorderButton used in 1:1 chat.
+  const sendGroupVoice = async (voiceMsg) => {
+    if (!activeGroup) return;
+    try {
+      await addDoc(collection(db, 'groups', activeGroup.id, 'msgs'), {
+        text: '', mediaUrl: voiceMsg.url, mediaType: 'audio', duration: voiceMsg.duration,
+        senderId: currentUser.id, senderName: currentUser.username,
+        senderAvatar: currentUser.avatar, senderAvatarColor: currentUser.avatarColor,
+        senderAvatarUrl: currentUser.avatarUrl || null,
+        createdAt: serverTimestamp(),
+      });
+      const unreadIncrements = {};
+      (activeGroup.members || []).forEach(uid => {
+        if (uid !== currentUser.id) unreadIncrements[`unread_${uid}`] = increment(1);
+      });
+      await updateDoc(doc(db, 'groups', activeGroup.id), {
+        lastMessage: '🎙️ Voice message', lastMessageAt: serverTimestamp(),
+        lastSenderId: currentUser.id, lastSenderName: currentUser.username,
+        ...unreadIncrements,
+      });
+    } catch (e) {
+      showToast?.('Failed to send voice message: ' + e.message, 'error');
+    }
   };
 
   if (activeGroup) {
@@ -1254,10 +1297,21 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack, embedded=false, 
                 )}
                 <div style={{ maxWidth: '72%' }}>
                   {!isMine && <div style={{ color: COLORS.textTertiary, fontSize: 10, marginBottom: 3, fontWeight:600 }}>@{msg.senderName}</div>}
-                  <div style={{ background: isMine ? `linear-gradient(135deg,${COLORS.brand},${COLORS.brandSecondary})` : COLORS.surfaceAlt, borderRadius: isMine ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: '10px 14px', color: isMine ? 'white' : COLORS.textPrimary, fontSize: 14, boxShadow: isMine ? SHADOW.xs : 'none' }}>
-                    {msg.text}
-                    {!isMine && <MessageTranslate text={msg.text} targetLang={currentUser?.language || 'en'} isMine={isMine} />}
-                  </div>
+                  {msg.mediaUrl && msg.mediaType?.startsWith('image') && (
+                    <img loading="lazy" decoding="async" src={msg.mediaUrl} alt="" style={{ maxWidth: 220, borderRadius: 14, marginBottom: msg.text ? 4 : 0, display: 'block' }} />
+                  )}
+                  {msg.mediaUrl && msg.mediaType?.startsWith('video') && (
+                    <video src={msg.mediaUrl} controls style={{ maxWidth: 220, borderRadius: 14, marginBottom: msg.text ? 4 : 0, display: 'block' }} />
+                  )}
+                  {msg.mediaUrl && msg.mediaType?.startsWith('audio') && (
+                    <audio src={msg.mediaUrl} controls style={{ maxWidth: 220, marginBottom: msg.text ? 4 : 0, display: 'block' }} />
+                  )}
+                  {msg.text && (
+                    <div style={{ background: isMine ? `linear-gradient(135deg,${COLORS.brand},${COLORS.brandSecondary})` : COLORS.surfaceAlt, borderRadius: isMine ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: '10px 14px', color: isMine ? 'white' : COLORS.textPrimary, fontSize: 14, boxShadow: isMine ? SHADOW.xs : 'none' }}>
+                      {msg.text}
+                      {!isMine && <MessageTranslate text={msg.text} targetLang={currentUser?.language || 'en'} isMine={isMine} />}
+                    </div>
+                  )}
                   {ts && (
                     <div style={{ fontSize:9.5, color:COLORS.textTertiary, marginTop:3, textAlign: isMine ? 'right' : 'left' }}>
                       {ts.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' })}
@@ -1269,11 +1323,39 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack, embedded=false, 
           })}
           <div ref={bottomRef} />
         </div>
-        <div style={{ padding: '10px 14px', borderTop: `1px solid ${COLORS.overlaySubtle}`, display: 'flex', gap: 8 }}>
-          <input value={msgText} onChange={e => setMsgText(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendGroupMsg()} placeholder="Message group..." style={{ flex: 1, background: COLORS.overlaySubtle, border: `1px solid ${COLORS.border}`, borderRadius: 24, padding: '11px 16px', color: COLORS.textPrimary, outline: 'none', fontSize: 13 }} />
-          <button onClick={sendGroupMsg} aria-label="Send message" style={{ background: `linear-gradient(135deg,${COLORS.brand},${COLORS.brandSecondary})`, border: 'none', borderRadius: '50%', width: 42, height: 42, color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-          </button>
+        {previewFile && (
+          <div style={{ padding: '0 14px 6px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: '8px 12px', boxShadow: SHADOW.xs }}>
+              {previewFile.type?.startsWith('image') && <img loading="lazy" decoding="async" src={previewFile.url} alt="" style={{ height: 44, width: 44, objectFit: 'cover', borderRadius: 8 }} />}
+              {previewFile.type?.startsWith('video') && <video src={previewFile.url} style={{ height: 44, width: 60, objectFit: 'cover', borderRadius: 8 }} />}
+              <button onClick={clearAttach} aria-label="Remove attachment" style={{ marginLeft: 'auto', background: COLORS.surfaceAlt, border: 'none', borderRadius: '50%', width: 22, height: 22, color: COLORS.brand, cursor: 'pointer', fontSize: 13 }}>✕</button>
+            </div>
+          </div>
+        )}
+        <div style={{ padding: '10px 14px', paddingBottom: 'max(28px, env(safe-area-inset-bottom))', background: COLORS.surface, borderTop: `1px solid ${COLORS.border}`, display: 'flex', gap: 8, alignItems: 'center' }}>
+          <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 2, background: COLORS.surfaceAlt, borderRadius: 26, padding: '4px 6px 4px 12px' }}>
+            <input value={msgText} onChange={e => setMsgText(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendGroupMsg()} placeholder="Message group..." style={{ flex: 1, minWidth: 0, background: 'none', border: 'none', outline: 'none', color: COLORS.textPrimary, fontSize: 13.5, padding: '9px 4px' }} />
+            <button onClick={() => fileInputRef.current?.click()} aria-label="Attach photo" style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, padding: 6 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" /></svg>
+            </button>
+            <button onClick={() => cameraInputRef.current?.click()} aria-label="Take photo" style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, padding: 6 }}>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" /><circle cx="12" cy="13" r="4" /></svg>
+            </button>
+          </div>
+          <input ref={fileInputRef} type="file" accept="image/*,video/*" onChange={pickFile} style={{ display: 'none' }} />
+          <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={pickFile} style={{ display: 'none' }} />
+          <AnimatePresence initial={false}>
+            {(msgText.trim() || previewFile) ? (
+              <motion.button key="send" initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.5, opacity: 0 }} transition={springs.snappy} whileTap={tapScale} onClick={sendGroupMsg} aria-label="Send message" style={{ background: COLORS.gradient, border: 'none', borderRadius: '50%', width: 42, height: 42, color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="1"><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
+              </motion.button>
+            ) : (
+              <motion.div key="voice" initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.5, opacity: 0 }} transition={springs.snappy}
+                style={{ background: COLORS.gradient, borderRadius: '50%', width: 42, height: 42, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <VoiceRecorderButton showToast={showToast} size="small" onSend={sendGroupVoice} />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     );
@@ -4328,8 +4410,8 @@ const CommentsModal = ({ video, currentUser, onClose, showToast, onViewProfile }
           <button key={e} onClick={()=>setCommentText(t=>t+e)} aria-label={`Insert ${e}`} style={{ background:'none', border:'none', fontSize:20, cursor:'pointer', padding:2 }}>{e}</button>
         ))}
       </div>
-      <div style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 16px max(16px, env(safe-area-inset-bottom))', borderTop:`1px solid ${COLORS.border}` }}>
-        <div style={{ flex:1, minWidth:0, display:'flex', alignItems:'center', gap:2, background:COLORS.surface2, border:`1px solid ${COLORS.border}`, borderRadius:24, padding:'4px 6px 4px 12px' }}>
+      <div style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 16px max(16px, env(safe-area-inset-bottom))', background:COLORS.surface, borderTop:`1px solid ${COLORS.border}` }}>
+        <div style={{ flex:1, minWidth:0, display:'flex', alignItems:'center', gap:2, background:COLORS.surfaceAlt, borderRadius:26, padding:'4px 6px 4px 12px' }}>
           <input ref={commentInputRef} value={commentText} onChange={e=>setCommentText(e.target.value)} onKeyDown={e=>e.key==='Enter'&&send()} placeholder="Add a comment..." style={{ flex:1, minWidth:0, background:'none', border:'none', outline:'none', color:COLORS.textPrimary, fontSize:13, padding:'8px 4px' }} />
           <button onClick={()=>cmFileInputRef.current?.click()} aria-label="Attach photo" style={{ background:'none', border:'none', cursor:'pointer', color:COLORS.textTertiary, flexShrink:0, display:'flex', padding:5 }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
@@ -4340,8 +4422,8 @@ const CommentsModal = ({ video, currentUser, onClose, showToast, onViewProfile }
         </div>
         <input ref={cmFileInputRef} type="file" accept="image/*,video/*" onChange={cmPickFile} style={{ display:'none' }} />
         <input ref={cmCameraInputRef} type="file" accept="image/*" capture="environment" onChange={cmPickFile} style={{ display:'none' }} />
-        <button onClick={send} aria-label="Send comment" style={{ background:COLORS.gradient, border:'none', borderRadius:'50%', width:36, height:36, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        <button onClick={send} aria-label="Send comment" style={{ background:COLORS.gradient, border:'none', borderRadius:'50%', width:42, height:42, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="1"><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
       </div>
       </motion.div>
@@ -8607,12 +8689,15 @@ unsub = onSnapshot(q, (snap) => {
     if (!isDefaultChatTheme) return seen ? (activeTheme.accent || COLORS.brand) : COLORS.textTertiary;
     return seen ? wa.tickRead : wa.tickUnread;
   };
-  // Composer bar colors — neutral WhatsApp light-grey bar + white pill + solid
-  // green action button for the default theme; falls back to the app's normal
-  // surface/brand colors when a custom Chat Theme is active.
-  const composerBarBg = isDefaultChatTheme ? wa.composerBarBg : COLORS.surface;
-  const composerPillBg = isDefaultChatTheme ? wa.composerPillBg : COLORS.surfaceAlt;
-  const actionButtonBg = isDefaultChatTheme ? wa.actionGreen : myBubbleBg;
+  // Composer bar colors — always the app's own brand surface/gradient tokens,
+  // regardless of which Chat Theme (or the WhatsApp-style default bubble look)
+  // is active for the message wallpaper/bubbles. The send button and write area
+  // are chrome, not wallpaper — they must look identical to every other send
+  // button and write area in the app (comments, group chat, etc.), never the
+  // WhatsApp green that used to show here only for the default theme.
+  const composerBarBg = COLORS.surface;
+  const composerPillBg = COLORS.surfaceAlt;
+  const actionButtonBg = COLORS.gradient;
   // WhatsApp-style "TODAY" / "YESTERDAY" / date divider label for the pill shown
   // between messages sent on different calendar days.
   const dateDividerLabel = (date) => {
@@ -8926,7 +9011,7 @@ unsub = onSnapshot(q, (snap) => {
         </div>
         <input ref={fileInputRef} type="file" accept="image/*,video/*,audio/*" onChange={pickFile} style={{display:'none'}}/>
         <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={pickFile} style={{display:'none'}}/>
-        <AnimatePresence mode="wait" initial={false}>
+        <AnimatePresence initial={false}>
         {(text.trim() || previewFile || audioBlob) ? (
           <motion.button key="send" initial={{ scale:0.5, opacity:0 }} animate={{ scale:1, opacity:1 }} exit={{ scale:0.5, opacity:0 }} transition={springs.snappy} whileTap={tapScale} onClick={handleSend} aria-label="Send message" style={{background:actionButtonBg,border:'none',borderRadius:'50%',width:42,height:42,color:'white',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,boxShadow:myGlow}}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="1"><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
