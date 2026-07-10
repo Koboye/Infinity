@@ -1951,6 +1951,10 @@ const buildDefaultProfile = (uid, data = {}) => ({
   verified: false,
   followers: [],
   following: [],
+  friends: [], // mutual, accepted friend connections — separate from the one-way follow graph
+  friendRequestsSent: [],
+  friendRequestsReceived: [],
+  closeFriends: [], // starred subset of `friends`, surfaced at the top of the Friends tab
   blockedUsers: [],
   coins: 500,
   walletBalance: 500,
@@ -1975,7 +1979,7 @@ const buildPrivateContact = (data = {}) => ({
 // edits (followers, following). Re-including these on a merge-update also used to trip the
 // Firestore rule that blocks coins/walletBalance writes outside dedicated flows, which was
 // the root cause of the repeated-Google-signin bug.
-const PROTECTED_PROFILE_FIELDS = ['coins', 'walletBalance', 'followers', 'following'];
+const PROTECTED_PROFILE_FIELDS = ['coins', 'walletBalance', 'followers', 'following', 'friends', 'friendRequestsSent', 'friendRequestsReceived', 'closeFriends'];
 
 const createUserProfile = async (uid, data) => {
   const userRef = doc(db, 'users', uid);
@@ -5829,18 +5833,64 @@ const HomeFeed = ({ t, videos, videosLoading, videosError, onLike, onComment, on
 };
 
 /* FriendsFeed removed — dead code, fully replaced by FriendsDiscoveryPage below. */
-/* ─────────────── FRIENDS DISCOVERY (SMART DISCOVERY) ─────────────── */
-/* ─────────────── FRIENDS DISCOVERY (SMART DISCOVERY) ─────────────── */
-const FriendsDiscoveryPage = ({ currentUser, users, followed, onFollow, onViewProfile, onOpenSearch, onFeedScroll, onCreateStory, onViewStory, onOpenStories, showToast }) => {
+/* ─────────────── FRIENDS PAGE (real mutual friend-request system) ───────────────
+   Rebuilt around a genuine, bidirectional friends graph (`friends`, `friendRequestsSent`,
+   `friendRequestsReceived`, `closeFriends` on each user doc — see toggleFollow's siblings
+   in InfinityV1app: sendFriendRequest/acceptFriendRequest/declineFriendRequest/removeFriend/
+   toggleCloseFriend) instead of treating "who I follow" as "my friends". Follow stays exactly
+   as it was everywhere else in the app (feed personalization, profile follow button); this
+   page layers a separate, mutual relationship on top — the same way Instagram's Follow and
+   Close Friends, or Facebook's Follow and Friend Request, coexist without one standing in
+   for the other.
+   Unique features added here: real mutual-connections ranking for suggestions, an Online Now
+   strip driven by live presence, a Requests tab with real Received/Sent state (accept/decline/
+   cancel), and Close Friends as a genuine starred list rather than "first 5 people you follow". */
+const FriendsDiscoveryPage = ({
+  currentUser, users, followed, onFollow,
+  friends, friendRequestsSent, friendRequestsReceived, closeFriends,
+  onSendFriendRequest, onCancelFriendRequest, onAcceptFriendRequest, onDeclineFriendRequest, onRemoveFriend, onToggleCloseFriend,
+  onViewProfile, onOpenSearch, onFeedScroll, onCreateStory, onViewStory, onOpenStories, onMessage, showToast,
+}) => {
   const [tab, setTab] = useState('discover');
+  const [requestsSubTab, setRequestsSubTab] = useState('received');
   const [search, setSearch] = useState('');
+  const [openMenuId, setOpenMenuId] = useState(null);
+
+  const friendsArr = friends || [];
+  const sentArr = friendRequestsSent || [];
+  const receivedArr = friendRequestsReceived || [];
+  const closeArr = closeFriends || [];
 
   const others = useMemo(()=>(users||[]).filter(u=>u.id!==currentUser?.id), [users, currentUser?.id]);
+
+  // Real mutual-connections count: intersection of everyone *I* follow/friend with
+  // everyone *they* follow/friend — not the old `followerCount % 20` placeholder.
+  const myConnections = useMemo(()=>new Set([...(followed||[]), ...friendsArr]), [followed, friendsArr]);
+  const mutualCount = useCallback((u)=>{
+    const theirs = new Set([...(u.following||[]), ...(u.friends||[])]);
+    let n = 0;
+    myConnections.forEach(id => { if (theirs.has(id)) n++; });
+    return n;
+  }, [myConnections]);
+
+  const yourFriends = useMemo(()=>
+    others.filter(u=>friendsArr.includes(u.id)).sort((a,b)=>mutualCount(b)-mutualCount(a))
+  , [others, friendsArr, mutualCount]);
+
+  const closeFriendUsers = useMemo(()=>
+    others.filter(u=>closeArr.includes(u.id))
+  , [others, closeArr]);
+
+  const receivedUsers = useMemo(()=>others.filter(u=>receivedArr.includes(u.id)), [others, receivedArr]);
+  const sentUsers = useMemo(()=>others.filter(u=>sentArr.includes(u.id)), [others, sentArr]);
+
   const suggestions = useMemo(()=>
-    others.filter(u=>!(followed||[]).includes(u.id)).sort((a,b)=>(b.followers?.length||0)-(a.followers?.length||0)).slice(0,6)
-  ,[others, followed]);
-  const yourFriends = useMemo(()=>others.filter(u=>(followed||[]).includes(u.id)), [others, followed]);
-  const closeFriends = yourFriends.slice(0,5);
+    others
+      .filter(u=>!friendsArr.includes(u.id) && !sentArr.includes(u.id) && !receivedArr.includes(u.id))
+      .sort((a,b)=> (mutualCount(b)-mutualCount(a)) || ((b.followers?.length||0)-(a.followers?.length||0)))
+      .slice(0,8)
+  ,[others, friendsArr, sentArr, receivedArr, mutualCount]);
+
   const filteredList = search
     ? others.filter(u=>u.username?.toLowerCase().includes(search.toLowerCase()) || u.fullName?.toLowerCase().includes(search.toLowerCase()))
     : null;
@@ -5851,10 +5901,59 @@ const FriendsDiscoveryPage = ({ currentUser, users, followed, onFollow, onViewPr
     </div>
   );
 
+  // One relationship button that reflects the *real* friend-request state machine:
+  // none → Add Friend, sent → Requested (tap to cancel), received → Accept/Decline,
+  // friends → Friends ✓ (tap opens a small actions menu: message / close friend / remove).
+  const FriendActionButton = ({ u, compact=false }) => {
+    const isFriend = friendsArr.includes(u.id);
+    const iSent = sentArr.includes(u.id);
+    const iReceived = receivedArr.includes(u.id);
+    const pad = compact ? '6px 14px' : '7px 16px';
+    const fontSize = compact ? 11.5 : 12;
+
+    if (isFriend) {
+      const isClose = closeArr.includes(u.id);
+      return (
+        <div style={{ position:'relative' }}>
+          <RippleButton onClick={e=>{ e.stopPropagation(); setOpenMenuId(openMenuId===u.id?null:u.id); }}
+            style={{ display:'flex', alignItems:'center', gap:4, background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, color:COLORS.textSecondary, borderRadius:14, padding:pad, fontSize, fontWeight:700, cursor:'pointer' }}>
+            {isClose && <span style={{fontSize:11}}>⭐</span>} Friends <span style={{fontSize:9}}>▾</span>
+          </RippleButton>
+          {openMenuId===u.id && (
+            <div onClick={e=>e.stopPropagation()} style={{ position:'absolute', top:'110%', right:0, zIndex:20, background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:14, boxShadow:SHADOW.card, minWidth:170, overflow:'hidden' }}>
+              {onMessage && <div onClick={()=>{ setOpenMenuId(null); onMessage(u.id); }} style={{ padding:'11px 14px', fontSize:13, color:COLORS.textPrimary, cursor:'pointer', fontWeight:600 }}>💬 Message</div>}
+              <div onClick={()=>{ setOpenMenuId(null); onToggleCloseFriend?.(u.id); }} style={{ padding:'11px 14px', fontSize:13, color:COLORS.textPrimary, cursor:'pointer', fontWeight:600, borderTop:`1px solid ${COLORS.border}` }}>{isClose ? '⭐ Remove Close Friend' : '⭐ Add to Close Friends'}</div>
+              <div onClick={()=>{ setOpenMenuId(null); onRemoveFriend?.(u.id); }} style={{ padding:'11px 14px', fontSize:13, color:COLORS.danger||'#FF453A', cursor:'pointer', fontWeight:600, borderTop:`1px solid ${COLORS.border}` }}>✕ Remove Friend</div>
+            </div>
+          )}
+        </div>
+      );
+    }
+    if (iReceived) {
+      return (
+        <div style={{ display:'flex', gap:6 }}>
+          <RippleButton onClick={e=>{ e.stopPropagation(); onAcceptFriendRequest?.(u.id); }} style={{ background:COLORS.gradient, border:'none', color:'white', borderRadius:14, padding:pad, fontSize, fontWeight:700, cursor:'pointer', boxShadow:SHADOW.glow(COLORS.brand) }}>Accept</RippleButton>
+          <RippleButton onClick={e=>{ e.stopPropagation(); onDeclineFriendRequest?.(u.id); }} style={{ background:'none', border:`1px solid ${COLORS.border}`, color:COLORS.textSecondary, borderRadius:14, padding:pad, fontSize, fontWeight:700, cursor:'pointer' }}>Decline</RippleButton>
+        </div>
+      );
+    }
+    if (iSent) {
+      return (
+        <RippleButton onClick={e=>{ e.stopPropagation(); onCancelFriendRequest?.(u.id); }} style={{ background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, color:COLORS.textSecondary, borderRadius:14, padding:pad, fontSize, fontWeight:700, cursor:'pointer' }}>Requested</RippleButton>
+      );
+    }
+    return (
+      <RippleButton onClick={e=>{ e.stopPropagation(); onSendFriendRequest?.(u.id); }} style={{ background:COLORS.gradient, border:'none', color:'white', borderRadius:14, padding:pad, fontSize, fontWeight:700, cursor:'pointer', boxShadow:SHADOW.glow(COLORS.brand) }}>+ Add Friend</RippleButton>
+    );
+  };
+
+  const requestsBadgeCount = receivedArr.length;
+
   return (
-    <div data-main-scroll="true" onScroll={onFeedScroll} style={{ height:'100%', overflowY:'auto', background:COLORS.bg, padding:'10px 16px max(74px, calc(58px + env(safe-area-inset-bottom)))' }}>
+    <div data-main-scroll="true" onScroll={e=>{ onFeedScroll?.(e); setOpenMenuId(null); }} style={{ height:'100%', overflowY:'auto', background:COLORS.bg, padding:'10px 16px max(74px, calc(58px + env(safe-area-inset-bottom)))' }}>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
         <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:18 }}>Friends</div>
+        {friendsArr.length > 0 && <div style={{ color:COLORS.textTertiary, fontSize:12, fontWeight:600 }}>{friendsArr.length} friend{friendsArr.length!==1?'s':''}</div>}
       </div>
       <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
         <div style={{ flex:1, display:'flex', alignItems:'center', gap:8, background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:20, padding:'10px 14px' }}>
@@ -5888,15 +5987,26 @@ const FriendsDiscoveryPage = ({ currentUser, users, followed, onFollow, onViewPr
                 <div style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:13.5 }}>{u.fullName || u.username}</div>
                 <div style={{ color:COLORS.textTertiary, fontSize:12 }}>@{u.username}</div>
               </div>
-              <RippleButton onClick={e=>{e.stopPropagation(); onFollow?.(u.id);}} style={{ background:(followed||[]).includes(u.id)?COLORS.surfaceAlt:'none', border:`1px solid ${COLORS.brand}`, color:(followed||[]).includes(u.id)?COLORS.textSecondary:COLORS.brand, borderRadius:14, padding:'6px 16px', fontSize:12, fontWeight:700, cursor:'pointer' }}>{(followed||[]).includes(u.id)?'Following':'Follow'}</RippleButton>
+              <FriendActionButton u={u} compact />
             </div>
           ))}
         </div>
       ) : (
       <>
-      <div style={{ display:'flex', gap:22, marginBottom:14 }}>
-        {[['discover','Discover'],['yours','Your Friends'],['requests','Requests'],['groups','Groups']].map(([id,label])=>(
-          <button key={id} onClick={()=>setTab(id)} style={{ background:'none', border:'none', borderBottom:tab===id?`2px solid ${COLORS.brand}`:'2px solid transparent', padding:'0 0 10px', color:tab===id?COLORS.brand:COLORS.textTertiary, fontSize:13.5, fontWeight:700, cursor:'pointer' }}>{label}</button>
+      <div style={{ display:'flex', gap:22, marginBottom:14, overflowX:'auto' }}>
+        {[
+          ['discover','Discover'],
+          ['friends',`Friends${friendsArr.length?` (${friendsArr.length})`:''}`],
+          ['requests','Requests'],
+          ['close','Close Friends'],
+          ['groups','Groups'],
+        ].map(([id,label])=>(
+          <button key={id} onClick={()=>{ setTab(id); setOpenMenuId(null); }} style={{ position:'relative', flexShrink:0, background:'none', border:'none', borderBottom:tab===id?`2px solid ${COLORS.brand}`:'2px solid transparent', padding:'0 0 10px', color:tab===id?COLORS.brand:COLORS.textTertiary, fontSize:13.5, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap' }}>
+            {label}
+            {id==='requests' && requestsBadgeCount > 0 && (
+              <span style={{ position:'absolute', top:-4, right:-14, background:COLORS.danger||'#FF453A', color:'white', fontSize:9.5, fontWeight:800, borderRadius:8, minWidth:16, height:16, padding:'0 3px', display:'flex', alignItems:'center', justifyContent:'center' }}>{requestsBadgeCount}</span>
+            )}
+          </button>
         ))}
       </div>
 
@@ -5907,44 +6017,45 @@ const FriendsDiscoveryPage = ({ currentUser, users, followed, onFollow, onViewPr
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={COLORS.brand} strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
             </div>
             <div style={{ flex:1 }}>
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                <div style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:13.5 }}>Smart Suggestions</div>
-                <span style={{ color:COLORS.brand, fontSize:12, fontWeight:700, cursor:'pointer' }}>See all</span>
-              </div>
-              <div style={{ color:COLORS.textTertiary, fontSize:11.5, marginTop:2 }}>AI-powered picks based on your interests, mutual friends & activity</div>
+              <div style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:13.5 }}>Smart Suggestions</div>
+              <div style={{ color:COLORS.textTertiary, fontSize:11.5, marginTop:2 }}>Ranked by real mutual connections — people you and your friends both know</div>
             </div>
           </div>
+          {suggestions.length===0 && <div style={{ color:COLORS.textTertiary, fontSize:12.5, padding:'8px 0 18px' }}>No new suggestions right now — check back later.</div>}
           <div style={{ display:'flex', gap:10, overflowX:'auto', paddingBottom:16, marginBottom:6 }}>
-            {suggestions.map(u=>(
-              <div key={u.id} style={{ position:'relative', flexShrink:0, width:132, background:COLORS.surfaceAlt, borderRadius:14, overflow:'hidden', border:`1px solid ${COLORS.border}`, boxShadow:SHADOW.card, transition:TRANSITION.base }}>
-                <div onClick={()=>onViewProfile?.(u.id)} style={{ height:110, background:u.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', overflow:'hidden' }}>
-                  {u.avatarUrl ? <img loading="lazy" decoding="async" src={u.avatarUrl} style={{ width:'100%', height:'100%', objectFit:'cover' }} alt="" /> : <span style={{ color:'white', fontWeight:800, fontSize:32 }}>{u.avatar||u.username?.[0]?.toUpperCase()}</span>}
+            {suggestions.map(u=>{
+              const mc = mutualCount(u);
+              return (
+                <div key={u.id} style={{ position:'relative', flexShrink:0, width:132, background:COLORS.surfaceAlt, borderRadius:14, overflow:'hidden', border:`1px solid ${COLORS.border}`, boxShadow:SHADOW.card, transition:TRANSITION.base }}>
+                  <div onClick={()=>onViewProfile?.(u.id)} style={{ height:110, background:u.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', overflow:'hidden' }}>
+                    {u.avatarUrl ? <img loading="lazy" decoding="async" src={u.avatarUrl} style={{ width:'100%', height:'100%', objectFit:'cover' }} alt="" /> : <span style={{ color:'white', fontWeight:800, fontSize:32 }}>{u.avatar||u.username?.[0]?.toUpperCase()}</span>}
+                  </div>
+                  <div style={{ padding:'8px 10px 10px' }}>
+                    <div onClick={()=>onViewProfile?.(u.id)} style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:12.5, cursor:'pointer', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{u.fullName || u.username}</div>
+                    <div style={{ color:COLORS.textTertiary, fontSize:11, marginBottom:8 }}>{mc > 0 ? `${mc} mutual` : 'New to Infinity'}</div>
+                    <RippleButton onClick={()=>onSendFriendRequest?.(u.id)} style={{ width:'100%', background:COLORS.gradient, border:'none', borderRadius:8, padding:'7px 0', color:'white', fontSize:12, fontWeight:700, cursor:'pointer' }}>+ Add Friend</RippleButton>
+                  </div>
                 </div>
-                <div style={{ padding:'8px 10px 10px' }}>
-                  <div onClick={()=>onViewProfile?.(u.id)} style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:12.5, cursor:'pointer', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{u.fullName || u.username}</div>
-                  <div style={{ color:COLORS.textTertiary, fontSize:11, marginBottom:8 }}>{Math.max(1,(u.followers?.length||0)%20)} mutual</div>
-                  <RippleButton onClick={()=>onFollow?.(u.id)} style={{ width:'100%', background:COLORS.gradient, border:'none', borderRadius:8, padding:'7px 0', color:'white', fontSize:12, fontWeight:700, cursor:'pointer' }}>+ Follow</RippleButton>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4 }}>
             <div>
               <div style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:13.5 }}>Close Friends</div>
-              <div style={{ color:COLORS.textTertiary, fontSize:11.5 }}>People you interact with most</div>
+              <div style={{ color:COLORS.textTertiary, fontSize:11.5 }}>Your starred inner circle</div>
             </div>
-            <span style={{ color:COLORS.brand, fontSize:12, fontWeight:700, cursor:'pointer' }}>See all</span>
+            <span onClick={()=>setTab('close')} style={{ color:COLORS.brand, fontSize:12, fontWeight:700, cursor:'pointer' }}>See all</span>
           </div>
-          {closeFriends.length===0 && <div style={{ color:COLORS.textTertiary, fontSize:12.5, padding:'14px 0' }}>Follow people to see them here.</div>}
-          {closeFriends.map(u=>(
+          {closeFriendUsers.length===0 && <div style={{ color:COLORS.textTertiary, fontSize:12.5, padding:'14px 0' }}>Star a friend from the Friends tab to add them here.</div>}
+          {closeFriendUsers.slice(0,5).map(u=>(
             <div key={u.id} onClick={()=>onViewProfile?.(u.id)} style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 0', cursor:'pointer' }}>
               <AvatarCircle u={u} size={40} />
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:13 }}>{u.fullName || u.username}</div>
                 <div style={{ color:COLORS.textTertiary, fontSize:11.5 }}>@{u.username}</div>
               </div>
-              <span style={{ color:COLORS.textTertiary, fontSize:16, cursor:'pointer' }}>•••</span>
+              <span style={{fontSize:14}}>⭐</span>
             </div>
           ))}
 
@@ -5966,29 +6077,97 @@ const FriendsDiscoveryPage = ({ currentUser, users, followed, onFollow, onViewPr
         </>
       )}
 
-      {tab==='yours' && (
-        yourFriends.length===0 ? (
+      {tab==='friends' && (
+        <>
+          {yourFriends.length > 0 && (
+            <div style={{ margin:'0 -16px 14px' }}>
+              <div style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:13, margin:'0 16px 8px' }}>Online Now</div>
+              <div style={{ display:'flex', gap:14, overflowX:'auto', padding:'0 16px 4px' }}>
+                {yourFriends.map(u=><OnlineFriendChip key={u.id} u={u} onClick={()=>onViewProfile?.(u.id)} />)}
+              </div>
+            </div>
+          )}
+          {yourFriends.length===0 ? (
+            <div style={{ textAlign:'center', padding:48, color:COLORS.textTertiary }}>
+              <div style={{ fontSize:44, marginBottom:12 }}>👥</div>
+              <div>No friends yet — send a request from Discover or Search</div>
+            </div>
+          ) : yourFriends.map(u=>{
+            const mc = mutualCount(u);
+            return (
+              <div key={u.id} onClick={()=>onViewProfile?.(u.id)} style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 0', cursor:'pointer' }}>
+                <AvatarCircle u={u} />
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:13.5 }}>{u.fullName || u.username}</div>
+                  <div style={{ color:COLORS.textTertiary, fontSize:12 }}>@{u.username}{mc>0 ? ` · ${mc} mutual` : ''}</div>
+                </div>
+                <FriendActionButton u={u} compact />
+              </div>
+            );
+          })}
+        </>
+      )}
+
+      {tab==='close' && (
+        closeFriendUsers.length===0 ? (
           <div style={{ textAlign:'center', padding:48, color:COLORS.textTertiary }}>
-            <div style={{ fontSize:44, marginBottom:12 }}>👥</div>
-            <div>Follow people to build your friends list</div>
+            <div style={{ fontSize:44, marginBottom:12 }}>⭐</div>
+            <div>No close friends yet</div>
+            <div style={{ fontSize:12, marginTop:6 }}>Open a friend's "Friends ▾" menu to star them</div>
           </div>
-        ) : yourFriends.map(u=>(
+        ) : closeFriendUsers.map(u=>(
           <div key={u.id} onClick={()=>onViewProfile?.(u.id)} style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 0', cursor:'pointer' }}>
             <AvatarCircle u={u} />
             <div style={{ flex:1, minWidth:0 }}>
               <div style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:13.5 }}>{u.fullName || u.username}</div>
               <div style={{ color:COLORS.textTertiary, fontSize:12 }}>@{u.username}</div>
             </div>
-            <span style={{ color:COLORS.textTertiary, fontSize:16 }}>•••</span>
+            <RippleButton onClick={e=>{ e.stopPropagation(); onToggleCloseFriend?.(u.id); }} style={{ background:'none', border:`1px solid ${COLORS.border}`, color:COLORS.textSecondary, borderRadius:14, padding:'6px 14px', fontSize:11.5, fontWeight:700, cursor:'pointer' }}>⭐ Starred</RippleButton>
           </div>
         ))
       )}
 
       {tab==='requests' && (
-        <div style={{ textAlign:'center', padding:48, color:COLORS.textTertiary }}>
-          <div style={{ fontSize:44, marginBottom:12 }}>📬</div>
-          <div>No pending friend requests</div>
-        </div>
+        <>
+          <div style={{ display:'flex', gap:8, marginBottom:14 }}>
+            {[['received',`Received${receivedUsers.length?` (${receivedUsers.length})`:''}`],['sent',`Sent${sentUsers.length?` (${sentUsers.length})`:''}`]].map(([id,label])=>(
+              <button key={id} onClick={()=>setRequestsSubTab(id)} style={{ flex:1, background:requestsSubTab===id?COLORS.gradient:COLORS.surfaceAlt, border:'none', borderRadius:12, padding:'9px 0', color:requestsSubTab===id?'white':COLORS.textSecondary, fontSize:12.5, fontWeight:700, cursor:'pointer', transition:TRANSITION.fast }}>{label}</button>
+            ))}
+          </div>
+          {requestsSubTab==='received' ? (
+            receivedUsers.length===0 ? (
+              <div style={{ textAlign:'center', padding:48, color:COLORS.textTertiary }}>
+                <div style={{ fontSize:44, marginBottom:12 }}>📬</div>
+                <div>No pending friend requests</div>
+              </div>
+            ) : receivedUsers.map(u=>(
+              <div key={u.id} onClick={()=>onViewProfile?.(u.id)} style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 0', cursor:'pointer' }}>
+                <AvatarCircle u={u} />
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:13.5 }}>{u.fullName || u.username}</div>
+                  <div style={{ color:COLORS.textTertiary, fontSize:12 }}>@{u.username}{mutualCount(u)>0 ? ` · ${mutualCount(u)} mutual` : ''}</div>
+                </div>
+                <FriendActionButton u={u} compact />
+              </div>
+            ))
+          ) : (
+            sentUsers.length===0 ? (
+              <div style={{ textAlign:'center', padding:48, color:COLORS.textTertiary }}>
+                <div style={{ fontSize:44, marginBottom:12 }}>📤</div>
+                <div>You haven't sent any requests</div>
+              </div>
+            ) : sentUsers.map(u=>(
+              <div key={u.id} onClick={()=>onViewProfile?.(u.id)} style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 0', cursor:'pointer' }}>
+                <AvatarCircle u={u} />
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:13.5 }}>{u.fullName || u.username}</div>
+                  <div style={{ color:COLORS.textTertiary, fontSize:12 }}>@{u.username}</div>
+                </div>
+                <FriendActionButton u={u} compact />
+              </div>
+            ))
+          )}
+        </>
       )}
 
       {tab==='groups' && (
@@ -5998,6 +6177,25 @@ const FriendsDiscoveryPage = ({ currentUser, users, followed, onFollow, onViewPr
       )}
       </>
       )}
+    </div>
+  );
+};
+
+// Small avatar chip with a real presence dot (from /presence/{uid}) — used for the
+// "Online Now" strip in the Friends tab. Pulled into its own component so each chip
+// owns its own presence subscription instead of one listener per whole list re-render.
+const OnlineFriendChip = ({ u, onClick }) => {
+  const presence = usePresence(u.id);
+  const isOnline = !!presence?.online;
+  return (
+    <div onClick={onClick} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5, flexShrink:0, width:56, cursor:'pointer' }}>
+      <div style={{ position:'relative', width:48, height:48 }}>
+        <div style={{ width:48, height:48, borderRadius:'50%', background:u.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, fontSize:18, overflow:'hidden' }}>
+          {u.avatarUrl ? <img loading="lazy" decoding="async" src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/> : (u.avatar||u.username?.[0]||'?')}
+        </div>
+        {isOnline && <div style={{ position:'absolute', bottom:0, right:0, width:13, height:13, borderRadius:'50%', background:'#2ED573', border:`2.5px solid ${COLORS.bg}` }} />}
+      </div>
+      <div style={{ color:COLORS.textTertiary, fontSize:10.5, fontWeight:600, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', maxWidth:56 }}>{isOnline ? 'Online' : (u.username||'').slice(0,8)}</div>
     </div>
   );
 };
@@ -8009,9 +8207,9 @@ if(activeSubPage==='settings') return (
                 const lSnap = await getDocs(collection(db,'likes'));
                 await Promise.all(lSnap.docs.filter(d=>d.id.includes(user.id)).map(d=>deleteDoc(doc(db,'likes',d.id))));
                 await updateDoc(doc(db,'users',user.id),{
-                  followers:[], following:[], coins:500, walletBalance:500, streak:1
+                  followers:[], following:[], friends:[], friendRequestsSent:[], friendRequestsReceived:[], closeFriends:[], coins:500, walletBalance:500, streak:1
                 });
-                setCurrentUser(u=>({...u,followers:[],following:[],coins:500,walletBalance:500,streak:1}));
+                setCurrentUser(u=>({...u,followers:[],following:[],friends:[],friendRequestsSent:[],friendRequestsReceived:[],closeFriends:[],coins:500,walletBalance:500,streak:1}));
                 showToast?.('Account reset successfully','success');
               } catch(e){
                 showToast?.('Reset failed: '+e.message,'error');
@@ -13831,6 +14029,69 @@ const handleLogout = async () => {
     if(!isFollowing) await sendNotification(uid, currentUser.id, 'follow', 'started following you');
   };
 
+  /* ─────────────── FRIEND REQUESTS (Friends tab) ───────────────
+     A deliberately separate, mutual relationship graph from the one-way `follow`
+     graph above. Sending a request writes to both docs' arrays in one round trip;
+     the `users` collection listener (already subscribed app-wide) reflects the
+     change back into `users` — and therefore into the Friends page — within a
+     snapshot, so no extra local mirror state is needed here the way `followed` has one. */
+  const sendFriendRequest = async (uid) => {
+    if (!currentUser?.id || !uid || uid === currentUser.id) return;
+    await updateDoc(doc(db,'users',currentUser.id), { friendRequestsSent: arrayUnion(uid) });
+    await updateDoc(doc(db,'users',uid), { friendRequestsReceived: arrayUnion(currentUser.id) });
+    await sendNotification(uid, currentUser.id, 'friend_request', 'sent you a friend request');
+  };
+
+  const cancelFriendRequest = async (uid) => {
+    if (!currentUser?.id || !uid) return;
+    await updateDoc(doc(db,'users',currentUser.id), { friendRequestsSent: arrayRemove(uid) });
+    await updateDoc(doc(db,'users',uid), { friendRequestsReceived: arrayRemove(currentUser.id) });
+  };
+
+  const declineFriendRequest = async (uid) => {
+    if (!currentUser?.id || !uid) return;
+    await updateDoc(doc(db,'users',currentUser.id), { friendRequestsReceived: arrayRemove(uid) });
+    await updateDoc(doc(db,'users',uid), { friendRequestsSent: arrayRemove(currentUser.id) });
+  };
+
+  const acceptFriendRequest = async (uid) => {
+    if (!currentUser?.id || !uid) return;
+    await updateDoc(doc(db,'users',currentUser.id), {
+      friendRequestsReceived: arrayRemove(uid),
+      friends: arrayUnion(uid),
+    });
+    await updateDoc(doc(db,'users',uid), {
+      friendRequestsSent: arrayRemove(currentUser.id),
+      friends: arrayUnion(currentUser.id),
+    });
+    await sendNotification(uid, currentUser.id, 'friend_accept', 'accepted your friend request');
+    showToast?.('You are now friends!', 'success');
+  };
+
+  const removeFriend = async (uid) => {
+    if (!currentUser?.id || !uid) return;
+    if (!(await confirmDialog('Remove this friend? You can send a new request later.'))) return;
+    await updateDoc(doc(db,'users',currentUser.id), { friends: arrayRemove(uid), closeFriends: arrayRemove(uid) });
+    await updateDoc(doc(db,'users',uid), { friends: arrayRemove(currentUser.id) });
+    showToast?.('Friend removed', 'info');
+  };
+
+  const toggleCloseFriend = async (uid) => {
+    if (!currentUser?.id || !uid) return;
+    const isClose = (currentUser.closeFriends || []).includes(uid) || (users.find(u=>u.id===currentUser.id)?.closeFriends||[]).includes(uid);
+    await updateDoc(doc(db,'users',currentUser.id), { closeFriends: isClose ? arrayRemove(uid) : arrayUnion(uid) });
+    showToast?.(isClose ? 'Removed from Close Friends' : 'Added to Close Friends ⭐', 'success');
+  };
+
+  // Live view of my own doc as reflected by the app-wide `users` snapshot listener —
+  // reads back instantly on both sides of a friend-request action without needing a
+  // separate mirrored state slice (unlike `followed`, which predates this listener).
+  const myLiveDoc = useMemo(()=>users.find(u=>u.id===currentUser?.id), [users, currentUser?.id]);
+  const friendsList = myLiveDoc?.friends || [];
+  const friendRequestsSent = myLiveDoc?.friendRequestsSent || [];
+  const friendRequestsReceived = myLiveDoc?.friendRequestsReceived || [];
+  const closeFriendsList = myLiveDoc?.closeFriends || [];
+
   const handleViewProfile = uid => { const user=users.find(u=>u.id===uid); if(user) setViewingProfile(user); };
   const [inboxTargetId, setInboxTargetId] = useState(null);
   const openNotifTarget = useCallback((notif) => {
@@ -14029,7 +14290,10 @@ const handleMessage = uid => {
   onOpenNotifications={()=>setShowNotifications(true)} onOpenStories={()=>setShowStoriesPage(true)}
   onCreateStory={()=>setShowCreateStory(true)} onViewStory={(payload)=>setShowStoryViewer(payload)}
   onOpenProfileDrawer={()=>setShowProfileDrawer(true)} />}
-            {activeTab==='friends' && <FriendsDiscoveryPage currentUser={currentUser} users={users} followed={followed} onFollow={toggleFollow} onViewProfile={handleViewProfile} onOpenSearch={()=>setShowDiscover(true)} onFeedScroll={handleFeedScroll} onCreateStory={()=>setShowCreateStory(true)} onViewStory={(payload)=>setShowStoryViewer(payload)} onOpenStories={()=>setShowStoriesPage(true)} showToast={showToast} />}
+            {activeTab==='friends' && <FriendsDiscoveryPage currentUser={currentUser} users={users} followed={followed} onFollow={toggleFollow}
+              friends={friendsList} friendRequestsSent={friendRequestsSent} friendRequestsReceived={friendRequestsReceived} closeFriends={closeFriendsList}
+              onSendFriendRequest={sendFriendRequest} onCancelFriendRequest={cancelFriendRequest} onAcceptFriendRequest={acceptFriendRequest} onDeclineFriendRequest={declineFriendRequest} onRemoveFriend={removeFriend} onToggleCloseFriend={toggleCloseFriend}
+              onViewProfile={handleViewProfile} onOpenSearch={()=>setShowDiscover(true)} onFeedScroll={handleFeedScroll} onCreateStory={()=>setShowCreateStory(true)} onViewStory={(payload)=>setShowStoryViewer(payload)} onOpenStories={()=>setShowStoriesPage(true)} onMessage={handleMessage} showToast={showToast} />}
             {activeTab==='create' && <CreateScreen onOpenCamera={()=>setShowCamera(true)} onShowSoundLibrary={()=>setShowSoundLibrary(true)} showToast={showToast} t={t} currentUser={currentUser} users={users} onPosted={()=>setActiveTab('home')} />}
             {activeTab==='inbox' && <InboxPage t={t} users={users} currentUser={currentUser} showToast={showToast} onViewProfile={handleViewProfile} initialTargetId={inboxTargetId} onClearTarget={()=>setInboxTargetId(null)} persistedConversation={activeConversation} openGroupsSignal={inboxOpenGroups} onSetConversation={(conv)=>{ setActiveConversation(conv); }} onFeedScroll={handleFeedScroll}
   onVoiceCall={uid=>{ const u=users.find(uu=>uu.id===uid); const callDocId=[currentUser.id,uid].sort().join('_'); setShowCall({type:'audio',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
