@@ -4928,6 +4928,25 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
   const [showLikes, setShowLikes] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [showShare, setShowShare] = useState(false);
+  // Real share, the way every other app does it: tap → straight to the OS's own
+  // native share sheet (whatever's actually installed — real contacts, real apps —
+  // rendered by the device, not by us). Only opens our in-app ShareSheet as a
+  // fallback when navigator.share isn't available at all (e.g. some desktop browsers).
+  const handleShareTap = () => {
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      shareToDevice({
+        url: `https://infinity-now.vercel.app/video/${video?.id}`,
+        title: 'Infinity',
+        text: video?.description || `Check out @${video?.username || 'this'} on Infinity`,
+        mediaUrl: video?.videoUrl || video?.images?.[0],
+        mediaType: video?.mediaType,
+        showToast,
+        onShared: () => { if (video?.id) updateDoc(doc(db, 'videos', video.id), { shares: increment(1) }).catch(() => {}); },
+      });
+    } else {
+      setShowShare(true);
+    }
+  };
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
   const [showMediaActions, setShowMediaActions] = useState(false);
@@ -5469,8 +5488,14 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
           <span style={{ fontSize:13, color:COLORS.textSecondary }}>{formatNumber(video.comments||0)}</span>
         </motion.button>
 
-        {/* Share */}
-        <motion.button whileTap={tapScale} onClick={()=>setShowShare(true)} style={{ background:'none', border:'none', padding:8, margin:-8, display:'flex', alignItems:'center', gap:6, cursor:'pointer', transition:TRANSITION.fast, borderRadius:10 }}>
+        {/* Share — tapping this should behave the way every other app's share button
+            does: it hands off straight to the device's own native share sheet (the
+            OS-drawn one with the user's real contacts and installed apps — nothing
+            here fakes or hardcodes that UI, the OS renders it). No extra "are you
+            sure you want to share" screen first. The in-app ShareSheet (with
+            repost/save/download/report) only opens as a fallback on browsers that
+            don't support navigator.share at all (mainly older/desktop browsers). */}
+        <motion.button whileTap={tapScale} onClick={handleShareTap} style={{ background:'none', border:'none', padding:8, margin:-8, display:'flex', alignItems:'center', gap:6, cursor:'pointer', transition:TRANSITION.fast, borderRadius:10 }}>
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           <span style={{ fontSize:13, color:COLORS.textSecondary }}>{formatNumber(video.shares||0)}</span>
         </motion.button>
