@@ -1,6 +1,28 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // Shared by the followers/following-style fields on /users/{userId}: a non-owner
+    // may only ever add or remove *their own* uid, one entry at a time. Used both for
+    // `followers` (unfollow/follow graph) and for the Friends-page fields below
+    // (friendRequestsSent/friendRequestsReceived/friends) — sending, cancelling,
+    // declining, accepting, and unfriending each touch the *other* party's doc with
+    // exactly this shape: the acting user adding/removing themself.
+    function selfArrayEdit(field) {
+      let before = field in resource.data ? resource.data[field] : [];
+      let after = field in request.resource.data ? request.resource.data[field] : [];
+      return (
+        (!before.hasAny([request.auth.uid])
+          && after.hasAll(before)
+          && after.hasAny([request.auth.uid])
+          && after.size() == before.size() + 1)
+        || (before.hasAny([request.auth.uid])
+          && before.hasAll(after)
+          && !after.hasAny([request.auth.uid])
+          && after.size() == before.size() - 1)
+      );
+    }
+
     match /users/{userId} {
       allow read: if request.auth != null;
 
@@ -8,17 +30,12 @@ service cloud.firestore {
         (request.auth.uid == userId
           && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['coins', 'walletBalance']))
         || (request.auth.uid != userId
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followers'])
-          && (
-            (!resource.data.followers.hasAny([request.auth.uid])
-              && request.resource.data.followers.hasAll(resource.data.followers)
-              && request.resource.data.followers.hasAny([request.auth.uid])
-              && request.resource.data.followers.size() == resource.data.followers.size() + 1)
-            || (resource.data.followers.hasAny([request.auth.uid])
-              && resource.data.followers.hasAll(request.resource.data.followers)
-              && !request.resource.data.followers.hasAny([request.auth.uid])
-              && request.resource.data.followers.size() == resource.data.followers.size() - 1)
-          )
+          && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['followers', 'friendRequestsSent', 'friendRequestsReceived', 'friends'])
+          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['followers']) || selfArrayEdit('followers'))
+          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['friendRequestsSent']) || selfArrayEdit('friendRequestsSent'))
+          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['friendRequestsReceived']) || selfArrayEdit('friendRequestsReceived'))
+          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['friends']) || selfArrayEdit('friends'))
         )
       );
       allow create: if request.auth != null && request.auth.uid == userId;
