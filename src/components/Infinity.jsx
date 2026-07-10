@@ -963,6 +963,7 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack, embedded=false, 
   const cameraInputRef = useRef(null);
   const pickFile = e => { const f = e.target.files[0]; if (f) { setPreviewFile({ url: URL.createObjectURL(f), file: f, type: f.type }); } e.target.value = ''; };
   const clearAttach = () => setPreviewFile(null);
+  const [showEmoji, setShowEmoji] = useState(false);
 
   useEffect(() => {
     if (!currentUser?.id) return;
@@ -1332,8 +1333,16 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack, embedded=false, 
             </div>
           </div>
         )}
+        {showEmoji && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '10px 14px', background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 16, margin: '0 14px 4px', maxHeight: 180, overflowY: 'auto' }}>
+            {EMOJI_LIST.map(e => (
+              <button key={e} onClick={() => setMsgText(t => t + e)} aria-label={`Insert ${e}`} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', padding: 2 }}>{e}</button>
+            ))}
+          </div>
+        )}
         <div style={{ padding: '10px 14px', paddingBottom: 'max(28px, env(safe-area-inset-bottom))', background: COLORS.surface, borderTop: `1px solid ${COLORS.border}`, display: 'flex', gap: 8, alignItems: 'center' }}>
           <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 2, background: COLORS.surfaceAlt, borderRadius: 26, padding: '4px 6px 4px 12px' }}>
+            <button onClick={() => setShowEmoji(v => !v)} aria-label="Open emoji picker" style={{ background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0, fontSize: 18, display: 'flex', padding: 4 }}>😊</button>
             <input value={msgText} onChange={e => setMsgText(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendGroupMsg()} placeholder="Message group..." style={{ flex: 1, minWidth: 0, background: 'none', border: 'none', outline: 'none', color: COLORS.textPrimary, fontSize: 13.5, padding: '9px 4px' }} />
             <button onClick={() => fileInputRef.current?.click()} aria-label="Attach photo" style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, padding: 6 }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" /></svg>
@@ -4174,7 +4183,7 @@ const NotificationBellButton = ({ onOpenNotifications, currentUser }) => {
 // Matches the "HOME FEED (ENHANCED)" reference: avatar, name, caption, media,
 // then a like/comment/share/save row with live counts underneath.
 /* ─────────────── LIKES MODAL (image 8) ─────────────── */
-const LikesModal = ({ video, currentUser, users, onClose, onFollow, followed }) => {
+const LikesModal = ({ video, currentUser, users, onClose, onFollow, followed, onViewProfile }) => {
   const [tab, setTab] = useState('all');
   const likers = useMemo(() => {
     const ids = video?.likedBy || [];
@@ -4217,7 +4226,6 @@ const LikesModal = ({ video, currentUser, users, onClose, onFollow, followed }) 
 };
 
 /* ─────────────── COMMENTS MODAL (image 9) ─────────────── */
-const REACTION_EMOJIS = ['❤️','😂','😢','🔥','😍','🙏'];
 const CommentsModal = ({ video, currentUser, onClose, showToast, onViewProfile }) => {
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState('');
@@ -4228,6 +4236,13 @@ const CommentsModal = ({ video, currentUser, onClose, showToast, onViewProfile }
   const cmCameraInputRef = useRef(null);
   const [cmAttachment, setCmAttachment] = useState(null);
   const cmPickFile = e => { const f=e.target.files[0]; if(f){setCmAttachment({url:URL.createObjectURL(f),file:f,type:f.type}); e.target.value='';} };
+  const [showEmoji, setShowEmoji] = useState(false);
+  const sendCommentVoice = async (voiceMsg) => {
+    try {
+      await addDoc(collection(db, 'comments'), { videoId: video.id, userId: currentUser.id, username: currentUser.username, avatar: currentUser.avatar || (currentUser.username||'U')[0].toUpperCase(), avatarColor: currentUser.avatarColor || COLORS.brand, avatarUrl: currentUser.avatarUrl || null, text: '', mediaUrl: voiceMsg.url, mediaType: 'audio', duration: voiceMsg.duration, likes: 0, createdAt: serverTimestamp() });
+      await updateDoc(doc(db, 'videos', video.id), { comments: increment(1) });
+    } catch { showToast?.('Failed to post voice comment', 'error'); }
+  };
 
   useEffect(() => {
     if (!video?.id) return;
@@ -4379,7 +4394,16 @@ const CommentsModal = ({ video, currentUser, onClose, showToast, onViewProfile }
                   )}
                 </div>
               </div>
-              <div style={{ color:COLORS.textSecondary, fontSize:13.5, lineHeight:1.45, marginTop:2 }}>{c.text}</div>
+              {c.mediaUrl && c.mediaType?.startsWith('image') && (
+                <img loading="lazy" decoding="async" src={c.mediaUrl} alt="" style={{ maxWidth:200, borderRadius:12, marginTop:6, display:'block' }} />
+              )}
+              {c.mediaUrl && c.mediaType?.startsWith('video') && (
+                <video src={c.mediaUrl} controls style={{ maxWidth:200, borderRadius:12, marginTop:6, display:'block' }} />
+              )}
+              {c.mediaUrl && c.mediaType?.startsWith('audio') && (
+                <audio src={c.mediaUrl} controls style={{ maxWidth:220, marginTop:6, display:'block' }} />
+              )}
+              {c.text && <div style={{ color:COLORS.textSecondary, fontSize:13.5, lineHeight:1.45, marginTop:2 }}>{c.text}</div>}
               <div style={{ display:'flex', alignItems:'center', gap:16, marginTop:6 }}>
                 <button onClick={()=>likeComment(c.id)} style={{ background:'none', border:'none', cursor:'pointer', color:COLORS.textTertiary, fontSize:12, fontWeight:600 }}>Like</button>
                 <button onClick={()=>{ setCommentText(txt => txt.startsWith(`@${c.username} `) ? txt : `@${c.username} `); commentInputRef.current?.focus(); }} style={{ background:'none', border:'none', cursor:'pointer', color:COLORS.textTertiary, fontSize:12, fontWeight:600 }}>Reply</button>
@@ -4409,26 +4433,38 @@ const CommentsModal = ({ video, currentUser, onClose, showToast, onViewProfile }
           </div>
         </div>
       )}
-      <div style={{ padding:'8px 16px', display:'flex', gap:8 }}>
-        {REACTION_EMOJIS.map(e => (
-          <button key={e} onClick={()=>setCommentText(t=>t+e)} aria-label={`Insert ${e}`} style={{ background:'none', border:'none', fontSize:20, cursor:'pointer', padding:2 }}>{e}</button>
-        ))}
-      </div>
+      {showEmoji && (
+        <div style={{ display:'flex', flexWrap:'wrap', gap:6, padding:'10px 16px', background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:16, margin:'0 16px 4px', maxHeight:180, overflowY:'auto' }}>
+          {EMOJI_LIST.map(e=>(
+            <button key={e} onClick={()=>setCommentText(t=>t+e)} aria-label={`Insert ${e}`} style={{ background:'none', border:'none', fontSize:22, cursor:'pointer', padding:2 }}>{e}</button>
+          ))}
+        </div>
+      )}
       <div style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 16px max(16px, env(safe-area-inset-bottom))', background:COLORS.surface, borderTop:`1px solid ${COLORS.border}` }}>
         <div style={{ flex:1, minWidth:0, display:'flex', alignItems:'center', gap:2, background:COLORS.surfaceAlt, borderRadius:26, padding:'4px 6px 4px 12px' }}>
-          <input ref={commentInputRef} value={commentText} onChange={e=>setCommentText(e.target.value)} onKeyDown={e=>e.key==='Enter'&&send()} placeholder="Add a comment..." style={{ flex:1, minWidth:0, background:'none', border:'none', outline:'none', color:COLORS.textPrimary, fontSize:13, padding:'8px 4px' }} />
+          <button onClick={()=>setShowEmoji(v=>!v)} aria-label="Open emoji picker" style={{ background:'none', border:'none', cursor:'pointer', flexShrink:0, fontSize:18, display:'flex', padding:4 }}>😊</button>
+          <input ref={commentInputRef} value={commentText} onChange={e=>setCommentText(e.target.value)} onKeyDown={e=>e.key==='Enter'&&send()} placeholder="Add a comment..." style={{ flex:1, minWidth:0, background:'none', border:'none', outline:'none', color:COLORS.textPrimary, fontSize:13.5, padding:'9px 4px' }} />
           <button onClick={()=>cmFileInputRef.current?.click()} aria-label="Attach photo" style={{ background:'none', border:'none', cursor:'pointer', color:COLORS.textTertiary, flexShrink:0, display:'flex', padding:5 }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
           </button>
           <button onClick={()=>cmCameraInputRef.current?.click()} aria-label="Take photo" style={{ background:'none', border:'none', cursor:'pointer', color:COLORS.textTertiary, flexShrink:0, display:'flex', padding:5 }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
           </button>
         </div>
         <input ref={cmFileInputRef} type="file" accept="image/*,video/*" onChange={cmPickFile} style={{ display:'none' }} />
         <input ref={cmCameraInputRef} type="file" accept="image/*" capture="environment" onChange={cmPickFile} style={{ display:'none' }} />
-        <button onClick={send} aria-label="Send comment" style={{ background:COLORS.gradient, border:'none', borderRadius:'50%', width:42, height:42, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="1"><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-        </button>
+        <AnimatePresence initial={false}>
+          {(commentText.trim() || cmAttachment) ? (
+            <motion.button key="send" initial={{ scale:0.5, opacity:0 }} animate={{ scale:1, opacity:1 }} exit={{ scale:0.5, opacity:0 }} transition={springs.snappy} whileTap={tapScale} onClick={send} aria-label="Send comment" style={{ background:COLORS.gradient, border:'none', borderRadius:'50%', width:42, height:42, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="1"><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </motion.button>
+          ) : (
+            <motion.div key="voice" initial={{ scale:0.5, opacity:0 }} animate={{ scale:1, opacity:1 }} exit={{ scale:0.5, opacity:0 }} transition={springs.snappy}
+              style={{ background:COLORS.gradient, borderRadius:'50%', width:42, height:42, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+              <VoiceRecorderButton showToast={showToast} size="small" onSend={sendCommentVoice} />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
       </motion.div>
     </motion.div>
@@ -5563,7 +5599,7 @@ const HomeFeed = ({ t, videos, videosLoading, videosError, onLike, onComment, on
 /* FriendsFeed removed — dead code, fully replaced by FriendsDiscoveryPage below. */
 /* ─────────────── FRIENDS DISCOVERY (SMART DISCOVERY) ─────────────── */
 /* ─────────────── FRIENDS DISCOVERY (SMART DISCOVERY) ─────────────── */
-const FriendsDiscoveryPage = ({ currentUser, users, followed, onFollow, onViewProfile, onOpenSearch, onFeedScroll, onCreateStory, onViewStory, onOpenStories }) => {
+const FriendsDiscoveryPage = ({ currentUser, users, followed, onFollow, onViewProfile, onOpenSearch, onFeedScroll, onCreateStory, onViewStory, onOpenStories, showToast }) => {
   const [tab, setTab] = useState('discover');
   const [search, setSearch] = useState('');
 
@@ -13417,7 +13453,7 @@ const handleMessage = uid => {
   onOpenNotifications={()=>setShowNotifications(true)} onOpenStories={()=>setShowStoriesPage(true)}
   onCreateStory={()=>setShowCreateStory(true)} onViewStory={(payload)=>setShowStoryViewer(payload)}
   onOpenProfileDrawer={()=>setShowProfileDrawer(true)} />}
-            {activeTab==='friends' && <FriendsDiscoveryPage currentUser={currentUser} users={users} followed={followed} onFollow={toggleFollow} onViewProfile={handleViewProfile} onOpenSearch={()=>setShowDiscover(true)} onFeedScroll={handleFeedScroll} onCreateStory={()=>setShowCreateStory(true)} onViewStory={(payload)=>setShowStoryViewer(payload)} onOpenStories={()=>setShowStoriesPage(true)} />}
+            {activeTab==='friends' && <FriendsDiscoveryPage currentUser={currentUser} users={users} followed={followed} onFollow={toggleFollow} onViewProfile={handleViewProfile} onOpenSearch={()=>setShowDiscover(true)} onFeedScroll={handleFeedScroll} onCreateStory={()=>setShowCreateStory(true)} onViewStory={(payload)=>setShowStoryViewer(payload)} onOpenStories={()=>setShowStoriesPage(true)} showToast={showToast} />}
             {activeTab==='create' && <CreateScreen onOpenCamera={()=>setShowCamera(true)} onShowSoundLibrary={()=>setShowSoundLibrary(true)} showToast={showToast} t={t} currentUser={currentUser} users={users} onPosted={()=>setActiveTab('home')} />}
             {activeTab==='inbox' && <InboxPage t={t} users={users} currentUser={currentUser} showToast={showToast} onViewProfile={handleViewProfile} initialTargetId={inboxTargetId} onClearTarget={()=>setInboxTargetId(null)} persistedConversation={activeConversation} openGroupsSignal={inboxOpenGroups} onSetConversation={(conv)=>{ setActiveConversation(conv); }} onFeedScroll={handleFeedScroll}
   onVoiceCall={uid=>{ const u=users.find(uu=>uu.id===uid); const callDocId=[currentUser.id,uid].sort().join('_'); setShowCall({type:'audio',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
