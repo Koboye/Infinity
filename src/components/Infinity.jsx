@@ -553,6 +553,57 @@ const toggleRepost = async (video, currentUser) => {
   return { reposted: true };
 };
 
+/* ─────────── UNIVERSAL SHARE (single source of truth, used everywhere) ───────────
+   Previously every share entry point in the app — the video ShareSheet, a post's
+   "…" options menu, your own profile header, someone else's profile modal, and the
+   QR code page — each hand-rolled its own slightly different version of "try
+   navigator.share, else copy the link", and one of them (QR page) had no fallback
+   at all, so it silently did nothing on desktop browsers. They all now call this
+   one function, so sharing behaves identically everywhere in the app.
+   It also goes one step further than a bare link, the way Instagram/TikTok/WhatsApp
+   do: when the browser supports the Web Share API's file-attachment (Level 2) and
+   real media is available, it fetches the actual photo/video and attaches it to the
+   native share sheet, instead of only ever sharing a URL. */
+const shareToDevice = async ({ url, title, text, mediaUrl, mediaType, showToast, onShared, copiedMessage = 'Link copied!' }) => {
+  const canNativeShare = typeof navigator !== 'undefined' && !!navigator.share;
+  if (canNativeShare) {
+    if (mediaUrl && navigator.canShare) {
+      try {
+        const res = await fetch(mediaUrl, { mode: 'cors' });
+        const blob = await res.blob();
+        const isVideo = (mediaType || '').startsWith('video');
+        const file = new File([blob], `infinity-share.${isVideo ? 'mp4' : 'jpg'}`, { type: blob.type || (isVideo ? 'video/mp4' : 'image/jpeg') });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({ title, text, files: [file] });
+          onShared?.();
+          return true;
+        }
+      } catch {
+        // Cross-origin media without CORS headers, or an unsupported file type —
+        // fall through to a link-only native share below instead of failing outright.
+      }
+    }
+    try {
+      await navigator.share({ title, text, url });
+      onShared?.();
+      return true;
+    } catch (e) {
+      if (e?.name === 'AbortError') return false; // user closed the native sheet — not an error
+      // Any other failure (e.g. share() rejected for an unsupported combination of
+      // fields) falls through to the clipboard fallback below.
+    }
+  }
+  try {
+    await navigator.clipboard.writeText(url);
+    showToast?.(copiedMessage, 'success');
+    onShared?.();
+    return true;
+  } catch {
+    showToast?.('Could not share', 'error');
+    return false;
+  }
+};
+
 const ShareIconBtn = ({ bg, fg='#fff', label, onClick, children }) => (
   <button onClick={onClick} style={{ background:'none', border:'none', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:7, width:60 }}>
     <div style={{ width:52, height:52, borderRadius:'50%', background:bg, display:'flex', alignItems:'center', justifyContent:'center', color:fg, flexShrink:0 }}>{children}</div>
@@ -582,21 +633,19 @@ const ShareSheet = ({ video, currentUser, onClose, showToast }) => {
   // lists whatever the user genuinely has installed — Instagram, Messages,
   // AirDrop, WhatsApp, or anything else — and lets the OS attach the link.
   // navigator.share isn't available on every browser (mainly desktop), so we
-  // fall back to copying the link when it's missing.
+  // fall back to copying the link when it's missing. When the post has real
+  // media, the actual photo/video is attached to the share (see shareToDevice),
+  // not just a link — matching how other apps' share sheets behave.
   const nativeShareSupported = typeof navigator !== 'undefined' && !!navigator.share;
-  const shareViaDevice = async () => {
-    if (nativeShareSupported) {
-      try {
-        await navigator.share({ title: 'Infinity', text: shareText, url: shareUrl });
-        recordShare();
-      } catch (e) {
-        // AbortError = user cancelled the native sheet — not an error worth surfacing.
-        if (e?.name !== 'AbortError') showToast?.('Could not open share sheet', 'error');
-      }
-    } else {
-      copyLink();
-    }
-  };
+  const shareViaDevice = () => shareToDevice({
+    url: shareUrl,
+    title: 'Infinity',
+    text: shareText,
+    mediaUrl: video?.videoUrl || video?.images?.[0],
+    mediaType: video?.mediaType,
+    showToast,
+    onShared: recordShare,
+  });
 
   const doToggleRepost = async () => {
     if (!currentUser?.id) { showToast?.('Log in to repost', 'error'); return; }
@@ -3323,14 +3372,15 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
   const joinedLabel = user?.createdAt?.seconds
     ? new Date(user.createdAt.seconds * 1000).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
     : null;
-  const shareProfile = async () => {
-    const url = typeof window !== 'undefined' ? `${window.location.origin}/@${user?.username || ''}` : `@${user?.username || ''}`;
-    try {
-      if (navigator.share) { await navigator.share({ title: user?.fullName || user?.username, url }); return; }
-      await navigator.clipboard.writeText(url);
-      showToast?.('Profile link copied', 'success');
-    } catch {}
-  };
+  const shareProfile = () => shareToDevice({
+    url: typeof window !== 'undefined' ? `${window.location.origin}/@${user?.username || ''}` : `@${user?.username || ''}`,
+    title: user?.fullName || user?.username,
+    text: `Check out @${user?.username || ''} on Infinity`,
+    mediaUrl: user?.avatarUrl,
+    mediaType: 'image',
+    showToast,
+    copiedMessage: 'Profile link copied',
+  });
   const submitUserReport = async (reason) => {
     try {
       await submitReport('user', user.id, currentUser.id, {
@@ -4757,6 +4807,15 @@ const PostOptionsMenu = ({ video, currentUser, onClose, showToast, onDelete, onB
   };
   const items = [
     { label: video?.pinned ? 'Unpin Post' : 'Pin Post', show:isMine, action:doPin, icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={video?.pinned?COLORS.brand:'currentColor'} strokeWidth="2"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14l-1.4-7.5A3 3 0 0014.66 7H9.34a3 3 0 00-2.94 2.5z"/></svg>) },
+    { label:'Share', show:true, action:()=>shareToDevice({
+        url:`https://infinity-now.vercel.app/video/${video?.id}`,
+        title:'Infinity',
+        text: video?.description || `Check out @${video?.username || 'this'} on Infinity`,
+        mediaUrl: video?.videoUrl || video?.images?.[0],
+        mediaType: video?.mediaType,
+        showToast,
+        onShared:()=>{ if (video?.id) updateDoc(doc(db,'videos',video.id), { shares: increment(1) }).catch(()=>{}); },
+      }), icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>) },
     { label:'Copy Link', show:true, action:async()=>{ try{ await navigator.clipboard.writeText(`https://infinity-now.vercel.app/video/${video?.id}`); showToast?.('Link copied!','success'); }catch{ showToast?.('Could not copy link','error'); } }, icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 007.07 0l2.83-2.83a5 5 0 00-7.07-7.07l-1.5 1.5"/><path d="M14 11a5 5 0 00-7.07 0L4.1 13.83a5 5 0 007.07 7.07l1.5-1.5"/></svg>) },
     { label: alreadyReposted ? 'Remove repost' : 'Repost', show:!isMine, action:doRepost, icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={alreadyReposted?COLORS.brand:'currentColor'} strokeWidth="2"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>) },
     { label: alreadySaved ? 'Remove from Collection' : 'Add to Collection', show:true, action:doAddToCollection, icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill={alreadySaved?COLORS.brand:'none'} stroke={alreadySaved?COLORS.brand:'currentColor'} strokeWidth="2"><path d="M6 2a2 2 0 00-2 2v18l8-6 8 6V4a2 2 0 00-2-2z"/></svg>) },
@@ -8341,14 +8400,15 @@ if(activeSubPage==='settings') return (
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
             </motion.button>
             <div style={{ display:'flex', gap:8 }}>
-              <motion.button whileHover={{ scale:1.06 }} whileTap={tapScale} onClick={async()=>{
-                const url = typeof window!=='undefined' ? `${window.location.origin}/@${user?.username||''}` : `@${user?.username||''}`;
-                try {
-                  if (navigator.share) { await navigator.share({ title:user?.fullName||user?.username, url }); return; }
-                  await navigator.clipboard.writeText(url);
-                  showToast?.('Profile link copied','success');
-                } catch {}
-              }} aria-label="Share profile" style={{ background:'rgba(255,255,255,0.25)', backdropFilter:'blur(10px)', border:'none', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+              <motion.button whileHover={{ scale:1.06 }} whileTap={tapScale} onClick={()=>shareToDevice({
+                url: typeof window!=='undefined' ? `${window.location.origin}/@${user?.username||''}` : `@${user?.username||''}`,
+                title: user?.fullName||user?.username,
+                text: `Check out @${user?.username||''} on Infinity`,
+                mediaUrl: user?.avatarUrl,
+                mediaType: 'image',
+                showToast,
+                copiedMessage: 'Profile link copied',
+              })} aria-label="Share profile" style={{ background:'rgba(255,255,255,0.25)', backdropFilter:'blur(10px)', border:'none', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.5" x2="15.4" y2="6.5"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/></svg>
               </motion.button>
               <motion.button whileHover={{ scale:1.06 }} whileTap={tapScale} onClick={onLogout} aria-label={t?.logOut||t?.logout||'Log Out'} title={t?.logOut||t?.logout||'Log Out'} style={{ background:'rgba(255,255,255,0.25)', backdropFilter:'blur(10px)', border:'none', borderRadius:'50%', width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
@@ -12007,7 +12067,7 @@ const CreatorAnalytics = ({ user, videos, onClose }) => {
 };
 
 /* ─────────────── QR CODE ─────────────── */
-const QRCodePage = ({ user, onClose }) => (
+const QRCodePage = ({ user, onClose, showToast }) => (
   <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.95)', zIndex:Z.page, display:'flex', alignItems:'center', justifyContent:'center' }}>
     <div style={{ background:'#15151C', borderRadius:28, padding:32, textAlign:'center', maxWidth:300, width:'100%', margin:'0 20px', border:'1px solid rgba(255,255,255,0.08)', position:'relative' }}>
       <button onClick={onClose} aria-label="Close" style={{ position:'absolute', top:14, right:14, background:'rgba(255,255,255,0.08)', border:'none', borderRadius:'50%', width:32, height:32, color:'white', cursor:'pointer', fontSize:16 }}>✕</button>
@@ -12021,8 +12081,15 @@ const QRCodePage = ({ user, onClose }) => (
 </div>
       <h3 style={{ color:'white', marginBottom:4, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>@{user?.username}</h3>
       <p style={{ color:'rgba(255,255,255,0.35)', fontSize:12, marginBottom:20 }}>Scan to follow on Infinity</p>
-      <button onClick={()=>navigator.share?.({title:'Infinity',text:`Follow @${user?.username} on Infinity`,url:`https://infinity-now.vercel.app`
-})} style={{ width:'100%', background:COLORS.gradient, border:'none', borderRadius:20, padding:13, color:'white', fontWeight:700, cursor:'pointer', fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Share Profile</button>
+      <button onClick={()=>shareToDevice({
+        url: `https://infinity-now.vercel.app/user/${user?.username || ''}`,
+        title: 'Infinity',
+        text: `Follow @${user?.username || ''} on Infinity`,
+        mediaUrl: user?.avatarUrl,
+        mediaType: 'image',
+        showToast,
+        copiedMessage: 'Profile link copied',
+      })} style={{ width:'100%', background:COLORS.gradient, border:'none', borderRadius:20, padding:13, color:'white', fontWeight:700, cursor:'pointer', fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Share Profile</button>
     </div>
   </div>
 );
@@ -13249,22 +13316,58 @@ const InfinityPage = ({ t, videos, videosLoading, videosError, onShare, onFollow
   // same moment still land on two different orders.
   const [seed, setSeed] = useState(()=>infinityHash(currentUser?.id || 'anon', Date.now()));
 
+  // ── NEW: curation modes ──────────────────────────────────────────────────
+  // The old Infinity tab was just Home with a shuffle button. It now offers three
+  // genuinely different ways to browse: a per-user random shuffle (the original
+  // behavior), strict newest-first, and a "Trending" ranking driven by real
+  // engagement (likes/comments/shares/views), so the tab actually earns its own
+  // identity instead of duplicating Home.
+  const [mode, setMode] = useState('shuffle'); // 'shuffle' | 'fresh' | 'trending'
+  const [tagFilter, setTagFilter] = useState(null);
+
   const reshuffle = () => {
+    if (mode !== 'shuffle') { setMode('shuffle'); }
     setSeed(infinityHash(currentUser?.id || 'anon', Date.now()));
     haptic('medium');
     showToast?.('Curating something new for you…', 'info');
   };
 
-  // Same real posts + same blocked-user filtering as Home, just reshuffled into a
-  // fresh, unique order every time the dice is tapped (and different per user,
-  // since the seed is mixed with currentUser.id above).
+  // ── NEW: trending hashtags rail ──────────────────────────────────────────
+  // Counts real hashtags across all visible posts and surfaces the most-used
+  // ones as tappable chips that filter the feed in place — a lightweight
+  // "what's happening" surface that Home doesn't have.
+  const trendingTags = useMemo(() => {
+    const counts = new Map();
+    for (const v of videos) {
+      for (const raw of v.hashtags || []) {
+        const tag = raw.toLowerCase();
+        counts.set(tag, (counts.get(tag) || 0) + 1);
+      }
+    }
+    return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8).map(([tag, count]) => ({ tag, count }));
+  }, [videos]);
+
+  // Same real posts + same blocked-user filtering as Home, ordered according to
+  // the selected mode, then narrowed further by an optional tapped hashtag.
   const filteredVideos = useMemo(()=>{
-    const base = sortByNewest(videos.filter(v=>!(blockedUsers||[]).includes(v.userId)));
-    return base
+    let base = videos.filter(v=>!(blockedUsers||[]).includes(v.userId));
+    if (tagFilter) base = base.filter(v => (v.hashtags||[]).some(h => h.toLowerCase() === tagFilter));
+
+    if (mode === 'fresh') return sortByNewest(base);
+
+    if (mode === 'trending') {
+      return base
+        .map(v => ({ v, score: (v.likes||0)*2 + (v.comments||0)*3 + (v.shares||0)*4 + (v.views||0) }))
+        .sort((a,b)=>b.score-a.score)
+        .map(x=>x.v);
+    }
+
+    // shuffle (default) — unique per-user, reshuffles fresh on every dice tap
+    return sortByNewest(base)
       .map(v => ({ v, sortKey: infinityHash(v.id, seed) }))
       .sort((a,b)=>a.sortKey-b.sortKey)
       .map(x=>x.v);
-  },[videos, blockedUsers, seed]);
+  },[videos, blockedUsers, seed, mode, tagFilter]);
 
   return (
     <div data-main-scroll="true" onScroll={onFeedScroll} style={{ height:'100%', overflowY:'auto', background:COLORS.bg, padding:'10px 14px max(74px, calc(58px + env(safe-area-inset-bottom)))', position:'relative' }}>
@@ -13323,6 +13426,39 @@ const InfinityPage = ({ t, videos, videosLoading, videosError, onShare, onFollow
         )}
       </div>
       </div>
+
+      {/* ── Infinity Mode selector ────────────────────────────────────────────
+          This is what actually separates this tab from Home now: three distinct
+          ways to browse (a per-user random shuffle, strict newest-first, and a
+          real engagement-based Trending ranking) instead of a single shuffled
+          copy of the same feed. */}
+      <div style={{ display:'flex', alignItems:'center', gap:2, background:COLORS.surfaceAlt, borderRadius:14, padding:3, margin:'2px 0 10px' }}>
+        {[
+          { id:'shuffle', label:'✨ Shuffle' },
+          { id:'fresh', label:'🕐 Fresh' },
+          { id:'trending', label:'🔥 Trending' },
+        ].map(m=>(
+          <button key={m.id} onClick={()=>setMode(m.id)} style={{ flex:1, border:'none', borderRadius:11, padding:'8px 6px', fontSize:11.5, fontWeight:700, cursor:'pointer', background:mode===m.id?COLORS.surface:'none', color:mode===m.id?COLORS.textPrimary:COLORS.textTertiary, boxShadow:mode===m.id?SHADOW.xs:'none', transition:TRANSITION.fast }}>
+            {m.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Trending hashtags rail ────────────────────────────────────────────
+          Real counts from actual posts' hashtags — tap one to filter the feed
+          to just that tag, tap it again (or "Clear") to go back to everything. */}
+      {trendingTags.length>0 && (
+        <div style={{ display:'flex', gap:7, overflowX:'auto', paddingBottom:2, marginBottom:12 }}>
+          {trendingTags.map(({tag,count})=>(
+            <button key={tag} onClick={()=>setTagFilter(f=>f===tag?null:tag)} style={{ flexShrink:0, display:'flex', alignItems:'center', gap:5, background:tagFilter===tag?COLORS.gradient:COLORS.surface, border:`1px solid ${tagFilter===tag?'transparent':COLORS.border}`, borderRadius:16, padding:'6px 12px', color:tagFilter===tag?'#fff':COLORS.textSecondary, fontSize:11.5, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap' }}>
+              #{tag.replace(/^#/,'')} <span style={{opacity:0.7, fontWeight:600}}>{count}</span>
+            </button>
+          ))}
+          {tagFilter && (
+            <button onClick={()=>setTagFilter(null)} style={{ flexShrink:0, background:'none', border:'none', color:COLORS.textTertiary, fontSize:11.5, fontWeight:700, cursor:'pointer', padding:'6px 4px' }}>✕ Clear</button>
+          )}
+        </div>
+      )}
 
       {/* Stories row — same Stories component as Home, so tapping an avatar opens that
           user's story instead of their profile, and "+" opens the story composer. */}
@@ -13443,8 +13579,13 @@ const InfinityPage = ({ t, videos, videosLoading, videosError, onShare, onFollow
 
       {!videosLoading && !videosError && !filteredVideos.length && (
         <div style={{ textAlign:'center', padding:'60px 20px', color:COLORS.textTertiary }}>
-          <div style={{ fontSize:44, marginBottom:10 }}>📭</div>
-          <div>{t?.noVideos||'No posts yet. Be the first to post!'}</div>
+          <div style={{ fontSize:44, marginBottom:10 }}>{tagFilter ? '🏷️' : '📭'}</div>
+          <div>{tagFilter ? `No posts tagged #${tagFilter.replace(/^#/,'')} yet.` : (t?.noVideos||'No posts yet. Be the first to post!')}</div>
+          {tagFilter && (
+            <button onClick={()=>setTagFilter(null)} style={{ marginTop:14, background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:12, padding:'8px 16px', color:COLORS.textPrimary, fontSize:12.5, fontWeight:700, cursor:'pointer' }}>
+              Clear tag filter
+            </button>
+          )}
         </div>
       )}
 
@@ -13465,8 +13606,9 @@ const InfinityPage = ({ t, videos, videosLoading, videosError, onShare, onFollow
         />
       ))}
 
-      {/* The one deliberate difference from Home: a floating dice button that reshuffles
-          the post order (per-user seed), instead of Home's strict newest-first order. */}
+      {/* Floating action button: reshuffles when already in Shuffle mode, or jumps
+          back into Shuffle mode with a fresh order when in Fresh/Trending — always
+          a one-tap "surprise me", whichever mode the tab is currently in. */}
       <button onClick={reshuffle} aria-label="Surprise me" style={{ position:'fixed', right:'max(20px, calc((100vw - 430px)/2 + 20px))', bottom:'max(96px, calc(84px + env(safe-area-inset-bottom)))', width:52, height:52, borderRadius:'50%', background:COLORS.gradient, border:'none', boxShadow:'0 6px 20px rgba(11,95,255,0.45)', color:'#fff', fontSize:22, cursor:'pointer', zIndex:Z.popover, display:'flex', alignItems:'center', justifyContent:'center' }}>
         🎲
       </button>
@@ -14207,7 +14349,7 @@ const handleMessage = uid => {
       )}
 
       {showSoundLibrary && <SoundLibraryPage onSelectSound={s=>{showToast?.(`Selected: ${s.name}`,'success'); setShowSoundLibrary(false);}} onClose={()=>setShowSoundLibrary(false)} />}
-      {showQRCode && <QRCodePage user={currentUser} onClose={()=>setShowQRCode(false)} />}
+      {showQRCode && <QRCodePage user={currentUser} onClose={()=>setShowQRCode(false)} showToast={showToast} />}
       {showNotifications && <NotificationsPage currentUser={currentUser} users={users} videos={videos} onClose={()=>setShowNotifications(false)} onViewProfile={uid=>{handleViewProfile(uid); setShowNotifications(false);}} onFollow={toggleFollow} followed={followed} showToast={showToast} t={t} onNavigate={(tab, opts)=>{ setShowNotifications(false); if(tab==='inbox'){ setActiveTab('inbox'); if(opts?.targetUserId) setInboxTargetId(opts.targetUserId); } else if(tab==='jobs'){ setActiveTab('friends'); } else { setActiveTab(tab||'home'); } }} />}
       {showAnalytics && <CreatorAnalytics user={currentUser} videos={videos} onClose={()=>setShowAnalytics(false)} />}
       <AnimatePresence>{showCreateStory && (
