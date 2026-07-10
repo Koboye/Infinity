@@ -5411,7 +5411,7 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
         </motion.button>
 
         {/* Share */}
-        <motion.button whileTap={tapScale} onClick={()=>{ setShowShare(true); onShare?.(video); }} style={{ background:'none', border:'none', padding:8, margin:-8, display:'flex', alignItems:'center', gap:6, cursor:'pointer', transition:TRANSITION.fast, borderRadius:10 }}>
+        <motion.button whileTap={tapScale} onClick={()=>setShowShare(true)} style={{ background:'none', border:'none', padding:8, margin:-8, display:'flex', alignItems:'center', gap:6, cursor:'pointer', transition:TRANSITION.fast, borderRadius:10 }}>
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           <span style={{ fontSize:13, color:COLORS.textSecondary }}>{formatNumber(video.shares||0)}</span>
         </motion.button>
@@ -7879,15 +7879,17 @@ const useCountUp = (target = 0, duration = 700) => {
 // Profile completeness score — drives the smart "finish your profile" nudge.
 // Each weighted field that's filled in adds its weight; used purely as a UX
 // prompt, never blocks anything.
+// NOTE: 'location' was previously in this list but EditProfileModal has no
+// location field to fill it in with, so the checklist item could never be
+// completed — a dead-end nudge. Removed; its 10 points folded into the base.
 const PROFILE_FIELDS = [
   { key: 'avatarUrl', weight: 30, label: 'Add a profile photo' },
   { key: 'bio', weight: 25, label: 'Write a bio' },
   { key: 'link', weight: 15, label: 'Add a website link' },
-  { key: 'location', weight: 10, label: 'Add your location' },
   { key: 'gender', weight: 5, label: 'Add your gender' },
 ];
 const computeProfileCompleteness = (user) => {
-  let score = 15; // base: having an account + username at all
+  let score = 25; // base: having an account + username at all
   const missing = [];
   for (const f of PROFILE_FIELDS) {
     if (user?.[f.key] && String(user[f.key]).trim().length > 0) score += f.weight;
@@ -7925,7 +7927,7 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
   }, [allVideos, user?.id]);
   const savedVideos = allVideos?.filter(v=>v.savedBy?.includes(user?.id))||[];
   const saveProfile = data=>setCurrentUser(u=>({...u,...data}));
-  const { pct: completenessPct, missing: completenessMissing } = useMemo(()=>computeProfileCompleteness(user), [user?.avatarUrl, user?.bio, user?.link, user?.location, user?.gender]);
+  const { pct: completenessPct, missing: completenessMissing } = useMemo(()=>computeProfileCompleteness(user), [user?.avatarUrl, user?.bio, user?.link, user?.gender]);
   const postsCount = useCountUp(myVideos.length);
   const followersCount = useCountUp(user?.followers?.length||0);
   const followingCount = useCountUp(user?.following?.length||0);
@@ -13648,7 +13650,6 @@ const [blockedUsers, setBlockedUsers] = useState([]);
   // ── v4 NEW STATE ──
   const [showSavedPosts, setShowSavedPosts] = useState(false);
   const [showDiscover, setShowDiscover] = useState(false);
-  const [showShareSheet, setShowShareSheet] = useState(null);
   const [showBroadcast, setShowBroadcast] = useState(false);
   const [notifBadgeCount, setNotifBadgeCount] = useState(0);
   const [settingsSignal, setSettingsSignal] = useState(0);
@@ -14227,7 +14228,6 @@ const handleMessage = uid => {
 
       {showSavedPosts && <SavedPostsPage currentUser={currentUser} showToast={showToast} onClose={()=>setShowSavedPosts(false)} />}
       {showDiscover && <DiscoverPage videos={videos} users={users} onViewProfile={uid=>{handleViewProfile(uid);}} showToast={showToast} onClose={()=>setShowDiscover(false)} currentUser={currentUser} onFollow={toggleFollow} followed={followed} />}
-      <AnimatePresence>{showShareSheet && <ShareSheet video={showShareSheet} currentUser={currentUser} onClose={()=>setShowShareSheet(null)} showToast={showToast} />}</AnimatePresence>
       {showBroadcast && <BroadcastPage currentUser={currentUser} users={users} showToast={showToast} onClose={()=>setShowBroadcast(false)} />}
       <AnimatePresence>{viewingProfile && (
         <UserProfileModal user={viewingProfile} currentUser={currentUser} users={users} onClose={()=>setViewingProfile(null)} onFollow={toggleFollow} onMessage={uid=>{handleMessage(uid); setViewingProfile(null);}} onVoiceCall={uid=>{const u=users.find(uu=>uu.id===uid); setShowCall({type:'audio',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid}); setViewingProfile(null);}}
@@ -14275,7 +14275,7 @@ const handleMessage = uid => {
         )}
         {!showSearch && !showCamera && (
           <>
-            {activeTab==='home' && <HomeFeed t={t} videos={videos} videosLoading={videosLoading} videosError={videosError} currentUser={currentUser} onLike={()=>{}} onComment={()=>{}} onShare={(v)=>setShowShareSheet(v)} onFollow={toggleFollow} onMessage={handleMessage}
+            {activeTab==='home' && <HomeFeed t={t} videos={videos} videosLoading={videosLoading} videosError={videosError} currentUser={currentUser} onLike={()=>{}} onComment={()=>{}} onFollow={toggleFollow} onMessage={handleMessage}
   onVoiceCall={uid=>{ const u=users.find(uu=>uu.id===uid); const callDocId=[currentUser.id,uid].sort().join('_'); setShowCall({type:'audio',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
   onVideoCall={uid=>{ const u=users.find(uu=>uu.id===uid); const callDocId=[currentUser.id,uid].sort().join('_'); setShowCall({type:'video',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
   onDuet={()=>showToast?.('Duet mode ready','info')} onStitch={()=>showToast?.('Stitch mode ready','info')} onSaveSound={()=>showToast?.('Sound saved!','success')}
@@ -14286,7 +14286,7 @@ const handleMessage = uid => {
   blockedUsers={blockedUsers} onBlock={handleBlockUser} users={users} onOpenCamera={()=>setShowCamera(true)} onOpenComposer={()=>setShowTextComposer(true)} onRefresh={refreshFeed} />}
             {activeTab==='infinity' && <InfinityPage t={t} onFeedScroll={handleFeedScroll} showToast={showToast} currentUser={currentUser} navVisible={navVisible}
   videos={videos} videosLoading={videosLoading} videosError={videosError} followed={followed} onFollow={toggleFollow} onViewProfile={handleViewProfile} onMessage={handleMessage}
-  onShare={(v)=>setShowShareSheet(v)} users={users} blockedUsers={blockedUsers} onBlock={handleBlockUser}
+  users={users} blockedUsers={blockedUsers} onBlock={handleBlockUser}
   onOpenNotifications={()=>setShowNotifications(true)} onOpenStories={()=>setShowStoriesPage(true)}
   onCreateStory={()=>setShowCreateStory(true)} onViewStory={(payload)=>setShowStoryViewer(payload)}
   onOpenProfileDrawer={()=>setShowProfileDrawer(true)} />}
