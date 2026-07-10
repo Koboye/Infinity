@@ -5904,8 +5904,293 @@ const HomeFeed = ({ t, videos, videosLoading, videosError, onLike, onComment, on
    Unique features added here: real mutual-connections ranking for suggestions, an Online Now
    strip driven by live presence, a Requests tab with real Received/Sent state (accept/decline/
    cancel), and Close Friends as a genuine starred list rather than "first 5 people you follow". */
+// Great-circle distance in km — used by the "Nearby" explore feature below.
+const haversineKm = (lat1, lon1, lat2, lon2) => {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+};
+
+const INTEREST_OPTIONS = ['Music','Gaming','Sports','Art','Tech','Travel','Fashion','Food','Fitness','Movies','Photography','Books','Comedy','Business','Nature','Cars'];
+
+/* ─────────── EXPLORE SHEET (Contacts / Interests / Nearby) ───────────────
+   Previously "Contacts", "Interests" and "Nearby" in Friends → Explore More
+   were dead buttons with no onClick at all. Each now opens a real bottom
+   sheet backed by real, working functionality:
+   - Contacts: uses the real Contact Picker API where the browser supports it
+     (matches picked contacts against actual Infinity users by name), and
+     falls back everywhere else to a working "send invite link" flow built on
+     the same shareToDevice() used across the rest of the app.
+   - Interests: a genuine interests graph — pick tags once (saved to your
+     profile), then see other users ranked by real shared-interest overlap,
+     not a placeholder list.
+   - Nearby: opt-in real geolocation (your coordinates are only stored if you
+     explicitly enable this), matched against other opted-in users via actual
+     haversine distance, with a one-tap way to turn it back off. */
+const ExploreSheet = ({ mode, currentUser, setCurrentUser, users, friendsArr, sentArr, receivedArr, onSendFriendRequest, onCancelFriendRequest, onViewProfile, showToast, onClose }) => {
+  const others = useMemo(()=>(users||[]).filter(u=>u.id!==currentUser?.id), [users, currentUser?.id]);
+  const titles = { contacts:'Find Contacts', interests:'Interests', nearby:'Nearby' };
+
+  const MiniActionButton = ({ u }) => {
+    const isFriend = friendsArr.includes(u.id);
+    const iSent = sentArr.includes(u.id);
+    const iReceived = receivedArr.includes(u.id);
+    if (isFriend) return <span style={{ color:COLORS.textTertiary, fontSize:11.5, fontWeight:700 }}>✓ Friends</span>;
+    if (iReceived) return <span style={{ color:COLORS.brand, fontSize:11.5, fontWeight:700 }}>Respond in Requests</span>;
+    if (iSent) return <RippleButton onClick={e=>{ e.stopPropagation(); onCancelFriendRequest?.(u.id); }} style={{ background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, color:COLORS.textSecondary, borderRadius:12, padding:'6px 12px', fontSize:11.5, fontWeight:700, cursor:'pointer' }}>Requested</RippleButton>;
+    return <RippleButton onClick={e=>{ e.stopPropagation(); onSendFriendRequest?.(u.id); }} style={{ background:COLORS.gradient, border:'none', color:'white', borderRadius:12, padding:'6px 12px', fontSize:11.5, fontWeight:700, cursor:'pointer' }}>+ Add</RippleButton>;
+  };
+
+  /* ── Contacts ─────────────────────────────────────────────────────────── */
+  const [contactsPicked, setContactsPicked] = useState(null); // null = not tried yet
+  const [contactsBusy, setContactsBusy] = useState(false);
+  const contactPickerSupported = typeof navigator !== 'undefined' && !!navigator.contacts?.select;
+  const inviteUrl = 'https://infinity-now.vercel.app';
+
+  const pickContacts = async () => {
+    setContactsBusy(true);
+    try {
+      const picked = await navigator.contacts.select(['name','tel'], { multiple:true });
+      const matches = [];
+      const unmatched = [];
+      for (const c of picked) {
+        const name = (c.name?.[0] || '').toLowerCase().trim();
+        if (!name) continue;
+        const found = others.find(u => u.fullName?.toLowerCase() === name || u.username?.toLowerCase() === name || u.fullName?.toLowerCase().includes(name));
+        if (found) matches.push(found); else unmatched.push(c.name?.[0] || 'Contact');
+      }
+      setContactsPicked({ matches, unmatched });
+    } catch (e) {
+      if (e?.name !== 'SecurityError' && e?.name !== 'AbortError') showToast?.('Could not read contacts', 'error');
+    }
+    setContactsBusy(false);
+  };
+
+  const inviteContact = (name) => shareToDevice({
+    url: inviteUrl,
+    title: 'Infinity',
+    text: `Hey ${name}, join me on Infinity!`,
+    showToast,
+    copiedMessage: 'Invite link copied!',
+  });
+
+  /* ── Interests ────────────────────────────────────────────────────────── */
+  const [pickingInterests, setPickingInterests] = useState(!(currentUser?.interests?.length));
+  const [draftInterests, setDraftInterests] = useState(currentUser?.interests || []);
+  const toggleDraftInterest = (tag) => setDraftInterests(list => list.includes(tag) ? list.filter(t=>t!==tag) : [...list, tag]);
+  const saveInterests = async () => {
+    try {
+      await updateDoc(doc(db, 'users', currentUser.id), { interests: draftInterests });
+      setCurrentUser?.(u => u ? { ...u, interests: draftInterests } : u);
+      setPickingInterests(false);
+      showToast?.('Interests saved', 'success');
+    } catch { showToast?.('Could not save interests', 'error'); }
+  };
+  const interestMatches = useMemo(()=>{
+    const mine = new Set(currentUser?.interests || []);
+    if (!mine.size) return [];
+    return others
+      .map(u => ({ u, shared: (u.interests||[]).filter(t=>mine.has(t)) }))
+      .filter(x => x.shared.length > 0)
+      .sort((a,b)=>b.shared.length-a.shared.length)
+      .slice(0, 20);
+  }, [others, currentUser?.interests]);
+
+  /* ── Nearby ───────────────────────────────────────────────────────────── */
+  const [nearbyBusy, setNearbyBusy] = useState(false);
+  const shareLocationOn = !!currentUser?.shareLocation && !!currentUser?.geo;
+
+  const enableNearby = () => {
+    if (!navigator.geolocation) { showToast?.('Location not supported on this device', 'error'); return; }
+    setNearbyBusy(true);
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      const geo = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      try {
+        await updateDoc(doc(db, 'users', currentUser.id), { geo, shareLocation: true });
+        setCurrentUser?.(u => u ? { ...u, geo, shareLocation: true } : u);
+        showToast?.('Nearby enabled', 'success');
+      } catch { showToast?.('Could not enable Nearby', 'error'); }
+      setNearbyBusy(false);
+    }, () => {
+      showToast?.('Location permission denied', 'error');
+      setNearbyBusy(false);
+    }, { timeout: 10000 });
+  };
+
+  const disableNearby = async () => {
+    try {
+      await updateDoc(doc(db, 'users', currentUser.id), { shareLocation: false });
+      setCurrentUser?.(u => u ? { ...u, shareLocation: false } : u);
+      showToast?.('Nearby turned off', 'info');
+    } catch { showToast?.('Could not update Nearby', 'error'); }
+  };
+
+  const nearbyUsers = useMemo(()=>{
+    if (!shareLocationOn) return [];
+    const { lat, lng } = currentUser.geo;
+    return others
+      .filter(u => u.shareLocation && u.geo)
+      .map(u => ({ u, km: haversineKm(lat, lng, u.geo.lat, u.geo.lng) }))
+      .sort((a,b)=>a.km-b.km)
+      .slice(0, 30);
+  }, [others, shareLocationOn, currentUser?.geo]);
+
+  return (
+    <motion.div variants={backdropVariants} initial="hidden" animate="visible" exit="hidden"
+      style={{ position:'fixed', inset:0, zIndex:Z.modal, background:'rgba(20,15,35,0.45)', display:'flex', alignItems:'flex-end' }} onClick={onClose}>
+      <motion.div variants={sheetVariants} initial="hidden" animate="visible" exit="exit"
+        onClick={e=>e.stopPropagation()} style={{ width:'100%', maxHeight:'82vh', overflowY:'auto', background:COLORS.surface, borderTopLeftRadius:22, borderTopRightRadius:22, paddingBottom:'max(16px, env(safe-area-inset-bottom))' }}>
+        <SheetBackHeader title={titles[mode]} onClose={onClose} />
+        <div style={{ padding:'0 16px 16px' }}>
+
+          {mode === 'contacts' && (
+            <>
+              {!contactsPicked ? (
+                <div style={{ textAlign:'center', padding:'20px 8px' }}>
+                  <div style={{ fontSize:38, marginBottom:10 }}>📇</div>
+                  <div style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:14, marginBottom:6 }}>Find friends from your contacts</div>
+                  <div style={{ color:COLORS.textTertiary, fontSize:12.5, marginBottom:16, lineHeight:1.5 }}>
+                    {contactPickerSupported
+                      ? "We'll only read the contacts you choose to share, once — nothing is uploaded."
+                      : "Your browser doesn't support picking contacts directly, but you can still invite people with a link."}
+                  </div>
+                  {contactPickerSupported ? (
+                    <RippleButton onClick={pickContacts} disabled={contactsBusy} style={{ background:COLORS.gradient, border:'none', borderRadius:14, padding:'12px 24px', color:'white', fontWeight:700, fontSize:13.5, cursor:contactsBusy?'default':'pointer', opacity:contactsBusy?0.7:1 }}>
+                      {contactsBusy ? 'Reading contacts…' : 'Choose Contacts'}
+                    </RippleButton>
+                  ) : (
+                    <RippleButton onClick={()=>inviteContact('there')} style={{ background:COLORS.gradient, border:'none', borderRadius:14, padding:'12px 24px', color:'white', fontWeight:700, fontSize:13.5, cursor:'pointer' }}>
+                      Send Invite Link
+                    </RippleButton>
+                  )}
+                </div>
+              ) : (
+                <>
+                  {contactsPicked.matches.length > 0 && (
+                    <>
+                      <div style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:13, margin:'12px 0 8px' }}>Already on Infinity</div>
+                      {contactsPicked.matches.map(u=>(
+                        <div key={u.id} onClick={()=>onViewProfile?.(u.id)} style={{ display:'flex', alignItems:'center', gap:12, padding:'9px 0', cursor:'pointer' }}>
+                          <AvatarChipSmall u={u} />
+                          <div style={{ flex:1, minWidth:0 }}>
+                            <div style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:13 }}>{u.fullName || u.username}</div>
+                            <div style={{ color:COLORS.textTertiary, fontSize:11.5 }}>@{u.username}</div>
+                          </div>
+                          <MiniActionButton u={u} />
+                        </div>
+                      ))}
+                    </>
+                  )}
+                  {contactsPicked.unmatched.length > 0 && (
+                    <>
+                      <div style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:13, margin:'16px 0 8px' }}>Not on Infinity yet</div>
+                      {contactsPicked.unmatched.map((name,i)=>(
+                        <div key={i} style={{ display:'flex', alignItems:'center', gap:12, padding:'9px 0' }}>
+                          <div style={{ width:40, height:40, borderRadius:'50%', background:COLORS.surfaceAlt, display:'flex', alignItems:'center', justifyContent:'center', color:COLORS.textTertiary, fontWeight:700, flexShrink:0 }}>{name[0]?.toUpperCase()}</div>
+                          <div style={{ flex:1, minWidth:0, color:COLORS.textPrimary, fontWeight:600, fontSize:13, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{name}</div>
+                          <RippleButton onClick={()=>inviteContact(name)} style={{ background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, color:COLORS.textSecondary, borderRadius:12, padding:'6px 12px', fontSize:11.5, fontWeight:700, cursor:'pointer' }}>Invite</RippleButton>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                  {contactsPicked.matches.length===0 && contactsPicked.unmatched.length===0 && (
+                    <div style={{ textAlign:'center', padding:30, color:COLORS.textTertiary, fontSize:12.5 }}>No named contacts found in that selection.</div>
+                  )}
+                </>
+              )}
+            </>
+          )}
+
+          {mode === 'interests' && (
+            pickingInterests ? (
+              <>
+                <div style={{ color:COLORS.textTertiary, fontSize:12.5, margin:'12px 0 12px' }}>Pick a few things you're into — we'll match you with people who share them.</div>
+                <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginBottom:16 }}>
+                  {INTEREST_OPTIONS.map(tag=>{
+                    const on = draftInterests.includes(tag);
+                    return (
+                      <button key={tag} onClick={()=>toggleDraftInterest(tag)} style={{ background:on?COLORS.gradient:COLORS.surfaceAlt, border:`1px solid ${on?'transparent':COLORS.border}`, borderRadius:16, padding:'8px 14px', color:on?'#fff':COLORS.textSecondary, fontSize:12.5, fontWeight:700, cursor:'pointer' }}>
+                        {tag}
+                      </button>
+                    );
+                  })}
+                </div>
+                <RippleButton onClick={saveInterests} disabled={!draftInterests.length} style={{ width:'100%', background:COLORS.gradient, border:'none', borderRadius:14, padding:'13px 0', color:'white', fontWeight:700, fontSize:13.5, cursor:draftInterests.length?'pointer':'default', opacity:draftInterests.length?1:0.5 }}>
+                  Save Interests
+                </RippleButton>
+              </>
+            ) : (
+              <>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', margin:'12px 0 4px' }}>
+                  <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
+                    {(currentUser?.interests||[]).map(tag=>(
+                      <span key={tag} style={{ background:COLORS.surfaceAlt, borderRadius:12, padding:'4px 10px', color:COLORS.textSecondary, fontSize:11, fontWeight:700 }}>{tag}</span>
+                    ))}
+                  </div>
+                  <span onClick={()=>{ setDraftInterests(currentUser?.interests||[]); setPickingInterests(true); }} style={{ color:COLORS.brand, fontSize:12, fontWeight:700, cursor:'pointer', flexShrink:0, marginLeft:8 }}>Edit</span>
+                </div>
+                <div style={{ color:COLORS.textTertiary, fontSize:11.5, margin:'8px 0 14px' }}>{interestMatches.length} {interestMatches.length===1?'person shares':'people share'} your interests</div>
+                {interestMatches.length===0 && <div style={{ textAlign:'center', padding:30, color:COLORS.textTertiary, fontSize:12.5 }}>No matches yet — check back as more people join.</div>}
+                {interestMatches.map(({u, shared})=>(
+                  <div key={u.id} onClick={()=>onViewProfile?.(u.id)} style={{ display:'flex', alignItems:'center', gap:12, padding:'9px 0', cursor:'pointer' }}>
+                    <AvatarChipSmall u={u} />
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:13 }}>{u.fullName || u.username}</div>
+                      <div style={{ color:COLORS.textTertiary, fontSize:11 }}>{shared.join(', ')}</div>
+                    </div>
+                    <MiniActionButton u={u} />
+                  </div>
+                ))}
+              </>
+            )
+          )}
+
+          {mode === 'nearby' && (
+            !shareLocationOn ? (
+              <div style={{ textAlign:'center', padding:'20px 8px' }}>
+                <div style={{ fontSize:38, marginBottom:10 }}>📍</div>
+                <div style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:14, marginBottom:6 }}>See people near you</div>
+                <div style={{ color:COLORS.textTertiary, fontSize:12.5, marginBottom:16, lineHeight:1.5 }}>Your location is only shared if you turn this on, and only with other people who've also opted in. Turn it off any time.</div>
+                <RippleButton onClick={enableNearby} disabled={nearbyBusy} style={{ background:COLORS.gradient, border:'none', borderRadius:14, padding:'12px 24px', color:'white', fontWeight:700, fontSize:13.5, cursor:nearbyBusy?'default':'pointer', opacity:nearbyBusy?0.7:1 }}>
+                  {nearbyBusy ? 'Locating…' : 'Enable Nearby'}
+                </RippleButton>
+              </div>
+            ) : (
+              <>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', margin:'12px 0 14px' }}>
+                  <div style={{ color:COLORS.textTertiary, fontSize:11.5 }}>{nearbyUsers.length} {nearbyUsers.length===1?'person':'people'} nearby</div>
+                  <span onClick={disableNearby} style={{ color:COLORS.danger||'#FF453A', fontSize:12, fontWeight:700, cursor:'pointer' }}>Turn off Nearby</span>
+                </div>
+                {nearbyUsers.length===0 && <div style={{ textAlign:'center', padding:30, color:COLORS.textTertiary, fontSize:12.5 }}>No one nearby has Nearby turned on yet.</div>}
+                {nearbyUsers.map(({u, km})=>(
+                  <div key={u.id} onClick={()=>onViewProfile?.(u.id)} style={{ display:'flex', alignItems:'center', gap:12, padding:'9px 0', cursor:'pointer' }}>
+                    <AvatarChipSmall u={u} />
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:13 }}>{u.fullName || u.username}</div>
+                      <div style={{ color:COLORS.textTertiary, fontSize:11.5 }}>{km < 1 ? `${Math.round(km*1000)} m away` : `${km.toFixed(1)} km away`}</div>
+                    </div>
+                    <MiniActionButton u={u} />
+                  </div>
+                ))}
+              </>
+            )
+          )}
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
+
+const AvatarChipSmall = ({ u }) => (
+  <div style={{ width:40, height:40, borderRadius:'50%', background:u.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, fontSize:15, overflow:'hidden', flexShrink:0 }}>
+    {u.avatarUrl ? <img loading="lazy" decoding="async" src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/> : (u.avatar||u.username?.[0]||'?')}
+  </div>
+);
+
 const FriendsDiscoveryPage = ({
-  currentUser, users, followed, onFollow,
+  currentUser, setCurrentUser, users, followed, onFollow,
   friends, friendRequestsSent, friendRequestsReceived, closeFriends,
   onSendFriendRequest, onCancelFriendRequest, onAcceptFriendRequest, onDeclineFriendRequest, onRemoveFriend, onToggleCloseFriend,
   onViewProfile, onOpenSearch, onFeedScroll, onCreateStory, onViewStory, onOpenStories, onMessage, showToast,
@@ -5914,6 +6199,7 @@ const FriendsDiscoveryPage = ({
   const [requestsSubTab, setRequestsSubTab] = useState('received');
   const [search, setSearch] = useState('');
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [exploreSheet, setExploreSheet] = useState(null); // null | 'contacts' | 'interests' | 'nearby'
 
   const friendsArr = friends || [];
   const sentArr = friendRequestsSent || [];
@@ -6106,7 +6392,12 @@ const FriendsDiscoveryPage = ({
             </div>
             <span onClick={()=>setTab('close')} style={{ color:COLORS.brand, fontSize:12, fontWeight:700, cursor:'pointer' }}>See all</span>
           </div>
-          {closeFriendUsers.length===0 && <div style={{ color:COLORS.textTertiary, fontSize:12.5, padding:'14px 0' }}>Star a friend from the Friends tab to add them here.</div>}
+          {closeFriendUsers.length===0 && (
+            <div style={{ padding:'14px 0' }}>
+              <div style={{ color:COLORS.textTertiary, fontSize:12.5, marginBottom:8 }}>Star a friend to add them here.</div>
+              <RippleButton onClick={()=>setTab('friends')} style={{ background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:12, padding:'8px 16px', color:COLORS.textPrimary, fontSize:12, fontWeight:700, cursor:'pointer' }}>Go to Friends list →</RippleButton>
+            </div>
+          )}
           {closeFriendUsers.slice(0,5).map(u=>(
             <div key={u.id} onClick={()=>onViewProfile?.(u.id)} style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 0', cursor:'pointer' }}>
               <AvatarCircle u={u} size={40} />
@@ -6121,9 +6412,9 @@ const FriendsDiscoveryPage = ({
           <div style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:13.5, margin:'18px 0 10px' }}>Explore More</div>
           <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
             {[
-              {label:'Contacts', icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>)},
-              {label:'Interests', icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>)},
-              {label:'Nearby', icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>)},
+              {label:'Contacts', icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>), action:()=>setExploreSheet('contacts')},
+              {label:'Interests', icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>), action:()=>setExploreSheet('interests')},
+              {label:'Nearby', icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>), action:()=>setExploreSheet('nearby')},
               {label:'Groups', icon:(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>), action:()=>setTab('groups')},
             ].map(item=>(
               <motion.button key={item.label} whileTap={tapScale} onClick={item.action}
@@ -6236,6 +6527,24 @@ const FriendsDiscoveryPage = ({
       )}
       </>
       )}
+      <AnimatePresence>
+        {exploreSheet && (
+          <ExploreSheet
+            mode={exploreSheet}
+            currentUser={currentUser}
+            setCurrentUser={setCurrentUser}
+            users={users}
+            friendsArr={friendsArr}
+            sentArr={sentArr}
+            receivedArr={receivedArr}
+            onSendFriendRequest={onSendFriendRequest}
+            onCancelFriendRequest={onCancelFriendRequest}
+            onViewProfile={onViewProfile}
+            showToast={showToast}
+            onClose={()=>setExploreSheet(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };
@@ -14432,7 +14741,7 @@ const handleMessage = uid => {
   onOpenNotifications={()=>setShowNotifications(true)} onOpenStories={()=>setShowStoriesPage(true)}
   onCreateStory={()=>setShowCreateStory(true)} onViewStory={(payload)=>setShowStoryViewer(payload)}
   onOpenProfileDrawer={()=>setShowProfileDrawer(true)} />}
-            {activeTab==='friends' && <FriendsDiscoveryPage currentUser={currentUser} users={users} followed={followed} onFollow={toggleFollow}
+            {activeTab==='friends' && <FriendsDiscoveryPage currentUser={currentUser} setCurrentUser={setCurrentUser} users={users} followed={followed} onFollow={toggleFollow}
               friends={friendsList} friendRequestsSent={friendRequestsSent} friendRequestsReceived={friendRequestsReceived} closeFriends={closeFriendsList}
               onSendFriendRequest={sendFriendRequest} onCancelFriendRequest={cancelFriendRequest} onAcceptFriendRequest={acceptFriendRequest} onDeclineFriendRequest={declineFriendRequest} onRemoveFriend={removeFriend} onToggleCloseFriend={toggleCloseFriend}
               onViewProfile={handleViewProfile} onOpenSearch={()=>setShowDiscover(true)} onFeedScroll={handleFeedScroll} onCreateStory={()=>setShowCreateStory(true)} onViewStory={(payload)=>setShowStoryViewer(payload)} onOpenStories={()=>setShowStoriesPage(true)} onMessage={handleMessage} showToast={showToast} />}
