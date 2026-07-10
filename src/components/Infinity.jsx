@@ -6438,8 +6438,27 @@ const EditProfileModal = ({ user, onClose, onSave, showToast }) => {
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(user?.avatarUrl||null);
   const [uploading, setUploading] = useState(false);
+  const [usernameStatus, setUsernameStatus] = useState(null); // null | 'checking' | 'available' | 'taken' | 'invalid' | 'same'
   const fileInputRef = useRef(null);
   const colors = ['#0B5FFF','#2E7BFF','#083FB0','#FFB100','#2ED573','#00A9D6','#FF453A','#5E5CE6','#00A9D6','#5CA0FF'];
+
+  // Smart, debounced live username availability check — same validation and
+  // Firestore lookup as handleSave, just run as-you-type so people find out
+  // a handle is taken before they hit Save, not after.
+  useEffect(() => {
+    const uname = username.trim().toLowerCase();
+    if (uname === (user?.username||'').toLowerCase()) { setUsernameStatus('same'); return; }
+    if (!uname) { setUsernameStatus(null); return; }
+    if (!isValidUsername(uname)) { setUsernameStatus('invalid'); return; }
+    setUsernameStatus('checking');
+    const t = setTimeout(async () => {
+      try {
+        const snap = await getDocs(query(collection(db, 'users'), where('usernameLower', '==', uname)));
+        setUsernameStatus(snap.empty ? 'available' : 'taken');
+      } catch { setUsernameStatus(null); }
+    }, 450);
+    return () => clearTimeout(t);
+  }, [username, user?.username]);
 
   const handleAvatarChange = (e) => {
     const f = e.target.files[0];
@@ -6488,7 +6507,7 @@ const EditProfileModal = ({ user, onClose, onSave, showToast }) => {
         <div style={{ width:36, height:4, background:COLORS.surfaceAlt, borderRadius:2, margin:'0 auto 20px' }} />
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24 }}>
           <span style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Edit Profile</span>
-          <motion.button whileTap={{ scale:0.94 }} onClick={handleSave} disabled={uploading} style={{ background:COLORS.gradient, border:'none', borderRadius:20, padding:'9px 22px', color:COLORS.textOnBrand, fontWeight:700, cursor:'pointer', fontSize:14, opacity:uploading?0.7:1, display:'flex', alignItems:'center', gap:7, boxShadow:SHADOW.glow(COLORS.brand) }}>
+          <motion.button whileTap={{ scale:0.94 }} onClick={handleSave} disabled={uploading || usernameStatus==='taken' || usernameStatus==='invalid' || usernameStatus==='checking'} style={{ background:COLORS.gradient, border:'none', borderRadius:20, padding:'9px 22px', color:COLORS.textOnBrand, fontWeight:700, cursor:'pointer', fontSize:14, opacity:(uploading || usernameStatus==='taken' || usernameStatus==='invalid' || usernameStatus==='checking')?0.6:1, display:'flex', alignItems:'center', gap:7, boxShadow:SHADOW.glow(COLORS.brand) }}>
             {uploading && <AuthSpinner size={14} />}
             {uploading?'Saving...':'Save'}
           </motion.button>
@@ -6517,14 +6536,25 @@ const EditProfileModal = ({ user, onClose, onSave, showToast }) => {
           {label:'Gender',value:gender,set:setGender,placeholder:'e.g. Male, Female, Other'},
         ].map(field=>(
           <div key={field.label} style={{ marginTop:20 }}>
-            <div style={{ color:COLORS.textTertiary, fontSize:12, marginBottom:7, fontWeight:600, textTransform:'uppercase', letterSpacing:0.5 }}>{field.label}</div>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:7 }}>
+              <div style={{ color:COLORS.textTertiary, fontSize:12, fontWeight:600, textTransform:'uppercase', letterSpacing:0.5 }}>{field.label}</div>
+              {field.label==='Bio' && <div style={{ color: bio.length>150?COLORS.dangerText:COLORS.textTertiary, fontSize:11, fontWeight:600 }}>{bio.length}/150</div>}
+            </div>
             {field.multiline ? (
-              <textarea value={field.value} onChange={e=>field.set(e.target.value)} placeholder={field.placeholder} style={{ width:'100%', background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:16, padding:'12px 14px', color:COLORS.textPrimary, outline:'none', fontSize:14, resize:'none', minHeight:80, boxSizing:'border-box', fontFamily:'inherit', transition:TRANSITION.fast }} />
+              <textarea value={field.value} onChange={e=>field.set(e.target.value.slice(0,150))} placeholder={field.placeholder} style={{ width:'100%', background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:16, padding:'12px 14px', color:COLORS.textPrimary, outline:'none', fontSize:14, resize:'none', minHeight:80, boxSizing:'border-box', fontFamily:'inherit', transition:TRANSITION.fast }} />
             ) : (
-              <div style={{ display:'flex', alignItems:'center', background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:16, padding:'12px 14px', transition:TRANSITION.fast }}>
-                {field.prefix && <span style={{ color:COLORS.textTertiary, marginRight:4, fontSize:14, fontWeight:600 }}>{field.prefix}</span>}
-                <input value={field.value} onChange={e=>field.set(e.target.value)} placeholder={field.placeholder} style={{ flex:1, background:'none', border:'none', color:COLORS.textPrimary, outline:'none', fontSize:14, fontFamily:'inherit' }} />
-              </div>
+              <>
+                <div style={{ display:'flex', alignItems:'center', background:COLORS.surfaceAlt, border:`1px solid ${field.label==='Username' && usernameStatus==='taken' ? COLORS.danger : field.label==='Username' && usernameStatus==='invalid' ? COLORS.danger : COLORS.border}`, borderRadius:16, padding:'12px 14px', transition:TRANSITION.fast }}>
+                  {field.prefix && <span style={{ color:COLORS.textTertiary, marginRight:4, fontSize:14, fontWeight:600 }}>{field.prefix}</span>}
+                  <input value={field.value} onChange={e=>field.set(e.target.value)} placeholder={field.placeholder} style={{ flex:1, background:'none', border:'none', color:COLORS.textPrimary, outline:'none', fontSize:14, fontFamily:'inherit' }} />
+                  {field.label==='Username' && usernameStatus==='checking' && <AuthSpinner size={14} />}
+                  {field.label==='Username' && usernameStatus==='available' && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.success} strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>}
+                  {field.label==='Username' && (usernameStatus==='taken'||usernameStatus==='invalid') && <span style={{ color:COLORS.dangerText, fontSize:14 }}>✕</span>}
+                </div>
+                {field.label==='Username' && usernameStatus==='taken' && <div style={{ color:COLORS.dangerText, fontSize:11, marginTop:6 }}>That username is already taken</div>}
+                {field.label==='Username' && usernameStatus==='invalid' && <div style={{ color:COLORS.dangerText, fontSize:11, marginTop:6 }}>5-32 chars: lowercase letters, numbers, or underscore, starting with a letter</div>}
+                {field.label==='Username' && usernameStatus==='available' && <div style={{ color:COLORS.successText, fontSize:11, marginTop:6 }}>Username available</div>}
+              </>
             )}
           </div>
         ))}
@@ -7390,6 +7420,52 @@ const SubPageHeader = ({ title, onBack, right }) => (
   </>
 );
 
+// Lightweight count-up animation for stat numbers (Posts/Followers/Following).
+// Plain rAF tween (no extra deps) — eases from the previous value to the next
+// whenever the target changes, so a follow/unfollow or new post visibly ticks
+// instead of just snapping to the new number.
+const useCountUp = (target = 0, duration = 700) => {
+  const [value, setValue] = useState(target);
+  const prevRef = useRef(target);
+  useEffect(() => {
+    const from = prevRef.current;
+    const to = target;
+    if (from === to) { setValue(to); return; }
+    let raf;
+    const start = performance.now();
+    const tick = (now) => {
+      const p = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setValue(Math.round(from + (to - from) * eased));
+      if (p < 1) raf = requestAnimationFrame(tick);
+      else prevRef.current = to;
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, duration]);
+  return value;
+};
+
+// Profile completeness score — drives the smart "finish your profile" nudge.
+// Each weighted field that's filled in adds its weight; used purely as a UX
+// prompt, never blocks anything.
+const PROFILE_FIELDS = [
+  { key: 'avatarUrl', weight: 30, label: 'Add a profile photo' },
+  { key: 'bio', weight: 25, label: 'Write a bio' },
+  { key: 'link', weight: 15, label: 'Add a website link' },
+  { key: 'location', weight: 10, label: 'Add your location' },
+  { key: 'gender', weight: 5, label: 'Add your gender' },
+];
+const computeProfileCompleteness = (user) => {
+  let score = 15; // base: having an account + username at all
+  const missing = [];
+  for (const f of PROFILE_FIELDS) {
+    if (user?.[f.key] && String(user[f.key]).trim().length > 0) score += f.weight;
+    else missing.push(f.label);
+  }
+  return { pct: Math.min(100, score), missing };
+};
+
 const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowAnalytics, onShowQRCode, allVideos, setBlockedUsers, onShowSavedPosts, onGoToGroups, onShowBroadcast, onViewProfile, settingsSignal, onFeedScroll, t, theme, onToggleTheme }) => {
   const [activeSubPage, setActiveSubPage] = useState(null);
   const [showEditProfile, setShowEditProfile] = useState(false);
@@ -7397,8 +7473,14 @@ const ProfilePage = ({ user, setCurrentUser, onLogout, users, showToast, onShowA
   const [profileTab, setProfileTab] = useState('posts');
   const [showHamburger, setShowHamburger] = useState(false);
   const [showFollowersList, setShowFollowersList] = useState(null);
+  const [settingsQuery, setSettingsQuery] = useState('');
   const myVideos = allVideos?.filter(v=>v.userId===user?.id)||[];
+  const savedVideos = allVideos?.filter(v=>v.savedBy?.includes(user?.id))||[];
   const saveProfile = data=>setCurrentUser(u=>({...u,...data}));
+  const { pct: completenessPct, missing: completenessMissing } = useMemo(()=>computeProfileCompleteness(user), [user?.avatarUrl, user?.bio, user?.link, user?.location, user?.gender]);
+  const postsCount = useCountUp(myVideos.length);
+  const followersCount = useCountUp(user?.followers?.length||0);
+  const followingCount = useCountUp(user?.following?.length||0);
 
   // Opened via the Settings tab in the bottom nav
   useEffect(()=>{ if(settingsSignal) setActiveSubPage('settings'); },[settingsSignal]);
@@ -7564,13 +7646,28 @@ if(activeSubPage==='wallet') return <WalletPage user={user} setCurrentUser={setC
     </div>
   );
 
+  if(activeSubPage==='notifprefs') return (
+    <NotificationPrefsPage user={user} setCurrentUser={setCurrentUser} showToast={showToast} onBack={()=>setActiveSubPage('settings')} />
+  );
+
+  if(activeSubPage==='help') return (
+    <HelpCenterPage user={user} showToast={showToast} onBack={()=>setActiveSubPage('settings')} onReport={()=>setActiveSubPage('unblock')} />
+  );
+
 if(activeSubPage==='settings') return (
-    <div style={{ height:'100%', overflow:'auto', background:COLORS.bg }}>
+    <motion.div variants={pageVariants} initial="hidden" animate="visible" style={{ height:'100%', overflow:'auto', background:COLORS.bg }}>
       <div style={{ padding:'16px' }}>
         <button onClick={()=>setActiveSubPage(null)} style={{ background:COLORS.surface2, border:`1px solid ${COLORS.border}`, borderRadius:20, padding:'8px 16px', color:COLORS.textPrimary, cursor:'pointer', fontSize:13, marginBottom:20, display:'flex', alignItems:'center', gap:6 }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg> Back
         </button>
-        <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:22, marginBottom:24, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{t?.settings||'Settings'}</div>
+        <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:22, marginBottom:16, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{t?.settings||'Settings'}</div>
+        <div style={{ position:'relative', marginBottom:22 }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2" style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)' }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input value={settingsQuery} onChange={e=>setSettingsQuery(e.target.value)} placeholder="Search settings" style={{ width:'100%', boxSizing:'border-box', background:COLORS.surface2, border:`1px solid ${COLORS.border}`, borderRadius:16, padding:'11px 14px 11px 38px', color:COLORS.textPrimary, outline:'none', fontSize:13.5, fontFamily:'inherit' }} />
+          {settingsQuery && (
+            <button onClick={()=>setSettingsQuery('')} aria-label="Clear search" style={{ position:'absolute', right:10, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', color:COLORS.textTertiary, cursor:'pointer', fontSize:15, padding:4 }}>✕</button>
+          )}
+        </div>
         <div style={{ color:COLORS.textTertiary, fontSize:11, fontWeight:700, marginBottom:8, textTransform:'uppercase', letterSpacing:1.2 }}>Account</div>
         <div style={{ background:COLORS.surface2, borderRadius:20, overflow:'hidden', marginBottom:20, border:`1px solid ${COLORS.border}` }}>
           {[
@@ -7580,7 +7677,7 @@ if(activeSubPage==='settings') return (
             {icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>,label:t?.language||'Language',action:()=>setActiveSubPage('language')},
             {icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H9a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-3a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>,label:'My Groups',action:()=>{onGoToGroups?.(); setActiveSubPage(null);}},
             {icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>,label:t?.switchAccount||'Switch Account',action:()=>setActiveSubPage('switch')},
-          ].map((item,i,arr)=>(
+          ].filter(item=>item.label.toLowerCase().includes(settingsQuery.toLowerCase())).map((item,i,arr)=>(
             <div key={item.label} onClick={item.action} style={{ padding:'15px 16px', borderBottom:i<arr.length-1?`1px solid ${COLORS.border}`:'', display:'flex', alignItems:'center', gap:14, cursor:'pointer' }}>
               <div style={{ width:36, height:36, borderRadius:12, background:COLORS.surface2, display:'flex', alignItems:'center', justifyContent:'center' }}>{item.icon}</div>
               <span style={{ color:COLORS.textPrimary, flex:1, fontSize:14 }}>{item.label}</span>
@@ -7619,26 +7716,29 @@ if(activeSubPage==='settings') return (
             </div>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
           </div>
-          <div style={{ padding:'15px 16px', borderTop:`1px solid ${COLORS.border}`, display:'flex', alignItems:'center', gap:14, cursor:'pointer' }} onClick={()=>showToast?.('Notification settings','info')}>
+          <div style={{ padding:'15px 16px', borderTop:`1px solid ${COLORS.border}`, display:'flex', alignItems:'center', gap:14, cursor:'pointer' }} onClick={()=>setActiveSubPage('notifprefs')}>
             <div style={{ width:36, height:36, borderRadius:12, background:COLORS.surface2, display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>🔔</div>
-            <span style={{ color:COLORS.textPrimary, flex:1, fontSize:14 }}>Notification Preferences</span>
+            <div style={{flex:1}}>
+              <div style={{ color:COLORS.textPrimary, fontSize:14 }}>Notification Preferences</div>
+              <div style={{ color:COLORS.textTertiary, fontSize:11, marginTop:2 }}>{typeof Notification!=='undefined' && Notification.permission==='granted' ? 'Push enabled' : 'Push off'}</div>
+            </div>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
           </div>
         </div>
         <div style={{ color:COLORS.textTertiary, fontSize:11, fontWeight:700, marginBottom:8, textTransform:'uppercase', letterSpacing:1.2 }}>Support</div>
         <div style={{ background:COLORS.surface2, borderRadius:20, overflow:'hidden', marginBottom:20, border:`1px solid ${COLORS.border}` }}>
           {[
-            {label:'Support', action:()=>{ window.location.href = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('Infinity Support Request')}&body=${encodeURIComponent(`Username: @${user?.username||''}\nAccount email: ${user?.email||''}\n\nDescribe your issue:\n`)}`; }},
+            {label:'Email Support', action:()=>{ window.location.href = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('Infinity Support Request')}&body=${encodeURIComponent(`Username: @${user?.username||''}\nAccount email: ${user?.email||''}\n\nDescribe your issue:\n`)}`; }},
             {label:t?.blockedUsers||'Blocked Users',action:()=>setActiveSubPage('unblock')},
             ...(user?.isAdmin ? [{label:'Moderation (Reports)',action:()=>setActiveSubPage('reports')}] : []),
-            {label:t?.helpCenter||'Help Center',action:()=>showToast?.('Help center','info')},
+            {label:t?.helpCenter||'Help Center',action:()=>setActiveSubPage('help')},
             {label:t?.reportProblem||'Report a Problem',action:async()=>{
               await sendEmailJS({to_email:SUPPORT_EMAIL,from_name:user?.username,message:`User ${user?.username} (${user?.email}) reported a problem.`});
               showToast?.('Report sent!','success');
             }},
             {label:t?.termsOfService||'Terms of Service', action:()=>window.open('/terms','_blank')},
 {label:t?.privacyPolicy||'Privacy Policy', action:()=>window.open('/privacy','_blank')},
-          ].map((item,i,arr)=>(
+          ].filter(item=>item.label.toLowerCase().includes(settingsQuery.toLowerCase())).map((item,i,arr)=>(
             <div key={item.label} onClick={item.action} style={{ padding:'14px 16px', borderBottom:i<arr.length-1?`1px solid ${COLORS.border}`:'', display:'flex', alignItems:'center', gap:12, cursor:'pointer' }}>
               <span style={{ color:COLORS.textPrimary, flex:1, fontSize:14 }}>{item.label}</span>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
@@ -7706,7 +7806,7 @@ if(activeSubPage==='settings') return (
         </div>
         <div style={{ textAlign:'center', color:COLORS.textDisabled, fontSize:11, marginBottom:16 }}>Infinity v3.0.0 • Made with ❤️</div>
       </div>
-    </div>
+    </motion.div>
   );
 
   if(activeSubPage==='switch') return (
@@ -7896,7 +7996,7 @@ if(activeSubPage==='settings') return (
             </div>
           )}
           <motion.div variants={listItemVariants} style={{ display:'flex', justifyContent:'center', gap:0, marginTop:18, background:COLORS.surfaceAlt, borderRadius:20, padding:'14px 4px', border:`1px solid ${COLORS.border}` }} role="list">
-            {[['Posts',myVideos.length,null],[t?.followers||'Followers',user?.followers?.length||0,'followers'],[t?.following||'Following',user?.following?.length||0,'following']].map(([label,val,listKey],i)=>(
+            {[['Posts',postsCount,null],[t?.followers||'Followers',followersCount,'followers'],[t?.following||'Following',followingCount,'following']].map(([label,val,listKey],i)=>(
               <motion.div key={label} role="listitem" whileTap={listKey?{ scale:0.94 }:{}} onClick={()=>listKey&&setShowFollowersList(listKey)} aria-label={`${formatNumber(val)} ${label}`} tabIndex={listKey?0:-1} onKeyDown={listKey?(e=>{ if(e.key==='Enter'){ setShowFollowersList(listKey); } }):undefined} style={{ flex:1, textAlign:'center', cursor:listKey?'pointer':'default', borderRadius:12, padding:'4px 0', borderRight:i<2?`1px solid ${COLORS.border}`:'none' }}>
                 <div className="tnum" style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:TYPE.xl }}>{formatNumber(val)}</div>
                 <div style={{ color:COLORS.textTertiary, fontSize:11.5, marginTop:2 }}>{label}</div>
@@ -7917,6 +8017,35 @@ if(activeSubPage==='settings') return (
               <span style={{ color:COLORS.textSecondary, fontSize:12, fontWeight:700 }}>Streak {user?.streak || 15}</span>
             </div>
           </motion.div>
+          <AnimatePresence>{completenessPct < 100 && (
+            <motion.div
+              key="completeness"
+              initial={{ opacity:0, height:0, marginTop:0 }} animate={{ opacity:1, height:'auto', marginTop:14 }} exit={{ opacity:0, height:0, marginTop:0 }}
+              transition={durations.base}
+              style={{ padding:'0 16px', overflow:'hidden' }}>
+              <motion.div whileTap={tapScale} onClick={(e)=>{e.stopPropagation(); setShowEditProfile(true);}}
+                style={{ background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:16, padding:'12px 14px', cursor:'pointer', textAlign:'left' }}>
+                <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                  <div style={{ position:'relative', width:34, height:34, flexShrink:0 }}>
+                    <svg width="34" height="34" viewBox="0 0 36 36" style={{ transform:'rotate(-90deg)' }}>
+                      <circle cx="18" cy="18" r="15.5" fill="none" stroke={COLORS.border} strokeWidth="3" />
+                      <motion.circle cx="18" cy="18" r="15.5" fill="none" stroke={COLORS.brand} strokeWidth="3" strokeLinecap="round"
+                        strokeDasharray={2*Math.PI*15.5}
+                        initial={{ strokeDashoffset: 2*Math.PI*15.5 }}
+                        animate={{ strokeDashoffset: 2*Math.PI*15.5*(1-completenessPct/100) }}
+                        transition={durations.slow} />
+                    </svg>
+                    <span style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', fontSize:9.5, fontWeight:800, color:COLORS.textPrimary }}>{completenessPct}%</span>
+                  </div>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ color:COLORS.textPrimary, fontSize:13, fontWeight:700 }}>Finish setting up your profile</div>
+                    <div style={{ color:COLORS.textTertiary, fontSize:11.5, marginTop:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>Next: {completenessMissing[0]}</div>
+                  </div>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2" style={{ flexShrink:0 }}><polyline points="9 18 15 12 9 6"/></svg>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}</AnimatePresence>
           <motion.div variants={listItemVariants} style={{ display:'flex', gap:10, marginTop:16, padding:'0 16px' }}>
             <motion.button whileHover={{ scale:1.015 }} whileTap={tapScale} onClick={(e)=>{e.stopPropagation(); setShowEditProfile(true);}} style={{ flex:1, background:COLORS.gradient, border:'none', borderRadius:16, padding:'12px 0', color:'white', fontWeight:700, cursor:'pointer', fontSize:14, boxShadow:SHADOW.glow(COLORS.brand), display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -8015,10 +8144,36 @@ if(activeSubPage==='settings') return (
           )
         )}
         {profileTab==='saved' && (
-          <div style={{ textAlign:'center', padding:'56px 24px' }}>
-            <div style={{ width:64, height:64, borderRadius:'50%', background:COLORS.surfaceAlt, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 14px' }}><span style={{ fontSize:28 }}>🔖</span></div>
-            <div style={{ fontSize:15, fontWeight:700, color:COLORS.textSecondary }}>No saved posts</div>
-          </div>
+          savedVideos.length===0 ? (
+            <motion.div initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} transition={durations.base} style={{ textAlign:'center', padding:'48px 24px', margin:'8px 16px 0', background:COLORS.surfaceAlt, borderRadius:RADIUS.lg, border:`1px solid ${COLORS.border}` }}>
+              <div style={{ width:60, height:60, borderRadius:'50%', background:COLORS.surface, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 14px', boxShadow:SHADOW.xs }}>
+                <span style={{ fontSize:26 }}>🔖</span>
+              </div>
+              <div style={{ fontSize:15, fontWeight:700, color:COLORS.textSecondary }}>No saved posts yet</div>
+              <div style={{ fontSize:13, marginTop:4, color:COLORS.textTertiary }}>Tap the bookmark icon on any post to save it here</div>
+            </motion.div>
+          ) : (
+            <>
+              <div style={{ display:'flex', justifyContent:'flex-end', padding:'8px 16px 0' }}>
+                <button onClick={onShowSavedPosts} style={{ background:'none', border:'none', color:COLORS.brand, fontSize:12.5, fontWeight:700, cursor:'pointer', padding:0 }}>Manage saved →</button>
+              </div>
+              <motion.div variants={listContainerVariants} initial="hidden" animate="visible" style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:2, marginTop:6 }}>
+                {savedVideos.map(v=>(
+                  <motion.div key={v.id} variants={listItemVariants} whileHover={{ opacity:0.94 }} onClick={()=>onShowSavedPosts?.()} style={{ aspectRatio:'9/16', background:COLORS.surfaceAlt, position:'relative', overflow:'hidden', borderRadius:RADIUS.sm, cursor:'pointer' }}>
+                    {v.videoUrl?.match(/\.(jpg|jpeg|png|gif|webp)/i) || v.mediaType?.startsWith('image')
+                      ? <img loading="lazy" decoding="async" src={v.videoUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" />
+                      : <video src={v.videoUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} />
+                    }
+                    <div style={{ position:'absolute', inset:0, background:'linear-gradient(180deg, transparent 65%, rgba(0,0,0,0.45))', pointerEvents:'none' }} />
+                    <div style={{ position:'absolute', bottom:6, left:6, color:'white', fontSize:10, fontWeight:700, display:'flex', alignItems:'center', gap:3 }}>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="white"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+                      <span className="tnum">{formatNumber(v.likes||0)}</span>
+                    </div>
+                  </motion.div>
+                ))}
+              </motion.div>
+            </>
+          )
         )}
         {profileTab==='drafts' && (
           <div style={{ textAlign:'center', padding:'56px 24px' }}>
@@ -8053,6 +8208,156 @@ if(activeSubPage==='settings') return (
   );
 };
 
+
+// Real, working Notification Preferences page — replaces what used to be a
+// toast stub. Master toggle actually requests browser permission + registers
+// an FCM token (same helpers used at login); category toggles persist to
+// user.notifPrefs in Firestore so they're respected wherever notifications
+// are sent from (see /api/notifications/send).
+const NOTIF_CATEGORIES = [
+  { key:'likes', label:'Likes', sub:'When someone likes your post', icon:'❤️' },
+  { key:'comments', label:'Comments', sub:'When someone comments on your post', icon:'💬' },
+  { key:'followers', label:'New Followers', sub:'When someone follows you', icon:'👤' },
+  { key:'messages', label:'Messages', sub:'Direct messages and group chats', icon:'✉️' },
+  { key:'live', label:'Live Streams', sub:'When people you follow go live', icon:'🔴' },
+  { key:'mentions', label:'Mentions & Replies', sub:'When you\'re tagged or replied to', icon:'@' },
+];
+const NotificationPrefsPage = ({ user, setCurrentUser, showToast, onBack }) => {
+  const defaults = { likes:true, comments:true, followers:true, messages:true, live:true, mentions:true };
+  const [prefs, setPrefs] = useState({ ...defaults, ...(user?.notifPrefs||{}) });
+  const [permission, setPermission] = useState(typeof Notification!=='undefined' ? Notification.permission : 'default');
+  const [requesting, setRequesting] = useState(false);
+  const hasToken = !!user?.fcmToken;
+
+  const toggle = async (key) => {
+    const next = { ...prefs, [key]: !prefs[key] };
+    setPrefs(next);
+    try {
+      await updateDoc(doc(db,'users',user.id), { notifPrefs: next });
+    } catch(e) { showToast?.('Failed to save','error'); }
+  };
+
+  const enablePush = async () => {
+    setRequesting(true);
+    try {
+      const perm = await Notification.requestPermission();
+      setPermission(perm);
+      if (perm === 'granted') {
+        const swReg = await registerNotifServiceWorker();
+        const token = messaging ? await getToken(messaging, swReg ? { vapidKey: VAPID_KEY, serviceWorkerRegistration: swReg } : { vapidKey: VAPID_KEY }) : null;
+        if (token) {
+          await updateDoc(doc(db,'users',user.id), { fcmToken: token });
+          setCurrentUser?.(u=>({...u, fcmToken: token }));
+          showToast?.('Push notifications enabled','success');
+        } else {
+          showToast?.('Could not register for push','error');
+        }
+      } else {
+        showToast?.('Notifications blocked — enable them in your browser settings', 'error');
+      }
+    } catch(e) {
+      showToast?.('Push setup failed', 'error');
+    }
+    setRequesting(false);
+  };
+
+  return (
+    <motion.div variants={pageVariants} initial="hidden" animate="visible" style={{height:'100%',overflow:'auto',background:COLORS.bg,padding:16}}>
+      <SubPageHeader title="Notification Preferences" onBack={onBack} />
+      <div style={{ background:COLORS.surface2, borderRadius:20, overflow:'hidden', marginBottom:20, border:`1px solid ${COLORS.border}` }}>
+        <div style={{ padding:'15px 16px', display:'flex', alignItems:'center', gap:14 }}>
+          <div style={{ width:36, height:36, borderRadius:12, background:permission==='granted'?`${COLORS.success}1A`:COLORS.surface2, display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>🔔</div>
+          <div style={{ flex:1 }}>
+            <div style={{ color:COLORS.textPrimary, fontSize:14, fontWeight:700 }}>Push Notifications</div>
+            <div style={{ color:permission==='granted'&&hasToken?COLORS.successText:COLORS.textTertiary, fontSize:11, marginTop:2 }}>
+              {permission==='granted' && hasToken ? 'Enabled on this device' : permission==='denied' ? 'Blocked in browser settings' : 'Not enabled yet'}
+            </div>
+          </div>
+          {!(permission==='granted' && hasToken) && permission!=='denied' && (
+            <motion.button whileTap={tapScale} disabled={requesting} onClick={enablePush} style={{ background:COLORS.gradient, border:'none', borderRadius:16, padding:'8px 14px', color:'white', fontWeight:700, fontSize:12.5, cursor:'pointer', opacity:requesting?0.7:1 }}>
+              {requesting ? '...' : 'Enable'}
+            </motion.button>
+          )}
+        </div>
+      </div>
+      <div style={{ color:COLORS.textTertiary, fontSize:11, fontWeight:700, marginBottom:8, textTransform:'uppercase', letterSpacing:1.2 }}>Notify me about</div>
+      <div style={{ background:COLORS.surface2, borderRadius:20, overflow:'hidden', border:`1px solid ${COLORS.border}`, opacity:permission==='granted'?1:0.6 }}>
+        {NOTIF_CATEGORIES.map((c,i,arr)=>(
+          <div key={c.key} onClick={()=>toggle(c.key)} style={{ padding:'14px 16px', borderBottom:i<arr.length-1?`1px solid ${COLORS.border}`:'', display:'flex', alignItems:'center', gap:14, cursor:'pointer' }}>
+            <div style={{ width:36, height:36, borderRadius:12, background:COLORS.surfaceAlt, display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}>{c.icon}</div>
+            <div style={{ flex:1 }}>
+              <div style={{ color:COLORS.textPrimary, fontSize:14 }}>{c.label}</div>
+              <div style={{ color:COLORS.textTertiary, fontSize:11, marginTop:2 }}>{c.sub}</div>
+            </div>
+            <div style={{ width:46, height:26, background:prefs[c.key]?COLORS.brand:COLORS.surface3, borderRadius:13, position:'relative', transition:'background 0.2s', flexShrink:0 }}>
+              <div style={{ width:20, height:20, background:'white', borderRadius:'50%', position:'absolute', top:3, left:prefs[c.key]?23:3, transition:'left 0.2s' }} />
+            </div>
+          </div>
+        ))}
+      </div>
+      {permission!=='granted' && (
+        <div style={{ marginTop:14, color:COLORS.textTertiary, fontSize:12, lineHeight:1.6 }}>Turn on push notifications above to control these categories — they'll still be saved for when you do.</div>
+      )}
+    </motion.div>
+  );
+};
+
+// Real Help Center — FAQ accordion + quick links, replacing the old toast stub.
+const HELP_FAQS = [
+  { q:'How do I change my username?', a:'Go to Settings → Edit Profile, update your username, then tap Save. Usernames must be 5–32 characters and can only contain lowercase letters, numbers, and underscores.' },
+  { q:'How do I control who can message or call me?', a:'Go to Settings → Privacy and toggle "Allow Messages from Everyone" or "Allow Calls from Everyone". When off, only people you follow back can reach you.' },
+  { q:'How do I get verified?', a:'Verification is currently granted case-by-case for creators with an established, authentic presence. Reach out through Support with links to your content.' },
+  { q:'Someone is bothering me — what can I do?', a:'Open their profile and use Block, or open the post/message and use Report. Blocked users can\'t view your profile, message you, or see your posts.' },
+  { q:'How do coins and the wallet work?', a:'Coins are used for gifts, boosts, and premium features. Top up or withdraw from Settings → Wallet. All transactions are logged under Wallet → Transactions.' },
+  { q:'How do I delete my account?', a:'Go to Settings → Account Actions → Delete Account. This permanently removes your posts, comments, and profile — it cannot be undone.' },
+];
+const HelpCenterPage = ({ user, showToast, onBack, onReport }) => {
+  const [query, setQuery] = useState('');
+  const [openIdx, setOpenIdx] = useState(null);
+  const filtered = HELP_FAQS.filter(f => (f.q+f.a).toLowerCase().includes(query.toLowerCase()));
+  return (
+    <motion.div variants={pageVariants} initial="hidden" animate="visible" style={{height:'100%',overflow:'auto',background:COLORS.bg,padding:16}}>
+      <SubPageHeader title="Help Center" onBack={onBack} />
+      <div style={{ position:'relative', marginBottom:18 }}>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2" style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)' }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search help articles" style={{ width:'100%', boxSizing:'border-box', background:COLORS.surface2, border:`1px solid ${COLORS.border}`, borderRadius:16, padding:'11px 14px 11px 38px', color:COLORS.textPrimary, outline:'none', fontSize:13.5, fontFamily:'inherit' }} />
+      </div>
+      <div style={{ background:COLORS.surface2, borderRadius:20, overflow:'hidden', border:`1px solid ${COLORS.border}`, marginBottom:20 }}>
+        {filtered.length===0 && (
+          <div style={{ padding:24, textAlign:'center', color:COLORS.textTertiary, fontSize:13 }}>No articles match "{query}"</div>
+        )}
+        {filtered.map((f,i,arr)=>(
+          <div key={f.q} style={{ borderBottom:i<arr.length-1?`1px solid ${COLORS.border}`:'' }}>
+            <div onClick={()=>setOpenIdx(openIdx===i?null:i)} style={{ padding:'15px 16px', display:'flex', alignItems:'center', gap:10, cursor:'pointer' }}>
+              <span style={{ color:COLORS.textPrimary, flex:1, fontSize:13.5, fontWeight:600 }}>{f.q}</span>
+              <motion.span animate={{ rotate: openIdx===i?180:0 }} transition={durations.fast} style={{ display:'flex' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
+              </motion.span>
+            </div>
+            <AnimatePresence>{openIdx===i && (
+              <motion.div initial={{ height:0, opacity:0 }} animate={{ height:'auto', opacity:1 }} exit={{ height:0, opacity:0 }} transition={durations.fast} style={{ overflow:'hidden' }}>
+                <div style={{ padding:'0 16px 16px', color:COLORS.textSecondary, fontSize:12.5, lineHeight:1.6 }}>{f.a}</div>
+              </motion.div>
+            )}</AnimatePresence>
+          </div>
+        ))}
+      </div>
+      <div style={{ color:COLORS.textTertiary, fontSize:11, fontWeight:700, marginBottom:8, textTransform:'uppercase', letterSpacing:1.2 }}>Still need help?</div>
+      <div style={{ background:COLORS.surface2, borderRadius:20, overflow:'hidden', border:`1px solid ${COLORS.border}` }}>
+        <div onClick={()=>{ window.location.href = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('Infinity Support Request')}&body=${encodeURIComponent(`Username: @${user?.username||''}\nAccount email: ${user?.email||''}\n\nDescribe your issue:\n`)}`; }} style={{ padding:'15px 16px', display:'flex', alignItems:'center', gap:14, cursor:'pointer', borderBottom:`1px solid ${COLORS.border}` }}>
+          <div style={{ width:36, height:36, borderRadius:12, background:COLORS.surfaceAlt, display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}>✉️</div>
+          <span style={{ color:COLORS.textPrimary, flex:1, fontSize:14 }}>Email Support</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <div onClick={onReport} style={{ padding:'15px 16px', display:'flex', alignItems:'center', gap:14, cursor:'pointer' }}>
+          <div style={{ width:36, height:36, borderRadius:12, background:COLORS.surfaceAlt, display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}>🚫</div>
+          <span style={{ color:COLORS.textPrimary, flex:1, fontSize:14 }}>Manage Blocked Users</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
 
 /* ─────────────── VOICE RECORDER — PRODUCTION GRADE ─────────────── */
 const VoiceRecorderButton = ({ onSend, showToast, size = 'normal' }) => {
