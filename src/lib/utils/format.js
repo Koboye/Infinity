@@ -81,6 +81,8 @@ export const pushTitleForType = (type) => ({
   live: 'Live now',
   call: 'Incoming call',
   moderation: 'Infinity',
+  friend_request: 'New friend request',
+  friend_accept: 'Friend request accepted',
 }[type] || 'Infinity');
 
 // Shapes uploaded media URLs (from Cloudinary) into the fields a post/video doc expects.
