@@ -950,6 +950,10 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack, embedded=false, 
   const [msgText, setMsgText] = useState('');
   const [showGroupInfo, setShowGroupInfo] = useState(false);
   const [groupCallOpen, setGroupCallOpen] = useState(null); // 'audio' | 'video' | null
+  // "Catch Me Up" — same mechanic as the 1:1 conversation view, using each member's
+  // own lastOpenedAt_{uid} field on the group doc.
+  const [lastOpenedAt, setLastOpenedAt] = useState(undefined);
+  const [catchUpDismissed, setCatchUpDismissed] = useState(false);
   const bottomRef = useRef(null);
 
   useEffect(() => {
@@ -1004,10 +1008,23 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack, embedded=false, 
   }, [activeGroup?.id]);
 
   // Reset this viewer's unread counter the moment a group is opened — mirrors the
-  // unread_{uid} pattern already used for 1:1 conversations.
+  // unread_{uid} pattern already used for 1:1 conversations. Also captures the
+  // *previous* lastOpenedAt_{uid} before overwriting it, so Catch Me Up knows the
+  // cutoff for "what did I miss".
   useEffect(() => {
     if (!activeGroup?.id || !currentUser?.id) return;
-    updateDoc(doc(db, 'groups', activeGroup.id), { [`unread_${currentUser.id}`]: 0 }).catch(() => {});
+    setLastOpenedAt(undefined);
+    setCatchUpDismissed(false);
+    (async () => {
+      try {
+        const snap = await getDoc(doc(db, 'groups', activeGroup.id));
+        setLastOpenedAt(snap.data()?.[`lastOpenedAt_${currentUser.id}`]?.toMillis?.() || 0);
+      } catch { setLastOpenedAt(0); }
+      updateDoc(doc(db, 'groups', activeGroup.id), {
+        [`unread_${currentUser.id}`]: 0,
+        [`lastOpenedAt_${currentUser.id}`]: serverTimestamp(),
+      }).catch(() => {});
+    })();
   }, [activeGroup?.id]);
 
   useEffect(() => {
@@ -1082,6 +1099,11 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack, embedded=false, 
 
   if (activeGroup) {
     const groupMembers = users.filter(u => (activeGroup.members||[]).includes(u.id));
+    const GROUP_CATCH_UP_THRESHOLD = 8;
+    const groupUnreadSinceOpen = (lastOpenedAt !== undefined)
+      ? groupMessages.filter(m => m.senderId !== currentUser.id && (m.createdAt?.toMillis?.() || 0) > lastOpenedAt)
+      : [];
+    const showGroupCatchUp = !catchUpDismissed && groupUnreadSinceOpen.length >= GROUP_CATCH_UP_THRESHOLD;
     return (
       <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: COLORS.bg }}>
         <div style={{ padding: '14px 16px', borderBottom: `1px solid ${COLORS.overlaySubtle}`, display: 'flex', alignItems: 'center', gap: 12, background: COLORS.overlaySubtle }}>
@@ -1204,24 +1226,45 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack, embedded=false, 
             onClose={() => setGroupCallOpen(null)}
           />
         )}
+        <AnimatePresence>
+          {showGroupCatchUp && (
+            <CatchUpBanner
+              unreadMessages={groupUnreadSinceOpen.map(m => ({ from: m.senderName || 'someone', text: m.text }))}
+              isGroup={true}
+              onDismiss={() => setCatchUpDismissed(true)}
+            />
+          )}
+        </AnimatePresence>
         <div style={{ flex: 1, overflowY: 'auto', padding: '10px 14px' }}>
           {groupMessages.map(msg => {
             const isMine = msg.senderId === currentUser.id;
+            const ts = msg.createdAt?.toDate?.();
             return (
-              <div key={msg.id} style={{ display: 'flex', justifyContent: isMine ? 'flex-end' : 'flex-start', marginBottom: 10 }}>
+              <motion.div
+                key={msg.id}
+                initial={{ opacity:0, y:6 }}
+                animate={{ opacity:1, y:0 }}
+                transition={{ duration:0.18 }}
+                style={{ display: 'flex', justifyContent: isMine ? 'flex-end' : 'flex-start', marginBottom: 10 }}
+              >
                 {!isMine && (
                   <div style={{ width: 28, height: 28, borderRadius: '50%', background: msg.senderAvatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: COLORS.textPrimary, fontSize: 11, fontWeight: 'bold', marginRight: 8, flexShrink: 0, overflow: 'hidden' }}>
                     {msg.senderAvatarUrl ? <img loading="lazy" decoding="async" src={msg.senderAvatarUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : msg.senderAvatar}
                   </div>
                 )}
                 <div style={{ maxWidth: '72%' }}>
-                  {!isMine && <div style={{ color: COLORS.textTertiary, fontSize: 10, marginBottom: 3 }}>@{msg.senderName}</div>}
-                  <div style={{ background: isMine ? `linear-gradient(135deg,${COLORS.brand},${COLORS.brandSecondary})` : COLORS.surfaceAlt, borderRadius: isMine ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: '10px 14px', color: isMine ? 'white' : COLORS.textPrimary, fontSize: 14 }}>
+                  {!isMine && <div style={{ color: COLORS.textTertiary, fontSize: 10, marginBottom: 3, fontWeight:600 }}>@{msg.senderName}</div>}
+                  <div style={{ background: isMine ? `linear-gradient(135deg,${COLORS.brand},${COLORS.brandSecondary})` : COLORS.surfaceAlt, borderRadius: isMine ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: '10px 14px', color: isMine ? 'white' : COLORS.textPrimary, fontSize: 14, boxShadow: isMine ? SHADOW.xs : 'none' }}>
                     {msg.text}
                     {!isMine && <MessageTranslate text={msg.text} targetLang={currentUser?.language || 'en'} isMine={isMine} />}
                   </div>
+                  {ts && (
+                    <div style={{ fontSize:9.5, color:COLORS.textTertiary, marginTop:3, textAlign: isMine ? 'right' : 'left' }}>
+                      {ts.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' })}
+                    </div>
+                  )}
                 </div>
-              </div>
+              </motion.div>
             );
           })}
           <div ref={bottomRef} />
@@ -3241,17 +3284,29 @@ const LiveChatMessage = ({ msg, targetLang }) => {
     setLoading(false);
   };
   return (
-    <div style={{ background: msg.isGift ? 'rgba(255,214,10,0.16)' : 'rgba(0,0,0,0.4)', border: msg.isGift ? '1px solid rgba(255,214,10,0.35)' : 'none', backdropFilter:'blur(10px)', borderRadius:20, padding:'6px 12px', display:'inline-flex', flexDirection:'column', gap:2, maxWidth:'85%', alignSelf:'flex-start' }}>
-      <div style={{ display:'flex', gap:7, alignItems:'baseline' }}>
-        <span style={{ color: msg.isGift ? '#FFD60A' : COLORS.brand, fontSize:11, fontWeight:700 }}>@{msg.user}</span>
-        <span style={{ color: msg.isGift ? '#FFD60A' : 'white', fontSize:11, fontWeight: msg.isGift?700:400 }}>{(translated && !showOriginal) ? translated : msg.text}</span>
+    <motion.div
+      initial={{ opacity:0, y:8, scale:0.96 }}
+      animate={{ opacity:1, y:0, scale:1 }}
+      transition={{ duration:0.22, ease:'easeOut' }}
+      style={{
+        background: msg.isGift ? 'linear-gradient(135deg,rgba(255,214,10,0.22),rgba(255,153,10,0.1))' : 'rgba(18,18,24,0.55)',
+        border: msg.isGift ? '1px solid rgba(255,214,10,0.4)' : '1px solid rgba(255,255,255,0.06)',
+        backdropFilter:'blur(14px)', WebkitBackdropFilter:'blur(14px)',
+        borderRadius:16, padding: msg.isGift ? '7px 12px' : '6px 12px',
+        display:'inline-flex', flexDirection:'column', gap:2, maxWidth:'86%', alignSelf:'flex-start',
+      }}
+    >
+      <div style={{ display:'flex', gap:6, alignItems:'baseline' }}>
+        {msg.isGift && <span style={{ fontSize:11 }}>🎁</span>}
+        <span style={{ color: msg.isGift ? '#FFD60A' : 'rgba(255,255,255,0.55)', fontSize:11, fontWeight:700 }}>@{msg.user}</span>
+        <span style={{ color: msg.isGift ? '#FFE9A3' : 'rgba(255,255,255,0.92)', fontSize:12.5, fontWeight: msg.isGift?700:500, lineHeight:1.3 }}>{(translated && !showOriginal) ? translated : msg.text}</span>
       </div>
       {eligible && (
-        <button onClick={toggle} disabled={loading} style={{ alignSelf:'flex-start', background:'none', border:'none', color:'#2F9BFF', fontSize:10, cursor:'pointer', padding:0, marginTop:1 }}>
+        <button onClick={toggle} disabled={loading} style={{ alignSelf:'flex-start', background:'none', border:'none', color:'#4FA3FF', fontSize:10, cursor:'pointer', padding:0, marginTop:1, fontWeight:600 }}>
           {loading ? '...' : translated ? (showOriginal ? '🌐 See translation' : '🌐 See original') : '🌐 Translate'}
         </button>
       )}
-    </div>
+    </motion.div>
   );
 };
 
@@ -3328,11 +3383,50 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
   const [floatingGifts, setFloatingGifts] = useState([]);
   const [showGiftPicker, setShowGiftPicker] = useState(false);
   const [showDonate, setShowDonate] = useState(false); // real-money tip, separate from coin gifts below
+  const [streamStart] = useState(() => Date.now());
+  const [elapsed, setElapsed] = useState(0);
+  // ── Signature feature: combo gifting + live Top Supporters rail ──
+  // Sending the same gift again within COMBO_WINDOW_MS bumps a visible xN combo
+  // instead of just re-firing the same single floating emoji — this is what makes
+  // rapid-fire gifting feel rewarding instead of repetitive. Every gift (coin value
+  // included) is also written to liveStreams/{id}/gifts so all viewers see a live,
+  // accurate Top Supporters leaderboard — not just whoever's message is still in the
+  // last-20 chat window.
+  const COMBO_WINDOW_MS = 2500;
+  const [activeCombo, setActiveCombo] = useState(null); // { giftId, emoji, count }
+  const comboRef = useRef(null); // { giftId, count, timer }
+  const [topSupporters, setTopSupporters] = useState([]);
   const localStreamRef = useRef(null);
   const liveIdRef = useRef(null);
   const heartbeatIntervalRef = useRef(null);
   const unloadHandlerRef = useRef(null);
   const endedRef = useRef(false);
+
+  useEffect(() => {
+    const tick = setInterval(() => setElapsed(Math.floor((Date.now()-streamStart)/1000)), 1000);
+    return () => clearInterval(tick);
+  }, [streamStart]);
+  const fmtDuration = (s) => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+
+  // Live-aggregate Top Supporters for this stream from the gifts subcollection —
+  // every viewer sees the same ranking update in real time.
+  useEffect(() => {
+    if (!liveId) return;
+    const unsub = onSnapshot(collection(db, 'liveStreams', liveId, 'gifts'), snap => {
+      const totals = new Map();
+      snap.docs.forEach(d => {
+        const g = d.data();
+        if (!g?.user) return;
+        totals.set(g.user, (totals.get(g.user) || 0) + (g.coins || 0));
+      });
+      const ranked = [...totals.entries()]
+        .map(([user, coins]) => ({ user, coins }))
+        .sort((a, b) => b.coins - a.coins)
+        .slice(0, 3);
+      setTopSupporters(ranked);
+    }, () => {});
+    return () => unsub();
+  }, [liveId]);
 
   // ── HOST: capture camera/mic, create the live doc, and answer every viewer ──
   useEffect(() => {
@@ -3570,11 +3664,21 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
   const sendGift = async (gift) => {
     if(!currentUser?.id || !liveId) return;
     if((currentUser.coins||0) < gift.coins){ showToast?.('Insufficient coins','error'); return; }
-    setShowGiftPicker(false);
     const emoji = gift.name.split(' ')[0];
+
+    // Combo: re-tapping the same gift within the window bumps the count instead of
+    // starting a fresh single animation.
+    const isSameGift = comboRef.current?.giftId === gift.id;
+    const nextCount = isSameGift ? comboRef.current.count + 1 : 1;
+    clearTimeout(comboRef.current?.timer);
+    const timer = setTimeout(() => { comboRef.current = null; setActiveCombo(null); }, COMBO_WINDOW_MS);
+    comboRef.current = { giftId: gift.id, count: nextCount, timer };
+    setActiveCombo({ giftId: gift.id, emoji, count: nextCount });
+
     const fid = Date.now()+Math.random();
-    setFloatingGifts(g=>[...g, { id:fid, emoji, x: 20+Math.random()*60 }]);
-    setTimeout(()=>setFloatingGifts(g=>g.filter(x=>x.id!==fid)), 1500);
+    setFloatingGifts(g=>[...g, { id:fid, emoji, x: 20+Math.random()*60, big: nextCount >= 3 }]);
+    setTimeout(()=>setFloatingGifts(g=>g.filter(x=>x.id!==fid)), 1600);
+
     try {
       await apiFetch('/api/wallet', {
         method: 'POST',
@@ -3584,8 +3688,17 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
       await addDoc(collection(db,'liveMessages'),{
         liveId,
         user: currentUser?.username||'viewer',
-        text: `sent ${gift.name}`,
+        text: nextCount > 1 ? `sent ${gift.name} x${nextCount}` : `sent ${gift.name}`,
         isGift: true,
+        createdAt: serverTimestamp(),
+      });
+      // Feeds the live Top Supporters rail — separate from liveMessages so the
+      // leaderboard stays accurate even once older chat messages scroll out of view.
+      await addDoc(collection(db,'liveStreams',liveId,'gifts'),{
+        userId: currentUser.id,
+        user: currentUser?.username||'viewer',
+        giftId: gift.id,
+        coins: gift.coins,
         createdAt: serverTimestamp(),
       });
     } catch(e){ showToast?.('Failed to send gift','error'); }
@@ -3611,31 +3724,76 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
     } catch(e) { /* announcement is best-effort — the donation itself already settled */ }
   };
 
+  const RANK_MEDAL = ['🥇','🥈','🥉'];
+  const popularGifts = VIRTUAL_GIFTS.filter(g => g.coins < 1000);
+  const premiumGifts = VIRTUAL_GIFTS.filter(g => g.coins >= 1000);
+
   return (
-    <div style={{ position:'fixed', inset:0, background:'linear-gradient(160deg,#0d0025,#160d00)', zIndex:Z.page, display:'flex', flexDirection:'column' }}>
-      <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse at 30% 40%,rgba(11,95,255,0.15),transparent 60%)' }} />
-      <div style={{ padding:'14px 16px', display:'flex', justifyContent:'space-between', alignItems:'center', zIndex:10 }}>
-        <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-          <div style={{ background:`linear-gradient(135deg,${COLORS.live},#B3121F)`, borderRadius:20, padding:'4px 12px', display:'flex', alignItems:'center', gap:6, boxShadow:'0 4px 14px rgba(225,29,46,0.45)' }}>
-            <div style={{ width:7, height:7, borderRadius:'50%', background:'white', animation:'pulse 1s infinite' }} />
-            <span style={{ color:'white', fontSize:13, fontWeight:700, letterSpacing:0.3 }}>LIVE</span>
-          </div>
-          {!isHost && (
-            <div style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', borderRadius:20, padding:'4px 12px', border:'1px solid rgba(255,255,255,0.08)' }}>
-              <span style={{ color:'white', fontSize:12, fontWeight:700 }}>@{streamer?.username || 'streamer'}</span>
+    <div style={{ position:'fixed', inset:0, background:'linear-gradient(160deg,#0a0016,#12060a)', zIndex:Z.page, display:'flex', flexDirection:'column', overflow:'hidden' }}>
+      <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse at 25% 20%,rgba(11,95,255,0.16),transparent 55%)', pointerEvents:'none' }} />
+      {isHost ? <LiveHostVideo streamRef={localStreamRef} /> : <LiveViewerVideo remoteStream={remoteStream} connected={connected} />}
+      {/* Top scrim so header text stays legible over any video content */}
+      <div style={{ position:'absolute', top:0, left:0, right:0, height:130, background:'linear-gradient(180deg,rgba(0,0,0,0.55),transparent)', pointerEvents:'none', zIndex:5 }} />
+
+      {/* ── Header ── */}
+      <div style={{ padding:'14px 14px 0', zIndex:10, position:'relative' }}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+          <div style={{ display:'flex', gap:7, alignItems:'center', minWidth:0 }}>
+            <div style={{ background:`linear-gradient(135deg,${COLORS.live},#B3121F)`, borderRadius:20, padding:'4px 10px', display:'flex', alignItems:'center', gap:5, boxShadow:'0 4px 14px rgba(225,29,46,0.45)', flexShrink:0 }}>
+              <div style={{ width:6, height:6, borderRadius:'50%', background:'white', animation:'pulse 1s infinite' }} />
+              <span style={{ color:'white', fontSize:12, fontWeight:800, letterSpacing:0.3 }}>LIVE</span>
             </div>
-          )}
-          <div style={{ background:'rgba(0,0,0,0.4)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', borderRadius:20, padding:'4px 12px', display:'flex', alignItems:'center', gap:5, border:'1px solid rgba(255,255,255,0.08)' }}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="rgba(255,255,255,0.7)"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-            <span style={{ color:'rgba(255,255,255,0.7)', fontSize:12 }}>{formatNumber(viewers)}</span>
+            <div style={{ background:'rgba(0,0,0,0.42)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', borderRadius:20, padding:'4px 10px', display:'flex', alignItems:'center', gap:6, border:'1px solid rgba(255,255,255,0.08)', minWidth:0 }}>
+              <div style={{ width:20, height:20, borderRadius:'50%', background:COLORS.gradient, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontSize:10, fontWeight:800, flexShrink:0 }}>
+                {(streamer?.username||'S')[0]?.toUpperCase()}
+              </div>
+              <span style={{ color:'white', fontSize:12, fontWeight:700, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>@{streamer?.username || 'streamer'}</span>
+              <span style={{ color:'rgba(255,255,255,0.4)', fontSize:10, fontWeight:600, flexShrink:0 }}>{fmtDuration(elapsed)}</span>
+            </div>
+          </div>
+          <div style={{ display:'flex', alignItems:'center', gap:8, flexShrink:0 }}>
+            <div style={{ background:'rgba(0,0,0,0.42)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', borderRadius:20, padding:'5px 10px', display:'flex', alignItems:'center', gap:5, border:'1px solid rgba(255,255,255,0.08)' }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="rgba(255,255,255,0.7)"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <span style={{ color:'rgba(255,255,255,0.8)', fontSize:12, fontWeight:700 }}>{formatNumber(viewers)}</span>
+            </div>
+            <button onClick={onClose} aria-label="Close" style={{ background:'rgba(255,255,255,0.12)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'50%', width:34, height:34, color:'white', cursor:'pointer', fontSize:15, transition:TRANSITION.fast }}>✕</button>
           </div>
         </div>
-        <button onClick={onClose} aria-label="Close" style={{ background:'rgba(255,255,255,0.12)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'50%', width:36, height:36, color:'white', cursor:'pointer', fontSize:16, transition:TRANSITION.fast }}>✕</button>
+
+        {/* ── Signature feature: live Top Supporters rail ── */}
+        {topSupporters.length > 0 && (
+          <motion.div initial={{ opacity:0, y:-6 }} animate={{ opacity:1, y:0 }} style={{ display:'flex', gap:8, marginTop:9, overflowX:'auto', scrollbarWidth:'none' }}>
+            {topSupporters.map((s, i) => (
+              <div key={s.user} style={{ background:'rgba(0,0,0,0.42)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border: i===0 ? '1px solid rgba(255,214,10,0.4)' : '1px solid rgba(255,255,255,0.08)', borderRadius:16, padding:'4px 9px 4px 6px', display:'flex', alignItems:'center', gap:5, flexShrink:0 }}>
+                <span style={{ fontSize:12 }}>{RANK_MEDAL[i]}</span>
+                <span style={{ color:'white', fontSize:11, fontWeight:700, maxWidth:70, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>@{s.user}</span>
+                <span style={{ color:'#FFD60A', fontSize:10, fontWeight:700 }}>💰{formatNumber(s.coins)}</span>
+              </div>
+            ))}
+          </motion.div>
+        )}
       </div>
-      {isHost ? <LiveHostVideo streamRef={localStreamRef} /> : <LiveViewerVideo remoteStream={remoteStream} connected={connected} />}
+
+      {/* ── Floating gift animations (combo-aware) ── */}
       {floatingGifts.map(g=>(
-        <div key={g.id} style={{ position:'absolute', bottom:120, left:`${g.x}%`, zIndex:60, pointerEvents:'none', fontSize:44, animation:'floatUp 1.5s ease forwards' }}>{g.emoji}</div>
+        <div key={g.id} style={{ position:'absolute', bottom:130, left:`${g.x}%`, zIndex:60, pointerEvents:'none', fontSize: g.big ? 60 : 44, animation:'floatUp 1.6s ease forwards', filter: g.big ? 'drop-shadow(0 0 14px rgba(255,214,10,0.8))' : 'none' }}>{g.emoji}</div>
       ))}
+      <AnimatePresence>
+        {activeCombo && activeCombo.count > 1 && (
+          <motion.div
+            key={`${activeCombo.giftId}-${activeCombo.count}`}
+            initial={{ opacity:0, scale:0.6 }}
+            animate={{ opacity:1, scale:1 }}
+            exit={{ opacity:0, scale:0.8 }}
+            style={{ position:'absolute', right:16, bottom:150, zIndex:61, background:'linear-gradient(135deg,#FFD60A,#FF8A00)', borderRadius:20, padding:'6px 14px', display:'flex', alignItems:'center', gap:6, boxShadow:'0 6px 18px rgba(255,153,10,0.5)' }}
+          >
+            <span style={{ fontSize:18 }}>{activeCombo.emoji}</span>
+            <span style={{ color:'#1a1200', fontSize:15, fontWeight:900 }}>x{activeCombo.count}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Chat ── */}
       <div style={{ flex:1, display:'flex', alignItems:'flex-end', padding:'0 14px 10px', zIndex:10 }}>
         <div style={{ flex:1, maxHeight:200, overflowY:'hidden', display:'flex', flexDirection:'column', gap:6 }}>
           {chatMessages.slice(-8).map(m=>{
@@ -3644,28 +3802,55 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
           })}
         </div>
       </div>
-      {showGiftPicker && (
-        <div style={{ padding:'0 14px 8px', zIndex:10 }}>
-          <div style={{ background:'rgba(10,10,16,0.92)', backdropFilter:'blur(20px)', borderRadius:20, padding:14, border:'1px solid rgba(255,255,255,0.08)' }}>
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
-              <span style={{ color:'rgba(255,255,255,0.5)', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1 }}>Send a gift</span>
-              <span style={{ color:'#FFD60A', fontSize:12, fontWeight:700 }}>💰 {formatNumber(currentUser?.coins||0)}</span>
-            </div>
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
-              {VIRTUAL_GIFTS.map(g=>(
-                <button key={g.id} onClick={()=>sendGift(g)} style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:14, padding:'10px 4px', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
-                  <span style={{ fontSize:24 }}>{g.name.split(' ')[0]}</span>
-                  <span style={{ color:'#FFD60A', fontSize:10, fontWeight:700 }}>{formatNumber(g.coins)}</span>
-                </button>
+
+      {/* ── Gift drawer ── */}
+      <AnimatePresence>
+        {showGiftPicker && (
+          <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:20 }} style={{ padding:'0 14px 8px', zIndex:10 }}>
+            <div style={{ background:'rgba(10,10,16,0.94)', backdropFilter:'blur(20px)', borderRadius:22, padding:14, border:'1px solid rgba(255,255,255,0.08)' }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
+                <span style={{ color:'rgba(255,255,255,0.5)', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1 }}>Send a gift · tap again to combo</span>
+                <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                  <span style={{ color:'#FFD60A', fontSize:12, fontWeight:700 }}>💰 {formatNumber(currentUser?.coins||0)}</span>
+                  <button onClick={()=>setShowGiftPicker(false)} aria-label="Close gifts" style={{ background:'none', border:'none', color:'rgba(255,255,255,0.5)', fontSize:14, cursor:'pointer', padding:0 }}>✕</button>
+                </div>
+              </div>
+              {[{ label:'Popular', list:popularGifts }, { label:'Premium', list:premiumGifts }].map(section => (
+                <div key={section.label} style={{ marginBottom: section.label==='Popular' ? 10 : 0 }}>
+                  <span style={{ color:'rgba(255,255,255,0.35)', fontSize:9, fontWeight:700, textTransform:'uppercase', letterSpacing:0.8 }}>{section.label}</span>
+                  <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8, marginTop:6 }}>
+                    {section.list.map(g=>{
+                      const isComboing = activeCombo?.giftId === g.id && activeCombo.count > 1;
+                      return (
+                        <motion.button
+                          key={g.id}
+                          whileTap={{ scale:0.92 }}
+                          onClick={()=>sendGift(g)}
+                          style={{
+                            background: isComboing ? 'rgba(255,214,10,0.16)' : 'rgba(255,255,255,0.06)',
+                            border: isComboing ? '1px solid rgba(255,214,10,0.5)' : '1px solid rgba(255,255,255,0.08)',
+                            borderRadius:14, padding:'10px 4px', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:4, position:'relative',
+                          }}
+                        >
+                          {isComboing && <span style={{ position:'absolute', top:-6, right:-4, background:'#FFD60A', color:'#1a1200', fontSize:9, fontWeight:800, borderRadius:8, padding:'1px 5px' }}>x{activeCombo.count}</span>}
+                          <span style={{ fontSize:24 }}>{g.name.split(' ')[0]}</span>
+                          <span style={{ color:'#FFD60A', fontSize:10, fontWeight:700 }}>{formatNumber(g.coins)}</span>
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                </div>
               ))}
             </div>
-          </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Composer ── */}
       <div style={{ display:'flex', gap:10, padding:'10px 14px 28px', borderTop:'1px solid rgba(255,255,255,0.06)', zIndex:10 }}>
         <input value={message} onChange={e=>setMessage(e.target.value)} onKeyDown={e=>e.key==='Enter'&&sendMessage()} placeholder="Say something..." style={{ flex:1, background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:28, padding:'10px 16px', color:'white', outline:'none', fontSize:13 }} />
         {!isHost && (
-          <button onClick={()=>setShowGiftPicker(v=>!v)} aria-label="Send gift" style={{ background: showGiftPicker ? 'rgba(255,214,10,0.25)' : 'rgba(255,255,255,0.08)', border:'1px solid rgba(255,214,10,0.3)', borderRadius:'50%', width:42, height:42, color:'#FFD60A', cursor:'pointer', fontSize:18, flexShrink:0 }}>🎁</button>
+          <button onClick={()=>setShowGiftPicker(v=>!v)} aria-label="Send gift" style={{ background: showGiftPicker ? 'rgba(255,214,10,0.25)' : 'rgba(255,255,255,0.08)', border:'1px solid rgba(255,214,10,0.3)', borderRadius:'50%', width:42, height:42, color:'#FFD60A', cursor:'pointer', fontSize:18, flexShrink:0, boxShadow: activeCombo?.count > 1 ? '0 0 0 3px rgba(255,214,10,0.35)' : 'none', transition:TRANSITION.fast }}>🎁</button>
         )}
         {!isHost && (
           // Real-money tip straight to the streamer's wallet, alongside (not instead
@@ -7896,9 +8081,85 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal' }) => {
 };
 
 /* ─────────────── INBOX (REAL-TIME FIRESTORE) ─────────────── */
+// ─────────────── CATCH ME UP ───────────────
+// Signature feature shared by 1:1 and group chat: when you reopen a thread with a
+// sizeable backlog of unread messages, a pill offers a one-tap AI summary instead of
+// forcing a scroll-and-skim through everything you missed. Purely additive — the
+// full message list is still right there underneath.
+const CatchUpBanner = ({ unreadMessages, isGroup, onDismiss }) => {
+  const [summary, setSummary] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
+
+  const runCatchUp = async () => {
+    setLoading(true);
+    setError(false);
+    try {
+      const data = await apiFetch('/api/ai/catch-up', {
+        method: 'POST',
+        body: JSON.stringify({ isGroup, messages: unreadMessages }),
+      });
+      if (data?.summary?.length) setSummary(data.summary);
+      else setError(true);
+    } catch (e) {
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity:0, y:-8 }}
+      animate={{ opacity:1, y:0 }}
+      exit={{ opacity:0, y:-8 }}
+      style={{ margin:'8px 14px 4px', background:'linear-gradient(135deg,rgba(11,95,255,0.14),rgba(110,76,245,0.1))', border:'1px solid rgba(110,76,245,0.3)', borderRadius:16, padding:'11px 13px', backdropFilter:'blur(10px)' }}
+    >
+      {!summary ? (
+        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+          <span style={{ fontSize:18 }}>✨</span>
+          <div style={{ flex:1, minWidth:0 }}>
+            <div style={{ color:COLORS.textPrimary, fontSize:12.5, fontWeight:700 }}>
+              You missed {unreadMessages.length} message{unreadMessages.length===1?'':'s'}
+            </div>
+            {error && <div style={{ color:COLORS.textTertiary, fontSize:11, marginTop:1 }}>Couldn't summarize — try again</div>}
+          </div>
+          <button onClick={runCatchUp} disabled={loading} style={{ background: COLORS.gradient, border:'none', borderRadius:14, padding:'7px 12px', color:'white', fontSize:11.5, fontWeight:700, cursor: loading?'default':'pointer', flexShrink:0, opacity: loading?0.7:1 }}>
+            {loading ? 'Summarizing…' : 'Catch me up'}
+          </button>
+          <button onClick={onDismiss} aria-label="Dismiss" style={{ background:'none', border:'none', color:COLORS.textTertiary, fontSize:13, cursor:'pointer', padding:2, flexShrink:0 }}>✕</button>
+        </div>
+      ) : (
+        <div>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:7 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+              <span style={{ fontSize:14 }}>✨</span>
+              <span style={{ color:COLORS.textPrimary, fontSize:11.5, fontWeight:700 }}>While you were away</span>
+            </div>
+            <button onClick={onDismiss} aria-label="Dismiss" style={{ background:'none', border:'none', color:COLORS.textTertiary, fontSize:13, cursor:'pointer', padding:2 }}>✕</button>
+          </div>
+          <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
+            {summary.map((line, i) => (
+              <div key={i} style={{ color:COLORS.textSecondary, fontSize:12.5, lineHeight:1.4, display:'flex', gap:6 }}>
+                <span style={{ color:COLORS.brand, flexShrink:0 }}>•</span>
+                <span>{line}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </motion.div>
+  );
+};
+
 const ConversationView = ({ currentUser, otherUser, conversationId, onBack, showToast, onViewProfile, onVoiceCall, onVideoCall, onBlock }) => {
   const [text, setText] = useState('');
   const [messages, setMessages] = useState([]);
+  // "Catch Me Up" — captured once, at mount, from the conversation doc's previous
+  // lastOpenedAt_{uid} (before this session overwrites it below). Messages after
+  // that point, from the other person, are what the banner offers to summarize.
+  const [lastOpenedAt, setLastOpenedAt] = useState(undefined); // undefined = not yet read
+  const [catchUpDismissed, setCatchUpDismissed] = useState(false);
   // Real in-thread search — filters the actual messages array, no mock data.
   const [showSearch, setShowSearch] = useState(false);
   const [threadSearch, setThreadSearch] = useState('');
@@ -8001,9 +8262,18 @@ const ConversationView = ({ currentUser, otherUser, conversationId, onBack, show
     let unsub = ()=>{};
 
     const init = async () => {
+      // Read the previous lastOpenedAt_{uid} before this session stamps a new one —
+      // that's the cutoff for "what did I miss since I was last here".
+      try {
+        const prevSnap = await getDoc(doc(db,'conversations', conversationId));
+        const prevOpenedAt = prevSnap.data()?.[`lastOpenedAt_${currentUser.id}`]?.toMillis?.() || 0;
+        setLastOpenedAt(prevOpenedAt);
+      } catch { setLastOpenedAt(0); }
+
       await setDoc(doc(db,'conversations', conversationId),{
         participants: [currentUser.id, otherUser.id],
         lastMessageAt: serverTimestamp(),
+        [`lastOpenedAt_${currentUser.id}`]: serverTimestamp(),
       },{ merge: true });
 
       const q = query(
@@ -8359,6 +8629,15 @@ unsub = onSnapshot(q, (snap) => {
   // times in the JSX below.
   const visibleMessages = threadSearch.trim() ? messages.filter(m=>m.text?.toLowerCase().includes(threadSearch.toLowerCase())) : messages;
 
+  // Messages from the other person since this thread was last opened — the backlog
+  // "Catch Me Up" offers to summarize. Below a small threshold it's not worth an AI
+  // call (you can just read 2-3 messages), so the banner only shows past that.
+  const CATCH_UP_THRESHOLD = 6;
+  const unreadSinceOpen = (lastOpenedAt !== undefined)
+    ? messages.filter(m => m.from === otherUser?.id && (m.createdAt?.toMillis?.() || 0) > lastOpenedAt)
+    : [];
+  const showCatchUp = !catchUpDismissed && unreadSinceOpen.length >= CATCH_UP_THRESHOLD;
+
   return (
     <div style={{height:'100%',display:'flex',flexDirection:'column',background:COLORS.bg}}>
       <div style={{padding:'14px 16px',background:COLORS.surface,backdropFilter:'blur(20px) saturate(1.4)',WebkitBackdropFilter:'blur(20px) saturate(1.4)',borderBottom:`1px solid ${COLORS.border}`,display:'flex',alignItems:'center',gap:12,boxShadow:'0 2px 12px rgba(11,95,255,0.06)',position:'relative',zIndex:2}}>
@@ -8420,6 +8699,16 @@ unsub = onSnapshot(q, (snap) => {
           )}
         </div>
       )}
+
+      <AnimatePresence>
+        {showCatchUp && (
+          <CatchUpBanner
+            unreadMessages={unreadSinceOpen.map(m => ({ from: 'them', text: m.text }))}
+            isGroup={false}
+            onDismiss={() => setCatchUpDismissed(true)}
+          />
+        )}
+      </AnimatePresence>
 
       <div className="chat-wallpaper" style={activeTheme.bgTint ? {
               flex:1,overflowY:'auto',padding:'16px',backgroundColor:COLORS.bg,
