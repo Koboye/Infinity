@@ -3086,12 +3086,36 @@ const CreateStoryModal = ({ currentUser, onClose, showToast }) => {
   const [cameraActive, setCameraActive] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState(null);
+  // ── Voice Story recording, brought up to the same standard as the chat/comment
+  // voice recorder (VoiceRecorderButton): this used to just create a fresh
+  // URL.createObjectURL(audioBlob) INSIDE the JSX on every render (a new, leaked
+  // blob URL each time, which could also reset playback mid-listen) and rendered a
+  // bare native <audio controls> — the exact same intrinsic-min-width overflow risk
+  // on mobile that was already fixed elsewhere in the app, plus no waveform, no
+  // scrubbing, no live level meter while recording. audioUrl is now created exactly
+  // once (in the recorder's onstop), and previewWaveform/duration/playback state
+  // give it the same scrubbable-waveform preview as everywhere else.
+  const [audioUrl, setAudioUrl] = useState(null);
+  const [audioDuration, setAudioDuration] = useState(0);
+  const [liveLevel, setLiveLevel] = useState([]); // live 24-bar meter while recording
+  const [previewWaveform, setPreviewWaveform] = useState([]);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const [audioPlaybackPos, setAudioPlaybackPos] = useState(0);
   const [uploading, setUploading] = useState(false);
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const recorderRef = useRef(null);
   const chunksRef = useRef([]);
   const fileInputRef = useRef(null);
+  const audioStreamRef = useRef(null);
+  const audioCtxRef = useRef(null);
+  const analyserRef = useRef(null);
+  const waveRafRef = useRef(null);
+  const waveHistoryRef = useRef([]);
+  const lastSampleAtRef = useRef(0);
+  const audioTimerRef = useRef(null);
+  const previewAudioElRef = useRef(null);
+  const audioScrubRef = useRef(null);
   const colors = ['#0B5FFF','#2E7BFF','#083FB0','#FFB100','#2ED573','#00A9D6','#FF453A','#5E5CE6'];
 
   const startCamera = async () => {
@@ -3105,11 +3129,100 @@ const CreateStoryModal = ({ currentUser, onClose, showToast }) => {
     c.getContext('2d').drawImage(videoRef.current,0,0);
     c.toBlob(blob=>{setSelectedFile({url:URL.createObjectURL(blob),file:blob,type:'image/jpeg'}); stopCamera(); showToast?.('Photo captured!','success');});
   };
+  // Samples a live amplitude level (for the while-recording meter) and, throttled,
+  // into waveHistoryRef so the FULL clip's shape is available for the post-recording
+  // scrubbable waveform — same technique as VoiceRecorderButton.
+  const sampleAudioLevel = () => {
+    if (!analyserRef.current) return;
+    const buf = new Uint8Array(analyserRef.current.frequencyBinCount);
+    analyserRef.current.getByteTimeDomainData(buf);
+    const bars = [];
+    const step = Math.max(1, Math.floor(buf.length / 24));
+    for (let i = 0; i < 24; i++) {
+      const v = buf[i * step] / 128 - 1;
+      bars.push(Math.min(1, Math.abs(v) * 3.5 + 0.1));
+    }
+    setLiveLevel(bars);
+    const now = performance.now();
+    if (now - lastSampleAtRef.current > 125) {
+      lastSampleAtRef.current = now;
+      waveHistoryRef.current.push(Math.min(1, Math.max(...bars, 0.08)));
+    }
+    waveRafRef.current = requestAnimationFrame(sampleAudioLevel);
+  };
   const startAudio = async () => {
-    try { const s = await navigator.mediaDevices.getUserMedia({audio:true}); const r=new MediaRecorder(s); chunksRef.current=[]; r.ondataavailable=e=>chunksRef.current.push(e.data); r.onstop=()=>{const blob=new Blob(chunksRef.current,{type:'audio/webm'}); setAudioBlob(blob); s.getTracks().forEach(t=>t.stop());}; r.start(); recorderRef.current=r; setIsRecording(true); }
+    try {
+      const s = await navigator.mediaDevices.getUserMedia({audio:true});
+      audioStreamRef.current = s;
+      try {
+        audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+        const source = audioCtxRef.current.createMediaStreamSource(s);
+        analyserRef.current = audioCtxRef.current.createAnalyser();
+        analyserRef.current.fftSize = 256;
+        source.connect(analyserRef.current);
+      } catch {}
+      const r = new MediaRecorder(s);
+      chunksRef.current = [];
+      r.ondataavailable = e => chunksRef.current.push(e.data);
+      r.onstop = () => {
+        const blob = new Blob(chunksRef.current,{type:'audio/webm'});
+        setAudioBlob(blob);
+        setAudioUrl(URL.createObjectURL(blob));
+        setPreviewWaveform(resampleWaveform(waveHistoryRef.current, 40));
+        s.getTracks().forEach(t=>t.stop());
+        cancelAnimationFrame(waveRafRef.current);
+        setLiveLevel([]);
+      };
+      r.start();
+      recorderRef.current = r;
+      setIsRecording(true);
+      setAudioDuration(0);
+      waveHistoryRef.current = [];
+      lastSampleAtRef.current = 0;
+      audioTimerRef.current = setInterval(()=>setAudioDuration(d=>d+1),1000);
+      sampleAudioLevel();
+    }
     catch { showToast?.('Mic denied','error'); }
   };
-  const stopAudio = () => { recorderRef.current?.stop(); setIsRecording(false); };
+  const stopAudio = () => { recorderRef.current?.stop(); setIsRecording(false); clearInterval(audioTimerRef.current); };
+  const reRecordAudio = () => {
+    if (audioUrl) URL.revokeObjectURL(audioUrl);
+    setAudioBlob(null); setAudioUrl(null); setPreviewWaveform([]); setAudioDuration(0);
+    setIsPlayingAudio(false); setAudioPlaybackPos(0); waveHistoryRef.current = [];
+  };
+  const toggleAudioPlayback = () => {
+    const el = previewAudioElRef.current;
+    if (!el) return;
+    if (isPlayingAudio) el.pause();
+    else { el.currentTime = audioPlaybackPos >= audioDuration ? 0 : audioPlaybackPos; el.play().catch(()=>{}); }
+  };
+  const seekAudioFromClientX = (clientX) => {
+    const bar = audioScrubRef.current, el = previewAudioElRef.current;
+    if (!bar || !el || !audioDuration) return;
+    const rect = bar.getBoundingClientRect();
+    const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+    const t = ratio * audioDuration;
+    el.currentTime = t;
+    setAudioPlaybackPos(t);
+  };
+  const handleAudioScrubDown = (e) => {
+    e.preventDefault();
+    seekAudioFromClientX(e.clientX);
+    const onMove = ev => seekAudioFromClientX(ev.clientX);
+    const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  };
+  const fmtAudioTime = s => `${Math.floor(s/60).toString().padStart(2,'0')}:${Math.floor(s%60).toString().padStart(2,'0')}`;
+  // Cleanup: stop any live mic stream/audio graph and release the blob URL if the
+  // whole modal is closed mid-recording or mid-preview.
+  useEffect(() => () => {
+    audioStreamRef.current?.getTracks().forEach(t=>t.stop());
+    try { audioCtxRef.current?.close(); } catch {}
+    cancelAnimationFrame(waveRafRef.current);
+    clearInterval(audioTimerRef.current);
+    if (audioUrl) URL.revokeObjectURL(audioUrl);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (mode==='camera') startCamera(); return ()=>stopCamera(); }, [mode]);
 
   const handlePost = async () => {
@@ -3200,14 +3313,58 @@ const CreateStoryModal = ({ currentUser, onClose, showToast }) => {
           </div>
         )}
         {mode==='audio' && (
-          <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:24, padding:40 }}>
+          <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:24, padding:40, width:'100%', boxSizing:'border-box' }}>
             <div style={{ fontSize:80 }}>🎙️</div>
             {audioBlob ? (
-              <><audio src={URL.createObjectURL(audioBlob)} controls style={{ width:'100%' }} /><button onClick={()=>setAudioBlob(null)} style={{ background:'#34343E', border:'none', borderRadius:20, padding:'10px 20px', color:'white', cursor:'pointer' }}>Re-record</button></>
+              <div style={{ width:'100%', display:'flex', flexDirection:'column', alignItems:'center', gap:16 }}>
+                {/* Hidden native element used purely for playback — no native controls
+                    UI, so it can never impose its own intrinsic min-width on the row
+                    (see VoiceRecorderButton for the full explanation of that bug). */}
+                <audio
+                  ref={previewAudioElRef}
+                  src={audioUrl}
+                  style={{ display:'none' }}
+                  onPlay={()=>setIsPlayingAudio(true)}
+                  onPause={()=>setIsPlayingAudio(false)}
+                  onEnded={()=>{ setIsPlayingAudio(false); setAudioPlaybackPos(0); }}
+                  onTimeUpdate={e=>setAudioPlaybackPos(e.currentTarget.currentTime)}
+                />
+                <div style={{ width:'100%', display:'flex', alignItems:'center', gap:12, background:'rgba(255,255,255,0.06)', borderRadius:24, padding:'12px 16px', boxSizing:'border-box' }}>
+                  <button onClick={toggleAudioPlayback} aria-label={isPlayingAudio ? 'Pause preview' : 'Play preview'} style={{ background:isPlayingAudio?COLORS.brand:'rgba(255,255,255,0.12)', border:'none', borderRadius:'50%', width:38, height:38, minWidth:38, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                    {isPlayingAudio
+                      ? <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                      : <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><polygon points="6 3 21 12 6 21 6 3"/></svg>}
+                  </button>
+                  <div ref={audioScrubRef} onPointerDown={handleAudioScrubDown} style={{ flex:1, minWidth:0, height:30, display:'flex', alignItems:'center', gap:2, cursor:'pointer', touchAction:'none' }}>
+                    {previewWaveform.map((h,i) => {
+                      const barRatio = (i + 0.5) / previewWaveform.length;
+                      const played = audioDuration > 0 && barRatio <= audioPlaybackPos / audioDuration;
+                      return <div key={i} style={{ flex:1, minWidth:2, borderRadius:2, height:`${Math.max(14, Math.round(h*100))}%`, background: played ? '#2ED573' : 'rgba(255,255,255,0.25)', transition:'background 0.1s' }} />;
+                    })}
+                  </div>
+                  <span style={{ color:'rgba(255,255,255,0.5)', fontSize:12, flexShrink:0, minWidth:34, textAlign:'right', fontVariantNumeric:'tabular-nums' }}>{fmtAudioTime(isPlayingAudio ? Math.ceil(audioDuration - audioPlaybackPos) : audioDuration)}</span>
+                </div>
+                <button onClick={reRecordAudio} style={{ background:'#34343E', border:'none', borderRadius:20, padding:'10px 20px', color:'white', cursor:'pointer', fontSize:13, fontWeight:700 }}>🔄 Re-record</button>
+              </div>
             ) : (
-              <button onMouseDown={startAudio} onMouseUp={stopAudio} onTouchStart={startAudio} onTouchEnd={stopAudio} style={{ background:isRecording?COLORS.brand:'#34343E', border:'none', borderRadius:'50%', width:90, height:90, fontSize:36, cursor:'pointer' }}>{isRecording?'⏹':'🎙️'}</button>
+              <>
+                <button onMouseDown={startAudio} onMouseUp={stopAudio} onTouchStart={startAudio} onTouchEnd={stopAudio} style={{ background:isRecording?COLORS.brand:'#34343E', border:'none', borderRadius:'50%', width:90, height:90, fontSize:36, cursor:'pointer', flexShrink:0, boxShadow: isRecording ? `0 0 0 8px ${COLORS.brand}22` : 'none', transition:'box-shadow 0.2s' }}>{isRecording?'⏹':'🎙️'}</button>
+                {/* Live level meter + running timer while recording, so it's obvious the
+                    mic is actually picking something up before you release — the old
+                    version gave zero feedback beyond a color change on the button itself. */}
+                {isRecording && (
+                  <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:8, width:'100%' }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:1.5, height:28, width:'100%', maxWidth:220 }}>
+                      {(liveLevel.length ? liveLevel : Array.from({length:24},()=>0.1)).map((h,i)=>(
+                        <div key={i} style={{ flex:1, background:COLORS.brand, borderRadius:2, height:`${Math.round(h*100)}%`, minHeight:2, transition:'height 0.05s' }} />
+                      ))}
+                    </div>
+                    <span style={{ color:'white', fontWeight:700, fontSize:13, fontVariantNumeric:'tabular-nums' }}>{fmtAudioTime(audioDuration)}</span>
+                  </div>
+                )}
+              </>
             )}
-            <p style={{ color:'#888', fontSize:13 }}>{isRecording?'Recording... release to stop':'Hold to record'}</p>
+            <p style={{ color:'#888', fontSize:13 }}>{isRecording?'Recording... release to stop':audioBlob?'Tap the waveform to scrub, or re-record':'Hold to record'}</p>
           </div>
         )}
         {mode==='file' && selectedFile && (
@@ -13944,7 +14101,24 @@ const NotificationsPage = ({ currentUser, users, videos, onClose, onViewProfile,
 
   const markAllRead = async () => {
     const unread = notifs.filter(n=>!n.read);
+    if (!unread.length) return;
     await Promise.all(unread.map(n=>updateDoc(doc(db,'notifications',n.id),{read:true})));
+    showToast?.('All caught up! ✓', 'success');
+  };
+
+  // Swipe/tap-to-dismiss a single notification — the panel previously only offered
+  // "mark all as read", with no way to clear one irrelevant item (e.g. an old gift
+  // or job update) without wiping the whole list. Optimistic-remove from local state
+  // first so it disappears instantly, roll back if the Firestore delete fails.
+  const dismissNotif = async (n, e) => {
+    e?.stopPropagation();
+    setNotifs(prev => prev.filter(x => x.id !== n.id));
+    try {
+      await deleteDoc(doc(db,'notifications',n.id));
+    } catch (err) {
+      setNotifs(prev => [n, ...prev].sort((a,b)=>tsToMillis(b.createdAt)-tsToMillis(a.createdAt)));
+      showToast?.('Could not remove notification', 'error');
+    }
   };
 
   const handleNotifTap = async (n) => {
@@ -13971,6 +14145,7 @@ const NotificationsPage = ({ currentUser, users, videos, onClose, onViewProfile,
     {id:'like', label:'Likes'},
     {id:'comment', label:'Comments'},
     {id:'mention', label:'Mentions'},
+    {id:'follow', label:'Follows'},
   ];
   const filteredNotifs = activeFilter === 'all' ? notifs : notifs.filter(n => n.type === activeFilter);
   const newNotifs = filteredNotifs.filter(n => (Date.now() - (n.date?.getTime?.()||0)) < 24*3600*1000);
@@ -13986,24 +14161,55 @@ const NotificationsPage = ({ currentUser, users, videos, onClose, onViewProfile,
     return date.toLocaleDateString();
   };
 
+  // Small colored icon badge shown at the avatar's bottom-right corner, one per
+  // notification type — Instagram/Facebook-style. Previously only 'like' and 'gift'
+  // had any icon at all; every other type (comment, follow, mention, live, story,
+  // message, job) rendered with nothing, so the row's icon alone couldn't tell you
+  // what kind of notification it was without reading the text.
+  const NOTIF_ICON = {
+    like: { emoji:'❤️', bg:'#FF453A' },
+    comment: { emoji:'💬', bg:COLORS.brand },
+    follow: { emoji:'➕', bg:'#2ED573' },
+    mention: { emoji:'@', bg:'#5E5CE6' },
+    gift: { emoji:'🎁', bg:'#FFB100' },
+    live: { emoji:'🔴', bg:'#FF453A' },
+    story: { emoji:'📸', bg:'#0A84FF' },
+    message: { emoji:'✉️', bg:COLORS.brand },
+    jobApplication: { emoji:'💼', bg:'#8B6F47' },
+    applicationReceived: { emoji:'💼', bg:'#8B6F47' },
+    applicationUpdate: { emoji:'💼', bg:'#8B6F47' },
+  };
+
   const renderRow = (n) => {
     const fromUser = users.find(u=>u.id===n.fromUserId);
-    const suffixIcon = {like:'❤️', comment:'', follow:'', mention:'', gift:'🎁', live:'', story:'', message:'', jobApplication:'', applicationReceived:'', applicationUpdate:''}[n.type] || '';
     const actionText = typeLabelRef.current[n.type] || n.message;
+    const icon = NOTIF_ICON[n.type];
+    // Post-related notifications (like/comment/mention) show a thumbnail of the
+    // actual post on the right — otherwise there's no visual reminder of WHICH post
+    // someone liked/commented on, only text, which gets hard to scan once you have
+    // more than a couple from the same person.
+    const relatedVideo = (n.type==='like' || n.type==='comment' || n.type==='mention') && n.videoId
+      ? videos.find(v => v.id === n.videoId) : null;
+    const thumbSrc = relatedVideo && (relatedVideo.images?.[0] || (relatedVideo.mediaType?.startsWith('video') ? null : relatedVideo.videoUrl));
     return (
       <div key={n.id} onClick={()=>handleNotifTap(n)}
+        className="notif-row"
         onMouseEnter={e=>e.currentTarget.style.background=COLORS.surfaceAlt}
         onMouseLeave={e=>e.currentTarget.style.background=n.read?'transparent':COLORS.overlaySubtle}
         style={{ display:'flex', alignItems:'flex-start', gap:12, padding:'12px 16px', cursor:'pointer', background:n.read?'transparent':COLORS.overlaySubtle, position:'relative', transition:TRANSITION.fast }}>
         {!n.read && <div style={{ position:'absolute', left:0, top:10, bottom:10, width:3, borderRadius:2, background:COLORS.gradient }} />}
-        <div style={{ width:44, height:44, borderRadius:'50%', background:fromUser?.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, fontSize:16, overflow:'hidden', flexShrink:0, boxShadow:SHADOW.xs }}>
-          {fromUser?.avatarUrl ? <img loading="lazy" decoding="async" src={fromUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : (fromUser?.avatar||fromUser?.username?.[0]||'?')}
+        <div style={{ position:'relative', flexShrink:0 }}>
+          <div style={{ width:44, height:44, borderRadius:'50%', background:fromUser?.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, fontSize:16, overflow:'hidden', boxShadow:SHADOW.xs }}>
+            {fromUser?.avatarUrl ? <img loading="lazy" decoding="async" src={fromUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : (fromUser?.avatar||fromUser?.username?.[0]||'?')}
+          </div>
+          {icon && (
+            <div style={{ position:'absolute', bottom:-3, right:-3, width:19, height:19, borderRadius:'50%', background:icon.bg, border:`2px solid ${COLORS.bg}`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:icon.emoji==='@'?10:9, fontWeight:800, color:'white' }}>{icon.emoji}</div>
+          )}
         </div>
         <div style={{ flex:1, minWidth:0 }}>
           <div style={{ color:COLORS.textPrimary, fontSize:13.5, lineHeight:1.5 }}>
             {fromUser && <span style={{ fontWeight:700 }}>{fromUser.fullName || fromUser.username} </span>}
             <span style={{ color:COLORS.textSecondary }}>{actionText}</span>
-            {suffixIcon && <span> {suffixIcon}</span>}
           </div>
           {n.type==='follow' && n.fromUserId !== currentUser?.id && (
             (followed||[]).includes(n.fromUserId) ? (
@@ -14013,7 +14219,20 @@ const NotificationsPage = ({ currentUser, users, videos, onClose, onViewProfile,
             )
           )}
         </div>
-        <div style={{ color:COLORS.textTertiary, fontSize:11.5, flexShrink:0, paddingTop:2 }}>{timeAgoShort(n.date)}</div>
+        {thumbSrc && (
+          <div style={{ width:40, height:40, borderRadius:8, overflow:'hidden', flexShrink:0, background:COLORS.surfaceAlt }}>
+            <img loading="lazy" decoding="async" src={thumbSrc} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+          </div>
+        )}
+        <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:6, flexShrink:0 }}>
+          <div style={{ color:COLORS.textTertiary, fontSize:11.5, paddingTop:2 }}>{timeAgoShort(n.date)}</div>
+          {/* Dismiss a single notification — was previously all-or-nothing
+              (only "mark all as read" existed, with no way to clear one item). Kept
+              visually quiet (low-contrast ✕) so it doesn't compete with the row's
+              actual content, but it's always tappable, not hover-only, since this is
+              a touch-first surface. */}
+          <button onClick={e=>dismissNotif(n,e)} aria-label="Dismiss notification" style={{ background:'none', border:'none', color:COLORS.textTertiary, fontSize:13, cursor:'pointer', padding:2, opacity:0.55, lineHeight:1 }}>✕</button>
+        </div>
       </div>
     );
   };
@@ -14025,7 +14244,7 @@ const NotificationsPage = ({ currentUser, users, videos, onClose, onViewProfile,
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
           <button onClick={onClose} aria-label="Back" style={{ background:'none', border:'none', width:34, cursor:'pointer', color:COLORS.textPrimary, fontSize:18 }}>‹</button>
           <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:17 }}>Notifications</div>
-          <button onClick={markAllRead} aria-label="Mark all as read" style={{ background:'none', border:'none', width:34, height:34, color:COLORS.textSecondary, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+          <button onClick={markAllRead} disabled={unreadCount===0} aria-label="Mark all as read" style={{ background:'none', border:'none', width:34, height:34, color:unreadCount===0?COLORS.textTertiary:COLORS.textSecondary, cursor:unreadCount===0?'default':'pointer', opacity:unreadCount===0?0.4:1, display:'flex', alignItems:'center', justifyContent:'center' }}>
             <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
           </button>
         </div>
