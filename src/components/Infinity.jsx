@@ -5157,6 +5157,28 @@ const PostOptionsMenu = ({ video, currentUser, onClose, showToast, onDelete, onB
 
 // Ensures only one FeedPostCard video autoplays at a time (TikTok-style single active playback)
 let __activeFeedVideoEl = null;
+// Whichever card currently owns __activeFeedVideoEl also registers its setVideoPaused
+// setter here. This lets code OUTSIDE the card (browser tab hidden, or an in-app
+// overlay like Live/Camera/Calls opening on top of the feed) pause the real <video>
+// AND flip that card's own play/pause icon, instead of silently pausing the element
+// while the card's UI still thinks it's playing.
+let __activeFeedVideoSetPaused = null;
+// ROOT CAUSE (background audio bug): feed post videos are always unmuted (`muted =
+// false` below) and were only ever paused by the IntersectionObserver-driven
+// "scrolled off-screen" effect. That observer tracks scroll position WITHIN the page —
+// it has no idea whether the browser tab itself is in the background, or whether an
+// in-app overlay (Live, a call, the camera, Stories) has been opened on top of the
+// still-mounted feed. Result: switching browser tabs, or going live / watching someone
+// else's live, left the underlying feed video playing with full sound underneath.
+// Fix: a single, file-wide "pause whatever's currently playing" entry point that (a) a
+// document 'visibilitychange' listener calls when the tab goes to the background, and
+// (b) the top-level app calls whenever a full-screen overlay is opened over the feed.
+function suspendActiveFeedVideo() {
+  if (__activeFeedVideoEl) {
+    try { __activeFeedVideoEl.pause(); } catch {}
+    __activeFeedVideoSetPaused?.(true);
+  }
+}
 // Tracks the stop() function of whichever post is currently being read aloud, so
 // starting Read Aloud on a different post cancels the previous one — one voice at a
 // time, same idea as __activeFeedVideoEl above for video playback.
@@ -5447,20 +5469,46 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
     const el = videoElRef.current;
     if (!el) return;
     if (isVisible) {
+      // Don't autoplay into a background tab or on top of an overlay (Live/Call/Camera/
+      // Stories) — the intersection observer alone can't see either of those. See
+      // suspendActiveFeedVideo() above for the full explanation.
+      if (document.hidden) return;
       if (__activeFeedVideoEl && __activeFeedVideoEl !== el) {
         try { __activeFeedVideoEl.pause(); } catch {}
       }
       __activeFeedVideoEl = el;
+      __activeFeedVideoSetPaused = setVideoPaused;
       el.play().then(()=>setVideoPaused(false)).catch(() => { setVideoPaused(true); });
     } else {
       el.pause();
       setVideoPaused(true);
-      if (__activeFeedVideoEl === el) __activeFeedVideoEl = null;
+      if (__activeFeedVideoEl === el) { __activeFeedVideoEl = null; __activeFeedVideoSetPaused = null; }
     }
   }, [isVisible, isVideo]);
 
+  // Tab-away fix: pause immediately when the browser tab is backgrounded (covers the
+  // case where the user switches tabs while a feed video is mid-play), and resume it
+  // — only this exact card, and only if it's still the one actually in view — when the
+  // tab comes back to the foreground. This is a per-card listener (not a single global
+  // one) so resume can correctly re-check "is *this* card still visible/current" instead
+  // of naively resuming whatever was last playing.
+  useEffect(() => {
+    if (!isVideo) return;
+    const onVisibility = () => {
+      const el = videoElRef.current;
+      if (!el) return;
+      if (document.hidden) {
+        if (__activeFeedVideoEl === el) el.pause();
+      } else if (isVisible && __activeFeedVideoEl === el) {
+        el.play().then(()=>setVideoPaused(false)).catch(()=>setVideoPaused(true));
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, [isVideo, isVisible]);
+
   useEffect(() => () => {
-    if (__activeFeedVideoEl === videoElRef.current) __activeFeedVideoEl = null;
+    if (__activeFeedVideoEl === videoElRef.current) { __activeFeedVideoEl = null; __activeFeedVideoSetPaused = null; }
   }, []);
 
   const toggleLike = async () => {
@@ -9533,6 +9581,25 @@ const HelpCenterPage = ({ user, showToast, onBack, onReport }) => {
 };
 
 /* ─────────────── VOICE RECORDER — PRODUCTION GRADE ─────────────── */
+// Downsamples (or, for very short clips, upsamples) a raw amplitude-sample array to
+// exactly `targetBars` values in 0..1, so the preview waveform always renders a clean,
+// evenly-spaced bar count regardless of the clip's actual length. Buckets and averages
+// for long clips; repeats/interpolates for clips shorter than targetBars samples.
+function resampleWaveform(samples, targetBars) {
+  if (!samples || samples.length === 0) return Array.from({ length: targetBars }, () => 0.1);
+  if (samples.length === targetBars) return samples;
+  const out = [];
+  for (let i = 0; i < targetBars; i++) {
+    const pos = (i / targetBars) * samples.length;
+    const start = Math.floor(pos);
+    const end = Math.max(start + 1, Math.floor(((i + 1) / targetBars) * samples.length));
+    const slice = samples.slice(start, end);
+    const avg = slice.length ? slice.reduce((a, b) => a + b, 0) / slice.length : samples[Math.min(start, samples.length - 1)];
+    out.push(Math.max(0.08, Math.min(1, avg)));
+  }
+  return out;
+}
+
 const VoiceRecorderButton = ({ onSend, showToast, size = 'normal', onStateChange }) => {
   const [state, setState] = useState('idle'); // idle | recording | paused | preview
   const [duration, setDuration] = useState(0);
@@ -9540,6 +9607,15 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal', onStateChange
   const [waveform, setWaveform] = useState([]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackPos, setPlaybackPos] = useState(0);
+  // The full-clip waveform shown during preview (WhatsApp/iMessage-style bars, tap or
+  // drag to seek) — distinct from `waveform`, which is just the live 30-bar visualizer
+  // shown WHILE recording. Built up incrementally as the recording happens (see
+  // waveHistoryRef in buildWaveform) so preview can show the whole clip's shape instead
+  // of one flat progress line.
+  const [previewWaveform, setPreviewWaveform] = useState([]);
+  const waveHistoryRef = useRef([]);
+  const lastSampleAtRef = useRef(0);
+  const scrubRef = useRef(null);
   const mediaRef = useRef(null);
   const chunksRef = useRef([]);
   const timerRef = useRef(null);
@@ -9567,6 +9643,16 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal', onStateChange
       bars.push(Math.min(1, Math.abs(v) * 3.5 + 0.1));
     }
     setWaveform(bars);
+    // Also sample a single overall amplitude level (peak of this frame) into the
+    // clip's full-length history, throttled to ~8 samples/sec — that's plenty of
+    // resolution for a scrubbable preview waveform without storing thousands of
+    // points on a long voice note.
+    const now = performance.now();
+    if (now - lastSampleAtRef.current > 125) {
+      lastSampleAtRef.current = now;
+      const peak = Math.min(1, Math.max(...bars, 0.08));
+      waveHistoryRef.current.push(peak);
+    }
     animFrameRef.current = requestAnimationFrame(buildWaveform);
   };
 
@@ -9588,11 +9674,14 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal', onStateChange
         const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
         blobRef.current = blob;
         setAudioUrl(URL.createObjectURL(blob));
+        setPreviewWaveform(resampleWaveform(waveHistoryRef.current, 44));
         setState('preview');
       };
       mr.start(100);
       setState('recording');
       setDuration(0);
+      waveHistoryRef.current = [];
+      lastSampleAtRef.current = 0;
       timerRef.current = setInterval(() => setDuration(d => d + 1), 1000);
       buildWaveform();
     } catch (e) {
@@ -9630,7 +9719,7 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal', onStateChange
     cancelAnimationFrame(animFrameRef.current);
     streamRef.current?.getTracks().forEach(t => t.stop());
     if (mediaRef.current && mediaRef.current.state !== 'inactive') mediaRef.current.stop();
-    setAudioUrl(null); setWaveform([]); setDuration(0); setState('idle'); blobRef.current = null;
+    setAudioUrl(null); setWaveform([]); setPreviewWaveform([]); waveHistoryRef.current = []; setDuration(0); setState('idle'); blobRef.current = null;
     setIsPlaying(false); setPlaybackPos(0);
   };
 
@@ -9655,6 +9744,28 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal', onStateChange
     const el = previewAudioRef.current;
     if (!el) return;
     if (isPlaying) { el.pause(); } else { el.currentTime = playbackPos >= duration ? 0 : playbackPos; el.play().catch(()=>{}); }
+  };
+
+  // Tap or drag anywhere on the waveform to seek — same gesture as WhatsApp/iMessage
+  // voice notes. Works from a plain click as well as a drag because pointer events
+  // fire a 'move' even for a simple tap-and-release in the same spot.
+  const seekFromClientX = (clientX) => {
+    const bar = scrubRef.current;
+    const el = previewAudioRef.current;
+    if (!bar || !el || !duration) return;
+    const rect = bar.getBoundingClientRect();
+    const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+    const t = ratio * duration;
+    el.currentTime = t;
+    setPlaybackPos(t);
+  };
+  const handleScrubPointerDown = (e) => {
+    e.preventDefault();
+    seekFromClientX(e.clientX);
+    const onMove = (ev) => seekFromClientX(ev.clientX);
+    const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
   };
 
   const fmtTime = s => `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
@@ -9682,15 +9793,30 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal', onStateChange
           onTimeUpdate={e=>setPlaybackPos(e.currentTarget.currentTime)}
         />
         <button onClick={cancelRecording} aria-label="Cancel recording" style={{ background:'rgba(11,95,255,0.15)', border:'none', borderRadius:'50%', width:32, height:32, minWidth:32, color:COLORS.brand, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, flexShrink:0 }}>✕</button>
-        <button onClick={togglePlayback} aria-label={isPlaying ? 'Pause preview' : 'Play preview'} style={{ background:'rgba(255,255,255,0.1)', border:'none', borderRadius:'50%', width:30, height:30, minWidth:30, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+        <button onClick={togglePlayback} aria-label={isPlaying ? 'Pause preview' : 'Play preview'} style={{ background:isPlaying?COLORS.brand:'rgba(255,255,255,0.1)', border:'none', borderRadius:'50%', width:30, height:30, minWidth:30, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, transition:'background 0.15s' }}>
           {isPlaying
             ? <svg width="13" height="13" viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
             : <svg width="13" height="13" viewBox="0 0 24 24" fill="white"><polygon points="6 3 21 12 6 21 6 3"/></svg>}
         </button>
-        <div style={{ flex:1, minWidth:0, height:3, background:'rgba(255,255,255,0.15)', borderRadius:2, overflow:'hidden' }}>
-          <div style={{ height:'100%', width: duration>0 ? `${Math.min(100,(playbackPos/duration)*100)}%` : '0%', background:COLORS.brand, borderRadius:2 }} />
+        {/* Real waveform of the actual clip (built up during recording), not a flat
+            progress line — tap or drag anywhere on it to scrub, WhatsApp/iMessage-style.
+            Bars already played are colored solid; the rest stay dim. A thin playhead
+            marks the exact position for fine seeking. */}
+        <div
+          ref={scrubRef}
+          onPointerDown={handleScrubPointerDown}
+          style={{ flex:1, minWidth:0, height:26, display:'flex', alignItems:'center', gap:1.5, cursor:'pointer', touchAction:'none', position:'relative' }}
+        >
+          {(previewWaveform.length ? previewWaveform : Array.from({length:44},()=>0.1)).map((h, i) => {
+            const barRatio = (i + 0.5) / (previewWaveform.length || 44);
+            const playedRatio = duration > 0 ? playbackPos / duration : 0;
+            const played = barRatio <= playedRatio;
+            return (
+              <div key={i} style={{ flex:1, minWidth:1.5, borderRadius:2, height:`${Math.max(12, Math.round(h*100))}%`, background: played ? COLORS.brand : 'rgba(255,255,255,0.25)', transition:'background 0.1s' }} />
+            );
+          })}
         </div>
-        <span style={{ color:'rgba(255,255,255,0.4)', fontSize:12, flexShrink:0, minWidth:30, textAlign:'right' }}>{fmtTime(duration)}</span>
+        <span style={{ color:'rgba(255,255,255,0.4)', fontSize:12, flexShrink:0, minWidth:30, textAlign:'right', fontVariantNumeric:'tabular-nums' }}>{fmtTime(isPlaying ? Math.ceil(duration - playbackPos) : duration)}</span>
         <button onClick={sendVoice} aria-label="Send voice message" style={{ background:COLORS.brand, border:'none', borderRadius:'50%', width:36, height:36, minWidth:36, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
@@ -14936,6 +15062,30 @@ const handleLogout = async () => {
 const [inboxOpenGroups, setInboxOpenGroups] = useState(0);
 const [activeConversation, setActiveConversation] = useState(null);
 const [quickConversation, setQuickConversation] = useState(null);
+// BUG FIX (background audio while Live / on a call / in the camera): showLiveStream,
+// showCall, showCamera, showStoriesPage/showStoryViewer and quickConversation all
+// render as overlays stacked ON TOP of the active tab's content further down in this
+// same tree — they don't unmount HomeFeed/InfinityPage underneath them. A feed post's
+// video has its own IntersectionObserver-driven autoplay (see FeedPostCard) which only
+// knows about scroll position, not about an overlay covering it, so going Live (either
+// starting your own or watching someone else's) left whatever feed video was playing
+// still going, full sound, invisibly underneath. This suspends it the instant any of
+// those overlays opens; the feed simply resumes its own IntersectionObserver-driven
+// autoplay/pause behavior normally once every overlay is closed again.
+useEffect(() => {
+  if (showLiveStream || showCall || showCamera || showStoriesPage || showStoryViewer || quickConversation) {
+    suspendActiveFeedVideo();
+  }
+}, [showLiveStream, showCall, showCamera, showStoriesPage, showStoryViewer, quickConversation]);
+// Separate belt-and-suspenders fix for the plain "switched to another browser tab"
+// case — each FeedPostCard also has its own visibilitychange listener that handles
+// resuming correctly for itself, but pausing here as soon as the tab backgrounds
+// means audio cuts out immediately rather than waiting a tick for that per-card effect.
+useEffect(() => {
+  const onVisibility = () => { if (document.hidden) suspendActiveFeedVideo(); };
+  document.addEventListener('visibilitychange', onVisibility);
+  return () => document.removeEventListener('visibilitychange', onVisibility);
+}, []);
 const handleMessage = uid => {
   if(!uid) { showToast?.('Unable to open chat: user not found','error'); return; }
   if(!currentUser?.id) { showToast?.('Unable to open chat: not signed in','error'); return; }
