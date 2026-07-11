@@ -9263,6 +9263,8 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal', onStateChange
   const [duration, setDuration] = useState(0);
   const [audioUrl, setAudioUrl] = useState(null);
   const [waveform, setWaveform] = useState([]);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [playbackPos, setPlaybackPos] = useState(0);
   const mediaRef = useRef(null);
   const chunksRef = useRef([]);
   const timerRef = useRef(null);
@@ -9271,6 +9273,7 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal', onStateChange
   const streamRef = useRef(null);
   const audioCtxRef = useRef(null);
   const blobRef = useRef(null);
+  const previewAudioRef = useRef(null);
 
   // Lets the parent composer know when we've left the compact "idle mic" look so
   // it can stop squeezing the expanded recorder (waveform/timer/send) into a fixed
@@ -9353,6 +9356,7 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal', onStateChange
     streamRef.current?.getTracks().forEach(t => t.stop());
     if (mediaRef.current && mediaRef.current.state !== 'inactive') mediaRef.current.stop();
     setAudioUrl(null); setWaveform([]); setDuration(0); setState('idle'); blobRef.current = null;
+    setIsPlaying(false); setPlaybackPos(0);
   };
 
   const sendVoice = async () => {
@@ -9364,6 +9368,19 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal', onStateChange
      } catch (e) { showToast?.(e?.message || 'Failed to send voice', 'error'); }
      cancelRecording();
    };
+
+  // Plain play/pause toggle for the preview clip. We deliberately don't render
+  // native <audio controls> here — on mobile browsers (iOS Safari in particular)
+  // the native control widget has a fixed intrinsic min-width (~250-300px) that
+  // ignores flex:1/minWidth:0, so on narrower screens it overflows the composer
+  // row and pushes/clips the Send button off-screen even though the layout code
+  // is otherwise correct. This tiny fixed-size button keeps the row width
+  // predictable so Send is always visible.
+  const togglePlayback = () => {
+    const el = previewAudioRef.current;
+    if (!el) return;
+    if (isPlaying) { el.pause(); } else { el.currentTime = playbackPos >= duration ? 0 : playbackPos; el.play().catch(()=>{}); }
+  };
 
   const fmtTime = s => `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
 
@@ -9377,11 +9394,29 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal', onStateChange
 
   if (state === 'preview') {
     return (
-      <div style={{ display:'flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.06)', borderRadius:24, padding:'8px 12px', flex:1 }}>
-        <button onClick={cancelRecording} aria-label="Cancel recording" style={{ background:'rgba(11,95,255,0.15)', border:'none', borderRadius:'50%', width:32, height:32, color:COLORS.brand, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}>✕</button>
-        <audio src={audioUrl} controls style={{ flex:1, height:28, minWidth:0 }} />
-        <span style={{ color:'rgba(255,255,255,0.4)', fontSize:12, flexShrink:0 }}>{fmtTime(duration)}</span>
-        <button onClick={sendVoice} aria-label="Send voice message" style={{ background:COLORS.brand, border:'none', borderRadius:'50%', width:36, height:36, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+      <div style={{ display:'flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.06)', borderRadius:24, padding:'8px 12px', flex:1, minWidth:0, maxWidth:'100%', boxSizing:'border-box' }}>
+        {/* Hidden native element used purely for playback — no native controls UI,
+            so it can never impose its own intrinsic min-width on the row. */}
+        <audio
+          ref={previewAudioRef}
+          src={audioUrl}
+          style={{ display:'none' }}
+          onPlay={()=>setIsPlaying(true)}
+          onPause={()=>setIsPlaying(false)}
+          onEnded={()=>{ setIsPlaying(false); setPlaybackPos(0); }}
+          onTimeUpdate={e=>setPlaybackPos(e.currentTarget.currentTime)}
+        />
+        <button onClick={cancelRecording} aria-label="Cancel recording" style={{ background:'rgba(11,95,255,0.15)', border:'none', borderRadius:'50%', width:32, height:32, minWidth:32, color:COLORS.brand, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, flexShrink:0 }}>✕</button>
+        <button onClick={togglePlayback} aria-label={isPlaying ? 'Pause preview' : 'Play preview'} style={{ background:'rgba(255,255,255,0.1)', border:'none', borderRadius:'50%', width:30, height:30, minWidth:30, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+          {isPlaying
+            ? <svg width="13" height="13" viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+            : <svg width="13" height="13" viewBox="0 0 24 24" fill="white"><polygon points="6 3 21 12 6 21 6 3"/></svg>}
+        </button>
+        <div style={{ flex:1, minWidth:0, height:3, background:'rgba(255,255,255,0.15)', borderRadius:2, overflow:'hidden' }}>
+          <div style={{ height:'100%', width: duration>0 ? `${Math.min(100,(playbackPos/duration)*100)}%` : '0%', background:COLORS.brand, borderRadius:2 }} />
+        </div>
+        <span style={{ color:'rgba(255,255,255,0.4)', fontSize:12, flexShrink:0, minWidth:30, textAlign:'right' }}>{fmtTime(duration)}</span>
+        <button onClick={sendVoice} aria-label="Send voice message" style={{ background:COLORS.brand, border:'none', borderRadius:'50%', width:36, height:36, minWidth:36, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
       </div>
