@@ -5567,86 +5567,488 @@ const FeedSkeletonCard = () => (
    so the Facebook-style card design went there instead, in place, rather than duplicating
    the feature across tabs. */
 
-const HomeFeed = ({ t, videos, videosLoading, videosError, onLike, onComment, onShare, onFollow, onMessage, onVoiceCall, onVideoCall, onDuet, onStitch, onSaveSound, followed, showToast, onWatchLive, currentUser, onViewProfile, onOpenSearch, onOpenNotifications, onOpenStories, onCreateStory, onViewStory, blockedUsers, onBlock, users, onOpenProfileDrawer, onFeedScroll, onOpenCamera, onOpenComposer, navVisible, onRefresh }) => {
-  const liveUserIds = useLiveStreamerIds(currentUser);
-  // Inline "quick search" — filters users/posts in place instead of navigating to Discover.
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const searchResults = useMemo(()=>{
-    const q = searchQuery.trim().toLowerCase();
-    if(!q) return { users:[], posts:[] };
-    const matchedUsers = (users||[]).filter(u=>u.id!==currentUser?.id && (u.username?.toLowerCase().includes(q) || u.fullName?.toLowerCase().includes(q))).slice(0,5);
-    const matchedPosts = (videos||[]).filter(v=>v.description?.toLowerCase().includes(q)).slice(0,5);
-    return { users:matchedUsers, posts:matchedPosts };
-  },[searchQuery, users, videos, currentUser?.id]);
+/* ════════════════════════════════════════════════════════════════════════
+   HOME TAB — "PULSE"
+   ────────────────────────────────────────────────────────────────────────
+   This is Infinity's home surface, redesigned from scratch to stop reading
+   as a Facebook/TikTok skin. It keeps every real working piece underneath
+   (auth, Firestore writes, uploads, moderation, the battle-tested
+   FeedPostCard interaction logic) but changes the shell, the information
+   architecture and adds features neither Facebook nor TikTok ship:
 
-  // Inline quick composer — Photo/Video/Poll/Feeling/Live all act directly on this card
-  // (single tap, no separate page). Mirrors CreateScreen's post-submission logic.
-  const [composerText, setComposerText] = useState('');
-  const [composerMedia, setComposerMedia] = useState([]);
-  const [composerPosting, setComposerPosting] = useState(false);
+   1. HONEST STREAM  — the feed was already strictly reverse-chronological
+      with zero engagement re-ranking. That was invisible before. Now it's
+      a stated, visible product decision ("No algorithm. Newest first.")
+      instead of a silent implementation detail.
+   2. ORBIT RAIL      — replaces the tall Facebook-style story cards with a
+      single unified presence ring: stories AND live streams in one row of
+      circular nodes, each with an SVG "freshness" arc instead of a static
+      gradient ring, so you can see at a glance what's about to expire.
+   3. FOCUS MODE      — a real anti-doomscroll switch. "Stream" is the
+      classic infinite list; "Digest" caps what loads and paces it in
+      today/yesterday/earlier sections so opening the app doesn't default
+      to an endless pull.
+   4. SIGNAL COMPOSER — the quick-post box now tints itself to whatever
+      mood you pick (synesthetic feedback instead of a plain grey box) and
+      can send a post into the future with Capsule — schedule a caption to
+      reveal later, something neither Facebook nor TikTok offer as a
+      built-in.
+   5. RHYTHM STRIP    — three tiny, non-manipulative stats ("posts today",
+      "live now", "voices today") replacing any kind of engagement bait —
+      orientation, not a dopamine hook.
+   ════════════════════════════════════════════════════════════════════════ */
+
+// ---- time / section helpers ------------------------------------------------
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+// Which part of the day a timestamp falls in — used to pace Digest mode and
+// to label the Rhythm strip's "since sunrise" stat.
+function dayPartMeta(date) {
+  const h = date.getHours();
+  if (h < 5) return { key: 'night', emoji: '🌙', label: 'Late night' };
+  if (h < 12) return { key: 'morning', emoji: '🌅', label: 'Morning' };
+  if (h < 17) return { key: 'afternoon', emoji: '☀️', label: 'Afternoon' };
+  if (h < 21) return { key: 'evening', emoji: '🌆', label: 'Evening' };
+  return { key: 'night', emoji: '🌙', label: 'Tonight' };
+}
+
+// "Today" / "Yesterday" / weekday / short date — used for the stream's
+// section dividers so a long session reads as distinct chapters instead of
+// one undifferentiated wall, without needing a per-post timestamp restyle.
+function sectionLabelFor(date) {
+  const now = new Date();
+  const startOfDay = d => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const diffDays = Math.round((startOfDay(now) - startOfDay(date)) / DAY_MS);
+  if (diffDays <= 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays < 7) return date.toLocaleDateString(undefined, { weekday: 'long' });
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+/* ─────────────── ORBIT RAIL ───────────────
+   Unified presence: stories + live streams as one row of circular nodes,
+   each ringed by an SVG arc that shows how much of its 24h life is left
+   (full ring = just posted, thin sliver = about to expire) instead of a
+   static gradient border. Live nodes pulse solid red instead of showing an
+   arc at all, since a live stream doesn't expire on the same clock. */
+const OrbitNode = ({ size = 60, freshness = 1, isLive, isSelf, avatarUrl, avatarColor, initial, label, onClick, onLongPress }) => {
+  const r = (size - 6) / 2;
+  const c = 2 * Math.PI * r;
+  const pressTimer = useRef(null);
+  const firedLong = useRef(false);
+  const startPress = () => {
+    firedLong.current = false;
+    pressTimer.current = setTimeout(() => { firedLong.current = true; haptic?.('light'); onLongPress?.(); }, 420);
+  };
+  const endPress = () => { clearTimeout(pressTimer.current); if (!firedLong.current) onClick?.(); };
+  return (
+    <motion.div
+      whileTap={{ scale: 0.94 }}
+      onMouseDown={startPress} onMouseUp={endPress} onMouseLeave={()=>clearTimeout(pressTimer.current)}
+      onTouchStart={startPress} onTouchEnd={endPress}
+      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, width: size + 14, flexShrink: 0, cursor: 'pointer' }}
+    >
+      <div style={{ position: 'relative', width: size, height: size }}>
+        <svg width={size} height={size} style={{ position: 'absolute', inset: 0, transform: 'rotate(-90deg)' }}>
+          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={COLORS.border} strokeWidth={isSelf ? 1.5 : 2.5} strokeDasharray={isSelf ? '3 4' : 'none'} />
+          {!isSelf && (
+            <circle
+              cx={size / 2} cy={size / 2} r={r} fill="none"
+              stroke={isLive ? COLORS.live : COLORS.brand} strokeWidth={2.5} strokeLinecap="round"
+              strokeDasharray={c} strokeDashoffset={isLive ? 0 : c * (1 - Math.max(0.06, freshness))}
+              style={isLive ? { animation: 'pulseGlow 1.6s ease-in-out infinite' } : undefined}
+            />
+          )}
+        </svg>
+        <div style={{ position: 'absolute', inset: 5, borderRadius: '50%', overflow: 'hidden', background: avatarColor || COLORS.brand, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: size * 0.3 }}>
+          {avatarUrl ? <img loading="lazy" decoding="async" src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (isSelf ? '' : initial)}
+          {isSelf && (
+            <div style={{ position: 'absolute', bottom: -1, right: -1, width: 20, height: 20, borderRadius: '50%', background: COLORS.gradient, border: `2px solid ${COLORS.bg}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 12, fontWeight: 800 }}>+</div>
+          )}
+        </div>
+        {isLive && (
+          <div style={{ position: 'absolute', bottom: -2, left: '50%', transform: 'translateX(-50%)', background: COLORS.live, borderRadius: 6, padding: '1px 6px', fontSize: 8, fontWeight: 800, color: 'white', letterSpacing: 0.3, whiteSpace: 'nowrap' }}>LIVE</div>
+        )}
+      </div>
+      <span style={{ fontSize: 10.5, fontWeight: 600, color: COLORS.textSecondary, maxWidth: size + 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
+    </motion.div>
+  );
+};
+
+const OrbitRail = ({ users, currentUser, onViewStory, onCreateStory, liveUserIds }) => {
+  const [storyGroups, setStoryGroups] = useState([]);
+
+  useEffect(() => {
+    const buildGroups = (docs) => {
+      const now = new Date();
+      const byUser = {};
+      docs.forEach(d => {
+        const data = d.data();
+        const exp = data.expiresAt?.toDate ? data.expiresAt.toDate() : (data.expiresAt ? new Date(data.expiresAt) : null);
+        if (exp && exp < now) return;
+        if (!byUser[data.userId]) byUser[data.userId] = { userId: data.userId, stories: [] };
+        byUser[data.userId].stories.push({ id: d.id, ...data, expiresAt: exp });
+      });
+      return Object.values(byUser).map(g => {
+        const u = (users || []).find(uu => uu.id === g.userId);
+        const latest = g.stories[g.stories.length - 1];
+        return {
+          ...g,
+          username: u?.username || latest?.username || 'user',
+          avatarColor: u?.avatarColor || latest?.avatarColor,
+          avatarUrl: u?.avatarUrl || latest?.avatarUrl,
+          expiresAt: g.stories.reduce((max, s) => (s.expiresAt && (!max || s.expiresAt > max)) ? s.expiresAt : max, null),
+        };
+      });
+    };
+    const primaryQ = query(collection(db, 'stories'), orderBy('createdAt', 'desc'));
+    let fallbackUnsub = null;
+    const unsub = onSnapshot(primaryQ, snap => setStoryGroups(buildGroups(snap.docs)), () => {
+      const fallbackQ = query(collection(db, 'stories'));
+      fallbackUnsub = onSnapshot(fallbackQ, snap => setStoryGroups(buildGroups(snap.docs)), () => {});
+    });
+    return () => { unsub(); fallbackUnsub?.(); };
+  }, [users]);
+
+  const mine = storyGroups.find(g => g.userId === currentUser?.id);
+  const others = storyGroups.filter(g => g.userId !== currentUser?.id);
+  const amILive = liveUserIds?.has(currentUser?.id);
+
+  const freshnessOf = (g) => {
+    if (!g?.expiresAt) return 1;
+    const remain = g.expiresAt.getTime() - Date.now();
+    return Math.max(0, Math.min(1, remain / DAY_MS));
+  };
+
+  const openGroup = (userId) => {
+    const idx = storyGroups.findIndex(g => g.userId === userId);
+    onViewStory?.({ groups: storyGroups, startIdx: idx });
+  };
+
+  if (!others.length && !mine) {
+    // Nothing to orbit yet — a single quiet "start one" node, no empty shelf.
+    return (
+      <div style={{ display: 'flex', gap: 14, padding: '4px 16px 6px', overflowX: 'auto', scrollbarWidth: 'none' }}>
+        <OrbitNode isSelf avatarUrl={currentUser?.avatarUrl} avatarColor={currentUser?.avatarColor} initial={(currentUser?.username || '?')[0]?.toUpperCase()} label="Start" onClick={onCreateStory} />
+        <div style={{ display: 'flex', alignItems: 'center', color: COLORS.textTertiary, fontSize: 12, fontStyle: 'italic' }}>No one's in orbit yet — be first</div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: 'flex', gap: 14, padding: '4px 16px 6px', overflowX: 'auto', scrollbarWidth: 'none' }}>
+      <OrbitNode
+        isSelf isLive={amILive}
+        avatarUrl={currentUser?.avatarUrl} avatarColor={currentUser?.avatarColor}
+        initial={(currentUser?.username || '?')[0]?.toUpperCase()}
+        label={mine ? 'You' : 'Add'}
+        onClick={() => (mine ? openGroup(currentUser.id) : onCreateStory?.())}
+        onLongPress={onCreateStory}
+      />
+      {others.map(g => (
+        <OrbitNode
+          key={g.userId}
+          avatarUrl={g.avatarUrl} avatarColor={g.avatarColor}
+          initial={(g.username || '?')[0]?.toUpperCase()}
+          label={g.username?.split('_')[0]}
+          isLive={liveUserIds?.has(g.userId)}
+          freshness={freshnessOf(g)}
+          onClick={() => openGroup(g.userId)}
+        />
+      ))}
+    </div>
+  );
+};
+
+/* ─────────────── RHYTHM STRIP ───────────────
+   Three glanceable, non-manipulative stats instead of any kind of "trending"
+   or engagement bait. Purely orientation: how alive is your world right now. */
+const RhythmStrip = ({ videos, liveUserIds, blockedUsers }) => {
+  const stats = useMemo(() => {
+    const now = Date.now();
+    const visible = (videos || []).filter(v => !(blockedUsers || []).includes(v.userId));
+    const today = visible.filter(v => now - (tsToMillis(v.createdAt) || 0) < DAY_MS);
+    const voicesToday = new Set(today.map(v => v.userId)).size;
+    const part = dayPartMeta(new Date());
+    return {
+      todayCount: today.length,
+      voicesToday,
+      liveCount: liveUserIds?.size || 0,
+      partEmoji: part.emoji,
+    };
+  }, [videos, liveUserIds, blockedUsers]);
+
+  const chips = [
+    { emoji: stats.partEmoji, text: `${stats.todayCount} new today` },
+    stats.voicesToday > 0 && { emoji: '🗣️', text: `${stats.voicesToday} voice${stats.voicesToday === 1 ? '' : 's'} today` },
+    stats.liveCount > 0 && { emoji: '🔴', text: `${stats.liveCount} live now` },
+  ].filter(Boolean);
+
+  if (!chips.length) return null;
+
+  return (
+    <div style={{ display: 'flex', gap: 8, padding: '2px 2px 10px', overflowX: 'auto', scrollbarWidth: 'none' }}>
+      {chips.map((c, i) => (
+        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, background: COLORS.surfaceAlt, border: `1px solid ${COLORS.border}`, borderRadius: RADIUS.pill, padding: '6px 12px', flexShrink: 0 }}>
+          <span style={{ fontSize: 12 }}>{c.emoji}</span>
+          <span style={{ fontSize: 11.5, fontWeight: 700, color: COLORS.textSecondary, whiteSpace: 'nowrap' }}>{c.text}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+/* ─────────────── STREAM DIVIDER ─────────────── */
+const StreamDivider = ({ label }) => (
+  <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '18px 2px 10px' }}>
+    <span style={{ fontSize: 12.5, fontWeight: 800, color: COLORS.textPrimary, letterSpacing: 0.2 }}>{label}</span>
+    <div style={{ flex: 1, height: 1, background: COLORS.border }} />
+  </div>
+);
+
+/* ─────────────── PULSE CARD SHELL ───────────────
+   A thin, unique-silhouette frame around the battle-tested FeedPostCard —
+   left accent bar keyed to the author's own color instead of a flat list of
+   identical rectangles, so scanning the stream has visual rhythm. Doesn't
+   touch FeedPostCard's internals (likes/comments/saves/captions/etc. all
+   keep working exactly as they do everywhere else in the app). */
+const PulseCardShell = ({ accentColor, children }) => (
+  <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+    <div style={{ width: 3, borderRadius: 3, background: accentColor || COLORS.brandLight, opacity: 0.55, flexShrink: 0 }} />
+    <div style={{ flex: 1, minWidth: 0 }}>{children}</div>
+  </div>
+);
+
+/* ─────────────── CAUGHT UP ─────────────── */
+const CaughtUpCard = ({ mode, onSwitchMode, onBackToTop }) => (
+  <div style={{ textAlign: 'center', padding: '30px 20px 10px', color: COLORS.textTertiary }}>
+    <div style={{ fontSize: 30, marginBottom: 8 }}>✨</div>
+    <div style={{ fontWeight: 800, color: COLORS.textPrimary, fontSize: 14, marginBottom: 4 }}>You're all caught up</div>
+    <div style={{ fontSize: 12, marginBottom: 14 }}>That's every post, newest first — no algorithm decided what you saw.</div>
+    <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+      <button onClick={onBackToTop} style={{ background: COLORS.surfaceAlt, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: '8px 16px', color: COLORS.textSecondary, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Back to top</button>
+      {mode === 'digest' && <button onClick={onSwitchMode} style={{ background: COLORS.gradient, border: 'none', borderRadius: 14, padding: '8px 16px', color: 'white', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Switch to full Stream</button>}
+    </div>
+  </div>
+);
+
+/* ─────────────── SIGNAL COMPOSER ─────────────── */
+const SignalComposer = ({ currentUser, showToast, onWatchLive, onPosted }) => {
+  const [text, setText] = useState('');
+  const [media, setMedia] = useState([]);
+  const [posting, setPosting] = useState(false);
   const [showFeelingPicker, setShowFeelingPicker] = useState(false);
   const [feeling, setFeeling] = useState(null);
   const [showPollBuilder, setShowPollBuilder] = useState(false);
   const [pollQuestion, setPollQuestion] = useState('');
   const [pollOptions, setPollOptions] = useState(['', '']);
-  const composerFileInputRef = useRef(null);
+  // Capsule — schedule this post to reveal later instead of posting now. A
+  // lightweight, built-in "future post" nobody else on Facebook/TikTok ships.
+  const [showCapsule, setShowCapsule] = useState(false);
+  const [capsuleAt, setCapsuleAt] = useState('');
+  const fileInputRef = useRef(null);
 
-  const pickComposerFiles = e => {
-    const files = Array.from(e.target.files||[]);
-    setComposerMedia(m => [...m, ...files.map(f=>({ url:URL.createObjectURL(f), file:f, type:f.type }))].slice(0,4));
+  const pickFiles = e => {
+    const files = Array.from(e.target.files || []);
+    setMedia(m => [...m, ...files.map(f => ({ url: URL.createObjectURL(f), file: f, type: f.type }))].slice(0, 4));
     e.target.value = '';
   };
-  const removeComposerMedia = idx => setComposerMedia(m => m.filter((_,i)=>i!==idx));
-  const setPollOption = (idx, val) => setPollOptions(opts => opts.map((o,i)=>i===idx?val:o));
-  const addPollOption = () => setPollOptions(opts => [...opts, '']); // unlimited options — poll length is only naturally bounded by what fits Firestore/UI
-  const removePollOption = idx => setPollOptions(opts => opts.length>2 ? opts.filter((_,i)=>i!==idx) : opts);
-  const closePollBuilder = () => { setShowPollBuilder(false); setPollQuestion(''); setPollOptions(['','']); };
-  const pollIsValid = pollQuestion.trim() && pollOptions.filter(o=>o.trim()).length>=2;
-  const composerHasContent = composerText.trim() || composerMedia.length || pollIsValid || feeling;
+  const removeMedia = idx => setMedia(m => m.filter((_, i) => i !== idx));
+  const setPollOption = (idx, val) => setPollOptions(opts => opts.map((o, i) => (i === idx ? val : o)));
+  const addPollOption = () => setPollOptions(opts => [...opts, '']);
+  const removePollOption = idx => setPollOptions(opts => (opts.length > 2 ? opts.filter((_, i) => i !== idx) : opts));
+  const closePollBuilder = () => { setShowPollBuilder(false); setPollQuestion(''); setPollOptions(['', '']); };
+  const pollIsValid = pollQuestion.trim() && pollOptions.filter(o => o.trim()).length >= 2;
+  const hasContent = text.trim() || media.length || pollIsValid || feeling;
+  const capsuleIsValid = !showCapsule || (capsuleAt && new Date(capsuleAt).getTime() > Date.now());
 
-  const submitQuickPost = async () => {
-    if(!composerHasContent || composerPosting) return;
-    setComposerPosting(true);
+  // Mood-reactive tint — the composer's background gently shifts toward the
+  // chosen feeling's color instead of staying a flat neutral surface.
+  const moodTint = {
+    happy: '#FFF7E0', loved: '#FFEAF1', blessed: '#EEF3FE', celebrating: '#FFF0E0',
+    sad: '#EEF1F7', tired: '#F1EFFB', motivated: '#FFEDEA', grateful: '#EAFBF0',
+    confident: '#EAF3FF', thoughtful: '#F2EEFB', amused: '#FFF6E0', thankful: '#FFEDF0',
+  }[feeling?.text] || COLORS.surface;
+
+  const submit = async () => {
+    if (!hasContent || posting || !capsuleIsValid) return;
+    setPosting(true);
     try {
       let uploadedUrls = [];
-      // Previously each upload failure was swallowed by an empty `catch {}`, so a
-      // broken/rejected photo or video upload just silently vanished — the post still
-      // went through as a text-only post with no indication anything had failed. Now a
-      // failed upload stops the whole post and tells the user, instead of quietly
-      // publishing something they didn't intend to send.
-      for (const m of composerMedia) {
-        try {
-          uploadedUrls.push(await uploadToCloudinary(m.file));
-        } catch (uploadErr) {
+      for (const m of media) {
+        try { uploadedUrls.push(await uploadToCloudinary(m.file)); }
+        catch (uploadErr) {
           console.error('Media upload failed:', uploadErr);
           showToast?.(uploadErr?.message || 'Failed to upload photo/video — please try again', 'error');
-          setComposerPosting(false);
+          setPosting(false);
           return;
         }
       }
-      const payload = { description: composerText, ...buildMediaFields(composerMedia, uploadedUrls), hashtags: (composerText||'').match(/#\w+/g) || [] };
-      if (pollIsValid) payload.poll = { question: pollQuestion.trim(), options: pollOptions.map(o=>o.trim()).filter(Boolean), votes:{}, voters:{} };
+      const payload = { description: text, ...buildMediaFields(media, uploadedUrls), hashtags: (text || '').match(/#\w+/g) || [] };
+      if (pollIsValid) payload.poll = { question: pollQuestion.trim(), options: pollOptions.map(o => o.trim()).filter(Boolean), votes: {}, voters: {} };
       if (feeling) payload.feeling = feeling;
-      const data = await apiFetch('/api/videos/create', { method:'POST', body: JSON.stringify(payload) });
-      showToast?.(data.moderationStatus === 'pending' ? 'Posted — under review' : 'Posted!', 'success');
-      setComposerText(''); setComposerMedia([]); setFeeling(null); setShowFeelingPicker(false); closePollBuilder();
+      if (showCapsule && capsuleAt) payload.revealAt = new Date(capsuleAt).toISOString();
+      const data = await apiFetch('/api/videos/create', { method: 'POST', body: JSON.stringify(payload) });
+      showToast?.(payload.revealAt ? 'Capsule scheduled ✨' : (data.moderationStatus === 'pending' ? 'Posted — under review' : 'Posted!'), 'success');
+      setText(''); setMedia([]); setFeeling(null); setShowFeelingPicker(false); closePollBuilder();
+      setShowCapsule(false); setCapsuleAt('');
+      onPosted?.();
     } catch (e) { showToast?.(e?.message || 'Failed to post', 'error'); }
-    setComposerPosting(false);
+    setPosting(false);
   };
 
-  // Feed order is strictly reverse-chronological (newest on top, oldest at bottom) —
-  // no engagement-based re-ranking.
-  const filteredVideos = useMemo(()=>{
-    return sortByNewest(videos.filter(v=>!(blockedUsers||[]).includes(v.userId)));
-  },[videos, blockedUsers]);
+  return (
+    <div style={{ background: moodTint, border: `1px solid ${COLORS.border}`, borderRadius: RADIUS.lg, padding: 14, transition: 'background 0.4s ease' }}>
+      <input ref={fileInputRef} type="file" accept="image/*,video/*" multiple onChange={pickFiles} style={{ display: 'none' }} />
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 12 }}>
+        <div style={{ width: 38, height: 38, borderRadius: '50%', background: currentUser?.avatarColor || COLORS.brand, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, overflow: 'hidden', flexShrink: 0 }}>
+          {currentUser?.avatarUrl ? <img loading="lazy" decoding="async" src={currentUser.avatarUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : (currentUser?.username || '?')[0]?.toUpperCase()}
+        </div>
+        <textarea value={text} onChange={e => setText(e.target.value)} placeholder="Send a signal into the stream…" rows={1}
+          style={{ flex: 1, minWidth: 0, background: 'none', border: 'none', outline: 'none', resize: 'none', color: COLORS.textPrimary, fontSize: 13.5, fontFamily: 'inherit', paddingTop: 8 }} />
+      </div>
 
-  // ── Pull-to-refresh — standard mobile-feed gesture (Instagram/TikTok/X-style).
-  // Only engages when the scroll container is already at the very top (scrollTop
-  // === 0), so it never fights with normal scrolling further down the feed. Tracks
-  // the raw touch distance, applies resistance past the trigger threshold so it
-  // doesn't feel like it's pulling forever, and calls the real onRefresh (which
-  // re-fetches from Firestore) once released past the threshold.
+      {feeling && (
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: '5px 10px', fontSize: 12, fontWeight: 600, color: COLORS.textSecondary, marginBottom: 10 }}>
+          feeling {feeling.emoji} {feeling.text}
+          <span onClick={() => setFeeling(null)} style={{ cursor: 'pointer', color: COLORS.textTertiary, fontWeight: 800 }}>✕</span>
+        </div>
+      )}
+
+      {media.length > 0 && (
+        <div style={{ display: 'flex', gap: 8, marginBottom: 12, overflowX: 'auto' }}>
+          {media.map((m, i) => (
+            <div key={i} style={{ position: 'relative', width: 64, height: 64, borderRadius: 12, overflow: 'hidden', background: COLORS.surfaceAlt, flexShrink: 0 }}>
+              {m.type?.startsWith('video') ? <video src={m.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <img loading="lazy" decoding="async" src={m.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+              <button onClick={() => removeMedia(i)} aria-label="Remove media" style={{ position: 'absolute', top: 3, right: 3, width: 18, height: 18, borderRadius: '50%', background: 'rgba(0,0,0,0.55)', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showFeelingPicker && (
+        <div style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: 12, marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <span style={{ color: COLORS.textPrimary, fontWeight: 700, fontSize: 12.5 }}>How are you feeling?</span>
+            <span onClick={() => setShowFeelingPicker(false)} style={{ cursor: 'pointer', color: COLORS.textTertiary }}>✕</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8 }}>
+            {FEELINGS.map(f => (
+              <button key={f.text} onClick={() => { setFeeling(f); setShowFeelingPicker(false); }} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, background: feeling?.text === f.text ? COLORS.surface2 : COLORS.surface, border: `1px solid ${feeling?.text === f.text ? COLORS.brand : COLORS.border}`, borderRadius: 12, padding: '8px 4px', cursor: 'pointer' }}>
+                <span style={{ fontSize: 18 }}>{f.emoji}</span>
+                <span style={{ fontSize: 9.5, color: COLORS.textSecondary, fontWeight: 600 }}>{f.text}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {showPollBuilder && (
+        <div style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: 12, marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <span style={{ color: COLORS.textPrimary, fontWeight: 700, fontSize: 12.5 }}>📊 Create a poll</span>
+            <span onClick={closePollBuilder} style={{ cursor: 'pointer', color: COLORS.textTertiary }}>✕</span>
+          </div>
+          <input value={pollQuestion} onChange={e => setPollQuestion(e.target.value)} placeholder="Ask a question…" style={{ width: '100%', background: COLORS.surfaceAlt, border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: '9px 12px', color: COLORS.textPrimary, outline: 'none', fontSize: 13, marginBottom: 8, boxSizing: 'border-box' }} />
+          {pollOptions.map((opt, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <input value={opt} onChange={e => setPollOption(i, e.target.value)} placeholder={`Option ${i + 1}`} style={{ flex: 1, background: COLORS.surfaceAlt, border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: '8px 12px', color: COLORS.textPrimary, outline: 'none', fontSize: 12.5, boxSizing: 'border-box' }} />
+              {pollOptions.length > 2 && <span onClick={() => removePollOption(i)} style={{ cursor: 'pointer', color: COLORS.textTertiary, fontSize: 13, padding: 4 }}>✕</span>}
+            </div>
+          ))}
+          <button onClick={addPollOption} style={{ background: 'none', border: 'none', color: COLORS.brand, fontWeight: 700, fontSize: 12, cursor: 'pointer', padding: '2px 0' }}>+ Add option</button>
+        </div>
+      )}
+
+      {showCapsule && (
+        <div style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: 12, marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <span style={{ color: COLORS.textPrimary, fontWeight: 700, fontSize: 12.5 }}>🕰 Reveal later</span>
+            <span onClick={() => { setShowCapsule(false); setCapsuleAt(''); }} style={{ cursor: 'pointer', color: COLORS.textTertiary }}>✕</span>
+          </div>
+          <div style={{ fontSize: 11.5, color: COLORS.textTertiary, marginBottom: 8 }}>This post stays sealed until the time you choose, then appears in the stream like any other post.</div>
+          <input type="datetime-local" value={capsuleAt} onChange={e => setCapsuleAt(e.target.value)} min={new Date(Date.now() + 5 * 60000).toISOString().slice(0, 16)}
+            style={{ width: '100%', background: COLORS.surfaceAlt, border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: '9px 12px', color: COLORS.textPrimary, outline: 'none', fontSize: 13, boxSizing: 'border-box' }} />
+        </div>
+      )}
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        {[
+          { icon: (<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.info} strokeWidth="2"><rect x="3" y="5" width="18" height="14" rx="2" /><circle cx="8.5" cy="10" r="1.5" /><path d="M21 15l-5-5L5 19" /></svg>), label: 'Photo', active: false, color: COLORS.info, action: () => fileInputRef.current?.click() },
+          { icon: (<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.brand} strokeWidth="2"><path d="M4 20V10M12 20V4M20 20v-7" /></svg>), label: 'Poll', active: showPollBuilder, color: COLORS.brand, action: () => setShowPollBuilder(v => !v) },
+          { icon: (<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.warning} strokeWidth="2"><circle cx="12" cy="12" r="9" /><path d="M9 10h.01M15 10h.01M8 15s1.5 2 4 2 4-2 4-2" /></svg>), label: 'Feeling', active: showFeelingPicker, color: COLORS.warning, action: () => setShowFeelingPicker(v => !v) },
+          { icon: (<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.brandSecondary} strokeWidth="2"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" /></svg>), label: 'Capsule', active: showCapsule, color: COLORS.brandSecondary, action: () => setShowCapsule(v => !v) },
+          { icon: (<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.live} strokeWidth="2"><path d="M23 7l-7 5 7 5V7z" /><rect x="1" y="5" width="15" height="14" rx="2" /></svg>), label: 'Live', active: false, color: COLORS.live, action: () => onWatchLive?.(currentUser) },
+        ].map(btn => (
+          <motion.button key={btn.label} whileHover={{ y: -1 }} whileTap={{ scale: 0.96 }} onClick={e => { e.stopPropagation(); btn.action(); }}
+            style={{ display: 'flex', alignItems: 'center', gap: 7, background: btn.active ? `${btn.color}14` : COLORS.surfaceAlt, border: `1px solid ${btn.active ? `${btn.color}40` : COLORS.border}`, borderRadius: RADIUS.md, padding: '6px 12px 6px 6px', color: btn.active ? btn.color : COLORS.textSecondary, fontSize: 12, fontWeight: 700, cursor: 'pointer', transition: TRANSITION.fast }}>
+            <span style={{ width: 22, height: 22, borderRadius: 8, background: `${btn.color}1A`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{btn.icon}</span>
+            {btn.label}
+          </motion.button>
+        ))}
+        {hasContent && (
+          <button onClick={submit} disabled={posting || !capsuleIsValid} style={{ marginLeft: 'auto', background: COLORS.gradient, border: 'none', borderRadius: 14, padding: '8px 16px', color: 'white', fontSize: 12.5, fontWeight: 700, cursor: (posting || !capsuleIsValid) ? 'default' : 'pointer', opacity: (posting || !capsuleIsValid) ? 0.7 : 1, boxShadow: SHADOW.glow(COLORS.brand) }}>
+            {posting ? 'Sending…' : (showCapsule ? 'Schedule' : 'Post')}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+/* ─────────────── HOME FEED (Pulse shell) ───────────────
+   Same external contract as before (identical props) so nothing else in
+   the app needs to change — only what renders inside changed. */
+const HomeFeed = ({ t, videos, videosLoading, videosError, onLike, onComment, onShare, onFollow, onMessage, onVoiceCall, onVideoCall, onDuet, onStitch, onSaveSound, followed, showToast, onWatchLive, currentUser, onViewProfile, onOpenSearch, onOpenNotifications, onOpenStories, onCreateStory, onViewStory, blockedUsers, onBlock, users, onOpenProfileDrawer, onFeedScroll, onOpenCamera, onOpenComposer, navVisible, onRefresh }) => {
+  const liveUserIds = useLiveStreamerIds(currentUser);
+
+  // Inline quick search — unchanged behavior, restyled shell.
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const searchResults = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return { users: [], posts: [] };
+    const matchedUsers = (users || []).filter(u => u.id !== currentUser?.id && (u.username?.toLowerCase().includes(q) || u.fullName?.toLowerCase().includes(q))).slice(0, 5);
+    const matchedPosts = (videos || []).filter(v => v.description?.toLowerCase().includes(q)).slice(0, 5);
+    return { users: matchedUsers, posts: matchedPosts };
+  }, [searchQuery, users, videos, currentUser?.id]);
+
+  // Focus Mode — the real anti-doomscroll control. "stream" = classic
+  // infinite reverse-chron list (unchanged); "digest" paces reveal in
+  // batches so the app doesn't default to an endless pull.
+  const [focusMode, setFocusMode] = useState('stream');
+  const DIGEST_BATCH = 8;
+  const [digestCount, setDigestCount] = useState(DIGEST_BATCH);
+
+  // Feed order stays strictly reverse-chronological — no engagement-based
+  // re-ranking, same as before. Capsule (revealAt) posts stay hidden from
+  // everyone, including their author, until that moment passes.
+  const filteredVideos = useMemo(() => {
+    const now = Date.now();
+    return sortByNewest((videos || []).filter(v => {
+      if ((blockedUsers || []).includes(v.userId)) return false;
+      if (v.revealAt) { const t = new Date(v.revealAt).getTime(); if (isFinite(t) && t > now) return false; }
+      return true;
+    }));
+  }, [videos, blockedUsers]);
+
+  const visibleVideos = focusMode === 'digest' ? filteredVideos.slice(0, digestCount) : filteredVideos;
+  const reachedEnd = visibleVideos.length >= filteredVideos.length && filteredVideos.length > 0;
+
+  // Section dividers ("Today" / "Yesterday" / …) computed once per render of
+  // the currently-visible slice.
+  const sections = useMemo(() => {
+    let lastLabel = null;
+    return visibleVideos.map(video => {
+      const d = tsToDate(video.createdAt) || new Date();
+      const label = sectionLabelFor(d);
+      const showDivider = label !== lastLabel;
+      lastLabel = label;
+      return { video, showDivider, label };
+    });
+  }, [visibleVideos]);
+
+  // Pull-to-refresh — same gesture/threshold/resistance as before.
   const feedScrollRef = useRef(null);
   const [pullDistance, setPullDistance] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
@@ -5660,8 +6062,6 @@ const HomeFeed = ({ t, videos, videosLoading, videosError, onLike, onComment, on
     if (pullStartY.current == null || refreshing) return;
     const delta = e.touches[0].clientY - pullStartY.current;
     if (delta <= 0) { setPullDistance(0); return; }
-    // Resistance curve — the further you pull, the less additional distance you get,
-    // so it feels elastic rather than a 1:1 linear drag.
     setPullDistance(Math.min(100, delta * 0.5));
   };
   const handlePullEnd = async () => {
@@ -5670,248 +6070,161 @@ const HomeFeed = ({ t, videos, videosLoading, videosError, onLike, onComment, on
     if (pullDistance >= PULL_TRIGGER && !refreshing) {
       setRefreshing(true);
       haptic?.('light');
-      try { await onRefresh?.(); } finally {
-        setTimeout(() => { setRefreshing(false); setPullDistance(0); }, 350);
-      }
+      try { await onRefresh?.(); } finally { setTimeout(() => { setRefreshing(false); setPullDistance(0); }, 350); }
     } else {
       setPullDistance(0);
     }
   };
 
+  const backToTop = () => { feedScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' }); };
+
   return (
     <div ref={feedScrollRef} data-main-scroll="true" onScroll={onFeedScroll}
       onTouchStart={handlePullStart} onTouchMove={handlePullMove} onTouchEnd={handlePullEnd}
-      style={{ height:'100%', overflowY:'auto', background:COLORS.bg, padding:'10px 14px max(74px, calc(58px + env(safe-area-inset-bottom)))' }}>
-      {/* Pull-to-refresh indicator — grows/rotates with pull distance, then spins
-          in place once refreshing (real re-fetch via onRefresh, not decorative). */}
+      style={{ height: '100%', overflowY: 'auto', background: COLORS.bg, padding: '10px 14px max(74px, calc(58px + env(safe-area-inset-bottom)))' }}>
+
       {(pullDistance > 0 || refreshing) && (
-        <div style={{ display:'flex', justifyContent:'center', alignItems:'center', height: refreshing ? 44 : Math.min(44, pullDistance), overflow:'hidden', transition: refreshing ? 'height 0.2s ease' : 'none', marginBottom: (refreshing || pullDistance > 0) ? 6 : 0 }}>
-          <div style={{
-            width:24, height:24, borderRadius:'50%', border:`2.5px solid ${COLORS.border}`, borderTopColor:COLORS.brand,
-            opacity: Math.min(1, (refreshing ? 1 : pullDistance / PULL_TRIGGER)),
-            transform: refreshing ? 'none' : `rotate(${pullDistance * 3}deg)`,
-            animation: refreshing ? 'spin 0.7s linear infinite' : 'none',
-          }} />
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: refreshing ? 44 : Math.min(44, pullDistance), overflow: 'hidden', transition: refreshing ? 'height 0.2s ease' : 'none', marginBottom: (refreshing || pullDistance > 0) ? 6 : 0 }}>
+          <div style={{ width: 24, height: 24, borderRadius: '50%', border: `2.5px solid ${COLORS.border}`, borderTopColor: COLORS.brand, opacity: Math.min(1, (refreshing ? 1 : pullDistance / PULL_TRIGGER)), transform: refreshing ? 'none' : `rotate(${pullDistance * 3}deg)`, animation: refreshing ? 'spin 0.7s linear infinite' : 'none' }} />
         </div>
       )}
-      {/* Sticky header — masthead + search + notifications stay pinned while the feed
-          scrolls beneath, instead of disappearing off the top like a page section.
-          Solid COLORS.bg (not a translucent blur) so it reads correctly in both
-          light and dark mode without needing a separate alpha token. Slides away on
-          scroll-down and back on scroll-up, mirroring the bottom nav's behavior
-          (same navVisible flag, same transform/transition), so scrolling through the
-          feed gets the full screen instead of a header stuck in place forever. */}
-      <div style={{ position:'sticky', top:0, zIndex:Z.stickyHeader, background:COLORS.bg, margin:'-10px -14px 0', padding:'10px 14px 8px', transform: navVisible ? 'translateY(0)' : 'translateY(-100%)', transition:'transform 0.25s cubic-bezier(0.4,0,0.2,1)' }}>
-        {/* Masthead — the app's wordmark, top-left, the way Instagram/Facebook/Threads
-            anchor their brand at the top of the main feed. Rendered in the same brand
-            gradient used everywhere else (nav active state, buttons) so it reads as
-            part of one cohesive identity rather than a bolted-on label. */}
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10, padding:'2px 2px 0' }}>
-          <div style={{ display:'flex', alignItems:'center', gap:5 }}>
-            <span style={{ fontSize:15 }}>♾️</span>
-            <span style={{ fontSize:20, fontWeight:900, letterSpacing:-0.6, background:COLORS.gradient, WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text' }}>Infinity</span>
+
+      {/* ── Pulse header — masthead, live-orbit count, search, notifications,
+          and the Focus Mode switch, all pinned together as one unit. */}
+      <div style={{ position: 'sticky', top: 0, zIndex: Z.stickyHeader, background: COLORS.bg, margin: '-10px -14px 0', padding: '10px 14px 8px', transform: navVisible ? 'translateY(0)' : 'translateY(-100%)', transition: 'transform 0.25s cubic-bezier(0.4,0,0.2,1)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, padding: '2px 2px 0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: 15, display: 'inline-block', animation: 'logoFloat 3.2s ease-in-out infinite' }}>♾️</span>
+            <span style={{ fontSize: 20, fontWeight: 900, letterSpacing: -0.6, background: COLORS.gradient, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Infinity</span>
+            <span style={{ marginLeft: 2, display: 'inline-flex', alignItems: 'center', gap: 4, background: COLORS.surfaceAlt, border: `1px solid ${COLORS.border}`, borderRadius: RADIUS.pill, padding: '3px 8px 3px 6px' }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: (liveUserIds?.size || 0) > 0 ? COLORS.live : COLORS.success, animation: (liveUserIds?.size || 0) > 0 ? 'pulseGlow 1.6s ease-in-out infinite' : 'none' }} />
+              <span style={{ fontSize: 10, fontWeight: 700, color: COLORS.textTertiary }}>Honest stream</span>
+            </span>
           </div>
         </div>
 
-        {/* Top search bar — expands and filters in place; tapping a result acts immediately,
-            nothing here navigates to a separate search page. */}
-        <div style={{ position:'relative' }}>
-          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-            <button onClick={onOpenProfileDrawer} aria-label="Open profile menu" style={{ width:40, height:40, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:14, cursor:'pointer' }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-          </button>
-          <div style={{ flex:1, display:'flex', alignItems:'center', gap:8, background:COLORS.surface, border:`1px solid ${searchOpen?COLORS.brand:COLORS.border}`, borderRadius:20, padding:'10px 14px' }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2" style={{flexShrink:0}}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input
-              value={searchQuery}
-              onFocus={()=>setSearchOpen(true)}
-              onChange={e=>{ setSearchQuery(e.target.value); setSearchOpen(true); }}
-              placeholder="Search"
-              style={{ flex:1, minWidth:0, background:'none', border:'none', outline:'none', color:COLORS.textPrimary, fontSize:13, fontFamily:'inherit' }}
-            />
-            {searchOpen && (
-              <span onClick={()=>{ setSearchOpen(false); setSearchQuery(''); }} style={{ cursor:'pointer', color:COLORS.textTertiary, fontSize:12, flexShrink:0 }}>✕</span>
-            )}
-          </div>
-          <NotificationBellButton onOpenNotifications={onOpenNotifications} currentUser={currentUser} />
-        </div>
-
-
-        {searchOpen && searchQuery.trim() && (
-          <div style={{ position:'absolute', top:'calc(100% + 6px)', left:50, right:0, background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:16, boxShadow:SHADOW.raised, zIndex:Z.popover, maxHeight:320, overflowY:'auto', padding:8 }}>
-            {!searchResults.users.length && !searchResults.posts.length && (
-              <div style={{ padding:'14px 10px', color:COLORS.textTertiary, fontSize:12.5, textAlign:'center' }}>No matches for "{searchQuery}"</div>
-            )}
-            {searchResults.users.map(u=>(
-              <div key={u.id} onClick={()=>{ onViewProfile?.(u.id); setSearchOpen(false); setSearchQuery(''); }} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 6px', borderRadius:10, cursor:'pointer' }}>
-                <div style={{ width:32, height:32, borderRadius:'50%', background:u.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, fontSize:13, overflow:'hidden', flexShrink:0 }}>
-                  {u.avatarUrl ? <img loading="lazy" decoding="async" src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/> : (u.username||'?')[0]?.toUpperCase()}
-                </div>
-                <div style={{ minWidth:0 }}>
-                  <div style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:13, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>@{u.username}</div>
-                  {u.fullName && <div style={{ color:COLORS.textTertiary, fontSize:11 }}>{u.fullName}</div>}
-                </div>
-              </div>
-            ))}
-            {searchResults.posts.map(v=>(
-              <div key={v.id} onClick={()=>{ onViewProfile?.(v.userId); setSearchOpen(false); setSearchQuery(''); }} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 6px', borderRadius:10, cursor:'pointer' }}>
-                <div style={{ width:32, height:32, borderRadius:8, background:COLORS.surfaceAlt, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="M21 15l-5-5L5 19"/></svg>
-                </div>
-                <div style={{ color:COLORS.textSecondary, fontSize:12.5, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{v.description}</div>
-              </div>
-            ))}
-          </div>
-        )}
-        </div>
-      </div>
-
-      {/* Stories row — reuses the same Stories component as the Friends feed, so
-          tapping an avatar actually opens that user's story instead of their profile,
-          and the "+" actually opens the story composer instead of doing nothing. */}
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:2 }}>
-        <span style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:14 }}>Stories</span>
-        <span onClick={onOpenStories} style={{ color:COLORS.brand, fontSize:12, fontWeight:700, cursor:'pointer' }}>See all</span>
-      </div>
-      <div style={{ margin:'0 -14px 6px' }}>
-        <Stories users={users} currentUser={currentUser} onViewStory={onViewStory} onCreateStory={onCreateStory} followed={followed} liveUserIds={liveUserIds} />
-      </div>
-
-      {/* Post composer — fully inline: typing, attaching a photo, building a poll and
-          picking a feeling all happen right here in one tap each, nothing navigates away. */}
-      <div style={{ background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:RADIUS.lg, padding:14, marginBottom:0 }}>
-        <input ref={composerFileInputRef} type="file" accept="image/*,video/*" multiple onChange={pickComposerFiles} style={{ display:'none' }} />
-        <div style={{ display:'flex', alignItems:'flex-start', gap:10, marginBottom:12 }}>
-          <div style={{ width:38, height:38, borderRadius:'50%', background:currentUser?.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, overflow:'hidden', flexShrink:0 }}>
-            {currentUser?.avatarUrl ? <img loading="lazy" decoding="async" src={currentUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/> : (currentUser?.username||'?')[0]?.toUpperCase()}
-          </div>
-          <textarea
-            value={composerText}
-            onChange={e=>setComposerText(e.target.value)}
-            placeholder="What's on your mind?"
-            rows={1}
-            style={{ flex:1, minWidth:0, background:'none', border:'none', outline:'none', resize:'none', color:COLORS.textPrimary, fontSize:13.5, fontFamily:'inherit', paddingTop:8 }}
-          />
-        </div>
-
-        {feeling && (
-          <div style={{ display:'inline-flex', alignItems:'center', gap:6, background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:12, padding:'5px 10px', fontSize:12, fontWeight:600, color:COLORS.textSecondary, marginBottom:10 }}>
-            feeling {feeling.emoji} {feeling.text}
-            <span onClick={()=>setFeeling(null)} style={{ cursor:'pointer', color:COLORS.textTertiary, fontWeight:800 }}>✕</span>
-          </div>
-        )}
-
-        {composerMedia.length>0 && (
-          <div style={{ display:'flex', gap:8, marginBottom:12, overflowX:'auto' }}>
-            {composerMedia.map((m,i)=>(
-              <div key={i} style={{ position:'relative', width:64, height:64, borderRadius:12, overflow:'hidden', background:COLORS.surfaceAlt, flexShrink:0 }}>
-                {m.type?.startsWith('video') ? <video src={m.url} style={{ width:'100%', height:'100%', objectFit:'cover' }} /> : <img loading="lazy" decoding="async" src={m.url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />}
-                <button onClick={()=>removeComposerMedia(i)} aria-label="Remove media" style={{ position:'absolute', top:3, right:3, width:18, height:18, borderRadius:'50%', background:'rgba(0,0,0,0.55)', color:'#fff', border:'none', cursor:'pointer', fontSize:11, display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {showFeelingPicker && (
-          <div style={{ background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:14, padding:12, marginBottom:12 }}>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
-              <span style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:12.5 }}>How are you feeling?</span>
-              <span onClick={()=>setShowFeelingPicker(false)} style={{ cursor:'pointer', color:COLORS.textTertiary }}>✕</span>
+        <div style={{ position: 'relative' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <button onClick={onOpenProfileDrawer} aria-label="Open profile menu" style={{ width: 40, height: 40, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 14, cursor: 'pointer' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>
+            </button>
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, background: COLORS.surface, border: `1px solid ${searchOpen ? COLORS.brand : COLORS.border}`, borderRadius: 20, padding: '10px 14px' }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2" style={{ flexShrink: 0 }}><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+              <input value={searchQuery} onFocus={() => setSearchOpen(true)} onChange={e => { setSearchQuery(e.target.value); setSearchOpen(true); }} placeholder="Search"
+                style={{ flex: 1, minWidth: 0, background: 'none', border: 'none', outline: 'none', color: COLORS.textPrimary, fontSize: 13, fontFamily: 'inherit' }} />
+              {searchOpen && <span onClick={() => { setSearchOpen(false); setSearchQuery(''); }} style={{ cursor: 'pointer', color: COLORS.textTertiary, fontSize: 12, flexShrink: 0 }}>✕</span>}
             </div>
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
-              {FEELINGS.map(f=>(
-                <button key={f.text} onClick={()=>{ setFeeling(f); setShowFeelingPicker(false); }} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4, background:feeling?.text===f.text?COLORS.surface2:COLORS.surface, border:`1px solid ${feeling?.text===f.text?COLORS.brand:COLORS.border}`, borderRadius:12, padding:'8px 4px', cursor:'pointer' }}>
-                  <span style={{ fontSize:18 }}>{f.emoji}</span>
-                  <span style={{ fontSize:9.5, color:COLORS.textSecondary, fontWeight:600 }}>{f.text}</span>
-                </button>
+            <NotificationBellButton onOpenNotifications={onOpenNotifications} currentUser={currentUser} />
+          </div>
+
+          {searchOpen && searchQuery.trim() && (
+            <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 50, right: 0, background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 16, boxShadow: SHADOW.raised, zIndex: Z.popover, maxHeight: 320, overflowY: 'auto', padding: 8 }}>
+              {!searchResults.users.length && !searchResults.posts.length && (
+                <div style={{ padding: '14px 10px', color: COLORS.textTertiary, fontSize: 12.5, textAlign: 'center' }}>No matches for "{searchQuery}"</div>
+              )}
+              {searchResults.users.map(u => (
+                <div key={u.id} onClick={() => { onViewProfile?.(u.id); setSearchOpen(false); setSearchQuery(''); }} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 6px', borderRadius: 10, cursor: 'pointer' }}>
+                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: u.avatarColor || COLORS.brand, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 13, overflow: 'hidden', flexShrink: 0 }}>
+                    {u.avatarUrl ? <img loading="lazy" decoding="async" src={u.avatarUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : (u.username || '?')[0]?.toUpperCase()}
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ color: COLORS.textPrimary, fontWeight: 700, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{u.username}</div>
+                    {u.fullName && <div style={{ color: COLORS.textTertiary, fontSize: 11 }}>{u.fullName}</div>}
+                  </div>
+                </div>
+              ))}
+              {searchResults.posts.map(v => (
+                <div key={v.id} onClick={() => { onViewProfile?.(v.userId); setSearchOpen(false); setSearchQuery(''); }} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 6px', borderRadius: 10, cursor: 'pointer' }}>
+                  <div style={{ width: 32, height: 32, borderRadius: 8, background: COLORS.surfaceAlt, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><rect x="3" y="5" width="18" height="14" rx="2" /><circle cx="8.5" cy="10" r="1.5" /><path d="M21 15l-5-5L5 19" /></svg>
+                  </div>
+                  <div style={{ color: COLORS.textSecondary, fontSize: 12.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.description}</div>
+                </div>
               ))}
             </div>
-          </div>
-        )}
-
-        {showPollBuilder && (
-          <div style={{ background:COLORS.surfaceAlt, border:`1px solid ${COLORS.border}`, borderRadius:14, padding:12, marginBottom:12 }}>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
-              <span style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:12.5 }}>📊 Create a poll</span>
-              <span onClick={closePollBuilder} style={{ cursor:'pointer', color:COLORS.textTertiary }}>✕</span>
-            </div>
-            <input value={pollQuestion} onChange={e=>setPollQuestion(e.target.value)} placeholder="Ask a question…" style={{ width:'100%', background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:12, padding:'9px 12px', color:COLORS.textPrimary, outline:'none', fontSize:13, marginBottom:8, boxSizing:'border-box' }} />
-            {pollOptions.map((opt,i)=>(
-              <div key={i} style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
-                <input value={opt} onChange={e=>setPollOption(i,e.target.value)} placeholder={`Option ${i+1}`} style={{ flex:1, background:COLORS.surface, border:`1px solid ${COLORS.border}`, borderRadius:12, padding:'8px 12px', color:COLORS.textPrimary, outline:'none', fontSize:12.5, boxSizing:'border-box' }} />
-                {pollOptions.length>2 && (
-                  <span onClick={()=>removePollOption(i)} style={{ cursor:'pointer', color:COLORS.textTertiary, fontSize:13, padding:4 }}>✕</span>
-                )}
-              </div>
-            ))}
-            <button onClick={addPollOption} style={{ background:'none', border:'none', color:COLORS.brand, fontWeight:700, fontSize:12, cursor:'pointer', padding:'2px 0' }}>+ Add option</button>
-          </div>
-        )}
-
-        <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
-          {[
-            {icon:(<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.info} strokeWidth="2"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="M21 15l-5-5L5 19"/></svg>), label:'Photo', active:false, color:COLORS.info, action:()=>composerFileInputRef.current?.click()},
-            {icon:(<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.brand} strokeWidth="2"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>), label:'Poll', active:showPollBuilder, color:COLORS.brand, action:()=>setShowPollBuilder(v=>!v)},
-            {icon:(<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.warning} strokeWidth="2"><circle cx="12" cy="12" r="9"/><path d="M9 10h.01M15 10h.01M8 15s1.5 2 4 2 4-2 4-2"/></svg>), label:'Feeling', active:showFeelingPicker, color:COLORS.warning, action:()=>setShowFeelingPicker(v=>!v)},
-            {icon:(<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.live} strokeWidth="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>), label:'Live', active:false, color:COLORS.live, action:()=>onWatchLive?.(currentUser)},
-          ].map(btn=>(
-            <motion.button key={btn.label} whileHover={{ y:-1 }} whileTap={{ scale:0.96 }} onClick={e=>{ e.stopPropagation(); btn.action(); }} style={{ display:'flex', alignItems:'center', gap:7, background:btn.active?`${btn.color}14`:COLORS.surfaceAlt, border:`1px solid ${btn.active?`${btn.color}40`:COLORS.border}`, borderRadius:RADIUS.md, padding:'6px 12px 6px 6px', color:btn.active?btn.color:COLORS.textSecondary, fontSize:12, fontWeight:700, cursor:'pointer', transition:TRANSITION.fast }}>
-              <span style={{ width:22, height:22, borderRadius:8, background:`${btn.color}1A`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>{btn.icon}</span>
-              {btn.label}
-            </motion.button>
-          ))}
-          {composerHasContent && (
-            <button onClick={submitQuickPost} disabled={composerPosting} style={{ marginLeft:'auto', background:COLORS.gradient, border:'none', borderRadius:14, padding:'8px 16px', color:'white', fontSize:12.5, fontWeight:700, cursor:composerPosting?'default':'pointer', opacity:composerPosting?0.7:1, boxShadow:SHADOW.glow(COLORS.brand) }}>
-              {composerPosting ? 'Posting…' : 'Post'}
-            </button>
           )}
+        </div>
+
+        {/* Focus Mode — Stream vs Digest */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10 }}>
+          <div style={{ display: 'flex', background: COLORS.surfaceAlt, border: `1px solid ${COLORS.border}`, borderRadius: RADIUS.pill, padding: 3, flex: 1 }}>
+            {[{ id: 'stream', label: '∞ Stream' }, { id: 'digest', label: '☕ Digest' }].map(m => (
+              <button key={m.id} onClick={() => { setFocusMode(m.id); setDigestCount(DIGEST_BATCH); }}
+                style={{ flex: 1, border: 'none', borderRadius: RADIUS.pill, padding: '7px 0', fontSize: 11.5, fontWeight: 700, cursor: 'pointer', background: focusMode === m.id ? COLORS.gradient : 'transparent', color: focusMode === m.id ? 'white' : COLORS.textSecondary, transition: TRANSITION.fast }}>
+                {m.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
+      {/* Orbit rail — unified presence (stories + live), replaces the old
+          rectangular story shelf. */}
+      <div style={{ margin: '4px -14px 0' }}>
+        <OrbitRail users={users} currentUser={currentUser} onViewStory={onViewStory} onCreateStory={onCreateStory} liveUserIds={liveUserIds} />
+      </div>
+
+      <RhythmStrip videos={videos} liveUserIds={liveUserIds} blockedUsers={blockedUsers} />
+
+      <SignalComposer currentUser={currentUser} showToast={showToast} onWatchLive={onWatchLive} onPosted={() => { feedScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' }); onRefresh?.(); }} />
+
       {videosLoading && !filteredVideos.length && (
-        <>
+        <div style={{ marginTop: 12 }}>
           <FeedSkeletonCard />
           <FeedSkeletonCard />
           <FeedSkeletonCard />
-        </>
+        </div>
       )}
 
       {!videosLoading && videosError && !filteredVideos.length && (
-        <div style={{ textAlign:'center', padding:'60px 20px', color:COLORS.textTertiary }}>
-          <div style={{ fontSize:44, marginBottom:10 }}>⚠️</div>
-          <div style={{ marginBottom:14 }}>Couldn't load your feed. Check your connection and try again.</div>
-          <button onClick={()=>window.location.reload()} style={{ background:COLORS.gradient, border:'none', borderRadius:14, padding:'9px 20px', color:'white', fontSize:13, fontWeight:700, cursor:'pointer' }}>
-            Retry
-          </button>
+        <div style={{ textAlign: 'center', padding: '60px 20px', color: COLORS.textTertiary }}>
+          <div style={{ fontSize: 44, marginBottom: 10 }}>⚠️</div>
+          <div style={{ marginBottom: 14 }}>Couldn't load your feed. Check your connection and try again.</div>
+          <button onClick={() => window.location.reload()} style={{ background: COLORS.gradient, border: 'none', borderRadius: 14, padding: '9px 20px', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Retry</button>
         </div>
       )}
 
       {!videosLoading && !videosError && !filteredVideos.length && (
-        <div style={{ textAlign:'center', padding:'60px 20px', color:COLORS.textTertiary }}>
-          <div style={{ fontSize:44, marginBottom:10 }}>📭</div>
-          <div>{t?.noVideos||'No posts yet. Be the first to post!'}</div>
+        <div style={{ textAlign: 'center', padding: '60px 20px', color: COLORS.textTertiary }}>
+          <div style={{ fontSize: 44, marginBottom: 10 }}>📭</div>
+          <div>{t?.noVideos || 'No posts yet. Be the first to post!'}</div>
         </div>
       )}
 
-      <motion.div variants={listContainerVariants} initial="hidden" animate="visible">
-        {filteredVideos.map(video=>(
-          <motion.div key={video.id} variants={listItemVariants}>
-            <FeedPostCard
-              video={video}
-              currentUser={currentUser}
-              onViewProfile={onViewProfile}
-              onOpenComments={onComment}
-              onShare={onShare}
-              users={users}
-              onFollow={onFollow}
-              followed={followed}
-              showToast={showToast}
-              onBlock={onBlock}
-              isLive={liveUserIds?.has(video.userId)}
-            />
-          </motion.div>
+      <motion.div variants={listContainerVariants} initial="hidden" animate="visible" style={{ marginTop: 12 }}>
+        {sections.map(({ video, showDivider, label }) => (
+          <React.Fragment key={video.id}>
+            {showDivider && <StreamDivider label={label} />}
+            <motion.div variants={listItemVariants}>
+              <PulseCardShell accentColor={video.avatarColor}>
+                <FeedPostCard
+                  video={video}
+                  currentUser={currentUser}
+                  onViewProfile={onViewProfile}
+                  onOpenComments={onComment}
+                  onShare={onShare}
+                  users={users}
+                  onFollow={onFollow}
+                  followed={followed}
+                  showToast={showToast}
+                  onBlock={onBlock}
+                  isLive={liveUserIds?.has(video.userId)}
+                />
+              </PulseCardShell>
+            </motion.div>
+          </React.Fragment>
         ))}
       </motion.div>
+
+      {focusMode === 'digest' && !reachedEnd && filteredVideos.length > 0 && (
+        <div style={{ textAlign: 'center', padding: '4px 0 16px' }}>
+          <button onClick={() => setDigestCount(c => c + DIGEST_BATCH)} style={{ background: COLORS.surfaceAlt, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: '9px 20px', color: COLORS.textSecondary, fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>
+            Show {Math.min(DIGEST_BATCH, filteredVideos.length - visibleVideos.length)} more
+          </button>
+        </div>
+      )}
+
+      {reachedEnd && <CaughtUpCard mode={focusMode} onSwitchMode={() => setFocusMode('stream')} onBackToTop={backToTop} />}
     </div>
   );
 };
