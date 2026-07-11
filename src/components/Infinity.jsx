@@ -3637,6 +3637,17 @@ const LIVE_ICE_SERVERS = [
   { urls: 'turns:global.relay.metered.ca:443?transport=tcp', username: 'f5e29fd91b8ea2fc485c24ac', credential: 'FZlzkJ5GJJUyYocD' },
 ];
 
+// Live broadcast filters, applied via canvas (see host capture pipeline below) so
+// viewers actually receive the filtered frames — not just a local CSS preview trick.
+const LIVE_FILTERS = [
+  { name: 'Normal', css: 'none' },
+  { name: 'B&W',     css: 'grayscale(1) contrast(1.1)' },
+  { name: 'Vintage', css: 'sepia(0.4) contrast(1.05) saturate(1.3)' },
+  { name: 'Cool',    css: 'saturate(1.2) hue-rotate(15deg) brightness(1.03)' },
+  { name: 'Warm',    css: 'sepia(0.15) saturate(1.35) brightness(1.05)' },
+  { name: 'Vivid',   css: 'contrast(1.15) saturate(1.5)' },
+];
+
 // Some environments simply don't expose a real RTCPeerConnection constructor at all:
 // embedded webviews/preview iframes without WebRTC entitlements, some in-app browsers
 // (e.g. certain social apps' built-in browser), or strict privacy modes that stub it
@@ -3644,7 +3655,10 @@ const LIVE_ICE_SERVERS = [
 // constructor" deep inside a snapshot handler, as an uncaught promise rejection with no
 // user-facing message at all. This checks up front so Live/Calls can fail with a clear,
 // actionable toast instead of silently doing nothing.
-// Broadcaster's own camera preview (host side only).
+// Broadcaster's own camera preview (host side only). Note `streamRef` here holds
+// the *filtered* composite stream (canvas video track + mic audio track) built in
+// the host capture pipeline below, not the raw camera — so the host's own preview
+// always matches exactly what viewers receive.
 const LiveHostVideo = ({ streamRef }) => {
   const videoRef = useRef(null);
   useEffect(()=>{
@@ -3661,7 +3675,7 @@ const LiveHostVideo = ({ streamRef }) => {
 // (host AND every viewer) rendered LiveCameraView, i.e. each person's own camera, so
 // viewers never saw the streamer at all. This renders the real remote MediaStream
 // received over the peer connection set up below.
-const LiveViewerVideo = ({ remoteStream, connected }) => {
+const LiveViewerVideo = ({ remoteStream, connected, videoElRef }) => {
   const videoRef = useRef(null);
   useEffect(()=>{
     if(videoRef.current && remoteStream){
@@ -3671,7 +3685,7 @@ const LiveViewerVideo = ({ remoteStream, connected }) => {
   },[remoteStream]);
   return (
     <>
-      <video ref={videoRef} autoPlay playsInline style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',background:'#000'}}/>
+      <video ref={el => { videoRef.current = el; if (videoElRef) videoElRef.current = el; }} autoPlay playsInline style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',background:'#000'}}/>
       {!connected && (
         <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:12 }}>
           <div style={{ width:36, height:36, border:'3px solid rgba(255,255,255,0.25)', borderTop:`3px solid ${COLORS.brand}`, borderRadius:'50%', animation:'spin 1s linear infinite' }} />
@@ -3721,6 +3735,43 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
   const unloadHandlerRef = useRef(null);
   const endedRef = useRef(false);
 
+  // ── Host camera controls: mic mute, camera on/off, front/back flip, torch,
+  // live filters. The video track that's actually broadcast is a canvas capture
+  // (see the host effect below) so filters and the camera-off placeholder are
+  // baked into what viewers see, not just a local preview effect.
+  const [micMuted, setMicMuted] = useState(false);
+  const [cameraOff, setCameraOff] = useState(false);
+  const [facingMode, setFacingMode] = useState('user');
+  const [filterIndex, setFilterIndex] = useState(0);
+  const [torchOn, setTorchOn] = useState(false);
+  const [torchSupported, setTorchSupported] = useState(false);
+  const [showEndConfirm, setShowEndConfirm] = useState(false);
+  const rawVideoElRef = useRef(null);
+  const hiddenCanvasRef = useRef(null);
+  const micTrackRef = useRef(null);
+  const videoTrackRef = useRef(null);
+  const cameraOffRef = useRef(false);
+  const filterIndexRef = useRef(0);
+  const rafRef = useRef(null);
+
+  // ── Viewer connection quality (signal bars) + Picture-in-Picture ──
+  const [quality, setQuality] = useState(3); // 1-3, optimistic until first measurement
+  const viewerPcRef = useRef(null);
+  const viewerVideoElRef = useRef(null);
+
+  // ── Keep the device screen awake while live (host broadcasting or viewer
+  // watching) — without this the phone can lock mid-stream on either side. ──
+  useEffect(() => {
+    let lock;
+    const requestLock = async () => {
+      try { if ('wakeLock' in navigator) { lock = await navigator.wakeLock.request('screen'); } } catch {}
+    };
+    requestLock();
+    const reacquire = () => { if (document.visibilityState === 'visible') requestLock(); };
+    document.addEventListener('visibilitychange', reacquire);
+    return () => { document.removeEventListener('visibilitychange', reacquire); lock?.release?.().catch(()=>{}); };
+  }, []);
+
   useEffect(() => {
     const tick = setInterval(() => setElapsed(Math.floor((Date.now()-streamStart)/1000)), 1000);
     return () => clearInterval(tick);
@@ -3761,15 +3812,51 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
         onClose?.();
         return;
       }
-      let stream;
+      let camStream, micStream;
       try {
-        stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'user' }, audio:true });
+        camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+        micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
       } catch (e) {
         showToast?.('Camera/mic access is needed to go live', 'error');
         onClose?.();
         return;
       }
-      if(cancelled){ stream.getTracks().forEach(t=>t.stop()); return; }
+      if (cancelled) { camStream.getTracks().forEach(t => t.stop()); micStream.getTracks().forEach(t => t.stop()); return; }
+
+      const videoTrack = camStream.getVideoTracks()[0];
+      const micTrack = micStream.getAudioTracks()[0];
+      videoTrackRef.current = videoTrack;
+      micTrackRef.current = micTrack;
+      setTorchSupported(!!videoTrack.getCapabilities?.().torch);
+
+      // Pipe the raw camera feed through a canvas so live filters and the
+      // camera-off placeholder are baked into the actual broadcast, not just a
+      // local CSS preview. The resulting canvas video track is a stable object
+      // across camera flips and filter changes — neither ever needs WebRTC
+      // renegotiation, only the pixels being drawn change.
+      const rawVideoEl = rawVideoElRef.current;
+      rawVideoEl.srcObject = new MediaStream([videoTrack]);
+      await rawVideoEl.play().catch(() => {});
+      const canvas = hiddenCanvasRef.current;
+      canvas.width = videoTrack.getSettings?.().width || 720;
+      canvas.height = videoTrack.getSettings?.().height || 1280;
+      const ctx = canvas.getContext('2d');
+      const draw = () => {
+        if (cancelled) return;
+        if (!cameraOffRef.current && rawVideoEl.videoWidth) {
+          ctx.filter = LIVE_FILTERS[filterIndexRef.current].css;
+          ctx.drawImage(rawVideoEl, 0, 0, canvas.width, canvas.height);
+        } else {
+          ctx.filter = 'none';
+          ctx.fillStyle = '#0a0016';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        rafRef.current = requestAnimationFrame(draw);
+      };
+      draw();
+
+      const canvasTrack = canvas.captureStream(30).getVideoTracks()[0];
+      const stream = new MediaStream([canvasTrack, micTrack]);
       localStreamRef.current = stream;
 
       const ref = await addDoc(collection(db, 'liveStreams'), {
@@ -3802,6 +3889,14 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
       window.addEventListener('pagehide', markInactiveOnUnload);
       unloadHandlerRef.current = markInactiveOnUnload;
 
+      const renegotiate = async (pc, viewerDocRef) => {
+        try {
+          const offer = await pc.createOffer({ iceRestart: true });
+          await pc.setLocalDescription(offer);
+          await updateDoc(viewerDocRef, { offer: { type: offer.type, sdp: offer.sdp } });
+        } catch {}
+      };
+
       unsubViewers = onSnapshot(collection(db, 'liveStreams', ref.id, 'viewers'), snap => {
         setViewers(snap.size);
         snap.docChanges().forEach(async change => {
@@ -3815,6 +3910,17 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
             stream.getTracks().forEach(track => pc.addTrack(track, stream));
             pc.onicecandidate = e => {
               if(e.candidate) addDoc(collection(db,'liveStreams',ref.id,'viewers',viewerId,'hostCandidates'), e.candidate.toJSON()).catch(()=>{});
+            };
+            // Auto-recover a dropped connection (brief WiFi/cell handoff, flaky
+            // network) instead of leaving that one viewer permanently frozen —
+            // restarts ICE and pushes a fresh offer over the same signaling doc.
+            let recovering = false;
+            pc.oniceconnectionstatechange = () => {
+              if ((pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'disconnected') && !recovering) {
+                recovering = true;
+                setTimeout(() => { recovering = false; }, 8000);
+                renegotiate(pc, change.doc.ref);
+              }
             };
             try {
               const offer = await pc.createOffer();
@@ -3856,11 +3962,14 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
     return () => {
       cancelled = true;
       endedRef.current = true;
+      cancelAnimationFrame(rafRef.current);
       clearInterval(heartbeatIntervalRef.current);
       if(unloadHandlerRef.current) window.removeEventListener('pagehide', unloadHandlerRef.current);
       unsubViewers();
       cleanupByViewer.forEach(fn => fn());
       pcByViewer.forEach(pc => pc.close());
+      videoTrackRef.current?.stop();
+      micTrackRef.current?.stop();
       localStreamRef.current?.getTracks().forEach(t => t.stop());
       if(liveIdRef.current) updateDoc(doc(db,'liveStreams',liveIdRef.current), { active:false }).catch(()=>{});
     };
@@ -3895,6 +4004,7 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
       setLiveId(liveDoc.id);
 
       pc = new RTCPeerConnection({ iceServers: LIVE_ICE_SERVERS });
+      viewerPcRef.current = pc;
       pc.ontrack = e => { setRemoteStream(e.streams[0]); setConnected(true); };
 
       // BUG FIX: previously there was no timeout here at all — if the WebRTC connection
@@ -3912,6 +4022,17 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
       pc.addEventListener('connectionstatechange', () => {
         if (pc.connectionState === 'connected') clearTimeout(connectTimeout);
       });
+      // If the connection drops mid-stream (brief network handoff, host restarting
+      // ICE below), fall back to the same "Connecting..." UI instead of freezing on
+      // the last video frame with no indication anything's wrong — it clears itself
+      // once the host's renegotiated offer (handled below) re-establishes the link.
+      pc.addEventListener('iceconnectionstatechange', () => {
+        if (pc.iceConnectionState === 'disconnected' || pc.iceConnectionState === 'failed') {
+          setConnected(false);
+        } else if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
+          setConnected(true);
+        }
+      });
 
       viewerDocRef = doc(db, 'liveStreams', liveDoc.id, 'viewers', currentUser.id);
       pc.onicecandidate = e => {
@@ -3920,9 +4041,15 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
 
       await setDoc(viewerDocRef, { joinedAt: serverTimestamp(), username: currentUser?.username || 'viewer' });
 
+      let lastOfferSdp = null;
       unsubOffer = onSnapshot(viewerDocRef, async docSnap => {
         const data = docSnap.data();
-        if(data?.offer && pc.signalingState === 'stable' && !pc.currentRemoteDescription){
+        // Also re-processes a *renegotiated* offer (host ICE-restart recovery) —
+        // previously this only ever fired once (`!pc.currentRemoteDescription`),
+        // so a host-initiated reconnect after a dropped connection had no way to
+        // reach the viewer and that viewer stayed frozen for the rest of the stream.
+        if (data?.offer && pc.signalingState === 'stable' && data.offer.sdp !== lastOfferSdp) {
+          lastOfferSdp = data.offer.sdp;
           try {
             await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
             const answer = await pc.createAnswer();
@@ -3955,9 +4082,35 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
       cancelled = true;
       unsubOffer(); unsubHostCandidates(); unsubLiveDoc();
       pc?.close();
+      viewerPcRef.current = null;
       if(viewerDocRef) deleteDoc(viewerDocRef).catch(()=>{});
     };
   }, [isHost, streamer?.id, currentUser?.id]);
+
+  // ── Viewer signal-quality indicator: polls real WebRTC stats (packet loss)
+  // rather than guessing from connection state alone, so "3 bars" actually means
+  // a clean feed and "1 bar" gives an honest heads-up before it visibly stutters.
+  useEffect(() => {
+    if (isHost) return;
+    const interval = setInterval(async () => {
+      const pc = viewerPcRef.current;
+      if (!pc) return;
+      try {
+        const stats = await pc.getStats();
+        let lost = 0, received = 0;
+        stats.forEach(r => {
+          if (r.type === 'inbound-rtp' && r.kind === 'video') {
+            lost = r.packetsLost || 0;
+            received = r.packetsReceived || 0;
+          }
+        });
+        const total = lost + received;
+        const lossRatio = total > 0 ? lost / total : 0;
+        setQuality(lossRatio < 0.02 ? 3 : lossRatio < 0.08 ? 2 : 1);
+      } catch {}
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [isHost]);
 
   useEffect(() => {
     if(!liveId) return;
@@ -4047,10 +4200,68 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
   const popularGifts = VIRTUAL_GIFTS.filter(g => g.coins < 1000);
   const premiumGifts = VIRTUAL_GIFTS.filter(g => g.coins >= 1000);
 
+  const toggleMic = () => {
+    if (!micTrackRef.current) return;
+    const next = !micMuted;
+    micTrackRef.current.enabled = !next;
+    setMicMuted(next);
+  };
+
+  const toggleCameraOff = () => {
+    const next = !cameraOff;
+    cameraOffRef.current = next;
+    setCameraOff(next);
+  };
+
+  const flipCamera = async () => {
+    const next = facingMode === 'user' ? 'environment' : 'user';
+    try {
+      const newCam = await navigator.mediaDevices.getUserMedia({ video: { facingMode: next } });
+      const newTrack = newCam.getVideoTracks()[0];
+      videoTrackRef.current?.stop();
+      videoTrackRef.current = newTrack;
+      rawVideoElRef.current.srcObject = new MediaStream([newTrack]);
+      await rawVideoElRef.current.play().catch(() => {});
+      setTorchSupported(!!newTrack.getCapabilities?.().torch);
+      setTorchOn(false);
+      setFacingMode(next);
+    } catch { showToast?.('Could not switch camera', 'error'); }
+  };
+
+  const cycleFilter = () => {
+    const next = (filterIndex + 1) % LIVE_FILTERS.length;
+    filterIndexRef.current = next;
+    setFilterIndex(next);
+    showToast?.(`Filter: ${LIVE_FILTERS[next].name}`, 'success');
+  };
+
+  const toggleTorch = async () => {
+    if (!videoTrackRef.current || !torchSupported) return;
+    try {
+      const next = !torchOn;
+      await videoTrackRef.current.applyConstraints({ advanced: [{ torch: next }] });
+      setTorchOn(next);
+    } catch { showToast?.('Flash not available on this camera', 'error'); }
+  };
+
   return (
     <div style={{ position:'fixed', inset:0, background:'linear-gradient(160deg,#0a0016,#12060a)', zIndex:Z.page, display:'flex', flexDirection:'column', overflow:'hidden' }}>
       <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse at 25% 20%,rgba(11,95,255,0.16),transparent 55%)', pointerEvents:'none' }} />
-      {isHost ? <LiveHostVideo streamRef={localStreamRef} /> : <LiveViewerVideo remoteStream={remoteStream} connected={connected} />}
+      {isHost ? <LiveHostVideo streamRef={localStreamRef} /> : <LiveViewerVideo remoteStream={remoteStream} connected={connected} videoElRef={viewerVideoElRef} />}
+      {/* Off-screen capture rig for the host's filter pipeline: `rawVideoElRef` plays
+          the raw camera track (fed to the canvas each frame), `hiddenCanvasRef` is
+          the canvas actually captured into the outgoing/broadcast video track. */}
+      {isHost && (
+        <>
+          <video ref={rawVideoElRef} muted playsInline style={{ display:'none' }} />
+          <canvas ref={hiddenCanvasRef} style={{ display:'none' }} />
+        </>
+      )}
+      {isHost && cameraOff && (
+        <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', zIndex:4, pointerEvents:'none' }}>
+          <span style={{ color:'rgba(255,255,255,0.35)', fontSize:13, fontWeight:600 }}>Camera off</span>
+        </div>
+      )}
       {/* Top scrim so header text stays legible over any video content */}
       <div style={{ position:'absolute', top:0, left:0, right:0, height:130, background:'linear-gradient(180deg,rgba(0,0,0,0.55),transparent)', pointerEvents:'none', zIndex:5 }} />
 
@@ -4075,7 +4286,28 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
               <svg width="12" height="12" viewBox="0 0 24 24" fill="rgba(255,255,255,0.7)"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
               <span style={{ color:'rgba(255,255,255,0.8)', fontSize:12, fontWeight:700 }}>{formatNumber(viewers)}</span>
             </div>
-            <button onClick={onClose} aria-label="Close" style={{ background:'rgba(255,255,255,0.12)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'50%', width:34, height:34, color:'white', cursor:'pointer', fontSize:15, transition:TRANSITION.fast }}>✕</button>
+            {!isHost && (
+              // Real signal bars from live WebRTC packet-loss stats — tinted red at
+              // 1 bar so a struggling connection is visible before it visibly stutters.
+              <div title="Connection quality" style={{ background:'rgba(0,0,0,0.42)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', borderRadius:20, padding:'6px 8px', display:'flex', alignItems:'flex-end', gap:2, border:'1px solid rgba(255,255,255,0.08)', height:15 }}>
+                {[1,2,3].map(bar => (
+                  <div key={bar} style={{ width:3, height: 4 + bar*3, borderRadius:1, background: bar <= quality ? (quality === 1 ? '#FF453A' : '#2ED573') : 'rgba(255,255,255,0.2)' }} />
+                ))}
+              </div>
+            )}
+            {!isHost && document.pictureInPictureEnabled && (
+              <button onClick={async () => {
+                try {
+                  const el = viewerVideoElRef.current;
+                  if (!el) return;
+                  if (document.pictureInPictureElement) await document.exitPictureInPicture();
+                  else await el.requestPictureInPicture();
+                } catch { showToast?.('Picture-in-picture not available', 'error'); }
+              }} aria-label="Picture in picture" style={{ background:'rgba(255,255,255,0.12)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'50%', width:34, height:34, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="2"/><rect x="12" y="12" width="8" height="6" rx="1" fill="white"/></svg>
+              </button>
+            )}
+            <button onClick={() => isHost ? setShowEndConfirm(true) : onClose?.()} aria-label={isHost ? 'End stream' : 'Close'} style={{ background:'rgba(255,255,255,0.12)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'50%', width:34, height:34, color:'white', cursor:'pointer', fontSize:15, transition:TRANSITION.fast }}>✕</button>
           </div>
         </div>
 
@@ -4092,6 +4324,34 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
           </motion.div>
         )}
       </div>
+
+      {/* ── Floating gift animations (combo-aware) ── */}
+      {isHost && (
+        <div style={{ position:'absolute', right:14, top:130, zIndex:10, display:'flex', flexDirection:'column', gap:10 }}>
+          <button onClick={toggleMic} aria-label={micMuted ? 'Unmute microphone' : 'Mute microphone'} style={{ background: micMuted ? 'rgba(255,69,58,0.35)' : 'rgba(0,0,0,0.42)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:'50%', width:40, height:40, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', fontSize:17 }}>
+            {micMuted ? '🔇' : '🎤'}
+          </button>
+          <button onClick={toggleCameraOff} aria-label={cameraOff ? 'Turn camera on' : 'Turn camera off'} style={{ background: cameraOff ? 'rgba(255,69,58,0.35)' : 'rgba(0,0,0,0.42)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:'50%', width:40, height:40, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', fontSize:17 }}>
+            {cameraOff ? '📷' : '📹'}
+          </button>
+          <button onClick={flipCamera} aria-label="Flip camera" style={{ background:'rgba(0,0,0,0.42)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:'50%', width:40, height:40, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+          </button>
+          <button onClick={cycleFilter} aria-label="Cycle live filter" title={LIVE_FILTERS[filterIndex].name} style={{ background:'rgba(0,0,0,0.42)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:'50%', width:40, height:40, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', fontSize:17 }}>
+            ✨
+          </button>
+          {torchSupported && (
+            <button onClick={toggleTorch} aria-label={torchOn ? 'Turn off flash' : 'Turn on flash'} style={{ background: torchOn ? 'rgba(255,214,10,0.35)' : 'rgba(0,0,0,0.42)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:'50%', width:40, height:40, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', fontSize:17 }}>
+              {torchOn ? '⚡' : '🔦'}
+            </button>
+          )}
+        </div>
+      )}
+      {isHost && filterIndex > 0 && (
+        <div style={{ position:'absolute', top:130, left:14, zIndex:10, background:'rgba(0,0,0,0.5)', backdropFilter:'blur(10px)', borderRadius:14, padding:'4px 10px' }}>
+          <span style={{ color:'white', fontSize:11, fontWeight:700 }}>{LIVE_FILTERS[filterIndex].name}</span>
+        </div>
+      )}
 
       {/* ── Floating gift animations (combo-aware) ── */}
       {floatingGifts.map(g=>(
@@ -4188,6 +4448,21 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
           showToast={showToast}
           onSuccess={onCashDonation}
         />
+      )}</AnimatePresence>
+      {/* One tap on ✕ used to end the broadcast instantly for the host — easy to hit
+          by accident mid-stream. Viewers still close immediately since leaving a
+          stream they're watching has no destructive consequence. */}
+      <AnimatePresence>{showEndConfirm && (
+        <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', zIndex:Z.modal, display:'flex', alignItems:'center', justifyContent:'center', padding:24 }} onClick={()=>setShowEndConfirm(false)}>
+          <motion.div initial={{ scale:0.9, opacity:0 }} animate={{ scale:1, opacity:1 }} exit={{ scale:0.9, opacity:0 }} onClick={e=>e.stopPropagation()} style={{ background:'#15151C', borderRadius:24, padding:22, width:'100%', maxWidth:320, border:'1px solid rgba(255,255,255,0.08)' }}>
+            <div style={{ color:'white', fontWeight:800, fontSize:16, marginBottom:6 }}>End live stream?</div>
+            <div style={{ color:'rgba(255,255,255,0.5)', fontSize:13, marginBottom:18, lineHeight:1.4 }}>Your {formatNumber(viewers)} viewer{viewers===1?'':'s'} will be disconnected and this broadcast will end.</div>
+            <div style={{ display:'flex', gap:10 }}>
+              <button onClick={()=>setShowEndConfirm(false)} style={{ flex:1, background:'rgba(255,255,255,0.08)', border:'none', borderRadius:14, padding:'11px 0', color:'white', fontWeight:700, fontSize:13, cursor:'pointer' }}>Keep streaming</button>
+              <button onClick={()=>{ setShowEndConfirm(false); onClose?.(); }} style={{ flex:1, background:COLORS.live, border:'none', borderRadius:14, padding:'11px 0', color:'white', fontWeight:700, fontSize:13, cursor:'pointer' }}>End stream</button>
+            </div>
+          </motion.div>
+        </motion.div>
       )}</AnimatePresence>
     </div>
   );
