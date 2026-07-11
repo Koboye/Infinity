@@ -12257,6 +12257,17 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
   const [recording, setRecording] = useState(false);
   const [facingMode, setFacingMode] = useState('user');
   const [flash, setFlash] = useState(false);
+  // REAL flashlight support. Previously `flash` only whited out the capture canvas for
+  // an instant when taking a photo — it never actually turned the device's flashlight
+  // on, so composing in a dark room got zero extra light and video recordings got no
+  // flash at all (the fake white-flash only fires at the moment of a photo capture).
+  // LiveStream already does this correctly via track.getCapabilities().torch — same
+  // pattern here. torchSupported reflects whether the *current* camera (front cameras
+  // essentially never have one) actually has a hardware torch; when it doesn't, the
+  // flash button falls back to the old fill-flash-on-capture behavior for photos.
+  const [torchOn, setTorchOn] = useState(false);
+  const [torchSupported, setTorchSupported] = useState(false);
+  const [showGrid, setShowGrid] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [recordSeconds, setRecordSeconds] = useState(0);
   const [zoom, setZoom] = useState(1);
@@ -12314,6 +12325,24 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
     } else {
       setZoomCaps(null);
       setZoom(1);
+    }
+    // Torch capability is per-camera (the front/selfie camera essentially never has
+    // one) — re-detect every time startCamera runs (initial mount AND every flip), and
+    // turn any previously-on torch state off since switching tracks silently drops it
+    // at the hardware level anyway; leaving the UI showing "on" would be a lie.
+    setTorchSupported(!!caps?.torch);
+    setTorchOn(false);
+  };
+
+  const toggleTorch = async () => {
+    const track = streamRef.current?.getVideoTracks?.()[0];
+    if (!track || !torchSupported) return;
+    const next = !torchOn;
+    try {
+      await track.applyConstraints({ advanced: [{ torch: next }] });
+      setTorchOn(next);
+    } catch {
+      showToast?.('Flashlight unavailable on this device', 'error');
     }
   };
 
@@ -12647,7 +12676,13 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
         <div style={{ display:'flex', gap:10 }}>
           <button onClick={()=>setTimerMode(m=>m===0?3:m===3?10:0)} style={{ background: timerMode?'rgba(11,95,255,0.5)':'rgba(0,0,0,0.5)', border:'none', borderRadius:'50%', width:40, height:40, color:'white', cursor:'pointer', fontSize: timerMode?11:18, fontWeight:800, display:'flex', alignItems:'center', justifyContent:'center' }}>{timerMode ? `${timerMode}s` : '⏱️'}</button>
           <button onClick={()=>setBeautyOn(v=>!v)} aria-label={beautyOn ? "Disable beauty filter" : "Enable beauty filter"} style={{ background: beautyOn?'rgba(11,95,255,0.5)':'rgba(0,0,0,0.5)', border:'none', borderRadius:'50%', width:40, height:40, color:'white', cursor:'pointer', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center' }}>🪄</button>
-          <button onClick={()=>setFlash(!flash)} aria-label={flash ? "Turn off flash" : "Turn on flash"} style={{ background: flash?'rgba(255,215,0,0.3)':'rgba(0,0,0,0.5)', border:'none', borderRadius:'50%', width:40, height:40, color: flash?'#FFD60A':'white', cursor:'pointer', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center' }}>⚡</button>
+          {/* When the current camera has a real hardware torch, this is an actual
+              flashlight that stays on continuously (useful for framing in the dark,
+              not just a flash at the instant of capture) — falls back to the old
+              fill-flash-on-photo-capture behavior on cameras without one (notably
+              the front/selfie camera). */}
+          <button onClick={()=> torchSupported ? toggleTorch() : setFlash(!flash)} aria-label={(torchSupported ? torchOn : flash) ? "Turn off flash" : "Turn on flash"} style={{ background: (torchSupported ? torchOn : flash)?'rgba(255,215,0,0.3)':'rgba(0,0,0,0.5)', border:'none', borderRadius:'50%', width:40, height:40, color: (torchSupported ? torchOn : flash)?'#FFD60A':'white', cursor:'pointer', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center' }}>{(torchSupported ? torchOn : flash) ? '⚡' : (torchSupported ? '🔦' : '⚡')}</button>
+          <button onClick={()=>setShowGrid(v=>!v)} aria-label={showGrid ? "Hide grid" : "Show grid"} style={{ background: showGrid?'rgba(11,95,255,0.5)':'rgba(0,0,0,0.5)', border:'none', borderRadius:'50%', width:40, height:40, color:'white', cursor:'pointer', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center' }}>#️⃣</button>
           <button onClick={flipCamera} aria-label="Flip camera" style={{ background:'rgba(0,0,0,0.5)', border:'none', borderRadius:'50%', width:40, height:40, color:'white', cursor:'pointer', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center' }}>🔄</button>
           <button onClick={()=>setShowFilters(!showFilters)} aria-label={showFilters ? "Hide filters" : "Show filters"} style={{ background: showFilters?'rgba(11,95,255,0.5)':'rgba(0,0,0,0.5)', border:'none', borderRadius:'50%', width:40, height:40, color:'white', cursor:'pointer', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center' }}>✨</button>
         </div>
@@ -12656,7 +12691,15 @@ const CameraUpload = ({ onUpload, onClose, showToast, currentUser }) => {
       {/* Camera viewfinder */}
       <div onClick={handleFocusTap} style={{ flex:1, position:'relative', overflow:'hidden', cursor: cameraMode==='photo' ? 'default' : 'default' }}>
         <video ref={videoRef} autoPlay playsInline muted style={{ width:'100%', height:'100%', objectFit:'cover', ...filterStyle }} />
-        {/* Tap-to-focus ring */}
+        {/* Rule-of-thirds composition grid, standard camera-app feature. Purely visual
+            (never baked into the actual capture) so it doesn't affect the photo/video. */}
+        {showGrid && (
+          <div style={{ position:'absolute', inset:0, pointerEvents:'none', display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gridTemplateRows:'1fr 1fr 1fr' }}>
+            {Array.from({length:9}).map((_,i)=>(
+              <div key={i} style={{ borderRight: i%3<2 ? '1px solid rgba(255,255,255,0.35)':'none', borderBottom: i<6 ? '1px solid rgba(255,255,255,0.35)':'none' }} />
+            ))}
+          </div>
+        )}
         {focusPoint && (
           <div style={{ position:'absolute', left:focusPoint.x-28, top:focusPoint.y-28, width:56, height:56, borderRadius:'50%', border:'2px solid #FFD60A', pointerEvents:'none', animation:'focusPulse 0.6s ease-out' }} />
         )}
