@@ -3747,7 +3747,7 @@ const UserProfileModal = ({ user, currentUser, onClose, onFollow, onMessage, onV
    and LiveViewerVideo (the streamer's video received over WebRTC) below. */
 /* ─────────────── LIVE STREAM ─────────────── */
 /* ─────────────── LIVE CHAT MESSAGE (with live translation) ─────────────── */
-const LiveChatMessage = ({ msg, targetLang }) => {
+const LiveChatMessage = ({ msg, targetLang, onModerate }) => {
   const [translated, setTranslated] = useState(null);
   const [showOriginal, setShowOriginal] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -3764,12 +3764,14 @@ const LiveChatMessage = ({ msg, targetLang }) => {
       initial={{ opacity:0, y:8, scale:0.96 }}
       animate={{ opacity:1, y:0, scale:1 }}
       transition={{ duration:0.22, ease:'easeOut' }}
+      onClick={onModerate}
       style={{
         background: msg.isGift ? 'linear-gradient(135deg,rgba(255,214,10,0.22),rgba(255,153,10,0.1))' : 'rgba(18,18,24,0.55)',
         border: msg.isGift ? '1px solid rgba(255,214,10,0.4)' : '1px solid rgba(255,255,255,0.06)',
         backdropFilter:'blur(14px)', WebkitBackdropFilter:'blur(14px)',
         borderRadius:16, padding: msg.isGift ? '7px 12px' : '6px 12px',
         display:'inline-flex', flexDirection:'column', gap:2, maxWidth:'86%', alignSelf:'flex-start',
+        cursor: onModerate ? 'pointer' : 'default',
       }}
     >
       <div style={{ display:'flex', gap:6, alignItems:'baseline' }}>
@@ -3818,13 +3820,38 @@ const LIVE_FILTERS = [
 // always matches exactly what viewers receive.
 const LiveHostVideo = ({ streamRef }) => {
   const videoRef = useRef(null);
-  useEffect(()=>{
-    if(videoRef.current && streamRef.current){
-      videoRef.current.srcObject = streamRef.current;
-      videoRef.current.play().catch(()=>{});
-    }
-  });
-  return <video ref={videoRef} autoPlay playsInline muted style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover'}}/>;
+  // BUG FIX (camera preview "blinks"/flickers while live): the previous version ran
+  // `videoRef.current.srcObject = streamRef.current` on EVERY render with no dependency
+  // array — because `streamRef` is a ref (not state), that was the only way to eventually
+  // pick up the stream once host capture finished initializing asynchronously. But
+  // LiveStream re-renders constantly while live (the 1s elapsed timer, chat messages,
+  // floating gifts, viewer count…), so this was reassigning `srcObject` to the *same*
+  // MediaStream dozens of times a minute. Most browsers briefly drop the displayed frame
+  // and re-negotiate playback whenever srcObject is reassigned — even to an identical
+  // object — which is exactly what read as "flickering/unstable" camera preview.
+  // Fix: poll with requestAnimationFrame only until the stream first becomes available,
+  // assign it exactly once, then stop — never touch srcObject again while it's the same
+  // stream object.
+  useEffect(() => {
+    let cancelled = false;
+    let rafId;
+    const tryAssign = () => {
+      if (cancelled) return;
+      const el = videoRef.current;
+      const s = streamRef.current;
+      if (el && s) {
+        if (el.srcObject !== s) {
+          el.srcObject = s;
+          el.play().catch(() => {});
+        }
+        return; // assigned — stop polling
+      }
+      rafId = requestAnimationFrame(tryAssign);
+    };
+    tryAssign();
+    return () => { cancelled = true; if (rafId) cancelAnimationFrame(rafId); };
+  }, [streamRef]);
+  return <video ref={videoRef} autoPlay playsInline muted style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',background:'#000'}}/>;
 };
 
 // Viewer's incoming WebRTC feed from the streamer — this is what makes "going live"
@@ -3903,13 +3930,37 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
   const [torchOn, setTorchOn] = useState(false);
   const [torchSupported, setTorchSupported] = useState(false);
   const [showEndConfirm, setShowEndConfirm] = useState(false);
+  // ── Zoom (pinch/slider) — only shown when the active camera actually reports a
+  // zoom capability, so we never render a control that silently does nothing. ──
+  const [zoomSupported, setZoomSupported] = useState(false);
+  const [zoomRange, setZoomRange] = useState({ min: 1, max: 1, step: 0.1 });
+  const [zoomLevel, setZoomLevel] = useState(1);
+  // ── Beauty mode: a soft, subtle skin-smoothing look baked into the same canvas
+  // pipeline as the filters below, so viewers see it too — not just a local preview. ──
+  const [beautyOn, setBeautyOn] = useState(false);
   const rawVideoElRef = useRef(null);
   const hiddenCanvasRef = useRef(null);
   const micTrackRef = useRef(null);
   const videoTrackRef = useRef(null);
   const cameraOffRef = useRef(false);
   const filterIndexRef = useRef(0);
+  const beautyOnRef = useRef(false);
   const rafRef = useRef(null);
+
+  // ── Live heart reactions (double-tap the video, IG/TikTok-style) ──
+  const [floatingHearts, setFloatingHearts] = useState([]);
+  const lastTapRef = useRef(0);
+  const lastHeartsSeenRef = useRef(0);
+  const spawnHeart = () => {
+    const id = Date.now() + Math.random();
+    setFloatingHearts(h => [...h.slice(-14), { id, x: 55 + Math.random() * 35 }]);
+    setTimeout(() => setFloatingHearts(h => h.filter(x => x.id !== id)), 1800);
+  };
+
+  // ── Pinned comment + lightweight moderator tools (host only) ──
+  const [pinnedMessage, setPinnedMessage] = useState(null);
+  const [blockedUsers, setBlockedUsers] = useState(() => new Set());
+  const [modTarget, setModTarget] = useState(null); // chat message the host long-pressed
 
   // ── Viewer connection quality (signal bars) + Picture-in-Picture ──
   const [quality, setQuality] = useState(3); // 1-3, optimistic until first measurement
@@ -3955,6 +4006,60 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
     return () => unsub();
   }, [liveId]);
 
+  // ── Heart reactions + pinned comment: synced through the liveStreams/{id} doc so
+  // every participant (host and every viewer) sees the same bursts and the same pin,
+  // not just whoever tapped/pinned locally. ──
+  useEffect(() => {
+    if (!liveId) return;
+    const unsub = onSnapshot(doc(db, 'liveStreams', liveId), snap => {
+      const d = snap.data();
+      if (!d) return;
+      const total = d.hearts || 0;
+      if (lastHeartsSeenRef.current && total > lastHeartsSeenRef.current) {
+        // Spawn a small burst rather than one heart per increment — a rapid flurry
+        // of taps from many viewers would otherwise flood the screen 1-for-1.
+        const burst = Math.min(6, total - lastHeartsSeenRef.current);
+        for (let i = 0; i < burst; i++) setTimeout(spawnHeart, i * 90);
+      }
+      lastHeartsSeenRef.current = total;
+      setPinnedMessage(d.pinnedMessage || null);
+    }, () => {});
+    return () => unsub();
+  }, [liveId]);
+
+  const sendHeart = () => {
+    spawnHeart();
+    if (liveId) updateDoc(doc(db, 'liveStreams', liveId), { hearts: increment(1) }).catch(() => {});
+  };
+
+  const handleVideoTap = () => {
+    const now = Date.now();
+    if (now - lastTapRef.current < 300) sendHeart();
+    lastTapRef.current = now;
+  };
+
+  // Host-only: pin a comment for everyone to see, delete it, or block the sender for
+  // the rest of this session. Deliberately lightweight — no separate moderation
+  // backend, just the primitives a small/mid live room actually needs.
+  const pinMessageForEveryone = (msg) => {
+    if (!liveId) return;
+    updateDoc(doc(db, 'liveStreams', liveId), { pinnedMessage: { user: msg.user, text: msg.text } }).catch(() => {});
+    setModTarget(null);
+  };
+  const unpinMessage = () => {
+    if (!liveId) return;
+    updateDoc(doc(db, 'liveStreams', liveId), { pinnedMessage: deleteField() }).catch(() => {});
+  };
+  const deleteHostMessage = (msg) => {
+    if (msg.id) deleteDoc(doc(db, 'liveMessages', msg.id)).catch(() => {});
+    setModTarget(null);
+  };
+  const blockCommenter = (msg) => {
+    setBlockedUsers(prev => new Set(prev).add(msg.user));
+    showToast?.(`Blocked @${msg.user} for this stream`, 'success');
+    setModTarget(null);
+  };
+
   // ── HOST: capture camera/mic, create the live doc, and answer every viewer ──
   useEffect(() => {
     if(!isHost) return;
@@ -3971,8 +4076,11 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
       }
       let camStream, micStream;
       try {
-        camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
-        micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 1080 }, height: { ideal: 1920 } } });
+        // Noise reduction: ask the browser's own audio pipeline for echo cancellation,
+        // noise suppression and auto gain — free, on-device, and works everywhere
+        // getUserMedia does, no extra library needed.
+        micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
       } catch (e) {
         showToast?.('Camera/mic access is needed to go live', 'error');
         onClose?.();
@@ -3985,6 +4093,14 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
       videoTrackRef.current = videoTrack;
       micTrackRef.current = micTrack;
       setTorchSupported(!!videoTrack.getCapabilities?.().torch);
+      const caps = videoTrack.getCapabilities?.();
+      if (caps?.zoom) {
+        setZoomSupported(true);
+        setZoomRange({ min: caps.zoom.min ?? 1, max: caps.zoom.max ?? 1, step: caps.zoom.step || 0.1 });
+        setZoomLevel(videoTrack.getSettings?.().zoom || caps.zoom.min || 1);
+      } else {
+        setZoomSupported(false);
+      }
 
       // Pipe the raw camera feed through a canvas so live filters and the
       // camera-off placeholder are baked into the actual broadcast, not just a
@@ -4001,7 +4117,13 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
       const draw = () => {
         if (cancelled) return;
         if (!cameraOffRef.current && rawVideoEl.videoWidth) {
-          ctx.filter = LIVE_FILTERS[filterIndexRef.current].css;
+          const baseFilter = LIVE_FILTERS[filterIndexRef.current].css;
+          // Beauty mode: a gentle blur softens skin texture, then contrast+saturation
+          // pulled back up so the frame doesn't just look "smudged" — baked into the
+          // same broadcast pixels everyone sees, not a local-only preview trick.
+          ctx.filter = beautyOnRef.current
+            ? `${baseFilter === 'none' ? '' : baseFilter + ' '}blur(1.1px) contrast(1.06) brightness(1.05) saturate(1.08)`
+            : baseFilter;
           ctx.drawImage(rawVideoEl, 0, 0, canvas.width, canvas.height);
         } else {
           ctx.filter = 'none';
@@ -4381,8 +4503,30 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
       await rawVideoElRef.current.play().catch(() => {});
       setTorchSupported(!!newTrack.getCapabilities?.().torch);
       setTorchOn(false);
+      const caps = newTrack.getCapabilities?.();
+      if (caps?.zoom) {
+        setZoomSupported(true);
+        setZoomRange({ min: caps.zoom.min ?? 1, max: caps.zoom.max ?? 1, step: caps.zoom.step || 0.1 });
+        setZoomLevel(newTrack.getSettings?.().zoom || caps.zoom.min || 1);
+      } else {
+        setZoomSupported(false);
+        setZoomLevel(1);
+      }
       setFacingMode(next);
     } catch { showToast?.('Could not switch camera', 'error'); }
+  };
+
+  const applyZoom = async (value) => {
+    setZoomLevel(value);
+    if (!videoTrackRef.current || !zoomSupported) return;
+    try { await videoTrackRef.current.applyConstraints({ advanced: [{ zoom: value }] }); } catch {}
+  };
+
+  const toggleBeauty = () => {
+    const next = !beautyOn;
+    beautyOnRef.current = next;
+    setBeautyOn(next);
+    showToast?.(next ? 'Beauty mode on' : 'Beauty mode off', 'success');
   };
 
   const cycleFilter = () => {
@@ -4405,6 +4549,13 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
     <div style={{ position:'fixed', inset:0, background:'linear-gradient(160deg,#0a0016,#12060a)', zIndex:Z.page, display:'flex', flexDirection:'column', overflow:'hidden' }}>
       <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse at 25% 20%,rgba(11,95,255,0.16),transparent 55%)', pointerEvents:'none' }} />
       {isHost ? <LiveHostVideo streamRef={localStreamRef} /> : <LiveViewerVideo remoteStream={remoteStream} connected={connected} videoElRef={viewerVideoElRef} />}
+      {/* Double-tap anywhere on the stream to send a heart — sits above the video but
+          below the header/side controls (which are zIndex 10) so it never swallows a
+          real button tap. */}
+      <div onClick={handleVideoTap} style={{ position:'absolute', inset:0, zIndex:6 }} />
+      {floatingHearts.map(h => (
+        <div key={h.id} style={{ position:'absolute', bottom:160, left:`${h.x}%`, zIndex:60, pointerEvents:'none', fontSize:34, animation:'floatUp 1.8s ease forwards', color:'#FF375F', filter:'drop-shadow(0 2px 6px rgba(255,55,95,0.5))' }}>♥</div>
+      ))}
       {/* Off-screen capture rig for the host's filter pipeline: `rawVideoElRef` plays
           the raw camera track (fed to the canvas each frame), `hiddenCanvasRef` is
           the canvas actually captured into the outgoing/broadcast video track. */}
@@ -4482,6 +4633,18 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
         )}
       </div>
 
+      {/* ── Pinned comment — synced to every participant via liveStreams/{id}.pinnedMessage ── */}
+      {pinnedMessage && (
+        <motion.div initial={{ opacity:0, y:-6 }} animate={{ opacity:1, y:0 }} style={{ margin:'9px 14px 0', zIndex:10, position:'relative', background:'rgba(11,95,255,0.16)', border:'1px solid rgba(11,95,255,0.4)', borderRadius:14, padding:'7px 11px', display:'flex', alignItems:'center', gap:8 }}>
+          <span style={{ fontSize:12, flexShrink:0 }}>📌</span>
+          <div style={{ flex:1, minWidth:0, display:'flex', gap:6, alignItems:'baseline' }}>
+            <span style={{ color:'#8FB8FF', fontSize:11, fontWeight:700, flexShrink:0 }}>@{pinnedMessage.user}</span>
+            <span style={{ color:'white', fontSize:12, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{pinnedMessage.text}</span>
+          </div>
+          {isHost && <button onClick={unpinMessage} aria-label="Unpin" style={{ background:'none', border:'none', color:'rgba(255,255,255,0.5)', fontSize:12, cursor:'pointer', flexShrink:0, padding:2 }}>✕</button>}
+        </motion.div>
+      )}
+
       {/* ── Floating gift animations (combo-aware) ── */}
       {isHost && (
         <div style={{ position:'absolute', right:14, top:130, zIndex:10, display:'flex', flexDirection:'column', gap:10 }}>
@@ -4501,6 +4664,24 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
             <button onClick={toggleTorch} aria-label={torchOn ? 'Turn off flash' : 'Turn on flash'} style={{ background: torchOn ? 'rgba(255,214,10,0.35)' : 'rgba(0,0,0,0.42)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:'50%', width:40, height:40, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', fontSize:17 }}>
               {torchOn ? '⚡' : '🔦'}
             </button>
+          )}
+          <button onClick={toggleBeauty} aria-label={beautyOn ? 'Turn off beauty mode' : 'Turn on beauty mode'} title="Beauty mode" style={{ background: beautyOn ? 'rgba(255,105,180,0.3)' : 'rgba(0,0,0,0.42)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:'50%', width:40, height:40, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', fontSize:17 }}>
+            ✨🪞
+          </button>
+          {zoomSupported && (
+            <div title="Zoom" style={{ background:'rgba(0,0,0,0.42)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:20, padding:'8px 6px', display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
+              <span style={{ color:'rgba(255,255,255,0.7)', fontSize:9, fontWeight:700 }}>{zoomLevel.toFixed(1)}×</span>
+              <input
+                type="range"
+                min={zoomRange.min}
+                max={zoomRange.max}
+                step={zoomRange.step}
+                value={zoomLevel}
+                onChange={e => applyZoom(parseFloat(e.target.value))}
+                style={{ writingMode:'vertical-lr', direction:'rtl', width:20, height:64, accentColor:COLORS.brand, cursor:'pointer' }}
+                aria-label="Camera zoom"
+              />
+            </div>
           )}
         </div>
       )}
@@ -4532,9 +4713,9 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
       {/* ── Chat ── */}
       <div style={{ flex:1, display:'flex', alignItems:'flex-end', padding:'0 14px 10px', zIndex:10 }}>
         <div style={{ flex:1, maxHeight:200, overflowY:'hidden', display:'flex', flexDirection:'column', gap:6 }}>
-          {chatMessages.slice(-8).map(m=>{
+          {chatMessages.filter(m => !blockedUsers.has(m.user)).slice(-8).map(m=>{
             const targetLang = currentUser?.language || 'en';
-            return <LiveChatMessage key={m.id} msg={m} targetLang={targetLang} />;
+            return <LiveChatMessage key={m.id} msg={m} targetLang={targetLang} onModerate={isHost && !m.isGift ? () => setModTarget(m) : undefined} />;
           })}
         </div>
       </div>
@@ -4609,6 +4790,19 @@ const LiveStream = ({ streamer, onClose, showToast, currentUser }) => {
       {/* One tap on ✕ used to end the broadcast instantly for the host — easy to hit
           by accident mid-stream. Viewers still close immediately since leaving a
           stream they're watching has no destructive consequence. */}
+      {/* ── Moderator sheet (host taps a viewer's chat message) ── */}
+      <AnimatePresence>{modTarget && (
+        <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', zIndex:Z.modal, display:'flex', alignItems:'flex-end', justifyContent:'center' }} onClick={()=>setModTarget(null)}>
+          <motion.div initial={{ y:60, opacity:0 }} animate={{ y:0, opacity:1 }} exit={{ y:60, opacity:0 }} onClick={e=>e.stopPropagation()} style={{ background:'#15151C', borderRadius:'22px 22px 0 0', padding:'18px 16px 28px', width:'100%', maxWidth:420, border:'1px solid rgba(255,255,255,0.08)', borderBottom:'none' }}>
+            <div style={{ color:'rgba(255,255,255,0.4)', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:0.6, marginBottom:10 }}>@{modTarget.user}'s message</div>
+            <div style={{ color:'white', fontSize:13, marginBottom:16, lineHeight:1.4 }}>{modTarget.text}</div>
+            <button onClick={()=>pinMessageForEveryone(modTarget)} style={{ width:'100%', textAlign:'left', background:'rgba(255,255,255,0.06)', border:'none', borderRadius:14, padding:'12px 14px', color:'white', fontWeight:600, fontSize:13.5, cursor:'pointer', marginBottom:8 }}>📌 Pin for everyone</button>
+            <button onClick={()=>deleteHostMessage(modTarget)} style={{ width:'100%', textAlign:'left', background:'rgba(255,255,255,0.06)', border:'none', borderRadius:14, padding:'12px 14px', color:'white', fontWeight:600, fontSize:13.5, cursor:'pointer', marginBottom:8 }}>🗑️ Delete comment</button>
+            <button onClick={()=>blockCommenter(modTarget)} style={{ width:'100%', textAlign:'left', background:'rgba(255,69,58,0.14)', border:'none', borderRadius:14, padding:'12px 14px', color:'#FF6961', fontWeight:600, fontSize:13.5, cursor:'pointer', marginBottom:8 }}>🚫 Block @{modTarget.user} from this stream</button>
+            <button onClick={()=>setModTarget(null)} style={{ width:'100%', background:'rgba(255,255,255,0.06)', border:'none', borderRadius:14, padding:'12px 14px', color:'rgba(255,255,255,0.6)', fontWeight:600, fontSize:13.5, cursor:'pointer' }}>Cancel</button>
+          </motion.div>
+        </motion.div>
+      )}</AnimatePresence>
       <AnimatePresence>{showEndConfirm && (
         <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', zIndex:Z.modal, display:'flex', alignItems:'center', justifyContent:'center', padding:24 }} onClick={()=>setShowEndConfirm(false)}>
           <motion.div initial={{ scale:0.9, opacity:0 }} animate={{ scale:1, opacity:1 }} exit={{ scale:0.9, opacity:0 }} onClick={e=>e.stopPropagation()} style={{ background:'#15151C', borderRadius:24, padding:22, width:'100%', maxWidth:320, border:'1px solid rgba(255,255,255,0.08)' }}>
@@ -9757,19 +9951,34 @@ function resampleWaveform(samples, targetBars) {
   return out;
 }
 
+// ─────────────── VOICE RECORDER (chat / group chat / stories / comments) ───────────────
+// Shared by every place in the app that can send a voice note. States:
+//   idle → recording → (paused) → preview → uploading → sent (brief success flash) → idle
+// or: recording → cancelled (slide-to-cancel / ✕) → idle
+//
+// Gestures, matching the muscle memory people already have from every major messenger:
+//   • Tap the mic once            → starts recording (works with a quick tap; no need to hold)
+//   • Press and hold, drag left   → "slide to cancel" — release past the threshold discards it
+//   • Press and hold, drag up     → "lock" — a lock chip animates in so it's obvious hands-free
+//     recording is now safe to let go of
+//   • Preview waveform            → tap/drag to scrub, exactly like the clip's real shape
 const VoiceRecorderButton = ({ onSend, showToast, size = 'normal', onStateChange }) => {
-  const [state, setState] = useState('idle'); // idle | recording | paused | preview
+  const [state, setState] = useState('idle'); // idle | recording | paused | preview | uploading | sent
   const [duration, setDuration] = useState(0);
   const [audioUrl, setAudioUrl] = useState(null);
   const [waveform, setWaveform] = useState([]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackPos, setPlaybackPos] = useState(0);
-  // The full-clip waveform shown during preview (WhatsApp/iMessage-style bars, tap or
-  // drag to seek) — distinct from `waveform`, which is just the live 30-bar visualizer
-  // shown WHILE recording. Built up incrementally as the recording happens (see
-  // waveHistoryRef in buildWaveform) so preview can show the whole clip's shape instead
-  // of one flat progress line.
   const [previewWaveform, setPreviewWaveform] = useState([]);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [sendError, setSendError] = useState(null);
+  // Live drag feedback while the mic button is held: dragX drives the "slide to
+  // cancel" reveal, locked flips true once the user drags up past the lock threshold.
+  const [dragX, setDragX] = useState(0);
+  const [dragY, setDragY] = useState(0);
+  const [locked, setLocked] = useState(false);
+  const [holding, setHolding] = useState(false);
+
   const waveHistoryRef = useRef([]);
   const lastSampleAtRef = useRef(0);
   const scrubRef = useRef(null);
@@ -9782,11 +9991,10 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal', onStateChange
   const audioCtxRef = useRef(null);
   const blobRef = useRef(null);
   const previewAudioRef = useRef(null);
+  const dragStartRef = useRef({ x: 0, y: 0 });
+  const cancelledRef = useRef(false);
+  const lockedRef = useRef(false);
 
-  // Lets the parent composer know when we've left the compact "idle mic" look so
-  // it can stop squeezing the expanded recorder (waveform/timer/send) into a fixed
-  // 42px circle — that squeeze was pushing the Send button off-screen to the right
-  // in chat/group/comment composers. See usage sites for the matching layout fix.
   useEffect(() => { onStateChange?.(state); }, [state]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const buildWaveform = () => {
@@ -9800,10 +10008,6 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal', onStateChange
       bars.push(Math.min(1, Math.abs(v) * 3.5 + 0.1));
     }
     setWaveform(bars);
-    // Also sample a single overall amplitude level (peak of this frame) into the
-    // clip's full-length history, throttled to ~8 samples/sec — that's plenty of
-    // resolution for a scrubbable preview waveform without storing thousands of
-    // points on a long voice note.
     const now = performance.now();
     if (now - lastSampleAtRef.current > 125) {
       lastSampleAtRef.current = now;
@@ -9814,8 +10018,12 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal', onStateChange
   };
 
   const startRecording = async () => {
+    cancelledRef.current = false;
+    lockedRef.current = false;
+    setLocked(false);
+    setSendError(null);
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
       streamRef.current = stream;
       audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
       const source = audioCtxRef.current.createMediaStreamSource(stream);
@@ -9828,6 +10036,15 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal', onStateChange
       chunksRef.current = [];
       mr.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data); };
       mr.onstop = () => {
+        // Slide-to-cancel: discard the take entirely and reset, rather than routing
+        // through the preview screen at all — matches the instant "gone" feeling of
+        // WhatsApp/iMessage when you drag the recorder off-screen.
+        if (cancelledRef.current) {
+          setAudioUrl(null); setWaveform([]); setPreviewWaveform([]); waveHistoryRef.current = [];
+          setDuration(0); blobRef.current = null; setIsPlaying(false); setPlaybackPos(0);
+          setState('idle');
+          return;
+        }
         const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
         blobRef.current = blob;
         setAudioUrl(URL.createObjectURL(blob));
@@ -9864,48 +10081,64 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal', onStateChange
     }
   };
 
-  const stopRecording = () => {
+  const teardownStream = () => {
     clearInterval(timerRef.current);
     cancelAnimationFrame(animFrameRef.current);
     streamRef.current?.getTracks().forEach(t => t.stop());
+  };
+
+  const stopRecording = () => {
+    teardownStream();
     if (mediaRef.current && mediaRef.current.state !== 'inactive') mediaRef.current.stop();
   };
 
   const cancelRecording = () => {
-    clearInterval(timerRef.current);
-    cancelAnimationFrame(animFrameRef.current);
-    streamRef.current?.getTracks().forEach(t => t.stop());
-    if (mediaRef.current && mediaRef.current.state !== 'inactive') mediaRef.current.stop();
-    setAudioUrl(null); setWaveform([]); setPreviewWaveform([]); waveHistoryRef.current = []; setDuration(0); setState('idle'); blobRef.current = null;
-    setIsPlaying(false); setPlaybackPos(0);
+    // Called both from the ✕ button and from a completed slide-to-cancel drag.
+    cancelledRef.current = true;
+    teardownStream();
+    if (mediaRef.current && mediaRef.current.state !== 'inactive') {
+      mediaRef.current.stop(); // onstop sees cancelledRef and resets to idle
+    } else {
+      setAudioUrl(null); setWaveform([]); setPreviewWaveform([]); waveHistoryRef.current = [];
+      setDuration(0); setState('idle'); blobRef.current = null;
+      setIsPlaying(false); setPlaybackPos(0);
+    }
+    setSendError(null);
   };
 
   const sendVoice = async () => {
-     if (!blobRef.current) return;
-     try {
-       const url = await uploadToCloudinary(blobRef.current);
-       onSend({ type: 'voice', url, duration });
-       showToast?.('Voice message sent 🎤', 'success');
-     } catch (e) { showToast?.(e?.message || 'Failed to send voice', 'error'); }
-     cancelRecording();
-   };
+    if (!blobRef.current) return;
+    setSendError(null);
+    setState('uploading');
+    setUploadProgress(0);
+    try {
+      const url = await uploadToCloudinary(blobRef.current, (pct) => setUploadProgress(pct));
+      onSend({ type: 'voice', url, duration });
+      // Brief success flash — a satisfying "it's sent" beat before the composer
+      // collapses back to the idle mic, instead of an abrupt cut.
+      setState('sent');
+      showToast?.('Voice message sent 🎤', 'success');
+      setTimeout(() => {
+        setAudioUrl(null); setWaveform([]); setPreviewWaveform([]); waveHistoryRef.current = [];
+        setDuration(0); setState('idle'); blobRef.current = null;
+        setIsPlaying(false); setPlaybackPos(0); setUploadProgress(0);
+      }, 650);
+    } catch (e) {
+      // BUG FIX: sending used to call cancelRecording() on any failure, which threw
+      // the actual recording away — losing the user's voice note on top of the failed
+      // upload. Now it drops back to preview with an inline retry so nothing is lost.
+      setState('preview');
+      setSendError(e?.message || 'Failed to send — check your connection');
+      showToast?.(e?.message || 'Failed to send voice', 'error');
+    }
+  };
 
-  // Plain play/pause toggle for the preview clip. We deliberately don't render
-  // native <audio controls> here — on mobile browsers (iOS Safari in particular)
-  // the native control widget has a fixed intrinsic min-width (~250-300px) that
-  // ignores flex:1/minWidth:0, so on narrower screens it overflows the composer
-  // row and pushes/clips the Send button off-screen even though the layout code
-  // is otherwise correct. This tiny fixed-size button keeps the row width
-  // predictable so Send is always visible.
   const togglePlayback = () => {
     const el = previewAudioRef.current;
     if (!el) return;
     if (isPlaying) { el.pause(); } else { el.currentTime = playbackPos >= duration ? 0 : playbackPos; el.play().catch(()=>{}); }
   };
 
-  // Tap or drag anywhere on the waveform to seek — same gesture as WhatsApp/iMessage
-  // voice notes. Works from a plain click as well as a drag because pointer events
-  // fire a 'move' even for a simple tap-and-release in the same spot.
   const seekFromClientX = (clientX) => {
     const bar = scrubRef.current;
     const el = previewAudioRef.current;
@@ -9925,75 +10158,178 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal', onStateChange
     window.addEventListener('pointerup', onUp);
   };
 
+  // ── Hold-and-drag from the idle mic button: slide left to cancel, slide up to lock ──
+  const CANCEL_THRESHOLD = 90;
+  const LOCK_THRESHOLD = 64;
+  const handleMicPointerDown = (e) => {
+    dragStartRef.current = { x: e.clientX, y: e.clientY };
+    setHolding(true);
+    setDragX(0); setDragY(0);
+    startRecording();
+    const onMove = (ev) => {
+      if (lockedRef.current) return; // once locked, stop tracking — recorder stays open hands-free
+      const dx = Math.min(0, ev.clientX - dragStartRef.current.x);
+      const dy = Math.min(0, ev.clientY - dragStartRef.current.y);
+      setDragX(dx);
+      setDragY(dy);
+      if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > LOCK_THRESHOLD) {
+        lockedRef.current = true;
+        setLocked(true);
+        setDragX(0); setDragY(0);
+        showToast?.('Recording locked — tap stop when done', 'success');
+      } else if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > CANCEL_THRESHOLD) {
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onUp);
+        setHolding(false);
+        setDragX(0); setDragY(0);
+        cancelRecording();
+      }
+    };
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      setHolding(false);
+      setDragX(0); setDragY(0);
+      // Releasing without locking or cancelling simply leaves the recording running —
+      // same forgiving "tap to record" behavior as before, just reachable via a hold too.
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  };
+
   const fmtTime = s => `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
 
   if (state === 'idle') {
     return (
-      <button onPointerDown={startRecording} aria-label="Record voice message" style={{ background:'none', border:'none', cursor:'pointer', padding:size==='small'?6:8, display:'flex', alignItems:'center', justifyContent:'center', color: size==='small' ? '#fff' : 'rgba(255,255,255,0.5)', borderRadius:'50%', transition:'color 0.15s' }}>
-        <svg width={size==='small'?18:22} height={size==='small'?18:22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-      </button>
+      <div style={{ position:'relative', display:'inline-flex' }}>
+        {/* Slide-to-cancel / lock affordance, only visible while actively held+dragged */}
+        <AnimatePresence>
+          {holding && (dragX < -8 || dragY < -8) && (
+            <motion.div
+              initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+              style={{ position:'absolute', bottom:'100%', right:0, marginBottom:8, display:'flex', flexDirection:'column', alignItems:'flex-end', gap:8, pointerEvents:'none' }}
+            >
+              {!locked && (
+                <div style={{ background:'rgba(20,20,26,0.92)', backdropFilter:'blur(10px)', borderRadius:16, padding:'6px 10px', display:'flex', alignItems:'center', gap:6, transform:`translateY(${Math.max(dragY, -LOCK_THRESHOLD)}px)`, opacity: Math.min(1, Math.abs(dragY)/LOCK_THRESHOLD + 0.3) }}>
+                  <span style={{ fontSize:13 }}>🔒</span>
+                  <span style={{ color:'rgba(255,255,255,0.6)', fontSize:10, fontWeight:600 }}>Slide up to lock</span>
+                </div>
+              )}
+              <div style={{ background:'rgba(20,20,26,0.92)', backdropFilter:'blur(10px)', borderRadius:16, padding:'6px 12px', display:'flex', alignItems:'center', gap:6, transform:`translateX(${Math.max(dragX, -CANCEL_THRESHOLD)}px)`, opacity: Math.min(1, Math.abs(dragX)/CANCEL_THRESHOLD + 0.3) }}>
+                <span style={{ color: Math.abs(dragX) > CANCEL_THRESHOLD*0.7 ? '#FF453A' : 'rgba(255,255,255,0.6)', fontSize:11, fontWeight:700 }}>← Slide to cancel</span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <motion.button
+          onPointerDown={handleMicPointerDown}
+          whileTap={{ scale:0.9 }}
+          aria-label="Record voice message (hold to lock, drag left to cancel)"
+          style={{ background:'none', border:'none', cursor:'pointer', padding:size==='small'?6:8, display:'flex', alignItems:'center', justifyContent:'center', color: size==='small' ? '#fff' : 'rgba(255,255,255,0.5)', borderRadius:'50%', transition:'color 0.15s' }}
+        >
+          <svg width={size==='small'?18:22} height={size==='small'?18:22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        </motion.button>
+      </div>
+    );
+  }
+
+  if (state === 'sent') {
+    // Momentary success beat — a filled checkmark that gently pops in — before the
+    // composer collapses back to the plain idle mic.
+    return (
+      <motion.div initial={{ opacity:0, scale:0.9 }} animate={{ opacity:1, scale:1 }} style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, background:'rgba(46,213,115,0.12)', borderRadius:24, padding:'10px 16px', flex:1 }}>
+        <motion.div initial={{ scale:0 }} animate={{ scale:1 }} transition={{ type:'spring', stiffness:500, damping:20 }} style={{ width:22, height:22, borderRadius:'50%', background:'#2ED573', display:'flex', alignItems:'center', justifyContent:'center' }}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+        </motion.div>
+        <span style={{ color:'#2ED573', fontSize:12.5, fontWeight:700 }}>Sent</span>
+      </motion.div>
+    );
+  }
+
+  if (state === 'uploading') {
+    return (
+      <div style={{ display:'flex', alignItems:'center', gap:10, background:'rgba(255,255,255,0.06)', borderRadius:24, padding:'8px 14px', flex:1, minWidth:0 }}>
+        {/* Circular progress ring driven by real XHR upload progress, not a fake spinner */}
+        <div style={{ position:'relative', width:30, height:30, flexShrink:0 }}>
+          <svg width="30" height="30" viewBox="0 0 30 30" style={{ transform:'rotate(-90deg)' }}>
+            <circle cx="15" cy="15" r="12.5" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="3" />
+            <circle cx="15" cy="15" r="12.5" fill="none" stroke={COLORS.brand} strokeWidth="3" strokeLinecap="round" strokeDasharray={2*Math.PI*12.5} strokeDashoffset={2*Math.PI*12.5*(1-uploadProgress/100)} style={{ transition:'stroke-dashoffset 0.15s ease' }} />
+          </svg>
+          <span style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', fontSize:8.5, fontWeight:700, color:'white' }}>{uploadProgress}</span>
+        </div>
+        <span style={{ color:'rgba(255,255,255,0.55)', fontSize:12.5, fontWeight:600, flex:1 }}>Sending voice message…</span>
+      </div>
     );
   }
 
   if (state === 'preview') {
     return (
-      <div style={{ display:'flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.06)', borderRadius:24, padding:'8px 12px', flex:1, minWidth:0, maxWidth:'100%', boxSizing:'border-box' }}>
-        {/* Hidden native element used purely for playback — no native controls UI,
-            so it can never impose its own intrinsic min-width on the row. */}
-        <audio
-          ref={previewAudioRef}
-          src={audioUrl}
-          style={{ display:'none' }}
-          onPlay={()=>setIsPlaying(true)}
-          onPause={()=>setIsPlaying(false)}
-          onEnded={()=>{ setIsPlaying(false); setPlaybackPos(0); }}
-          onTimeUpdate={e=>setPlaybackPos(e.currentTarget.currentTime)}
-        />
-        <button onClick={cancelRecording} aria-label="Cancel recording" style={{ background:'rgba(11,95,255,0.15)', border:'none', borderRadius:'50%', width:32, height:32, minWidth:32, color:COLORS.brand, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, flexShrink:0 }}>✕</button>
-        <button onClick={togglePlayback} aria-label={isPlaying ? 'Pause preview' : 'Play preview'} style={{ background:isPlaying?COLORS.brand:'rgba(255,255,255,0.1)', border:'none', borderRadius:'50%', width:30, height:30, minWidth:30, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, transition:'background 0.15s' }}>
-          {isPlaying
-            ? <svg width="13" height="13" viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
-            : <svg width="13" height="13" viewBox="0 0 24 24" fill="white"><polygon points="6 3 21 12 6 21 6 3"/></svg>}
-        </button>
-        {/* Real waveform of the actual clip (built up during recording), not a flat
-            progress line — tap or drag anywhere on it to scrub, WhatsApp/iMessage-style.
-            Bars already played are colored solid; the rest stay dim. A thin playhead
-            marks the exact position for fine seeking. */}
-        <div
-          ref={scrubRef}
-          onPointerDown={handleScrubPointerDown}
-          style={{ flex:1, minWidth:0, height:26, display:'flex', alignItems:'center', gap:1.5, cursor:'pointer', touchAction:'none', position:'relative' }}
-        >
-          {(previewWaveform.length ? previewWaveform : Array.from({length:44},()=>0.1)).map((h, i) => {
-            const barRatio = (i + 0.5) / (previewWaveform.length || 44);
-            const playedRatio = duration > 0 ? playbackPos / duration : 0;
-            const played = barRatio <= playedRatio;
-            return (
-              <div key={i} style={{ flex:1, minWidth:1.5, borderRadius:2, height:`${Math.max(12, Math.round(h*100))}%`, background: played ? COLORS.brand : 'rgba(255,255,255,0.25)', transition:'background 0.1s' }} />
-            );
-          })}
+      <div style={{ display:'flex', flexDirection:'column', gap:6, flex:1, minWidth:0 }}>
+        {sendError && (
+          <motion.div initial={{ opacity:0, y:-4 }} animate={{ opacity:1, y:0 }} style={{ display:'flex', alignItems:'center', gap:6, background:'rgba(255,69,58,0.12)', border:'1px solid rgba(255,69,58,0.3)', borderRadius:12, padding:'5px 10px' }}>
+            <span style={{ color:'#FF6961', fontSize:11, flex:1 }}>{sendError}</span>
+            <button onClick={sendVoice} style={{ background:'#FF453A', border:'none', borderRadius:10, padding:'3px 9px', color:'white', fontSize:10.5, fontWeight:700, cursor:'pointer', flexShrink:0 }}>Retry</button>
+          </motion.div>
+        )}
+        <div style={{ display:'flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.06)', borderRadius:24, padding:'8px 12px', flex:1, minWidth:0, maxWidth:'100%', boxSizing:'border-box' }}>
+          <audio
+            ref={previewAudioRef}
+            src={audioUrl}
+            style={{ display:'none' }}
+            onPlay={()=>setIsPlaying(true)}
+            onPause={()=>setIsPlaying(false)}
+            onEnded={()=>{ setIsPlaying(false); setPlaybackPos(0); }}
+            onTimeUpdate={e=>setPlaybackPos(e.currentTarget.currentTime)}
+          />
+          <button onClick={cancelRecording} aria-label="Discard recording" style={{ background:'rgba(11,95,255,0.15)', border:'none', borderRadius:'50%', width:32, height:32, minWidth:32, color:COLORS.brand, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, flexShrink:0 }}>✕</button>
+          <button onClick={togglePlayback} aria-label={isPlaying ? 'Pause preview' : 'Play preview'} style={{ background:isPlaying?COLORS.brand:'rgba(255,255,255,0.1)', border:'none', borderRadius:'50%', width:30, height:30, minWidth:30, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, transition:'background 0.15s' }}>
+            {isPlaying
+              ? <svg width="13" height="13" viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+              : <svg width="13" height="13" viewBox="0 0 24 24" fill="white"><polygon points="6 3 21 12 6 21 6 3"/></svg>}
+          </button>
+          <div
+            ref={scrubRef}
+            onPointerDown={handleScrubPointerDown}
+            style={{ flex:1, minWidth:0, height:26, display:'flex', alignItems:'center', gap:1.5, cursor:'pointer', touchAction:'none', position:'relative' }}
+          >
+            {(previewWaveform.length ? previewWaveform : Array.from({length:44},()=>0.1)).map((h, i) => {
+              const barRatio = (i + 0.5) / (previewWaveform.length || 44);
+              const playedRatio = duration > 0 ? playbackPos / duration : 0;
+              const played = barRatio <= playedRatio;
+              return (
+                <div key={i} style={{ flex:1, minWidth:1.5, borderRadius:2, height:`${Math.max(12, Math.round(h*100))}%`, background: played ? COLORS.brand : 'rgba(255,255,255,0.25)', transition:'background 0.1s' }} />
+              );
+            })}
+          </div>
+          <span style={{ color:'rgba(255,255,255,0.4)', fontSize:12, flexShrink:0, minWidth:30, textAlign:'right', fontVariantNumeric:'tabular-nums' }}>{fmtTime(isPlaying ? Math.ceil(duration - playbackPos) : duration)}</span>
+          <button onClick={sendVoice} aria-label="Send voice message" style={{ background:COLORS.brand, border:'none', borderRadius:'50%', width:36, height:36, minWidth:36, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
         </div>
-        <span style={{ color:'rgba(255,255,255,0.4)', fontSize:12, flexShrink:0, minWidth:30, textAlign:'right', fontVariantNumeric:'tabular-nums' }}>{fmtTime(isPlaying ? Math.ceil(duration - playbackPos) : duration)}</span>
-        <button onClick={sendVoice} aria-label="Send voice message" style={{ background:COLORS.brand, border:'none', borderRadius:'50%', width:36, height:36, minWidth:36, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-        </button>
       </div>
     );
   }
 
   // recording or paused
   return (
-    <div style={{ display:'flex', alignItems:'center', gap:8, flex:1, background:'rgba(11,95,255,0.06)', borderRadius:24, padding:'8px 12px', border:'1px solid rgba(11,95,255,0.15)' }}>
+    <div style={{ display:'flex', alignItems:'center', gap:8, flex:1, background: state==='recording' ? 'rgba(225,29,46,0.08)' : 'rgba(11,95,255,0.06)', borderRadius:24, padding:'8px 12px', border: state==='recording' ? '1px solid rgba(225,29,46,0.25)' : '1px solid rgba(11,95,255,0.15)', transition:'background 0.2s, border-color 0.2s' }}>
       <button onClick={cancelRecording} aria-label="Cancel recording" style={{ background:'rgba(11,95,255,0.15)', border:'none', borderRadius:'50%', width:30, height:30, color:COLORS.brand, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>✕</button>
-      {/* Waveform visualization */}
+      {/* Pulsing rec dot makes it unmistakable at a glance which state this is,
+          without needing to read the timer. */}
+      {state === 'recording' && (
+        <motion.div animate={{ scale:[1,1.35,1], opacity:[1,0.6,1] }} transition={{ duration:1.1, repeat:Infinity, ease:'easeInOut' }} style={{ width:8, height:8, borderRadius:'50%', background:COLORS.live, flexShrink:0 }} />
+      )}
       <div style={{ flex:1, display:'flex', alignItems:'center', gap:1.5, height:28 }}>
         {waveform.length > 0 ? waveform.map((h,i)=>(
-          <div key={i} style={{ flex:1, background: state==='recording'?COLORS.brand:'rgba(255,255,255,0.3)', borderRadius:2, height:`${Math.round(h*100)}%`, minHeight:2, transition:'height 0.05s', opacity: state==='paused'?0.5:1 }} />
+          <div key={i} style={{ flex:1, background: state==='recording'?COLORS.live:'rgba(255,255,255,0.3)', borderRadius:2, height:`${Math.round(h*100)}%`, minHeight:2, transition:'height 0.05s', opacity: state==='paused'?0.5:1 }} />
         )) : Array.from({length:30}).map((_,i)=>(
           <div key={i} style={{ flex:1, background:'rgba(255,255,255,0.15)', borderRadius:2, height:'20%' }} />
         ))}
       </div>
-      <span style={{ color: state==='paused'?'rgba(255,255,255,0.4)':COLORS.brand, fontSize:12, fontWeight:700, fontVariantNumeric:'tabular-nums', flexShrink:0 }}>{fmtTime(duration)}</span>
+      {locked && (
+        <span title="Recording locked — hands-free" style={{ fontSize:12, flexShrink:0 }}>🔒</span>
+      )}
+      <span style={{ color: state==='paused'?'rgba(255,255,255,0.4)':COLORS.live, fontSize:12, fontWeight:700, fontVariantNumeric:'tabular-nums', flexShrink:0 }}>{fmtTime(duration)}</span>
       {state === 'recording'
         ? <button onClick={pauseRecording} aria-label="Pause recording" style={{ background:'rgba(255,255,255,0.1)', border:'none', borderRadius:'50%', width:30, height:30, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>⏸</button>
         : <button onClick={resumeRecording} aria-label="Resume recording" style={{ background:'rgba(255,255,255,0.1)', border:'none', borderRadius:'50%', width:30, height:30, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>▶</button>}
@@ -10003,7 +10339,6 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal', onStateChange
     </div>
   );
 };
-
 /* ─────────────── INBOX (REAL-TIME FIRESTORE) ─────────────── */
 // ─────────────── CATCH ME UP ───────────────
 // Signature feature shared by 1:1 and group chat: when you reopen a thread with a
