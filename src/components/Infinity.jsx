@@ -1117,6 +1117,10 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack, embedded=false, 
   const [activeGroup, setActiveGroup] = useState(null);
   const [groupMessages, setGroupMessages] = useState([]);
   const [msgText, setMsgText] = useState('');
+  // Tracks the VoiceRecorderButton's internal state so the composer row can stop
+  // forcing it into a fixed 42px circle once it expands — see comment composer for
+  // the full explanation of why that clipped the waveform/send UI off-screen.
+  const [groupVoiceState, setGroupVoiceState] = useState('idle');
   const [showGroupInfo, setShowGroupInfo] = useState(false);
   const [groupCallOpen, setGroupCallOpen] = useState(null); // 'audio' | 'video' | null
   // "Catch Me Up" — same mechanic as the 1:1 conversation view, using each member's
@@ -1540,15 +1544,17 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack, embedded=false, 
           </div>
         )}
         <div style={{ padding: '10px 14px', paddingBottom: 'max(28px, env(safe-area-inset-bottom))', background: COLORS.surface, borderTop: `1px solid ${COLORS.border}`, display: 'flex', gap: 8, alignItems: 'center' }}>
-          <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 2, background: COLORS.surfaceAlt, borderRadius: 26, padding: '4px 6px 4px 12px' }}>
-            <input value={msgText} onChange={e => setMsgText(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendGroupMsg()} placeholder="Message group..." style={{ flex: 1, minWidth: 0, background: 'none', border: 'none', outline: 'none', color: COLORS.textPrimary, fontSize: 13.5, padding: '9px 4px' }} />
-            <button onClick={() => fileInputRef.current?.click()} aria-label="Attach photo" style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, padding: 6 }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" /></svg>
-            </button>
-            <button onClick={openGroupCamera} aria-label="Take photo" style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, padding: 6 }}>
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" /><circle cx="12" cy="13" r="4" /></svg>
-            </button>
-          </div>
+          {groupVoiceState === 'idle' && (
+            <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 2, background: COLORS.surfaceAlt, borderRadius: 26, padding: '4px 6px 4px 12px' }}>
+              <input value={msgText} onChange={e => setMsgText(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendGroupMsg()} placeholder="Message group..." style={{ flex: 1, minWidth: 0, background: 'none', border: 'none', outline: 'none', color: COLORS.textPrimary, fontSize: 13.5, padding: '9px 4px' }} />
+              <button onClick={() => fileInputRef.current?.click()} aria-label="Attach photo" style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, padding: 6 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" /></svg>
+              </button>
+              <button onClick={openGroupCamera} aria-label="Take photo" style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, padding: 6 }}>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" /><circle cx="12" cy="13" r="4" /></svg>
+              </button>
+            </div>
+          )}
           <input ref={fileInputRef} type="file" accept="image/*,video/*" onChange={pickFile} style={{ display: 'none' }} />
           <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={pickFile} style={{ display: 'none' }} />
           <AnimatePresence initial={false}>
@@ -1557,9 +1563,13 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack, embedded=false, 
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="1"><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
               </motion.button>
             ) : (
+              // Same key stays mounted across idle → recording → preview so the active
+              // recording is never unmounted; only style changes (circle vs full-width).
               <motion.div key="voice" initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.5, opacity: 0 }} transition={springs.snappy}
-                style={{ background: COLORS.gradient, borderRadius: '50%', width: 42, height: 42, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <VoiceRecorderButton showToast={showToast} size="small" onSend={sendGroupVoice} />
+                style={ groupVoiceState === 'idle'
+                  ? { background: COLORS.gradient, borderRadius: '50%', width: 42, height: 42, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }
+                  : { flex: 1, minWidth: 0, display: 'flex', alignItems: 'center' } }>
+                <VoiceRecorderButton showToast={showToast} size="small" onSend={sendGroupVoice} onStateChange={setGroupVoiceState} />
               </motion.div>
             )}
           </AnimatePresence>
@@ -4445,6 +4455,10 @@ const LikesModal = ({ video, currentUser, users, onClose, onFollow, followed, on
 const CommentsModal = ({ video, currentUser, onClose, showToast, onViewProfile }) => {
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState('');
+  // Tracks the VoiceRecorderButton's internal state (idle/recording/paused/preview)
+  // so the composer row can stop forcing it into a fixed 42px circle once it expands
+  // — that fixed circle was clipping the waveform/timer/send UI off the right edge.
+  const [cmVoiceState, setCmVoiceState] = useState('idle');
   const commentInputRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -4686,15 +4700,17 @@ const CommentsModal = ({ video, currentUser, onClose, showToast, onViewProfile }
         </div>
       )}
       <div style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 16px max(16px, env(safe-area-inset-bottom))', background:COLORS.surface, borderTop:`1px solid ${COLORS.border}` }}>
-        <div style={{ flex:1, minWidth:0, display:'flex', alignItems:'center', gap:2, background:COLORS.surfaceAlt, borderRadius:26, padding:'4px 6px 4px 12px' }}>
-          <input ref={commentInputRef} value={commentText} onChange={e=>setCommentText(e.target.value)} onKeyDown={e=>e.key==='Enter'&&send()} placeholder="Add a comment..." style={{ flex:1, minWidth:0, background:'none', border:'none', outline:'none', color:COLORS.textPrimary, fontSize:13.5, padding:'9px 4px' }} />
-          <button onClick={()=>cmFileInputRef.current?.click()} aria-label="Attach photo" style={{ background:'none', border:'none', cursor:'pointer', color:COLORS.textTertiary, flexShrink:0, display:'flex', padding:5 }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
-          </button>
-          <button onClick={openCmCamera} aria-label="Take photo" style={{ background:'none', border:'none', cursor:'pointer', color:COLORS.textTertiary, flexShrink:0, display:'flex', padding:5 }}>
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
-          </button>
-        </div>
+        {cmVoiceState === 'idle' && (
+          <div style={{ flex:1, minWidth:0, display:'flex', alignItems:'center', gap:2, background:COLORS.surfaceAlt, borderRadius:26, padding:'4px 6px 4px 12px' }}>
+            <input ref={commentInputRef} value={commentText} onChange={e=>setCommentText(e.target.value)} onKeyDown={e=>e.key==='Enter'&&send()} placeholder="Add a comment..." style={{ flex:1, minWidth:0, background:'none', border:'none', outline:'none', color:COLORS.textPrimary, fontSize:13.5, padding:'9px 4px' }} />
+            <button onClick={()=>cmFileInputRef.current?.click()} aria-label="Attach photo" style={{ background:'none', border:'none', cursor:'pointer', color:COLORS.textTertiary, flexShrink:0, display:'flex', padding:5 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+            </button>
+            <button onClick={openCmCamera} aria-label="Take photo" style={{ background:'none', border:'none', cursor:'pointer', color:COLORS.textTertiary, flexShrink:0, display:'flex', padding:5 }}>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            </button>
+          </div>
+        )}
         <input ref={cmFileInputRef} type="file" accept="image/*,video/*" onChange={cmPickFile} style={{ display:'none' }} />
         <input ref={cmCameraInputRef} type="file" accept="image/*" capture="environment" onChange={cmPickFile} style={{ display:'none' }} />
         <AnimatePresence initial={false}>
@@ -4703,9 +4719,17 @@ const CommentsModal = ({ video, currentUser, onClose, showToast, onViewProfile }
               <svg width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="1"><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
             </motion.button>
           ) : (
+            // Wrapper stays mounted (same key) across idle → recording → preview so the
+            // in-progress recording is never torn down mid-flow. Only its *style* changes:
+            // a fixed 42px circle while idle (just the mic glyph), but flex:1 with no fixed
+            // width once recording/paused/preview so the waveform, timer, cancel and send
+            // controls have the full row to render in — previously the fixed circle clipped
+            // this content and pushed Send off the visible screen edge.
             <motion.div key="voice" initial={{ scale:0.5, opacity:0 }} animate={{ scale:1, opacity:1 }} exit={{ scale:0.5, opacity:0 }} transition={springs.snappy}
-              style={{ background:COLORS.gradient, borderRadius:'50%', width:42, height:42, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-              <VoiceRecorderButton showToast={showToast} size="small" onSend={sendCommentVoice} />
+              style={ cmVoiceState === 'idle'
+                ? { background:COLORS.gradient, borderRadius:'50%', width:42, height:42, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }
+                : { flex:1, minWidth:0, display:'flex', alignItems:'center' } }>
+              <VoiceRecorderButton showToast={showToast} size="small" onSend={sendCommentVoice} onStateChange={setCmVoiceState} />
             </motion.div>
           )}
         </AnimatePresence>
@@ -9234,7 +9258,7 @@ const HelpCenterPage = ({ user, showToast, onBack, onReport }) => {
 };
 
 /* ─────────────── VOICE RECORDER — PRODUCTION GRADE ─────────────── */
-const VoiceRecorderButton = ({ onSend, showToast, size = 'normal' }) => {
+const VoiceRecorderButton = ({ onSend, showToast, size = 'normal', onStateChange }) => {
   const [state, setState] = useState('idle'); // idle | recording | paused | preview
   const [duration, setDuration] = useState(0);
   const [audioUrl, setAudioUrl] = useState(null);
@@ -9247,6 +9271,12 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal' }) => {
   const streamRef = useRef(null);
   const audioCtxRef = useRef(null);
   const blobRef = useRef(null);
+
+  // Lets the parent composer know when we've left the compact "idle mic" look so
+  // it can stop squeezing the expanded recorder (waveform/timer/send) into a fixed
+  // 42px circle — that squeeze was pushing the Send button off-screen to the right
+  // in chat/group/comment composers. See usage sites for the matching layout fix.
+  useEffect(() => { onStateChange?.(state); }, [state]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const buildWaveform = () => {
     if (!analyserRef.current) return;
@@ -9455,6 +9485,10 @@ const CatchUpBanner = ({ unreadMessages, isGroup, onDismiss }) => {
 
 const ConversationView = ({ currentUser, otherUser, conversationId, onBack, showToast, onViewProfile, onVoiceCall, onVideoCall, onBlock }) => {
   const [text, setText] = useState('');
+  // Tracks the VoiceRecorderButton's internal state so the composer row can stop
+  // forcing it into a fixed 42px circle once it expands — see comment composer for
+  // the full explanation of why that clipped the waveform/send UI off-screen.
+  const [chatVoiceState, setChatVoiceState] = useState('idle');
   const [messages, setMessages] = useState([]);
   // "Catch Me Up" — captured once, at mount, from the conversation doc's previous
   // lastOpenedAt_{uid} (before this session overwrites it below). Messages after
@@ -10206,32 +10240,42 @@ unsub = onSnapshot(q, (snap) => {
         </motion.div>
       )}
       <div style={{padding:'10px 14px',paddingBottom:'max(28px, env(safe-area-inset-bottom))',background:composerBarBg,borderTop:`1px solid ${COLORS.border}`,display:'flex',gap:8,alignItems:'center'}}>
-        <div style={{flex:1,minWidth:0,display:'flex',alignItems:'center',gap:2,background:composerPillBg,borderRadius:26,padding:'4px 6px 4px 12px'}}>
-          <input value={text} onChange={e=>{
-            setText(e.target.value);
-            if (smartReplies.length) setSmartReplies([]);
-            setDoc(doc(db,'typing',conversationId),{[currentUser.id]:serverTimestamp()},{merge:true}).catch(()=>{});
-          }} onKeyDown={e=>e.key==='Enter'&&handleSend()} placeholder={isRecording?`🔴 ${fmt(recordSecs)}`:'Type a message'} style={{flex:1,minWidth:0,background:'none',border:'none',outline:'none',color:COLORS.textPrimary,fontSize:13.5,padding:'9px 4px'}}/>
-          <button onClick={()=>fileInputRef.current?.click()} aria-label="Attach photo" style={{background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:6}}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
-          </button>
-          <button onClick={openChatCamera} aria-label="Take photo" style={{background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:6}}>
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
-          </button>
-        </div>
+        {chatVoiceState === 'idle' && (
+          <div style={{flex:1,minWidth:0,display:'flex',alignItems:'center',gap:2,background:composerPillBg,borderRadius:26,padding:'4px 6px 4px 12px'}}>
+            <input value={text} onChange={e=>{
+              setText(e.target.value);
+              if (smartReplies.length) setSmartReplies([]);
+              setDoc(doc(db,'typing',conversationId),{[currentUser.id]:serverTimestamp()},{merge:true}).catch(()=>{});
+            }} onKeyDown={e=>e.key==='Enter'&&handleSend()} placeholder="Type a message" style={{flex:1,minWidth:0,background:'none',border:'none',outline:'none',color:COLORS.textPrimary,fontSize:13.5,padding:'9px 4px'}}/>
+            <button onClick={()=>fileInputRef.current?.click()} aria-label="Attach photo" style={{background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:6}}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+            </button>
+            <button onClick={openChatCamera} aria-label="Take photo" style={{background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:6}}>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            </button>
+          </div>
+        )}
         <input ref={fileInputRef} type="file" accept="image/*,video/*,audio/*" onChange={pickFile} style={{display:'none'}}/>
         <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={pickFile} style={{display:'none'}}/>
         <AnimatePresence initial={false}>
-        {(text.trim() || previewFile || audioBlob) ? (
+        {(text.trim() || previewFile) ? (
           <motion.button key="send" initial={{ scale:0.5, opacity:0 }} animate={{ scale:1, opacity:1 }} exit={{ scale:0.5, opacity:0 }} transition={springs.snappy} whileTap={tapScale} onClick={handleSend} aria-label="Send message" style={{background:actionButtonBg,border:'none',borderRadius:'50%',width:42,height:42,color:'white',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,boxShadow:myGlow}}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="1"><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           </motion.button>
         ) : (
+          // Same key ("voice") stays mounted across idle → recording → preview so the
+          // in-progress recording is never torn down mid-flow. Only the style switches:
+          // a fixed 42px circle while idle (mic glyph only), flex:1 with no fixed width
+          // once recording/paused/preview so the waveform, timer, cancel and send controls
+          // get the full row instead of being clipped off the right edge of the screen.
           <motion.div key="voice" initial={{ scale:0.5, opacity:0 }} animate={{ scale:1, opacity:1 }} exit={{ scale:0.5, opacity:0 }} transition={springs.snappy}
-            style={{background:actionButtonBg,borderRadius:'50%',width:42,height:42,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,boxShadow:myGlow}}>
+            style={ chatVoiceState === 'idle'
+              ? {background:actionButtonBg,borderRadius:'50%',width:42,height:42,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,boxShadow:myGlow}
+              : {flex:1,minWidth:0,display:'flex',alignItems:'center'} }>
           <VoiceRecorderButton
             showToast={showToast}
             size="small"
+            onStateChange={setChatVoiceState}
             onSend={async (voiceMsg) => {
               try {
                 const ref = await addDoc(collection(db,'messages',conversationId,'msgs'), {
