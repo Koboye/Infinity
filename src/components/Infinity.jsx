@@ -5631,131 +5631,168 @@ function sectionLabelFor(date) {
    (full ring = just posted, thin sliver = about to expire) instead of a
    static gradient border. Live nodes pulse solid red instead of showing an
    arc at all, since a live stream doesn't expire on the same clock. */
-const OrbitNode = ({ size = 60, freshness = 1, isLive, isSelf, avatarUrl, avatarColor, initial, label, onClick, onLongPress }) => {
-  const r = (size - 6) / 2;
-  const c = 2 * Math.PI * r;
-  const pressTimer = useRef(null);
-  const firedLong = useRef(false);
-  const startPress = () => {
-    firedLong.current = false;
-    pressTimer.current = setTimeout(() => { firedLong.current = true; haptic?.('light'); onLongPress?.(); }, 420);
-  };
-  const endPress = () => { clearTimeout(pressTimer.current); if (!firedLong.current) onClick?.(); };
-  return (
-    <motion.div
-      whileTap={{ scale: 0.94 }}
-      onMouseDown={startPress} onMouseUp={endPress} onMouseLeave={()=>clearTimeout(pressTimer.current)}
-      onTouchStart={startPress} onTouchEnd={endPress}
-      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, width: size + 14, flexShrink: 0, cursor: 'pointer' }}
-    >
-      <div style={{ position: 'relative', width: size, height: size }}>
-        <svg width={size} height={size} style={{ position: 'absolute', inset: 0, transform: 'rotate(-90deg)' }}>
-          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={COLORS.border} strokeWidth={isSelf ? 1.5 : 2.5} strokeDasharray={isSelf ? '3 4' : 'none'} />
-          {!isSelf && (
-            <circle
-              cx={size / 2} cy={size / 2} r={r} fill="none"
-              stroke={isLive ? COLORS.live : COLORS.brand} strokeWidth={2.5} strokeLinecap="round"
-              strokeDasharray={c} strokeDashoffset={isLive ? 0 : c * (1 - Math.max(0.06, freshness))}
-              style={isLive ? { animation: 'pulseGlow 1.6s ease-in-out infinite' } : undefined}
-            />
-          )}
-        </svg>
-        <div style={{ position: 'absolute', inset: 5, borderRadius: '50%', overflow: 'hidden', background: avatarColor || COLORS.brand, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: size * 0.3 }}>
-          {avatarUrl ? <img loading="lazy" decoding="async" src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (isSelf ? '' : initial)}
-          {isSelf && (
-            <div style={{ position: 'absolute', bottom: -1, right: -1, width: 20, height: 20, borderRadius: '50%', background: COLORS.gradient, border: `2px solid ${COLORS.bg}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 12, fontWeight: 800 }}>+</div>
-          )}
-        </div>
-        {isLive && (
-          <div style={{ position: 'absolute', bottom: -2, left: '50%', transform: 'translateX(-50%)', background: COLORS.live, borderRadius: 6, padding: '1px 6px', fontSize: 8, fontWeight: 800, color: 'white', letterSpacing: 0.3, whiteSpace: 'nowrap' }}>LIVE</div>
-        )}
-      </div>
-      <span style={{ fontSize: 10.5, fontWeight: 600, color: COLORS.textSecondary, maxWidth: size + 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
-    </motion.div>
-  );
-};
+/* ─────────────── PULSE LINE ───────────────
+   Replaces any kind of "row of tappable circular avatars" — that pattern
+   itself, however it's decorated, reads as a Stories shelf. This is a
+   different object entirely: a live 24-hour activity waveform, like an EKG
+   for your circle, with no avatar bubbles at all. Bumps are built from when
+   your circle actually posted; a flat data point, not a profile picture.
+   Tapping a point opens that moment's story; the "now" edge shows who's
+   live as small colored ticks, not photo bubbles. */
+const PULSE_BUCKETS = 8;
+const PULSE_BUCKET_MS = 3 * 60 * 60 * 1000; // 3h per bucket, 24h total
+const PULSE_VB_W = 400, PULSE_VB_H = 64, PULSE_BASELINE = 46, PULSE_AMPLITUDE = 32;
 
-const OrbitRail = ({ users, currentUser, onViewStory, onCreateStory, liveUserIds }) => {
-  const [storyGroups, setStoryGroups] = useState([]);
+// Smooth line through evenly-spaced points via cubic beziers with
+// horizontal-midpoint control points — a standard chart-smoothing trick,
+// gives the "waveform" feel without needing a charting library.
+function pulseSmoothPath(points) {
+  if (points.length < 2) return '';
+  let d = `M ${points[0].x} ${points[0].y}`;
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[i], p1 = points[i + 1];
+    const midX = (p0.x + p1.x) / 2;
+    d += ` C ${midX} ${p0.y}, ${midX} ${p1.y}, ${p1.x} ${p1.y}`;
+  }
+  return d;
+}
+
+const PulseLine = ({ users, currentUser, onViewStory, onCreateStory, onWatchLive, liveUserIds }) => {
+  const [rawStories, setRawStories] = useState([]);
+  const gradId = useRef(`pulseGrad_${Math.random().toString(36).slice(2)}`).current;
 
   useEffect(() => {
-    const buildGroups = (docs) => {
+    const buildList = (docs) => {
       const now = new Date();
-      const byUser = {};
-      docs.forEach(d => {
+      return docs.map(d => {
         const data = d.data();
         const exp = data.expiresAt?.toDate ? data.expiresAt.toDate() : (data.expiresAt ? new Date(data.expiresAt) : null);
-        if (exp && exp < now) return;
-        if (!byUser[data.userId]) byUser[data.userId] = { userId: data.userId, stories: [] };
-        byUser[data.userId].stories.push({ id: d.id, ...data, expiresAt: exp });
-      });
-      return Object.values(byUser).map(g => {
-        const u = (users || []).find(uu => uu.id === g.userId);
-        const latest = g.stories[g.stories.length - 1];
-        return {
-          ...g,
-          username: u?.username || latest?.username || 'user',
-          avatarColor: u?.avatarColor || latest?.avatarColor,
-          avatarUrl: u?.avatarUrl || latest?.avatarUrl,
-          expiresAt: g.stories.reduce((max, s) => (s.expiresAt && (!max || s.expiresAt > max)) ? s.expiresAt : max, null),
-        };
-      });
+        const created = data.createdAt?.toDate ? data.createdAt.toDate() : (data.createdAt ? new Date(data.createdAt) : now);
+        return { id: d.id, ...data, createdAtDate: created, expiresAtDate: exp };
+      }).filter(s => !s.expiresAtDate || s.expiresAtDate >= now);
     };
     const primaryQ = query(collection(db, 'stories'), orderBy('createdAt', 'desc'));
     let fallbackUnsub = null;
-    const unsub = onSnapshot(primaryQ, snap => setStoryGroups(buildGroups(snap.docs)), () => {
+    const unsub = onSnapshot(primaryQ, snap => setRawStories(buildList(snap.docs)), () => {
       const fallbackQ = query(collection(db, 'stories'));
-      fallbackUnsub = onSnapshot(fallbackQ, snap => setStoryGroups(buildGroups(snap.docs)), () => {});
+      fallbackUnsub = onSnapshot(fallbackQ, snap => setRawStories(buildList(snap.docs)), () => {});
     });
     return () => { unsub(); fallbackUnsub?.(); };
-  }, [users]);
+  }, []);
+
+  // Story groups (by author) — only used to hand the viewer the same
+  // {groups, startIdx} shape it's always expected, not for rendering.
+  const storyGroups = useMemo(() => {
+    const byUser = {};
+    rawStories.forEach(s => {
+      if (!byUser[s.userId]) byUser[s.userId] = { userId: s.userId, stories: [] };
+      byUser[s.userId].stories.push(s);
+    });
+    return Object.values(byUser).map(g => {
+      const u = (users || []).find(uu => uu.id === g.userId);
+      return {
+        ...g,
+        username: u?.username || g.stories[0]?.username || 'user',
+        avatarColor: u?.avatarColor || g.stories[0]?.avatarColor,
+        avatarUrl: u?.avatarUrl || g.stories[0]?.avatarUrl,
+      };
+    });
+  }, [rawStories, users]);
 
   const mine = storyGroups.find(g => g.userId === currentUser?.id);
-  const others = storyGroups.filter(g => g.userId !== currentUser?.id);
   const amILive = liveUserIds?.has(currentUser?.id);
 
-  const freshnessOf = (g) => {
-    if (!g?.expiresAt) return 1;
-    const remain = g.expiresAt.getTime() - Date.now();
-    return Math.max(0, Math.min(1, remain / DAY_MS));
-  };
+  const { points, dots, area, total } = useMemo(() => {
+    const now = Date.now();
+    const buckets = Array.from({ length: PULSE_BUCKETS }, () => ({ count: 0, latest: null }));
+    rawStories.forEach(s => {
+      const ageMs = now - s.createdAtDate.getTime();
+      if (ageMs < 0 || ageMs > PULSE_BUCKETS * PULSE_BUCKET_MS) return;
+      const fromNow = Math.min(PULSE_BUCKETS - 1, Math.floor(ageMs / PULSE_BUCKET_MS));
+      const idx = (PULSE_BUCKETS - 1) - fromNow; // 0 = 24h ago … last = now
+      buckets[idx].count += 1;
+      if (!buckets[idx].latest || s.createdAtDate > buckets[idx].latest.createdAtDate) buckets[idx].latest = s;
+    });
+    const maxCount = Math.max(1, ...buckets.map(b => b.count));
+    const pts = buckets.map((b, i) => {
+      const x = (i / (PULSE_BUCKETS - 1)) * PULSE_VB_W;
+      const idle = b.count === 0 ? (i % 2 === 0 ? 2 : -2) : 0;
+      const y = PULSE_BASELINE - (b.count / maxCount) * PULSE_AMPLITUDE + idle;
+      return { x, y, count: b.count, latest: b.latest };
+    });
+    const dotPts = pts.filter(p => p.count > 0);
+    const linePath = pulseSmoothPath(pts);
+    const areaPath = pts.length ? `${linePath} L ${pts[pts.length - 1].x} ${PULSE_VB_H} L ${pts[0].x} ${PULSE_VB_H} Z` : '';
+    return { points: linePath, dots: dotPts, area: areaPath, total: buckets.reduce((s, b) => s + b.count, 0) };
+  }, [rawStories]);
 
-  const openGroup = (userId) => {
+  const openFor = (userId) => {
     const idx = storyGroups.findIndex(g => g.userId === userId);
+    if (idx === -1) return;
     onViewStory?.({ groups: storyGroups, startIdx: idx });
   };
+  const handleSelfTap = () => (mine ? openFor(currentUser.id) : onCreateStory?.());
 
-  if (!others.length && !mine) {
-    // Nothing to orbit yet — a single quiet "start one" node, no empty shelf.
-    return (
-      <div style={{ display: 'flex', gap: 14, padding: '4px 16px 6px', overflowX: 'auto', scrollbarWidth: 'none' }}>
-        <OrbitNode isSelf avatarUrl={currentUser?.avatarUrl} avatarColor={currentUser?.avatarColor} initial={(currentUser?.username || '?')[0]?.toUpperCase()} label="Start" onClick={onCreateStory} />
-        <div style={{ display: 'flex', alignItems: 'center', color: COLORS.textTertiary, fontSize: 12, fontStyle: 'italic' }}>No one's in orbit yet — be first</div>
-      </div>
-    );
-  }
+  const liveList = useMemo(() => {
+    const ids = Array.from(liveUserIds || []).filter(id => id !== currentUser?.id);
+    return ids.map(id => (users || []).find(u => u.id === id)).filter(Boolean);
+  }, [liveUserIds, users, currentUser?.id]);
 
   return (
-    <div style={{ display: 'flex', gap: 14, padding: '4px 16px 6px', overflowX: 'auto', scrollbarWidth: 'none' }}>
-      <OrbitNode
-        isSelf isLive={amILive}
-        avatarUrl={currentUser?.avatarUrl} avatarColor={currentUser?.avatarColor}
-        initial={(currentUser?.username || '?')[0]?.toUpperCase()}
-        label={mine ? 'You' : 'Add'}
-        onClick={() => (mine ? openGroup(currentUser.id) : onCreateStory?.())}
-        onLongPress={onCreateStory}
-      />
-      {others.map(g => (
-        <OrbitNode
-          key={g.userId}
-          avatarUrl={g.avatarUrl} avatarColor={g.avatarColor}
-          initial={(g.username || '?')[0]?.toUpperCase()}
-          label={g.username?.split('_')[0]}
-          isLive={liveUserIds?.has(g.userId)}
-          freshness={freshnessOf(g)}
-          onClick={() => openGroup(g.userId)}
-        />
-      ))}
+    <div style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: RADIUS.lg, padding: '12px 14px 10px', marginBottom: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+        <motion.button whileTap={tapScale} onClick={handleSelfTap}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, background: mine ? `${COLORS.brand}14` : COLORS.surfaceAlt, border: `1px solid ${mine ? `${COLORS.brand}40` : COLORS.border}`, borderRadius: RADIUS.pill, padding: '5px 10px 5px 8px', cursor: 'pointer' }}>
+          <span style={{ fontSize: 12 }}>{mine ? '👁️' : '✏️'}</span>
+          <span style={{ fontSize: 11, fontWeight: 700, color: mine ? COLORS.brand : COLORS.textSecondary }}>{mine ? 'View your pulse' : 'Add to today\u2019s pulse'}</span>
+        </motion.button>
+        <span style={{ fontSize: 10.5, fontWeight: 700, color: COLORS.textTertiary }}>{total} {total === 1 ? 'pulse' : 'pulses'} · last 24h</span>
+      </div>
+
+      <div style={{ position: 'relative' }}>
+        <svg viewBox={`0 0 ${PULSE_VB_W} ${PULSE_VB_H}`} preserveAspectRatio="none" style={{ width: '100%', height: 56, display: 'block' }}>
+          <defs>
+            <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={COLORS.brand} stopOpacity="0.22" />
+              <stop offset="100%" stopColor={COLORS.brand} stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          {area && <path d={area} fill={`url(#${gradId})`} stroke="none" />}
+          {points && <path d={points} fill="none" stroke={COLORS.brand} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />}
+          <line x1={PULSE_VB_W - 1} y1="4" x2={PULSE_VB_W - 1} y2={PULSE_VB_H - 4} stroke={COLORS.border} strokeWidth="1" strokeDasharray="2 3" />
+          {dots.map((d, i) => (
+            <circle key={i} cx={d.x} cy={d.y} r="4.5"
+              fill={d.latest?.avatarColor || COLORS.brand} stroke={COLORS.surface} strokeWidth="2"
+              style={{ cursor: 'pointer' }}
+              onClick={() => d.latest?.userId && openFor(d.latest.userId)}
+            >
+              <title>{d.latest?.username ? `@${d.latest.username} · ${d.count} pulse${d.count === 1 ? '' : 's'}` : ''}</title>
+            </circle>
+          ))}
+        </svg>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2 }}>
+          <span style={{ fontSize: 9, color: COLORS.textTertiary, fontWeight: 600 }}>24h ago</span>
+          <span style={{ fontSize: 9, color: COLORS.textTertiary, fontWeight: 600 }}>now</span>
+        </div>
+      </div>
+
+      {(amILive || liveList.length > 0) && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, paddingTop: 8, borderTop: `1px solid ${COLORS.border}`, flexWrap: 'wrap' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 10.5, fontWeight: 800, color: COLORS.live }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: COLORS.live, animation: 'pulseGlow 1.4s ease-in-out infinite' }} />
+            LIVE NOW
+          </span>
+          {amILive && (
+            <span onClick={() => onWatchLive?.(currentUser)} style={{ fontSize: 11, fontWeight: 700, color: COLORS.textSecondary, cursor: 'pointer', background: COLORS.surfaceAlt, border: `1px solid ${COLORS.border}`, borderRadius: RADIUS.pill, padding: '3px 9px' }}>You</span>
+          )}
+          {liveList.slice(0, 4).map(u => (
+            <span key={u.id} onClick={() => onWatchLive?.(u)} style={{ fontSize: 11, fontWeight: 700, color: COLORS.textSecondary, cursor: 'pointer', background: COLORS.surfaceAlt, border: `1px solid ${COLORS.border}`, borderRadius: RADIUS.pill, padding: '3px 9px' }}>
+              @{u.username}
+            </span>
+          ))}
+          {liveList.length > 4 && <span style={{ fontSize: 11, fontWeight: 700, color: COLORS.textTertiary }}>+{liveList.length - 4}</span>}
+        </div>
+      )}
     </div>
   );
 };
@@ -6158,10 +6195,10 @@ const HomeFeed = ({ t, videos, videosLoading, videosError, onLike, onComment, on
         </div>
       </div>
 
-      {/* Orbit rail — unified presence (stories + live), replaces the old
-          rectangular story shelf. */}
-      <div style={{ margin: '4px -14px 0' }}>
-        <OrbitRail users={users} currentUser={currentUser} onViewStory={onViewStory} onCreateStory={onCreateStory} liveUserIds={liveUserIds} />
+      {/* Pulse Line — a 24h activity waveform standing in for the old
+          stories shelf entirely. No avatars, no row of tappable circles. */}
+      <div style={{ marginTop: 4, marginBottom: 10 }}>
+        <PulseLine users={users} currentUser={currentUser} onViewStory={onViewStory} onCreateStory={onCreateStory} onWatchLive={onWatchLive} liveUserIds={liveUserIds} />
       </div>
 
       <RhythmStrip videos={videos} liveUserIds={liveUserIds} blockedUsers={blockedUsers} />
