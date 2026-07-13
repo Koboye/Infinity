@@ -1515,7 +1515,11 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack, embedded=false, 
                     <video src={msg.mediaUrl} controls style={{ maxWidth: 220, borderRadius: 14, marginBottom: msg.text ? 4 : 0, display: 'block' }} />
                   )}
                   {msg.mediaUrl && msg.mediaType?.startsWith('audio') && (
-                    <audio src={msg.mediaUrl} controls style={{ maxWidth: 220, marginBottom: msg.text ? 4 : 0, display: 'block' }} />
+                    <div style={{ marginBottom: msg.text ? 4 : 0 }}>
+                      <AudioBubble src={msg.mediaUrl} duration={msg.duration} seed={msg.id || msg.mediaUrl}
+                        accentBg={isMine ? 'rgba(255,255,255,0.16)' : COLORS.audioSurface}
+                        accentColor={isMine ? '#fff' : COLORS.audio} />
+                    </div>
                   )}
                   {msg.text && (
                     <div style={{ background: isMine ? `linear-gradient(135deg,${COLORS.brand},${COLORS.brandSecondary})` : COLORS.surfaceAlt, borderRadius: isMine ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: '10px 14px', color: isMine ? 'white' : COLORS.textPrimary, fontSize: 14, boxShadow: isMine ? SHADOW.xs : 'none' }}>
@@ -2172,23 +2176,6 @@ const SkeletonLoader = ({ count=3 }) => (
   </div>
 );
 
-// Was defined but never rendered anywhere (a leftover from before the light-theme
-// redesign — it still had the old hardcoded dark '#15151C' background). Reworked to
-// use the current theme tokens and now used as Infinity's loading placeholder while
-// posts are still streaming in, instead of just deleting it outright.
-const VideoSkeleton = () => (
-  <div style={{ background:COLORS.surface, borderRadius:20, overflow:'hidden', border:`1px solid ${COLORS.border}` }}>
-    <div style={{ display:'flex', gap:10, alignItems:'center', padding:'12px 14px 10px' }}>
-      <div className="skeleton-shimmer" style={{ width:28, height:28, borderRadius:'50%', flexShrink:0 }} />
-      <div className="skeleton-shimmer" style={{ height:11, borderRadius:6, width:'35%' }} />
-    </div>
-    <div className="skeleton-shimmer" style={{ width:'100%', height:200 }} />
-    <div style={{ padding:'12px 14px 14px', display:'flex', flexDirection:'column', gap:8 }}>
-      <div className="skeleton-shimmer" style={{ height:11, borderRadius:6, width:'80%' }} />
-      <div className="skeleton-shimmer" style={{ height:11, borderRadius:6, width:'55%' }} />
-    </div>
-  </div>
-);
 const RippleButton = ({ onClick, style, children, disabled }) => {
   const handleClick = (e) => {
     if(disabled) return;
@@ -2606,13 +2593,16 @@ const TelegramStoryViewer = ({ storyGroups, startGroupIdx, currentUser, onClose,
       <div style={{ flex:1, position:'relative', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden' }}>
         {currentStory.mediaType === 'video' || currentStory.mediaUrl?.includes('/video/')
           ? <video src={currentStory.mediaUrl} autoPlay loop playsInline style={{ width:'100%', height:'100%', objectFit:'cover' }} />
-          : currentStory.mediaUrl
-            ? <img loading="lazy" decoding="async" src={currentStory.mediaUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
-            : <div style={{ width:'100%', height:'100%', background:currentStory.bgColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', padding:40 }}>
-                <div style={{ color:'white', fontSize:28, fontWeight:700, textAlign:'center', lineHeight:1.4 }}>{currentStory.text}</div>
-              </div>}
+          : currentStory.mediaType?.startsWith('audio')
+            ? <AudioHeroCard src={currentStory.mediaUrl} duration={currentStory.duration} seed={currentStory.id || currentStory.mediaUrl}
+                caption={currentStory.text} fullBleed autoPlay />
+            : currentStory.mediaUrl
+              ? <img loading="lazy" decoding="async" src={currentStory.mediaUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+              : <div style={{ width:'100%', height:'100%', background:currentStory.bgColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', padding:40 }}>
+                  <div style={{ color:'white', fontSize:28, fontWeight:700, textAlign:'center', lineHeight:1.4 }}>{currentStory.text}</div>
+                </div>}
         {/* Text overlay on media */}
-        {currentStory.text && currentStory.mediaUrl && (
+        {currentStory.text && currentStory.mediaUrl && !currentStory.mediaType?.startsWith('audio') && (
           <div style={{ position:'absolute', bottom:90, left:0, right:0, textAlign:'center', padding:'0 24px' }}>
             <div style={{ color:'white', fontSize:18, fontWeight:700, textShadow:'0 2px 8px rgba(0,0,0,0.8)', lineHeight:1.4 }}>{currentStory.text}</div>
           </div>
@@ -3010,9 +3000,8 @@ const StoriesPage = ({ users, currentUser, onClose, onViewStory, onCreateStory, 
         ) : isActiveVideo ? (
           <video src={activeMedia} muted loop autoPlay playsInline style={{ width:'100%', height:'100%', objectFit:'cover', position:'absolute', inset:0 }} />
         ) : isActiveAudio ? (
-          <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:14, padding:24 }}>
-            <div style={{ fontSize:56 }}>🎙️</div>
-            <audio src={activeMedia} controls style={{ width:'100%', maxWidth:260 }} />
+          <div style={{ position:'absolute', inset:0 }}>
+            <AudioHeroCard src={activeMedia} duration={activeStory?.duration} seed={activeStory?.id || activeMedia} fullBleed />
           </div>
         ) : activeStory?.text ? (
           <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', padding:24 }}>
@@ -3249,6 +3238,7 @@ const CreateStoryModal = ({ currentUser, onClose, showToast }) => {
         bgColor: bgColor || COLORS.brand,
         mediaUrl: mediaUrl || null,
         mediaType: mediaType || null,
+        duration: audioBlob ? audioDuration : null,
         createdAt: serverTimestamp(),
         expiresAt: new Date(Date.now() + 24*60*60*1000),
       });
@@ -3271,9 +3261,9 @@ const CreateStoryModal = ({ currentUser, onClose, showToast }) => {
         <div style={{ width:36, height:4, background:'rgba(255,255,255,0.15)', borderRadius:2, margin:'0 auto 24px' }} />
         <div style={{ color:'white', fontWeight:800, fontSize:20, marginBottom:20, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>Create Story</div>
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-          {[{id:'camera',icon:'📷',label:'Camera',sub:'Photo or video',color:COLORS.brand},{id:'file',icon:'🖼️',label:'Gallery',sub:'From device',color:COLORS.brand},{id:'text',icon:'✏️',label:'Text',sub:'Write a story',color:'#0A84FF'},{id:'audio',icon:'🎙️',label:'Audio',sub:'Voice story',color:'#2ED573'}].map(opt=>(
-            <button key={opt.id} onClick={()=>{if(opt.id==='file') fileInputRef.current?.click(); else setMode(opt.id);}} style={{ background:'rgba(255,255,255,0.04)', border:`1px solid ${opt.color}30`, borderRadius:22, padding:'18px 14px', display:'flex', flexDirection:'column', alignItems:'center', gap:8, cursor:'pointer' }}>
-              <div style={{ width:52, height:52, borderRadius:'50%', background:opt.color+'18', display:'flex', alignItems:'center', justifyContent:'center', fontSize:26 }}>{opt.icon}</div>
+          {[{id:'camera',icon:'📷',label:'Camera',sub:'Photo or video',color:COLORS.brand},{id:'file',icon:'🖼️',label:'Gallery',sub:'From device',color:COLORS.brand},{id:'text',icon:'✏️',label:'Text',sub:'Write a story',color:'#0A84FF'},{id:'audio',icon:'🎙️',label:'Voice',sub:'Record a voice story',color:COLORS.audio,gradient:COLORS.audioGradient}].map(opt=>(
+            <button key={opt.id} onClick={()=>{if(opt.id==='file') fileInputRef.current?.click(); else setMode(opt.id);}} style={{ background: opt.gradient ? `${opt.color}12` : 'rgba(255,255,255,0.04)', border:`1px solid ${opt.color}30`, borderRadius:22, padding:'18px 14px', display:'flex', flexDirection:'column', alignItems:'center', gap:8, cursor:'pointer' }}>
+              <div style={{ width:52, height:52, borderRadius:'50%', background: opt.gradient || (opt.color+'18'), boxShadow: opt.gradient ? SHADOW.glow(COLORS.audioGlow) : 'none', display:'flex', alignItems:'center', justifyContent:'center', fontSize:26 }}>{opt.icon}</div>
               <div style={{ color:'white', fontWeight:700, fontSize:14, fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>{opt.label}</div>
               <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11 }}>{opt.sub}</div>
             </button>
@@ -3314,41 +3304,15 @@ const CreateStoryModal = ({ currentUser, onClose, showToast }) => {
         )}
         {mode==='audio' && (
           <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:24, padding:40, width:'100%', boxSizing:'border-box' }}>
-            <div style={{ fontSize:80 }}>🎙️</div>
+            <div style={{ width:100, height:100, borderRadius:'50%', background:COLORS.audioGradient, display:'flex', alignItems:'center', justifyContent:'center', fontSize:44, boxShadow: SHADOW.glow(COLORS.audioGlow) }}>🎙️</div>
             {audioBlob ? (
               <div style={{ width:'100%', display:'flex', flexDirection:'column', alignItems:'center', gap:16 }}>
-                {/* Hidden native element used purely for playback — no native controls
-                    UI, so it can never impose its own intrinsic min-width on the row
-                    (see VoiceRecorderButton for the full explanation of that bug). */}
-                <audio
-                  ref={previewAudioElRef}
-                  src={audioUrl}
-                  style={{ display:'none' }}
-                  onPlay={()=>setIsPlayingAudio(true)}
-                  onPause={()=>setIsPlayingAudio(false)}
-                  onEnded={()=>{ setIsPlayingAudio(false); setAudioPlaybackPos(0); }}
-                  onTimeUpdate={e=>setAudioPlaybackPos(e.currentTarget.currentTime)}
-                />
-                <div style={{ width:'100%', display:'flex', alignItems:'center', gap:12, background:'rgba(255,255,255,0.06)', borderRadius:24, padding:'12px 16px', boxSizing:'border-box' }}>
-                  <button onClick={toggleAudioPlayback} aria-label={isPlayingAudio ? 'Pause preview' : 'Play preview'} style={{ background:isPlayingAudio?COLORS.brand:'rgba(255,255,255,0.12)', border:'none', borderRadius:'50%', width:38, height:38, minWidth:38, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                    {isPlayingAudio
-                      ? <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
-                      : <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><polygon points="6 3 21 12 6 21 6 3"/></svg>}
-                  </button>
-                  <div ref={audioScrubRef} onPointerDown={handleAudioScrubDown} style={{ flex:1, minWidth:0, height:30, display:'flex', alignItems:'center', gap:2, cursor:'pointer', touchAction:'none' }}>
-                    {previewWaveform.map((h,i) => {
-                      const barRatio = (i + 0.5) / previewWaveform.length;
-                      const played = audioDuration > 0 && barRatio <= audioPlaybackPos / audioDuration;
-                      return <div key={i} style={{ flex:1, minWidth:2, borderRadius:2, height:`${Math.max(14, Math.round(h*100))}%`, background: played ? '#2ED573' : 'rgba(255,255,255,0.25)', transition:'background 0.1s' }} />;
-                    })}
-                  </div>
-                  <span style={{ color:'rgba(255,255,255,0.5)', fontSize:12, flexShrink:0, minWidth:34, textAlign:'right', fontVariantNumeric:'tabular-nums' }}>{fmtAudioTime(isPlayingAudio ? Math.ceil(audioDuration - audioPlaybackPos) : audioDuration)}</span>
-                </div>
-                <button onClick={reRecordAudio} style={{ background:'#34343E', border:'none', borderRadius:20, padding:'10px 20px', color:'white', cursor:'pointer', fontSize:13, fontWeight:700 }}>🔄 Re-record</button>
+                <AudioBubble src={audioUrl} duration={audioDuration} seed={audioUrl} accentBg="rgba(255,255,255,0.06)" accentColor={COLORS.audioSecondary} />
+                <button onClick={reRecordAudio} style={{ background:COLORS.audioGradient, border:'none', borderRadius:20, padding:'10px 20px', color:'white', cursor:'pointer', fontSize:13, fontWeight:700 }}>🔄 Re-record</button>
               </div>
             ) : (
               <>
-                <button onMouseDown={startAudio} onMouseUp={stopAudio} onTouchStart={startAudio} onTouchEnd={stopAudio} style={{ background:isRecording?COLORS.brand:'#34343E', border:'none', borderRadius:'50%', width:90, height:90, fontSize:36, cursor:'pointer', flexShrink:0, boxShadow: isRecording ? `0 0 0 8px ${COLORS.brand}22` : 'none', transition:'box-shadow 0.2s' }}>{isRecording?'⏹':'🎙️'}</button>
+                <button onMouseDown={startAudio} onMouseUp={stopAudio} onTouchStart={startAudio} onTouchEnd={stopAudio} style={{ background:isRecording?COLORS.live:COLORS.audioGradient, border:'none', borderRadius:'50%', width:90, height:90, fontSize:36, cursor:'pointer', flexShrink:0, boxShadow: isRecording ? `0 0 0 8px ${COLORS.live}22` : SHADOW.glow(COLORS.audioGlow), transition:'box-shadow 0.2s' }}>{isRecording?'⏹':'🎙️'}</button>
                 {/* Live level meter + running timer while recording, so it's obvious the
                     mic is actually picking something up before you release — the old
                     version gave zero feedback beyond a color change on the button itself. */}
@@ -3356,7 +3320,7 @@ const CreateStoryModal = ({ currentUser, onClose, showToast }) => {
                   <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:8, width:'100%' }}>
                     <div style={{ display:'flex', alignItems:'center', gap:1.5, height:28, width:'100%', maxWidth:220 }}>
                       {(liveLevel.length ? liveLevel : Array.from({length:24},()=>0.1)).map((h,i)=>(
-                        <div key={i} style={{ flex:1, background:COLORS.brand, borderRadius:2, height:`${Math.round(h*100)}%`, minHeight:2, transition:'height 0.05s' }} />
+                        <div key={i} style={{ flex:1, background:COLORS.audioGradient, borderRadius:2, height:`${Math.round(h*100)}%`, minHeight:2, transition:'height 0.05s' }} />
                       ))}
                     </div>
                     <span style={{ color:'white', fontWeight:700, fontSize:13, fontVariantNumeric:'tabular-nums' }}>{fmtAudioTime(audioDuration)}</span>
@@ -5293,7 +5257,9 @@ const CommentsModal = ({ video, currentUser, onClose, showToast, onViewProfile }
                 <video src={c.mediaUrl} controls style={{ maxWidth:200, borderRadius:12, marginTop:6, display:'block' }} />
               )}
               {c.mediaUrl && c.mediaType?.startsWith('audio') && (
-                <audio src={c.mediaUrl} controls style={{ maxWidth:220, marginTop:6, display:'block' }} />
+                <div style={{ marginTop: 6 }}>
+                  <AudioBubble src={c.mediaUrl} duration={c.duration} seed={c.id || c.mediaUrl} compact />
+                </div>
               )}
               {c.text && <div style={{ color:COLORS.textSecondary, fontSize:13.5, lineHeight:1.45, marginTop:2 }}>{c.text}</div>}
               <div style={{ display:'flex', alignItems:'center', gap:16, marginTop:6 }}>
@@ -5714,6 +5680,7 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
   // below once isVisible exists.
   useEffect(() => () => { if (isReading || isTranslatingRead) stopReading(); }, []);
   const isVideo = video?.mediaType?.startsWith('video') || /\.(mp4|webm|mov)(\?|$)/i.test(video?.videoUrl||'');
+  const isAudioPost = video?.mediaType?.startsWith('audio');
   const galleryImages = Array.isArray(video.images) && video.images.length > 0 ? video.images : null;
   const mediaSrc = (galleryImages && galleryImages[0]) || video.videoUrl;
   const mediaWrapRef = useRef(null);
@@ -6039,7 +6006,9 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
           onContextMenu={e=>{ e.preventDefault(); haptic('medium'); setShowMediaActions(true); }}
           style={{ position:'relative', borderRadius:16, overflow:'hidden', marginBottom:10, background:'#000', boxShadow:SHADOW.sm }}
         >
-          {isVideo ? (
+          {isAudioPost ? (
+            <AudioHeroCard src={mediaSrc} duration={video.duration} seed={video.id || mediaSrc} />
+          ) : isVideo ? (
             <>
               <div onClick={()=>{
                   if (mediaPressFired.current) { mediaPressFired.current = false; return; }
@@ -7358,6 +7327,41 @@ const CreateScreen = ({ onOpenCamera, onShowSoundLibrary, showToast, t, currentU
   const [locating, setLocating] = useState(false);
   const fileInputRef = useRef(null);
 
+  // ── Voice Post — flagship audio post type, exclusive of photo/video media ──
+  const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
+  const [voiceNote, setVoiceNote] = useState(null); // { blob, url, duration }
+  const [isRecordingVoice, setIsRecordingVoice] = useState(false);
+  const [voiceRecordSec, setVoiceRecordSec] = useState(0);
+  const voiceMediaRef = useRef(null);
+  const voiceChunksRef = useRef([]);
+  const voiceTimerRef = useRef(null);
+
+  const startVoicePost = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const rec = new MediaRecorder(stream);
+      voiceChunksRef.current = [];
+      rec.ondataavailable = e => { if (e.data.size > 0) voiceChunksRef.current.push(e.data); };
+      rec.onstop = () => {
+        stream.getTracks().forEach(t => t.stop());
+        clearInterval(voiceTimerRef.current);
+        const blob = new Blob(voiceChunksRef.current, { type: 'audio/webm' });
+        setVoiceNote({ blob, url: URL.createObjectURL(blob), duration: voiceRecordSec });
+        setIsRecordingVoice(false);
+      };
+      voiceMediaRef.current = rec;
+      setVoiceRecordSec(0);
+      rec.start();
+      setIsRecordingVoice(true);
+      voiceTimerRef.current = setInterval(() => setVoiceRecordSec(s => s + 1), 1000);
+    } catch (e) {
+      console.error('Mic access failed:', e);
+      showToast?.('Microphone access denied', 'error');
+    }
+  };
+  const stopVoicePost = () => { voiceMediaRef.current?.stop(); };
+  const discardVoiceNote = () => { setVoiceNote(null); setShowVoiceRecorder(false); };
+
   const toggleTagUser = (u) => setTaggedUsers(list => list.some(x=>x.id===u.id) ? list.filter(x=>x.id!==u.id) : [...list, { id:u.id, username:u.username, avatarUrl:u.avatarUrl||null, avatarColor:u.avatarColor||COLORS.brand }]);
   const eventIsValid = eventTitle.trim() && eventDate.trim();
   const closeEventBuilder = () => setShowEventBuilder(false);
@@ -7416,6 +7420,7 @@ const CreateScreen = ({ onOpenCamera, onShowSoundLibrary, showToast, t, currentU
   };
 
   const pickFiles = e => {
+    if (voiceNote) { showToast?.('Remove the voice note to add photos/video','info'); e.target.value = ''; return; }
     const files = Array.from(e.target.files||[]);
     setMedia(m => [...m, ...files.map(f=>({ url:URL.createObjectURL(f), file:f, type:f.type }))].slice(0,4));
     e.target.value = '';
@@ -7429,8 +7434,9 @@ const CreateScreen = ({ onOpenCamera, onShowSoundLibrary, showToast, t, currentU
   const pollIsValid = pollQuestion.trim() && pollOptions.filter(o=>o.trim()).length>=2;
 
   const quickActions = [
-    { label:'Photo', color:COLORS.info, icon:(<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="M21 15l-5-5L5 19"/></svg>), action:()=>fileInputRef.current?.click() },
-    { label:'Video', color:COLORS.brandSecondary, icon:(<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="M16 10l6-3v10l-6-3"/></svg>), action:()=>fileInputRef.current?.click() },
+    { label:'Photo', color:COLORS.info, icon:(<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="M21 15l-5-5L5 19"/></svg>), action:()=>{ if(voiceNote){ showToast?.('Remove the voice note to add photos','info'); return; } fileInputRef.current?.click(); } },
+    { label:'Video', color:COLORS.brandSecondary, icon:(<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="M16 10l6-3v10l-6-3"/></svg>), action:()=>{ if(voiceNote){ showToast?.('Remove the voice note to add video','info'); return; } fileInputRef.current?.click(); } },
+    { label:'Voice', color:COLORS.audio, gradient:COLORS.audioGradient, icon:(<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>), action:()=>{ if(media.length){ showToast?.('Voice posts stand alone — remove photos/video first','info'); return; } setShowVoiceRecorder(v=>!v); } },
     { label:'Poll', color:COLORS.brand, icon:(<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>), action:()=>setShowPollBuilder(v=>!v) },
     { label:'Feeling', color:COLORS.warningText, icon:(<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9"/><path d="M9 10h.01M15 10h.01M8 15s1.5 2 4 2 4-2 4-2"/></svg>), action:()=>{ setMoodTab('feeling'); setShowFeelingPicker(v=>!v); } },
   ];
@@ -7446,27 +7452,41 @@ const CreateScreen = ({ onOpenCamera, onShowSoundLibrary, showToast, t, currentU
   ];
 
   const submitPost = async () => {
-    const hasContent = text.trim() || media.length || pollIsValid || eventIsValid || taggedUsers.length || location.trim() || activity;
+    const hasContent = text.trim() || media.length || voiceNote || pollIsValid || eventIsValid || taggedUsers.length || location.trim() || activity;
     if (!hasContent) return;
     setPosting(true);
     try {
       let uploadedUrls = [];
-      // See submitQuickPost's comment above — same fix: don't swallow upload errors,
-      // stop and tell the user instead of quietly posting without their media.
-      for (const m of media) {
-        // GIFs picked from the Giphy picker are already hosted — no upload needed.
-        if (!m.file) { uploadedUrls.push(m.url); continue; }
+      let mediaFields;
+      if (voiceNote) {
         try {
-          uploadedUrls.push(await uploadToCloudinary(m.file));
+          const audioUrl = await uploadToCloudinary(voiceNote.blob);
+          mediaFields = { videoUrl: audioUrl, images: [audioUrl], mediaType: 'audio/webm', duration: voiceNote.duration };
         } catch (uploadErr) {
-          console.error('Media upload failed:', uploadErr);
-          showToast?.(uploadErr?.message || 'Failed to upload photo/video — please try again', 'error');
+          console.error('Voice note upload failed:', uploadErr);
+          showToast?.(uploadErr?.message || 'Failed to upload voice note — please try again', 'error');
           setPosting(false);
           return;
         }
+      } else {
+        // See submitQuickPost's comment above — same fix: don't swallow upload errors,
+        // stop and tell the user instead of quietly posting without their media.
+        for (const m of media) {
+          // GIFs picked from the Giphy picker are already hosted — no upload needed.
+          if (!m.file) { uploadedUrls.push(m.url); continue; }
+          try {
+            uploadedUrls.push(await uploadToCloudinary(m.file));
+          } catch (uploadErr) {
+            console.error('Media upload failed:', uploadErr);
+            showToast?.(uploadErr?.message || 'Failed to upload photo/video — please try again', 'error');
+            setPosting(false);
+            return;
+          }
+        }
+        mediaFields = buildMediaFields(media, uploadedUrls);
       }
       const payload = {
-        description: text, ...buildMediaFields(media, uploadedUrls),
+        description: text, ...mediaFields,
         hashtags: (text||'').match(/#\w+/g) || [],
       };
       if (pollIsValid) {
@@ -7477,7 +7497,7 @@ const CreateScreen = ({ onOpenCamera, onShowSoundLibrary, showToast, t, currentU
       if (location.trim()) payload.location = location.trim();
       if (taggedUsers.length) payload.taggedUsers = taggedUsers;
       if (eventIsValid) payload.event = { title: eventTitle.trim(), date: eventDate, location: eventLocation.trim() || null };
-      if (bgColor && !uploadedUrls.length) { payload.bgColor = bgColor; payload.textStyle = textStyle; }
+      if (bgColor && !uploadedUrls.length && !voiceNote) { payload.bgColor = bgColor; payload.textStyle = textStyle; }
       payload.visibility = visibility;
       const data = await apiFetch('/api/videos/create', { method:'POST', body: JSON.stringify(payload) });
       showToast?.(data.moderationStatus === 'pending' ? 'Posted — under review' : 'Posted!', 'success');
@@ -7485,6 +7505,7 @@ const CreateScreen = ({ onOpenCamera, onShowSoundLibrary, showToast, t, currentU
       setTaggedUsers([]); setShowTagPicker(false); setLocation(''); setShowLocationInput(false);
       setEventTitle(''); setEventDate(''); setEventLocation(''); setShowEventBuilder(false);
       setBgColor(null); setShowBgPicker(false); setTextStyle('classic'); setVisibility('Everyone');
+      setVoiceNote(null); setShowVoiceRecorder(false);
       onPosted?.();
     } catch (e) { showToast?.(e?.message || 'Failed to post', 'error'); }
     setPosting(false);
@@ -7499,7 +7520,7 @@ const CreateScreen = ({ onOpenCamera, onShowSoundLibrary, showToast, t, currentU
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
         <div style={{ flex:1, color:COLORS.textPrimary, fontWeight:800, fontSize:17 }}>Create Post</div>
-        <button onClick={submitPost} disabled={posting || !(text.trim() || media.length || pollIsValid || eventIsValid || taggedUsers.length || location.trim())} style={{ background:COLORS.gradient, opacity:(posting || !(text.trim() || media.length || pollIsValid || eventIsValid || taggedUsers.length || location.trim()))?0.5:1, border:'none', borderRadius:16, padding:'8px 18px', color:'#fff', fontWeight:700, fontSize:13.5, cursor:'pointer' }}>{posting?'Posting…':'Post'}</button>
+        <button onClick={submitPost} disabled={posting || !(text.trim() || media.length || voiceNote || pollIsValid || eventIsValid || taggedUsers.length || location.trim())} style={{ background: voiceNote ? COLORS.audioGradient : COLORS.gradient, opacity:(posting || !(text.trim() || media.length || voiceNote || pollIsValid || eventIsValid || taggedUsers.length || location.trim()))?0.5:1, border:'none', borderRadius:16, padding:'8px 18px', color:'#fff', fontWeight:700, fontSize:13.5, cursor:'pointer' }}>{posting?'Posting…':'Post'}</button>
       </div>
 
       <div style={{ padding:16 }}>
@@ -7595,6 +7616,34 @@ const CreateScreen = ({ onOpenCamera, onShowSoundLibrary, showToast, t, currentU
           </div>
         )}
 
+        {/* Voice Post — flagship audio composer */}
+        {showVoiceRecorder && (
+          <div style={{ background: `linear-gradient(135deg, ${COLORS.audio}12, ${COLORS.audioSecondary}0a)`, border:`1px solid ${COLORS.audio}30`, borderRadius:16, padding:16, marginBottom:16 }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
+              <span style={{ color:COLORS.textPrimary, fontWeight:700, fontSize:13.5, display:'flex', alignItems:'center', gap:6 }}>
+                <span style={{ width:8, height:8, borderRadius:'50%', background:COLORS.audioGradient, display:'inline-block' }} />
+                Voice Post
+              </span>
+              <span onClick={()=>{ if(isRecordingVoice) stopVoicePost(); discardVoiceNote(); }} style={{ cursor:'pointer', color:COLORS.textTertiary }}>✕</span>
+            </div>
+            {voiceNote ? (
+              <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:12 }}>
+                <AudioBubble src={voiceNote.url} duration={voiceNote.duration} seed={voiceNote.url} />
+                <button onClick={()=>setVoiceNote(null)} style={{ background:'none', border:`1px solid ${COLORS.audio}`, color:COLORS.audio, borderRadius:14, padding:'6px 14px', fontSize:12, fontWeight:700, cursor:'pointer' }}>🔄 Re-record</button>
+              </div>
+            ) : (
+              <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:10 }}>
+                <button
+                  onClick={isRecordingVoice ? stopVoicePost : startVoicePost}
+                  aria-label={isRecordingVoice ? 'Stop recording' : 'Start recording'}
+                  style={{ width:64, height:64, borderRadius:'50%', border:'none', cursor:'pointer', background: isRecordingVoice ? COLORS.live : COLORS.audioGradient, color:'#fff', fontSize:26, boxShadow: isRecordingVoice ? `0 0 0 6px ${COLORS.live}22` : SHADOW.glow(COLORS.audioGlow) }}
+                >{isRecordingVoice ? '⏹' : '🎙️'}</button>
+                <span style={{ color:COLORS.textSecondary, fontSize:12.5 }}>{isRecordingVoice ? `Recording… ${formatAudioTime(voiceRecordSec)}` : 'Tap to record your voice post'}</span>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Media previews */}
         {media.length>0 && (
           <div style={{ display:'flex', gap:8, marginBottom:16, overflowX:'auto' }}>
@@ -7613,9 +7662,9 @@ const CreateScreen = ({ onOpenCamera, onShowSoundLibrary, showToast, t, currentU
         {/* Quick action row */}
         <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:20, flexWrap:'wrap' }}>
           {quickActions.map(btn=>{
-            const isActive = (btn.label==='Poll' && showPollBuilder) || (btn.label==='Feeling' && (showFeelingPicker || feeling));
+            const isActive = (btn.label==='Poll' && showPollBuilder) || (btn.label==='Feeling' && (showFeelingPicker || feeling)) || (btn.label==='Voice' && (showVoiceRecorder || voiceNote));
             return (
-              <button key={btn.label} onClick={btn.action} style={{ display:'flex', alignItems:'center', gap:6, background:isActive?COLORS.surface2:COLORS.surface, border:`1px solid ${isActive?COLORS.brand:COLORS.border}`, borderRadius:14, padding:'8px 13px', color:COLORS.textSecondary, fontSize:12.5, fontWeight:600, cursor:'pointer' }}>
+              <button key={btn.label} onClick={btn.action} style={{ display:'flex', alignItems:'center', gap:6, background: isActive ? (btn.gradient ? COLORS.audioSurface : COLORS.surface2) : COLORS.surface, border:`1px solid ${isActive ? btn.color : COLORS.border}`, borderRadius:14, padding:'8px 13px', color:COLORS.textSecondary, fontSize:12.5, fontWeight:600, cursor:'pointer' }}>
                 <span style={{ color:btn.color, display:'flex' }}>{btn.icon}</span>{btn.label}
               </button>
             );
@@ -9951,6 +10000,240 @@ function resampleWaveform(samples, targetBars) {
   return out;
 }
 
+/* ─────────────── AUDIO — SIGNATURE PLAYBACK COMPONENTS ───────────────
+ * One shared visual language for every place audio can appear: chat bubbles
+ * (1:1 + group), comment attachments, voice stories, and audio feed posts.
+ * Two sizes of the same idea:
+ *   AudioBubble    — compact chat/comment-bubble sized player
+ *   AudioHeroCard  — full-bleed, flagship-sized player for feed posts / stories
+ * Both use the COLORS.audio* signature tokens (blue→teal gradient) so voice
+ * content reads as one consistent, ownable identity across the whole app,
+ * instead of the mismatched native-<audio>-controls / decorative-fake-wave
+ * situation that existed before.
+ */
+// Deterministic pseudo-random bar heights, seeded off a string (message id,
+// clip url, etc.) so a given clip always renders the same "waveform" shape
+// on every render/remount instead of visibly jumping around, even when we
+// don't have real decoded amplitude data for it.
+function seededBars(seed, count) {
+  let h = 0;
+  const str = String(seed || 'audio');
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0;
+  const bars = [];
+  let s = Math.abs(h) || 1;
+  for (let i = 0; i < count; i++) {
+    s = (s * 1103515245 + 12345) & 0x7fffffff;
+    const t = (s % 1000) / 1000;
+    // bias toward a natural speech-like envelope (louder mid, quieter ends)
+    const envelope = 0.35 + 0.65 * Math.sin((Math.PI * (i + 1)) / (count + 1));
+    bars.push(Math.max(0.12, Math.min(1, 0.25 + t * 0.75 * envelope)));
+  }
+  return bars;
+}
+
+function formatAudioTime(sec) {
+  if (!isFinite(sec) || sec < 0) sec = 0;
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+// Compact glass-card audio player used inside chat/comment bubbles.
+// `accentBg`/`accentColor` let "my message" bubbles override the fill (e.g.
+// to sit on the sender's own bubble gradient) while defaulting to the
+// signature audio gradient everywhere else.
+const AudioBubble = ({ src, duration: knownDuration, seed, accentBg, accentColor, compact = false }) => {
+  const audioRef = useRef(null);
+  const [playing, setPlaying] = useState(false);
+  const [progress, setProgress] = useState(0); // 0..1
+  const [duration, setDuration] = useState(knownDuration || 0);
+  const bars = useMemo(() => seededBars(seed || src, compact ? 26 : 34), [seed, src, compact]);
+
+  useEffect(() => {
+    const el = audioRef.current;
+    if (!el) return;
+    const onTime = () => {
+      if (el.duration) setProgress(el.currentTime / el.duration);
+    };
+    const onMeta = () => setDuration(el.duration || knownDuration || 0);
+    const onEnd = () => { setPlaying(false); setProgress(0); };
+    el.addEventListener('timeupdate', onTime);
+    el.addEventListener('loadedmetadata', onMeta);
+    el.addEventListener('ended', onEnd);
+    return () => {
+      el.removeEventListener('timeupdate', onTime);
+      el.removeEventListener('loadedmetadata', onMeta);
+      el.removeEventListener('ended', onEnd);
+    };
+  }, [src, knownDuration]);
+
+  const toggle = () => {
+    const el = audioRef.current;
+    if (!el) return;
+    if (playing) { el.pause(); setPlaying(false); }
+    else { el.play().catch(() => {}); setPlaying(true); }
+  };
+
+  const seek = (clientX, trackEl) => {
+    const el = audioRef.current;
+    if (!el || !trackEl || !el.duration) return;
+    const rect = trackEl.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    el.currentTime = pct * el.duration;
+    setProgress(pct);
+  };
+
+  const playedBars = Math.round(progress * bars.length);
+  const bg = accentBg || COLORS.audioSurface;
+  const fg = accentColor || COLORS.audio;
+
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 10,
+      background: bg, borderRadius: RADIUS.lg, padding: compact ? '7px 10px' : '9px 12px',
+      minWidth: compact ? 170 : 210, maxWidth: 280,
+      border: `1px solid ${COLORS.audioTrack}`,
+    }}>
+      <audio ref={audioRef} src={src} preload="metadata" style={{ display: 'none' }} />
+      <button
+        onClick={toggle}
+        aria-label={playing ? 'Pause' : 'Play'}
+        style={{
+          flexShrink: 0, width: compact ? 30 : 36, height: compact ? 30 : 36, borderRadius: '50%',
+          border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: COLORS.audioGradient, color: '#fff', boxShadow: SHADOW.glow(COLORS.audioGlow),
+        }}
+      >
+        {playing ? (
+          <svg width={compact ? 12 : 14} height={compact ? 12 : 14} viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+        ) : (
+          <svg width={compact ? 12 : 14} height={compact ? 12 : 14} viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        )}
+      </button>
+      <div
+        onClick={(e) => seek(e.clientX, e.currentTarget)}
+        style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 2, height: compact ? 22 : 26, cursor: 'pointer' }}
+      >
+        {bars.map((h, i) => (
+          <div key={i} style={{
+            flex: 1, borderRadius: 2, height: `${Math.max(15, h * 100)}%`,
+            background: i < playedBars ? fg : COLORS.audioTrack,
+            transition: 'background 0.1s linear',
+          }} />
+        ))}
+      </div>
+      <span style={{ flexShrink: 0, fontSize: 11, color: fg, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+        {formatAudioTime(playing || progress > 0 ? (progress * duration) : duration)}
+      </span>
+    </div>
+  );
+};
+
+// Flagship, full-bleed audio player for feed posts and voice stories — a
+// gradient hero card with a large glowing play button, big waveform, and
+// caption slot. `fullBleed` makes it fill its parent's actual dimensions
+// (for the story viewer) instead of using a fixed literal height (feed card).
+const AudioHeroCard = ({ src, duration: knownDuration, seed, caption, authorName, fullBleed = false, autoPlay = false }) => {
+  const audioRef = useRef(null);
+  const [playing, setPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(knownDuration || 0);
+  const bars = useMemo(() => seededBars(seed || src, 48), [seed, src]);
+
+  useEffect(() => {
+    const el = audioRef.current;
+    if (!el) return;
+    const onTime = () => { if (el.duration) setProgress(el.currentTime / el.duration); };
+    const onMeta = () => { setDuration(el.duration || knownDuration || 0); if (autoPlay) { el.play().catch(() => {}); setPlaying(true); } };
+    const onEnd = () => { setPlaying(false); setProgress(0); };
+    el.addEventListener('timeupdate', onTime);
+    el.addEventListener('loadedmetadata', onMeta);
+    el.addEventListener('ended', onEnd);
+    return () => {
+      el.removeEventListener('timeupdate', onTime);
+      el.removeEventListener('loadedmetadata', onMeta);
+      el.removeEventListener('ended', onEnd);
+    };
+  }, [src, knownDuration, autoPlay]);
+
+  const toggle = (e) => {
+    e.stopPropagation();
+    const el = audioRef.current;
+    if (!el) return;
+    if (playing) { el.pause(); setPlaying(false); }
+    else { el.play().catch(() => {}); setPlaying(true); }
+  };
+
+  const seek = (clientX, trackEl) => {
+    const el = audioRef.current;
+    if (!el || !trackEl || !el.duration) return;
+    const rect = trackEl.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    el.currentTime = pct * el.duration;
+    setProgress(pct);
+  };
+
+  const playedBars = Math.round(progress * bars.length);
+
+  return (
+    <div style={{
+      position: 'relative', width: '100%', height: fullBleed ? '100%' : 340,
+      borderRadius: fullBleed ? 0 : RADIUS.xl, overflow: 'hidden',
+      background: `radial-gradient(120% 100% at 50% 0%, ${COLORS.audioSecondary}55, transparent 60%), ${COLORS.audioGradient}`,
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      padding: 24, boxSizing: 'border-box', color: '#fff',
+    }}>
+      <audio ref={audioRef} src={src} preload="metadata" style={{ display: 'none' }} />
+      {/* soft glow rings behind the play button for a "live signal" feel */}
+      <div style={{
+        position: 'absolute', width: 220, height: 220, borderRadius: '50%',
+        background: 'rgba(255,255,255,0.08)', filter: 'blur(2px)',
+        animation: playing ? 'audioPulse 2.2s ease-in-out infinite' : 'none',
+      }} />
+      <svg width={36} height={36} viewBox="0 0 24 24" fill="rgba(255,255,255,0.85)" style={{ marginBottom: 14, position: 'relative' }}>
+        <path d="M12 14a3 3 0 003-3V6a3 3 0 10-6 0v5a3 3 0 003 3zm5-3a5 5 0 01-10 0H5a7 7 0 006 6.93V21h2v-3.07A7 7 0 0019 11h-2z"/>
+      </svg>
+      <button
+        onClick={toggle}
+        aria-label={playing ? 'Pause' : 'Play'}
+        style={{
+          position: 'relative', width: 68, height: 68, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.7)',
+          background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(6px)', color: '#fff',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', marginBottom: 18,
+        }}
+      >
+        {playing ? (
+          <svg width={24} height={24} viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+        ) : (
+          <svg width={26} height={26} viewBox="0 0 24 24" fill="currentColor" style={{ marginLeft: 3 }}><path d="M8 5v14l11-7z"/></svg>
+        )}
+      </button>
+      <div
+        onClick={(e) => seek(e.clientX, e.currentTarget)}
+        style={{ width: '100%', maxWidth: 320, display: 'flex', alignItems: 'center', gap: 2.5, height: 40, cursor: 'pointer', position: 'relative' }}
+      >
+        {bars.map((h, i) => (
+          <div key={i} style={{
+            flex: 1, borderRadius: 2, height: `${Math.max(12, h * 100)}%`,
+            background: i < playedBars ? '#fff' : 'rgba(255,255,255,0.35)',
+            transition: 'background 0.1s linear',
+          }} />
+        ))}
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', maxWidth: 320, marginTop: 6, fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.85)', fontVariantNumeric: 'tabular-nums' }}>
+        <span>{formatAudioTime(progress * duration)}</span>
+        <span>{formatAudioTime(duration)}</span>
+      </div>
+      {caption ? (
+        <div style={{ marginTop: 16, textAlign: 'center', fontSize: 14, color: 'rgba(255,255,255,0.92)', maxWidth: 320, lineHeight: 1.4 }}>
+          {authorName ? <span style={{ fontWeight: 700 }}>{authorName}: </span> : null}{caption}
+        </div>
+      ) : null}
+      <style>{`@keyframes audioPulse { 0%,100% { transform: scale(1); opacity: 0.6; } 50% { transform: scale(1.15); opacity: 0.15; } }`}</style>
+    </div>
+  );
+};
+
 // ─────────────── VOICE RECORDER (chat / group chat / stories / comments) ───────────────
 // Shared by every place in the app that can send a voice note. States:
 //   idle → recording → (paused) → preview → uploading → sent (brief success flash) → idle
@@ -10281,8 +10564,8 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal', onStateChange
             onEnded={()=>{ setIsPlaying(false); setPlaybackPos(0); }}
             onTimeUpdate={e=>setPlaybackPos(e.currentTarget.currentTime)}
           />
-          <button onClick={cancelRecording} aria-label="Discard recording" style={{ background:'rgba(11,95,255,0.15)', border:'none', borderRadius:'50%', width:32, height:32, minWidth:32, color:COLORS.brand, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, flexShrink:0 }}>✕</button>
-          <button onClick={togglePlayback} aria-label={isPlaying ? 'Pause preview' : 'Play preview'} style={{ background:isPlaying?COLORS.brand:'rgba(255,255,255,0.1)', border:'none', borderRadius:'50%', width:30, height:30, minWidth:30, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, transition:'background 0.15s' }}>
+          <button onClick={cancelRecording} aria-label="Discard recording" style={{ background:COLORS.audioSurface, border:'none', borderRadius:'50%', width:32, height:32, minWidth:32, color:COLORS.audio, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, flexShrink:0 }}>✕</button>
+          <button onClick={togglePlayback} aria-label={isPlaying ? 'Pause preview' : 'Play preview'} style={{ background:isPlaying?COLORS.audioGradient:'rgba(255,255,255,0.1)', border:'none', borderRadius:'50%', width:30, height:30, minWidth:30, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, transition:'background 0.15s', boxShadow: isPlaying ? SHADOW.glow(COLORS.audioGlow) : 'none' }}>
             {isPlaying
               ? <svg width="13" height="13" viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
               : <svg width="13" height="13" viewBox="0 0 24 24" fill="white"><polygon points="6 3 21 12 6 21 6 3"/></svg>}
@@ -10297,12 +10580,12 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal', onStateChange
               const playedRatio = duration > 0 ? playbackPos / duration : 0;
               const played = barRatio <= playedRatio;
               return (
-                <div key={i} style={{ flex:1, minWidth:1.5, borderRadius:2, height:`${Math.max(12, Math.round(h*100))}%`, background: played ? COLORS.brand : 'rgba(255,255,255,0.25)', transition:'background 0.1s' }} />
+                <div key={i} style={{ flex:1, minWidth:1.5, borderRadius:2, height:`${Math.max(12, Math.round(h*100))}%`, background: played ? COLORS.audio : 'rgba(255,255,255,0.25)', transition:'background 0.1s' }} />
               );
             })}
           </div>
           <span style={{ color:'rgba(255,255,255,0.4)', fontSize:12, flexShrink:0, minWidth:30, textAlign:'right', fontVariantNumeric:'tabular-nums' }}>{fmtTime(isPlaying ? Math.ceil(duration - playbackPos) : duration)}</span>
-          <button onClick={sendVoice} aria-label="Send voice message" style={{ background:COLORS.brand, border:'none', borderRadius:'50%', width:36, height:36, minWidth:36, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+          <button onClick={sendVoice} aria-label="Send voice message" style={{ background:COLORS.audioGradient, border:'none', borderRadius:'50%', width:36, height:36, minWidth:36, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, boxShadow: SHADOW.glow(COLORS.audioGlow) }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           </button>
         </div>
@@ -10333,7 +10616,7 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal', onStateChange
       {state === 'recording'
         ? <button onClick={pauseRecording} aria-label="Pause recording" style={{ background:'rgba(255,255,255,0.1)', border:'none', borderRadius:'50%', width:30, height:30, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>⏸</button>
         : <button onClick={resumeRecording} aria-label="Resume recording" style={{ background:'rgba(255,255,255,0.1)', border:'none', borderRadius:'50%', width:30, height:30, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>▶</button>}
-      <button onClick={stopRecording} aria-label="Stop recording" style={{ background:COLORS.brand, border:'none', borderRadius:'50%', width:34, height:34, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+      <button onClick={stopRecording} aria-label="Stop recording" style={{ background:COLORS.audioGradient, border:'none', borderRadius:'50%', width:34, height:34, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, boxShadow: SHADOW.glow(COLORS.audioGlow) }}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
       </button>
     </div>
@@ -11085,23 +11368,9 @@ unsub = onSnapshot(q, (snap) => {
                 {msg.mediaUrl&&msg.mediaType?.startsWith('image')&&<img loading="lazy" decoding="async" src={msg.mediaUrl} alt="" style={{maxWidth:'100%',borderRadius:14,display:'block'}}/>}
                 {msg.mediaUrl&&msg.mediaType?.startsWith('video')&&<video src={msg.mediaUrl} controls style={{maxWidth:'100%',borderRadius:14,display:'block'}}/>}
                 {(msg.mediaUrl&&msg.mediaType?.startsWith('audio')) || msg.type==='voice'&&(msg.voiceUrl||msg.mediaUrl) ? (
-                  <div style={{display:'flex',alignItems:'center',gap:10,background:isMine?myBubbleBg:COLORS.surface,borderRadius:20,padding:'10px 14px',minWidth:200,border: isMine?'none':`1px solid ${COLORS.border}`,boxShadow: isMine ? myGlow : SHADOW.xs}}>
-                    <button onClick={e=>{
-                      e.stopPropagation();
-                      const url = msg.voiceUrl || msg.mediaUrl;
-                      if (!url) return;
-                      const audio = new Audio(url);
-                      audio.play().catch(()=>{});
-                    }} aria-label="Play voice message" style={{background:isMine?'rgba(255,255,255,0.25)':COLORS.surfaceAlt,border:'none',borderRadius:'50%',width:34,height:34,color:isMine?'white':COLORS.brand,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill={isMine?'white':COLORS.brand}><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                    </button>
-                    <div style={{flex:1,display:'flex',alignItems:'center',gap:1.5,height:24}}>
-                      {Array.from({length:24}).map((_,i)=>(
-                        <div key={i} style={{flex:1,background:isMine?'rgba(255,255,255,0.6)':COLORS.border,borderRadius:2,height:`${20+Math.sin(i*0.8)*14}%`,minHeight:3}}/>
-                      ))}
-                    </div>
-                    <span style={{color:isMine?'rgba(255,255,255,0.8)':COLORS.textTertiary,fontSize:11,flexShrink:0}}>{msg.duration ? `0:${String(msg.duration).padStart(2,'0')}` : '🎙️'}</span>
-                  </div>
+                  <AudioBubble src={msg.voiceUrl || msg.mediaUrl} duration={msg.duration} seed={msg.id || msg.mediaUrl}
+                    accentBg={isMine ? myBubbleBg : COLORS.audioSurface}
+                    accentColor={isMine ? '#fff' : COLORS.audio} />
                 ) : null}
               </div>
               {isMine && (
@@ -13765,20 +14034,12 @@ const AuthBanner = ({ type = 'error', children }) => {
   );
 };
 
-const AuthDivider = ({ label }) => (
-  <div style={{ display:'flex', alignItems:'center', gap:10, margin:'18px 0' }}>
-    <div style={{ flex:1, height:1, background:COLORS.border }} />
-    <span style={{ color:COLORS.textTertiary, fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:0.6 }}>{label}</span>
-    <div style={{ flex:1, height:1, background:COLORS.border }} />
-  </div>
-);
-
 // Animated ambient background used behind every auth step for visual continuity —
 // two soft brand-colored orbs drifting slowly, purely decorative (pointer-events none).
 const AuthBackdrop = () => (
   <div style={{ position:'absolute', inset:0, overflow:'hidden', pointerEvents:'none' }}>
     <div style={{ position:'absolute', top:'-10%', left:'-15%', width:280, height:280, borderRadius:'50%', background:'radial-gradient(circle,rgba(11,95,255,0.16),transparent 70%)', animation:'authOrb1 9s ease-in-out infinite' }} />
-    <div style={{ position:'absolute', bottom:'-15%', right:'-15%', width:320, height:320, borderRadius:'50%', background:'radial-gradient(circle,rgba(236,72,153,0.10),transparent 70%)', animation:'authOrb2 11s ease-in-out infinite' }} />
+    <div style={{ position:'absolute', bottom:'-15%', right:'-15%', width:320, height:320, borderRadius:'50%', background:'radial-gradient(circle,rgba(11,143,232,0.10),transparent 70%)', animation:'authOrb2 11s ease-in-out infinite' }} />
   </div>
 );
 
