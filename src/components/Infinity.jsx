@@ -1516,9 +1516,10 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack, embedded=false, 
                   )}
                   {msg.mediaUrl && msg.mediaType?.startsWith('audio') && (
                     <div style={{ marginBottom: msg.text ? 4 : 0 }}>
-                      <AudioBubble src={msg.mediaUrl} duration={msg.duration} seed={msg.id || msg.mediaUrl}
+                      <VoiceMessagePro src={msg.mediaUrl} duration={msg.duration} seed={msg.id || msg.mediaUrl}
                         accentBg={isMine ? 'rgba(255,255,255,0.16)' : COLORS.audioSurface}
-                        accentColor={isMine ? '#fff' : COLORS.audio} />
+                        accentColor={isMine ? '#fff' : COLORS.audio}
+                        msg={msg} msgRef={doc(db,'groups',activeGroup.id,'msgs',msg.id)} showToast={showToast} />
                     </div>
                   )}
                   {msg.text && (
@@ -2594,8 +2595,11 @@ const TelegramStoryViewer = ({ storyGroups, startGroupIdx, currentUser, onClose,
         {currentStory.mediaType === 'video' || currentStory.mediaUrl?.includes('/video/')
           ? <video src={currentStory.mediaUrl} autoPlay loop playsInline style={{ width:'100%', height:'100%', objectFit:'cover' }} />
           : currentStory.mediaType?.startsWith('audio')
-            ? <AudioHeroCard src={currentStory.mediaUrl} duration={currentStory.duration} seed={currentStory.id || currentStory.mediaUrl}
-                caption={currentStory.text} fullBleed autoPlay />
+            ? <>
+                <AudioHeroCard src={currentStory.mediaUrl} duration={currentStory.duration} seed={currentStory.id || currentStory.mediaUrl}
+                  caption={currentStory.text} fullBleed autoPlay />
+                <StoryVoiceInsights story={currentStory} storyRef={doc(db,'stories',currentStory.id)} showToast={showToast} />
+              </>
             : currentStory.mediaUrl
               ? <img loading="lazy" decoding="async" src={currentStory.mediaUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
               : <div style={{ width:'100%', height:'100%', background:currentStory.bgColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', padding:40 }}>
@@ -5258,7 +5262,8 @@ const CommentsModal = ({ video, currentUser, onClose, showToast, onViewProfile }
               )}
               {c.mediaUrl && c.mediaType?.startsWith('audio') && (
                 <div style={{ marginTop: 6 }}>
-                  <AudioBubble src={c.mediaUrl} duration={c.duration} seed={c.id || c.mediaUrl} compact />
+                  <VoiceMessagePro src={c.mediaUrl} duration={c.duration} seed={c.id || c.mediaUrl} compact
+                    msg={c} msgRef={doc(db,'comments',c.id)} showToast={showToast} />
                 </div>
               )}
               {c.text && <div style={{ color:COLORS.textSecondary, fontSize:13.5, lineHeight:1.45, marginTop:2 }}>{c.text}</div>}
@@ -10234,6 +10239,224 @@ const AudioHeroCard = ({ src, duration: knownDuration, seed, caption, authorName
   );
 };
 
+// ─────────────── VOICE MESSAGE PRO — smart audio (speed control + transcription + AI summary) ───────────────
+// Drop-in upgrade over AudioBubble for message surfaces that have a real
+// Firestore doc to cache results onto: 1:1 chat, group chat, comments.
+// (Feed/story audio keeps plain AudioBubble/AudioHeroCard — those aren't
+// tied to a single reusable doc worth caching a transcript on.)
+//
+// msg doc additions (all optional, written lazily on first use):
+//   transcription: { text: string, status: 'done' } | null
+//   aiSummary: string | null
+// Transcribing/summarizing once and writing the result back onto msgRef
+// means every participant who opens the same clip reads the cached
+// version — nobody re-pays the AI cost to open a voice note twice.
+//
+// Needs two small server routes, same pattern as the existing
+// POST /api/ai/smart-reply:
+//   POST /api/ai/transcribe      { audioUrl }        -> { text }
+//   POST /api/ai/audio-summary   { audioUrl, text }   -> { summary }
+// Smart-audio overlay for voice stories — sits below AudioHeroCard in the
+// fullscreen story viewer. Speed control lives on AudioHeroCard's own play
+// button area already (native <audio> element), so this just adds
+// transcription + AI summary, caching onto the real `stories/{id}` doc so
+// re-watching (or a friend watching) the same story doesn't re-pay for it.
+// zIndex:20 + stopPropagation matter here: the story viewer has an inset:0
+// tap-zone layer at zIndex:10 for prev/next navigation sitting on top of the
+// plain content — without both, taps here would just advance the story.
+const StoryVoiceInsights = ({ story, storyRef, showToast }) => {
+  const [transcribing, setTranscribing] = useState(false);
+  const [showTranscript, setShowTranscript] = useState(false);
+  const [summarizing, setSummarizing] = useState(false);
+
+  const runTranscribe = async (e) => {
+    e.stopPropagation();
+    if (story?.transcription?.text) { setShowTranscript(v => !v); return; }
+    if (!storyRef) return;
+    setTranscribing(true);
+    try {
+      const data = await apiFetch('/api/ai/transcribe', { method: 'POST', body: JSON.stringify({ audioUrl: story.mediaUrl }) });
+      await updateDoc(storyRef, { transcription: { text: data.text, status: 'done' } });
+      setShowTranscript(true);
+    } catch (err) {
+      showToast?.(err.message || 'Transcription failed', 'error');
+    }
+    setTranscribing(false);
+  };
+
+  const runSummary = async (e) => {
+    e.stopPropagation();
+    if (story?.aiSummary || !storyRef) return;
+    setSummarizing(true);
+    try {
+      const data = await apiFetch('/api/ai/audio-summary', { method: 'POST', body: JSON.stringify({ audioUrl: story.mediaUrl, text: story?.transcription?.text || null }) });
+      await updateDoc(storyRef, { aiSummary: data.summary });
+    } catch (err) {
+      showToast?.(err.message || 'Summary failed', 'error');
+    }
+    setSummarizing(false);
+  };
+
+  const longEnough = (story?.duration || 0) >= 45;
+
+  return (
+    <div onClick={(e) => e.stopPropagation()} style={{ position: 'absolute', left: 16, right: 16, bottom: 88, zIndex: 20, display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button onClick={runTranscribe} disabled={transcribing} style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(6px)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: RADIUS.pill, color: '#fff', fontSize: 11.5, fontWeight: 700, padding: '6px 12px', cursor: 'pointer' }}>
+          {transcribing ? 'Transcribing…' : (story?.transcription?.text ? (showTranscript ? 'Hide transcript ▲' : 'Show transcript ▼') : '📝 Transcribe')}
+        </button>
+        {longEnough && (
+          <button onClick={runSummary} disabled={summarizing || !!story?.aiSummary} style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(6px)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: RADIUS.pill, color: '#fff', fontSize: 11.5, fontWeight: 700, padding: '6px 12px', cursor: 'pointer' }}>
+            {summarizing ? 'Summarizing…' : story?.aiSummary ? '✓ Summarized' : '✨ AI summary'}
+          </button>
+        )}
+      </div>
+      {showTranscript && story?.transcription?.text && (
+        <div style={{ maxWidth: 320, fontSize: 12.5, lineHeight: 1.4, color: '#fff', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(6px)', borderRadius: 12, padding: '8px 12px', textAlign: 'center' }}>
+          {story.transcription.text}
+        </div>
+      )}
+      {story?.aiSummary && (
+        <div style={{ maxWidth: 320, fontSize: 12, lineHeight: 1.4, color: '#fff', background: `${COLORS.brand}44`, backdropFilter: 'blur(6px)', border: `1px solid ${COLORS.brand}88`, borderRadius: 12, padding: '8px 12px', textAlign: 'center' }}>
+          ✨ {story.aiSummary}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const VOICE_SPEED_STEPS = [1, 1.5, 2, 0.5];
+
+const VoiceMessagePro = ({ src, duration: knownDuration, seed, accentBg, accentColor, compact = false, msg, msgRef, showToast }) => {
+  const audioRef = useRef(null);
+  const [playing, setPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(knownDuration || 0);
+  const [speedIdx, setSpeedIdx] = useState(0);
+  const [transcribing, setTranscribing] = useState(false);
+  const [showTranscript, setShowTranscript] = useState(false);
+  const [summarizing, setSummarizing] = useState(false);
+  const bars = useMemo(() => seededBars(seed || src, compact ? 26 : 34), [seed, src, compact]);
+
+  useEffect(() => {
+    const el = audioRef.current;
+    if (!el) return;
+    const onTime = () => { if (el.duration) setProgress(el.currentTime / el.duration); };
+    const onMeta = () => setDuration(el.duration || knownDuration || 0);
+    const onEnd = () => { setPlaying(false); setProgress(0); };
+    el.addEventListener('timeupdate', onTime);
+    el.addEventListener('loadedmetadata', onMeta);
+    el.addEventListener('ended', onEnd);
+    return () => {
+      el.removeEventListener('timeupdate', onTime);
+      el.removeEventListener('loadedmetadata', onMeta);
+      el.removeEventListener('ended', onEnd);
+    };
+  }, [src, knownDuration]);
+
+  const toggle = () => {
+    const el = audioRef.current;
+    if (!el) return;
+    if (playing) { el.pause(); setPlaying(false); }
+    else { el.playbackRate = VOICE_SPEED_STEPS[speedIdx]; el.play().catch(() => {}); setPlaying(true); }
+  };
+
+  const cycleSpeed = () => {
+    const next = (speedIdx + 1) % VOICE_SPEED_STEPS.length;
+    setSpeedIdx(next);
+    if (audioRef.current) audioRef.current.playbackRate = VOICE_SPEED_STEPS[next];
+    haptic?.('light');
+  };
+
+  const seek = (clientX, trackEl) => {
+    const el = audioRef.current;
+    if (!el || !trackEl || !el.duration) return;
+    const rect = trackEl.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    el.currentTime = pct * el.duration;
+    setProgress(pct);
+  };
+
+  const runTranscribe = async () => {
+    if (msg?.transcription?.text) { setShowTranscript(v => !v); return; }
+    if (!msgRef) { showToast?.('Transcription unavailable here', 'info'); return; }
+    setTranscribing(true);
+    try {
+      const data = await apiFetch('/api/ai/transcribe', { method: 'POST', body: JSON.stringify({ audioUrl: src }) });
+      await updateDoc(msgRef, { transcription: { text: data.text, status: 'done' } });
+      setShowTranscript(true);
+    } catch (e) {
+      showToast?.(e.message || 'Transcription failed', 'error');
+    }
+    setTranscribing(false);
+  };
+
+  const runSummary = async () => {
+    if (msg?.aiSummary || !msgRef) return;
+    setSummarizing(true);
+    try {
+      const data = await apiFetch('/api/ai/audio-summary', { method: 'POST', body: JSON.stringify({ audioUrl: src, text: msg?.transcription?.text || null }) });
+      await updateDoc(msgRef, { aiSummary: data.summary });
+    } catch (e) {
+      showToast?.(e.message || 'Summary failed', 'error');
+    }
+    setSummarizing(false);
+  };
+
+  const playedBars = Math.round(progress * bars.length);
+  const bg = accentBg || COLORS.audioSurface;
+  const fg = accentColor || COLORS.audio;
+  const longEnough = (duration || 0) >= 45;
+
+  return (
+    <div style={{ minWidth: compact ? 190 : 230, maxWidth: 300 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: bg, borderRadius: RADIUS.lg, padding: compact ? '7px 10px' : '9px 12px', border: `1px solid ${COLORS.audioTrack}` }}>
+        <audio ref={audioRef} src={src} preload="metadata" style={{ display: 'none' }} />
+        <button onClick={toggle} aria-label={playing ? 'Pause' : 'Play'} style={{ flexShrink: 0, width: compact ? 30 : 36, height: compact ? 30 : 36, borderRadius: '50%', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', background: COLORS.audioGradient, color: '#fff' }}>
+          {playing ? (
+            <svg width={compact ? 12 : 14} height={compact ? 12 : 14} viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+          ) : (
+            <svg width={compact ? 12 : 14} height={compact ? 12 : 14} viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          )}
+        </button>
+        <div onClick={(e) => seek(e.clientX, e.currentTarget)} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 2, height: compact ? 22 : 26, cursor: 'pointer' }}>
+          {bars.map((h, i) => (
+            <div key={i} style={{ flex: 1, borderRadius: 2, height: `${Math.max(15, h * 100)}%`, background: i < playedBars ? fg : COLORS.audioTrack, transition: 'background 0.1s linear' }} />
+          ))}
+        </div>
+        <span style={{ flexShrink: 0, fontSize: 11, color: fg, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+          {formatAudioTime(playing || progress > 0 ? progress * duration : duration)}
+        </span>
+        <button onClick={cycleSpeed} aria-label="Playback speed" style={{ flexShrink: 0, border: `1px solid ${fg}55`, background: 'none', borderRadius: RADIUS.pill, color: fg, fontSize: 10.5, fontWeight: 800, padding: '3px 6px', cursor: 'pointer' }}>
+          {VOICE_SPEED_STEPS[speedIdx]}x
+        </button>
+      </div>
+
+      <div style={{ display: 'flex', gap: 6, marginTop: 5, flexWrap: 'wrap' }}>
+        <button onClick={runTranscribe} disabled={transcribing} style={{ fontSize: 10.5, fontWeight: 700, color: COLORS.textTertiary, background: 'none', border: 'none', cursor: 'pointer', padding: '2px 0', display: 'flex', alignItems: 'center', gap: 3 }}>
+          {transcribing ? 'Transcribing…' : (msg?.transcription?.text ? (showTranscript ? 'Hide transcript ▲' : 'Show transcript ▼') : '📝 Transcribe')}
+        </button>
+        {longEnough && (
+          <button onClick={runSummary} disabled={summarizing || !!msg?.aiSummary} style={{ fontSize: 10.5, fontWeight: 700, color: COLORS.brand, background: 'none', border: 'none', cursor: 'pointer', padding: '2px 0' }}>
+            {summarizing ? 'Summarizing…' : msg?.aiSummary ? '✓ Summarized' : '✨ AI summary'}
+          </button>
+        )}
+      </div>
+
+      {showTranscript && msg?.transcription?.text && (
+        <div style={{ marginTop: 4, fontSize: 12.5, lineHeight: 1.4, color: COLORS.textSecondary, background: COLORS.surfaceAlt, borderRadius: 10, padding: '7px 10px' }}>
+          {msg.transcription.text}
+        </div>
+      )}
+      {msg?.aiSummary && (
+        <div style={{ marginTop: 4, fontSize: 12, lineHeight: 1.4, color: COLORS.textPrimary, background: `${COLORS.brand}14`, border: `1px solid ${COLORS.brand}33`, borderRadius: 10, padding: '7px 10px' }}>
+          ✨ {msg.aiSummary}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ─────────────── VOICE RECORDER (chat / group chat / stories / comments) ───────────────
 // Shared by every place in the app that can send a voice note. States:
 //   idle → recording → (paused) → preview → uploading → sent (brief success flash) → idle
@@ -11368,9 +11591,10 @@ unsub = onSnapshot(q, (snap) => {
                 {msg.mediaUrl&&msg.mediaType?.startsWith('image')&&<img loading="lazy" decoding="async" src={msg.mediaUrl} alt="" style={{maxWidth:'100%',borderRadius:14,display:'block'}}/>}
                 {msg.mediaUrl&&msg.mediaType?.startsWith('video')&&<video src={msg.mediaUrl} controls style={{maxWidth:'100%',borderRadius:14,display:'block'}}/>}
                 {(msg.mediaUrl&&msg.mediaType?.startsWith('audio')) || msg.type==='voice'&&(msg.voiceUrl||msg.mediaUrl) ? (
-                  <AudioBubble src={msg.voiceUrl || msg.mediaUrl} duration={msg.duration} seed={msg.id || msg.mediaUrl}
+                  <VoiceMessagePro src={msg.voiceUrl || msg.mediaUrl} duration={msg.duration} seed={msg.id || msg.mediaUrl}
                     accentBg={isMine ? myBubbleBg : COLORS.audioSurface}
-                    accentColor={isMine ? '#fff' : COLORS.audio} />
+                    accentColor={isMine ? '#fff' : COLORS.audio}
+                    msg={msg} msgRef={doc(db,'messages',conversationId,'msgs',msg.id)} showToast={showToast} />
                 ) : null}
               </div>
               {isMine && (
