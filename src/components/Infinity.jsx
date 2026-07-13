@@ -10047,6 +10047,22 @@ function formatAudioTime(sec) {
 // `accentBg`/`accentColor` let "my message" bubbles override the fill (e.g.
 // to sit on the sender's own bubble gradient) while defaulting to the
 // signature audio gradient everywhere else.
+// Only one audio/voice clip should ever play at once — chat bubbles, group
+// chat, comments, feed posts, hero cards and voice stories all mount their
+// own independent <audio> element with no shared parent, so this is a tiny
+// module-level (outside React) singleton rather than lifted state: whichever
+// player calls stopOtherAudio() right before it starts pauses whatever else
+// was playing. Each player listens for the browser's native 'pause' event
+// (not just 'ended') so its own play/pause icon stays in sync even when it
+// was paused *by* another player rather than by the user tapping it.
+let __activeAudioEl = null;
+function stopOtherAudio(el) {
+  if (__activeAudioEl && __activeAudioEl !== el) {
+    try { __activeAudioEl.pause(); } catch (e) {}
+  }
+  __activeAudioEl = el;
+}
+
 const AudioBubble = ({ src, duration: knownDuration, seed, accentBg, accentColor, compact = false }) => {
   const audioRef = useRef(null);
   const [playing, setPlaying] = useState(false);
@@ -10062,13 +10078,16 @@ const AudioBubble = ({ src, duration: knownDuration, seed, accentBg, accentColor
     };
     const onMeta = () => setDuration(el.duration || knownDuration || 0);
     const onEnd = () => { setPlaying(false); setProgress(0); };
+    const onPause = () => setPlaying(false);
     el.addEventListener('timeupdate', onTime);
     el.addEventListener('loadedmetadata', onMeta);
     el.addEventListener('ended', onEnd);
+    el.addEventListener('pause', onPause);
     return () => {
       el.removeEventListener('timeupdate', onTime);
       el.removeEventListener('loadedmetadata', onMeta);
       el.removeEventListener('ended', onEnd);
+      el.removeEventListener('pause', onPause);
     };
   }, [src, knownDuration]);
 
@@ -10076,7 +10095,7 @@ const AudioBubble = ({ src, duration: knownDuration, seed, accentBg, accentColor
     const el = audioRef.current;
     if (!el) return;
     if (playing) { el.pause(); setPlaying(false); }
-    else { el.play().catch(() => {}); setPlaying(true); }
+    else { stopOtherAudio(el); el.play().catch(() => {}); setPlaying(true); }
   };
 
   const seek = (clientX, trackEl) => {
@@ -10149,15 +10168,18 @@ const AudioHeroCard = ({ src, duration: knownDuration, seed, caption, authorName
     const el = audioRef.current;
     if (!el) return;
     const onTime = () => { if (el.duration) setProgress(el.currentTime / el.duration); };
-    const onMeta = () => { setDuration(el.duration || knownDuration || 0); if (autoPlay) { el.play().catch(() => {}); setPlaying(true); } };
+    const onMeta = () => { setDuration(el.duration || knownDuration || 0); if (autoPlay) { stopOtherAudio(el); el.play().catch(() => {}); setPlaying(true); } };
     const onEnd = () => { setPlaying(false); setProgress(0); };
+    const onPause = () => setPlaying(false);
     el.addEventListener('timeupdate', onTime);
     el.addEventListener('loadedmetadata', onMeta);
     el.addEventListener('ended', onEnd);
+    el.addEventListener('pause', onPause);
     return () => {
       el.removeEventListener('timeupdate', onTime);
       el.removeEventListener('loadedmetadata', onMeta);
       el.removeEventListener('ended', onEnd);
+      el.removeEventListener('pause', onPause);
     };
   }, [src, knownDuration, autoPlay]);
 
@@ -10166,7 +10188,7 @@ const AudioHeroCard = ({ src, duration: knownDuration, seed, caption, authorName
     const el = audioRef.current;
     if (!el) return;
     if (playing) { el.pause(); setPlaying(false); }
-    else { el.play().catch(() => {}); setPlaying(true); }
+    else { stopOtherAudio(el); el.play().catch(() => {}); setPlaying(true); }
   };
 
   const seek = (clientX, trackEl) => {
@@ -10344,13 +10366,16 @@ const VoiceMessagePro = ({ src, duration: knownDuration, seed, accentBg, accentC
     const onTime = () => { if (el.duration) setProgress(el.currentTime / el.duration); };
     const onMeta = () => setDuration(el.duration || knownDuration || 0);
     const onEnd = () => { setPlaying(false); setProgress(0); };
+    const onPause = () => setPlaying(false);
     el.addEventListener('timeupdate', onTime);
     el.addEventListener('loadedmetadata', onMeta);
     el.addEventListener('ended', onEnd);
+    el.addEventListener('pause', onPause);
     return () => {
       el.removeEventListener('timeupdate', onTime);
       el.removeEventListener('loadedmetadata', onMeta);
       el.removeEventListener('ended', onEnd);
+      el.removeEventListener('pause', onPause);
     };
   }, [src, knownDuration]);
 
@@ -10358,7 +10383,7 @@ const VoiceMessagePro = ({ src, duration: knownDuration, seed, accentBg, accentC
     const el = audioRef.current;
     if (!el) return;
     if (playing) { el.pause(); setPlaying(false); }
-    else { el.playbackRate = VOICE_SPEED_STEPS[speedIdx]; el.play().catch(() => {}); setPlaying(true); }
+    else { stopOtherAudio(el); el.playbackRate = VOICE_SPEED_STEPS[speedIdx]; el.play().catch(() => {}); setPlaying(true); }
   };
 
   const cycleSpeed = () => {
@@ -10642,7 +10667,7 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal', onStateChange
   const togglePlayback = () => {
     const el = previewAudioRef.current;
     if (!el) return;
-    if (isPlaying) { el.pause(); } else { el.currentTime = playbackPos >= duration ? 0 : playbackPos; el.play().catch(()=>{}); }
+    if (isPlaying) { el.pause(); } else { stopOtherAudio(el); el.currentTime = playbackPos >= duration ? 0 : playbackPos; el.play().catch(()=>{}); }
   };
 
   const seekFromClientX = (clientX) => {
