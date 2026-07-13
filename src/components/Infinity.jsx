@@ -2597,7 +2597,7 @@ const TelegramStoryViewer = ({ storyGroups, startGroupIdx, currentUser, onClose,
           : currentStory.mediaType?.startsWith('audio')
             ? <>
                 <AudioHeroCard src={currentStory.mediaUrl} duration={currentStory.duration} seed={currentStory.id || currentStory.mediaUrl}
-                  caption={currentStory.text} fullBleed autoPlay />
+                  caption={currentStory.text} authorName={currentGroup.username} authorAvatar={currentGroup.avatarUrl} authorAvatarColor={currentGroup.avatarColor} fullBleed autoPlay />
                 <StoryVoiceInsights story={currentStory} storyRef={doc(db,'stories',currentStory.id)} showToast={showToast} />
               </>
             : currentStory.mediaUrl
@@ -3005,7 +3005,7 @@ const StoriesPage = ({ users, currentUser, onClose, onViewStory, onCreateStory, 
           <video src={activeMedia} muted loop autoPlay playsInline style={{ width:'100%', height:'100%', objectFit:'cover', position:'absolute', inset:0 }} />
         ) : isActiveAudio ? (
           <div style={{ position:'absolute', inset:0 }}>
-            <AudioHeroCard src={activeMedia} duration={activeStory?.duration} seed={activeStory?.id || activeMedia} fullBleed />
+            <AudioHeroCard src={activeMedia} duration={activeStory?.duration} seed={activeStory?.id || activeMedia} authorName={active?.username} authorAvatar={active?.avatarUrl} authorAvatarColor={active?.avatarColor} fullBleed />
           </div>
         ) : activeStory?.text ? (
           <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', padding:24 }}>
@@ -6012,7 +6012,7 @@ const FeedPostCard = ({ video, currentUser, onViewProfile, onOpenComments, onSha
           style={{ position:'relative', borderRadius:16, overflow:'hidden', marginBottom:10, background:'#000', boxShadow:SHADOW.sm }}
         >
           {isAudioPost ? (
-            <AudioHeroCard src={mediaSrc} duration={video.duration} seed={video.id || mediaSrc} />
+            <AudioHeroCard src={mediaSrc} duration={video.duration} seed={video.id || mediaSrc} authorName={displayName} authorAvatar={author?.avatarUrl || video.avatarUrl} authorAvatarColor={video.avatarColor} />
           ) : isVideo ? (
             <>
               <div onClick={()=>{
@@ -10063,18 +10063,24 @@ function stopOtherAudio(el) {
   __activeAudioEl = el;
 }
 
+const VOICE_SPEED_STEPS_BUBBLE = [1, 1.5, 2];
+
 const AudioBubble = ({ src, duration: knownDuration, seed, accentBg, accentColor, compact = false }) => {
   const audioRef = useRef(null);
+  const trackRef = useRef(null);
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0); // 0..1
   const [duration, setDuration] = useState(knownDuration || 0);
+  const [seeking, setSeeking] = useState(false);
+  const [seekPct, setSeekPct] = useState(0);
+  const [speedIdx, setSpeedIdx] = useState(0);
   const bars = useMemo(() => seededBars(seed || src, compact ? 26 : 34), [seed, src, compact]);
 
   useEffect(() => {
     const el = audioRef.current;
     if (!el) return;
     const onTime = () => {
-      if (el.duration) setProgress(el.currentTime / el.duration);
+      if (el.duration && !seeking) setProgress(el.currentTime / el.duration);
     };
     const onMeta = () => setDuration(el.duration || knownDuration || 0);
     const onEnd = () => { setPlaying(false); setProgress(0); };
@@ -10089,22 +10095,52 @@ const AudioBubble = ({ src, duration: knownDuration, seed, accentBg, accentColor
       el.removeEventListener('ended', onEnd);
       el.removeEventListener('pause', onPause);
     };
-  }, [src, knownDuration]);
+  }, [src, knownDuration, seeking]);
 
   const toggle = () => {
     const el = audioRef.current;
     if (!el) return;
     if (playing) { el.pause(); setPlaying(false); }
-    else { stopOtherAudio(el); el.play().catch(() => {}); setPlaying(true); }
+    else { stopOtherAudio(el); el.playbackRate = VOICE_SPEED_STEPS_BUBBLE[speedIdx]; el.play().catch(() => {}); setPlaying(true); }
   };
 
-  const seek = (clientX, trackEl) => {
+  const cycleSpeed = () => {
+    const next = (speedIdx + 1) % VOICE_SPEED_STEPS_BUBBLE.length;
+    setSpeedIdx(next);
+    if (audioRef.current) audioRef.current.playbackRate = VOICE_SPEED_STEPS_BUBBLE[next];
+    haptic?.('light');
+  };
+
+  const pctFromClientX = (clientX) => {
+    const rect = trackRef.current.getBoundingClientRect();
+    return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+  };
+
+  // Press-and-drag scrubbing (not just tap) — matches how Telegram/WhatsApp let you
+  // drag the played-head, but adds a floating time readout above the thumb while
+  // dragging so you can see exactly where you'll land before releasing.
+  const handleTrackPointerDown = (e) => {
+    e.preventDefault();
     const el = audioRef.current;
-    if (!el || !trackEl || !el.duration) return;
-    const rect = trackEl.getBoundingClientRect();
-    const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-    el.currentTime = pct * el.duration;
+    if (!el || !el.duration) return;
+    setSeeking(true);
+    const pct = pctFromClientX(e.clientX);
+    setSeekPct(pct);
     setProgress(pct);
+    const onMove = (ev) => {
+      const p = pctFromClientX(ev.clientX);
+      setSeekPct(p);
+      setProgress(p);
+    };
+    const onUp = (ev) => {
+      const p = pctFromClientX(ev.clientX);
+      el.currentTime = p * el.duration;
+      setSeeking(false);
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
   };
 
   const playedBars = Math.round(progress * bars.length);
@@ -10113,42 +10149,84 @@ const AudioBubble = ({ src, duration: knownDuration, seed, accentBg, accentColor
 
   return (
     <div style={{
-      display: 'flex', alignItems: 'center', gap: 10,
-      background: bg, borderRadius: RADIUS.lg, padding: compact ? '7px 10px' : '9px 12px',
-      minWidth: compact ? 170 : 210, maxWidth: 280,
+      position: 'relative', display: 'flex', alignItems: 'center', gap: compact ? 8 : 10,
+      background: bg, borderRadius: RADIUS.pill, padding: compact ? '6px 12px 6px 6px' : '7px 14px 7px 7px',
+      minWidth: compact ? 176 : 218, maxWidth: 300,
       border: `1px solid ${COLORS.audioTrack}`,
+      boxShadow: playing ? `0 2px 14px ${COLORS.audioGlow}33` : '0 1px 3px rgba(0,0,0,0.04)',
+      transition: 'box-shadow 0.25s ease',
     }}>
       <audio ref={audioRef} src={src} preload="metadata" style={{ display: 'none' }} />
+      {/* Live scrub tooltip — floats above the exact drag position */}
+      <AnimatePresence>
+        {seeking && (
+          <motion.div
+            initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
+            style={{
+              position: 'absolute', top: -30, left: `${seekPct * 100}%`, transform: 'translateX(-50%)',
+              background: 'rgba(20,20,26,0.94)', color: '#fff', fontSize: 10.5, fontWeight: 700,
+              padding: '3px 8px', borderRadius: 8, whiteSpace: 'nowrap', pointerEvents: 'none', zIndex: 2,
+            }}
+          >
+            {formatAudioTime(seekPct * duration)}
+          </motion.div>
+        )}
+      </AnimatePresence>
       <button
         onClick={toggle}
         aria-label={playing ? 'Pause' : 'Play'}
         style={{
-          flexShrink: 0, width: compact ? 30 : 36, height: compact ? 30 : 36, borderRadius: '50%',
+          position: 'relative', flexShrink: 0, width: compact ? 32 : 38, height: compact ? 32 : 38, borderRadius: '50%',
           border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
           background: COLORS.audioGradient, color: '#fff', boxShadow: SHADOW.glow(COLORS.audioGlow),
         }}
       >
+        {playing && (
+          <motion.span
+            aria-hidden
+            animate={{ scale: [1, 1.45], opacity: [0.55, 0] }}
+            transition={{ duration: 1.4, repeat: Infinity, ease: 'easeOut' }}
+            style={{ position: 'absolute', inset: -2, borderRadius: '50%', border: `1.5px solid ${fg}`, pointerEvents: 'none' }}
+          />
+        )}
         {playing ? (
-          <svg width={compact ? 12 : 14} height={compact ? 12 : 14} viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+          <svg width={compact ? 12 : 14} height={compact ? 12 : 14} viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.5"/><rect x="14" y="5" width="4" height="14" rx="1.5"/></svg>
         ) : (
-          <svg width={compact ? 12 : 14} height={compact ? 12 : 14} viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          <svg width={compact ? 12 : 14} height={compact ? 12 : 14} viewBox="0 0 24 24" fill="currentColor" style={{ marginLeft: 1.5 }}><path d="M8 5v14l11-7z"/></svg>
         )}
       </button>
       <div
-        onClick={(e) => seek(e.clientX, e.currentTarget)}
-        style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 2, height: compact ? 22 : 26, cursor: 'pointer' }}
+        ref={trackRef}
+        onPointerDown={handleTrackPointerDown}
+        style={{ flex: 1, display: 'flex', alignItems: 'center', gap: compact ? 2 : 2.5, height: compact ? 22 : 26, cursor: 'pointer', touchAction: 'none' }}
       >
-        {bars.map((h, i) => (
-          <div key={i} style={{
-            flex: 1, borderRadius: 2, height: `${Math.max(15, h * 100)}%`,
-            background: i < playedBars ? fg : COLORS.audioTrack,
-            transition: 'background 0.1s linear',
-          }} />
-        ))}
+        {bars.map((h, i) => {
+          const isPlayed = i < playedBars;
+          const isLeading = playing && !seeking && i === playedBars - 1;
+          return (
+            <motion.div
+              key={i}
+              animate={isLeading ? { scaleY: [1, 1.35, 1] } : { scaleY: 1 }}
+              transition={{ duration: 0.5, repeat: isLeading ? Infinity : 0, ease: 'easeInOut' }}
+              style={{
+                flex: 1, minWidth: 2, borderRadius: 3, height: `${Math.max(16, h * 100)}%`,
+                background: isPlayed ? fg : COLORS.audioTrack,
+                opacity: isPlayed ? 1 : 0.7,
+                transformOrigin: 'center',
+                transition: 'background 0.15s linear, opacity 0.15s linear',
+              }}
+            />
+          );
+        })}
       </div>
-      <span style={{ flexShrink: 0, fontSize: 11, color: fg, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
-        {formatAudioTime(playing || progress > 0 ? (progress * duration) : duration)}
+      <span style={{ flexShrink: 0, fontSize: 11, color: fg, fontWeight: 700, fontVariantNumeric: 'tabular-nums', opacity: 0.9 }}>
+        {formatAudioTime(seeking ? seekPct * duration : (playing || progress > 0 ? (progress * duration) : duration))}
       </span>
+      {!compact && (
+        <button onClick={cycleSpeed} aria-label="Playback speed" style={{ flexShrink: 0, border: `1px solid ${fg}44`, background: `${fg}14`, borderRadius: RADIUS.pill, color: fg, fontSize: 10, fontWeight: 800, padding: '3px 6px', cursor: 'pointer' }}>
+          {VOICE_SPEED_STEPS_BUBBLE[speedIdx]}×
+        </button>
+      )}
     </div>
   );
 };
@@ -10157,17 +10235,22 @@ const AudioBubble = ({ src, duration: knownDuration, seed, accentBg, accentColor
 // gradient hero card with a large glowing play button, big waveform, and
 // caption slot. `fullBleed` makes it fill its parent's actual dimensions
 // (for the story viewer) instead of using a fixed literal height (feed card).
-const AudioHeroCard = ({ src, duration: knownDuration, seed, caption, authorName, fullBleed = false, autoPlay = false }) => {
+const AudioHeroCard = ({ src, duration: knownDuration, seed, caption, authorName, authorAvatar, authorAvatarColor, fullBleed = false, autoPlay = true }) => {
   const audioRef = useRef(null);
+  const trackRef = useRef(null);
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(knownDuration || 0);
+  const [seeking, setSeeking] = useState(false);
+  const [seekPct, setSeekPct] = useState(0);
   const bars = useMemo(() => seededBars(seed || src, 48), [seed, src]);
 
   useEffect(() => {
     const el = audioRef.current;
     if (!el) return;
-    const onTime = () => { if (el.duration) setProgress(el.currentTime / el.duration); };
+    const onTime = () => { if (el.duration && !seeking) setProgress(el.currentTime / el.duration); };
+    // Always-on autoplay: every audio post/story starts talking the moment it's on
+    // screen, same as this app's video posts already do — no extra tap needed.
     const onMeta = () => { setDuration(el.duration || knownDuration || 0); if (autoPlay) { stopOtherAudio(el); el.play().catch(() => {}); setPlaying(true); } };
     const onEnd = () => { setPlaying(false); setProgress(0); };
     const onPause = () => setPlaying(false);
@@ -10181,7 +10264,7 @@ const AudioHeroCard = ({ src, duration: knownDuration, seed, caption, authorName
       el.removeEventListener('ended', onEnd);
       el.removeEventListener('pause', onPause);
     };
-  }, [src, knownDuration, autoPlay]);
+  }, [src, knownDuration, autoPlay, seeking]);
 
   const toggle = (e) => {
     e.stopPropagation();
@@ -10191,13 +10274,28 @@ const AudioHeroCard = ({ src, duration: knownDuration, seed, caption, authorName
     else { stopOtherAudio(el); el.play().catch(() => {}); setPlaying(true); }
   };
 
-  const seek = (clientX, trackEl) => {
+  const pctFromClientX = (clientX) => {
+    const rect = trackRef.current.getBoundingClientRect();
+    return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+  };
+
+  const handleTrackPointerDown = (e) => {
+    e.stopPropagation(); e.preventDefault();
     const el = audioRef.current;
-    if (!el || !trackEl || !el.duration) return;
-    const rect = trackEl.getBoundingClientRect();
-    const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-    el.currentTime = pct * el.duration;
-    setProgress(pct);
+    if (!el || !el.duration) return;
+    setSeeking(true);
+    const pct = pctFromClientX(e.clientX);
+    setSeekPct(pct); setProgress(pct);
+    const onMove = (ev) => { const p = pctFromClientX(ev.clientX); setSeekPct(p); setProgress(p); };
+    const onUp = (ev) => {
+      const p = pctFromClientX(ev.clientX);
+      el.currentTime = p * el.duration;
+      setSeeking(false);
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
   };
 
   const playedBars = Math.round(progress * bars.length);
@@ -10206,57 +10304,112 @@ const AudioHeroCard = ({ src, duration: knownDuration, seed, caption, authorName
     <div style={{
       position: 'relative', width: '100%', height: fullBleed ? '100%' : 340,
       borderRadius: fullBleed ? 0 : RADIUS.xl, overflow: 'hidden',
-      background: `radial-gradient(120% 100% at 50% 0%, ${COLORS.audioSecondary}55, transparent 60%), ${COLORS.audioGradient}`,
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      padding: 24, boxSizing: 'border-box', color: '#fff',
+      padding: 24, boxSizing: 'border-box', color: '#fff', background: '#151022',
     }}>
       <audio ref={audioRef} src={src} preload="metadata" style={{ display: 'none' }} />
-      {/* soft glow rings behind the play button for a "live signal" feel */}
-      <div style={{
-        position: 'absolute', width: 220, height: 220, borderRadius: '50%',
-        background: 'rgba(255,255,255,0.08)', filter: 'blur(2px)',
-        animation: playing ? 'audioPulse 2.2s ease-in-out infinite' : 'none',
-      }} />
-      <svg width={36} height={36} viewBox="0 0 24 24" fill="rgba(255,255,255,0.85)" style={{ marginBottom: 14, position: 'relative' }}>
-        <path d="M12 14a3 3 0 003-3V6a3 3 0 10-6 0v5a3 3 0 003 3zm5-3a5 5 0 01-10 0H5a7 7 0 006 6.93V21h2v-3.07A7 7 0 0019 11h-2z"/>
-      </svg>
-      <button
-        onClick={toggle}
-        aria-label={playing ? 'Pause' : 'Play'}
-        style={{
-          position: 'relative', width: 68, height: 68, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.7)',
-          background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(6px)', color: '#fff',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', marginBottom: 18,
-        }}
-      >
-        {playing ? (
-          <svg width={24} height={24} viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
-        ) : (
-          <svg width={26} height={26} viewBox="0 0 24 24" fill="currentColor" style={{ marginLeft: 3 }}><path d="M8 5v14l11-7z"/></svg>
-        )}
-      </button>
-      <div
-        onClick={(e) => seek(e.clientX, e.currentTarget)}
-        style={{ width: '100%', maxWidth: 320, display: 'flex', alignItems: 'center', gap: 2.5, height: 40, cursor: 'pointer', position: 'relative' }}
-      >
-        {bars.map((h, i) => (
-          <div key={i} style={{
-            flex: 1, borderRadius: 2, height: `${Math.max(12, h * 100)}%`,
-            background: i < playedBars ? '#fff' : 'rgba(255,255,255,0.35)',
-            transition: 'background 0.1s linear',
-          }} />
-        ))}
+
+      {/* ── Background: the poster's own profile photo, blurred into a moody backdrop ──
+          Gives every voice post/story an identity at a glance instead of a generic
+          gradient card — the same way Spotify/Apple Music use cover art as the scene. */}
+      {authorAvatar ? (
+        <div aria-hidden style={{
+          position: 'absolute', inset: -20, backgroundImage: `url(${authorAvatar})`,
+          backgroundSize: 'cover', backgroundPosition: 'center', filter: 'blur(38px) saturate(1.3) brightness(0.55)',
+          transform: 'scale(1.15)', pointerEvents: 'none',
+        }} />
+      ) : (
+        <div aria-hidden style={{ position: 'absolute', inset: 0, background: authorAvatarColor || COLORS.brand, opacity: 0.9 }} />
+      )}
+      {/* signature audio-gradient tint + top/bottom scrims for legibility over any photo */}
+      <div aria-hidden style={{ position: 'absolute', inset: 0, background: `radial-gradient(130% 90% at 50% -10%, ${COLORS.audioSecondary}55, transparent 55%), linear-gradient(180deg, rgba(10,8,18,0.55) 0%, rgba(10,8,18,0.25) 35%, rgba(10,8,18,0.65) 100%)`, pointerEvents: 'none' }} />
+      <div aria-hidden style={{ position: 'absolute', inset: 0, opacity: 0.35, backgroundImage: 'radial-gradient(rgba(255,255,255,0.14) 1px, transparent 1.4px)', backgroundSize: '18px 18px', pointerEvents: 'none' }} />
+
+      {/* ── Centerpiece: profile photo as a spinning "record", the way voice notes
+          in a music-forward feed should feel — spins only while actually playing */}
+      <div style={{ position: 'relative', width: 96, height: 96, marginBottom: 18 }}>
+        <div style={{ position: 'absolute', width: 220, height: 220, left: '50%', top: '50%', transform: 'translate(-50%,-50%)', borderRadius: '50%', background: 'rgba(255,255,255,0.06)', animation: playing ? 'audioPulse 2.2s ease-in-out infinite' : 'none' }} />
+        <div style={{ position: 'absolute', width: 150, height: 150, left: '50%', top: '50%', transform: 'translate(-50%,-50%)', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.18)', animation: playing ? 'audioPulse 2.2s ease-in-out infinite 0.4s' : 'none' }} />
+        <motion.div
+          animate={playing ? { rotate: 360 } : { rotate: 0 }}
+          transition={playing ? { duration: 6, repeat: Infinity, ease: 'linear' } : { duration: 0.3 }}
+          style={{
+            width: 96, height: 96, borderRadius: '50%', overflow: 'hidden', position: 'relative',
+            border: '3px solid rgba(255,255,255,0.85)', boxShadow: '0 10px 28px rgba(0,0,0,0.35)',
+            background: authorAvatarColor || COLORS.brand,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+        >
+          {authorAvatar ? (
+            <img src={authorAvatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ) : (
+            <span style={{ fontSize: 34, fontWeight: 800, color: '#fff' }}>{(authorName || '?')[0]?.toUpperCase()}</span>
+          )}
+          {/* center "spindle" dot, purely decorative vinyl cue */}
+          <div style={{ position: 'absolute', width: 14, height: 14, borderRadius: '50%', background: 'rgba(0,0,0,0.35)', border: '2px solid rgba(255,255,255,0.7)' }} />
+        </motion.div>
+        <button
+          onClick={toggle}
+          aria-label={playing ? 'Pause' : 'Play'}
+          style={{
+            position: 'absolute', right: -4, bottom: -4, width: 34, height: 34, borderRadius: '50%',
+            border: '2px solid rgba(255,255,255,0.9)', background: COLORS.audioGradient, color: '#fff',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+            boxShadow: SHADOW.glow(COLORS.audioGlow),
+          }}
+        >
+          {playing ? (
+            <svg width={13} height={13} viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.5"/><rect x="14" y="5" width="4" height="14" rx="1.5"/></svg>
+          ) : (
+            <svg width={14} height={14} viewBox="0 0 24 24" fill="currentColor" style={{ marginLeft: 1.5 }}><path d="M8 5v14l11-7z"/></svg>
+          )}
+        </button>
       </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', maxWidth: 320, marginTop: 6, fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.85)', fontVariantNumeric: 'tabular-nums' }}>
-        <span>{formatAudioTime(progress * duration)}</span>
+      {authorName && <div style={{ position: 'relative', fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.9)', marginBottom: 14 }}>@{authorName}</div>}
+
+      <div
+        ref={trackRef}
+        onPointerDown={handleTrackPointerDown}
+        style={{ width: '100%', maxWidth: 320, display: 'flex', alignItems: 'center', gap: 3, height: 42, cursor: 'pointer', position: 'relative', touchAction: 'none' }}
+      >
+        <AnimatePresence>
+          {seeking && (
+            <motion.div
+              initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
+              style={{ position: 'absolute', top: -30, left: `${seekPct * 100}%`, transform: 'translateX(-50%)', background: 'rgba(0,0,0,0.75)', color: '#fff', fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 8, whiteSpace: 'nowrap', pointerEvents: 'none' }}
+            >
+              {formatAudioTime(seekPct * duration)}
+            </motion.div>
+          )}
+        </AnimatePresence>
+        {bars.map((h, i) => {
+          const isLeading = playing && !seeking && i === playedBars - 1;
+          return (
+            <motion.div
+              key={i}
+              animate={isLeading ? { scaleY: [1, 1.3, 1] } : { scaleY: 1 }}
+              transition={{ duration: 0.5, repeat: isLeading ? Infinity : 0, ease: 'easeInOut' }}
+              style={{
+                flex: 1, borderRadius: 3, height: `${Math.max(12, h * 100)}%`,
+                background: i < playedBars ? '#fff' : 'rgba(255,255,255,0.32)',
+                boxShadow: i < playedBars ? '0 0 8px rgba(255,255,255,0.5)' : 'none',
+                transformOrigin: 'center',
+                transition: 'background 0.12s linear, box-shadow 0.12s linear',
+              }}
+            />
+          );
+        })}
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', maxWidth: 320, marginTop: 8, fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.85)', fontVariantNumeric: 'tabular-nums' }}>
+        <span>{formatAudioTime(seeking ? seekPct * duration : progress * duration)}</span>
         <span>{formatAudioTime(duration)}</span>
       </div>
       {caption ? (
-        <div style={{ marginTop: 16, textAlign: 'center', fontSize: 14, color: 'rgba(255,255,255,0.92)', maxWidth: 320, lineHeight: 1.4 }}>
-          {authorName ? <span style={{ fontWeight: 700 }}>{authorName}: </span> : null}{caption}
+        <div style={{ position: 'relative', marginTop: 18, textAlign: 'center', fontSize: 14, color: 'rgba(255,255,255,0.94)', maxWidth: 320, lineHeight: 1.45, background: 'rgba(0,0,0,0.22)', borderRadius: RADIUS.lg, padding: '10px 14px' }}>
+          {caption}
         </div>
       ) : null}
-      <style>{`@keyframes audioPulse { 0%,100% { transform: scale(1); opacity: 0.6; } 50% { transform: scale(1.15); opacity: 0.15; } }`}</style>
+      <style>{`@keyframes audioPulse { 0%,100% { transform: translate(-50%,-50%) scale(1); opacity: 0.6; } 50% { transform: translate(-50%,-50%) scale(1.15); opacity: 0.12; } }`}</style>
     </div>
   );
 };
@@ -10434,48 +10587,72 @@ const VoiceMessagePro = ({ src, duration: knownDuration, seed, accentBg, accentC
   const longEnough = (duration || 0) >= 45;
 
   return (
-    <div style={{ minWidth: compact ? 190 : 230, maxWidth: 300 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: bg, borderRadius: RADIUS.lg, padding: compact ? '7px 10px' : '9px 12px', border: `1px solid ${COLORS.audioTrack}` }}>
+    <div style={{ minWidth: compact ? 196 : 236, maxWidth: 300 }}>
+      <div style={{
+        position: 'relative', display: 'flex', alignItems: 'center', gap: compact ? 8 : 10,
+        background: bg, borderRadius: RADIUS.pill, padding: compact ? '6px 8px' : '7px 9px',
+        border: `1px solid ${COLORS.audioTrack}`,
+        boxShadow: playing ? `0 2px 14px ${COLORS.audioGlow}33` : '0 1px 3px rgba(0,0,0,0.04)',
+        transition: 'box-shadow 0.25s ease',
+      }}>
         <audio ref={audioRef} src={src} preload="metadata" style={{ display: 'none' }} />
-        <button onClick={toggle} aria-label={playing ? 'Pause' : 'Play'} style={{ flexShrink: 0, width: compact ? 30 : 36, height: compact ? 30 : 36, borderRadius: '50%', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', background: COLORS.audioGradient, color: '#fff' }}>
+        <button onClick={toggle} aria-label={playing ? 'Pause' : 'Play'} style={{ position: 'relative', flexShrink: 0, width: compact ? 32 : 38, height: compact ? 32 : 38, borderRadius: '50%', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', background: COLORS.audioGradient, color: '#fff', boxShadow: SHADOW.glow(COLORS.audioGlow) }}>
+          {playing && (
+            <motion.span aria-hidden animate={{ scale: [1, 1.45], opacity: [0.55, 0] }} transition={{ duration: 1.4, repeat: Infinity, ease: 'easeOut' }} style={{ position: 'absolute', inset: -2, borderRadius: '50%', border: `1.5px solid ${fg}`, pointerEvents: 'none' }} />
+          )}
           {playing ? (
-            <svg width={compact ? 12 : 14} height={compact ? 12 : 14} viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+            <svg width={compact ? 12 : 14} height={compact ? 12 : 14} viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.5"/><rect x="14" y="5" width="4" height="14" rx="1.5"/></svg>
           ) : (
-            <svg width={compact ? 12 : 14} height={compact ? 12 : 14} viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            <svg width={compact ? 12 : 14} height={compact ? 12 : 14} viewBox="0 0 24 24" fill="currentColor" style={{ marginLeft: 1.5 }}><path d="M8 5v14l11-7z"/></svg>
           )}
         </button>
-        <div onClick={(e) => seek(e.clientX, e.currentTarget)} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 2, height: compact ? 22 : 26, cursor: 'pointer' }}>
-          {bars.map((h, i) => (
-            <div key={i} style={{ flex: 1, borderRadius: 2, height: `${Math.max(15, h * 100)}%`, background: i < playedBars ? fg : COLORS.audioTrack, transition: 'background 0.1s linear' }} />
-          ))}
+        <div onClick={(e) => seek(e.clientX, e.currentTarget)} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: compact ? 2 : 2.5, height: compact ? 22 : 26, cursor: 'pointer' }}>
+          {bars.map((h, i) => {
+            const isPlayed = i < playedBars;
+            const isLeading = playing && i === playedBars - 1;
+            return (
+              <motion.div
+                key={i}
+                animate={isLeading ? { scaleY: [1, 1.35, 1] } : { scaleY: 1 }}
+                transition={{ duration: 0.5, repeat: isLeading ? Infinity : 0, ease: 'easeInOut' }}
+                style={{ flex: 1, minWidth: 2, borderRadius: 3, height: `${Math.max(16, h * 100)}%`, background: isPlayed ? fg : COLORS.audioTrack, opacity: isPlayed ? 1 : 0.7, transformOrigin: 'center', transition: 'background 0.15s linear, opacity 0.15s linear' }}
+              />
+            );
+          })}
         </div>
-        <span style={{ flexShrink: 0, fontSize: 11, color: fg, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+        <span style={{ flexShrink: 0, fontSize: 11, color: fg, fontWeight: 700, fontVariantNumeric: 'tabular-nums', opacity: 0.9 }}>
           {formatAudioTime(playing || progress > 0 ? progress * duration : duration)}
         </span>
-        <button onClick={cycleSpeed} aria-label="Playback speed" style={{ flexShrink: 0, border: `1px solid ${fg}55`, background: 'none', borderRadius: RADIUS.pill, color: fg, fontSize: 10.5, fontWeight: 800, padding: '3px 6px', cursor: 'pointer' }}>
-          {VOICE_SPEED_STEPS[speedIdx]}x
+        <button onClick={cycleSpeed} aria-label="Playback speed" style={{ flexShrink: 0, border: `1px solid ${fg}44`, background: `${fg}14`, borderRadius: RADIUS.pill, color: fg, fontSize: 10.5, fontWeight: 800, padding: '4px 7px', cursor: 'pointer', letterSpacing: 0.2 }}>
+          {VOICE_SPEED_STEPS[speedIdx]}×
         </button>
       </div>
 
-      <div style={{ display: 'flex', gap: 6, marginTop: 5, flexWrap: 'wrap' }}>
-        <button onClick={runTranscribe} disabled={transcribing} style={{ fontSize: 10.5, fontWeight: 700, color: COLORS.textTertiary, background: 'none', border: 'none', cursor: 'pointer', padding: '2px 0', display: 'flex', alignItems: 'center', gap: 3 }}>
-          {transcribing ? 'Transcribing…' : (msg?.transcription?.text ? (showTranscript ? 'Hide transcript ▲' : 'Show transcript ▼') : '📝 Transcribe')}
+      <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+        <button onClick={runTranscribe} disabled={transcribing} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10.5, fontWeight: 700, color: COLORS.textSecondary, background: COLORS.surfaceAlt, border: `1px solid ${COLORS.border}`, borderRadius: RADIUS.pill, cursor: transcribing ? 'default' : 'pointer', padding: '4px 9px', opacity: transcribing ? 0.7 : 1 }}>
+          <span style={{ fontSize: 11 }}>📝</span>
+          {transcribing ? 'Transcribing…' : (msg?.transcription?.text ? (showTranscript ? 'Hide transcript' : 'Transcript') : 'Transcribe')}
         </button>
         {longEnough && (
-          <button onClick={runSummary} disabled={summarizing || !!msg?.aiSummary} style={{ fontSize: 10.5, fontWeight: 700, color: COLORS.brand, background: 'none', border: 'none', cursor: 'pointer', padding: '2px 0' }}>
-            {summarizing ? 'Summarizing…' : msg?.aiSummary ? '✓ Summarized' : '✨ AI summary'}
+          <button onClick={runSummary} disabled={summarizing || !!msg?.aiSummary} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10.5, fontWeight: 700, color: COLORS.brand, background: `${COLORS.brand}14`, border: `1px solid ${COLORS.brand}33`, borderRadius: RADIUS.pill, cursor: (summarizing || !!msg?.aiSummary) ? 'default' : 'pointer', padding: '4px 9px' }}>
+            <span style={{ fontSize: 11 }}>✨</span>
+            {summarizing ? 'Summarizing…' : msg?.aiSummary ? 'Summarized' : 'AI summary'}
           </button>
         )}
       </div>
 
-      {showTranscript && msg?.transcription?.text && (
-        <div style={{ marginTop: 4, fontSize: 12.5, lineHeight: 1.4, color: COLORS.textSecondary, background: COLORS.surfaceAlt, borderRadius: 10, padding: '7px 10px' }}>
-          {msg.transcription.text}
-        </div>
-      )}
+      <AnimatePresence>
+        {showTranscript && msg?.transcription?.text && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} style={{ overflow: 'hidden' }}>
+            <div style={{ marginTop: 5, fontSize: 12.5, lineHeight: 1.45, color: COLORS.textSecondary, background: COLORS.surfaceAlt, borderRadius: 12, padding: '8px 11px', borderLeft: `2.5px solid ${fg}` }}>
+              {msg.transcription.text}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {msg?.aiSummary && (
-        <div style={{ marginTop: 4, fontSize: 12, lineHeight: 1.4, color: COLORS.textPrimary, background: `${COLORS.brand}14`, border: `1px solid ${COLORS.brand}33`, borderRadius: 10, padding: '7px 10px' }}>
-          ✨ {msg.aiSummary}
+        <div style={{ marginTop: 5, fontSize: 12, lineHeight: 1.45, color: COLORS.textPrimary, background: `linear-gradient(135deg, ${COLORS.brand}14, ${COLORS.audioSecondary}14)`, border: `1px solid ${COLORS.brand}33`, borderRadius: 12, padding: '8px 11px' }}>
+          <span style={{ marginRight: 4 }}>✨</span>{msg.aiSummary}
         </div>
       )}
     </div>
@@ -10738,16 +10915,17 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal', onStateChange
           {holding && (dragX < -8 || dragY < -8) && (
             <motion.div
               initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-              style={{ position:'absolute', bottom:'100%', right:0, marginBottom:8, display:'flex', flexDirection:'column', alignItems:'flex-end', gap:8, pointerEvents:'none' }}
+              style={{ position:'absolute', bottom:'100%', right:0, marginBottom:10, display:'flex', flexDirection:'column', alignItems:'flex-end', gap:8, pointerEvents:'none' }}
             >
               {!locked && (
-                <div style={{ background:'rgba(20,20,26,0.92)', backdropFilter:'blur(10px)', borderRadius:16, padding:'6px 10px', display:'flex', alignItems:'center', gap:6, transform:`translateY(${Math.max(dragY, -LOCK_THRESHOLD)}px)`, opacity: Math.min(1, Math.abs(dragY)/LOCK_THRESHOLD + 0.3) }}>
+                <div style={{ background:'rgba(18,18,24,0.94)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', borderRadius:16, padding:'7px 11px', display:'flex', alignItems:'center', gap:6, boxShadow:'0 6px 20px rgba(0,0,0,0.25)', transform:`translateY(${Math.max(dragY, -LOCK_THRESHOLD)}px)`, opacity: Math.min(1, Math.abs(dragY)/LOCK_THRESHOLD + 0.3) }}>
                   <span style={{ fontSize:13 }}>🔒</span>
-                  <span style={{ color:'rgba(255,255,255,0.6)', fontSize:10, fontWeight:600 }}>Slide up to lock</span>
+                  <span style={{ color:'rgba(255,255,255,0.75)', fontSize:10.5, fontWeight:700 }}>Slide up to lock</span>
                 </div>
               )}
-              <div style={{ background:'rgba(20,20,26,0.92)', backdropFilter:'blur(10px)', borderRadius:16, padding:'6px 12px', display:'flex', alignItems:'center', gap:6, transform:`translateX(${Math.max(dragX, -CANCEL_THRESHOLD)}px)`, opacity: Math.min(1, Math.abs(dragX)/CANCEL_THRESHOLD + 0.3) }}>
-                <span style={{ color: Math.abs(dragX) > CANCEL_THRESHOLD*0.7 ? '#FF453A' : 'rgba(255,255,255,0.6)', fontSize:11, fontWeight:700 }}>← Slide to cancel</span>
+              <div style={{ background: Math.abs(dragX) > CANCEL_THRESHOLD*0.7 ? 'rgba(225,29,46,0.94)' : 'rgba(18,18,24,0.94)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', borderRadius:16, padding:'7px 13px', display:'flex', alignItems:'center', gap:6, boxShadow:'0 6px 20px rgba(0,0,0,0.25)', transform:`translateX(${Math.max(dragX, -CANCEL_THRESHOLD)}px)`, opacity: Math.min(1, Math.abs(dragX)/CANCEL_THRESHOLD + 0.3), transition:'background 0.15s ease' }}>
+                <span style={{ fontSize: 12 }}>←</span>
+                <span style={{ color: '#fff', fontSize:11, fontWeight:700 }}>Slide to cancel</span>
               </div>
             </motion.div>
           )}
@@ -10755,10 +10933,20 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal', onStateChange
         <motion.button
           onPointerDown={handleMicPointerDown}
           whileTap={{ scale:0.9 }}
+          animate={holding ? { scale: 1.08 } : { scale: 1 }}
           aria-label="Record voice message (hold to lock, drag left to cancel)"
-          style={{ background:'none', border:'none', cursor:'pointer', padding:size==='small'?6:8, display:'flex', alignItems:'center', justifyContent:'center', color: size==='small' ? '#fff' : 'rgba(255,255,255,0.5)', borderRadius:'50%', transition:'color 0.15s' }}
+          style={{
+            position: 'relative',
+            background: holding ? COLORS.audioGradient : 'transparent',
+            border: holding ? 'none' : `1.5px solid ${size==='small' ? 'rgba(255,255,255,0.45)' : COLORS.audioTrack}`,
+            cursor:'pointer', width: size==='small'?32:38, height: size==='small'?32:38,
+            display:'flex', alignItems:'center', justifyContent:'center',
+            color: holding ? '#fff' : (size==='small' ? '#fff' : COLORS.audio),
+            borderRadius:'50%', boxShadow: holding ? SHADOW.glow(COLORS.audioGlow) : 'none',
+            transition:'background 0.15s ease, border-color 0.15s ease, color 0.15s ease',
+          }}
         >
-          <svg width={size==='small'?18:22} height={size==='small'?18:22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+          <svg width={size==='small'?16:18} height={size==='small'?16:18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
         </motion.button>
       </div>
     );
@@ -10768,11 +10956,11 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal', onStateChange
     // Momentary success beat — a filled checkmark that gently pops in — before the
     // composer collapses back to the plain idle mic.
     return (
-      <motion.div initial={{ opacity:0, scale:0.9 }} animate={{ opacity:1, scale:1 }} style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, background:'rgba(46,213,115,0.12)', borderRadius:24, padding:'10px 16px', flex:1 }}>
-        <motion.div initial={{ scale:0 }} animate={{ scale:1 }} transition={{ type:'spring', stiffness:500, damping:20 }} style={{ width:22, height:22, borderRadius:'50%', background:'#2ED573', display:'flex', alignItems:'center', justifyContent:'center' }}>
+      <motion.div initial={{ opacity:0, scale:0.9 }} animate={{ opacity:1, scale:1 }} style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, background:'rgba(46,213,115,0.1)', border:'1px solid rgba(46,213,115,0.25)', borderRadius:24, padding:'9px 16px', flex:1 }}>
+        <motion.div initial={{ scale:0 }} animate={{ scale:1 }} transition={{ type:'spring', stiffness:500, damping:20 }} style={{ width:22, height:22, borderRadius:'50%', background:'#2ED573', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 2px 8px rgba(46,213,115,0.4)' }}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
         </motion.div>
-        <span style={{ color:'#2ED573', fontSize:12.5, fontWeight:700 }}>Sent</span>
+        <span style={{ color:'#2ED573', fontSize:12.5, fontWeight:700 }}>Voice message sent</span>
       </motion.div>
     );
   }
@@ -10812,11 +11000,14 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal', onStateChange
             onEnded={()=>{ setIsPlaying(false); setPlaybackPos(0); }}
             onTimeUpdate={e=>setPlaybackPos(e.currentTarget.currentTime)}
           />
-          <button onClick={cancelRecording} aria-label="Discard recording" style={{ background:COLORS.surface, border:`1px solid ${COLORS.audioTrack}`, borderRadius:'50%', width:32, height:32, minWidth:32, color:COLORS.audio, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, flexShrink:0 }}>✕</button>
-          <button onClick={togglePlayback} aria-label={isPlaying ? 'Pause preview' : 'Play preview'} style={{ background:isPlaying?COLORS.audioGradient:COLORS.surface, border: isPlaying ? 'none' : `1px solid ${COLORS.audioTrack}`, borderRadius:'50%', width:30, height:30, minWidth:30, color: isPlaying ? '#fff' : COLORS.audio, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, transition:'background 0.15s', boxShadow: isPlaying ? SHADOW.glow(COLORS.audioGlow) : 'none' }}>
+          <button onClick={cancelRecording} aria-label="Discard recording" style={{ background:COLORS.surface, border:`1px solid ${COLORS.audioTrack}`, borderRadius:'50%', width:30, height:30, minWidth:30, color:COLORS.textSecondary, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, flexShrink:0 }}>✕</button>
+          <button onClick={togglePlayback} aria-label={isPlaying ? 'Pause preview' : 'Play preview'} style={{ position:'relative', background:isPlaying?COLORS.audioGradient:COLORS.surface, border: isPlaying ? 'none' : `1px solid ${COLORS.audioTrack}`, borderRadius:'50%', width:32, height:32, minWidth:32, color: isPlaying ? '#fff' : COLORS.audio, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, transition:'background 0.15s', boxShadow: isPlaying ? SHADOW.glow(COLORS.audioGlow) : 'none' }}>
+            {isPlaying && (
+              <motion.span aria-hidden animate={{ scale: [1, 1.45], opacity: [0.55, 0] }} transition={{ duration: 1.4, repeat: Infinity, ease: 'easeOut' }} style={{ position: 'absolute', inset: -2, borderRadius: '50%', border: `1.5px solid ${COLORS.audio}`, pointerEvents: 'none' }} />
+            )}
             {isPlaying
-              ? <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
-              : <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 21 12 6 21 6 3"/></svg>}
+              ? <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+              : <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style={{ marginLeft: 1.5 }}><polygon points="6 3 21 12 6 21 6 3"/></svg>}
           </button>
           <div
             ref={scrubRef}
@@ -10828,7 +11019,7 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal', onStateChange
               const playedRatio = duration > 0 ? playbackPos / duration : 0;
               const played = barRatio <= playedRatio;
               return (
-                <div key={i} style={{ flex:1, minWidth:1.5, borderRadius:2, height:`${Math.max(12, Math.round(h*100))}%`, background: played ? COLORS.audio : COLORS.audioTrack, transition:'background 0.1s' }} />
+                <div key={i} style={{ flex:1, minWidth:1.5, borderRadius:3, height:`${Math.max(12, Math.round(h*100))}%`, background: played ? COLORS.audio : COLORS.audioTrack, opacity: played ? 1 : 0.7, transition:'background 0.1s, opacity 0.1s' }} />
               );
             })}
           </div>
@@ -10843,28 +11034,40 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal', onStateChange
 
   // recording or paused
   return (
-    <div style={{ display:'flex', alignItems:'center', gap:8, flex:1, background: state==='recording' ? 'rgba(225,29,46,0.08)' : 'rgba(11,95,255,0.06)', borderRadius:24, padding:'8px 12px', border: state==='recording' ? '1px solid rgba(225,29,46,0.25)' : '1px solid rgba(11,95,255,0.15)', transition:'background 0.2s, border-color 0.2s' }}>
-      <button onClick={cancelRecording} aria-label="Cancel recording" style={{ background:'rgba(11,95,255,0.15)', border:'none', borderRadius:'50%', width:30, height:30, color:COLORS.brand, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>✕</button>
+    <div style={{
+      position: 'relative', display:'flex', alignItems:'center', gap:9, flex:1,
+      background: state==='recording' ? 'rgba(225,29,46,0.07)' : COLORS.audioSurface,
+      borderRadius:24, padding:'7px 8px 7px 12px',
+      border: state==='recording' ? '1px solid rgba(225,29,46,0.28)' : `1px solid ${COLORS.audioTrack}`,
+      boxShadow: state==='recording' ? '0 2px 14px rgba(225,29,46,0.14)' : 'none',
+      transition:'background 0.2s, border-color 0.2s, box-shadow 0.2s',
+    }}>
       {/* Pulsing rec dot makes it unmistakable at a glance which state this is,
           without needing to read the timer. */}
-      {state === 'recording' && (
-        <motion.div animate={{ scale:[1,1.35,1], opacity:[1,0.6,1] }} transition={{ duration:1.1, repeat:Infinity, ease:'easeInOut' }} style={{ width:8, height:8, borderRadius:'50%', background:COLORS.live, flexShrink:0 }} />
+      {state === 'recording' ? (
+        <motion.div animate={{ scale:[1,1.35,1], opacity:[1,0.55,1] }} transition={{ duration:1.1, repeat:Infinity, ease:'easeInOut' }} style={{ width:9, height:9, borderRadius:'50%', background:COLORS.live, flexShrink:0, boxShadow:`0 0 8px ${COLORS.live}88` }} />
+      ) : (
+        <div style={{ width:9, height:9, borderRadius:2, background:COLORS.textTertiary, flexShrink:0 }} />
       )}
-      <div style={{ flex:1, display:'flex', alignItems:'center', gap:1.5, height:28 }}>
+      <div style={{ flex:1, display:'flex', alignItems:'center', gap:2, height:28 }}>
         {waveform.length > 0 ? waveform.map((h,i)=>(
-          <div key={i} style={{ flex:1, background: state==='recording'?COLORS.live:COLORS.audioTrack, borderRadius:2, height:`${Math.round(h*100)}%`, minHeight:2, transition:'height 0.05s', opacity: state==='paused'?0.5:1 }} />
+          <div key={i} style={{ flex:1, minWidth:1.5, background: state==='recording'?COLORS.live:COLORS.textTertiary, borderRadius:3, height:`${Math.round(h*100)}%`, minHeight:2, transition:'height 0.05s', opacity: state==='paused'?0.45:1 }} />
         )) : Array.from({length:30}).map((_,i)=>(
-          <div key={i} style={{ flex:1, background:COLORS.audioTrack, borderRadius:2, height:'20%' }} />
+          <div key={i} style={{ flex:1, minWidth:1.5, background:COLORS.audioTrack, borderRadius:3, height:'20%' }} />
         ))}
       </div>
       {locked && (
-        <span title="Recording locked — hands-free" style={{ fontSize:12, flexShrink:0 }}>🔒</span>
+        <span title="Recording locked — hands-free" style={{ fontSize:12, flexShrink:0, background:`${COLORS.brand}18`, borderRadius:'50%', width:22, height:22, display:'flex', alignItems:'center', justifyContent:'center' }}>🔒</span>
       )}
-      <span style={{ color: state==='paused'?COLORS.textTertiary:COLORS.live, fontSize:12, fontWeight:700, fontVariantNumeric:'tabular-nums', flexShrink:0 }}>{fmtTime(duration)}</span>
+      <span style={{ color: state==='paused'?COLORS.textTertiary:COLORS.live, fontSize:12.5, fontWeight:800, fontVariantNumeric:'tabular-nums', flexShrink:0, minWidth:34 }}>{fmtTime(duration)}</span>
+      <button onClick={cancelRecording} aria-label="Cancel recording" style={{ background:COLORS.surface, border:`1px solid ${COLORS.audioTrack}`, borderRadius:'50%', width:28, height:28, color:COLORS.textSecondary, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontSize:13 }}>✕</button>
       {state === 'recording'
-        ? <button onClick={pauseRecording} aria-label="Pause recording" style={{ background:COLORS.surface, border:`1px solid ${COLORS.audioTrack}`, borderRadius:'50%', width:30, height:30, color:COLORS.brand, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>⏸</button>
-        : <button onClick={resumeRecording} aria-label="Resume recording" style={{ background:COLORS.surface, border:`1px solid ${COLORS.audioTrack}`, borderRadius:'50%', width:30, height:30, color:COLORS.brand, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>▶</button>}
-      <button onClick={stopRecording} aria-label="Stop recording" style={{ background:COLORS.audioGradient, border:'none', borderRadius:'50%', width:34, height:34, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, boxShadow: SHADOW.glow(COLORS.audioGlow) }}>
+        ? <button onClick={pauseRecording} aria-label="Pause recording" style={{ background:COLORS.surface, border:`1px solid ${COLORS.audioTrack}`, borderRadius:'50%', width:30, height:30, color:COLORS.brand, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontSize:12 }}>⏸</button>
+        : <button onClick={resumeRecording} aria-label="Resume recording" style={{ background:COLORS.surface, border:`1px solid ${COLORS.audioTrack}`, borderRadius:'50%', width:30, height:30, color:COLORS.brand, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontSize:12 }}>▶</button>}
+      <button onClick={stopRecording} aria-label="Stop recording" style={{ position: 'relative', background:COLORS.audioGradient, border:'none', borderRadius:'50%', width:36, height:36, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, boxShadow: SHADOW.glow(COLORS.audioGlow) }}>
+        {state === 'recording' && (
+          <motion.span aria-hidden animate={{ scale: [1, 1.4], opacity: [0.5, 0] }} transition={{ duration: 1.3, repeat: Infinity, ease: 'easeOut' }} style={{ position: 'absolute', inset: -2, borderRadius: '50%', border: `1.5px solid ${COLORS.audio}`, pointerEvents: 'none' }} />
+        )}
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
       </button>
     </div>
