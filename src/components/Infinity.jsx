@@ -10779,16 +10779,16 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal', onStateChange
 
   if (state === 'uploading') {
     return (
-      <div style={{ display:'flex', alignItems:'center', gap:10, background:'rgba(255,255,255,0.06)', borderRadius:24, padding:'8px 14px', flex:1, minWidth:0 }}>
+      <div style={{ display:'flex', alignItems:'center', gap:10, background:COLORS.audioSurface, border:`1px solid ${COLORS.audioTrack}`, borderRadius:24, padding:'8px 14px', flex:1, minWidth:0 }}>
         {/* Circular progress ring driven by real XHR upload progress, not a fake spinner */}
         <div style={{ position:'relative', width:30, height:30, flexShrink:0 }}>
           <svg width="30" height="30" viewBox="0 0 30 30" style={{ transform:'rotate(-90deg)' }}>
-            <circle cx="15" cy="15" r="12.5" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="3" />
+            <circle cx="15" cy="15" r="12.5" fill="none" stroke={COLORS.audioTrack} strokeWidth="3" />
             <circle cx="15" cy="15" r="12.5" fill="none" stroke={COLORS.brand} strokeWidth="3" strokeLinecap="round" strokeDasharray={2*Math.PI*12.5} strokeDashoffset={2*Math.PI*12.5*(1-uploadProgress/100)} style={{ transition:'stroke-dashoffset 0.15s ease' }} />
           </svg>
-          <span style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', fontSize:8.5, fontWeight:700, color:'white' }}>{uploadProgress}</span>
+          <span style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', fontSize:8.5, fontWeight:700, color:COLORS.textPrimary }}>{uploadProgress}</span>
         </div>
-        <span style={{ color:'rgba(255,255,255,0.55)', fontSize:12.5, fontWeight:600, flex:1 }}>Sending voice message…</span>
+        <span style={{ color:COLORS.textSecondary, fontSize:12.5, fontWeight:600, flex:1 }}>Sending voice message…</span>
       </div>
     );
   }
@@ -10802,7 +10802,7 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal', onStateChange
             <button onClick={sendVoice} style={{ background:'#FF453A', border:'none', borderRadius:10, padding:'3px 9px', color:'white', fontSize:10.5, fontWeight:700, cursor:'pointer', flexShrink:0 }}>Retry</button>
           </motion.div>
         )}
-        <div style={{ display:'flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.06)', borderRadius:24, padding:'8px 12px', flex:1, minWidth:0, maxWidth:'100%', boxSizing:'border-box' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:8, background:COLORS.audioSurface, border:`1px solid ${COLORS.audioTrack}`, borderRadius:24, padding:'8px 12px', flex:1, minWidth:0, maxWidth:'100%', boxSizing:'border-box' }}>
           <audio
             ref={previewAudioRef}
             src={audioUrl}
@@ -10812,11 +10812,11 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal', onStateChange
             onEnded={()=>{ setIsPlaying(false); setPlaybackPos(0); }}
             onTimeUpdate={e=>setPlaybackPos(e.currentTarget.currentTime)}
           />
-          <button onClick={cancelRecording} aria-label="Discard recording" style={{ background:COLORS.audioSurface, border:'none', borderRadius:'50%', width:32, height:32, minWidth:32, color:COLORS.audio, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, flexShrink:0 }}>✕</button>
-          <button onClick={togglePlayback} aria-label={isPlaying ? 'Pause preview' : 'Play preview'} style={{ background:isPlaying?COLORS.audioGradient:'rgba(255,255,255,0.1)', border:'none', borderRadius:'50%', width:30, height:30, minWidth:30, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, transition:'background 0.15s', boxShadow: isPlaying ? SHADOW.glow(COLORS.audioGlow) : 'none' }}>
+          <button onClick={cancelRecording} aria-label="Discard recording" style={{ background:COLORS.surface, border:`1px solid ${COLORS.audioTrack}`, borderRadius:'50%', width:32, height:32, minWidth:32, color:COLORS.audio, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, flexShrink:0 }}>✕</button>
+          <button onClick={togglePlayback} aria-label={isPlaying ? 'Pause preview' : 'Play preview'} style={{ background:isPlaying?COLORS.audioGradient:COLORS.surface, border: isPlaying ? 'none' : `1px solid ${COLORS.audioTrack}`, borderRadius:'50%', width:30, height:30, minWidth:30, color: isPlaying ? '#fff' : COLORS.audio, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, transition:'background 0.15s', boxShadow: isPlaying ? SHADOW.glow(COLORS.audioGlow) : 'none' }}>
             {isPlaying
-              ? <svg width="13" height="13" viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
-              : <svg width="13" height="13" viewBox="0 0 24 24" fill="white"><polygon points="6 3 21 12 6 21 6 3"/></svg>}
+              ? <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+              : <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 21 12 6 21 6 3"/></svg>}
           </button>
           <div
             ref={scrubRef}
@@ -10828,11 +10828,11 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal', onStateChange
               const playedRatio = duration > 0 ? playbackPos / duration : 0;
               const played = barRatio <= playedRatio;
               return (
-                <div key={i} style={{ flex:1, minWidth:1.5, borderRadius:2, height:`${Math.max(12, Math.round(h*100))}%`, background: played ? COLORS.audio : 'rgba(255,255,255,0.25)', transition:'background 0.1s' }} />
+                <div key={i} style={{ flex:1, minWidth:1.5, borderRadius:2, height:`${Math.max(12, Math.round(h*100))}%`, background: played ? COLORS.audio : COLORS.audioTrack, transition:'background 0.1s' }} />
               );
             })}
           </div>
-          <span style={{ color:'rgba(255,255,255,0.4)', fontSize:12, flexShrink:0, minWidth:30, textAlign:'right', fontVariantNumeric:'tabular-nums' }}>{fmtTime(isPlaying ? Math.ceil(duration - playbackPos) : duration)}</span>
+          <span style={{ color:COLORS.textTertiary, fontSize:12, flexShrink:0, minWidth:30, textAlign:'right', fontVariantNumeric:'tabular-nums' }}>{fmtTime(isPlaying ? Math.ceil(duration - playbackPos) : duration)}</span>
           <button onClick={sendVoice} aria-label="Send voice message" style={{ background:COLORS.audioGradient, border:'none', borderRadius:'50%', width:36, height:36, minWidth:36, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, boxShadow: SHADOW.glow(COLORS.audioGlow) }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           </button>
@@ -10852,18 +10852,18 @@ const VoiceRecorderButton = ({ onSend, showToast, size = 'normal', onStateChange
       )}
       <div style={{ flex:1, display:'flex', alignItems:'center', gap:1.5, height:28 }}>
         {waveform.length > 0 ? waveform.map((h,i)=>(
-          <div key={i} style={{ flex:1, background: state==='recording'?COLORS.live:'rgba(255,255,255,0.3)', borderRadius:2, height:`${Math.round(h*100)}%`, minHeight:2, transition:'height 0.05s', opacity: state==='paused'?0.5:1 }} />
+          <div key={i} style={{ flex:1, background: state==='recording'?COLORS.live:COLORS.audioTrack, borderRadius:2, height:`${Math.round(h*100)}%`, minHeight:2, transition:'height 0.05s', opacity: state==='paused'?0.5:1 }} />
         )) : Array.from({length:30}).map((_,i)=>(
-          <div key={i} style={{ flex:1, background:'rgba(255,255,255,0.15)', borderRadius:2, height:'20%' }} />
+          <div key={i} style={{ flex:1, background:COLORS.audioTrack, borderRadius:2, height:'20%' }} />
         ))}
       </div>
       {locked && (
         <span title="Recording locked — hands-free" style={{ fontSize:12, flexShrink:0 }}>🔒</span>
       )}
-      <span style={{ color: state==='paused'?'rgba(255,255,255,0.4)':COLORS.live, fontSize:12, fontWeight:700, fontVariantNumeric:'tabular-nums', flexShrink:0 }}>{fmtTime(duration)}</span>
+      <span style={{ color: state==='paused'?COLORS.textTertiary:COLORS.live, fontSize:12, fontWeight:700, fontVariantNumeric:'tabular-nums', flexShrink:0 }}>{fmtTime(duration)}</span>
       {state === 'recording'
-        ? <button onClick={pauseRecording} aria-label="Pause recording" style={{ background:'rgba(255,255,255,0.1)', border:'none', borderRadius:'50%', width:30, height:30, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>⏸</button>
-        : <button onClick={resumeRecording} aria-label="Resume recording" style={{ background:'rgba(255,255,255,0.1)', border:'none', borderRadius:'50%', width:30, height:30, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>▶</button>}
+        ? <button onClick={pauseRecording} aria-label="Pause recording" style={{ background:COLORS.surface, border:`1px solid ${COLORS.audioTrack}`, borderRadius:'50%', width:30, height:30, color:COLORS.brand, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>⏸</button>
+        : <button onClick={resumeRecording} aria-label="Resume recording" style={{ background:COLORS.surface, border:`1px solid ${COLORS.audioTrack}`, borderRadius:'50%', width:30, height:30, color:COLORS.brand, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>▶</button>}
       <button onClick={stopRecording} aria-label="Stop recording" style={{ background:COLORS.audioGradient, border:'none', borderRadius:'50%', width:34, height:34, color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, boxShadow: SHADOW.glow(COLORS.audioGlow) }}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
       </button>
