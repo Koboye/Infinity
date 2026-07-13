@@ -68,6 +68,17 @@ export const COLORS = {
   border: 'rgba(11,95,255,0.12)',
   borderStrong: 'rgba(11,95,255,0.22)',
   overlaySubtle: 'rgba(11,95,255,0.05)',
+
+  // Audio / Voice signature — a dedicated identity for voice notes, voice
+  // stories, and audio posts. Stays inside the blue family (no purple/pink)
+  // by pairing brand blue with cyan/teal, which reads as a "live signal"
+  // without competing with `live` (red) or `success` (green) semantics.
+  audio: '#0B8FE8',                // signature audio accent — blue-cyan
+  audioSecondary: '#00C2C7',       // teal stop, second half of the gradient
+  audioGradient: 'linear-gradient(135deg,#0B8FE8,#00C2C7)',
+  audioGlow: 'rgba(11,143,232,0.35)',
+  audioSurface: 'rgba(11,143,232,0.08)',   // tinted glass background for audio cards
+  audioTrack: 'rgba(11,143,232,0.18)',     // unplayed waveform / progress track
 };
 
 /**
@@ -138,6 +149,13 @@ export const COLORS_DARK = {
   border: 'rgba(78,140,255,0.18)',
   borderStrong: 'rgba(78,140,255,0.3)',
   overlaySubtle: 'rgba(78,140,255,0.08)',
+
+  audio: '#3FB6F5',
+  audioSecondary: '#2EE0E6',
+  audioGradient: 'linear-gradient(135deg,#3FB6F5,#2EE0E6)',
+  audioGlow: 'rgba(63,182,245,0.4)',
+  audioSurface: 'rgba(63,182,245,0.12)',
+  audioTrack: 'rgba(63,182,245,0.22)',
 };
 
 const THEME_STORAGE_KEY = 'infinity_theme';
