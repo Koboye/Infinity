@@ -15617,6 +15617,55 @@ const TabGlyph = ({id, active, currentUser}) => {
 };
 
 /* ─────────────── MAIN APP ─────────────── */
+// ─────────────── ERROR BOUNDARY ───────────────
+// Class component is a hard React requirement here — there is no hook
+// equivalent of componentDidCatch/getDerivedStateFromError. Without this,
+// any uncaught render error anywhere in the tree (a null msg.mediaUrl, an
+// unexpected Firestore doc shape, etc.) unmounts the entire app to a blank
+// white screen — including the bottom nav, so the person can't even
+// navigate away from whatever triggered it.
+//
+// Two instances are used below:
+//   1. One wraps the ENTIRE app — last-resort catch-all.
+//   2. One wraps just the routed tab content — so a crash while, say,
+//      rendering a malformed chat still leaves the bottom nav bar and
+//      toast host alive, and "Go home" resets straight back to a working
+//      tab instead of forcing a full page reload.
+// resetKey (passed as the `activeTab` value) lets the same boundary recover
+// automatically the moment the person navigates to a different tab, without
+// needing a manual "try again" click.
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(error, info) {
+    // eslint-disable-next-line no-console
+    console.error('[ErrorBoundary]', this.props.label || '', error, info?.componentStack);
+  }
+  componentDidUpdate(prevProps) {
+    if (this.state.hasError && prevProps.resetKey !== this.props.resetKey) {
+      this.setState({ hasError: false });
+    }
+  }
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback
+        ? this.props.fallback(() => this.setState({ hasError: false }))
+        : (
+          <div style={{ padding: 24, textAlign: 'center' }}>
+            <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>Something went wrong</div>
+            <button onClick={() => this.setState({ hasError: false })} style={{ background: '#0B5FFF', border: 'none', borderRadius: 14, padding: '8px 16px', color: '#fff', fontWeight: 700, cursor: 'pointer' }}>Try again</button>
+          </div>
+        );
+    }
+    return this.props.children;
+  }
+}
+
 export default function InfinityV1app() {
   // Holds the currently-registered presence 'beforeunload' handler so handleLogin can
   // remove the previous one before adding a new one. Without this, switching accounts
@@ -16251,6 +16300,14 @@ const handleMessage = uid => {
   );
 
   return (
+    <ErrorBoundary label="app-root" fallback={() => (
+      <div style={{ maxWidth:430, margin:'0 auto', height:'100dvh', background:COLORS.bg, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:14, padding:24, textAlign:'center' }}>
+        <div style={{ fontSize:40 }}>💥</div>
+        <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:17 }}>Infinity hit an unexpected error</div>
+        <div style={{ color:COLORS.textTertiary, fontSize:13, maxWidth:280 }}>Reloading almost always fixes this. Your account and messages are safe.</div>
+        <button onClick={() => window.location.reload()} style={{ background:COLORS.gradient, border:'none', borderRadius:16, padding:'11px 22px', color:'#fff', fontWeight:700, cursor:'pointer', fontSize:14 }}>Reload app</button>
+      </div>
+    )}>
     <div style={{ maxWidth:430, margin:'0 auto', height:'100dvh', background:COLORS.bg, display:'flex', flexDirection:'column', position:'relative', overflow:'hidden' }}>
       <GlobalStyles />
       <ConfirmDialogHost />
@@ -16361,6 +16418,21 @@ const handleMessage = uid => {
           </div>
         )}
         {!showSearch && !showCamera && (
+          <ErrorBoundary
+            resetKey={activeTab}
+            label={`tab:${activeTab}`}
+            fallback={(retry) => (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24, textAlign: 'center' }}>
+                <div style={{ fontSize: 34 }}>😕</div>
+                <div style={{ color: COLORS.textPrimary, fontWeight: 700, fontSize: 15 }}>This page hit a snag</div>
+                <div style={{ color: COLORS.textTertiary, fontSize: 12.5, maxWidth: 260 }}>Nothing else is affected — you can try again or head back home.</div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={retry} style={{ background: COLORS.surfaceAlt, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: '8px 16px', color: COLORS.textPrimary, fontWeight: 700, cursor: 'pointer', fontSize: 13 }}>Try again</button>
+                  <button onClick={() => setActiveTab('home')} style={{ background: COLORS.gradient, border: 'none', borderRadius: 14, padding: '8px 16px', color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: 13 }}>Go home</button>
+                </div>
+              </div>
+            )}
+          >
           <>
             {activeTab==='home' && <HomeFeed t={t} videos={videos} videosLoading={videosLoading} videosError={videosError} currentUser={currentUser} onLike={()=>{}} onComment={()=>{}} onFollow={toggleFollow} onMessage={handleMessage}
   onVoiceCall={uid=>{ const u=users.find(uu=>uu.id===uid); const callDocId=[currentUser.id,uid].sort().join('_'); setShowCall({type:'audio',contactName:u?.username,contactAvatar:u?.avatar,contactId:uid,callDocId}); }}
@@ -16389,6 +16461,7 @@ const handleMessage = uid => {
 />}
             {(activeTab==='profile'||activeTab==='settings') && <ProfilePage user={currentUser} setCurrentUser={setCurrentUser} onLogout={handleLogout} users={users} showToast={showToast} onShowAnalytics={()=>setShowAnalytics(true)} onShowQRCode={()=>setShowQRCode(true)} allVideos={videos} setBlockedUsers={setBlockedUsers} onShowSavedPosts={()=>setShowSavedPosts(true)} onGoToGroups={()=>{ setActiveTab('inbox'); setInboxOpenGroups(n=>n+1); }} onShowBroadcast={()=>setShowBroadcast(true)} onViewProfile={handleViewProfile} settingsSignal={activeTab==='settings'?settingsSignal:0} onFeedScroll={handleFeedScroll} t={t} theme={theme} onToggleTheme={toggleTheme} />}
           </>
+          </ErrorBoundary>
         )}
       </div>
 
@@ -16444,5 +16517,6 @@ const handleMessage = uid => {
       )}
       <AnimatePresence>{toast && <Toast {...toast} onClose={()=>setToast(null)} />}</AnimatePresence>
     </div>
+    </ErrorBoundary>
   );
 }
