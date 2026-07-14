@@ -258,6 +258,16 @@ const DISAPPEARING_OPTIONS = [
   { seconds: 604800,   label: '7 days' },
   { seconds: 7776000,  label: '90 days' },
 ];
+// Must match the TONE_INSTRUCTIONS whitelist in src/app/api/ai/smart-reply/route.js —
+// these ids are sent as `tone` and the server maps them to a real prompt instruction.
+// There is no client-side reply generation; every tone here means a real Gemini call.
+const REPLY_TONES = [
+  { id: 'casual',       label: '😎 Casual' },
+  { id: 'professional', label: '💼 Professional' },
+  { id: 'playful',      label: '😂 Playful' },
+  { id: 'warm',         label: '❤️ Warm' },
+  { id: 'brief',        label: '⚡ Brief' },
+];
 const TRANSLATIONS = {
   en: { home:'For You', friends:'Friends', inbox:'Messages', profile:'Profile', create:'Create', foryou:'For You', skills:'Skills', jobs:'Jobs', post:'Post', cancel:'Cancel', save:'Save', follow:'+ Follow', unfollow:'Following', message:'Message', settings:'Settings', logout:'Log Out', editProfile:'Edit Profile', search:'Search anything...', noVideos:'No videos yet. Be the first to post!', addComment:'Add a comment...', noMessages:'No messages yet', startChat:'Go to a profile and tap Message to start', notifications:'Notifications', markRead:'Mark all read', wallet:'Wallet', analytics:'Analytics', badges:'Badges', premium:'Premium', live:'Go Live', report:'Report', block:'Block', duet:'Duet', stitch:'Stitch', voiceCall:'Voice Call', videoCall:'Video Call', pinned:'Pinned', reply:'Reply', pin:'Pin', retake:'Retake', newPost:'New Post', sounds:'Sounds', close:'Close', back:'Back', comments:'Comments' },
 am: { home:'ለእርስዎ', friends:'ጓደኞች', inbox:'መልዕክቶች', profile:'መገለጫ', create:'ፍጠር', foryou:'ለእርስዎ', skills:'ችሎታዎች', jobs:'ስራዎች', post:'ለጥፍ', cancel:'ሰርዝ', save:'አስቀምጥ', follow:'+ ተከተል', unfollow:'እየተከተሉ ነው', message:'መልዕክት', settings:'ቅንብሮች', logout:'ውጣ', editProfile:'መገለጫ አርትዕ', search:'ፈልግ...', noVideos:'ምንም ቪዲዮ የለም።', addComment:'አስተያየት ጨምር...', noMessages:'ምንም መልዕክቶች የሉም', startChat:'ወደ መገለጫ ሂድ እና መልዕክት ላክ', notifications:'ማሳወቂያዎች', markRead:'ሁሉንም እንደተነበበ ምልክት አድርግ', wallet:'ቦርሳ', analytics:'ትንተና', badges:'ሽልማቶች', premium:'ፕሪሚየም', live:'ቀጥታ', report:'ሪፖርት', block:'አግድ', duet:'ዱዌት', stitch:'ስቲች', voiceCall:'የድምፅ ጥሪ', videoCall:'ቪዲዮ ጥሪ', pinned:'ተሰክቷል', reply:'መልስ', pin:'ስክ', retake:'እንደገና', newPost:'አዲስ ለጥፍ', sounds:'ድምፆች', close:'ዝጋ', back:'ተመለስ', comments:'አስተያየቶች', posts:'ልጥፎች', followers:'ተከታዮች', following:'እየተከተሉ', language:'ቋንቋ', privacy:'ግላዊነት', deposit:'ጨምር', withdraw:'አውጣ', convert:'ቀይር', transactions:'ግብይቶች', noTransactions:'ምንም ግብይቶች የሉም', coins:'ሳንቲሞች', cash:'ገንዘብ', openCamera:'ካሜራ ክፈት', uploadGallery:'ከጋለሪ ጫን', writeText:'ጽሁፍ ጻፍ', recordAudio:'ድምፅ ቅዳ', addSound:'ድምፅ ጨምር', createShare:'ፍጠር እና አጋራ', expressYourself:'እራስህን ግለፅ', noPosts:'ምንም ልጥፍ የለም', noSaved:'ምንም አልተቀመጠም', noDrafts:'ምንም ረቂቆች የሉም', createFirst:'የመጀመሪያ ቪዲዮህን ፍጠር!', online:'ኦንላይን', offline:'ኦፍላይን', typing:'እየተየፉ ነው...', startConvo:'ወግ ጀምር! 👋', verified:'የተረጋገጠ', trending:'አዝማሚያ', noResults:'ምንም ውጤት የለም', shareProfile:'መገለጫ አጋራ', scanToFollow:'ለመከተል ቅዱ', weeklyViews:'ሳምንታዊ እይታዎች', topVideos:'ምርጥ ቪዲዮዎች', totalViews:'ጠቅላላ እይታዎች', totalLikes:'ጠቅላላ ወደዶዎች', changePassword:'የይለፍ ቃል ቀይር', emailPhone:'ኢሜይል እና ስልክ', switchAccount:'አካውንት ቀይር', blockedUsers:'የታገዱ ተጠቃሚዎች', helpCenter:'የእርዳታ ማዕከል', reportProblem:'ችግር ሪፖርት አድርግ', termsOfService:'የአገልግሎት ውሎች', privacyPolicy:'የግላዊነት ፖሊሲ', resetAccount:'አካውንት ዳግም አስጀምር', deleteAccount:'አካውንት ሰርዝ', logOut:'ውጣ', version:'ስሪት', madeWith:'ተሰርቷል', noNotifications:'ምንም ማሳወቂያዎች የሉም', markAllRead:'ሁሉንም እንደተነበበ ምልክት አድርግ' },  ar: { home:'لك', friends:'أصدقاء', inbox:'رسائل', profile:'الملف', create:'إنشاء', foryou:'لك', skills:'مهارات', jobs:'وظائف', post:'نشر', cancel:'إلغاء', save:'حفظ', follow:'+ متابعة', unfollow:'تتابع', message:'رسالة', settings:'الإعدادات', logout:'تسجيل الخروج', editProfile:'تعديل الملف', search:'ابحث...', noVideos:'لا توجد مقاطع بعد.', addComment:'أضف تعليقاً...', noMessages:'لا رسائل بعد', startChat:'اذهب إلى ملف وأرسل رسالة', notifications:'الإشعارات', markRead:'تعليم الكل كمقروء', wallet:'المحفظة', analytics:'التحليلات', badges:'الشارات', premium:'مميز', live:'بث مباشر', report:'إبلاغ', block:'حظر', duet:'ثنائي', stitch:'خياطة', voiceCall:'مكالمة صوتية', videoCall:'مكالمة فيديو', pinned:'مثبت', reply:'رد', pin:'تثبيت', retake:'إعادة', newPost:'منشور جديد', sounds:'أصوات', close:'إغلاق', back:'رجوع', comments:'تعليقات' },
@@ -281,10 +291,6 @@ const EXTRA_TRANSLATIONS = {
 Object.assign(TRANSLATIONS, EXTRA_TRANSLATIONS);
 
 /* ─────────────── EXTRA CONSTANTS (v4) ─────────────── */
-const TRENDING_HASHTAGS = [
-  '#Infinity', '#infinity', '#trending', '#viral', '#fyp', '#ethiopia', '#addisababa',
-  '#africa', '#music', '#dance', '#comedy', '#fashion', '#food', '#travel', '#tech',
-];
 
 const SUPPORTED_LANGUAGES = [
   ['English','English','en'],['አማርኛ','Amharic','am'],['العربية','Arabic','ar'],['Français','French','fr'],['Español','Spanish','es'],
@@ -816,15 +822,22 @@ const StickerPicker = ({ onSelect, onClose }) => {
 };
 
 /* ─────────────── TRENDING HASHTAGS COMPONENT (v4) ─────────────── */
-const TrendingHashtags = ({ onSearch }) => (
-  <div style={{ padding: '10px 0', overflowX: 'auto', display: 'flex', gap: 8 }}>
-    {TRENDING_HASHTAGS.map(tag => (
-      <button key={tag} onClick={() => onSearch?.(tag)} style={{ background: 'rgba(11,95,255,0.1)', border: '1px solid rgba(11,95,255,0.2)', borderRadius: 20, padding: '6px 14px', color: COLORS.brand, fontSize: 12, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>
-        {tag}
-      </button>
-    ))}
-  </div>
-);
+// Renders only real tags passed in — callers compute these by counting actual
+// hashtag usage across real posts (see DiscoverPage below). No static fallback
+// list: if there's no real usage data yet, this renders nothing rather than
+// presenting invented "trending" tags.
+const TrendingHashtags = ({ tags, onSearch }) => {
+  if (!tags || !tags.length) return null;
+  return (
+    <div style={{ padding: '10px 0', overflowX: 'auto', display: 'flex', gap: 8 }}>
+      {tags.map(tag => (
+        <button key={tag} onClick={() => onSearch?.(tag)} style={{ background: 'rgba(11,95,255,0.1)', border: '1px solid rgba(11,95,255,0.2)', borderRadius: 20, padding: '6px 14px', color: COLORS.brand, fontSize: 12, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>
+          {tag}
+        </button>
+      ))}
+    </div>
+  );
+};
 
 /* ─────────────── GROUP CALL (real WebRTC mesh — replaces the old call UI mockup) ───────────────
    Previously "Group Call" just opened an overlay with static avatars and buttons that only fired
@@ -1779,6 +1792,19 @@ const DiscoverPage = ({ videos, users, onViewProfile, showToast, onClose, curren
   const [activeFilter, setActiveFilter] = useState('all');
   const filters = [['all','All'],['video','Videos'],['people','People'],['hashtag','Tags']];
   const searchLower = search.toLowerCase();
+  // Real trending tags — counted from hashtags actually used on real posts,
+  // same approach as the Explore feed's trending rail. No static seed list:
+  // if nobody has posted with hashtags yet, this is simply empty.
+  const realTrendingTags = useMemo(() => {
+    const counts = new Map();
+    for (const v of videos || []) {
+      for (const raw of v.hashtags || []) {
+        const tag = raw.toLowerCase();
+        counts.set(tag, (counts.get(tag) || 0) + 1);
+      }
+    }
+    return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10).map(([tag]) => tag);
+  }, [videos]);
   const filteredVideos = videos.filter(v =>
     (!search || v.description?.toLowerCase().includes(searchLower) || v.username?.toLowerCase().includes(searchLower))
     && (activeFilter === 'all' || activeFilter === 'video')
@@ -1787,7 +1813,7 @@ const DiscoverPage = ({ videos, users, onViewProfile, showToast, onClose, curren
     search && (u.username?.toLowerCase().includes(searchLower) || u.fullName?.toLowerCase().includes(searchLower))
     && (activeFilter === 'all' || activeFilter === 'people')
   );
-  const filteredTags = TRENDING_HASHTAGS.filter(t =>
+  const filteredTags = realTrendingTags.filter(t =>
     (!search || t.toLowerCase().includes(searchLower))
     && (activeFilter === 'all' || activeFilter === 'hashtag')
   );
@@ -1812,8 +1838,12 @@ const DiscoverPage = ({ videos, users, onViewProfile, showToast, onClose, curren
       <div style={{ flex: 1, overflowY: 'auto', padding: 12 }}>
         {!search && (
           <>
-            <div style={{ color: COLORS.textTertiary, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>Trending</div>
-            <TrendingHashtags onSearch={t => setSearch(t)} />
+            {realTrendingTags.length > 0 && (
+              <>
+                <div style={{ color: COLORS.textTertiary, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>Trending</div>
+                <TrendingHashtags tags={realTrendingTags} onSearch={t => setSearch(t)} />
+              </>
+            )}
             <div style={{ color: COLORS.textTertiary, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, margin: '20px 0 10px' }}>Suggested Creators</div>
             {users.slice(0, 6).map(u => (
               <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: `1px solid ${COLORS.overlaySubtle}` }}>
@@ -11161,6 +11191,10 @@ const ConversationView = ({ currentUser, otherUser, conversationId, onBack, show
   // that point, from the other person, are what the banner offers to summarize.
   const [lastOpenedAt, setLastOpenedAt] = useState(undefined); // undefined = not yet read
   const [catchUpDismissed, setCatchUpDismissed] = useState(false);
+  // Chat Insights — a small stats strip computed from the real messages array
+  // below (message counts, active days, response time). Nothing predicted or
+  // invented; it's just arithmetic over data already in state, toggled on demand.
+  const [showInsights, setShowInsights] = useState(false);
   // Real in-thread search — filters the actual messages array, no mock data.
   const [showSearch, setShowSearch] = useState(false);
   const [threadSearch, setThreadSearch] = useState('');
@@ -11184,7 +11218,7 @@ const ConversationView = ({ currentUser, otherUser, conversationId, onBack, show
   const [otherTyping, setOtherTyping] = useState(false);
   const [showMsgReactions, setShowMsgReactions] = useState(null);
   const msgLongTimer = useRef(null);
-  const MSG_EMOJIS = ['❤️','😂','😮','😢','🔥','👏','💯','😍'];
+  const MSG_EMOJIS = ['❤️','😂','😮','😢','🔥','👏','💯','😍','🎉','🙏'];
   const [presenceData, setPresenceData] = useState(null);
   // Smart Replies — short tappable suggestions generated from the last few messages,
   // shown only when the most recent message is from the other person (replying to
@@ -11192,6 +11226,15 @@ const ConversationView = ({ currentUser, otherUser, conversationId, onBack, show
   // their own reply, or after a message is sent.
   const [smartReplies, setSmartReplies] = useState([]);
   const [smartRepliesLoading, setSmartRepliesLoading] = useState(false);
+  // Real failure state — mirrors CatchUpBanner's error handling below, so a
+  // rate-limit or API failure shows an honest "couldn't generate" message
+  // instead of silently looking like there was simply nothing to suggest.
+  const [smartReplyError, setSmartReplyError] = useState(false);
+  const [smartReplyRetryNonce, setSmartReplyRetryNonce] = useState(0);
+  // Real tone selector for smart replies — changing this re-calls the actual
+  // Gemini-backed /api/ai/smart-reply endpoint with a different instruction.
+  // Not a local template swap: every option below triggers a real API call.
+  const [replyTone, setReplyTone] = useState('casual');
   const smartReplyReqIdRef = useRef(0);
   const typingTimerRef = useRef(null);
   const [recordSecs, setRecordSecs] = useState(0);
@@ -11360,25 +11403,27 @@ unsub = onSnapshot(q, (snap) => {
   // list overwriting the suggestions for a newer one (e.g. two messages arrive close
   // together) — only the response for the most recent request is applied.
   useEffect(()=>{
-    if(!isReady || messages.length===0){ setSmartReplies([]); return; }
+    if(!isReady || messages.length===0){ setSmartReplies([]); setSmartReplyError(false); return; }
     const last = messages[messages.length-1];
-    if(last.from !== otherUser.id || last.mediaUrl){ setSmartReplies([]); return; }
+    if(last.from !== otherUser.id || last.mediaUrl){ setSmartReplies([]); setSmartReplyError(false); return; }
     const reqId = ++smartReplyReqIdRef.current;
     setSmartRepliesLoading(true);
+    setSmartReplyError(false);
     apiFetch('/api/ai/smart-reply', {
       method: 'POST',
       body: JSON.stringify({
         messages: messages.slice(-8).map(m=>({ from: m.from===currentUser.id?'me':'them', text: m.text })),
+        tone: replyTone,
       }),
     }).then(data=>{
       if (reqId !== smartReplyReqIdRef.current) return; // superseded by a newer message
       setSmartReplies(data?.replies || []);
     }).catch(()=>{
-      if (reqId === smartReplyReqIdRef.current) setSmartReplies([]);
+      if (reqId === smartReplyReqIdRef.current) { setSmartReplies([]); setSmartReplyError(true); }
     }).finally(()=>{
       if (reqId === smartReplyReqIdRef.current) setSmartRepliesLoading(false);
     });
-  },[messages, isReady, otherUser?.id, currentUser?.id]);
+  },[messages, isReady, otherUser?.id, currentUser?.id, replyTone, smartReplyRetryNonce]);
 
   // Real "shared groups" count for the Chat Info sheet — queries the actual groups
   // collection (same one GroupChatPage uses) rather than showing a fabricated number.
@@ -11641,6 +11686,37 @@ unsub = onSnapshot(q, (snap) => {
     : [];
   const showCatchUp = !catchUpDismissed && unreadSinceOpen.length >= CATCH_UP_THRESHOLD;
 
+  // Chat Insights — every number here comes straight from `messages`, which is
+  // the same Firestore-backed array the thread renders from. No AI call, no
+  // hardcoded sample data: if the chat has 40 messages, this reads 40.
+  const chatStats = useMemo(() => {
+    if (!messages.length) return null;
+    const mine = messages.filter(m => m.from === currentUser?.id && !m.deleted).length;
+    const theirs = messages.filter(m => m.from === otherUser?.id && !m.deleted).length;
+    const daysActive = new Set(
+      messages.filter(m => m.ts).map(m => m.ts.toDateString())
+    ).size;
+    // Average gap between a message from them and your next reply, over the
+    // last 50 exchanges — a real measure of response time, not a guess.
+    const gaps = [];
+    for (let i = 1; i < messages.length; i++) {
+      const prev = messages[i - 1], cur = messages[i];
+      if (prev.from === otherUser?.id && cur.from === currentUser?.id && prev.ts && cur.ts) {
+        gaps.push(cur.ts.getTime() - prev.ts.getTime());
+      }
+    }
+    const recentGaps = gaps.slice(-50);
+    const avgReplyMs = recentGaps.length
+      ? recentGaps.reduce((a, b) => a + b, 0) / recentGaps.length
+      : null;
+    const avgReplyLabel = avgReplyMs == null ? '—'
+      : avgReplyMs < 60000 ? '< 1 min'
+      : avgReplyMs < 3600000 ? `${Math.round(avgReplyMs / 60000)} min`
+      : avgReplyMs < 86400000 ? `${Math.round(avgReplyMs / 3600000)} hr`
+      : `${Math.round(avgReplyMs / 86400000)} d`;
+    return { total: mine + theirs, mine, theirs, daysActive, avgReplyLabel };
+  }, [messages, currentUser?.id, otherUser?.id]);
+
   // ── Infinity Messaging identity ─────────────────────────────────────────
   // A "flow" bubble/composer language purpose-built to read as nothing else on
   // the market: squircle presence avatars (not circles — circles are the one
@@ -11676,6 +11752,9 @@ unsub = onSnapshot(q, (snap) => {
           </button>
           <button onClick={()=>onVideoCall?.(otherUser?.id)} aria-label="Start video call" style={{background:COLORS.surfaceAlt,border:'none',borderRadius:SQUIRCLE,width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.brand} strokeWidth="2.2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+          </button>
+          <button onClick={()=>setShowInsights(s=>!s)} title="Chat insights" style={{background:showInsights?COLORS.surfaceAlt:'none',border:'none',borderRadius:SQUIRCLE,width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2.2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
           </button>
           <button onClick={()=>{ setShowSearch(s=>!s); if(showSearch) setThreadSearch(''); }} title="Search in chat" style={{background:showSearch?COLORS.surfaceAlt:'none',border:'none',borderRadius:SQUIRCLE,width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -11723,6 +11802,32 @@ unsub = onSnapshot(q, (snap) => {
             isGroup={false}
             onDismiss={() => setCatchUpDismissed(true)}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Chat Insights — real numbers only, derived from `messages` above.
+          No predicted mood, no invented milestones, no placeholder graph. */}
+      <AnimatePresence>
+        {showInsights && chatStats && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            style={{ overflow: 'hidden' }}
+          >
+            <div style={{ padding: '10px 16px', background: COLORS.surface, borderBottom: `1px solid ${COLORS.border}`, display: 'flex', justifyContent: 'space-around', gap: 8 }}>
+              {[
+                { label: 'Messages', value: chatStats.total },
+                { label: 'Days active', value: chatStats.daysActive },
+                { label: 'Your avg reply', value: chatStats.avgReplyLabel },
+              ].map(stat => (
+                <div key={stat.label} style={{ textAlign: 'center' }}>
+                  <div style={{ color: COLORS.textPrimary, fontWeight: 800, fontSize: 15 }}>{stat.value}</div>
+                  <div style={{ color: COLORS.textTertiary, fontSize: 10, marginTop: 2 }}>{stat.label}</div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
 
@@ -11891,9 +11996,36 @@ unsub = onSnapshot(q, (snap) => {
           <StickerPicker onSelect={sendSticker} onClose={()=>setShowStickers(false)} />
         </div>
       )}
-      {smartReplies.length > 0 && !text && !previewFile && !audioBlob && (
-        <motion.div initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }} style={{ display:'flex', gap:8, padding:'0 14px 8px', overflowX:'auto' }} className="no-scrollbar">
-          {smartReplies.map((reply,i)=>(
+      {(smartReplies.length > 0 || smartRepliesLoading || smartReplyError) && !text && !previewFile && !audioBlob && (
+        <motion.div initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }} style={{ display:'flex', flexDirection:'column', gap:6, padding:'0 14px 8px' }}>
+          {/* Real tone selector — each option re-calls /api/ai/smart-reply with a
+              different instruction. No local canned phrases; every tone is a live
+              Gemini response for the actual message thread. */}
+          <div style={{ display:'flex', gap:6, overflowX:'auto' }} className="no-scrollbar">
+            {REPLY_TONES.map(opt=>(
+              <button key={opt.id} onClick={()=>{ if(opt.id!==replyTone){ setReplyTone(opt.id); } }}
+                style={{ flexShrink:0, background: replyTone===opt.id ? COLORS.brand+'22' : 'none', border:`1px solid ${replyTone===opt.id ? COLORS.brand : COLORS.border}`, borderRadius:12, padding:'4px 10px', color: replyTone===opt.id ? COLORS.brand : COLORS.textTertiary, fontSize:11, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap' }}>
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          <div style={{ display:'flex', gap:8, overflowX:'auto', alignItems:'center' }} className="no-scrollbar">
+          {smartRepliesLoading ? (
+            <div style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 4px', color:COLORS.textTertiary, fontSize:12 }}>
+              <div style={{ width:12, height:12, border:`2px solid ${COLORS.border}`, borderTop:`2px solid ${COLORS.brand}`, borderRadius:'50%', animation:'spin 0.8s linear infinite' }} />
+              Generating replies…
+            </div>
+          ) : smartReplyError ? (
+            /* Honest failure state — same pattern as CatchUpBanner. A real API
+               error (rate limit, no Gemini key configured, etc.) is shown as a
+               failure with a retry, never silently hidden as "no suggestions". */
+            <div style={{ display:'flex', alignItems:'center', gap:8, padding:'6px 4px', color:COLORS.textTertiary, fontSize:12 }}>
+              <span>Couldn't generate replies</span>
+              <button onClick={()=>setSmartReplyRetryNonce(n=>n+1)} style={{ background:'none', border:'none', color:COLORS.brand, fontWeight:700, fontSize:12, cursor:'pointer', padding:0 }}>
+                Retry
+              </button>
+            </div>
+          ) : smartReplies.map((reply,i)=>(
             <motion.button
               key={reply+i}
               whileHover={{ scale:1.03 }} whileTap={{ scale:0.96 }}
@@ -11903,6 +12035,7 @@ unsub = onSnapshot(q, (snap) => {
               {reply}
             </motion.button>
           ))}
+          </div>
         </motion.div>
       )}
       {/* Floating composer island — detached from the screen edge with margin on
@@ -13258,7 +13391,19 @@ const SearchOverlay = ({ onClose, videos, users, onViewProfile, currentUser, onF
   const [recentSearches, setRecentSearches] = useState(() => {
     try { return JSON.parse(localStorage.getItem('Infinity_recent_searches') || '[]'); } catch { return []; }
   });
-  const [trendingSearches] = useState(['#viral', '#ethiopia', '#music', '#dance', '#comedy', '#travel', '#food', '#fashion']);
+  // Real trending tags — counted from hashtags actually used on real posts,
+  // same approach as DiscoverPage and the Explore feed's trending rail. No
+  // static seed list: if nobody has posted with hashtags yet, this is empty.
+  const trendingSearches = useMemo(() => {
+    const counts = new Map();
+    for (const v of videos || []) {
+      for (const raw of v.hashtags || []) {
+        const tag = raw.toLowerCase();
+        counts.set(tag, (counts.get(tag) || 0) + 1);
+      }
+    }
+    return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8).map(([tag]) => tag);
+  }, [videos]);
 
   const addRecentSearch = (term) => {
     if (!term.trim()) return;
@@ -13338,15 +13483,17 @@ const SearchOverlay = ({ onClose, videos, users, onViewProfile, currentUser, onF
                 ))}
               </div>
             )}
-            <div style={{ marginBottom:8 }}>
-              <div style={{ color:COLORS.textTertiary, fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:14 }}>🔥 Trending</div>
-              <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
-                {trendingSearches.map((tag,i)=>(
-                  <motion.button key={i} whileTap={tapScale} onClick={()=>{ setQuery(tag); addRecentSearch(tag); }}
-                    style={{ background:COLORS.overlaySubtle, border:`1px solid ${COLORS.border}`, borderRadius:20, padding:'8px 14px', color:COLORS.textSecondary, fontSize:13, cursor:'pointer', fontWeight:600 }}>{tag}</motion.button>
-                ))}
+            {trendingSearches.length > 0 && (
+              <div style={{ marginBottom:8 }}>
+                <div style={{ color:COLORS.textTertiary, fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:14 }}>🔥 Trending</div>
+                <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+                  {trendingSearches.map((tag,i)=>(
+                    <motion.button key={i} whileTap={tapScale} onClick={()=>{ setQuery(tag); addRecentSearch(tag); }}
+                      style={{ background:COLORS.overlaySubtle, border:`1px solid ${COLORS.border}`, borderRadius:20, padding:'8px 14px', color:COLORS.textSecondary, fontSize:13, cursor:'pointer', fontWeight:600 }}>{tag}</motion.button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
             <div style={{ marginTop:24 }}>
               <div style={{ color:COLORS.textTertiary, fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:14 }}>Suggested People</div>
               {users.slice(0,5).map(u=>(
