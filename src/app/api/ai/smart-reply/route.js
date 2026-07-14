@@ -20,10 +20,21 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Smart replies are not configured on this server.' }, { status: 503 });
     }
 
-    const { messages } = await req.json();
+    const { messages, tone } = await req.json();
     if (!Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json({ error: 'messages array is required' }, { status: 400 });
     }
+
+    // Optional tone for the suggestions — whitelisted so the value that reaches
+    // the model prompt is always one of these, never arbitrary client input.
+    const TONE_INSTRUCTIONS = {
+      casual: 'casual tone',
+      professional: 'polished, professional tone',
+      playful: 'playful, lighthearted tone',
+      warm: 'warm and affectionate tone',
+      brief: 'extremely brief, to-the-point tone',
+    };
+    const toneInstruction = TONE_INSTRUCTIONS[tone] || TONE_INSTRUCTIONS.casual;
 
     // Only the last few turns matter for a reply suggestion, and we never want to
     // ship a huge chat history to the model — cap both message count and per-message
@@ -44,7 +55,7 @@ export async function POST(req) {
     }
 
     const transcript = recent.map(m => `${m.from === 'me' ? 'Me' : 'Them'}: ${m.text}`).join('\n');
-    const prompt = `Here is the tail end of a private chat conversation:\n\n${transcript}\n\nSuggest 3 short, natural replies "Me" could send next. Each under 8 words, casual tone, no quotes, no numbering, one per line. If the last message is a question, at least one suggestion should directly answer it. Do not repeat what "Them" said.`;
+    const prompt = `Here is the tail end of a private chat conversation:\n\n${transcript}\n\nSuggest 3 short, natural replies "Me" could send next, in a ${toneInstruction}. Each under 8 words, no quotes, no numbering, one per line. If the last message is a question, at least one suggestion should directly answer it. Do not repeat what "Them" said.`;
 
     const res = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${process.env.GEMINI_API_KEY}`,
