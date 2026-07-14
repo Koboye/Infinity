@@ -1360,20 +1360,23 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack, embedded=false, 
     const showGroupCatchUp = !catchUpDismissed && groupUnreadSinceOpen.length >= GROUP_CATCH_UP_THRESHOLD;
     return (
       <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: COLORS.bg }}>
-        <div style={{ padding: '14px 16px', borderBottom: `1px solid ${COLORS.overlaySubtle}`, display: 'flex', alignItems: 'center', gap: 12, background: COLORS.overlaySubtle }}>
-          <button onClick={exitGroup} aria-label="Back" style={{ background: 'none', border: 'none', color: COLORS.textPrimary, cursor: 'pointer', fontSize: 18 }}>←</button>
-          <div onClick={()=>setShowGroupInfo(true)} style={{ display:'flex', alignItems:'center', gap:10, flex:1, cursor:'pointer' }}>
-            <div style={{ width: 38, height: 38, borderRadius: '50%', background: activeGroup.avatarColor || COLORS.brand, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: 16 }}>{activeGroup.avatar || '👥'}</div>
-            <div>
-              <div style={{ color: COLORS.textPrimary, fontWeight: 700, fontSize: 15 }}>{activeGroup.name}</div>
-              <div style={{ color: COLORS.textTertiary, fontSize: 11 }}>{(activeGroup.members || []).length} members · tap for info</div>
+        <div style={{ padding: '16px 16px 14px', display: 'flex', alignItems: 'center', gap: 12, background:`linear-gradient(180deg, ${COLORS.surface} 0%, ${COLORS.surface}F2 100%)`, backdropFilter:'blur(24px) saturate(1.5)', WebkitBackdropFilter:'blur(24px) saturate(1.5)', position:'relative', zIndex:2 }}>
+          <div style={{position:'absolute',left:0,right:0,bottom:0,height:1,background:`linear-gradient(90deg, transparent, ${COLORS.border}, transparent)`}}/>
+          <button onClick={exitGroup} aria-label="Back" style={{ background:COLORS.surfaceAlt, border:'none', borderRadius:INF_SQUIRCLE, width:34, height:34, color:COLORS.textPrimary, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2.2"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <div onClick={()=>setShowGroupInfo(true)} style={{ display:'flex', alignItems:'center', gap:10, flex:1, cursor:'pointer', minWidth:0 }}>
+            <div style={{ width: 40, height: 40, borderRadius: INF_SQUIRCLE, background: activeGroup.avatarColor || COLORS.brand, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: 16, flexShrink:0 }}>{activeGroup.avatar || '👥'}</div>
+            <div style={{minWidth:0}}>
+              <div style={{ color: COLORS.textPrimary, fontWeight: 700, fontSize: 15, letterSpacing:-0.2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{activeGroup.name}</div>
+              <div style={{ color: COLORS.textTertiary, fontSize: 11.5 }}>{(activeGroup.members || []).length} members · tap for info</div>
             </div>
           </div>
-          <button onClick={()=>setGroupCallOpen('audio')} aria-label="Start audio call" style={{ background:'rgba(52,199,89,0.15)', border:'1px solid rgba(52,199,89,0.25)', borderRadius:'50%', width:36, height:36, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.success} strokeWidth="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-5.99-5.99 19.79 19.79 0 01-3.07-8.67A2 2 0 014 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>
+          <button onClick={()=>setGroupCallOpen('audio')} aria-label="Start audio call" style={{ background:COLORS.surfaceAlt, border:'none', borderRadius:INF_SQUIRCLE, width:34, height:34, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', flexShrink:0 }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.brand} strokeWidth="2.2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-5.99-5.99 19.79 19.79 0 01-3.07-8.67A2 2 0 014 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>
           </button>
-          <button onClick={()=>setGroupCallOpen('video')} aria-label="Start video call" style={{ background:'rgba(175,82,222,0.15)', border:'1px solid rgba(175,82,222,0.25)', borderRadius:'50%', width:36, height:36, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.brandSecondary} strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+          <button onClick={()=>setGroupCallOpen('video')} aria-label="Start video call" style={{ background:COLORS.surfaceAlt, border:'none', borderRadius:INF_SQUIRCLE, width:34, height:34, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', flexShrink:0 }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.brand} strokeWidth="2.2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
           </button>
         </div>
         {/* Group Info Panel */}
@@ -1382,7 +1385,7 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack, embedded=false, 
             <div onClick={e=>e.stopPropagation()} style={{ width:'100%', background:COLORS.surface2, borderTopLeftRadius:28, borderTopRightRadius:28, padding:'20px 20px 40px', maxHeight:'70%', overflowY:'auto' }}>
               <div style={{ width:36, height:4, background:COLORS.border, borderRadius:2, margin:'0 auto 20px' }} />
               <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:20 }}>
-                <div style={{ width:52, height:52, borderRadius:'50%', background:activeGroup.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:22 }}>{activeGroup.avatar||'👥'}</div>
+                <div style={{ width:52, height:52, borderRadius:INF_SQUIRCLE, background:activeGroup.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:22 }}>{activeGroup.avatar||'👥'}</div>
                 <div>
                   <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:18 }}>{activeGroup.name}</div>
                   <div style={{ color:COLORS.textTertiary, fontSize:12 }}>Created by group admin</div>
@@ -1391,7 +1394,7 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack, embedded=false, 
               <div style={{ color:COLORS.textTertiary, fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:12 }}>Members ({groupMembers.length})</div>
               {groupMembers.map(u=>(
                 <div key={u.id} style={{ display:'flex', alignItems:'center', gap:12, padding:'11px 0', borderBottom:`1px solid ${COLORS.overlaySubtle}` }}>
-                  <div style={{ width:44, height:44, borderRadius:'50%', background:u.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:COLORS.textPrimary, fontWeight:'bold', fontSize:18, overflow:'hidden', flexShrink:0 }}>
+                  <div style={{ width:44, height:44, borderRadius:INF_SQUIRCLE, background:u.avatarColor, display:'flex', alignItems:'center', justifyContent:'center', color:COLORS.textPrimary, fontWeight:'bold', fontSize:18, overflow:'hidden', flexShrink:0 }}>
                     {u.avatarUrl ? <img loading="lazy" decoding="async" src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : u.avatar}
                   </div>
                   <div style={{ flex:1, minWidth:0 }}>
@@ -1502,7 +1505,7 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack, embedded=false, 
                 style={{ display: 'flex', justifyContent: isMine ? 'flex-end' : 'flex-start', marginBottom: 10 }}
               >
                 {!isMine && (
-                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: msg.senderAvatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: COLORS.textPrimary, fontSize: 11, fontWeight: 'bold', marginRight: 8, flexShrink: 0, overflow: 'hidden' }}>
+                  <div style={{ width: 28, height: 28, borderRadius: INF_SQUIRCLE, background: msg.senderAvatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: COLORS.textPrimary, fontSize: 11, fontWeight: 'bold', marginRight: 8, flexShrink: 0, overflow: 'hidden' }}>
                     {msg.senderAvatarUrl ? <img loading="lazy" decoding="async" src={msg.senderAvatarUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : msg.senderAvatar}
                   </div>
                 )}
@@ -1523,7 +1526,7 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack, embedded=false, 
                     </div>
                   )}
                   {msg.text && (
-                    <div style={{ background: isMine ? `linear-gradient(135deg,${COLORS.brand},${COLORS.brandSecondary})` : COLORS.surfaceAlt, borderRadius: isMine ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: '10px 14px', color: isMine ? 'white' : COLORS.textPrimary, fontSize: 14, boxShadow: isMine ? SHADOW.xs : 'none' }}>
+                    <div style={{ background: COLORS.surface, borderRadius: 20, padding: isMine ? '9px 14px 9px 13px' : '9px 14px', color: COLORS.textPrimary, fontSize: 14, boxShadow: isMine ? `inset 3px 0 0 0 ${COLORS.brand}, ${SHADOW.xs}` : SHADOW.xs, border:`1px solid ${COLORS.border}` }}>
                       {msg.text}
                       {!isMine && <MessageTranslate text={msg.text} targetLang={currentUser?.language || 'en'} isMine={isMine} />}
                     </div>
@@ -1548,10 +1551,10 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack, embedded=false, 
             </div>
           </div>
         )}
-        <div style={{ padding: '10px 14px', paddingBottom: 'max(28px, env(safe-area-inset-bottom))', background: COLORS.surface, borderTop: `1px solid ${COLORS.border}`, display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div style={{ padding: '6px 14px', paddingBottom: 'max(18px, env(safe-area-inset-bottom))', background: 'transparent', display: 'flex', gap: 8, alignItems: 'center' }}>
           {groupVoiceState === 'idle' && (
-            <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 2, background: COLORS.surfaceAlt, borderRadius: 26, padding: '4px 6px 4px 12px' }}>
-              <input value={msgText} onChange={e => setMsgText(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendGroupMsg()} placeholder="Message group..." style={{ flex: 1, minWidth: 0, background: 'none', border: 'none', outline: 'none', color: COLORS.textPrimary, fontSize: 13.5, padding: '9px 4px' }} />
+            <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 2, background: COLORS.surface, borderRadius: 28, padding: '4px 6px 4px 14px', boxShadow:SHADOW.raised, border:`1px solid ${COLORS.border}` }}>
+              <input value={msgText} onChange={e => setMsgText(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendGroupMsg()} placeholder="Message group" style={{ flex: 1, minWidth: 0, background: 'none', border: 'none', outline: 'none', color: COLORS.textPrimary, fontSize: 13.5, padding: '10px 4px' }} />
               <button onClick={() => fileInputRef.current?.click()} aria-label="Attach photo" style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, padding: 6 }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" /></svg>
               </button>
@@ -1564,15 +1567,15 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack, embedded=false, 
           <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={pickFile} style={{ display: 'none' }} />
           <AnimatePresence initial={false}>
             {(msgText.trim() || previewFile) ? (
-              <motion.button key="send" initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.5, opacity: 0 }} transition={springs.snappy} whileTap={tapScale} onClick={sendGroupMsg} aria-label="Send message" style={{ background: COLORS.gradient, border: 'none', borderRadius: '50%', width: 42, height: 42, color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="1"><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
+              <motion.button key="send" initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.5, opacity: 0 }} transition={springs.snappy} whileTap={tapScale} onClick={sendGroupMsg} aria-label="Send message" style={{ background: COLORS.gradient, border: 'none', borderRadius: INF_SQUIRCLE, width: 44, height: 44, color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow:SHADOW.glow(COLORS.brand) }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M6 12h13"/><path d="M13 6l7 6-7 6"/></svg>
               </motion.button>
             ) : (
               // Same key stays mounted across idle → recording → preview so the active
-              // recording is never unmounted; only style changes (circle vs full-width).
+              // recording is never unmounted; only style changes (squircle vs full-width).
               <motion.div key="voice" initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.5, opacity: 0 }} transition={springs.snappy}
                 style={ groupVoiceState === 'idle'
-                  ? { background: COLORS.gradient, borderRadius: '50%', width: 42, height: 42, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }
+                  ? { background: COLORS.gradient, borderRadius: INF_SQUIRCLE, width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow:SHADOW.glow(COLORS.brand) }
                   : { flex: 1, minWidth: 0, display: 'flex', alignItems: 'center' } }>
                 <VoiceRecorderButton showToast={showToast} size="small" onSend={sendGroupVoice} onStateChange={setGroupVoiceState} />
               </motion.div>
@@ -2144,6 +2147,7 @@ const GlobalStyles = () => (
     @keyframes bounceIn{0%{transform:scale(0.3);opacity:0}50%{transform:scale(1.1)}70%{transform:scale(0.9)}100%{transform:scale(1);opacity:1}}
     @keyframes swipeHint{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
     @keyframes chatBgDrift{0%,100%{background-position:0% 0%, 0px 0px}50%{background-position:2% 3%, 4px 6px}}
+    @keyframes infinityTypingFlow{0%{background-position:0% 50%}100%{background-position:-200% 50%}}
     .chat-wallpaper{animation:chatBgDrift 22s ease-in-out infinite;transition:background 0.6s ease,background-color 0.6s ease}
     button{touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
     button:focus,button:focus-visible{outline:none}
@@ -11637,34 +11641,47 @@ unsub = onSnapshot(q, (snap) => {
     : [];
   const showCatchUp = !catchUpDismissed && unreadSinceOpen.length >= CATCH_UP_THRESHOLD;
 
+  // ── Infinity Messaging identity ─────────────────────────────────────────
+  // A "flow" bubble/composer language purpose-built to read as nothing else on
+  // the market: squircle presence avatars (not circles — circles are the one
+  // shape shared by every existing messenger's avatar), no tail/pointer on
+  // bubbles, a floating detached composer capsule instead of a bar flush with
+  // the screen edge, and a single hairline gradient rail standing in for the
+  // classic solid-fill "my bubble" color block.
+  const SQUIRCLE = '30% 30% 34% 30% / 34% 34% 30% 30%';
+  const railGradient = activeTheme.gradient || COLORS.gradient;
+
   return (
     <div style={{height:'100%',display:'flex',flexDirection:'column',background:COLORS.bg}}>
-      <div style={{padding:'14px 16px',background:COLORS.surface,backdropFilter:'blur(20px) saturate(1.4)',WebkitBackdropFilter:'blur(20px) saturate(1.4)',borderBottom:`1px solid ${COLORS.border}`,display:'flex',alignItems:'center',gap:12,boxShadow:'0 2px 12px rgba(11,95,255,0.06)',position:'relative',zIndex:2}}>
-        <button onClick={onBack} aria-label="Back" style={{background:'none',border:'none',color:COLORS.textPrimary,cursor:'pointer',padding:'4px 0',display:'flex'}}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
+      <div style={{padding:'16px 18px 14px',background:`linear-gradient(180deg, ${COLORS.surface} 0%, ${COLORS.surface}F2 100%)`,backdropFilter:'blur(24px) saturate(1.5)',WebkitBackdropFilter:'blur(24px) saturate(1.5)',display:'flex',alignItems:'center',gap:12,position:'relative',zIndex:2}}>
+        <div style={{position:'absolute',left:0,right:0,bottom:0,height:1,background:`linear-gradient(90deg, transparent, ${COLORS.border}, transparent)`}}/>
+        <button onClick={onBack} aria-label="Back" style={{background:COLORS.surfaceAlt,border:'none',borderRadius:SQUIRCLE,width:34,height:34,color:COLORS.textPrimary,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2.2"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
-        <div onClick={()=>onViewProfile?.(otherUser?.id)} style={{width:42,height:42,borderRadius:'50%',background:otherUser?.avatarColor||COLORS.brand,display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontWeight:700,overflow:'hidden',cursor:'pointer',boxShadow:SHADOW.xs,flexShrink:0}}>
-          {otherUser?.avatarUrl?<img loading="lazy" decoding="async" src={otherUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/>:(otherUser?.avatar||'?')}
+        <div onClick={()=>onViewProfile?.(otherUser?.id)} style={{position:'relative',flexShrink:0,cursor:'pointer'}}>
+          <div style={{width:42,height:42,borderRadius:SQUIRCLE,background:otherUser?.avatarColor||COLORS.brand,display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontWeight:700,overflow:'hidden',boxShadow:SHADOW.xs}}>
+            {otherUser?.avatarUrl?<img loading="lazy" decoding="async" src={otherUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/>:(otherUser?.avatar||'?')}
+          </div>
+          {presenceData?.online && <div style={{position:'absolute',bottom:-2,right:-2,width:12,height:12,borderRadius:'50%',background:COLORS.success,border:`2.5px solid ${COLORS.surface}`}}/>}
         </div>
         <div onClick={()=>onViewProfile?.(otherUser?.id)} style={{cursor:'pointer',minWidth:0}}>
-          <div style={{color:COLORS.textPrimary,fontWeight:700,fontSize:15,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif",overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>@{otherUser?.username||'user'}</div>
+          <div style={{color:COLORS.textPrimary,fontWeight:700,fontSize:15,letterSpacing:-0.2,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif",overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>@{otherUser?.username||'user'}</div>
           <div style={{color: presenceData?.online ? COLORS.success : COLORS.textTertiary, fontSize:11.5, display:'flex', alignItems:'center', gap:4}}>
-            {presenceData?.online && <div style={{width:6,height:6,borderRadius:'50%', background: COLORS.success}}/>}
-            {presenceData?.online ? 'Online' : presenceData?.lastSeen ? `last seen ${timeAgo(presenceData.lastSeen.toDate())}` : 'Offline'}
+            {presenceData?.online ? 'Active now' : presenceData?.lastSeen ? `Active ${timeAgo(presenceData.lastSeen.toDate())}` : 'Offline'}
           </div>
         </div>
-        <div style={{marginLeft:'auto',display:'flex',gap:8}}>
-          <button onClick={()=>onVoiceCall?.(otherUser?.id)} aria-label="Start voice call" style={{background:COLORS.surfaceAlt,border:`1px solid ${COLORS.border}`,borderRadius:'50%',width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={COLORS.brand} strokeWidth="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-5.99-5.99 19.79 19.79 0 01-3.07-8.67A2 2 0 014 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>
+        <div style={{marginLeft:'auto',display:'flex',gap:6}}>
+          <button onClick={()=>onVoiceCall?.(otherUser?.id)} aria-label="Start voice call" style={{background:COLORS.surfaceAlt,border:'none',borderRadius:SQUIRCLE,width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.brand} strokeWidth="2.2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-5.99-5.99 19.79 19.79 0 01-3.07-8.67A2 2 0 014 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>
           </button>
-          <button onClick={()=>onVideoCall?.(otherUser?.id)} aria-label="Start video call" style={{background:COLORS.surfaceAlt,border:`1px solid ${COLORS.border}`,borderRadius:'50%',width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={COLORS.brand} strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+          <button onClick={()=>onVideoCall?.(otherUser?.id)} aria-label="Start video call" style={{background:COLORS.surfaceAlt,border:'none',borderRadius:SQUIRCLE,width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.brand} strokeWidth="2.2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
           </button>
-          <button onClick={()=>{ setShowSearch(s=>!s); if(showSearch) setThreadSearch(''); }} title="Search in chat" style={{background:showSearch?COLORS.surfaceAlt:'none',border:'none',borderRadius:'50%',width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <button onClick={()=>{ setShowSearch(s=>!s); if(showSearch) setThreadSearch(''); }} title="Search in chat" style={{background:showSearch?COLORS.surfaceAlt:'none',border:'none',borderRadius:SQUIRCLE,width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           </button>
-          <button onClick={()=>setShowChatInfo(true)} title="Chat info" style={{background:'none',border:'none',borderRadius:'50%',width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
-            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
+          <button onClick={()=>setShowChatInfo(true)} title="Chat info" style={{background:'none',border:'none',borderRadius:SQUIRCLE,width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2.2"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
           </button>
         </div>
       </div>
@@ -11759,7 +11776,7 @@ unsub = onSnapshot(q, (snap) => {
               onMouseUp={()=>clearTimeout(msgLongTimer.current)}
               style={{display:'flex',justifyContent:isMine?'flex-end':'flex-start',alignItems:'flex-end',gap:8,marginBottom:10,position:'relative'}}>
   {!isMine && (
-    <div onClick={()=>onViewProfile?.(otherUser?.id)} style={{width:26,height:26,borderRadius:'50%',background:otherUser?.avatarColor||COLORS.brand,display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontWeight:700,fontSize:10,flexShrink:0,cursor:'pointer',overflow:'hidden'}}>
+    <div onClick={()=>onViewProfile?.(otherUser?.id)} style={{width:26,height:26,borderRadius:SQUIRCLE,background:otherUser?.avatarColor||COLORS.brand,display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontWeight:700,fontSize:10,flexShrink:0,cursor:'pointer',overflow:'hidden'}}>
       {otherUser?.avatarUrl ? <img loading="lazy" decoding="async" src={otherUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/> : otherUser?.avatar}
     </div>
   )}
@@ -11767,8 +11784,12 @@ unsub = onSnapshot(q, (snap) => {
                 {msg.text && msg.type==='sticker' && !msg.deleted && (
                   <div style={{fontSize:56, lineHeight:1, padding:'2px 4px'}}>{msg.text}</div>
                 )}
-                {msg.text && msg.type!=='sticker' && <div style={{background: msg.deleted ? COLORS.surfaceAlt : isMine?myBubbleBg:COLORS.surface, borderRadius:isMine?'18px 18px 4px 18px':'18px 18px 18px 4px',padding:'9px 14px',marginBottom:msg.mediaUrl?4:0, boxShadow: isMine ? myGlow : SHADOW.xs, border: isMine ? 'none' : `1px solid ${COLORS.border}` }}>
-  <span style={{color: msg.deleted ? COLORS.textTertiary : isMine?myBubbleTextColor:COLORS.textPrimary, fontSize:14, lineHeight:1.4, fontStyle: msg.deleted?'italic':'normal'}}>{msg.text}</span>
+                {/* "Flow" bubble — uniform 20px rounding on every corner (no tail cut),
+                    sent messages carry a 3px brand-gradient rail on their leading edge
+                    instead of a solid fill block, so the thread reads as one continuous
+                    glass surface with an identity marker rather than a two-tone chat log. */}
+                {msg.text && msg.type!=='sticker' && <div style={{background: msg.deleted ? COLORS.surfaceAlt : COLORS.surface, borderRadius:20, padding: isMine ? '9px 14px 9px 13px' : '9px 14px', marginBottom:msg.mediaUrl?4:0, boxShadow: isMine ? `inset 3px 0 0 0 ${activeTheme.accent || COLORS.brand}, ${SHADOW.xs}` : SHADOW.xs, border: `1px solid ${COLORS.border}`, position:'relative' }}>
+  <span style={{color: msg.deleted ? COLORS.textTertiary : COLORS.textPrimary, fontSize:14, lineHeight:1.4, fontStyle: msg.deleted?'italic':'normal'}}>{msg.text}</span>
   {!msg.deleted && !isMine && <MessageTranslate text={msg.text} targetLang={currentUser?.language || 'en'} isMine={isMine} />}
 </div>}
                 <div style={{ color:COLORS.textTertiary, fontSize:10.5, marginTop:3, textAlign:isMine?'right':'left', paddingLeft:isMine?0:2, paddingRight:isMine?2:0, display:'flex', alignItems:'center', justifyContent:isMine?'flex-end':'flex-start', gap:3 }}>
@@ -11842,16 +11863,12 @@ unsub = onSnapshot(q, (snap) => {
           );
         })}
         {otherTyping && (
-  <div style={{ display:'flex', alignItems:'flex-end', gap:8, marginBottom:8, animation:'fadeIn 0.3s ease' }}>
-    <div style={{ width:28, height:28, borderRadius:'50%', background:otherUser?.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontSize:11, overflow:'hidden', flexShrink:0 }}>
+  <div style={{ display:'flex', alignItems:'flex-end', gap:8, marginBottom:8 }}>
+    <div style={{ width:28, height:28, borderRadius:SQUIRCLE, background:otherUser?.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontSize:11, overflow:'hidden', flexShrink:0 }}>
       {otherUser?.avatarUrl ? <img loading="lazy" decoding="async" src={otherUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/> : otherUser?.avatar}
     </div>
-    <div style={{ background:COLORS.surface, borderRadius:'18px 18px 18px 4px', padding:'12px 16px', display:'flex', gap:5, alignItems:'center', border:`1px solid ${COLORS.border}`, boxShadow:SHADOW.xs }}>
-      {[0,1,2].map(i=>(
-        <div key={i} style={{ width:7, height:7, borderRadius:'50%', background:COLORS.textTertiary,
-          animation:`pulse 1.4s ease ${i*0.22}s infinite`,
-          transform:`scaleY(${1})` }}/>
-      ))}
+    <div style={{ background:COLORS.surface, borderRadius:20, padding:'13px 16px', width:46, border:`1px solid ${COLORS.border}`, boxShadow:SHADOW.xs, overflow:'hidden' }}>
+      <div style={{ height:3, borderRadius:2, background: railGradient, backgroundSize:'200% 100%', animation:'infinityTypingFlow 1.2s ease-in-out infinite' }}/>
     </div>
   </div>
 )}
@@ -11888,14 +11905,17 @@ unsub = onSnapshot(q, (snap) => {
           ))}
         </motion.div>
       )}
-      <div style={{padding:'10px 14px',paddingBottom:'max(28px, env(safe-area-inset-bottom))',background:composerBarBg,borderTop:`1px solid ${COLORS.border}`,display:'flex',gap:8,alignItems:'center'}}>
+      {/* Floating composer island — detached from the screen edge with margin on
+          every side and its own elevation, rather than a bar flush with the
+          bottom chrome. This is the messaging module's signature move. */}
+      <div style={{padding:'6px 14px',paddingBottom:'max(18px, env(safe-area-inset-bottom))',background:'transparent',display:'flex',gap:8,alignItems:'center'}}>
         {chatVoiceState === 'idle' && (
-          <div style={{flex:1,minWidth:0,display:'flex',alignItems:'center',gap:2,background:composerPillBg,borderRadius:26,padding:'4px 6px 4px 12px'}}>
+          <div style={{flex:1,minWidth:0,display:'flex',alignItems:'center',gap:2,background:composerBarBg,borderRadius:28,padding:'4px 6px 4px 14px',boxShadow:SHADOW.raised,border:`1px solid ${COLORS.border}`}}>
             <input value={text} onChange={e=>{
               setText(e.target.value);
               if (smartReplies.length) setSmartReplies([]);
               setDoc(doc(db,'typing',conversationId),{[currentUser.id]:serverTimestamp()},{merge:true}).catch(()=>{});
-            }} onKeyDown={e=>e.key==='Enter'&&handleSend()} placeholder="Type a message" style={{flex:1,minWidth:0,background:'none',border:'none',outline:'none',color:COLORS.textPrimary,fontSize:13.5,padding:'9px 4px'}}/>
+            }} onKeyDown={e=>e.key==='Enter'&&handleSend()} placeholder="Message" style={{flex:1,minWidth:0,background:'none',border:'none',outline:'none',color:COLORS.textPrimary,fontSize:13.5,padding:'10px 4px'}}/>
             <button onClick={()=>fileInputRef.current?.click()} aria-label="Attach photo" style={{background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:6}}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
             </button>
@@ -11908,18 +11928,18 @@ unsub = onSnapshot(q, (snap) => {
         <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={pickFile} style={{display:'none'}}/>
         <AnimatePresence initial={false}>
         {(text.trim() || previewFile) ? (
-          <motion.button key="send" initial={{ scale:0.5, opacity:0 }} animate={{ scale:1, opacity:1 }} exit={{ scale:0.5, opacity:0 }} transition={springs.snappy} whileTap={tapScale} onClick={handleSend} aria-label="Send message" style={{background:actionButtonBg,border:'none',borderRadius:'50%',width:42,height:42,color:'white',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,boxShadow:myGlow}}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="1"><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          <motion.button key="send" initial={{ scale:0.5, opacity:0 }} animate={{ scale:1, opacity:1 }} exit={{ scale:0.5, opacity:0 }} transition={springs.snappy} whileTap={tapScale} onClick={handleSend} aria-label="Send message" style={{background:railGradient,border:'none',borderRadius:SQUIRCLE,width:44,height:44,color:'white',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,boxShadow:SHADOW.glow(activeTheme.accent || COLORS.brand)}}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M6 12h13"/><path d="M13 6l7 6-7 6"/></svg>
           </motion.button>
         ) : (
           // Same key ("voice") stays mounted across idle → recording → preview so the
           // in-progress recording is never torn down mid-flow. Only the style switches:
-          // a fixed 42px circle while idle (mic glyph only), flex:1 with no fixed width
+          // a fixed 44px squircle while idle (mic glyph only), flex:1 with no fixed width
           // once recording/paused/preview so the waveform, timer, cancel and send controls
           // get the full row instead of being clipped off the right edge of the screen.
           <motion.div key="voice" initial={{ scale:0.5, opacity:0 }} animate={{ scale:1, opacity:1 }} exit={{ scale:0.5, opacity:0 }} transition={springs.snappy}
             style={ chatVoiceState === 'idle'
-              ? {background:actionButtonBg,borderRadius:'50%',width:42,height:42,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,boxShadow:myGlow}
+              ? {background:railGradient,borderRadius:SQUIRCLE,width:44,height:44,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,boxShadow:SHADOW.glow(activeTheme.accent || COLORS.brand)}
               : {flex:1,minWidth:0,display:'flex',alignItems:'center'} }>
           <VoiceRecorderButton
             showToast={showToast}
@@ -12170,6 +12190,11 @@ const MessageStatusTicks = ({ status }) => {
   );
 };
 
+// Shared "flow" avatar shape for the messaging module — a squircle instead of a
+// perfect circle, distinguishing chat surfaces from the circular avatars used
+// everywhere else in the app (feed, profile) while staying internally consistent.
+const INF_SQUIRCLE = '30% 30% 34% 30% / 34% 34% 30% 30%';
+
 // One row in the chat list. Pulled out to its own component so each row can own its
 // presence + typing subscriptions without re-subscribing every other row on every render.
 const ConversationRow = ({ u, conv, currentUser, onOpen, onLongPress }) => {
@@ -12224,10 +12249,11 @@ const ConversationRow = ({ u, conv, currentUser, onOpen, onLongPress }) => {
       onTouchMove={cancelPress}
       onMouseEnter={e=>e.currentTarget.style.background=COLORS.surfaceAlt}
       onContextMenu={e=>{ e.preventDefault(); onLongPress(u, conv); }}
-      style={{ display:'flex', alignItems:'center', gap:14, padding:'11px 16px', cursor:'pointer', borderRadius:16, transition:TRANSITION.fast, userSelect:'none', WebkitUserSelect:'none', background: unread>0 ? `${COLORS.brand}0A` : 'transparent' }}
+      style={{ display:'flex', alignItems:'center', gap:14, padding:'11px 16px', cursor:'pointer', borderRadius:22, transition:TRANSITION.fast, userSelect:'none', WebkitUserSelect:'none', background: unread>0 ? `${COLORS.brand}0A` : 'transparent', position:'relative' }}
     >
+      {unread>0 && <div style={{ position:'absolute', left:6, top:10, bottom:10, width:3, borderRadius:2, background:COLORS.gradient }}/>}
       <div style={{ position:'relative', flexShrink:0 }}>
-        <div style={{ width:52, height:52, borderRadius:'50%', background:u.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, fontSize:20, overflow:'hidden', boxShadow: isOnline ? SHADOW.glow(COLORS.success) : SHADOW.xs, border: unread>0 ? `2px solid ${COLORS.brand}` : 'none' }}>
+        <div style={{ width:52, height:52, borderRadius:INF_SQUIRCLE, background:u.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, fontSize:20, overflow:'hidden', boxShadow: isOnline ? SHADOW.glow(COLORS.success) : SHADOW.xs }}>
           {u.avatarUrl ? <img loading="lazy" decoding="async" src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="" /> : u.avatar}
         </div>
         {/* Real presence — was a hardcoded green dot on every row before regardless of
@@ -12302,10 +12328,11 @@ const GroupRow = ({ g, currentUser, onOpen, onLongPress }) => {
       onTouchMove={cancelPress}
       onMouseEnter={e=>e.currentTarget.style.background=COLORS.surfaceAlt}
       onContextMenu={e=>{ e.preventDefault(); onLongPress(g); }}
-      style={{ display:'flex', alignItems:'center', gap:14, padding:'11px 16px', cursor:'pointer', borderRadius:16, transition:TRANSITION.fast, userSelect:'none', WebkitUserSelect:'none', background: unread>0 ? `${COLORS.brand}0A` : 'transparent' }}
+      style={{ display:'flex', alignItems:'center', gap:14, padding:'11px 16px', cursor:'pointer', borderRadius:22, transition:TRANSITION.fast, userSelect:'none', WebkitUserSelect:'none', background: unread>0 ? `${COLORS.brand}0A` : 'transparent', position:'relative' }}
     >
+      {unread>0 && <div style={{ position:'absolute', left:6, top:10, bottom:10, width:3, borderRadius:2, background:COLORS.gradient }}/>}
       <div style={{ position:'relative', flexShrink:0 }}>
-        <div style={{ width:52, height:52, borderRadius:'50%', background:g.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, fontSize:20, overflow:'hidden', boxShadow:SHADOW.xs, border: unread>0 ? `2px solid ${COLORS.brand}` : 'none' }}>
+        <div style={{ width:52, height:52, borderRadius:INF_SQUIRCLE, background:g.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, fontSize:20, overflow:'hidden', boxShadow:SHADOW.xs }}>
           {g.avatar || '👥'}
         </div>
         <div style={{ position:'absolute', bottom:-2, right:-2, width:18, height:18, borderRadius:'50%', background:COLORS.surface, border:`2px solid ${COLORS.surface}`, display:'flex', alignItems:'center', justifyContent:'center', boxShadow:SHADOW.xs }}>
@@ -12342,8 +12369,8 @@ const InboxStripAvatar = ({ u, onClick }) => {
   return (
     <div onClick={onClick} style={{ textAlign:'center', flexShrink:0, cursor:'pointer' }}>
       <div style={{ position:'relative' }}>
-        <div className={isOnline ? 'story-avatar-ring' : ''} style={{ width:50, height:50, borderRadius:'50%', border: isOnline ? undefined : `2px solid ${COLORS.border}`, padding: isOnline ? undefined : 2 }}>
-          <div style={{ width:'100%', height:'100%', borderRadius:'50%', background:u.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, overflow:'hidden' }}>
+        <div className={isOnline ? 'story-avatar-ring' : ''} style={{ width:50, height:50, borderRadius:INF_SQUIRCLE, border: isOnline ? undefined : `2px solid ${COLORS.border}`, padding: isOnline ? undefined : 2 }}>
+          <div style={{ width:'100%', height:'100%', borderRadius:INF_SQUIRCLE, background:u.avatarColor||COLORS.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:700, overflow:'hidden' }}>
             {u.avatarUrl ? <img loading="lazy" decoding="async" src={u.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/> : u.avatar}
           </div>
         </div>
@@ -12636,15 +12663,16 @@ snap.docs.forEach(async conv => {
 
   return (
     <div style={{ height:'100%', display:'flex', flexDirection:'column', background:COLORS.bg, position:'relative' }}>
-      <div style={{ padding:'14px 16px 0', background:COLORS.surface, borderBottom:`1px solid ${COLORS.border}` }}>
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
-          <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:20 }}>Chats</div>
-          <button onClick={()=>setShowCreateGroup(true)} aria-label="New group" style={{ background:COLORS.surfaceAlt, border:'none', width:36, height:36, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', color:COLORS.brand, cursor:'pointer' }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      <div style={{ padding:'16px 16px 0', background:`linear-gradient(180deg, ${COLORS.surface} 0%, ${COLORS.surface}F2 100%)`, backdropFilter:'blur(24px) saturate(1.5)', WebkitBackdropFilter:'blur(24px) saturate(1.5)', position:'relative' }}>
+        <div style={{position:'absolute',left:0,right:0,bottom:0,height:1,background:`linear-gradient(90deg, transparent, ${COLORS.border}, transparent)`}}/>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
+          <div style={{ color:COLORS.textPrimary, fontWeight:800, fontSize:22, letterSpacing:-0.4 }}>Chats</div>
+          <button onClick={()=>setShowCreateGroup(true)} aria-label="New group" style={{ background:COLORS.gradient, border:'none', width:38, height:38, borderRadius:INF_SQUIRCLE, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', cursor:'pointer', boxShadow:SHADOW.glow(COLORS.brand) }}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
           </button>
         </div>
         {/* Inline search */}
-        <div style={{ display:'flex', alignItems:'center', background:COLORS.surfaceAlt, borderRadius:14, padding:'9px 12px', gap:8, marginBottom:12 }}>
+        <div style={{ display:'flex', alignItems:'center', background:COLORS.surfaceAlt, borderRadius:INF_SQUIRCLE, padding:'10px 14px', gap:8, marginBottom:12 }}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input
             placeholder="Search chats"
@@ -15347,7 +15375,7 @@ const InboxBadge = ({ currentUser }) => {
     return ()=>unsub();
   },[currentUser?.id]);
   if(!unread) return null;
-  return <div style={{ position:'absolute', top:-4, right:-4, minWidth:16, height:16, background:COLORS.brandTextFill, borderRadius:8, border:`1.5px solid ${COLORS.bg}`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:9, color:'white', fontWeight:800, padding:'0 3px' }}>{unread>9?'9+':unread}</div>;
+  return <div style={{ position:'absolute', top:-4, right:-4, minWidth:16, height:16, background:COLORS.gradient, borderRadius:INF_SQUIRCLE, border:`1.5px solid ${COLORS.bg}`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:9, color:'white', fontWeight:800, padding:'0 3px', boxShadow:SHADOW.glow(COLORS.brand) }}>{unread>9?'9+':unread}</div>;
 };
 /* ─────────────── INFINITY PAGE ───────────────
    Infinity is a shuffled view over the exact same real posts Home shows — no
@@ -15795,9 +15823,11 @@ const TabGlyph = ({id, active, currentUser}) => {
     <span style={{ position:'relative', display:'flex' }}>
       <svg viewBox="0 0 24 24" style={s}>
         {defs}
-        <path d="M3.2 5.4l9-3 9 3v.2L12.2 14 3.2 5.6z" fill={active ? `url(#${gid})` : 'none'} fillOpacity={active ? 0.22 : 0} />
-        <path d="M3.2 5.4v12.2A1.4 1.4 0 004.6 19h14.8a1.4 1.4 0 001.4-1.4V5.4" fill="none" />
-        <path d="M3.2 5.6L12.2 14l8.8-8.4" fill="none" />
+        {/* Two overlapping tailless "flow" bubbles — the same uniform-radius shape
+            used for every message bubble inside the chat screens this tab opens,
+            instead of the generic mail-envelope glyph nearly every app reuses. */}
+        <rect x="3" y="4.4" width="14.2" height="10.4" rx="4.4" fill={active ? `url(#${gid})` : 'none'} fillOpacity={active ? 0.22 : 0} />
+        <rect x="7.3" y="9.6" width="13.5" height="10" rx="4.4" fill="none" />
       </svg>
       <InboxBadge currentUser={currentUser} />
     </span>
