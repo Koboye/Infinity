@@ -1375,7 +1375,7 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack, embedded=false, 
       <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: COLORS.bg }}>
         <div style={{ padding: '16px 16px 14px', display: 'flex', alignItems: 'center', gap: 12, background:`linear-gradient(180deg, ${COLORS.surface} 0%, ${COLORS.surface}F2 100%)`, backdropFilter:'blur(24px) saturate(1.5)', WebkitBackdropFilter:'blur(24px) saturate(1.5)', position:'relative', zIndex:2 }}>
           <div style={{position:'absolute',left:0,right:0,bottom:0,height:1,background:`linear-gradient(90deg, transparent, ${COLORS.border}, transparent)`}}/>
-          <button onClick={exitGroup} aria-label="Back" style={{ background:COLORS.surfaceAlt, border:'none', borderRadius:INF_SQUIRCLE, width:34, height:34, color:COLORS.textPrimary, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+          <button className="inf-icon-btn" onClick={exitGroup} aria-label="Back" style={{ background:COLORS.surfaceAlt, border:'none', borderRadius:INF_SQUIRCLE, width:34, height:34, color:COLORS.textPrimary, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2.2"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
           <div onClick={()=>setShowGroupInfo(true)} style={{ display:'flex', alignItems:'center', gap:10, flex:1, cursor:'pointer', minWidth:0 }}>
@@ -1385,10 +1385,10 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack, embedded=false, 
               <div style={{ color: COLORS.textTertiary, fontSize: 11.5 }}>{(activeGroup.members || []).length} members · tap for info</div>
             </div>
           </div>
-          <button onClick={()=>setGroupCallOpen('audio')} aria-label="Start audio call" style={{ background:COLORS.surfaceAlt, border:'none', borderRadius:INF_SQUIRCLE, width:34, height:34, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', flexShrink:0 }}>
+          <button className="inf-icon-btn" onClick={()=>setGroupCallOpen('audio')} aria-label="Start audio call" style={{ background:'transparent', border:'none', borderRadius:INF_SQUIRCLE, width:34, height:34, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', flexShrink:0 }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.brand} strokeWidth="2.2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-5.99-5.99 19.79 19.79 0 01-3.07-8.67A2 2 0 014 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>
           </button>
-          <button onClick={()=>setGroupCallOpen('video')} aria-label="Start video call" style={{ background:COLORS.surfaceAlt, border:'none', borderRadius:INF_SQUIRCLE, width:34, height:34, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', flexShrink:0 }}>
+          <button className="inf-icon-btn" onClick={()=>setGroupCallOpen('video')} aria-label="Start video call" style={{ background:'transparent', border:'none', borderRadius:INF_SQUIRCLE, width:34, height:34, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', flexShrink:0 }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.brand} strokeWidth="2.2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
           </button>
         </div>
@@ -1566,12 +1566,12 @@ const GroupChatPage = ({ currentUser, users, showToast, onBack, embedded=false, 
         )}
         <div style={{ padding: '6px 14px', paddingBottom: 'max(18px, env(safe-area-inset-bottom))', background: 'transparent', display: 'flex', gap: 8, alignItems: 'center' }}>
           {groupVoiceState === 'idle' && (
-            <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 2, background: COLORS.surface, borderRadius: 28, padding: '4px 6px 4px 14px', boxShadow:SHADOW.raised, border:`1px solid ${COLORS.border}` }}>
+            <div className="inf-composer-pill" style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 2, background: COLORS.surface, borderRadius: 28, padding: '4px 6px 4px 14px', boxShadow:SHADOW.raised, border:`1px solid ${COLORS.border}` }}>
               <input value={msgText} onChange={e => setMsgText(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendGroupMsg()} placeholder="Message group" style={{ flex: 1, minWidth: 0, background: 'none', border: 'none', outline: 'none', color: COLORS.textPrimary, fontSize: 13.5, padding: '10px 4px' }} />
-              <button onClick={() => fileInputRef.current?.click()} aria-label="Attach photo" style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, padding: 6 }}>
+              <button className="inf-icon-btn" onClick={() => fileInputRef.current?.click()} aria-label="Attach photo" style={{ background: 'transparent', border: 'none', borderRadius:'50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, width:30, height:30 }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" /></svg>
               </button>
-              <button onClick={openGroupCamera} aria-label="Take photo" style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, padding: 6 }}>
+              <button className="inf-icon-btn" onClick={openGroupCamera} aria-label="Take photo" style={{ background: 'transparent', border: 'none', borderRadius:'50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, width:30, height:30 }}>
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" /><circle cx="12" cy="13" r="4" /></svg>
               </button>
             </div>
@@ -2195,6 +2195,16 @@ const GlobalStyles = () => (
     img{image-rendering:-webkit-optimize-contrast}
     video{will-change:transform}
     .smooth-scroll{-webkit-overflow-scrolling:touch;scroll-behavior:smooth}
+    /* ── Messaging module — shared button/boundary polish ─────────────────
+       Every icon button and composer surface in the chat tab (1:1, group,
+       inbox) routes through these two classes so hover/press/focus feedback
+       reads identically everywhere instead of some buttons being naked
+       hit-targets and others having chrome. */
+    .inf-icon-btn{transition:background 0.16s ease, box-shadow 0.16s ease, transform 0.1s ease}
+    .inf-icon-btn:hover{background:${COLORS.surfaceAlt}}
+    .inf-icon-btn:active{transform:scale(0.9)!important}
+    .inf-composer-pill{transition:box-shadow 0.2s ease, border-color 0.2s ease}
+    .inf-composer-pill:focus-within{box-shadow:0 0 0 3px ${COLORS.brand}22, ${SHADOW.raised};border-color:${COLORS.brand}55!important}
   `}</style>
 );
 const SkeletonLoader = ({ count=3 }) => (
@@ -11226,6 +11236,27 @@ const ConversationView = ({ currentUser, otherUser, conversationId, onBack, show
   // their own reply, or after a message is sent.
   const [smartReplies, setSmartReplies] = useState([]);
   const [smartRepliesLoading, setSmartRepliesLoading] = useState(false);
+  // Reply / Quote — long-press a message → "Reply" attaches a small quoted
+  // preview of it to the composer; sending stamps the new message with a
+  // `replyTo` snapshot (id/text/from) so the bubble can render the quote
+  // permanently, the same way every major messenger does it. Editing reuses
+  // the same composer row: picking "Edit" on one of your own text messages
+  // preloads its text and switches the send button into "save edit" mode.
+  const [replyTarget, setReplyTarget] = useState(null); // {id, text, from} | null
+  const [editingMessage, setEditingMessage] = useState(null); // {id, text} | null
+  const [showScrollDown, setShowScrollDown] = useState(false);
+  const [newBelowCount, setNewBelowCount] = useState(0);
+  const msgsScrollRef = useRef(null);
+  const msgRefsMap = useRef({});
+  const [highlightMsgId, setHighlightMsgId] = useState(null);
+  const jumpToMessage = (id) => {
+    const el = msgRefsMap.current[id];
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setHighlightMsgId(id);
+      setTimeout(() => setHighlightMsgId(cur => cur === id ? null : cur), 1400);
+    }
+  };
   // Real failure state — mirrors CatchUpBanner's error handling below, so a
   // rate-limit or API failure shows an honest "couldn't generate" message
   // instead of silently looking like there was simply nothing to suggest.
@@ -11528,7 +11559,25 @@ unsub = onSnapshot(q, (snap) => {
   const clearAttach = () => { setAudioBlob(null); setPreviewFile(null); };
   const fmt = s => `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
 
+  // Saving an edit updates the existing Firestore doc in place (text + an
+  // `edited:true` flag the bubble reads to show a small "edited" tag) instead
+  // of going through the normal send path — no new message, no conversation
+  // preview/unread bump, exactly like editing in any real messenger.
+  const saveEdit = async () => {
+    const newText = text.trim();
+    if (!newText || !editingMessage) { setEditingMessage(null); setText(''); return; }
+    if (newText === editingMessage.text) { setEditingMessage(null); setText(''); return; }
+    try {
+      await updateDoc(doc(db,'messages',conversationId,'msgs',editingMessage.id), { text: newText, edited: true });
+    } catch(e) {
+      showToast?.('Could not save edit: ' + e.message, 'error');
+    }
+    setEditingMessage(null);
+    setText('');
+  };
+
   const handleSend = async (overrideText) => {
+    if (editingMessage) { await saveEdit(); return; }
     if(!conversationId || !currentUser?.id || !otherUser?.id) return;
     let mediaUrl=null, mediaType=null;
     if(previewFile?.file){ 
@@ -11564,6 +11613,10 @@ unsub = onSnapshot(q, (snap) => {
   mediaType: mediaType || null, 
   createdAt: serverTimestamp(),
   status: 'sent',
+  // Snapshot, not a live reference — if the quoted message is later edited or
+  // deleted, the quote here intentionally keeps showing what it said at the
+  // moment this reply was sent (same behavior as WhatsApp/Telegram quotes).
+  replyTo: replyTarget ? { id: replyTarget.id, text: replyTarget.text, from: replyTarget.from } : null,
   // Real per-message expiry when Disappearing Messages is on for this chat — a
   // Firestore TTL policy on `expireAt` (collection group: msgs) does the actual
   // deletion server-side. null when the setting is off, same as every other
@@ -11587,6 +11640,7 @@ unsub = onSnapshot(q, (snap) => {
         [`unread_${otherUser.id}`]: increment(1) 
       },{ merge:true });
       clearAttach();
+      setReplyTarget(null);
       sendNotification(otherUser.id, currentUser.id, 'message', 'sent you a message', { fromUsername: currentUser.username });
     } catch(e){
       showToast?.('Failed to send: ' + e.message, 'error');
@@ -11728,38 +11782,38 @@ unsub = onSnapshot(q, (snap) => {
   const railGradient = activeTheme.gradient || COLORS.gradient;
 
   return (
-    <div style={{height:'100%',display:'flex',flexDirection:'column',background:COLORS.bg}}>
+    <div style={{height:'100%',display:'flex',flexDirection:'column',background:COLORS.bg,position:'relative'}}>
       <div style={{padding:'16px 18px 14px',background:`linear-gradient(180deg, ${COLORS.surface} 0%, ${COLORS.surface}F2 100%)`,backdropFilter:'blur(24px) saturate(1.5)',WebkitBackdropFilter:'blur(24px) saturate(1.5)',display:'flex',alignItems:'center',gap:12,position:'relative',zIndex:2}}>
         <div style={{position:'absolute',left:0,right:0,bottom:0,height:1,background:`linear-gradient(90deg, transparent, ${COLORS.border}, transparent)`}}/>
-        <button onClick={onBack} aria-label="Back" style={{background:COLORS.surfaceAlt,border:'none',borderRadius:SQUIRCLE,width:34,height:34,color:COLORS.textPrimary,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+        <button className="inf-icon-btn" onClick={onBack} aria-label="Back" style={{background:COLORS.surfaceAlt,border:'none',borderRadius:SQUIRCLE,width:36,height:36,color:COLORS.textPrimary,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2.2"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
-        <div onClick={()=>onViewProfile?.(otherUser?.id)} style={{position:'relative',flexShrink:0,cursor:'pointer'}}>
-          <div style={{width:42,height:42,borderRadius:SQUIRCLE,background:otherUser?.avatarColor||COLORS.brand,display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontWeight:700,overflow:'hidden',boxShadow:SHADOW.xs}}>
+        <div onClick={()=>onViewProfile?.(otherUser?.id)} style={{position:'relative',flexShrink:0,cursor:'pointer',padding:2,borderRadius:SQUIRCLE,background: presenceData?.online ? `conic-gradient(${COLORS.success}, ${COLORS.success}55, ${COLORS.success})` : 'transparent'}}>
+          <div style={{width:40,height:40,borderRadius:SQUIRCLE,background:otherUser?.avatarColor||COLORS.brand,display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontWeight:700,overflow:'hidden',boxShadow:SHADOW.xs,border:`2px solid ${COLORS.surface}`}}>
             {otherUser?.avatarUrl?<img loading="lazy" decoding="async" src={otherUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/>:(otherUser?.avatar||'?')}
           </div>
-          {presenceData?.online && <div style={{position:'absolute',bottom:-2,right:-2,width:12,height:12,borderRadius:'50%',background:COLORS.success,border:`2.5px solid ${COLORS.surface}`}}/>}
         </div>
         <div onClick={()=>onViewProfile?.(otherUser?.id)} style={{cursor:'pointer',minWidth:0}}>
           <div style={{color:COLORS.textPrimary,fontWeight:700,fontSize:15,letterSpacing:-0.2,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif",overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>@{otherUser?.username||'user'}</div>
           <div style={{color: presenceData?.online ? COLORS.success : COLORS.textTertiary, fontSize:11.5, display:'flex', alignItems:'center', gap:4}}>
+            {presenceData?.online && <span style={{width:6,height:6,borderRadius:'50%',background:COLORS.success,display:'inline-block',boxShadow:`0 0 0 3px ${COLORS.success}22`}}/>}
             {presenceData?.online ? 'Active now' : presenceData?.lastSeen ? `Active ${timeAgo(presenceData.lastSeen.toDate())}` : 'Offline'}
           </div>
         </div>
-        <div style={{marginLeft:'auto',display:'flex',gap:6}}>
-          <button onClick={()=>onVoiceCall?.(otherUser?.id)} aria-label="Start voice call" style={{background:COLORS.surfaceAlt,border:'none',borderRadius:SQUIRCLE,width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
+        <div style={{marginLeft:'auto',display:'flex',gap:4}}>
+          <button className="inf-icon-btn" onClick={()=>onVoiceCall?.(otherUser?.id)} aria-label="Start voice call" style={{background:'transparent',border:'none',borderRadius:SQUIRCLE,width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.brand} strokeWidth="2.2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-5.99-5.99 19.79 19.79 0 01-3.07-8.67A2 2 0 014 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>
           </button>
-          <button onClick={()=>onVideoCall?.(otherUser?.id)} aria-label="Start video call" style={{background:COLORS.surfaceAlt,border:'none',borderRadius:SQUIRCLE,width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
+          <button className="inf-icon-btn" onClick={()=>onVideoCall?.(otherUser?.id)} aria-label="Start video call" style={{background:'transparent',border:'none',borderRadius:SQUIRCLE,width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.brand} strokeWidth="2.2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
           </button>
-          <button onClick={()=>setShowInsights(s=>!s)} title="Chat insights" style={{background:showInsights?COLORS.surfaceAlt:'none',border:'none',borderRadius:SQUIRCLE,width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2.2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          <button className="inf-icon-btn" onClick={()=>setShowInsights(s=>!s)} title="Chat insights" style={{background:showInsights?COLORS.surfaceAlt:'transparent',border:'none',borderRadius:SQUIRCLE,width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={showInsights?COLORS.brand:COLORS.textSecondary} strokeWidth="2.2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
           </button>
-          <button onClick={()=>{ setShowSearch(s=>!s); if(showSearch) setThreadSearch(''); }} title="Search in chat" style={{background:showSearch?COLORS.surfaceAlt:'none',border:'none',borderRadius:SQUIRCLE,width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <button className="inf-icon-btn" onClick={()=>{ setShowSearch(s=>!s); if(showSearch) setThreadSearch(''); }} title="Search in chat" style={{background:showSearch?COLORS.surfaceAlt:'transparent',border:'none',borderRadius:SQUIRCLE,width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={showSearch?COLORS.brand:COLORS.textSecondary} strokeWidth="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           </button>
-          <button onClick={()=>setShowChatInfo(true)} title="Chat info" style={{background:'none',border:'none',borderRadius:SQUIRCLE,width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
+          <button className="inf-icon-btn" onClick={()=>setShowChatInfo(true)} title="Chat info" style={{background:'transparent',border:'none',borderRadius:SQUIRCLE,width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2.2"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
           </button>
         </div>
@@ -11831,14 +11885,19 @@ unsub = onSnapshot(q, (snap) => {
         )}
       </AnimatePresence>
 
-      <div className="chat-wallpaper" style={activeTheme.bgTint ? {
+      <div ref={msgsScrollRef} onScroll={e=>{
+              const el = e.currentTarget;
+              const fromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+              setShowScrollDown(fromBottom > 240);
+              if (fromBottom <= 240) setNewBelowCount(0);
+            }} className="chat-wallpaper" style={activeTheme.bgTint ? {
               flex:1,overflowY:'auto',padding:'16px',backgroundColor:COLORS.bg,
               backgroundImage:`linear-gradient(${activeTheme.bgTint},${activeTheme.bgTint}), radial-gradient(${activeTheme.dotColor} 1px, transparent 1px)`,
-              backgroundSize:'220% 220%, 18px 18px',
+              backgroundSize:'220% 220%, 18px 18px', position:'relative',
             } : {
               flex:1,overflowY:'auto',padding:'16px',backgroundColor:wa.wallpaperBg,
               backgroundImage:whatsappWallpaperPattern(wa.wallpaperDoodle),
-              backgroundSize:'100px 100px',
+              backgroundSize:'100px 100px', position:'relative',
             }}>
         {messages.length===0&&<div style={{textAlign:'center',padding:40,color:COLORS.textTertiary,fontSize:13}}>Start a conversation! 👋</div>}
         {visibleMessages.length===0 && threadSearch.trim() && (
@@ -11874,12 +11933,13 @@ unsub = onSnapshot(q, (snap) => {
             <React.Fragment key={msg.id}>
             {dateDivider}
             <motion.div
+              ref={el => { if (el) msgRefsMap.current[msg.id] = el; }}
               variants={bubbleVariants} initial="hidden" animate="visible"
               onTouchStart={()=>{ msgLongTimer.current=setTimeout(()=>{ haptic('heavy'); setShowMsgReactions(msg.id); },500); }}
               onTouchEnd={()=>clearTimeout(msgLongTimer.current)}
               onMouseDown={()=>{ msgLongTimer.current=setTimeout(()=>setShowMsgReactions(msg.id),500); }}
               onMouseUp={()=>clearTimeout(msgLongTimer.current)}
-              style={{display:'flex',justifyContent:isMine?'flex-end':'flex-start',alignItems:'flex-end',gap:8,marginBottom:10,position:'relative'}}>
+              style={{display:'flex',justifyContent:isMine?'flex-end':'flex-start',alignItems:'flex-end',gap:8,marginBottom:10,position:'relative',borderRadius:14,transition:'background 0.4s ease',background: highlightMsgId===msg.id ? `${COLORS.brand}1A` : 'transparent'}}>
   {!isMine && (
     <div onClick={()=>onViewProfile?.(otherUser?.id)} style={{width:26,height:26,borderRadius:SQUIRCLE,background:otherUser?.avatarColor||COLORS.brand,display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontWeight:700,fontSize:10,flexShrink:0,cursor:'pointer',overflow:'hidden'}}>
       {otherUser?.avatarUrl ? <img loading="lazy" decoding="async" src={otherUser.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/> : otherUser?.avatar}
@@ -11893,7 +11953,15 @@ unsub = onSnapshot(q, (snap) => {
                     sent messages carry a 3px brand-gradient rail on their leading edge
                     instead of a solid fill block, so the thread reads as one continuous
                     glass surface with an identity marker rather than a two-tone chat log. */}
-                {msg.text && msg.type!=='sticker' && <div style={{background: msg.deleted ? COLORS.surfaceAlt : COLORS.surface, borderRadius:20, padding: isMine ? '9px 14px 9px 13px' : '9px 14px', marginBottom:msg.mediaUrl?4:0, boxShadow: isMine ? `inset 3px 0 0 0 ${activeTheme.accent || COLORS.brand}, ${SHADOW.xs}` : SHADOW.xs, border: `1px solid ${COLORS.border}`, position:'relative' }}>
+                {msg.text && msg.type!=='sticker' && <div style={{background: msg.deleted ? COLORS.surfaceAlt : COLORS.surface, borderRadius:20, padding: isMine ? '9px 14px 9px 13px' : '9px 14px', marginBottom:msg.mediaUrl?4:0, boxShadow: isMine ? `inset 3px 0 0 0 ${activeTheme.accent || COLORS.brand}, ${SHADOW.raised}` : SHADOW.xs, border: `1px solid ${isMine ? `${activeTheme.accent || COLORS.brand}1F` : COLORS.border}`, position:'relative' }}>
+  {msg.replyTo && (
+    <div onClick={()=>jumpToMessage(msg.replyTo.id)} style={{cursor:'pointer',background:COLORS.surfaceAlt,borderRadius:10,padding:'5px 9px',marginBottom:6,borderLeft:`2.5px solid ${activeTheme.accent || COLORS.brand}`,maxWidth:'100%'}}>
+      <div style={{color: activeTheme.accent || COLORS.brand, fontSize:10.5, fontWeight:700, marginBottom:1}}>
+        {msg.replyTo.from===currentUser?.id ? 'You' : `@${otherUser?.username||'user'}`}
+      </div>
+      <div style={{color:COLORS.textTertiary, fontSize:11.5, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{msg.replyTo.text}</div>
+    </div>
+  )}
   <span style={{color: msg.deleted ? COLORS.textTertiary : COLORS.textPrimary, fontSize:14, lineHeight:1.4, fontStyle: msg.deleted?'italic':'normal'}}>{msg.text}</span>
   {!msg.deleted && !isMine && <MessageTranslate text={msg.text} targetLang={currentUser?.language || 'en'} isMine={isMine} />}
 </div>}
@@ -11904,6 +11972,7 @@ unsub = onSnapshot(q, (snap) => {
   {msg.expireAt && (
     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2.2" style={{flexShrink:0}}><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
   )}
+  {msg.edited && <span style={{fontStyle:'italic',opacity:0.8}}>edited</span>}
   <span>{msg.ts ? msg.ts.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : ''}</span>
   {isMine && (
     <span style={{ fontSize:12, color: tickColor(msg.status==='seen'), letterSpacing:-2 }}>
@@ -11913,18 +11982,43 @@ unsub = onSnapshot(q, (snap) => {
 </div>
                 {/* Reaction picker */}
               {showMsgReactions===msg.id && (
-                <div onClick={e=>e.stopPropagation()} style={{position:'absolute',bottom:'100%',left:isMine?'auto':'0',right:isMine?'0':'auto',background:COLORS.surface,backdropFilter:'blur(20px)',borderRadius:40,padding:'6px 10px',display:'flex',gap:4,zIndex:100,border:`1px solid ${COLORS.border}`,animation:'popInBounce 0.25s ease',marginBottom:4,boxShadow:SHADOW.raised}}>
-                  {MSG_EMOJIS.map(emoji=>(
-                    <button key={emoji} onClick={async()=>{
-                      await updateDoc(doc(db,'messages',conversationId,'msgs',msg.id),{[`reactions.${currentUser.id}`]:emoji});
-                      setShowMsgReactions(null);
-                      haptic('light');
-                    }} style={{background:'none',border:'none',fontSize:24,cursor:'pointer',padding:'2px 4px',borderRadius:20,transition:'transform 0.15s'}}
-                    onMouseEnter={e=>e.currentTarget.style.transform='scale(1.3)'}
-                    onMouseLeave={e=>e.currentTarget.style.transform='scale(1)'}
-                    >{emoji}</button>
-                  ))}
-                  <button onClick={()=>setShowMsgReactions(null)} aria-label="Close" style={{background:COLORS.surfaceAlt,border:'none',borderRadius:'50%',width:28,height:28,color:COLORS.textSecondary,cursor:'pointer',fontSize:12,display:'flex',alignItems:'center',justifyContent:'center',marginLeft:4}}>✕</button>
+                <div onClick={e=>e.stopPropagation()} style={{position:'absolute',bottom:'100%',left:isMine?'auto':'0',right:isMine?'0':'auto',background:COLORS.surface,backdropFilter:'blur(20px)',borderRadius:22,padding:'8px',zIndex:100,border:`1px solid ${COLORS.border}`,animation:'popInBounce 0.25s ease',marginBottom:4,boxShadow:SHADOW.raised,display:'flex',flexDirection:'column',gap:6,minWidth:180}}>
+                  <div style={{display:'flex',gap:4}}>
+                    {MSG_EMOJIS.map(emoji=>(
+                      <button key={emoji} onClick={async()=>{
+                        await updateDoc(doc(db,'messages',conversationId,'msgs',msg.id),{[`reactions.${currentUser.id}`]:emoji});
+                        setShowMsgReactions(null);
+                        haptic('light');
+                      }} style={{background:'none',border:'none',fontSize:22,cursor:'pointer',padding:'2px 3px',borderRadius:20,transition:'transform 0.15s'}}
+                      onMouseEnter={e=>e.currentTarget.style.transform='scale(1.3)'}
+                      onMouseLeave={e=>e.currentTarget.style.transform='scale(1)'}
+                      >{emoji}</button>
+                    ))}
+                    <button onClick={()=>setShowMsgReactions(null)} aria-label="Close" style={{background:COLORS.surfaceAlt,border:'none',borderRadius:'50%',width:26,height:26,color:COLORS.textSecondary,cursor:'pointer',fontSize:11,display:'flex',alignItems:'center',justifyContent:'center',marginLeft:'auto',flexShrink:0}}>✕</button>
+                  </div>
+                  {!msg.deleted && msg.type!=='sticker' && (
+                    <div style={{display:'flex',flexDirection:'column',borderTop:`1px solid ${COLORS.border}`,paddingTop:6}}>
+                      <button onClick={()=>{
+                        setReplyTarget({ id: msg.id, text: msg.text || (msg.mediaUrl ? '📎 Attachment' : ''), from: msg.from });
+                        setEditingMessage(null);
+                        setShowMsgReactions(null);
+                      }} style={{background:'none',border:'none',color:COLORS.textPrimary,fontSize:13,fontWeight:600,cursor:'pointer',padding:'7px 8px',textAlign:'left',display:'flex',alignItems:'center',gap:8,borderRadius:10}}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2.2"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 00-4-4H4"/></svg>
+                        Reply
+                      </button>
+                      {isMine && msg.text && (
+                        <button onClick={()=>{
+                          setEditingMessage({ id: msg.id, text: msg.text });
+                          setReplyTarget(null);
+                          setText(msg.text);
+                          setShowMsgReactions(null);
+                        }} style={{background:'none',border:'none',color:COLORS.textPrimary,fontSize:13,fontWeight:600,cursor:'pointer',padding:'7px 8px',textAlign:'left',display:'flex',alignItems:'center',gap:8,borderRadius:10}}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.textSecondary} strokeWidth="2.2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z"/></svg>
+                          Edit
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -11952,7 +12046,7 @@ unsub = onSnapshot(q, (snap) => {
                 ) : null}
               </div>
               {isMine && (
-                <button aria-label="Delete message" onClick={async()=>{
+                <button className="inf-icon-btn" aria-label="Delete message" onClick={async()=>{
   const choice = await confirmDialog('Delete for everyone?');
   if(choice){
     await updateDoc(doc(db,'messages',conversationId,'msgs',msg.id), { 
@@ -11961,7 +12055,7 @@ unsub = onSnapshot(q, (snap) => {
       deleted: true 
     });
   }
-}} style={{background:'none',border:'none',color:COLORS.textDisabled,fontSize:10,cursor:'pointer',padding:'0 2px',alignSelf:'flex-end',marginBottom:2}}>✕</button>
+}} style={{background:'transparent',border:'none',borderRadius:'50%',width:22,height:22,display:'flex',alignItems:'center',justifyContent:'center',color:COLORS.textDisabled,fontSize:11,cursor:'pointer',alignSelf:'flex-end',marginBottom:2,flexShrink:0}}>✕</button>
               )}
             </motion.div>
             </React.Fragment>
@@ -11980,13 +12074,42 @@ unsub = onSnapshot(q, (snap) => {
         <div ref={bottomRef}/>
       </div>
 
+      <AnimatePresence>
+        {showScrollDown && (
+          <motion.button
+            initial={{ opacity:0, scale:0.6, y:10 }} animate={{ opacity:1, scale:1, y:0 }} exit={{ opacity:0, scale:0.6, y:10 }}
+            transition={springs.snappy}
+            onClick={()=>{ bottomRef.current?.scrollIntoView({ behavior:'smooth' }); setShowScrollDown(false); setNewBelowCount(0); }}
+            className="inf-icon-btn" aria-label="Scroll to latest"
+            style={{position:'absolute',right:16,bottom:96,width:38,height:38,borderRadius:SQUIRCLE,background:COLORS.surface,border:`1px solid ${COLORS.border}`,boxShadow:SHADOW.raised,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',zIndex:5}}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.textPrimary} strokeWidth="2.4"><polyline points="6 9 12 15 18 9"/></svg>
+          </motion.button>
+        )}
+      </AnimatePresence>
+
+      {(replyTarget || editingMessage) && (
+        <div style={{padding:'0 14px 6px'}}>
+          <div style={{display:'flex',alignItems:'center',gap:10,background:COLORS.surface,border:`1px solid ${COLORS.border}`,borderRadius:14,padding:'8px 12px',boxShadow:SHADOW.xs,borderLeft:`3px solid ${activeTheme.accent || COLORS.brand}`}}>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{color: activeTheme.accent || COLORS.brand, fontSize:11.5, fontWeight:700}}>
+                {editingMessage ? 'Editing message' : (replyTarget.from===currentUser?.id ? 'Replying to yourself' : `Replying to @${otherUser?.username||'user'}`)}
+              </div>
+              <div style={{color:COLORS.textTertiary,fontSize:12.5,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                {editingMessage ? editingMessage.text : replyTarget.text}
+              </div>
+            </div>
+            <button className="inf-icon-btn" onClick={()=>{ if(editingMessage){ setEditingMessage(null); setText(''); } else { setReplyTarget(null); } }} aria-label="Cancel" style={{background:COLORS.surfaceAlt,border:'none',borderRadius:'50%',width:22,height:22,color:COLORS.brand,cursor:'pointer',fontSize:13,flexShrink:0}}>✕</button>
+          </div>
+        </div>
+      )}
+
       {(previewFile||audioBlob)&&(
         <div style={{padding:'0 14px 6px'}}>
           <div style={{display:'flex',alignItems:'center',gap:10,background:COLORS.surface,border:`1px solid ${COLORS.border}`,borderRadius:14,padding:'8px 12px',boxShadow:SHADOW.xs}}>
             {previewFile?.type?.startsWith('image')&&<img loading="lazy" decoding="async" src={previewFile.url} alt="" style={{height:44,width:44,objectFit:'cover',borderRadius:8}}/>}
             {previewFile?.type?.startsWith('video')&&<video src={previewFile.url} style={{height:44,width:60,objectFit:'cover',borderRadius:8}}/>}
             {audioBlob&&!previewFile&&<audio src={URL.createObjectURL(audioBlob)} controls style={{height:28,flex:1}}/>}
-            <button onClick={clearAttach} aria-label="Remove attachment" style={{marginLeft:'auto',background:COLORS.surfaceAlt,border:'none',borderRadius:'50%',width:22,height:22,color:COLORS.brand,cursor:'pointer',fontSize:13}}>✕</button>
+            <button className="inf-icon-btn" onClick={clearAttach} aria-label="Remove attachment" style={{marginLeft:'auto',background:COLORS.surfaceAlt,border:'none',borderRadius:'50%',width:22,height:22,color:COLORS.brand,cursor:'pointer',fontSize:13}}>✕</button>
           </div>
         </div>
       )}
@@ -12043,16 +12166,16 @@ unsub = onSnapshot(q, (snap) => {
           bottom chrome. This is the messaging module's signature move. */}
       <div style={{padding:'6px 14px',paddingBottom:'max(18px, env(safe-area-inset-bottom))',background:'transparent',display:'flex',gap:8,alignItems:'center'}}>
         {chatVoiceState === 'idle' && (
-          <div style={{flex:1,minWidth:0,display:'flex',alignItems:'center',gap:2,background:composerBarBg,borderRadius:28,padding:'4px 6px 4px 14px',boxShadow:SHADOW.raised,border:`1px solid ${COLORS.border}`}}>
+          <div className="inf-composer-pill" style={{flex:1,minWidth:0,display:'flex',alignItems:'center',gap:2,background:composerBarBg,borderRadius:28,padding:'4px 6px 4px 14px',boxShadow:SHADOW.raised,border:`1px solid ${COLORS.border}`}}>
             <input value={text} onChange={e=>{
               setText(e.target.value);
               if (smartReplies.length) setSmartReplies([]);
               setDoc(doc(db,'typing',conversationId),{[currentUser.id]:serverTimestamp()},{merge:true}).catch(()=>{});
-            }} onKeyDown={e=>e.key==='Enter'&&handleSend()} placeholder="Message" style={{flex:1,minWidth:0,background:'none',border:'none',outline:'none',color:COLORS.textPrimary,fontSize:13.5,padding:'10px 4px'}}/>
-            <button onClick={()=>fileInputRef.current?.click()} aria-label="Attach photo" style={{background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:6}}>
+            }} onKeyDown={e=>e.key==='Enter'&&handleSend()} placeholder={editingMessage ? "Edit message" : "Message"} style={{flex:1,minWidth:0,background:'none',border:'none',outline:'none',color:COLORS.textPrimary,fontSize:13.5,padding:'10px 4px'}}/>
+            <button className="inf-icon-btn" onClick={()=>fileInputRef.current?.click()} aria-label="Attach photo" style={{background:'transparent',border:'none',borderRadius:'50%',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,width:30,height:30}}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
             </button>
-            <button onClick={openChatCamera} aria-label="Take photo" style={{background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:6}}>
+            <button className="inf-icon-btn" onClick={openChatCamera} aria-label="Take photo" style={{background:'transparent',border:'none',borderRadius:'50%',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,width:30,height:30}}>
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
             </button>
           </div>
@@ -12061,8 +12184,10 @@ unsub = onSnapshot(q, (snap) => {
         <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={pickFile} style={{display:'none'}}/>
         <AnimatePresence initial={false}>
         {(text.trim() || previewFile) ? (
-          <motion.button key="send" initial={{ scale:0.5, opacity:0 }} animate={{ scale:1, opacity:1 }} exit={{ scale:0.5, opacity:0 }} transition={springs.snappy} whileTap={tapScale} onClick={handleSend} aria-label="Send message" style={{background:railGradient,border:'none',borderRadius:SQUIRCLE,width:44,height:44,color:'white',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,boxShadow:SHADOW.glow(activeTheme.accent || COLORS.brand)}}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M6 12h13"/><path d="M13 6l7 6-7 6"/></svg>
+          <motion.button key="send" initial={{ scale:0.5, opacity:0 }} animate={{ scale:1, opacity:1 }} exit={{ scale:0.5, opacity:0 }} transition={springs.snappy} whileTap={tapScale} onClick={handleSend} aria-label={editingMessage ? "Save edit" : "Send message"} style={{background:railGradient,border:'none',borderRadius:SQUIRCLE,width:44,height:44,color:'white',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,boxShadow:SHADOW.glow(activeTheme.accent || COLORS.brand)}}>
+            {editingMessage
+              ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M6 12h13"/><path d="M13 6l7 6-7 6"/></svg>}
           </motion.button>
         ) : (
           // Same key ("voice") stays mounted across idle → recording → preview so the
@@ -12805,7 +12930,7 @@ snap.docs.forEach(async conv => {
           </button>
         </div>
         {/* Inline search */}
-        <div style={{ display:'flex', alignItems:'center', background:COLORS.surfaceAlt, borderRadius:INF_SQUIRCLE, padding:'10px 14px', gap:8, marginBottom:12 }}>
+        <div className="inf-composer-pill" style={{ display:'flex', alignItems:'center', background:COLORS.surfaceAlt, borderRadius:INF_SQUIRCLE, padding:'10px 14px', gap:8, marginBottom:12, border:'1px solid transparent' }}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={COLORS.textTertiary} strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input
             placeholder="Search chats"
