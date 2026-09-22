@@ -1,0 +1,13 @@
+{
+  "name": "ገበያ Link",
+  "short_name": "ገበያ Link",
+  "description": "Sell, stock and credit book for Ethiopian shops.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F4F7F2",
+  "theme_color": "#1E6B45",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
