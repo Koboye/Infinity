@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body {
+  padding: 0;
+  margin: 0;
+  background: var(--app-bg, #F4F7F2);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  font-family: 'Noto Sans Ethiopic', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  scroll-padding-top: env(safe-area-inset-top, 0px);
+}
+
+* { box-sizing: border-box; }
+
+:focus-visible {
+  outline: 2px solid #0E7A55;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.tnum { font-variant-numeric: tabular-nums; }
+
+.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+input, button, textarea, select { font-family: inherit; }
+input::placeholder { color: inherit; opacity: 0.55; }
+
+/* Responsive shell: on phones the app fills the viewport edge-to-edge (unchanged
+   behaviour). On tablets/desktop it's centered in a phone-proportioned frame so
+   the layout — built for a phone screen — never stretches into an unreadable,
+   full-bleed mess on a laptop browser. */
+.app-frame-outer {
+  min-height: 100dvh;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  background: var(--app-bg, #F4F7F5);
+}
+.app-frame {
+  width: 100%;
+  min-height: 100dvh;
+  position: relative;
+}
+@media (min-width: 720px) {
+  .app-frame-outer {
+    align-items: center;
+    background: #0F1613;
+    padding: 32px 0;
+  }
+  .app-frame {
+    width: 420px;
+    height: min(880px, 96dvh);
+    border-radius: 32px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    box-shadow: 0 30px 70px rgba(0,0,0,0.45), 0 0 0 8px #1a2320;
+    /* Establishes a containing block so the app's internally position:fixed
+       elements (tab bar, full-screen sheets) dock to the edges of this
+       frame instead of escaping to cover the whole browser viewport. */
+    transform: translateZ(0);
+    contain: layout;
+  }
+  .app-frame > div { min-height: 100% !important; }
+}

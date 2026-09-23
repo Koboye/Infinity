@@ -1,0 +1,13 @@
+{
+  "name": "Altimate",
+  "short_name": "Altimate",
+  "description": "Sales, inventory, credit and reports for your business.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F4F7F5",
+  "theme_color": "#0B4A3D",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
