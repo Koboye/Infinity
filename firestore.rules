@@ -1,0 +1,16 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Everything in Dimts is written by the server (Admin SDK bypasses rules).
+    // The browser may only read its own data.
+    match /dimtsJobs/{jobId} {
+      allow read: if request.auth != null && request.auth.uid == resource.data.uid;
+      allow write: if false;
+    }
+    match /users/{userId}/dimts/{docId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false;
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}

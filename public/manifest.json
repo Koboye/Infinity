@@ -1,0 +1,3 @@
+{ "name": "Dimts · ድምጽ", "short_name": "Dimts", "description": "Hear the world in Amharic, in every speaker's own voice.",
+  "start_url": "/", "display": "standalone", "background_color": "#F5F8FF", "theme_color": "#0B5FFF", "orientation": "portrait",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }] }

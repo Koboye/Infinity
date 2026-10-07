@@ -1,0 +1,7 @@
+html, body { padding: 0; margin: 0; background: var(--app-bg, #F5F8FF); }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+button { font-family: inherit; }
+.spin { animation: dSpin .8s linear infinite; }
+@keyframes dSpin { to { transform: rotate(360deg); } }
