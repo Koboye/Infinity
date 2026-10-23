@@ -1,4 +1,0 @@
-1. Go to @BotFather.
-2. Execute /newbot.
-3. Grab HTTP API token for .env file.
-4. Execute /newapp and connect to cloud endpoint domain.
