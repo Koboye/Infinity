@@ -1,0 +1,8 @@
+{
+  "name": "Gebeta & Dama King",
+  "short_name": "GebetaKing",
+  "theme_color": "#006738",
+  "background_color": "#FFCD00",
+  "display": "standalone",
+  "start_url": "/"
+}

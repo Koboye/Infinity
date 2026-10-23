@@ -1,0 +1,2 @@
+Deploy using docker-compose on Ubuntu LTS Instance.
+Ensure ports 80 and 443 are mapped with Certbot Let's Encrypt certificates.

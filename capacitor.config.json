@@ -1,0 +1,6 @@
+{
+  "appId": "app.gebeta.king",
+  "appName": "Gebeta & Dama King",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}

@@ -1,0 +1,5 @@
+{
+  "users": "ObjectId, username, telegramId, eloRating, rankName, xp, inventory",
+  "tournaments": "ObjectId, prizePoolStars, resetAt, matches",
+  "ledger": "ObjectId, userId, transactionType, starAmount, reference"
+}
