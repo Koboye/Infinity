@@ -1,0 +1,51 @@
+/* v13 — design polish layer. Purely additive: it only refines what globals/royal/v11 already draw. */
+
+/* ── touch comfort ── */
+.icon-btn { width: 44px; height: 44px; }
+.topbar { padding-top: max(10px, env(safe-area-inset-top)); padding-left: max(14px, env(safe-area-inset-left)); padding-right: max(14px, env(safe-area-inset-right)); }
+.screen { padding-bottom: max(28px, env(safe-area-inset-bottom)); }
+button, .btn, .menu-item, .icon-btn { transition: transform .12s ease, box-shadow .2s ease, background-color .2s ease, border-color .2s ease, filter .2s ease; }
+.btn:active:not(:disabled), .icon-btn:active { transform: translateY(1px) scale(.98); }
+:focus-visible { outline: 3px solid var(--gold-hi, #FFE9A6); outline-offset: 3px; border-radius: 12px; }
+
+/* ── menus: a gentle lift on hover / press ── */
+@media (hover: hover) { .menu-item:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(0,0,0,.4), inset 0 0 0 3px rgba(0,0,0,.28), inset 0 0 0 4px rgba(233,182,74,.35); } }
+.menu-item:active:not(:disabled) { transform: translateY(1px) scale(.99); }
+
+/* ── the turn line becomes a clear pill with a live dot ── */
+.match .status:not(:empty) {
+  align-self: center; display: inline-flex; align-items: center; gap: 8px; padding: 4px 16px; border-radius: 99px;
+  background: rgba(0,0,0,.28); border: 1px solid rgba(233,182,74,.28); box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+}
+.match .status:not(:empty)::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 8px 2px rgba(233,182,74,.7); animation: v13dot 1.6s ease-in-out infinite; }
+@keyframes v13dot { 50% { transform: scale(.55); opacity: .5; } }
+
+/* ── player on the clock: a soft halo, not just a border ── */
+.pcard.on { box-shadow: 0 0 0 1px rgba(233,182,74,.55), 0 0 22px rgba(233,182,74,.28); }
+.pcard .pscore { transition: transform .25s cubic-bezier(.3,1.6,.5,1); }
+
+/* ── banking a family: the pile that is receiving stones glows and breathes ── */
+.pit.store.hot { animation: v13bank .5s ease-out; }
+@keyframes v13bank { 0% { transform: scale(1); } 35% { transform: scale(1.045); filter: brightness(1.25); } 100% { transform: scale(1); } }
+
+/* ── banner flashes: a springier entrance ── */
+.flash { text-shadow: 0 1px 0 rgba(255,255,255,.35); letter-spacing: .01em; }
+
+/* ── dialogs & results: frosted backdrop, crisper edge ── */
+.overlay { -webkit-backdrop-filter: blur(6px) saturate(1.1); backdrop-filter: blur(6px) saturate(1.1); }
+.result, .dialog { box-shadow: 0 24px 60px rgba(0,0,0,.55), 0 0 0 1px rgba(233,182,74,.25), inset 0 1px 0 rgba(255,255,255,.08); }
+
+/* ── Bingo: the called ball glows, the BINGO button breathes when you are ready ── */
+.bingo-caller .bball { box-shadow: 0 6px 18px rgba(0,0,0,.45), 0 0 22px rgba(255,255,255,.12); }
+.bingo-btn:not(:disabled) { animation: v13ready 2.4s ease-in-out infinite; }
+@keyframes v13ready { 50% { filter: brightness(1.12); } }
+
+/* ── the decorative border strip catches the light slowly ── */
+.tibeb { background-size: 200% 100%; animation: v13shine 14s linear infinite; }
+@keyframes v13shine { to { background-position: 200% 0; } }
+
+/* ── respect people who asked for calm ── */
+@media (prefers-reduced-motion: reduce) {
+  .match .status:not(:empty)::before, .pit.store.hot, .bingo-btn:not(:disabled), .tibeb { animation: none; }
+  button, .btn, .menu-item, .icon-btn { transition: none; }
+}
