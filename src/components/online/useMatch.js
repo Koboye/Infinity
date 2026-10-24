@@ -1,0 +1,64 @@
+'use client';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { apiCall } from '@/lib/firebase';
+import { EMOTES } from '@/lib/i18n';
+import { sfx } from '@/lib/sound';
+
+export const setSaved = (code) => { try { code ? localStorage.setItem('gebeta.room', code) : localStorage.removeItem('gebeta.room'); } catch {} };
+
+/**
+ * Everything every online game shares: seat, turn timer, claiming a win when the opponent
+ * runs out of time, emotes, resign, rematch and the end-of-match sound.
+ * `busy` = the game's animator is still replaying a move (we hold the result overlay until it ends).
+ */
+export function useMatchLifecycle({ t, lang, room, uid, code, busy, onExit, onSwitchRoom, confirm }) {
+  const [err, setErr] = useState('');
+  const [now, setNow] = useState(Date.now());
+  const [emotes, setEmotes] = useState({});
+  const claimed = useRef(false);
+  const doneSound = useRef(false);
+
+  useEffect(() => { setSaved(code); }, [code]);
+  useEffect(() => { const id = setInterval(() => setNow(Date.now()), 500); return () => clearInterval(id); }, []);
+
+  const seat = room.players.indexOf(uid);
+  const playing = room.status === 'playing';
+  const myTurn = playing && room.turn === seat && room.phase !== 'roundOver';
+  const secondsLeft = playing && room.deadline ? Math.max(0, Math.ceil((room.deadline - now) / 1000)) : null;
+
+  // Opponent ran out of time → claim the win (the server re-checks the clock).
+  useEffect(() => {
+    if (!playing || room.turn === seat || secondsLeft !== 0 || claimed.current) return;
+    claimed.current = true;
+    apiCall({ action: 'timeout', code }).catch(() => { claimed.current = false; });
+  }, [playing, room.turn, seat, secondsLeft, code]);
+  useEffect(() => { claimed.current = false; }, [room.moveSeq]);
+
+  const finished = room.status === 'finished' && !busy;
+  useEffect(() => {
+    if (!finished || doneSound.current) return;
+    doneSound.current = true; setSaved(null);
+    room.winner === seat ? sfx.win() : room.winner === 'draw' ? sfx.tap() : sfx.lose();
+  }, [finished, room.winner, seat]);
+
+  // Emotes from either player
+  const emoteAt = room.emote?.at;
+  useEffect(() => {
+    const e = room.emote;
+    if (!e || Date.now() - e.at >= 4000) return;
+    const def = EMOTES.find((x) => x.id === e.id);
+    if (!def) return;
+    setEmotes((m) => ({ ...m, [e.by]: { text: def[lang] || def.en, k: e.at } }));
+    const id = setTimeout(() => setEmotes((m) => (m[e.by]?.k === e.at ? { ...m, [e.by]: null } : m)), 3200);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [emoteAt]);
+
+  const api = useCallback(async (body) => { try { setErr(''); return await apiCall({ code, ...body }); } catch (e) { setErr(e.message); throw e; } }, [code]);
+  const resign = async () => { if (await confirm(t.resignConfirm)) { try { await api({ action: 'resign' }); } catch {} } };
+  const sendEmote = (id) => apiCall({ action: 'emote', code, id }).catch(() => {});
+  const rematch = async () => { try { const r = await api({ action: 'rematch' }); setSaved(null); onSwitchRoom(r.code); } catch {} };
+  const exit = () => { setSaved(null); onExit(); };
+
+  return { seat, playing, myTurn, secondsLeft, err, setErr, emotes, finished, now, api, resign, sendEmote, rematch, exit };
+}
