@@ -1,0 +1,147 @@
+/* ═════ v11 — tidy Gebeta storage, frozen holes, compact landscape chips, Bingo ═════ */
+
+/* Stones are stored in concentric rings inside a circle that is centred in the hole (round or oval), so a hole
+   always looks like a neat little tray. Size comes from the packing (--s) and is measured against the smaller side. */
+.pit .seed {
+  --r: calc(var(--s, .25) * 50cqmin);
+  width: calc(var(--s, .25) * 100cqmin) !important; aspect-ratio: 1;
+  left: calc(50% + var(--x, 0) * (50cqmin - var(--r) - 5cqmin)) !important;
+  top: calc(50% + var(--y, 0) * (50cqmin - var(--r) - 5cqmin)) !important;
+  rotate: 0deg;
+}
+.pit.store .seed { left: calc(50% + var(--x, 0) * (50cqw - var(--r) - 5cqmin)) !important; top: calc(50% + var(--y, 0) * (50cqh - var(--r) - 5cqmin)) !important; }
+[data-stone="pebble"] .seed.v1 { rotate: 24deg; } [data-stone="pebble"] .seed.v2 { rotate: -18deg; }
+[data-stone="shell"] .seed.v1 { rotate: 16deg; } [data-stone="shell"] .seed.v2 { rotate: -16deg; }
+.pit .seed { animation-duration: .3s; }
+
+/* a clean groove between the two rows of holes */
+.match .board::after { content: ''; position: absolute; left: 6%; right: 6%; top: 50%; height: 3px; transform: translateY(-50%); border-radius: 3px; background: linear-gradient(90deg, transparent, rgba(0,0,0,.45), transparent); pointer-events: none; }
+@media (orientation: portrait) { .match .board::after { left: 50%; right: auto; top: 6%; bottom: 6%; width: 3px; height: auto; transform: translateX(-50%); background: linear-gradient(180deg, transparent, rgba(0,0,0,.45), transparent); } }
+
+/* a frozen hole: nobody can lift it, and a sowing that ends on it ends the turn */
+.pit.frozen:not(.store) {
+  background: radial-gradient(circle at 50% 36%, #0b1d2b 0%, #1d4258 55%, #6aa7c4 100%) !important;
+  box-shadow: inset 0 7px 12px rgba(0,0,0,.7), inset 0 0 14px rgba(190,235,255,.45), 0 0 0 3px #9fd8f0, 0 0 14px 2px rgba(150,220,255,.45);
+}
+.pit.frozen .seed { filter: saturate(.55) brightness(1.08); }
+.pit .frostmark { position: absolute; right: 8%; top: 4%; font-size: min(26cqmin, 1.2rem); color: #d9f4ff; text-shadow: 0 0 6px #7fd0ff; pointer-events: none; z-index: 3; }
+
+/* landscape phones: player chips become slim rows above / below the board instead of covering it */
+@media (orientation: landscape) and (max-height: 640px) {
+  .match > .board-wrap { inset: 38px 0; }
+  .match > .pcard { flex-direction: row !important; align-items: center; gap: 8px; height: 34px; padding: 2px 10px; max-width: 46%; }
+  .match > .pcard .pname { max-width: 12ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .match > .pcard .hero { width: 24px; height: 24px; font-size: .85rem; flex: none; }
+  .match > .pcard .stone-dot, .match > .pcard .side-dot { flex: none; }
+  .match > .pcard .pscore { margin-left: auto; font-size: 1.05rem; }
+  .match > .match-actions { top: 2px; right: 2px; }
+  .match > .match-actions .btn { height: 30px; min-height: 0; padding: 0 12px; line-height: 1; }
+  .match > .status { bottom: 4px; max-width: 40%; font-size: .8rem; }
+}
+
+/* turn clock */
+.turnclock { position: relative; height: 5px; margin: 0 6px; border-radius: 99px; background: rgba(0,0,0,.35); overflow: hidden; flex: none; }
+.turnclock > i { position: absolute; inset: 0 auto 0 0; border-radius: 99px; background: linear-gradient(90deg, #4FA36B, #F2B632); transition: width .25s linear; }
+.turnclock.low > i { background: var(--red, #C23B2A); }
+
+.gamepick { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.gp { padding: 8px 2px 7px; min-width: 0; }
+.gp b { font-size: .84rem; }
+
+/* ═════ Bingo ═════ */
+.match > .board-wrap.bingo-wrap { place-items: stretch; container-type: normal; display: flex; justify-content: center; overflow: hidden; }
+.bingo {
+  --b0: #3B6FD0; --b1: #C23B2A; --b2: #F2B632; --b3: #4FA36B; --b4: #8E3FD1;
+  width: 100%; height: 100%; max-width: 520px; margin: 0 auto; padding: 8px; box-sizing: border-box; min-height: 0;
+  display: grid; gap: 8px; grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr) auto auto; align-content: start;
+  border-radius: 22px; border: 3px solid var(--ebony, #1a0d06);
+  background: linear-gradient(160deg, #3b2b57 0%, #261a3d 55%, #170f26 100%); box-shadow: 0 10px 0 #0e0818, 0 22px 30px rgba(0,0,0,.5), inset 0 2px 0 rgba(255,255,255,.14);
+  position: relative;
+}
+.bingo::before { content: ''; position: absolute; inset: 6px; border-radius: 17px; border: 2px solid rgba(233,182,74,.5); pointer-events: none; }
+.l0 { --lc: var(--b0); } .l1 { --lc: var(--b1); } .l2 { --lc: var(--b2); } .l3 { --lc: var(--b3); } .l4 { --lc: var(--b4); } .l5 { --lc: #777; }
+
+.bingo-caller { display: flex; align-items: center; gap: 12px; padding: 4px 6px; }
+.bball { position: relative; flex: none; width: 74px; height: 74px; border-radius: 50%; display: grid; place-items: center; align-content: center;
+  background: var(--lc); color: #fff; box-shadow: 0 6px 0 rgba(0,0,0,.35), inset 0 -6px 10px rgba(0,0,0,.28); animation: ballIn .5s cubic-bezier(.2,.9,.3,1.25); }
+.bball::after { content: ''; position: absolute; inset: 12%; border-radius: 50%; background: #fffdf3; z-index: 0; }
+.bball small, .bball b { position: relative; z-index: 1; color: #1b1209; line-height: 1; }
+.bball small { font: 900 .8rem var(--font-latin); color: var(--lc); filter: brightness(.8); }
+.bball b { font: 900 1.75rem var(--font-latin); }
+@keyframes ballIn { 0% { transform: translateY(-40px) scale(.4) rotate(-90deg); opacity: 0; } 70% { transform: translateY(4px) scale(1.08); opacity: 1; } 100% { transform: none; } }
+.bcall-meta { flex: 1; min-width: 0; display: grid; gap: 5px; }
+.bnext { position: relative; display: block; height: 16px; border-radius: 99px; background: rgba(0,0,0,.4); overflow: hidden; }
+.bnext i { position: absolute; inset: 0 auto 0 0; width: var(--p, 0%); background: linear-gradient(90deg, #4FA36B, #F2B632); transition: width 1s linear; }
+.bnext em { position: absolute; inset: 0; display: grid; place-items: center; font: 800 .72rem var(--font-ui); font-style: normal; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.7); }
+.brecent { display: flex; gap: 4px; min-height: 22px; }
+.bchip { font: 800 .7rem var(--font-ui); padding: 2px 7px; border-radius: 99px; background: var(--lc); color: #fff; text-shadow: 0 1px 1px rgba(0,0,0,.4); }
+.bcount { font: 600 .74rem var(--font-ui); color: var(--ivory-dim, #cdbf9c); }
+
+.bcard { overflow: hidden; display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: auto repeat(5, 1fr); gap: 5px; min-height: 0; padding: 4px 4px 2px; }
+.bhead { text-align: center; font: 900 1.1rem var(--font-latin); color: #fff; background: var(--lc); border-radius: 10px 10px 4px 4px; padding: 2px 0; text-shadow: 0 1px 2px rgba(0,0,0,.4); }
+.bcell { position: relative; border: 0; border-radius: 10px; background: linear-gradient(180deg, #fffaf0, #eadfc4); color: #2a1a05; font: 800 clamp(1rem, 4.6vmin, 1.7rem) var(--font-latin); font-variant-numeric: tabular-nums;
+  box-shadow: 0 3px 0 #a99668, inset 0 1px 0 #fff; touch-action: manipulation; transition: transform .1s, background .2s; min-height: 0; }
+.bcell:active { transform: translateY(2px); box-shadow: 0 1px 0 #a99668; }
+.bcell.on { background: radial-gradient(circle at 50% 50%, var(--gold, #F2B632) 0 34%, transparent 35%), linear-gradient(180deg, #fffaf0, #eadfc4); color: #7a4a00; }
+.bcell.on::after { content: ''; position: absolute; inset: 14%; border-radius: 50%; border: 3px solid #C23B2A; background: rgba(194,59,42,.2); animation: dab .25s ease-out; }
+.bcell.free { color: #b07a00; }
+.bcell.free:not(.on) { background: linear-gradient(180deg, #fff1c7, #f0d98c); }
+.bcell.win { animation: bwin .8s ease-in-out infinite; }
+.bcell.shake { animation: bshake .35s; }
+@keyframes dab { 0% { transform: scale(2); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes bwin { 50% { transform: scale(1.1); filter: brightness(1.2); } }
+@keyframes bshake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+
+.bingo-btn { border: 0; border-radius: 16px; padding: 12px 10px; font: 900 1.4rem var(--font-latin); letter-spacing: .08em; color: #2a1503; background: var(--foil, linear-gradient(135deg, #FFF0B8, #E9B64A 55%, #A9741A));
+  box-shadow: 0 5px 0 #7a520f, 0 10px 18px rgba(0,0,0,.4); touch-action: manipulation; }
+.bingo-btn:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 2px 0 #7a520f; }
+.bingo-btn:disabled { filter: grayscale(.8) brightness(.7); }
+
+.bside { display: flex; gap: 10px; align-items: center; }
+.bmini { flex: none; display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; width: 62px; padding: 4px; border-radius: 8px; background: rgba(0,0,0,.35); }
+.bmini i { aspect-ratio: 1; border-radius: 2px; background: rgba(255,255,255,.18); }
+.bmini i.on { background: var(--red, #C23B2A); } .bmini i.win { background: #fff; }
+.bsheet { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.brow { display: grid; grid-template-columns: 1.1em repeat(15, 1fr); gap: 1px; align-items: center; }
+.brow b { font: 900 .6rem var(--font-latin); color: #fff; background: var(--lc); border-radius: 3px; text-align: center; }
+.brow i { font: 600 .44rem var(--font-ui); font-style: normal; text-align: center; padding: 1px 0; border-radius: 2px; color: rgba(255,255,255,.25); background: rgba(255,255,255,.05); }
+.brow i.on { color: #1b1209; background: var(--gold, #F2B632); font-weight: 800; }
+
+/* wide screens / landscape: caller + sheet on the left, the card on the right */
+@media (orientation: landscape) and (min-width: 640px) {
+  .bcell { font-size: clamp(.9rem, 5.2vmin, 1.6rem); }
+  .bingo { max-width: 960px; grid-template-columns: minmax(200px, 1fr) minmax(0, 1.25fr); grid-template-rows: auto minmax(0, 1fr) auto; align-content: stretch; }
+  .bingo-caller { grid-column: 1; grid-row: 1; }
+  .bcard { grid-column: 2; grid-row: 1 / span 3; }
+  .bingo-btn { grid-column: 1; grid-row: 3; }
+  .bside { grid-column: 1; grid-row: 2; flex-direction: column; align-items: stretch; justify-content: center; }
+  .bmini { width: 54px; }
+  .brow i { font-size: .5rem; }
+}
+.bdemo-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; max-width: 220px; margin: 0 auto; }
+.bdemo-grid .bcell.mini { min-height: 0; aspect-ratio: 1; display: grid; place-items: center; font-size: .85rem; border-radius: 7px; }
+.bdemo-grid .bhead { font-size: .8rem; }
+.bingodemo { padding: 10px 0; }
+.btn.on { border-color: var(--gold, #F2B632); background: rgba(233,182,74,.2); }
+
+/* Dama huff: the pieces the opponent may remove (they missed a capture) */
+.ck-piece.pick .ck-face { outline: 3px solid #ff5a4d; outline-offset: 2px; box-shadow: 0 0 14px 4px rgba(255,90,77,.75); animation: pulse .9s infinite; }
+.sq.pick { box-shadow: inset 0 0 0 3px rgba(255,90,77,.85); cursor: pointer; }
+
+/* v13: one-touch holes — taps are never swallowed by a disabled button, and a touch fires on press */
+.pit { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: manipulation; }
+.pit[aria-disabled="true"] { cursor: default; }
+.pit:active:not([aria-disabled="true"]) { transform: scale(.95); }
+/* optional helper (Settings → Show ready fours): a green tick on every four you may collect */
+.pit .readymark { display: none; }
+html[data-assist="on"] .pit.ready .readymark {
+  display: grid; place-items: center; position: absolute; right: 6%; top: 4%; width: min(34cqmin, 1.5rem); height: min(34cqmin, 1.5rem);
+  border-radius: 50%; background: #2fbf71; color: #052a14; font-weight: 800; font-size: min(24cqmin, 1rem); pointer-events: none; z-index: 3;
+  box-shadow: 0 0 0 2px #eafff2, 0 0 10px 2px rgba(80,230,140,.8); animation: pulse 1s infinite;
+}
+.pit.pending { box-shadow: inset 0 7px 12px rgba(0,0,0,.8), 0 0 0 3px #7CE0A8; }
+
+/* v13: turn clock bar — a thin strip along the bottom of the player card that is on the clock; it drains and turns red */
+.match .pcard.clocked { background-image: linear-gradient(90deg, #7CE0A8, #F2B632); background-repeat: no-repeat; background-position: 0 100%; background-size: calc(var(--p, 1) * 100%) 4px; transition: background-size .5s linear; }
+.match .pcard.clocked:has(.timer.low) { background-image: linear-gradient(90deg, #ff8a70, #e23b2a); }
+@media (prefers-reduced-motion: reduce) { .match .pcard.clocked { transition: none; } }

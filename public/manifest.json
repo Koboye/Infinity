@@ -1,0 +1,71 @@
+{
+  "name": "ገበጣ · ዳማ · ዱምና",
+  "short_name": "ገበጣ",
+  "description": "Play ገበጣ (Gebeta), ዳማ (Dama) and ዱምና (Dumna) online with friends or against the computer.",
+  "start_url": "/",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#0E3B2C",
+  "theme_color": "#0E3B2C",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "id": "/",
+  "lang": "am",
+  "dir": "ltr",
+  "scope": "/",
+  "categories": [
+    "games",
+    "board",
+    "entertainment"
+  ],
+  "shortcuts": [
+    {
+      "name": "ገበጣ",
+      "url": "/?game=gebeta",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "ዳማ",
+      "url": "/?game=checkers",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "ዱምና",
+      "url": "/?game=dominoes",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}
