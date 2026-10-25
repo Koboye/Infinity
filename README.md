@@ -143,3 +143,9 @@ tests/                     engine, rooms, API tests with an in-memory Firestore 
 - `src/app/v39.css`, loaded last: drifting diamond-weave backdrop with a per-game accent glow (`<html data-game>` + `--game-accent`), glass top bar / panels / dialogs, chunky bevelled 3D buttons, glowing pulsing selection cards, docked pill tab bar on Home, glass player cards and status pills in every game.
 - Fixes found by screenshot on a 390 px phone: the Home demo board no longer spills past its frame; long titles stay on one line; dock chips fit.
 - Original artwork and palette (no third-party assets or branding).
+
+## Coin economy — limits to know about (v47)
+- **Not cheat-proof.** The wallet is stored on the phone, so someone technical could edit their coins or set the clock forward for extra spins. For online matches where real people compete, the server should hold the balance. That needs a Firebase backend change (planned).
+- **One wallet per device.** It isn't tied to the sign-in account, so coins don't follow a player to another phone. A second account on the same phone does not get a second welcome gift.
+- **Pass & Play** (two people on one phone) charges the fee and pays the winner's prize back into the same wallet, so it costs 10% per game.
+- **No coin top-ups.** The 1,000 welcome gift and the daily lucky spins are the only ways to earn coins. A player who runs out waits for the next day's spins. A daily top-up or a "double your coins" option would be easy to add.
