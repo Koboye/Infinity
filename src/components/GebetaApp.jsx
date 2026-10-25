@@ -12,6 +12,7 @@ import CheckersLocal from './checkers/CheckersLocal';
 import DominoesLocal from './dominoes/DominoesLocal';
 import BingoGame from './bingo/BingoGame';
 import LudoGame from './ludo/LudoGame';
+import ModesScreen from './ModesScreen';
 import OnlineRoom from './online/OnlineRoom';
 import { Home, Setup, RulesScreen, AuthForm, Lobby, Leaders, ProfileScreen, ProgressScreen, SettingsScreen, Tibeb } from './Screens';
 import { isPlayable, GAMES } from '@/lib/games.js';
@@ -109,7 +110,7 @@ export default function GebetaApp() {
   const confirm = useCallback((message) => new Promise((resolve) => setDialog({ message, resolve })), []);
   const go = (name, extra = {}) => {
     // a coming-soon game (Dominoes) has no play, setup, rules, online or leaderboard screens
-    if (['ai', 'pass', 'online', 'leaders', 'rules'].includes(name) && !isPlayable(game)) return;
+    if (['modes', 'ai', 'pass', 'online', 'leaders', 'rules'].includes(name) && !isPlayable(game)) return;
     if (name === 'game' && !isPlayable(extra.game)) return;
     // starting a game is a tap, so the browser lets us take the whole screen right now
     if ((name === 'game' || name === 'room') && !document.fullscreenElement) document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }).catch(() => {});
@@ -134,7 +135,7 @@ export default function GebetaApp() {
   const uid = user?.uid;
 
   const gname = t[`${game}Name`];
-  const titles = { game: gname, ai: `${gname} · ${t.playComputer}`, pass: `${gname} · ${t.passPlay}`, online: `${gname} · ${t.playFriendOnline}`, leaders: `${gname} · ${t.leaderboard}`, rules: `${gname} · ${t.rules}`, profile: t.profile, progress: t.progress, settings: t.settings };
+  const titles = { modes: gname, game: gname, ai: `${gname} · ${t.playComputer}`, pass: `${gname} · ${t.passPlay}`, online: `${gname} · ${t.playFriendOnline}`, leaders: `${gname} · ${t.leaderboard}`, rules: `${gname} · ${t.rules}`, profile: t.profile, progress: t.progress, settings: t.settings };
   const inGame = view.name === 'game' || view.name === 'room';
 
   // Full-screen play ground: the page chrome shrinks away and, where the browser allows it, the whole screen is used.
@@ -162,7 +163,8 @@ export default function GebetaApp() {
 
   let body;
   switch (view.name) {
-    case 'home': body = <Home t={t} go={go} onlineOn={onlineAvailable} user={user} profile={profile} game={game} onPickGame={pickGame} />; break;
+    case 'home': body = <Home t={t} go={go} onlineOn={onlineAvailable} user={user} profile={profile} game={game} onPickGame={(g) => { pickGame(g); if (isPlayable(g)) go('modes'); }} />; break;
+    case 'modes': body = <ModesScreen t={t} game={game} go={go} onlineOn={onlineAvailable} />; break;
     case 'ai': case 'pass': body = <Setup t={t} mode={view.name} game={game} onStart={(o) => go('game', { mode: view.name, game, ...o })} />; break;
     case 'game': {
       const P = { t, mode: view.mode, level: view.level, ruleset: view.ruleset, opts: view.opts || {}, me, onExit: home, onLeave: leaveGame };
@@ -189,7 +191,7 @@ export default function GebetaApp() {
       <Tibeb />
       <header className="topbar">
         {view.name === 'home' ? <span className="topbar-spacer" /> :
-          <button className="icon-btn" onClick={view.name === 'game' ? leaveGame : home} aria-label={t.backHome}>‹</button>}
+          <button className="icon-btn" onClick={view.name === 'game' ? leaveGame : ['ai', 'pass', 'online', 'leaders', 'rules'].includes(view.name) ? () => go('modes') : home} aria-label={t.backHome}>‹</button>}
         <h2 className="topbar-title">{view.name === 'home' ? '' : titles[view.name] || (view.name === 'room' ? `# ${view.code}` : 'ገበጣ')}</h2>
         <div className="topbar-actions">
           <div className="lang-switch" role="group" aria-label={t.language}>

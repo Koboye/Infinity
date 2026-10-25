@@ -174,7 +174,6 @@ export function Home({ t, go, onlineOn, user, profile, game, onPickGame }) {
           <p>{t.comingSoonSub(t[`${game}Name`])}</p>
         </div>
       )}
-      {!soon && <ActionRail t={t} go={go} offlineOnly={offlineOnly} noPass={!!gameInfo(game).noPass} />}
       <SwipeRail className="rail-dock" label="More" dots={false} itemClass="dock-item" value={-1}
         items={[{ id: 'progress' }, ...(!offlineOnly && !soon ? [{ id: 'leaders' }] : []), ...(!soon ? [{ id: 'rules' }] : []), { id: 'profile' }]}
         renderItem={({ id }) => (

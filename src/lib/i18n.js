@@ -2,6 +2,7 @@ export const STRINGS = {
   en: {
     appName: 'ገበጣ', subtitle: 'Classic games, Ethiopian style',
     playComputer: 'Play the computer', playComputerSub: 'Practice offline, three levels',
+    chooseMode: 'Choose how to play', badgeOffline: 'Offline', badgeOnline: 'Online',
     playFriendOnline: 'Play online', playFriendOnlineSub: 'Quick match or invite a friend with a code',
     passPlay: 'Two players, one phone', passPlaySub: 'Pass the device between turns',
     leaderboard: 'Leaderboard', profile: 'Profile', rules: 'How to play', settings: 'Settings',
@@ -146,6 +147,7 @@ export const STRINGS = {
   am: {
     appName: 'ገበጣ', subtitle: 'ክላሲክ ጨዋታዎች በኢትዮጵያ ዘይቤ',
     playComputer: 'ከኮምፒውተር ጋር ተጫወት', playComputerSub: 'ያለ ኢንተርኔት፣ ሦስት ደረጃዎች',
+    chooseMode: 'እንዴት መጫወት ይፈልጋሉ?', badgeOffline: 'ያለ ኢንተርኔት', badgeOnline: 'በኢንተርኔት',
     playFriendOnline: 'በኢንተርኔት ተጫወት', playFriendOnlineSub: 'ፈጣን ጨዋታ ወይም በኮድ ጓደኛ ጋብዝ',
     passPlay: 'ሁለት ተጫዋች፣ አንድ ስልክ', passPlaySub: 'ተራ በተራ ስልኩን ተቀባበሉ',
     leaderboard: 'የደረጃ ሰንጠረዥ', profile: 'መገለጫ', rules: 'ሕግጋት', settings: 'ቅንብሮች',

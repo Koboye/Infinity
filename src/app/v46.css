@@ -1,0 +1,27 @@
+/* v46 "Choose How To Play" — second screen after picking a game: big two-per-row mode tiles. */
+.modes { max-width: 640px; margin-inline: auto; padding: 4px 6px 24px; display: grid; gap: 16px; }
+.modes-hero { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 26px; border: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  background: radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--accent) 38%, #1a1550), #0c0a2e 70%); box-shadow: 0 10px 28px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.18); }
+.modes-badge { flex: none; width: 76px; height: 76px; border-radius: 22px; display: grid; place-items: center; background: radial-gradient(circle at 35% 25%, rgba(255,255,255,.35), rgba(0,0,0,.25)); box-shadow: 0 0 26px color-mix(in srgb, var(--accent) 60%, transparent), inset 0 -4px 8px rgba(0,0,0,.3); }
+.modes-hero h1 { margin: 0; font-size: clamp(1.7rem, 8vw, 2.3rem); color: var(--accent); text-shadow: 0 3px 0 rgba(0,0,0,.35); }
+.modes-hero p { margin: 2px 0 0; opacity: .8; font-weight: 700; }
+
+.modes-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.modes-grid .mode-tile:last-child:nth-child(odd) { grid-column: 1 / -1; }
+.mode-tile { position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; color: #fff; font: inherit; cursor: pointer;
+  padding: 26px 10px 16px; border-radius: 26px; border: 2.5px solid rgba(255,255,255,.28);
+  background: linear-gradient(165deg, color-mix(in srgb, var(--c) 92%, #fff 8%) 0%, color-mix(in srgb, var(--c) 62%, #000) 100%);
+  box-shadow: 0 8px 0 color-mix(in srgb, var(--c) 38%, #000), 0 16px 26px rgba(0,0,0,.38), inset 0 2px 0 rgba(255,255,255,.4);
+  transition: transform .12s, box-shadow .12s; animation: mode-in .45s cubic-bezier(.2,.9,.3,1.15) both; animation-delay: calc(var(--i) * 70ms); -webkit-tap-highlight-color: transparent; }
+.mode-tile.big { min-height: 190px; } .mode-tile.small { min-height: 150px; }
+.mode-tile::before { content: ''; position: absolute; inset: 0 0 52% 0; background: linear-gradient(180deg, rgba(255,255,255,.28), transparent); pointer-events: none; }
+.mode-tile:active { transform: translateY(6px); box-shadow: 0 2px 0 color-mix(in srgb, var(--c) 38%, #000), 0 6px 12px rgba(0,0,0,.4), inset 0 2px 0 rgba(255,255,255,.4); }
+.mode-ico { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; font-size: 2rem; background: radial-gradient(circle at 35% 28%, rgba(255,255,255,.55), rgba(255,255,255,.1) 60%); box-shadow: 0 6px 12px rgba(0,0,0,.3), inset 0 -3px 6px rgba(0,0,0,.2); }
+.mode-title { font-size: 1.05rem; line-height: 1.15; text-shadow: 0 2px 0 rgba(0,0,0,.35); }
+.mode-sub { font-size: .74rem; line-height: 1.3; opacity: .92; max-width: 16ch; }
+.mode-tag { position: absolute; top: 9px; right: 9px; padding: 3px 9px; border-radius: 99px; font-size: .66rem; font-weight: 900; background: rgba(0,0,0,.38); border: 1px solid rgba(255,255,255,.3); }
+.mode-tag.live::before { content: ''; display: inline-block; width: 7px; height: 7px; margin-right: 5px; border-radius: 50%; background: #6BE3A4; box-shadow: 0 0 8px #6BE3A4; animation: mode-live 1.4s ease-in-out infinite; }
+@keyframes mode-in { from { opacity: 0; transform: translateY(18px) scale(.94); } to { opacity: 1; transform: none; } }
+@keyframes mode-live { 50% { opacity: .35; } }
+@media (max-width: 360px) { .mode-tile.big { min-height: 170px; } .mode-ico { width: 54px; height: 54px; font-size: 1.7rem; } }
+@media (prefers-reduced-motion: reduce) { .mode-tile, .mode-tag.live::before { animation: none; } }
