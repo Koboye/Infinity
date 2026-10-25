@@ -9,11 +9,13 @@ import {
 import { auth, db, googleProvider, apiCall } from '@/lib/firebase';
 import { newGame, playMove, collectAll } from '@/lib/gebeta/engine.js';
 import { chooseMove } from '@/lib/gebeta/ai.js';
+import SwipePicker from '@/components/SwipePicker';
 import { newGame as ckNew, playMove as ckPlay, legalMoves as ckLegal } from '@/lib/checkers/engine.js';
 import { chooseCheckersMove } from '@/lib/checkers/ai.js';
 import { HEROES, heroById } from '@/lib/i18n';
 import { GAME_LIST, GAMES, gameInfo, statFields } from '@/lib/games.js';
 import { GameIcon } from './GameIcons';
+import SwipeRail from './SwipeRail';
 import CheckersBoard from './checkers/CheckersBoard';
 import { useCheckersAnimator } from './checkers/useCheckersAnimator';
 import { Tile } from './dominoes/Tile';
@@ -101,16 +103,16 @@ function DominoDemo() {
 }
 
 export function GamePicker({ t, game, onPick }) {
+  const idx = Math.max(0, GAME_LIST.indexOf(game));
   return (
-    <div className="gamepick" role="tablist" aria-label={t.pickGame}>
-      {GAME_LIST.map((id) => (
-        <button key={id} role="tab" aria-selected={game === id} className={`gp${game === id ? ' on' : ''}${GAMES[id].comingSoon ? ' soon' : ''}`} onClick={() => onPick(id)} style={{ '--accent': GAMES[id].accent }}>
-          <GameIcon game={id} size={40} />
+    <SwipeRail className="rail-games" label={t.pickGame} items={GAME_LIST.map((id) => ({ id }))} value={idx} selectOnSwipe onSelect={(i) => onPick(GAME_LIST[i])}
+      renderItem={({ id }, i, on) => (
+        <button type="button" className={`gp gp-card${on ? ' on' : ''}${GAMES[id].comingSoon ? ' soon' : ''}`} onClick={() => onPick(id)} style={{ '--accent': GAMES[id].accent }}>
+          <GameIcon game={id} size={44} />
           <b>{t[`${id}Name`]}</b>
           <small>{GAMES[id].comingSoon ? t.comingSoon : t[`${id}Tag`]}</small>
         </button>
-      ))}
-    </div>
+      )} />
   );
 }
 
@@ -123,6 +125,28 @@ function DailyCard({ t, onPick }) {
       <GameIcon game={st.g} size={34} />
       <span><b>📅 {t.daily}</b><span>{st.done ? t.dailyDone : t.dailySub(t[`${st.g}Name`])}</span></span>
     </button>
+  );
+}
+
+function ActionRail({ t, go, offlineOnly, noPass }) {
+  const items = [
+    ...(!offlineOnly ? [{ id: 'online', c: '#FF5C8A', icon: '🌍', title: t.playFriendOnline, sub: t.playFriendOnlineSub }] : []),
+    { id: 'ai', c: '#F2B632', icon: '🤖', title: t.playComputer, sub: t.playComputerSub },
+    ...(!noPass ? [{ id: 'pass', c: '#35E0C2', icon: '🤝', title: t.passPlay, sub: t.passPlaySub }] : []),
+  ];
+  const [cur, setCur] = useState(() => Math.max(0, items.findIndex((x) => x.id === 'ai')));
+  return (
+    <>
+      <SwipeRail className="rail-actions" label="Play" items={items} value={cur} onSettle={setCur} onSelect={(i) => setCur(i)}
+        renderItem={(it) => (
+          <button type="button" className="act-card" style={{ '--c': it.c }} onClick={() => go(it.id)}>
+            <span className="act-icon" aria-hidden="true">{it.icon}</span>
+            <span className="act-txt"><b>{it.title}</b><small>{it.sub}</small></span>
+            <span className="act-go" aria-hidden="true">›</span>
+          </button>
+        )} />
+      {items.length > 1 && <p className="swipe-hint" aria-hidden="true">‹ {t.swipeHint} ›</p>}
+    </>
   );
 }
 
@@ -149,27 +173,17 @@ export function Home({ t, go, onlineOn, user, profile, game, onPickGame }) {
           <p>{t.comingSoonSub(t[`${game}Name`])}</p>
         </div>
       )}
-      {!soon && <nav className="menu" aria-label="Menu">
-        {!offlineOnly && (
-        <button className="menu-item primary" onClick={() => go('online')}>
-          <span className="mi-title">{t.playFriendOnline}</span><span className="mi-sub">{t.playFriendOnlineSub}</span>
-        </button>)}
-        <button className={`menu-item${offlineOnly ? ' primary' : ''}`} onClick={() => go('ai')}>
-          <span className="mi-title">{t.playComputer}</span><span className="mi-sub">{t.playComputerSub}</span>
-        </button>
-        {!gameInfo(game).noPass && (
-        <button className="menu-item" onClick={() => go('pass')}>
-          <span className="mi-title">{t.passPlay}</span><span className="mi-sub">{t.passPlaySub}</span>
-        </button>)}
-      </nav>}
-      <div className="menu-row">
-        <button className="btn" onClick={() => go('progress')}>🔥 {t.progress}</button>
-        {!offlineOnly && !soon && <button className="btn" onClick={() => go('leaders')}>{t.leaderboard}</button>}
-        {!soon && <button className="btn" onClick={() => go('rules')}>{t.rules}</button>}
-        <button className="btn" onClick={() => go('profile')}>
-          {user ? <><span className="mini-hero" style={{ background: hero.color }}>{hero.glyph}</span> {profile?.displayName || t.profile}</> : t.profile}
-        </button>
-      </div>
+      {!soon && <ActionRail t={t} go={go} offlineOnly={offlineOnly} noPass={!!gameInfo(game).noPass} />}
+      <SwipeRail className="rail-dock" label="More" dots={false} itemClass="dock-item" value={-1}
+        items={[{ id: 'progress' }, ...(!offlineOnly && !soon ? [{ id: 'leaders' }] : []), ...(!soon ? [{ id: 'rules' }] : []), { id: 'profile' }]}
+        renderItem={({ id }) => (
+          <button type="button" className={`dock-chip dc-${id}`} onClick={() => go(id)}>
+            {id === 'progress' && <>🔥 {t.progress}</>}
+            {id === 'leaders' && <>🏆 {t.leaderboard}</>}
+            {id === 'rules' && <>📖 {t.rules}</>}
+            {id === 'profile' && (user ? <><span className="mini-hero" style={{ background: hero.color }}>{hero.glyph}</span> {profile?.displayName || t.profile}</> : <>👤 {t.profile}</>)}
+          </button>
+        )} />
     </div>
   );
 }
@@ -187,14 +201,11 @@ export function Setup({ t, mode, game, onStart }) {
   return (
     <div className="panel">
       {mode === 'ai' && (
-        <fieldset className="seg-group">
-          <legend>{t.playComputer}</legend>
-          <div className="seg">
-            {['easy', 'medium', 'hard'].map((l) => (
-              <button key={l} className={level === l ? 'on' : ''} onClick={() => setLevel(l)} aria-pressed={level === l}>{t[l]}</button>
-            ))}
-          </div>
-        </fieldset>
+        <SwipePicker
+          label={t.levelTitle} prevLabel={t.swipePrev} nextLabel={t.swipeNext}
+          value={level} onChange={setLevel}
+          items={LEVELS.map((l) => ({ id: l.id, title: t[l.id], sub: t.levelSub[l.id], pips: l.pips, tone: l.tone }))}
+        />
       )}
       <RulesetPicker t={t} game={game} value={ruleset} onChange={setRuleset} />
       {game === 'dominoes' && <TargetPicker t={t} value={target} onChange={setTarget} />}
@@ -215,27 +226,22 @@ export function Setup({ t, mode, game, onStart }) {
           </div>
         </fieldset>
       )}
-      <button className="btn primary wide" onClick={() => onStart({ level, ruleset, target, opts: { ultra, suddenDeath: sudden, careless, cards: numCards } })}>{mode === 'ai' ? t.playComputer : t.passPlay}</button>
+      <button className="btn primary wide start-cta" onClick={() => onStart({ level, ruleset, target, opts: { ultra, suddenDeath: sudden, careless, cards: numCards } })}>{mode === 'ai' ? t.playComputer : t.passPlay}</button>
     </div>
   );
 }
 
+const TONES = ['#FFB020', '#35E0C2', '#FF5C8A', '#8A78FF', '#7BE06B', '#FF8A4C'];
+const LEVELS = [{ id: 'easy', pips: 1, tone: '#7BE06B' }, { id: 'medium', pips: 2, tone: '#FFB020' }, { id: 'hard', pips: 3, tone: '#FF5C8A' }];
+
 export function RulesetPicker({ t, game, value, onChange }) {
   if (gameInfo(game).rulesets.length < 2) return null; // only one way to play — nothing to choose
   return (
-    <fieldset className="seg-group">
-      <legend>{t.ruleset}</legend>
-      <div className="cards2">
-        {gameInfo(game).rulesets.map((id) => {
-          const [name, sub] = t.rs[game][id];
-          return (
-            <button key={id} className={`opt${value === id ? ' on' : ''}`} onClick={() => onChange(id)} aria-pressed={value === id}>
-              <b>{name}</b><span>{sub}</span>
-            </button>
-          );
-        })}
-      </div>
-    </fieldset>
+    <SwipePicker
+      label={t.gameTypeTitle} prevLabel={t.swipePrev} nextLabel={t.swipeNext}
+      value={value} onChange={onChange}
+      items={gameInfo(game).rulesets.map((id, k) => { const [name, sub] = t.rs[game][id]; return { id, title: name, sub: t.rsShort?.[game]?.[id] || sub, tone: TONES[k % TONES.length] }; })}
+    />
   );
 }
 

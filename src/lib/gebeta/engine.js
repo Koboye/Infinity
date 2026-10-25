@@ -102,7 +102,12 @@ export function nextSlot(pos) {
 export function legalMoves(state, seat = state.turn) {
   if (state.over) return [];
   // Tuz opening: the starter taps one of HIS OWN holes whose opposite hole is the opponent's (the Tuz forms there, never on his own holes)
-  if (state.opening && seat === state.turn) return holesOf(state, seat).filter((i) => state.pits[i] > 0 && flagOf(state, i) === 0 && (state.own ? state.own[oppositeOf(i)] : (oppositeOf(i) <= 6 ? 0 : 1)) !== seat);
+  // ...and the opponent must still have a stone he can lift once that hole is frozen (otherwise the game would dead-lock after the opening)
+  if (state.opening && seat === state.turn) {
+    const ownerAt = (h) => (state.own ? state.own[h] : (h <= 6 ? 0 : 1));
+    return holesOf(state, seat).filter((i) => state.pits[i] > 0 && flagOf(state, i) === 0 && ownerAt(oppositeOf(i)) !== seat
+      && holesOf(state, 1 - seat).some((h) => h !== oppositeOf(i) && state.pits[h] > 0 && flagOf(state, h) === 0));
+  }
   return holesOf(state, seat).filter((i) => state.pits[i] > 0 && flagOf(state, i) === 0);
 }
 
@@ -235,7 +240,10 @@ export function playMove(state, pit, rulesetId = 'gebeta', schedule = [], autoSe
     for (let j = 1; j <= d; j++) { const h = RING[(k0 + j) % 12]; w.push({ t: 'sow', i: h }); if (j < d) w.push({ t: 'lift1', i: h }); }
     w.push({ t: 'tuztake', i: tgt, store: STORE[seat0], n: 1, by: seat0, empty: false, opening: true }); // the carried stone goes to the pile
     w.push({ t: 'tuz', i: tgt, by: seat0, opening: true });
-    return { ok: true, state: o, steps: w, extraTurn: false, captured: FAMILY, newRound: false };
+    // the opening may freeze the opponent's ONLY hole (a lopsided deal): a player with nothing to lift is skipped, as in every other move
+    const skip = !holesOf(o, 1 - seat0).some((i) => o.pits[i] > 0 && flagOf(o, i) === 0);
+    if (skip) o.turn = seat0;
+    return { ok: true, state: o, steps: w, extraTurn: skip, captured: FAMILY, newRound: false };
   }
   if (!Number.isInteger(pit) || !holesOf(state, state.turn).includes(pit)) return { ok: false, error: 'Not your pit' };
   if (state.pits[pit] === 0) return { ok: false, error: 'Pit is empty' };
@@ -418,8 +426,11 @@ export function playMove(state, pit, rulesetId = 'gebeta', schedule = [], autoSe
       // the opener alternates: whoever did not open this round opens the next one
       next.turn = 1 - (state.starter === 0 || state.starter === 1 ? state.starter : seat);
       next.starter = next.turn;
+      if (rules.tuz) next.opening = true; // ጡዝ: every round starts like the game does — the new opener plays the Tuz opening from one of HIS OWN holes
       for (let k = 0; k < 14; k++) { p[k] = dealt.pits[k]; fl[k] = 0; }
       next.own = dealt.own;
+      // ጡዝ: if the new opener has no hole facing an opponent hole (a lopsided deal), there is nothing to open — the round starts normally
+      if (rules.tuz && !legalMoves({ ...next, opening: true }, next.turn).length) next.opening = false;
       newRound = true;
     }
   } else {

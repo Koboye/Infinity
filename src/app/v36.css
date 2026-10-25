@@ -1,0 +1,73 @@
+/* v36 — release-level setup screen: swipeable Level / Game-type cards, colour-coded, thumb-reachable Start button.
+   Styling only. Loaded LAST. Every card carries its own dark "Midnight & Ember" surface so it reads on any game theme. */
+
+.swipe { --ink: #0B0A1E; --ink2: #1B1646; --ivory: #FFF6E3; margin: 6px -6px 18px; }
+.swipe-head { display: flex; align-items: baseline; justify-content: space-between; padding: 0 10px 8px; }
+.swipe-label { font: 900 .78rem/1 var(--font-display, inherit); letter-spacing: .14em; text-transform: uppercase; opacity: .85; }
+.swipe-count { font: 800 .78rem/1 var(--font-display, inherit); opacity: .6; font-variant-numeric: tabular-nums; }
+
+.swipe-stage { position: relative; }
+.swipe-track {
+  display: flex; gap: 12px; overflow-x: auto; overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+  padding: 10px 14% 14px;               /* side padding lets the first/last card sit in the middle, neighbours peek in */
+  touch-action: pan-x pan-y;
+}
+.swipe-track::-webkit-scrollbar { display: none; }
+.swipe-track:focus-within { outline: none; }
+
+.swipe-card {
+  --tone: #FFB020;
+  flex: 0 0 100%; max-width: 100%; min-height: 148px; scroll-snap-align: center; scroll-snap-stop: always;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center;
+  padding: 18px 16px; border-radius: 22px; cursor: pointer; color: var(--ivory); font: inherit;
+  background: linear-gradient(160deg, var(--ink2) 0%, var(--ink) 100%);
+  border: 2px solid color-mix(in srgb, var(--tone) 35%, transparent);
+  box-shadow: 0 8px 18px rgba(0,0,0,.35);
+  opacity: .55; transform: scale(.92);
+  transition: transform .28s cubic-bezier(.2,.9,.3,1.2), opacity .2s, border-color .2s, box-shadow .25s;
+  -webkit-tap-highlight-color: transparent;
+}
+.swipe-card.on {
+  opacity: 1; transform: scale(1); border-color: var(--tone);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--tone) 26%, var(--ink2)) 0%, var(--ink) 100%);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--tone) 28%, transparent), 0 14px 30px rgba(0,0,0,.5), 0 0 30px color-mix(in srgb, var(--tone) 40%, transparent);
+}
+.swipe-card:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+.sc-glyph { font-size: 1.8rem; line-height: 1; }
+.sc-title { font: 900 1.5rem/1.1 var(--font-display, inherit); letter-spacing: .02em; color: var(--tone); text-shadow: 0 0 18px color-mix(in srgb, var(--tone) 45%, transparent); }
+.sc-sub { font-size: .9rem; line-height: 1.35; opacity: .88; max-width: 30ch; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* difficulty pips */
+.sc-pips { display: inline-flex; gap: 6px; }
+.sc-pips i { width: 26px; height: 8px; border-radius: 99px; background: rgba(255,255,255,.16); transition: background .2s, box-shadow .2s; }
+.sc-pips i.f { background: var(--tone); box-shadow: 0 0 10px color-mix(in srgb, var(--tone) 70%, transparent); }
+
+/* arrows for mouse / desktop; hidden on touch devices where swiping is the gesture */
+.swipe-arrow {
+  position: absolute; top: 50%; transform: translateY(-58%); z-index: 2; width: 38px; height: 38px; border-radius: 50%;
+  display: none; place-items: center; font: 900 1.6rem/1 var(--font-display, inherit); padding: 0 0 4px;
+  color: #2a1500; background: linear-gradient(180deg, #FFE29A, #FFB020); border: 2px solid #2a1500; box-shadow: 0 3px 0 #C46A00, 0 6px 12px rgba(0,0,0,.35); cursor: pointer;
+}
+.swipe-arrow.l { left: 2px; } .swipe-arrow.r { right: 2px; }
+.swipe-arrow:disabled { opacity: .25; cursor: default; }
+@media (hover: hover) and (pointer: fine) { .swipe-arrow { display: grid; } }
+
+/* dots */
+.swipe-dots { display: flex; justify-content: center; gap: 8px; padding-top: 2px; }
+.swipe-dots i { width: 8px; height: 8px; border-radius: 99px; background: rgba(255,255,255,.28); transition: width .25s, background .25s, box-shadow .25s; }
+.swipe-dots i.on { width: 26px; background: var(--tone, #FFB020); box-shadow: 0 0 10px color-mix(in srgb, var(--tone, #FFB020) 70%, transparent); }
+
+/* Start: pill, ember, always reachable with the thumb */
+.panel .start-cta {
+  position: sticky; bottom: max(12px, env(safe-area-inset-bottom, 0px)); z-index: 3; margin-top: 8px;
+  min-height: 56px; border-radius: 99px; font: 900 1rem/1 var(--font-display, inherit); letter-spacing: .1em; text-transform: uppercase;
+  color: #2a1500; background: linear-gradient(180deg, #FFE29A, #FFB020); border: 2px solid #2a1500;
+  box-shadow: 0 5px 0 #C46A00, 0 12px 24px rgba(0,0,0,.4);
+  transition: transform .08s, box-shadow .08s, filter .15s;
+}
+.panel .start-cta:hover { filter: brightness(1.07); }
+.panel .start-cta:active { transform: translateY(4px); box-shadow: 0 1px 0 #C46A00; }
+
+@media (max-width: 380px) { .swipe-track { padding-inline: 10%; } .sc-title { font-size: 1.3rem; } }
+@media (prefers-reduced-motion: reduce) { .swipe-card, .sc-pips i, .swipe-dots i { transition: none; } }

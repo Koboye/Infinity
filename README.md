@@ -128,3 +128,9 @@ tests/                     engine, rooms, API tests with an in-memory Firestore 
 
 ## v35 — rule-by-rule audit of ጡዝ
 `tests/tuz-rulebook.test.mjs` has one test per rule of the rulebook: own Tuz (no capture, turn ends), emptied Tuz (receives stones, a last stone there captures the single stone placed), capturing from the opponent's Tuz (**exactly two stones**, the rest stays frozen, play again), ownership (nobody can lift a Tuz), creating several Tuz (last stone on an opponent hole holding exactly three), and a last stone in an empty hole ending the turn. This corrects v33, which also took the landing stone.
+
+## v36 — ጡዝ rules completed + release-level swipe UI
+- **Every ጡዝ round opens like the game does:** after a re-deal the new opener plays the Tuz opening from one of his own holes. If a lopsided deal leaves him no hole facing an opponent hole, the round starts normally.
+- **Fixed a deadlock:** an opening that froze the opponent's only hole left him with nothing to lift. A player with nothing to lift is now skipped after the opening too, as after any other move.
+- Tests: `tests/tuz-rulebook.test.mjs` rule 8 (30 random games, 1000+ new rounds, always a legal move, 48 stones kept).
+- **Swipeable UI:** `SwipePicker` (level / game type) and new `SwipeRail` (games, play modes, bottom dock): snap scrolling, mouse drag, keyboard, dots, colour-coded cards, sticky Start button. Styles: `v36.css`, `v36-rails.css`.
