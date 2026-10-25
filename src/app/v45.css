@@ -1,0 +1,48 @@
+/* v45 "Everything Visible" — Ludo-King-style: no hidden sideways lists. Games, play modes, levels and game types are big tap tiles you can see at once; the bottom bar is a fixed 4-tab bar. */
+
+/* kill every swipe affordance */
+.rail-dots, .swipe-dots, .swipe-arrow, .swipe-hint, .swipe-count { display: none !important; }
+
+/* ── rails → grids ── */
+.rail-wrap { margin: 0 0 12px; }
+.rail-wrap .rail { display: grid; gap: 10px; overflow: visible; scroll-snap-type: none; padding: 4px 2px; cursor: auto; touch-action: auto; }
+.rail-wrap .rail-item { opacity: 1; transform: none; min-width: 0; scroll-snap-align: none; }
+.rail-wrap .rail:focus-visible { outline: none; }
+
+/* 1) game picker: 3 columns of chunky tiles (5 games = 3 + 2) */
+.rail-games .rail { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.rail-games .rail-item .gp-card { width: 100%; min-height: 118px; padding: 12px 6px; border-radius: 20px; gap: 6px; border: 2.5px solid color-mix(in srgb, var(--accent) 45%, transparent); box-shadow: 0 6px 0 rgba(0,0,0,.35), 0 12px 20px rgba(0,0,0,.3); }
+.rail-games .rail-item .gp-card b { font-size: .98rem; line-height: 1.1; text-align: center; }
+.rail-games .rail-item .gp-card small { font-size: .68rem; text-align: center; line-height: 1.2; }
+.rail-games .rail-item .gp-card.on { transform: translateY(-3px) scale(1.04); border-color: var(--accent); background: linear-gradient(160deg, color-mix(in srgb, var(--accent) 38%, #1a1550), #0F0C2E); }
+.rail-games .rail-item .gp-card:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,.35); }
+
+/* 2) play modes: two big buttons per row */
+.rail-actions .rail { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.rail-actions .rail-item .act-card { width: 100%; height: 100%; min-height: 128px; flex-direction: column; text-align: center; justify-content: center; gap: 8px; padding: 14px 10px; border-radius: 22px; border: 2.5px solid var(--card-line); box-shadow: 0 6px 0 rgba(0,0,0,.35), 0 12px 20px rgba(0,0,0,.3); }
+.rail-actions .rail-item:only-child, .rail-actions .rail-item:nth-child(odd):last-child { grid-column: 1 / -1; }
+.rail-actions .act-go { display: none; }
+
+/* 3) bottom bar: fixed equal tabs, always inside the screen */
+.rail-dock { position: sticky; bottom: max(6px, env(safe-area-inset-bottom)); z-index: 30; margin: 8px 0 0; padding: 6px; border-radius: 22px; background: linear-gradient(180deg, #1c1a5e, #0c0a2e); border: 1.5px solid var(--card-line); box-shadow: 0 -4px 20px rgba(0,0,0,.4); }
+.rail-dock .rail { grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 4px; padding: 0; }
+.rail-dock .rail-item { flex: initial; }
+.rail-dock .dock-chip { width: 100%; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 4px 2px; border-radius: 16px; font-size: .7rem; font-weight: 800; line-height: 1.1; text-align: center; white-space: normal; overflow-wrap: anywhere; background: transparent; border: 0; color: inherit; }
+.rail-dock .dock-chip:active { background: rgba(255,226,154,.16); }
+
+/* ── pickers in Setup (level, game type, target) → visible tiles ── */
+.swipe-track { display: grid !important; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 10px; overflow: visible !important; scroll-snap-type: none !important; padding: 4px 2px !important; }
+.swipe-track .swipe-card { width: auto !important; min-width: 0; flex: initial !important; min-height: 112px; padding: 10px 6px; border-radius: 20px; opacity: 1 !important; transform: none !important; scroll-snap-align: none; animation: none; box-shadow: 0 6px 0 rgba(0,0,0,.35); }
+.swipe-track .swipe-card.on { border-color: var(--tone, #FFB020); background: linear-gradient(160deg, color-mix(in srgb, var(--tone, #FFB020) 34%, #1a1550), #0F0C2E); transform: translateY(-2px) !important; }
+.swipe-card .sc-title { font-size: 1.05rem; text-align: center; } .swipe-card .sc-sub { font-size: .68rem; text-align: center; line-height: 1.25; }
+.swipe-head { padding-bottom: 6px; }
+
+/* ── Home fits one screen ── */
+.home .brand { margin-bottom: 6px; }
+.home .brand-am { font-size: clamp(2.6rem, 14vw, 4rem); line-height: 1; }
+.home .brand-en { font-size: .85rem; margin: 2px 0 6px; }
+.home .crest { width: 44px; height: auto; }
+.home .demo, .home .ckdemo, .home .bingodemo, .home .bdemo-grid, .home .domdemo { display: none; }
+html[data-size="lg"] .home .demo, html[data-size="lg"] .home .ckdemo, html[data-size="lg"] .home .bingodemo { display: block; }
+.home { max-width: 640px; margin-inline: auto; }
+@media (max-width: 360px) { .rail-games .rail { grid-template-columns: repeat(2, minmax(0, 1fr)); } .rail-dock .dock-chip { font-size: .64rem; } }
