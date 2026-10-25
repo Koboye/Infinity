@@ -21,6 +21,7 @@ import './v36-rails.css';
 import './v39.css';
 import './v40.css';
 import './v41.css';
+import './v42.css';
 import RegisterSW from '@/components/RegisterSW';
 import ViewportFit from '@/components/ViewportFit';
 import '@fontsource/noto-sans-ethiopic/400.css';
@@ -39,6 +40,9 @@ export const metadata: Metadata = {
   title: 'ገበጣ · ዳማ',
   description: 'Play ገበጣ (Gebeta), ዳማ (Dama) online with friends or against the computer.',
   manifest: '/manifest.json',
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://infinity.vercel.app'),
+  openGraph: { title: 'ገበጣ · ዳማ · ሉዶ', description: 'Gebeta, Dama, Ludo, Dominoes and Bingo — play online or offline.', images: ['/og-image.png'], type: 'website' },
+  twitter: { card: 'summary_large_image', title: 'ገበጣ · ዳማ · ሉዶ', images: ['/og-image.png'] },
   icons: { icon: '/icon.svg', apple: '/icon-192.png' },
   appleWebApp: { capable: true, title: 'ገበጣ', statusBarStyle: 'black-translucent' },
 };

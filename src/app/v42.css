@@ -1,0 +1,18 @@
+/* v42 "Brand" — one consistent identity for Home, Settings and every panel: gold on deep emerald/indigo, large rounded touch targets. */
+:root { --brand-gold: #FFD36B; --brand-gold-lo: #E59A12; --brand-ink: #072A1F; --brand-glass: rgba(255,246,227,.08); --brand-line: rgba(255,226,154,.22); }
+.panel { border-radius: 22px; background: linear-gradient(165deg, var(--brand-glass), rgba(0,0,0,.18)); border: 1px solid var(--brand-line); box-shadow: 0 10px 28px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.12); backdrop-filter: blur(8px); }
+.set-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 12px 4px; min-height: 52px; border-bottom: 1px solid var(--brand-line); }
+.set-row:last-of-type { border-bottom: 0; }
+.seg { display: inline-flex; padding: 3px; border-radius: 99px; background: rgba(0,0,0,.35); border: 1px solid var(--brand-line); }
+.seg button { min-width: 56px; border-radius: 99px; border: 0; background: transparent; color: inherit; font-weight: 700; padding: 8px 14px; transition: background .2s, color .2s; }
+.seg button.on { background: linear-gradient(180deg, var(--brand-gold), var(--brand-gold-lo)); color: var(--brand-ink); box-shadow: 0 2px 8px rgba(0,0,0,.35); }
+input[type=range] { accent-color: var(--brand-gold); }
+.btn { border-radius: 16px; font-weight: 800; letter-spacing: .01em; transition: transform .15s, box-shadow .15s; }
+.btn:active { transform: translateY(2px) scale(.98); }
+.btn.primary { background: linear-gradient(180deg, var(--brand-gold), var(--brand-gold-lo)); color: var(--brand-ink); box-shadow: 0 5px 0 rgba(110,60,0,.55), 0 12px 22px rgba(0,0,0,.35); border: 0; }
+.btn.ghost { background: var(--brand-glass); border: 1.5px solid var(--brand-line); color: inherit; }
+.app-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 16px 4px 6px; }
+.app-actions .btn { flex: 1 1 160px; }
+.app-actions-ok { font-weight: 800; color: #6BE3A4; padding: 8px 12px; }
+.app-actions-msg { flex-basis: 100%; margin: 0; font-size: .9rem; opacity: .9; }
+@media (prefers-reduced-motion: reduce) { .btn, .seg button { transition: none; } }

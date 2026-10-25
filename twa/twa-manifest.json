@@ -1,0 +1,20 @@
+{
+  "packageId": "com.koboye.infinity",
+  "host": "YOUR-DEPLOYED-DOMAIN.com",
+  "name": "ገበጣ · ዳማ · ሉዶ",
+  "launcherName": "ገበጣ",
+  "display": "standalone",
+  "orientation": "default",
+  "themeColor": "#072A1F",
+  "navigationColor": "#072A1F",
+  "backgroundColor": "#072A1F",
+  "startUrl": "/",
+  "iconUrl": "https://YOUR-DEPLOYED-DOMAIN.com/icon-512.png",
+  "maskableIconUrl": "https://YOUR-DEPLOYED-DOMAIN.com/icon-maskable-512.png",
+  "webManifestUrl": "https://YOUR-DEPLOYED-DOMAIN.com/manifest.json",
+  "enableNotifications": false,
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "signingKey": { "path": "./android.keystore", "alias": "infinity" },
+  "fallbackType": "customtabs"
+}

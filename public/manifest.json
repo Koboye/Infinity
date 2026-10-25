@@ -1,9 +1,9 @@
 {
-  "name": "ገበጣ · ዳማ",
+  "name": "ገበጣ · ዳማ · ሉዶ — Board Games",
   "short_name": "ገበጣ",
-  "description": "Play ገበጣ (Gebeta) and ዳማ (Dama) online with friends or against the computer.",
+  "description": "Play Gebeta, Dama, Ludo, Dominoes, Tuz and Bingo online with friends or against the computer. Works offline.",
   "start_url": "/",
-  "display": "fullscreen",
+  "display": "standalone",
   "orientation": "any",
   "background_color": "#072A1F",
   "theme_color": "#072A1F",
@@ -38,7 +38,8 @@
   ],
   "shortcuts": [
     {
-      "name": "ገበጣ",
+      "name": "ገበጣ Gebeta",
+      "short_name": "ገበጣ Gebeta",
       "url": "/?game=gebeta",
       "icons": [
         {
@@ -48,7 +49,8 @@
       ]
     },
     {
-      "name": "ዳማ",
+      "name": "ዳማ Dama",
+      "short_name": "ዳማ Dama",
       "url": "/?game=checkers",
       "icons": [
         {
@@ -56,6 +58,54 @@
           "sizes": "192x192"
         }
       ]
+    },
+    {
+      "name": "ሉዶ Ludo",
+      "short_name": "ሉዶ Ludo",
+      "url": "/?game=ludo",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Dominoes",
+      "short_name": "Dominoes",
+      "url": "/?game=dominoes",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Bingo",
+      "short_name": "Bingo",
+      "url": "/?game=bingo",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
-  ]
+  ],
+  "display_override": [
+    "fullscreen",
+    "standalone",
+    "minimal-ui"
+  ],
+  "prefers_related_applications": false,
+  "share_target": {
+    "action": "/",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  }
 }

@@ -1,5 +1,6 @@
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
+import AppActions from './AppActions';
 import {
   collection, query, orderBy, limit, getDocs, doc, updateDoc, getDoc,
 } from 'firebase/firestore';
@@ -551,6 +552,7 @@ export function SettingsScreen({ t, lang, onLang, music, onMusic, muted, onMute,
       <div className="set-row"><span>🔊 {t.voice || 'Bingo caller voice'}</span><Seg label={t.voice || 'Bingo caller voice'} value={settings.voice !== false} onPick={(v) => set('voice', v)} opts={[[true, 'On'], [false, 'Off']]} /></div>
       <div className="set-row"><span>✓ {t.assist || 'Show ready fours'}</span><Seg label={t.assist || 'Show ready fours'} value={!!settings.assist} onPick={(v) => set('assist', v)} opts={[[false, 'Off'], [true, 'On']]} /></div>
       <div className="set-row"><span>{t.contrast}</span><Seg label={t.contrast} value={settings.contrast} onPick={(v) => set('contrast', v)} opts={[[false, 'Off'], [true, 'On']]} /></div>
+      <AppActions />
     </div>
   );
 }
