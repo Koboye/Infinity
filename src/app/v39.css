@@ -1,0 +1,123 @@
+/* v39 — "Royal Arcade": one design language for every screen and every game. Styling only; loaded LAST.
+   Ideas: deep jewel backdrop with a slow-moving diamond weave, a per-game accent (--game-accent, set on <html>),
+   chunky bevelled 3D buttons, glass panels, a docked tab bar, glowing selection, and generous touch targets. */
+:root {
+  --ga: var(--game-accent, #F2B632);
+  --ink-0: #070616; --ink-1: #0F0C2E; --ink-2: #1A1550; --ink-3: #2A2078;
+  --ember: #FFB020; --ember-hi: #FFE29A; --ember-lo: #C46A00;
+  --teal: #35E0C2; --rose: #FF5C8A; --ivory-2: #FFF6E3;
+  --glass: linear-gradient(160deg, rgba(60,48,150,.55), rgba(14,11,44,.78));
+  --glass-line: rgba(255,226,154,.28);
+  --shadow-pop: 0 10px 0 rgba(0,0,0,.25), 0 20px 36px rgba(0,0,0,.45);
+}
+
+/* ───── backdrop: jewel gradient + slowly drifting diamond weave + accent glow ───── */
+html, body { background: var(--ink-0); }
+body {
+  background:
+    radial-gradient(90% 55% at 50% -5%, color-mix(in srgb, var(--ga) 30%, transparent) 0%, transparent 62%),
+    radial-gradient(70% 45% at 100% 100%, rgba(138,120,255,.28) 0%, transparent 70%),
+    radial-gradient(70% 45% at 0% 85%, rgba(53,224,194,.16) 0%, transparent 70%),
+    linear-gradient(180deg, var(--ink-2) 0%, var(--ink-1) 50%, var(--ink-0) 100%) fixed;
+}
+body::before {
+  content: ''; position: fixed; inset: -40px; z-index: 0; pointer-events: none; opacity: .5;
+  background-image:
+    linear-gradient(45deg, rgba(255,226,154,.07) 25%, transparent 25%, transparent 75%, rgba(255,226,154,.07) 75%),
+    linear-gradient(45deg, rgba(255,226,154,.07) 25%, transparent 25%, transparent 75%, rgba(255,226,154,.07) 75%);
+  background-size: 64px 64px; background-position: 0 0, 32px 32px; animation: v39-drift 40s linear infinite;
+  -webkit-mask: radial-gradient(120% 90% at 50% 40%, #000 30%, transparent 85%); mask: radial-gradient(120% 90% at 50% 40%, #000 30%, transparent 85%);
+}
+@keyframes v39-drift { to { background-position: 64px 64px, 96px 96px; } }
+.app { position: relative; z-index: 1; }
+
+/* ───── top bar: glass strip ───── */
+.tibeb { height: 8px; }
+.topbar { margin: 8px 12px 0; padding: 6px 8px; border-radius: 20px; background: var(--glass); border: 1px solid var(--glass-line); box-shadow: 0 6px 18px rgba(0,0,0,.35); backdrop-filter: blur(8px); }
+.topbar-title { color: var(--ivory-2); font-weight: 800; letter-spacing: .02em; }
+.icon-btn { border-radius: 14px; border: 1.5px solid var(--glass-line); background: linear-gradient(180deg, rgba(90,75,200,.45), rgba(20,16,60,.7)); box-shadow: 0 3px 0 rgba(0,0,0,.35); transition: transform .08s, box-shadow .08s; }
+.icon-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,.35); }
+.lang-switch { border-radius: 99px; border: 1.5px solid var(--glass-line); overflow: hidden; background: rgba(0,0,0,.3); }
+.lang-switch button.on { background: linear-gradient(180deg, var(--ember-hi), var(--ember)); color: #2a1500; }
+
+/* ───── buttons: chunky bevelled arcade keys ───── */
+.btn { min-height: 50px; border-radius: 16px; border: 2px solid var(--glass-line); color: var(--ivory-2); font-weight: 800; letter-spacing: .02em;
+  background: linear-gradient(180deg, #4A3DB0 0%, #2A2078 55%, #1A1550 100%); box-shadow: 0 5px 0 #0B0A1E, 0 10px 18px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.22);
+  transition: transform .08s, box-shadow .08s, filter .15s; }
+.btn:hover:not(:disabled) { background: linear-gradient(180deg, #5A4CC8 0%, #33288F 55%, #1F1A62 100%); filter: brightness(1.08); }
+.btn:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 #0B0A1E, inset 0 1px 0 rgba(255,255,255,.18); }
+.btn.primary { color: #2a1500; border-color: #2a1500; background: linear-gradient(180deg, var(--ember-hi) 0%, var(--ember) 55%, #F08A00 100%); box-shadow: 0 5px 0 var(--ember-lo), 0 12px 22px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.7); }
+.btn.primary:active:not(:disabled) { box-shadow: 0 1px 0 var(--ember-lo); }
+.btn.primary.danger { color: #fff; border-color: #4a0f1d; background: linear-gradient(180deg, #FF7A92, #E0264F 60%, #B01238); box-shadow: 0 5px 0 #6e0c25, 0 12px 22px rgba(0,0,0,.4); }
+.btn.ghost { box-shadow: none; background: transparent; border-color: transparent; }
+.btn.wide { min-height: 58px; font-size: 1.05rem; }
+
+/* ───── panels / dialogs: glass cards ───── */
+.panel, .dialog, .rules { background: var(--glass); border: 1.5px solid var(--glass-line); border-radius: 24px; box-shadow: var(--shadow-pop); backdrop-filter: blur(6px); }
+.panel { padding: 18px 16px; gap: 18px; }
+.dialog { padding: 22px 18px; }
+.overlay { background: rgba(7,6,22,.72); backdrop-filter: blur(4px); }
+.rules h2, .panel h2 { color: var(--ember-hi); font-family: var(--font-display); }
+.rules li b { color: var(--ember); }
+input[type=text], input[type=email], input[type=password], input:not([type]) { border-radius: 14px; border: 2px solid var(--glass-line); background: rgba(5,4,20,.6); color: var(--ivory-2); padding: 12px 14px; }
+input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(53,224,194,.25); outline: none; }
+
+/* ───── home: hero logo + living cards ───── */
+.home { gap: 14px; }
+.brand-am { background: linear-gradient(180deg, #FFF6D0 0%, var(--ember) 55%, #E07A00 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 4px 0 #3a1c00) drop-shadow(0 10px 22px rgba(255,176,32,.35)); animation: v39-shine 5s ease-in-out infinite; }
+@keyframes v39-shine { 50% { filter: drop-shadow(0 4px 0 #3a1c00) drop-shadow(0 12px 30px rgba(255,226,154,.75)); } }
+.brand-en { color: var(--ivory-2); opacity: .8; letter-spacing: .06em; }
+.daily { border-radius: 20px; border: 1.5px solid color-mix(in srgb, var(--ga) 55%, transparent); background: linear-gradient(135deg, color-mix(in srgb, var(--ga) 22%, var(--ink-2)), var(--ink-1)); box-shadow: 0 5px 0 rgba(0,0,0,.35); }
+.daily.done { opacity: .75; }
+.demo { overflow: hidden; border-radius: 26px; transform: none; max-width: 100%; box-shadow: 0 18px 36px rgba(0,0,0,.5); }
+.demo > * { max-width: 100%; }
+
+.rail-games .gp-card, .act-card, .dock-chip, .pick-card, .swipe-card { -webkit-tap-highlight-color: transparent; }
+.rail-games .gp-card { min-height: 142px; border-width: 2.5px; box-shadow: 0 7px 0 rgba(0,0,0,.35), 0 16px 26px rgba(0,0,0,.4); }
+.rail-games .gp-card.on { animation: v39-float 3.4s ease-in-out infinite; }
+@keyframes v39-float { 50% { transform: translateY(-4px); } }
+.rail-games .gp-card svg, .rail-games .gp-card img { filter: drop-shadow(0 4px 6px rgba(0,0,0,.5)); }
+.act-card { position: relative; overflow: hidden; }
+.act-card::after { content: ''; position: absolute; inset: 0 0 auto 0; height: 46%; background: linear-gradient(180deg, rgba(255,255,255,.14), transparent); pointer-events: none; border-radius: 22px 22px 0 0; }
+.act-icon { box-shadow: inset 0 -4px 0 rgba(0,0,0,.35), 0 0 18px color-mix(in srgb, var(--c) 55%, transparent); }
+
+/* docked tab bar: the dock rail floats at the bottom of Home */
+.home .rail-dock { position: sticky; bottom: max(8px, env(safe-area-inset-bottom, 0px)); z-index: 5; margin: 6px 0 0; border-radius: 99px; background: linear-gradient(180deg, rgba(42,32,120,.92), rgba(11,10,30,.96)); border: 1.5px solid var(--glass-line); box-shadow: 0 -4px 22px rgba(0,0,0,.4), 0 8px 18px rgba(0,0,0,.45); backdrop-filter: blur(10px); }
+.home .rail-dock .rail { padding: 6px 8px; }
+.dock-chip { border-radius: 99px; background: transparent; border-width: 0; box-shadow: none; padding: 10px 16px; }
+.dock-chip:active { background: rgba(255,226,154,.14); transform: none; box-shadow: none; }
+
+/* ───── setup: pick cards bigger, glowing, with clear selected state ───── */
+.swipe-label { color: var(--ember-hi); }
+.swipe-card { border-radius: 26px; min-height: 164px; }
+.swipe-card.on { animation: v39-pulse 2.6s ease-in-out infinite; }
+@keyframes v39-pulse { 50% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--tone) 35%, transparent), 0 16px 34px rgba(0,0,0,.5), 0 0 44px color-mix(in srgb, var(--tone) 60%, transparent); } }
+.panel .start-cta { min-height: 62px; font-size: 1.1rem; }
+.panel .start-cta::before { content: '▶ '; }
+.seg { border-radius: 99px; border: 2px solid var(--glass-line); background: rgba(0,0,0,.3); }
+.seg button.on { background: linear-gradient(180deg, var(--ember-hi), var(--ember)); color: #2a1500; font-weight: 800; }
+.opt { border-radius: 18px; border: 2px solid var(--glass-line); background: rgba(0,0,0,.25); }
+.opt.on { border-color: var(--ember); background: rgba(255,176,32,.16); box-shadow: 0 0 18px rgba(255,176,32,.35); }
+.check { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px; background: rgba(0,0,0,.22); border: 1px solid var(--glass-line); }
+.check input { accent-color: var(--ember); width: 20px; height: 20px; }
+
+/* ───── in-game: lit table, glass player cards, bigger status ───── */
+.match .status, .ludo-status, .status { background: var(--glass); border: 1.5px solid var(--glass-line); border-radius: 99px; color: var(--ivory-2); font-weight: 800; padding: 9px 18px; box-shadow: 0 5px 14px rgba(0,0,0,.35); }
+.pcard { background: var(--glass); border: 1.5px solid var(--glass-line); border-radius: 20px; box-shadow: 0 5px 0 rgba(0,0,0,.3); }
+.pcard.on { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(53,224,194,.3), 0 0 26px rgba(53,224,194,.4); }
+.screen.ingame { padding-inline: 8px; }
+.toast { border-radius: 99px; background: var(--glass); border: 1.5px solid var(--ember); color: var(--ivory-2); box-shadow: 0 10px 26px rgba(0,0,0,.5); }
+.offline-bar { background: linear-gradient(90deg, #B01238, #E0264F); }
+
+/* ───── accent per game on shared chrome ───── */
+html[data-game='ludo'] .topbar, html[data-game='checkers'] .topbar, html[data-game='bingo'] .topbar, html[data-game='dominoes'] .topbar, html[data-game='gebeta'] .topbar { border-color: color-mix(in srgb, var(--ga) 50%, transparent); }
+html[data-game] .tibeb { background: repeating-linear-gradient(90deg, var(--ga) 0 14px, var(--ember) 14px 28px, var(--rose) 28px 42px, var(--teal) 42px 46px); }
+
+@media (prefers-reduced-motion: reduce) { body::before, .brand-am, .rail-games .gp-card.on, .swipe-card.on { animation: none; } }
+
+/* fixes found on a 390px phone: the Home demo board's store pits spilled past its frame (content is ~1.25× the board width) */
+.demo .board { width: 125%; zoom: .8; }
+.topbar-title { font-size: .95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.dock-chip { padding: 10px 12px; font-size: .8rem; }
+.ludo-auto { display: flex; align-items: center; gap: 10px; text-align: left; padding: 10px 12px; border-radius: 14px; background: rgba(0,0,0,.25); border: 1px solid var(--glass-line); }
+.ludo-auto input { accent-color: var(--ember); width: 20px; height: 20px; flex: none; margin: 0; }

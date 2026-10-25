@@ -14,7 +14,7 @@ import BingoGame from './bingo/BingoGame';
 import LudoGame from './ludo/LudoGame';
 import OnlineRoom from './online/OnlineRoom';
 import { Home, Setup, RulesScreen, AuthForm, Lobby, Leaders, ProfileScreen, ProgressScreen, SettingsScreen, Tibeb } from './Screens';
-import { isPlayable } from '@/lib/games.js';
+import { isPlayable, GAMES } from '@/lib/games.js';
 import Coach, { needsCoach } from './Coach';
 import { setCurrentGame, visit, onUnlock, load as loadProgress, mergeProgress, saveMerged } from '@/lib/progress';
 
@@ -52,7 +52,7 @@ export default function GebetaApp() {
     window.addEventListener('online', on); window.addEventListener('offline', off);
     return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off); };
   }, []);
-  useEffect(() => { setCurrentGame(game); }, [game]);
+  useEffect(() => { setCurrentGame(game); document.documentElement.dataset.game = game; document.documentElement.style.setProperty('--game-accent', (GAMES[game] || GAMES.gebeta).accent); }, [game]);
   useEffect(() => { visit(); return onUnlock((fresh) => { setToast(fresh[0]); setTimeout(() => setToast(null), 3500); }); }, []);
 
   const pickGame = (g) => { setGame(g); if (isPlayable(g)) write('gebeta.game', g); };
