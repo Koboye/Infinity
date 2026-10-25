@@ -1,0 +1,33 @@
+/* v41 "Fits Everywhere" — every game sizes to the real visible screen (uses --app-h/--app-w/data-orient from ViewportFit). */
+html, body { max-width: 100%; overflow-x: hidden; -webkit-text-size-adjust: 100%; }
+body { min-height: var(--app-h, 100dvh); padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+img, svg, canvas { max-width: 100%; }
+button, .btn { min-height: 44px; touch-action: manipulation; }
+
+/* Square boards: never taller or wider than the free space, centered */
+.ludo-board { width: min(100%, calc(var(--app-h, 100dvh) - 250px), 640px); margin-inline: auto; }
+.ckboard { width: min(100%, calc(var(--app-h, 100dvh) - 230px), 680px); max-width: 100%; margin-inline: auto; aspect-ratio: 1; }
+.board { max-width: 100%; margin-inline: auto; }
+.bingo, .ludo, .ckboard, .board { box-sizing: border-box; }
+
+/* Tiny phones */
+html[data-size="xs"] .btn { font-size: .85rem; padding-inline: 10px; }
+html[data-size="xs"] .board { row-gap: 10px; padding: 2.4%; }
+html[data-size="xs"] .ludo-players { gap: 4px; }
+
+/* Landscape phones: board left, controls right, nothing clipped */
+html[data-orient="landscape"][data-size="md"] .ludo,
+html[data-orient="landscape"][data-size="sm"] .ludo { max-width: 100%; flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: flex-start; }
+html[data-orient="landscape"] .ludo-board { width: min(var(--app-h, 100dvh) - 40px, 60vw); }
+html[data-orient="landscape"] .ckboard { width: min(var(--app-h, 100dvh) - 40px, 60vw); }
+html[data-orient="landscape"] .ludo-players { width: auto; grid-template-columns: repeat(2, minmax(110px, 1fr)); }
+
+/* Tablets and desktops: bigger boards, roomier layout */
+html[data-size="lg"] .ludo { max-width: 760px; }
+html[data-size="lg"] .ludo-board { width: min(100%, calc(var(--app-h, 100dvh) - 220px), 720px); }
+html[data-size="lg"] .ckboard { width: min(100%, calc(var(--app-h, 100dvh) - 200px), 760px); }
+html[data-size="lg"] .board { max-width: 980px; }
+
+/* Dialogs and overlays always fit the screen */
+.overlay .dialog { max-width: min(94vw, 520px); max-height: calc(var(--app-h, 100dvh) - 24px); overflow-y: auto; }
+.match-actions, .result-actions { flex-wrap: wrap; gap: 8px; }
