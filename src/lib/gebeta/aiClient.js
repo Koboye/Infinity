@@ -1,5 +1,5 @@
 // Asks the Gebeta computer for a move without blocking the UI (Web Worker), with a safe in-page fallback.
-import { chooseMove, LEVELS } from './ai.js';
+import { chooseMove, levelsFor } from './ai.js';
 
 let worker; // undefined = not created yet, null = unavailable
 let seq = 0;
@@ -39,7 +39,7 @@ export function chooseMoveAsync(state, rules = 'gebeta', level = 'medium', auto 
     const id = ++seq; job.res = res; pending.set(id, job);
     // A worker that never answers (killed by the phone, stuck, blocked) must never freeze the game:
     // after the level's thinking time plus a grace period, drop the worker and play with the in-page fallback.
-    job.timer = setTimeout(() => { if (!pending.has(id)) return; pending.delete(id); failAll(); res(fallback(job)); }, (LEVELS[level]?.ms ?? 450) + 2500);
+    job.timer = setTimeout(() => { if (!pending.has(id)) return; pending.delete(id); failAll(); res(fallback(job)); }, (levelsFor(rules)[level]?.ms ?? 450) + 2500);
     try { w.postMessage({ id, state, rules, level, auto }); } catch { clearTimeout(job.timer); pending.delete(id); res(fallback(job)); }
   });
 }

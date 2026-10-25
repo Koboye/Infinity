@@ -11,6 +11,17 @@ export const LEVELS = {
   hard: { depth: 64, ms: 3000, randomness: 0 },
 };
 
+// ጡዝ has its own strength ladder, calibrated by tests/tuz-calibration.mjs against a fixed reference player
+// (an average club player: 3-ply look-ahead, 10 % careless moves). Target win rate of the computer vs that player:
+//   easy 60-75 %   medium 76-85 %   hard 86-99 %
+// A level is a look-ahead depth, a thinking clock and a share of careless (random) moves.
+export const TUZ_LEVELS = {
+  easy: { depth: 4, ms: 300, randomness: 0.18 },
+  medium: { depth: 4, ms: 600, randomness: 0.10 },
+  hard: { depth: 64, ms: 3000, randomness: 0 },
+};
+export const levelsFor = (rules) => (rules === 'tuz' ? TUZ_LEVELS : LEVELS);
+
 const WIN = 1e6;
 class Timeout extends Error {}
 const EXACT = 0, LOWER = 1, UPPER = 2;
@@ -92,7 +103,7 @@ export function think(state0, rules = 'gebeta', opt = {}) {
   AUTO = opt.auto == null ? -1 : opt.auto;
   try { return thinkInner(state0, rules, opt); } finally { AUTO = -1; }
 }
-function thinkInner(state0, rules = 'gebeta', { auto: _auto, depth = 40, ms = 1000, w = WEIGHTS, tt = new Map(), rng = Math.random, evalFn = null, only = null } = {}) {
+function thinkInner(state0, rules = 'gebeta', { auto: _auto, depth = 40, ms = 1000, w = WEIGHTS, tt = new Map(), rng = Math.random, evalFn = null, only = null, evenOnly = rules === 'tuz' } = {}) {
   const state = collectAll(state0).state;
   const moves = only ? legalMoves(state).filter((m) => only.includes(m)) : legalMoves(state);
   if (!moves.length) return { move: undefined, depth: 0, value: 0 };
@@ -112,7 +123,10 @@ function thinkInner(state0, rules = 'gebeta', { auto: _auto, depth = 40, ms = 10
       }
     } catch (e) { if (e instanceof Timeout) break; throw e; }
     if (iterBest != null) {
-      bestMove = iterBest; reached = d; bestVal = iterVal;
+      // An odd-depth pass ends on the computer's own move and is over-optimistic (the horizon effect: measured 68% vs 99% for the
+      // neighbouring even depth). So once an even pass of depth >= 4 exists, odd passes only warm the search memory; they never choose.
+      if (d % 2 === 0 || d < 4 || !evenOnly || Math.abs(iterVal) >= WIN / 2) { bestMove = iterBest; reached = d; bestVal = iterVal; }
+      else reached = Math.max(reached, d - 1);
       const i = order.findIndex((o) => o.m === iterBest);
       if (i > 0) order.unshift(order.splice(i, 1)[0]);
       if (Math.abs(iterVal) >= WIN / 2) break; // forced win / loss found
@@ -141,7 +155,8 @@ export function captureMoves(state, rules = 'gebeta') {
 
 export function chooseMove(state0, rules = 'gebeta', level = 'medium', rng = Math.random, opts = {}) {
   const state = collectAll(state0).state;
-  const cfg = LEVELS[level] || LEVELS.medium;
+  const table = levelsFor(rules);
+  const cfg = table[level] || table.medium;
   const moves = legalMoves(state);
   if (moves.length <= 1) return moves[0];
   const caps = captureMoves(state, rules);
