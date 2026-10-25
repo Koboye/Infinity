@@ -1,0 +1,21 @@
+/* v30 — majestic "who starts?" wheel. Loaded last. Pure styling: the wheel geometry and the fair draw (lib/spin.js) are untouched. */
+.spin-ov { background: radial-gradient(ellipse at 50% 38%, rgba(255,182,39,.22) 0%, rgba(6,36,27,.88) 55%, rgba(2,12,9,.96) 100%); backdrop-filter: blur(6px); }
+.spin-card { position: relative; background: linear-gradient(165deg, #0F4A36 0%, #0B3A2B 55%, #06241B 100%); border: 3px solid #FFB627; box-shadow: 0 0 0 2px #06241B, 0 24px 60px rgba(0,0,0,.65), 0 0 60px rgba(255,182,39,.28), inset 0 0 40px rgba(255,182,39,.1); animation: mj-rise .55s cubic-bezier(.2,1.2,.4,1) both; }
+.spin-card::before { content: ''; position: absolute; inset: 8px; border-radius: 14px; border: 1px solid rgba(255,224,138,.35); pointer-events: none; }
+.spin-title { font-family: var(--font-display, serif); font-weight: 900; letter-spacing: .03em; font-size: 1.3rem; color: #FFE08A; text-shadow: 0 2px 0 #04170f, 0 0 18px rgba(255,182,39,.55); }
+.spin-stage { width: min(70vw, 300px); filter: drop-shadow(0 14px 22px rgba(0,0,0,.55)); }
+.spin-stage::before { content: ''; position: absolute; inset: -16px; border-radius: 50%; background: conic-gradient(from 0deg, #FFE08A, #FFB627, #8a5a0b, #FFE08A, #FFB627, #8a5a0b, #FFE08A); -webkit-mask: radial-gradient(circle, transparent 66%, #000 67%); mask: radial-gradient(circle, transparent 66%, #000 67%); animation: mj-gleam 9s linear infinite; }
+.spin-wheel { border: 6px solid #FFE08A; box-shadow: inset 0 0 0 3px #7a520f, inset 0 0 34px rgba(0,0,0,.45), 0 0 26px rgba(255,182,39,.45); }
+.spin-wheel::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle at 34% 28%, rgba(255,255,255,.28), transparent 46%); pointer-events: none; }
+.spin-hub { background: radial-gradient(circle at 35% 30%, #FFF7E0, #FFB627 55%, #8a5a0b); border: 3px solid #1d1204; box-shadow: 0 3px 10px rgba(0,0,0,.6), 0 0 14px rgba(255,182,39,.7); }
+.spin-pointer { filter: drop-shadow(0 3px 5px rgba(0,0,0,.65)); border-right-color: #FFB627; transition: transform .08s ease-out; }
+.spin-live { font-family: var(--font-display, serif); color: #FFF7E0; }
+.spin-live.final { color: #FFE08A; text-shadow: 0 0 20px rgba(255,182,39,.8); }
+.spin-bar b { background: linear-gradient(90deg, #FFB627, #FFF7E0); }
+.spin-legend { color: #FFF7E0; font-weight: 800; }
+.spin-legend .won { color: #FFE08A; }
+.spin-card .btn.ghost { color: #FFF7E0; border-color: rgba(255,224,138,.5); }
+@keyframes mj-rise { from { opacity: 0; transform: translateY(18px) scale(.94); } to { opacity: 1; transform: none; } }
+@keyframes mj-gleam { to { transform: rotate(360deg); } }
+@media (max-width: 380px) { .spin-stage { width: min(74vw, 250px); } .spin-title { font-size: 1.1rem; } }
+@media (prefers-reduced-motion: reduce) { .spin-card, .spin-stage::before { animation: none; } }
