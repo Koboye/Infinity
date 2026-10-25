@@ -1,0 +1,67 @@
+/* v44 "One Design System" — shared tokens + consistent look for every screen: Home, Setup, Rules, Leaderboard, Profile, Progress, Lobby, Sign-in, dialogs, results, Bingo, Dominoes. Additive only. */
+:root {
+  --r-sm: 12px; --r-md: 18px; --r-lg: 26px;
+  --sp-1: 6px; --sp-2: 10px; --sp-3: 16px; --sp-4: 24px;
+  --ink-text: #FFF6E3; --ink-soft: rgba(255,246,227,.72);
+  --card-bg: linear-gradient(165deg, rgba(255,246,227,.11), rgba(0,0,0,.2));
+  --card-line: rgba(255,226,154,.22);
+  --elev-1: 0 6px 16px rgba(0,0,0,.3); --elev-2: 0 14px 30px rgba(0,0,0,.42);
+  --good: #6BE3A4; --bad: #FF6B7A; --focus: #FFE29A;
+}
+body { color: var(--ink-text); line-height: 1.45; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+h1, h2, h3 { letter-spacing: -.01em; line-height: 1.15; text-wrap: balance; }
+p, li { text-wrap: pretty; }
+.muted, .small { color: var(--ink-soft); }
+::selection { background: var(--brand-gold, #FFD36B); color: #072A1F; }
+
+/* top bar */
+.topbar { padding-top: max(8px, env(safe-area-inset-top)); gap: var(--sp-2); }
+.topbar-title { font-size: 1.05rem; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.icon-btn { min-width: 44px; min-height: 44px; border-radius: 14px; border: 1.5px solid var(--card-line); background: var(--card-bg); color: inherit; box-shadow: var(--elev-1); transition: transform .15s; }
+.icon-btn:active { transform: scale(.94); }
+.lang-switch { display: inline-flex; padding: 3px; border-radius: 99px; background: rgba(0,0,0,.35); border: 1px solid var(--card-line); }
+.lang-switch button { min-height: 36px; min-width: 40px; border: 0; border-radius: 99px; background: transparent; color: inherit; font-weight: 800; }
+.lang-switch button.on { background: linear-gradient(180deg, var(--brand-gold, #FFD36B), var(--brand-gold-lo, #E59A12)); color: #072A1F; }
+
+/* cards: home actions, menu rows, stats, leaderboard, achievements */
+.act-card, .menu-item, .stats, .hist, .ach-grid > *, .leaders > *, .stone-prev, .stonepick { border-radius: var(--r-md); border: 1.5px solid var(--card-line); background: var(--card-bg); box-shadow: var(--elev-1); }
+.act-card, .menu-item { min-height: 64px; transition: transform .18s, box-shadow .18s, border-color .18s; }
+.act-card:hover, .menu-item:hover, .act-card:focus-visible, .menu-item:focus-visible { transform: translateY(-3px); box-shadow: var(--elev-2); border-color: var(--brand-gold, #FFD36B); }
+.act-card:active, .menu-item:active { transform: scale(.985); }
+.mi-title, .act-txt b { font-weight: 800; }
+.mi-sub { color: var(--ink-soft); font-size: .85rem; }
+.start-cta { min-height: 56px; border-radius: var(--r-md); font-weight: 900; font-size: 1.05rem; }
+.leaders > * { padding: 10px 14px; }
+.rank { font-weight: 900; min-width: 2ch; text-align: center; }
+.ach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: var(--sp-2); }
+
+/* forms: sign-in, join room, lobby */
+.form { display: grid; gap: var(--sp-3); }
+.form-label { font-weight: 700; font-size: .9rem; color: var(--ink-soft); }
+input:not([type=range]):not([type=checkbox]), select, textarea { width: 100%; min-height: 48px; padding: 10px 14px; border-radius: var(--r-sm); border: 1.5px solid var(--card-line); background: rgba(0,0,0,.32); color: var(--ink-text); font: inherit; transition: border-color .15s, box-shadow .15s; }
+input:focus-visible, select:focus-visible, textarea:focus-visible { outline: none; border-color: var(--brand-gold, #FFD36B); box-shadow: 0 0 0 3px rgba(255,226,154,.28); }
+.err { color: var(--bad); font-weight: 700; } .ok { color: var(--good); font-weight: 700; }
+.joinrow { display: flex; gap: var(--sp-2); } .joinrow input { flex: 1; }
+
+/* dialogs, toasts, results */
+.overlay { backdrop-filter: blur(6px); background: rgba(4,8,20,.6); }
+.dialog { border-radius: var(--r-lg); border: 1.5px solid var(--card-line); background: linear-gradient(170deg, #1B2A55, #0C1230); box-shadow: var(--elev-2); padding: var(--sp-4); }
+.dialog h2, .dialog h3 { margin-top: 0; }
+.match-actions, .result-actions { display: flex; flex-wrap: wrap; gap: var(--sp-2); justify-content: center; }
+.match-actions .btn, .result-actions .btn { flex: 1 1 140px; }
+.result-title { font-weight: 900; font-size: clamp(1.7rem, 7vw, 2.4rem); }
+.toast { border-radius: 99px; padding: 10px 18px; font-weight: 700; box-shadow: var(--elev-2); border: 1px solid var(--card-line); }
+.offline-bar { font-weight: 700; padding: 6px 12px; text-align: center; }
+.btn.danger { background: linear-gradient(180deg, #FF6B7A, #C92A3C); color: #fff; border: 0; box-shadow: 0 5px 0 rgba(90,0,12,.5); }
+.btn:disabled, button:disabled { opacity: .5; cursor: not-allowed; filter: saturate(.6); }
+
+/* Bingo and Dominoes controls match the same system */
+.bingo-btn, .bpower .btn { border-radius: var(--r-md); min-height: 48px; font-weight: 800; }
+.bcard, .bsheet, .bside { border-radius: var(--r-md); border: 1.5px solid var(--card-line); }
+.bcoins, .bcount { font-weight: 900; font-variant-numeric: tabular-nums; }
+.side-dot-txt { font-weight: 800; }
+
+/* a11y + motion */
+:where(a, button, [role=button], input, select, textarea):focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }
+@media (max-width: 380px) { .ach-grid { grid-template-columns: repeat(2, 1fr); } .dialog { padding: var(--sp-3); } }
