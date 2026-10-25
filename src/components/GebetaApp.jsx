@@ -13,6 +13,8 @@ import DominoesLocal from './dominoes/DominoesLocal';
 import BingoGame from './bingo/BingoGame';
 import LudoGame from './ludo/LudoGame';
 import ModesScreen from './ModesScreen';
+import { WalletChip, FeeSheet, SpinSheet, WelcomeGift } from './Wallet';
+import { takeWelcome } from '@/lib/wallet';
 import OnlineRoom from './online/OnlineRoom';
 import { Home, Setup, RulesScreen, AuthForm, Lobby, Leaders, ProfileScreen, ProgressScreen, SettingsScreen, Tibeb } from './Screens';
 import { isPlayable, GAMES } from '@/lib/games.js';
@@ -28,6 +30,9 @@ export default function GebetaApp() {
   const [muted, setMutedState] = useState(false);
   const [music, setMusicState] = useState(false);
   const [view, setView] = useState({ name: 'home' });
+  const [sheet, setSheet] = useState(null);                  // { type: 'fee' | 'spin' | 'gift', ... }
+  const viewRef = useRef(view); viewRef.current = view;
+  const lastStake = useRef({ fee: 50, seats: 2 });
   const [user, setUser] = useState(null);
   const [authReady, setAuthReady] = useState(!onlineAvailable);
   const [profile, setProfile] = useState(null);
@@ -114,8 +119,17 @@ export default function GebetaApp() {
     if (name === 'game' && !isPlayable(extra.game)) return;
     // starting a game is a tap, so the browser lets us take the whole screen right now
     if ((name === 'game' || name === 'room') && !document.fullscreenElement) document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }).catch(() => {});
+    // STRICT RULE: every match (any game, any mode) costs an entry fee. No coins, no match.
+    if ((name === 'game' || name === 'room') && !extra.paid) { setSheet({ type: 'fee', name, extra, seats: extra.opts?.players || 2 }); return; }
     if (name === 'game') setCoach(needsCoach(extra.game) ? extra.game : null); setView({ name, ...extra }); };
   const home = () => setView({ name: 'home' });
+  useEffect(() => { if (takeWelcome()) setSheet({ type: 'gift' }); }, []);
+  // a finished game started another round on its own (play again / rematch): it must be paid for too
+  useEffect(() => {
+    const onRematch = () => setTimeout(() => { if (['game', 'room'].includes(viewRef.current.name)) setSheet({ type: 'fee', rematch: true, seats: lastStake.current.seats }); }, 0);
+    window.addEventListener('wallet:rematch', onRematch);
+    return () => window.removeEventListener('wallet:rematch', onRematch);
+  }, []);
   // Invite link (?room=CODE): sign in (guest is fine), join the friend's room, then clean the address bar.
   const pendingRoom = useRef(null);
   useEffect(() => {
@@ -189,11 +203,20 @@ export default function GebetaApp() {
     <div className="app">
       {offline && <div className="offline-bar" role="status">{t.offline}</div>}
       <Tibeb />
+      {sheet?.type === 'gift' && <WelcomeGift lang={lang} onClose={() => setSheet(null)} />}
+      {sheet?.type === 'spin' && <SpinSheet lang={lang} onClose={() => setSheet(null)} />}
+      {sheet?.type === 'fee' && (
+        <FeeSheet lang={lang} seats={sheet.seats} initial={lastStake.current.fee} rematch={!!sheet.rematch}
+          onSpin={() => setSheet({ type: 'spin' })}
+          onCancel={() => { const r = sheet.rematch; setSheet(null); if (r) home(); }}
+          onPay={(fee) => { lastStake.current = { fee, seats: sheet.seats }; const sh = sheet; setSheet(null); if (!sh.rematch) go(sh.name, { ...sh.extra, paid: true }); }} />
+      )}
       <header className="topbar">
         {view.name === 'home' ? <span className="topbar-spacer" /> :
           <button className="icon-btn" onClick={view.name === 'game' ? leaveGame : ['ai', 'pass', 'online', 'leaders', 'rules'].includes(view.name) ? () => go('modes') : home} aria-label={t.backHome}>‹</button>}
         <h2 className="topbar-title">{view.name === 'home' ? '' : titles[view.name] || (view.name === 'room' ? `# ${view.code}` : 'ገበጣ')}</h2>
         <div className="topbar-actions">
+          <WalletChip lang={lang} onOpen={() => setSheet({ type: 'spin' })} />
           <div className="lang-switch" role="group" aria-label={t.language}>
             <button className={lang === 'en' ? 'on' : ''} onClick={() => chooseLang('en')} aria-pressed={lang === 'en'} lang="en" title="English">EN</button>
             <button className={lang === 'am' ? 'on' : ''} onClick={() => chooseLang('am')} aria-pressed={lang === 'am'} lang="am" title="አማርኛ">አማ</button>

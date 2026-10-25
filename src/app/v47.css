@@ -1,0 +1,22 @@
+/* v47 coins: wallet chip, entry-fee sheet, daily spin wheel, welcome gift */
+.coin-chip { position: relative; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; border-radius: 99px; border: 2px solid #E59A12; background: linear-gradient(180deg, #2a2470, #0e0b34); color: #FFE29A; font: inherit; font-weight: 900; box-shadow: 0 4px 0 rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.2); cursor: pointer; font-variant-numeric: tabular-nums; }
+.coin-chip b { font-size: .95rem; } .coin-ico { font-size: 1.15rem; }
+.coin-dot { position: absolute; top: -6px; right: -4px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 99px; background: #FF4D5E; color: #fff; font: 900 .7rem/20px inherit; text-align: center; font-style: normal; box-shadow: 0 2px 6px rgba(0,0,0,.4); }
+.wallet-sheet { z-index: 90; display: grid; place-items: center; padding: 14px; }
+.wallet-card { width: min(100%, 440px); text-align: center; }
+.wallet-card h2 { margin: 0 0 6px; font-size: 1.4rem; }
+.wallet-bal { margin: 0 0 10px; font-weight: 800; color: #FFE29A; }
+.fee-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 14px 0; }
+.fee-tile { display: grid; gap: 2px; justify-items: center; padding: 12px 4px; border-radius: 18px; border: 2.5px solid rgba(255,226,154,.25); background: linear-gradient(165deg, rgba(255,246,227,.12), rgba(0,0,0,.25)); color: #fff; font: inherit; cursor: pointer; box-shadow: 0 5px 0 rgba(0,0,0,.35); transition: transform .12s; }
+.fee-tile b { font-size: 1.15rem; } .fee-tile small { font-size: .66rem; opacity: .8; }
+.fee-tile.on { border-color: #FFD36B; background: linear-gradient(165deg, #E59A12, #7a4a00); transform: translateY(-2px); }
+.fee-tile:disabled { opacity: .35; }
+.gift-ico { font-size: 3.4rem; animation: gift-pop .8s cubic-bezier(.2,.9,.3,1.4) both; } .gift-amt { font-size: 2.2rem; font-weight: 900; color: #FFD36B; margin: 8px 0 14px; text-shadow: 0 3px 0 rgba(0,0,0,.4); }
+@keyframes gift-pop { from { transform: scale(.2) rotate(-20deg); opacity: 0; } to { transform: none; opacity: 1; } }
+.wheel-wrap { position: relative; width: 240px; height: 240px; margin: 14px auto 8px; }
+.wheel { position: absolute; inset: 0; border-radius: 50%; border: 6px solid #FFD36B; box-shadow: 0 0 0 4px #7a4a00, 0 12px 28px rgba(0,0,0,.5), inset 0 0 22px rgba(0,0,0,.35); }
+.wheel-lbl { position: absolute; left: 50%; top: 50%; width: 44px; margin-left: -22px; margin-top: -11px; font-weight: 900; font-size: .95rem; color: #fff; text-shadow: 0 2px 2px rgba(0,0,0,.6); }
+.wheel-pointer { position: absolute; z-index: 2; top: -10px; left: 50%; margin-left: -12px; border: 12px solid transparent; border-top: 26px solid #fff; filter: drop-shadow(0 3px 2px rgba(0,0,0,.5)); }
+.wheel-result { min-height: 1.6em; font-weight: 900; font-size: 1.15rem; color: #6BE3A4; margin: 4px 0 10px; }
+.result-coins { font-weight: 900; font-size: 1.6rem; margin: 6px 0; } .result-coins.up { color: #FFD36B; } .result-coins.down { color: #FF8A8A; }
+@media (prefers-reduced-motion: reduce) { .gift-ico { animation: none; } }
