@@ -54,8 +54,8 @@ export const oppositeOf = (i) => 12 - i;
 //     frozen as the mover's Tuz and his turn ends. Nobody can lift a Tuz; stones may still pass through or land on it.
 //   - THE ONLY FREEZE IS THE TUZ. A hole that reaches four any other way (mid-sowing, or by your own last stone in your own
 //     hole) is a perfectly normal hole: no marker, nothing to collect, no waiting, no freezing — it is lifted / relayed like any other.
-//   - attacking a Tuz: your LAST stone resting on the opponent's Tuz takes two stones from it (plus your own landing stone) and you
-//     play again; a Tuz of 4 is left with 2. A Tuz emptied this way is remembered (flag 6): the next LAST stone to land there is captured.
+//   - attacking a Tuz: your LAST stone resting on the opponent's Tuz takes exactly two stones from it and you
+//     play again; the rest stays frozen. A Tuz emptied this way is remembered (flag 6): the next LAST stone to land there is captured.
 //   - when a round ends, each Tuz is paid to its owner's pile. A player may own any number of Tuz holes.
 export const tuzFlag = (seat) => (seat === 0 ? 4 : 5);
 RULESETS.tuz = { id: 'tuz', seeds: 4, relay: true, family: FAMILY, families: false, extraTurn: false, capture: false, tuz: true };
@@ -294,11 +294,11 @@ export function playMove(state, pit, rulesetId = 'gebeta', schedule = [], autoSe
         }
         fl[pos] = 0;
       }
-      // ጡዝ: the LAST stone comes to rest on the OPPONENT's frozen Tuz → capture exactly two stones FROM the Tuz (your own
-      // landing stone is kept too), the rest stays frozen (a Tuz of 4 is left with 2), and play again.
+      // ጡዝ: the LAST stone comes to rest on the OPPONENT's frozen Tuz → capture exactly TWO stones from it, the rest stays
+      // frozen (a Tuz of 4 plus my landing stone is left with 3), and play again.
       // (Resting on your OWN Tuz just ends the turn: a frozen hole is never lifted, so there is no relay.)
       if (rules.tuz && hand === 0 && (fl[pos] === 4 || fl[pos] === 5) && fl[pos] - 4 !== seat) {
-        const take = Math.min(2, p[pos] - 1) + 1; // two from the Tuz + the stone I just placed
+        const take = Math.min(2, p[pos]); // exactly two stones are captured; my landing stone stays in the hole like any stone dropped there
         steps.push({ t: 'tuztake', i: pos, store: STORE[seat], n: take, by: seat, empty: p[pos] - take === 0 });
         p[pos] -= take; p[STORE[seat]] += take; if (p[pos] === 0) fl[pos] = 6;
         captured += take; extra = true; ended = true;

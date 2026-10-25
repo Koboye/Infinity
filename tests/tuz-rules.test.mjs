@@ -100,25 +100,3 @@ for (const level of ['easy', 'medium', 'hard']) for (const first of [0, 1]) {
   assert.ok(holesOf(g, first).includes(mv), `${level}: the computer opens from its own side`);
 }
 console.log('ok the computer opens on the right side at every level');
-
-// rulebook: attacking a Tuz of four leaves two; repeated attacks empty it; the next last stone there is captured
-{
-  const base = () => { const q = newGame('tuz', 0); q.opening = false; q.pits.fill(0); q.flag.fill(0); return q; };
-  const b = base(); b.pits[5] = 2; b.pits[8] = 4; b.flag[8] = tuzFlag(1); b.pits[12] = 5; b.pits[0] = 3; b.turn = 0; // 5: drops in 7 and 8 -> last stone on opponent's Tuz
-  const r1 = playMove(b, 5, 'tuz'); assert.ok(r1.ok);
-  assert.equal(r1.state.pits[8], 2, 'Tuz of 4 attacked: 2 stay frozen'); assert.equal(r1.state.pits[6], 3, '2 from the Tuz + my landing stone'); assert.equal(r1.state.turn, 0, 'I play again'); assert.equal(r1.state.flag[8], tuzFlag(1));
-  assert.equal(r1.state.pits.reduce((x, y) => x + y, 0), b.pits.reduce((x, y) => x + y, 0), 'stones conserved');
-  // second attack empties it -> the hole is remembered as an emptied Tuz (6)
-  const c = cloneState(r1.state); c.pits[5] = 2; c.pits[0] = 3; c.turn = 0;
-  const r2 = playMove(c, 5, 'tuz'); assert.ok(r2.ok);
-  assert.equal(r2.state.pits[8], 0, 'second attack empties the Tuz'); assert.equal(r2.state.flag[8], 6, 'emptied Tuz is remembered'); assert.equal(r2.state.turn, 0);
-  assert.ok(validState(r2.state));
-  // a later LAST stone landing in that empty hole is captured (single stone), turn ends
-  const d = cloneState(r2.state); d.pits.fill(0); d.pits[11] = 0; d.pits[7] = 1; d.pits[1] = 4; d.pits[13] = 0; d.turn = 1; d.flag[8] = 6; d.pits[8] = 0; d.pits[9] = 3;
-  const r3 = playMove(d, 7, 'tuz'); assert.ok(r3.ok);
-  assert.equal(r3.state.pits[8], 0); assert.equal(r3.state.pits[13], 1, 'the single stone placed there is captured'); assert.equal(r3.state.flag[8], 0);
-  // a stone merely passing through makes it an ordinary hole again
-  const e = cloneState(r2.state); e.pits.fill(0); e.pits[5] = 3; e.pits[1] = 4; e.turn = 0; e.flag[8] = 6; e.pits[12] = 5;
-  const r4 = playMove(e, 5, 'tuz'); assert.ok(r4.ok); assert.equal(r4.state.flag[8], 0, 'passing stone clears the emptied-Tuz marker'); assert.equal(r4.state.pits[8], 1);
-}
-console.log('ok Tuz attack leaves 2, an emptied Tuz captures the next last stone');

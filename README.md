@@ -125,3 +125,6 @@ tests/                     engine, rooms, API tests with an in-memory Firestore 
 - The starter (you, the computer, either seat online) taps one of **his own** holes. It keeps 3 stones; one stone walks round the ring to the opponent's hole **straight across** (12 − i), which becomes the starter's first **Tuz** (four stones). The carried stone goes to the starter's pile, so 48 stones stay accounted for.
 - A Tuz is therefore never on its maker's own hole — the opening included (the old opening put it on the starter's own hole). Checked over 60 full random games in `tests/tuz-rules.test.mjs`.
 - This replaces the "opens on the opponent's holes" wording in v32.
+
+## v35 — rule-by-rule audit of ጡዝ
+`tests/tuz-rulebook.test.mjs` has one test per rule of the rulebook: own Tuz (no capture, turn ends), emptied Tuz (receives stones, a last stone there captures the single stone placed), capturing from the opponent's Tuz (**exactly two stones**, the rest stays frozen, play again), ownership (nobody can lift a Tuz), creating several Tuz (last stone on an opponent hole holding exactly three), and a last stone in an empty hole ending the turn. This corrects v33, which also took the landing stone.
