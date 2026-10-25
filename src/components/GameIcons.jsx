@@ -13,6 +13,17 @@ export function GameIcon({ game, size = 44 }) {
       </svg>
     );
   }
+  if (game === 'ludo') {
+    return (
+      <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden="true">
+        <rect x="3" y="3" width="42" height="42" rx="9" fill="#F6ECD2" stroke="#2a1d10" strokeWidth="2" />
+        <rect x="3" y="3" width="18" height="18" rx="6" fill="#E0452B" /><rect x="27" y="3" width="18" height="18" rx="6" fill="#2E9E4F" />
+        <rect x="27" y="27" width="18" height="18" rx="6" fill="#F2B632" /><rect x="3" y="27" width="18" height="18" rx="6" fill="#2F6FD6" />
+        <rect x="15" y="15" width="18" height="18" rx="4" fill="#fffaf0" stroke="#2a1d10" strokeWidth="1.6" transform="rotate(12 24 24)" />
+        {[[20, 20], [28, 28], [24, 24]].map(([x, y]) => <circle key={x} cx={x} cy={y} r="2" fill="#241609" />)}
+      </svg>
+    );
+  }
   if (game === 'bingo') {
     return (
       <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden="true">

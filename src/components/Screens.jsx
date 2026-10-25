@@ -198,6 +198,7 @@ export function Setup({ t, mode, game, onStart }) {
   const [careless, setCareless] = useState(false);  // Checkers: the computer may overlook captures (you can claim the piece)
   const [sudden, setSudden] = useState(false);      // Checkers: Sudden Death after 5 minutes
   const [numCards, setNumCards] = useState(1);      // Bingo: 1-4 cards
+  const [ludoPlayers, setLudoPlayers] = useState(4);  // Ludo: 2 / 3 (fair triangle) / 4
   return (
     <div className="panel">
       {mode === 'ai' && (
@@ -218,6 +219,15 @@ export function Setup({ t, mode, game, onStart }) {
           <label className="check"><input type="checkbox" checked={sudden} onChange={(e) => setSudden(e.target.checked)} /> {t.suddenDeath}</label>
         </fieldset>
       )}
+      {game === 'ludo' && (
+        <fieldset className="seg-group">
+          <legend>{t.ludoPlayers}</legend>
+          <div className="seg">
+            {[2, 3, 4].map((n) => <button key={n} className={ludoPlayers === n ? 'on' : ''} onClick={() => setLudoPlayers(n)} aria-pressed={ludoPlayers === n}>{n}</button>)}
+          </div>
+          <p className="muted small">{ludoPlayers === 3 ? t.ludoTriangleNote : t.ludoSquareNote}</p>
+        </fieldset>
+      )}
       {game === 'bingo' && (
         <fieldset className="seg-group">
           <legend>{t.cardsLabel}</legend>
@@ -226,7 +236,7 @@ export function Setup({ t, mode, game, onStart }) {
           </div>
         </fieldset>
       )}
-      <button className="btn primary wide start-cta" onClick={() => onStart({ level, ruleset, target, opts: { ultra, suddenDeath: sudden, careless, cards: numCards } })}>{mode === 'ai' ? t.playComputer : t.passPlay}</button>
+      <button className="btn primary wide start-cta" onClick={() => onStart({ level, ruleset, target, opts: { ultra, suddenDeath: sudden, careless, cards: numCards, players: ludoPlayers } })}>{mode === 'ai' ? t.playComputer : t.passPlay}</button>
     </div>
   );
 }
@@ -260,7 +270,7 @@ export function TargetPicker({ t, value, onChange }) {
 
 /* ───────── Rules ───────── */
 export function RulesScreen({ t, game }) {
-  const title = game === 'checkers' ? t.rulesTitleCheckers : game === 'dominoes' ? t.rulesTitleDominoes : game === 'bingo' ? t.rulesTitleBingo : t.rulesTitle;
+  const title = game === 'checkers' ? t.rulesTitleCheckers : game === 'dominoes' ? t.rulesTitleDominoes : game === 'bingo' ? t.rulesTitleBingo : game === 'ludo' ? t.rulesTitleLudo : t.rulesTitle;
   return (
     <div className="panel rules">
       <h2>{title}</h2>

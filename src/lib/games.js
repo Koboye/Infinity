@@ -1,5 +1,5 @@
 // Client-side game catalogue (what the menus need to know about each game).
-export const GAME_LIST = ['gebeta', 'checkers', 'dominoes', 'bingo'];
+export const GAME_LIST = ['gebeta', 'checkers', 'dominoes', 'bingo', 'ludo'];
 
 /** The standard turn time every game uses (seconds). */
 export const TURN_SECONDS = 30;
@@ -14,6 +14,7 @@ export const GAMES = {
   gebeta: { id: 'gebeta', rulesets: ['gebeta', 'ashagro', 'tuz'], defaultRuleset: 'gebeta', accent: '#F2B632' },
   checkers: { id: 'checkers', rulesets: ['flying', 'american'], defaultRuleset: 'flying', accent: '#C23B2A' },
   bingo: { id: 'bingo', rulesets: ['line', 'corners', 'stamp', 'xshape', 'plus', 'full'], defaultRuleset: 'line', accent: '#8E3FD1', noPass: true },
+  ludo: { id: 'ludo', rulesets: ['classic', 'quick'], defaultRuleset: 'classic', accent: '#E0452B', offlineOnly: true }, // 2/3/4 players · 3 players use the fair triangle
   dominoes: { id: 'dominoes', rulesets: ['draw', 'block'], defaultRuleset: 'draw', targets: [50, 100], defaultTarget: 50, accent: '#4FA36B', comingSoon: true }, // built but NOT released: shown as "Coming soon" only
 };
 export const gameInfo = (id) => GAMES[id] || GAMES.gebeta;
