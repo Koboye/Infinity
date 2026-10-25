@@ -109,7 +109,7 @@ export function useAnimator(initialPits, t, pace = 1, initialOwn = null, initial
               fours += 1;
               if (fours === 2 && tRef.current.combo) showFlash(tRef.current.combo, 'capture', 1400); // two fours in one sowing chain
             } else if (s.t === 'tuztake') {
-              setHand(0); setActive(s.store); sfx.capture(); showFlash(tRef.current.tuzTake, 'extra', 1800);
+              setHand(0); setActive(s.store); sfx.capture(); if (!s.opening) showFlash(tRef.current.tuzTake, 'extra', 1800);
             } else if (s.t === 'tuz') {
               setHand(0); setActive(s.i); sfx.capture(); showFlash(tRef.current.tuz, 'capture', 2000);
             } else if (s.t === 'share') {

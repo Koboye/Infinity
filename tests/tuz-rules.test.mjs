@@ -11,21 +11,23 @@ import gebetaMod from '../src/lib/online/gebeta.js';
 // tiny seeded RNG so a failure can be replayed
 const rngOf = (seed) => () => { seed |= 0; seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
 
-// 4. both seats can open, and only on the other side
+// 4. both seats open from their OWN hole; the Tuz forms in the opponent's hole across (never on the opener's own hole)
 for (const first of [0, 1]) {
   const g = newGame('tuz', first);
   const legal = legalMoves(g);
-  assert.deepEqual(legal, holesOf(g, 1 - first), `seat ${first} opens on the opponent's holes`);
-  for (const own of holesOf(g, first)) assert.equal(playMove(g, own, 'tuz').ok, false, `seat ${first} cannot open on own hole ${own}`);
+  assert.deepEqual(legal, holesOf(g, first), `seat ${first} opens from his own holes`);
+  for (const other of holesOf(g, 1 - first)) assert.equal(playMove(g, other, 'tuz').ok, false, `seat ${first} cannot open from the opponent's hole ${other}`);
   for (const h of legal) {
-    const r = playMove(g, h, 'tuz'); assert.ok(r.ok, `opening on ${h}`);
-    assert.equal(r.state.flag[h], tuzFlag(first)); assert.equal(r.state.pits[h], 4);
-    assert.notEqual(ownerOf(h, r.state.own), first, 'the Tuz is in the OPPONENT\'s hole');
+    const r = playMove(g, h, 'tuz'); assert.ok(r.ok, `opening from ${h}`);
+    const tgt = 12 - h;
+    assert.equal(r.state.flag[tgt], tuzFlag(first)); assert.equal(r.state.pits[tgt], 4);
+    assert.notEqual(ownerOf(tgt, r.state.own), first, 'the Tuz is in the OPPONENT\'s hole');
+    assert.equal(r.state.pits[h], 3, 'the tapped hole keeps three'); assert.equal(r.state.flag[h], 0);
+    assert.equal(r.state.pits[first === 0 ? 6 : 13], 1, 'the carried stone is in the opener\'s pile');
     assert.equal(r.state.turn, 1 - first); assert.ok(validState(r.state, true));
-    assert.deepEqual(r.state.pits.filter((_, i) => i !== 6 && i !== 13), new Array(12).fill(4), 'every hole holds four after the opening');
   }
 }
-console.log('ok both seats open on the opponent\'s holes');
+console.log('ok both seats open from their own hole, Tuz across in the opponent\'s hole');
 
 // 1 + 2. full random games: a Tuz is never in its maker's own hole, nothing but a Tuz freezes, stones are conserved
 let tuzMade = 0, games = 0;
@@ -95,7 +97,7 @@ console.log('ok nothing is collectable in ጡዝ');
 for (const level of ['easy', 'medium', 'hard']) for (const first of [0, 1]) {
   const g = newGame('tuz', first);
   const mv = chooseMove(g, 'tuz', level, Math.random, { maxMs: 30 });
-  assert.ok(holesOf(g, 1 - first).includes(mv), `${level}: the computer's opening is on the opponent's side`);
+  assert.ok(holesOf(g, first).includes(mv), `${level}: the computer opens from its own side`);
 }
 console.log('ok the computer opens on the right side at every level');
 

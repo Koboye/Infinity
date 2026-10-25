@@ -120,3 +120,8 @@ tests/                     engine, rooms, API tests with an in-memory Firestore 
 - **Attacking a Tuz:** your last stone on the opponent's Tuz captures exactly two stones from it **plus your own landing stone**; the Tuz keeps the rest (4 → 2) and you play again.
 - **Emptied Tuz:** when repeated attacks empty a Tuz, the hole is remembered (flag 6). A stone that merely passes through makes it an ordinary hole again; the LAST stone landing there is captured (one stone to the mover's pile) and the turn ends.
 - Tests: `tests/tuz.test.mjs`, `tests/tuz-rules.test.mjs`.
+
+## v34 — ጡዝ opening starts from YOUR OWN hole
+- The starter (you, the computer, either seat online) taps one of **his own** holes. It keeps 3 stones; one stone walks round the ring to the opponent's hole **straight across** (12 − i), which becomes the starter's first **Tuz** (four stones). The carried stone goes to the starter's pile, so 48 stones stay accounted for.
+- A Tuz is therefore never on its maker's own hole — the opening included (the old opening put it on the starter's own hole). Checked over 60 full random games in `tests/tuz-rules.test.mjs`.
+- This replaces the "opens on the opponent's holes" wording in v32.
