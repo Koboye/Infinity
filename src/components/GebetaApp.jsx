@@ -11,6 +11,7 @@ import LocalGame from './LocalGame';
 import CheckersLocal from './checkers/CheckersLocal';
 import DominoesLocal from './dominoes/DominoesLocal';
 import BingoGame from './bingo/BingoGame';
+import LudoGame from './ludo/LudoGame';
 import OnlineRoom from './online/OnlineRoom';
 import { Home, Setup, RulesScreen, AuthForm, Lobby, Leaders, ProfileScreen, ProgressScreen, SettingsScreen, Tibeb } from './Screens';
 import { isPlayable } from '@/lib/games.js';
@@ -168,6 +169,7 @@ export default function GebetaApp() {
       body = view.game === 'checkers' ? <CheckersLocal {...P} />
         : view.game === 'dominoes' ? <DominoesLocal {...P} target={view.target} />
         : view.game === 'bingo' ? <BingoGame {...P} />
+        : view.game === 'ludo' ? <LudoGame {...P} />
         : <LocalGame {...P} />;
       break;
     }

@@ -13,6 +13,7 @@ import './final.css';
 import './world.css';
 import './tuz.css';
 import './majestic.css';
+import './ludo.css';
 import './spin2.css';
 import './v32.css';
 import RegisterSW from '@/components/RegisterSW';

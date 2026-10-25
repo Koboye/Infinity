@@ -64,7 +64,7 @@ const notify = (fresh) => { if (fresh.length) listeners.forEach((f) => f(fresh))
 export function mergeProgress(a, b) {
   const A = { ...blank(), ...a }, B = { ...blank(), ...b };
   const rec = {};
-  for (const g of ['gebeta', 'checkers', 'dominoes', 'bingo']) { const x = A.rec[g] || {}, y = B.rec[g] || {}; rec[g] = { w: Math.max(x.w || 0, y.w || 0), l: Math.max(x.l || 0, y.l || 0), d: Math.max(x.d || 0, y.d || 0) }; }
+  for (const g of ['gebeta', 'checkers', 'dominoes', 'bingo', 'ludo']) { const x = A.rec[g] || {}, y = B.rec[g] || {}; rec[g] = { w: Math.max(x.w || 0, y.w || 0), l: Math.max(x.l || 0, y.l || 0), d: Math.max(x.d || 0, y.d || 0) }; }
   const latest = (A.last || '') >= (B.last || '') ? A : B;
   const ach = { ...B.ach, ...A.ach };
   for (const k of Object.keys(B.ach)) if (A.ach[k] && B.ach[k] < A.ach[k]) ach[k] = B.ach[k];
