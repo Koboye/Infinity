@@ -110,3 +110,8 @@ tests/                     engine, rooms, API tests with an in-memory Firestore 
 - **The Tuz is the only freeze.** A four made mid-sowing, or by your own last stone in your own hole, is an ordinary hole: no marker, nothing to collect, touching it lifts and plays it. In ጡዝ the collect tap is gone from the local screen, the online screen and the server (`collect` answers "Nothing to collect there").
 - Attacking a Tuz (your last stone rests on the opponent's Tuz: +2 and play again) and the end-of-round payout of every Tuz to its owner are unchanged.
 - Tests: `tests/tuz.test.mjs` updated, new `tests/tuz-rules.test.mjs` (60 full random games: a Tuz is never in its maker's own hole, only Tuz ever freezes, both seats open on the right side at every AI level).
+
+## v32 — part 2 (look & computer levels)
+- **Rebrand "Midnight & Ember"** (`src/app/v32.css`, loaded last): midnight-indigo board, ember-gold frame, turquoise glow on playable holes, ember / rose Tuz seals, pill-shaped uppercase buttons, lit status pill. New flash texts (EN + አማርኛ).
+- **Spin wheel** (all games): bigger stage, brighter rim with twinkling studs, ✦ hub, winner glow and a sparkle burst when it stops. Geometry and the fair draw are unchanged.
+- **Computer levels** re-measured on the new opening rule (vs the reference club player, `node tests/tuz-calibration.mjs N level maxMs`): easy 68 % of 100 (band 60–75 ✔), medium 73 % of 80 (band 76–85, slightly under), hard last measured 95 % before this release and not re-run.

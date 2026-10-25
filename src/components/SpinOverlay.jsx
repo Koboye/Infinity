@@ -83,7 +83,7 @@ export default function SpinOverlay({ t, names, winner, onDone, title = null, wo
         <div className={`spin-live${landed ? ' final' : ' flick'}`} key={`${landed}-${live}`} aria-hidden="true">
           {live != null && <span>{landed ? '🏆 ' : '👉 '}<i className={live === 0 ? 'a' : 'b'} /> {names[live]}</span>}
         </div>
-        <div className="spin-stage">
+        <div className={`spin-stage${landed ? ` won-${w}` : ''}`}>
           <div className="spin-rays" aria-hidden="true" />
           <div className="spin-rim" aria-hidden="true">{Array.from({ length: 24 }, (_, i) => <u key={i} style={{ transform: `rotate(${i * 15}deg)` }} />)}</div>
           <div ref={wheelRef} className={`spin-wheel${landed ? ' landed' : ''}`} style={{ background }}>
@@ -93,7 +93,8 @@ export default function SpinOverlay({ t, names, winner, onDone, title = null, wo
             <span className="spin-gloss" />
           </div>
           <i ref={pointerRef} className="spin-pointer" data-win={landed ? w : undefined} aria-hidden="true" />
-          <b className="spin-hub" aria-hidden="true" />
+          <b className="spin-hub" aria-hidden="true"><em>✦</em></b>
+          {landed && <div className="spin-sparks" aria-hidden="true">{Array.from({ length: 16 }, (_, k) => <s key={k} style={{ '--k': k, '--a': `${k * 22.5}deg`, '--d': `${62 + (k % 3) * 14}%` }} />)}</div>}
         </div>
         {landed ? <div className="spin-bar" style={{ '--hold': `${hold}ms` }} aria-hidden="true"><b /></div>
           : <button type="button" className="btn ghost" onClick={(e) => { e.stopPropagation(); finish(); }}>{t.skip}</button>}

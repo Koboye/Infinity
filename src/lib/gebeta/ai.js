@@ -16,8 +16,8 @@ export const LEVELS = {
 //   easy 60-75 %   medium 76-85 %   hard 86-99 %
 // A level is a look-ahead depth, a thinking clock and a share of careless (random) moves.
 export const TUZ_LEVELS = {
-  easy: { depth: 4, ms: 300, randomness: 0.18 },
-  medium: { depth: 4, ms: 600, randomness: 0.08 },
+  easy: { depth: 4, ms: 300, randomness: 0.11 },
+  medium: { depth: 4, ms: 600, randomness: 0.04 },
   // Hard = the same 4-ply search with NO careless moves. Measured: with this evaluation a deeper search is not stronger
   // (depth 6 vs depth 4, randomised openings: 27-21), and against the reference player depth 4 scored 95 % vs depth 6 83 %.
   // Going beyond this needs a better evaluation function, not more depth.
