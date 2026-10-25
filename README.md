@@ -115,3 +115,8 @@ tests/                     engine, rooms, API tests with an in-memory Firestore 
 - **Rebrand "Midnight & Ember"** (`src/app/v32.css`, loaded last): midnight-indigo board, ember-gold frame, turquoise glow on playable holes, ember / rose Tuz seals, pill-shaped uppercase buttons, lit status pill. New flash texts (EN + አማርኛ).
 - **Spin wheel** (all games): bigger stage, brighter rim with twinkling studs, ✦ hub, winner glow and a sparkle burst when it stops. Geometry and the fair draw are unchanged.
 - **Computer levels** re-measured on the new opening rule (vs the reference club player, `node tests/tuz-calibration.mjs N level maxMs`): easy 68 % of 100 (band 60–75 ✔), medium 73 % of 80 (band 76–85, slightly under), hard last measured 95 % before this release and not re-run.
+
+## v33 — ጡዝ matches the written rulebook
+- **Attacking a Tuz:** your last stone on the opponent's Tuz captures exactly two stones from it **plus your own landing stone**; the Tuz keeps the rest (4 → 2) and you play again.
+- **Emptied Tuz:** when repeated attacks empty a Tuz, the hole is remembered (flag 6). A stone that merely passes through makes it an ordinary hole again; the LAST stone landing there is captured (one stone to the mover's pile) and the turn ends.
+- Tests: `tests/tuz.test.mjs`, `tests/tuz-rules.test.mjs`.

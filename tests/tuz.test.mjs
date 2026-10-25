@@ -31,7 +31,7 @@ const ro = playMove(own, 0, 'tuz'); assert.ok(ro.ok); assert.equal(ro.state.flag
 // a four made in the MIDDLE of a sowing (not by the last stone) is an ordinary hole too — and the opponent's too
 { const q = newGame('tuz', 0); q.opening = false; q.pits.fill(0); q.pits[5] = 3; q.pits[7] = 3; q.pits[8] = 0; q.pits[9] = 0; q.pits[12] = 4; q.pits[0] = 2;
   const rq = playMove(q, 5, 'tuz'); assert.ok(rq.ok);
-  assert.ok(rq.state.flag.every((f) => f === 0 || f === 4 || f === 5), 'only a Tuz ever freezes');
+  assert.ok(rq.state.flag.every((f) => f === 0 || f >= 4), 'only a Tuz ever freezes');
   assert.ok(!rq.steps.some((x) => x.t === 'ripe' || x.t === 'share' || x.t === 'family')); }
 console.log('ok last stone 3->4 on an opponent hole freezes a Tuz');
 
@@ -48,8 +48,8 @@ console.log('ok solo play continues, then every Tuz is paid');
 let x0 = newGame('tuz', 0); x0.opening = false; x0.pits.fill(0); x0.pits[5] = 2; x0.pits[7] = 1; x0.pits[8] = 4; x0.flag[8] = tuzFlag(1); x0.pits[1] = 2; x0.pits[10] = 3; x0.pits[13] = 0;
 const t0 = x0.pits.reduce((a, b) => a + b, 0);
 const rx = playMove(x0, 5, 'tuz'); assert.ok(rx.ok);
-assert.ok(rx.steps.some((q) => q.t === 'tuztake' && q.n === 2 && q.by === 0));
-assert.equal(rx.state.pits[6], 2, 'two stones go to my pile'); assert.equal(rx.state.pits[8], 3, 'the Tuz keeps the rest'); assert.equal(rx.state.flag[8], tuzFlag(1));
+assert.ok(rx.steps.some((q) => q.t === 'tuztake' && q.n === 3 && q.by === 0));
+assert.equal(rx.state.pits[6], 3, 'two stones from the Tuz + my landing stone go to my pile'); assert.equal(rx.state.pits[8], 2, 'a Tuz of 4 is left with 2'); assert.equal(rx.state.flag[8], tuzFlag(1));
 assert.equal(rx.state.turn, 0, 'I play again'); assert.equal(rx.state.pits.reduce((a, b) => a + b, 0), t0);
 let y0 = newGame('tuz', 0); y0.opening = false; y0.pits.fill(0); y0.pits[11] = 1; y0.pits[0] = 3; y0.pits[12] = 0; y0.pits[7] = 3; y0.pits[8] = 4; y0.flag[8] = tuzFlag(1); y0.pits[10] = 2; y0.turn = 1; y0.pits[9] = 2;
 y0.pits[7] = 0; y0.pits[10] = 0; y0.pits[9] = 0; y0.pits[11] = 0; y0.pits[12] = 0; y0.pits[0] = 3; y0.pits[1] = 3; y0.pits[2] = 1;
@@ -94,7 +94,7 @@ import gebetaMod from '../src/lib/online/gebeta.js';
       const mv = chooseMove(q, 'tuz', 'easy', Math.random, { maxMs: 8 }); assert.ok(legalMoves(q).includes(mv), 'AI plays a legal move');
       if (moves === 1) assert.ok(holesOf(q, 1 - q.turn).includes(mv), 'the opening is on an OPPONENT hole');
       const x = playMove(q, mv, 'tuz', [], -1); assert.ok(x.ok); q = x.state;
-      assert.ok(validState(q, true)); assert.ok(q.flag.every((f) => f === 0 || f === 4 || f === 5), 'nothing but a Tuz freezes');
+      assert.ok(validState(q, true)); assert.ok(q.flag.every((f) => f === 0 || f >= 4), 'nothing but a Tuz freezes');
     }
   }
   console.log('ok full computer games: legal, conserved, only Tuz freezes'); }
