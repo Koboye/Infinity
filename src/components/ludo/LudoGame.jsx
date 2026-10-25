@@ -227,8 +227,8 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
           <button type="button" className="tool" onClick={hint} disabled={!canHint} title={t.ludoHintBtn}><span aria-hidden="true">💡</span> {t.ludoHintBtn}</button>
           <button type="button" className={`tool${fast ? ' on' : ''}`} onClick={toggleFast} aria-pressed={fast}><span aria-hidden="true">⚡</span> {t.ludoFast}</button>
           <button type="button" className={`tool${showLog ? ' on' : ''}`} onClick={() => setShowLog((v) => !v)} aria-pressed={showLog}><span aria-hidden="true">📜</span> {t.ludoShowLog}</button>
+          <button type="button" className={`tool${auto ? ' on' : ''}`} onClick={() => setAuto((v) => !v)} aria-pressed={auto} title={t.ludoAuto}><span aria-hidden="true">🎯</span> {t.ludoAutoShort || 'Auto'}</button>
         </div>
-        <label className="ludo-auto"><input type="checkbox" checked={auto} onChange={(e) => setAuto(e.target.checked)} /> {t.ludoAuto}</label>
         {showLog && (
           <ol className="ludo-log" aria-label={t.ludoShowLog}>
             {recent.length === 0 && <li className="empty">—</li>}

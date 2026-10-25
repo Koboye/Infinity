@@ -1,0 +1,27 @@
+/* v43 "Ludo Crown" — one-screen Ludo: big board, compact dock, no scrolling, nothing clipped. */
+.ludo { gap: 8px; padding: 2px 10px 8px; max-width: 640px; }
+/* board: fits width AND leaves room for header, player cards and dock */
+.ludo-board { width: min(100% - 8px, calc(var(--app-h, 100dvh) - 330px), 640px); margin-inline: auto; }
+.ludo-svg { overflow: hidden; border-radius: 20px; }
+/* compact player cards: avatar + pips on one line */
+.ludo-players { gap: 6px; padding-top: 2px; }
+.ludo-chip { padding: 6px 8px 5px; border-radius: 14px; gap: 3px 6px; }
+.ludo-chip .av { width: 28px; height: 28px; font-size: .85rem; }
+.ludo-chip .nm { font-size: .78rem; }
+.ludo-chip.on { transform: translateY(-1px) scale(1.02); }
+.ludo-chip.on::before { display: none; }
+/* dock: die left, message + tools right, one tidy block */
+.ludo-dock { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: 'die say' 'die tools' 'log log'; padding: 10px 12px; gap: 4px 12px; border-radius: 20px; }
+.ludo-say { min-height: 0; } .ludo-say b { font-size: 1rem; } .ludo-say small { font-size: .78rem; }
+.ludo-tools { flex-wrap: nowrap; gap: 5px; overflow-x: auto; scrollbar-width: none; }
+.ludo-tools::-webkit-scrollbar { display: none; }
+.ludo-tools .tool { flex: none; padding: 7px 10px; font-size: .76rem; min-height: 36px; white-space: nowrap; }
+.ludo-tools .tool.on { background: linear-gradient(180deg, var(--brand-gold, #FFD36B), var(--brand-gold-lo, #E59A12)); color: #072A1F; border-color: transparent; }
+.ludo-log { max-height: 22vh; overflow-y: auto; }
+/* top bar icon buttons render the same on every phone */
+.icon-btn { display: inline-grid; place-items: center; }
+/* landscape: board left, dock right */
+html[data-orient="landscape"] .ludo { max-width: 100%; display: grid; grid-template-columns: auto minmax(220px, 1fr); grid-template-areas: 'board players' 'board dock'; align-items: start; gap: 8px 14px; }
+html[data-orient="landscape"] .ludo-players { grid-area: players; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+html[data-orient="landscape"] .ludo-board { grid-area: board; width: calc(var(--app-h, 100dvh) - 90px); }
+html[data-orient="landscape"] .ludo-dock { grid-area: dock; }
