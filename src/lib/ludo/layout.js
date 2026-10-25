@@ -62,3 +62,21 @@ export function tokenXY(board, seat, pos, slot = 0) {
   return homeXY(board, seat, pos - (B.ringLen - 2));
 }
 export const homeCells = HOME_CELLS;
+
+/* ── drawing helpers shared by the renderer and the game ── */
+/** Token radius and hop height in SVG units, per board. */
+export const UNIT = { square: { r: 0.36, hop: 0.5 }, triangle: { r: 1.75, hop: 2.4 } };
+
+/** Centres of the cells a token crosses going from relative position `from` to `to` (used to draw the last-move trail). */
+export function trailXY(board, seat, from, to) {
+  if (from === to) return [];
+  const out = [];
+  for (let x = from === -1 ? 0 : from + 1; x <= to; x++) out.push(tokenXY(board, seat, x, 0));
+  return from === -1 ? [baseXY(board, seat, 0), ...out] : out;
+}
+
+/** Angle (degrees) of a seat's home column, pointing towards the finish — for the chevrons painted on it. */
+export function homeAngle(board, seat) {
+  const a = homeXY(board, seat, 1), b = homeXY(board, seat, 5);
+  return Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI;
+}

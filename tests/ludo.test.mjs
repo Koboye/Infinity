@@ -118,3 +118,46 @@ import { ringXY, homeXY, tokenXY, TRI } from '../src/lib/ludo/layout.js';
   assert.deepEqual(homeXY('square', 0, 5), { x: 5.5, y: 7.5 });
   console.log('ok board drawing is exact (square steps = 1, triangle rotates onto itself)'); }
 console.log('ludo layout tests passed');
+
+// ── 7. v38 system upgrade: stats, move log, previews, hint, save / restore ──
+import { previewAll, hintMove, progressOf, serializeGame, restoreGame } from '../src/lib/ludo/engine.js';
+{ // stats count rolls, sixes, captures and losses; the log records every move
+  let s = newGame({ players: 4, tokens: 4 });
+  s = applyRoll(s, 6).state; assert.equal(s.stats.rolls[0], 1); assert.equal(s.stats.sixes[0], 1);
+  s = applyMove(s, 0).state; assert.equal(s.log.length, 1); assert.deepEqual([s.log[0].p, s.log[0].dice, s.log[0].out], [0, 6, true]);
+  const t = mk(); t.pos[0] = [3, -1, -1, -1]; t.pos[1] = [(absOf(t, 0, 5) - 13 + 52) % 52, -1, -1, -1]; t.phase = 'roll';
+  const m = applyMove(applyRoll(t, 2).state, 0); assert.equal(m.state.stats.captures[0], 1); assert.equal(m.state.stats.lost[1], 1); assert.equal(m.state.log.at(-1).cap, 1);
+  assert.equal(newGame({ players: 4 }).stats.rolls.length, 4);
+  // the engine never mutates the state it is given
+  const frozen = JSON.stringify(t); applyRoll(t, 2); assert.equal(JSON.stringify(t), frozen);
+  console.log('ok stats + move log'); }
+{ // previewAll describes each legal move
+  const s = mk(); s.pos[0] = [3, 10, -1, -1]; s.dice = 4; s.phase = 'move';
+  const pv = previewAll(s); assert.deepEqual(pv.map((x) => x.i), [0, 1]); assert.deepEqual(pv.map((x) => x.to), [7, 14]);
+  const star = mk(); star.pos[0] = [4, -1, -1, -1]; star.dice = 4; star.phase = 'move'; assert.equal(previewAll(star)[0].safe, true, 'rel 8 is a star');
+  const blk = mk(); blk.pos[0] = [3, 7, -1, -1]; blk.dice = 4; blk.phase = 'move'; assert.equal(previewAll(blk).find((x) => x.i === 0).block, true);
+  assert.deepEqual(previewAll(mk()), [], 'nothing to preview before a roll');
+  console.log('ok move previews'); }
+{ // the hint is a legal move, prefers a capture, and is stable
+  const t = mk(); t.pos[0] = [3, 20, -1, -1]; t.pos[1] = [(absOf(t, 0, 5) - 13 + 52) % 52, -1, -1, -1]; t.phase = 'move'; t.dice = 2;
+  assert.equal(hintMove(t), 0, 'hint takes the capture'); assert.equal(hintMove(t), hintMove(t));
+  assert.equal(hintMove(mk()), null);
+  for (let g = 0; g < 200; g++) { let s = newGame({ players: 4 }), k = 0; while (!s.over && k++ < 3000) { s = applyRoll(s, 1 + Math.floor(Math.random() * 6)).state; if (s.phase === 'move') { assert.ok(legalMoves(s).includes(hintMove(s))); s = applyMove(s, hintMove(s)).state; } } }
+  console.log('ok hint'); }
+{ // progress runs 0 → 1
+  const s = newGame({ players: 2 }); assert.equal(progressOf(s, 0), 0);
+  s.pos[0] = [56, 56, 56, 56]; assert.equal(progressOf(s, 0), 1);
+  console.log('ok progress'); }
+{ // save / restore round trip and rejection of garbage
+  let s = newGame({ players: 3, tokens: 2 }); s = applyRoll(s, 6).state;
+  const back = restoreGame(serializeGame(s), { players: 3, tokens: 2 });
+  assert.deepEqual(back.pos, s.pos); assert.equal(back.turn, s.turn); assert.equal(back.phase, 'move'); assert.equal(back.dice, 6); assert.deepEqual(back.stats, s.stats);
+  assert.ok(applyMove(back, 0).ok, 'a restored game keeps playing');
+  assert.equal(restoreGame(serializeGame(s), { players: 4 }), null, 'a different player count is not resumed');
+  assert.equal(restoreGame(serializeGame(s), { tokens: 4 }), null, 'a different token count is not resumed');
+  for (const bad of ['', 'nope', '{}', '{"v":1}', JSON.stringify({ ...JSON.parse(serializeGame(s)), pos: [[99, 0], [0, 0], [0, 0]] }),
+    JSON.stringify({ ...JSON.parse(serializeGame(s)), turn: 9 }), JSON.stringify({ ...JSON.parse(serializeGame(s)), phase: 'move', dice: 0 }),
+    JSON.stringify({ ...JSON.parse(serializeGame(s)), board: 'square' }), null, 42]) assert.equal(restoreGame(bad), null, 'rejects ' + String(bad).slice(0, 30));
+  const fin = newGame({ players: 2 }); fin.over = true; assert.equal(restoreGame(serializeGame(fin)), null, 'a finished game is not resumed');
+  console.log('ok save / restore'); }
+console.log('ludo v38 system tests passed');

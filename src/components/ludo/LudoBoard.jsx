@@ -1,11 +1,13 @@
 'use client';
-import React from 'react';
+import React, { useState } from 'react';
 import { BOARDS, finishOf } from '@/lib/ludo/engine.js';
-import { ringXY, homeXY, baseXY, finishXY, tokenXY, viewBoxOf, TRI } from '@/lib/ludo/layout.js';
+import { ringXY, homeXY, baseXY, finishXY, tokenXY, viewBoxOf, homeAngle, UNIT, TRI } from '@/lib/ludo/layout.js';
 
 export const COLORS = ['#E0452B', '#2E9E4F', '#F2B632', '#2F6FD6'];
 export const COLOR_NAMES = ['red', 'green', 'yellow', 'blue'];
-const DARK = ['#9c2a17', '#1d6b34', '#b98412', '#1d4a99'];
+const DARK = ['#8e2412', '#17592b', '#a8740d', '#163f86'];
+const LIGHT = ['#ff8e74', '#77d98f', '#ffe08a', '#8db8ff'];
+const INK = '#2a1d10';
 
 const star = (x, y, r) => {
   const pts = Array.from({ length: 10 }, (_, i) => { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * 0.42 : r; return `${(x + rr * Math.cos(a)).toFixed(3)},${(y + rr * Math.sin(a)).toFixed(3)}`; });
@@ -15,111 +17,226 @@ const star = (x, y, r) => {
 function Defs() {
   return (
     <defs>
+      <linearGradient id="lframe" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#8a5a2b" /><stop offset=".5" stopColor="#4a2e15" /><stop offset="1" stopColor="#2a1a0b" /></linearGradient>
+      <linearGradient id="lpaper" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#fff9e8" /><stop offset="1" stopColor="#efe2bf" /></linearGradient>
+      <radialGradient id="lplate" cx="50%" cy="40%" r="70%"><stop offset="0" stopColor="#fffdf4" /><stop offset="1" stopColor="#ecdfbd" /></radialGradient>
+      <linearGradient id="lgold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#ffe9a3" /><stop offset=".55" stopColor="#e2a921" /><stop offset="1" stopColor="#a8700b" /></linearGradient>
+      <radialGradient id="lsock" cx="50%" cy="40%" r="65%"><stop offset="0" stopColor="#000" stopOpacity=".28" /><stop offset="1" stopColor="#000" stopOpacity=".06" /></radialGradient>
+      <filter id="lglowS" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation=".16" /></filter>
+      <filter id="lglowT" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.1" /></filter>
       {COLORS.map((c, i) => (
-        <radialGradient key={i} id={`lg${i}`} cx="35%" cy="30%" r="75%"><stop offset="0%" stopColor="#fff" stopOpacity=".95" /><stop offset="28%" stopColor={c} /><stop offset="100%" stopColor={DARK[i]} /></radialGradient>
+        <React.Fragment key={i}>
+          <radialGradient id={`lg${i}`} cx="36%" cy="30%" r="78%"><stop offset="0" stopColor="#fff" stopOpacity=".95" /><stop offset=".26" stopColor={LIGHT[i]} /><stop offset=".62" stopColor={c} /><stop offset="1" stopColor={DARK[i]} /></radialGradient>
+          <linearGradient id={`lb${i}`} x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor={DARK[i]} /><stop offset=".3" stopColor={LIGHT[i]} /><stop offset=".62" stopColor={c} /><stop offset="1" stopColor={DARK[i]} /></linearGradient>
+          <linearGradient id={`lc${i}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor={LIGHT[i]} /><stop offset=".45" stopColor={c} /><stop offset="1" stopColor={DARK[i]} /></linearGradient>
+          <radialGradient id={`lw${i}`} cx="50%" cy="50%" r="75%"><stop offset="0" stopColor={LIGHT[i]} /><stop offset=".6" stopColor={c} /><stop offset="1" stopColor={DARK[i]} /></radialGradient>
+        </React.Fragment>
       ))}
     </defs>
   );
 }
 
-/** Static board: bases, ring, start cells, stars, home columns, centre. */
-function Square({ seats }) {
-  const cells = [];
+const Chevron = ({ x, y, a, s = 1, o = 0.6 }) => (
+  <path d="M-0.17,-0.2 L0.11,0 L-0.17,0.2" transform={`translate(${x} ${y}) rotate(${a}) scale(${s})`} fill="none" stroke="#fff" strokeOpacity={o} strokeWidth={0.1 * 1} strokeLinecap="round" strokeLinejoin="round" />
+);
+
+/** The classic cross: bases, ring, start cells, stars, home columns and the centre. */
+function Square({ seats, turnSeat }) {
+  const cells = [], B = BOARDS.square;
   for (let i = 0; i < 52; i++) {
-    const { x, y } = ringXY('square', i), si = BOARDS.square.seatStart.indexOf(i), safe = BOARDS.square.seatStart.some((st) => BOARDS.square.safeOffsets.some((o) => (st + o) % 52 === i));
+    const { x, y } = ringXY('square', i), si = B.seatStart.indexOf(i), safe = B.seatStart.some((st) => B.safeOffsets.some((o) => (st + o) % 52 === i));
     cells.push(
       <g key={i}>
-        <rect x={x - 0.5} y={y - 0.5} width="1" height="1" fill={si >= 0 ? COLORS[si] : '#fffaf0'} stroke="#2a1d10" strokeWidth="0.04" />
-        {safe && si < 0 && <polygon points={star(x, y, 0.34)} fill="#d9a521" stroke="#8a5a0b" strokeWidth="0.03" />}
-        {si >= 0 && <polygon points={star(x, y, 0.3)} fill="#fff" opacity=".9" />}
+        <rect x={x - 0.46} y={y - 0.46} width="0.92" height="0.92" rx="0.14" fill={si >= 0 ? `url(#lc${si})` : 'url(#lpaper)'} stroke={INK} strokeOpacity=".55" strokeWidth="0.035" opacity={si >= 0 && !seats.includes(si) ? 0.5 : 1} />
+        <rect x={x - 0.4} y={y - 0.4} width="0.8" height="0.4" rx="0.1" fill="#fff" opacity={si >= 0 ? 0.2 : 0.55} />
+        {safe && si < 0 && <><polygon points={star(x, y, 0.4)} fill="#ffcf4a" opacity=".55" filter="url(#lglowS)" /><polygon points={star(x, y, 0.33)} fill="url(#lgold)" stroke="#7a4d08" strokeWidth="0.03" strokeLinejoin="round" /></>}
+        {si >= 0 && <polygon points={star(x, y, 0.3)} fill="#fff" opacity=".92" />}
       </g>,
     );
   }
   const home = [];
-  [0, 1, 2, 3].forEach((s) => { for (let m = 1; m <= 5; m++) { const { x, y } = homeXY('square', s, m); home.push(<rect key={`${s}${m}`} x={x - 0.5} y={y - 0.5} width="1" height="1" fill={COLORS[s]} stroke="#2a1d10" strokeWidth="0.04" opacity={seats.includes(s) ? 1 : 0.35} />); } });
+  [0, 1, 2, 3].forEach((s) => {
+    const a = homeAngle('square', s), on = seats.includes(s);
+    for (let m = 1; m <= 5; m++) {
+      const { x, y } = homeXY('square', s, m);
+      home.push(
+        <g key={`${s}${m}`} opacity={on ? 1 : 0.35}>
+          <rect x={x - 0.46} y={y - 0.46} width="0.92" height="0.92" rx="0.14" fill={`url(#lc${s})`} stroke={INK} strokeOpacity=".6" strokeWidth="0.035" />
+          <rect x={x - 0.4} y={y - 0.4} width="0.8" height="0.35" rx="0.1" fill="#fff" opacity=".22" />
+          <Chevron x={x} y={y} a={a} s={m === 5 ? 1.1 : 0.9} o={m === 5 ? 0.95 : 0.55} />
+        </g>,
+      );
+    }
+  });
   const bases = [[0, 0], [9, 0], [9, 9], [0, 9]].map(([x, y], s) => (
-    <g key={s} opacity={seats.includes(s) ? 1 : 0.35}>
-      <rect x={x} y={y} width="6" height="6" fill={COLORS[s]} stroke="#2a1d10" strokeWidth="0.06" />
-      <rect x={x + 0.9} y={y + 0.9} width="4.2" height="4.2" rx="0.6" fill="#fffaf0" />
-      {[0, 1, 2, 3].map((k) => { const p = baseXY('square', s, k); return <circle key={k} cx={p.x} cy={p.y} r="0.55" fill="none" stroke={COLORS[s]} strokeWidth="0.12" opacity=".55" />; })}
+    <g key={s} opacity={seats.includes(s) ? 1 : 0.32}>
+      <rect x={x} y={y} width="6" height="6" rx="0.5" fill={`url(#lc${s})`} stroke={INK} strokeWidth="0.06" />
+      <rect x={x + 0.12} y={y + 0.12} width="5.76" height="2.4" rx="0.4" fill="#fff" opacity=".13" />
+      <rect x={x + 0.85} y={y + 0.85} width="4.3" height="4.3" rx="0.9" fill="url(#lplate)" stroke={DARK[s]} strokeOpacity=".55" strokeWidth="0.07" />
+      {[0, 1, 2, 3].map((k) => { const p = baseXY('square', s, k); return (
+        <g key={k}><circle cx={p.x} cy={p.y} r="0.66" fill="url(#lsock)" /><circle cx={p.x} cy={p.y} r="0.66" fill="none" stroke={COLORS[s]} strokeWidth="0.1" opacity=".75" /><circle cx={p.x - 0.12} cy={p.y - 0.14} r="0.18" fill="#fff" opacity=".35" /></g>
+      ); })}
     </g>
   ));
+  const jewel = COLORS[turnSeat] || '#fff';
   return (
     <g>
-      <rect x="-0.2" y="-0.2" width="15.4" height="15.4" rx="0.6" fill="#2a1d10" />
+      <rect x="-0.4" y="-0.4" width="15.8" height="15.8" rx="1" fill="url(#lframe)" />
+      <rect x="-0.28" y="-0.28" width="15.56" height="15.56" rx="0.85" fill="none" stroke="#e8c27d" strokeOpacity=".5" strokeWidth="0.05" />
+      <rect x="0" y="0" width="15" height="15" rx="0.45" fill="url(#lpaper)" />
       {bases}{cells}{home}
-      <polygon points="6,6 9,6 7.5,7.5" fill={COLORS[1]} /><polygon points="9,6 9,9 7.5,7.5" fill={COLORS[2]} />
-      <polygon points="9,9 6,9 7.5,7.5" fill={COLORS[3]} /><polygon points="6,9 6,6 7.5,7.5" fill={COLORS[0]} />
-      <rect x="6" y="6" width="3" height="3" fill="none" stroke="#2a1d10" strokeWidth="0.06" />
+      <polygon points="6,6 9,6 7.5,7.5" fill="url(#lc1)" /><polygon points="9,6 9,9 7.5,7.5" fill="url(#lc2)" />
+      <polygon points="9,9 6,9 7.5,7.5" fill="url(#lc3)" /><polygon points="6,9 6,6 7.5,7.5" fill="url(#lc0)" />
+      <path d="M6,6 L9,9 M9,6 L6,9" stroke="#fff" strokeOpacity=".55" strokeWidth="0.05" />
+      <rect x="6" y="6" width="3" height="3" fill="none" stroke={INK} strokeWidth="0.06" />
+      <circle cx="7.5" cy="7.5" r="0.62" fill={jewel} opacity=".5" filter="url(#lglowS)" className="ludo-jewel-glow" />
+      <circle cx="7.5" cy="7.5" r="0.42" fill="url(#lgold)" stroke="#7a4d08" strokeWidth="0.04" />
+      <circle cx="7.5" cy="7.5" r="0.26" fill={jewel} stroke="#fff" strokeOpacity=".8" strokeWidth="0.04" className="ludo-jewel" />
     </g>
   );
 }
 
-function Triangle() {
+function Triangle({ turnSeat }) {
   const B = BOARDS.triangle, cells = [];
   for (let i = 0; i < 54; i++) {
     const { x, y } = ringXY('triangle', i), si = B.seatStart.indexOf(i), safe = B.seatStart.some((st) => B.safeOffsets.some((o) => (st + o) % 54 === i));
     cells.push(
       <g key={i}>
-        <circle cx={x} cy={y} r="1.95" fill={si >= 0 ? COLORS[si] : '#fffaf0'} stroke="#2a1d10" strokeWidth="0.3" />
-        {safe && <polygon points={star(x, y, si >= 0 ? 1.3 : 1.45)} fill={si >= 0 ? '#fff' : '#d9a521'} stroke={si >= 0 ? 'none' : '#8a5a0b'} strokeWidth="0.15" />}
+        <circle cx={x} cy={y} r="1.95" fill={si >= 0 ? `url(#lw${si})` : 'url(#lplate)'} stroke={INK} strokeOpacity=".7" strokeWidth="0.28" />
+        <ellipse cx={x - 0.3} cy={y - 0.7} rx="1.05" ry="0.55" fill="#fff" opacity={si >= 0 ? 0.25 : 0.6} />
+        {safe && <><polygon points={star(x, y, 1.75)} fill="#ffcf4a" opacity={si >= 0 ? 0 : 0.55} filter="url(#lglowT)" /><polygon points={star(x, y, si >= 0 ? 1.3 : 1.45)} fill={si >= 0 ? '#fff' : 'url(#lgold)'} stroke={si >= 0 ? 'none' : '#7a4d08'} strokeWidth="0.14" strokeLinejoin="round" /></>}
       </g>,
     );
   }
   const home = [];
-  [0, 1, 2].forEach((s) => { for (let m = 1; m <= 5; m++) { const { x, y } = homeXY('triangle', s, m); home.push(<circle key={`${s}${m}`} cx={x} cy={y} r="1.75" fill={COLORS[s]} stroke="#2a1d10" strokeWidth="0.3" />); } });
+  [0, 1, 2].forEach((s) => {
+    for (let m = 1; m <= 5; m++) {
+      const { x, y } = homeXY('triangle', s, m), a = homeAngle('triangle', s);
+      home.push(
+        <g key={`${s}${m}`}>
+          <circle cx={x} cy={y} r="1.78" fill={`url(#lw${s})`} stroke={INK} strokeOpacity=".7" strokeWidth="0.28" />
+          <g transform={`translate(${x} ${y}) rotate(${a}) scale(${m === 5 ? 1.15 : 0.95})`}><path d="M-0.9,-1 L0.55,0 L-0.9,1" fill="none" stroke="#fff" strokeOpacity={m === 5 ? 0.95 : 0.6} strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round" /></g>
+        </g>,
+      );
+    }
+  });
   const bases = [0, 1, 2].map((s) => {
     const b = baseXY('triangle', s, 0);
     return (
       <g key={s}>
-        <circle cx={b.bx} cy={b.by} r="9" fill={COLORS[s]} stroke="#2a1d10" strokeWidth="0.5" />
-        <circle cx={b.bx} cy={b.by} r="7.4" fill="#fffaf0" />
-        {[0, 1, 2, 3].map((k) => { const p = baseXY('triangle', s, k); return <circle key={k} cx={p.x} cy={p.y} r="2.1" fill="none" stroke={COLORS[s]} strokeWidth="0.5" opacity=".55" />; })}
+        <circle cx={b.bx} cy={b.by} r="9.2" fill={`url(#lw${s})`} stroke={INK} strokeWidth="0.5" />
+        <circle cx={b.bx} cy={b.by} r="7.5" fill="url(#lplate)" stroke={DARK[s]} strokeOpacity=".55" strokeWidth="0.45" />
+        {[0, 1, 2, 3].map((k) => { const p = baseXY('triangle', s, k); return (
+          <g key={k}><circle cx={p.x} cy={p.y} r="2.35" fill="url(#lsock)" /><circle cx={p.x} cy={p.y} r="2.35" fill="none" stroke={COLORS[s]} strokeWidth="0.6" opacity=".75" /><circle cx={p.x - 0.6} cy={p.y - 0.7} r="0.7" fill="#fff" opacity=".35" /></g>
+        ); })}
       </g>
     );
   });
   const wedge = [0, 1, 2].map((s) => { // centre hub: three wedges, one per seat, pointing at that seat's home column
-    const f = finishXY('triangle', s, 1.5), a = Math.atan2(f.y - TRI.cy, f.x - TRI.cx), r = 5.2, a0 = a - Math.PI / 3, a1 = a + Math.PI / 3;
+    const f = finishXY('triangle', s, 1.5), a = Math.atan2(f.y - TRI.cy, f.x - TRI.cx), r = 5.4, a0 = a - Math.PI / 3, a1 = a + Math.PI / 3;
     const p = (t) => `${(TRI.cx + r * Math.cos(t)).toFixed(2)},${(TRI.cy + r * Math.sin(t)).toFixed(2)}`;
-    return <path key={s} d={`M${TRI.cx},${TRI.cy} L${p(a0)} A${r},${r} 0 0 1 ${p(a1)} Z`} fill={COLORS[s]} stroke="#2a1d10" strokeWidth="0.3" />;
+    return <path key={s} d={`M${TRI.cx},${TRI.cy} L${p(a0)} A${r},${r} 0 0 1 ${p(a1)} Z`} fill={`url(#lw${s})`} stroke="#fff" strokeOpacity=".7" strokeWidth="0.3" />;
   });
-  const [A, Bv, C] = TRI.V;
+  const [A, Bv, C] = TRI.V, jewel = COLORS[turnSeat] || '#fff', pts = `${A.x},${A.y} ${Bv.x},${Bv.y} ${C.x},${C.y}`;
   return (
     <g>
-      <polygon points={`${A.x},${A.y} ${Bv.x},${Bv.y} ${C.x},${C.y}`} fill="#f6ecd2" stroke="#2a1d10" strokeWidth="9" strokeLinejoin="round" />
+      <polygon points={pts} fill="url(#lframe)" stroke="url(#lframe)" strokeWidth="10.5" strokeLinejoin="round" />
+      <polygon points={pts} fill="none" stroke="#e8c27d" strokeOpacity=".5" strokeWidth="0.5" strokeLinejoin="round" transform={`translate(${TRI.cx} ${TRI.cy}) scale(1.115) translate(${-TRI.cx} ${-TRI.cy})`} />
+      <polygon points={pts} fill="url(#lpaper)" stroke="#3a2412" strokeWidth="5" strokeLinejoin="round" />
       {bases}{cells}{home}{wedge}
+      <circle cx={TRI.cx} cy={TRI.cy} r="3.2" fill={jewel} opacity=".5" filter="url(#lglowT)" className="ludo-jewel-glow" />
+      <circle cx={TRI.cx} cy={TRI.cy} r="2.2" fill="url(#lgold)" stroke="#7a4d08" strokeWidth="0.25" />
+      <circle cx={TRI.cx} cy={TRI.cy} r="1.3" fill={jewel} stroke="#fff" strokeOpacity=".8" strokeWidth="0.25" className="ludo-jewel" />
     </g>
   );
 }
 
-/** tokens: [{p, i, seat, pos}] already resolved (animation overrides applied). legal: Set of "p:i" keys the human may tap. */
-export default function LudoBoard({ board, seats, tokens, legal, onPick, hintKey }) {
-  const isSq = board === 'square', R = isSq ? 0.36 : 1.75;
+/** A pawn drawn at radius 1 (base ellipse, flared body, neck ring, glossy head). */
+function Pawn({ seat, fin }) {
+  return (
+    <g transform={`translate(0 ${fin ? 0.05 : 0.18})`}>
+      <ellipse cx="0" cy="0.5" rx="0.88" ry="0.3" fill={DARK[seat]} stroke="rgba(0,0,0,.55)" strokeWidth="0.06" />
+      <path d="M-0.7,0.46 C-0.7,0.12 -0.3,0.08 -0.22,-0.36 L0.22,-0.36 C0.3,0.08 0.7,0.12 0.7,0.46 C0.45,0.62 -0.45,0.62 -0.7,0.46 Z" fill={`url(#lb${seat})`} stroke="rgba(0,0,0,.5)" strokeWidth="0.06" strokeLinejoin="round" />
+      <ellipse cx="0" cy="-0.38" rx="0.42" ry="0.13" fill={DARK[seat]} stroke="rgba(0,0,0,.45)" strokeWidth="0.05" />
+      <circle cx="0" cy="-0.8" r="0.46" fill={`url(#lg${seat})`} stroke="rgba(0,0,0,.55)" strokeWidth="0.06" />
+      <ellipse cx="-0.16" cy="-0.97" rx="0.17" ry="0.1" fill="#fff" opacity=".85" transform="rotate(-25 -0.16 -0.97)" />
+      <path d="M-0.5,0.16 C-0.34,0.04 -0.3,0 -0.26,-0.2" fill="none" stroke="#fff" strokeOpacity=".38" strokeWidth="0.07" strokeLinecap="round" />
+    </g>
+  );
+}
+
+/** Particles for a capture / home / leave-base burst, drawn at a board position. */
+function Burst({ fx, board }) {
+  const U = UNIT[board], n = fx.kind === 'out' ? 0 : 12;
+  return (
+    <g className={`ludo-fx ${fx.kind}`} style={{ transform: `translate(${fx.x}px, ${fx.y}px)`, '--u': U.r }}>
+      <circle className="fx-ring" r={U.r * 1.1} fill="none" stroke={fx.kind === 'home' ? '#ffd24a' : fx.color} strokeWidth={U.r * 0.22} />
+      {fx.kind === 'hit' && <circle className="fx-flash" r={U.r * 1.4} fill="#fff" />}
+      {Array.from({ length: n }, (_, k) => {
+        const a = (k / n) * Math.PI * 2 + fx.k * 0.7, d = U.r * (2.4 + (k % 3) * 0.7);
+        return <circle key={k} className="fx-p" r={U.r * (0.12 + (k % 3) * 0.05)} fill={fx.kind === 'home' ? (k % 2 ? '#ffd24a' : '#fff7c2') : (k % 2 ? fx.color : '#fff')} style={{ '--dx': Math.cos(a) * d, '--dy': Math.sin(a) * d, animationDelay: `${(k % 4) * 0.02}s` }} />;
+      })}
+    </g>
+  );
+}
+
+/**
+ * tokens   : [{p, i, seat, pos, moving}] already resolved (animation overrides applied).
+ * legal    : Set of "p:i" keys the human may tap.     previews: Map "p:i" → { to, captured, finishes } for those tokens.
+ * trail    : { seat, pts:[{x,y}], k } the cells the last move crossed.   fx: [{id,x,y,color,kind,k}] bursts.   flying: Set of keys sliding home after a capture.
+ */
+export default function LudoBoard({ board, seats, tokens, legal, onPick, hintKey, turnSeat, previews, trail, fx = [], flying }) {
+  const isSq = board === 'square', U = UNIT[board], R = U.r, F = finishOf(board);
+  const [hover, setHover] = useState(null);
   // spread tokens that share a point
   const groups = new Map();
   tokens.forEach((tk) => { const xy = tokenXY(board, tk.seat, tk.pos, tk.i); const k = `${xy.x.toFixed(2)},${xy.y.toFixed(2)}`; (groups.get(k) || groups.set(k, []).get(k)).push({ tk, xy }); });
   const items = [];
   groups.forEach((g) => g.forEach(({ tk, xy }, idx) => {
-    const n = g.length, ang = (idx / n) * Math.PI * 2, spread = n > 1 ? R * 0.55 : 0;
-    items.push({ tk, x: xy.x + Math.cos(ang) * spread, y: xy.y + Math.sin(ang) * spread, sc: n > 1 ? 0.8 : 1 });
+    const n = g.length, ang = (idx / n) * Math.PI * 2 - Math.PI / 2, spread = n > 1 ? R * (n > 2 ? 0.8 : 0.62) : 0;
+    items.push({ tk, x: xy.x + Math.cos(ang) * spread, y: xy.y + Math.sin(ang) * spread, sc: (n > 1 ? 0.78 : 1) * (tk.pos === F ? 0.85 : 1), fin: tk.pos === F });
   }));
-  items.sort((a, b) => a.y - b.y);
+  items.sort((a, b) => (a.tk.moving ? 1 : 0) - (b.tk.moving ? 1 : 0) || a.y - b.y);
+  const ghosts = [];
+  legal.forEach((key) => {
+    const pv = previews && previews.get(key); if (!pv) return;
+    const [p, i] = key.split(':').map(Number), tk = tokens.find((t) => t.p === p && t.i === i); if (!tk) return;
+    const xy = tokenXY(board, tk.seat, pv.to, i), on = hover === key || hintKey === key, hit = pv.captured.length > 0;
+    ghosts.push(
+      <g key={key} className={`ludo-ghost${on ? ' on' : ''}${hit ? ' hit' : ''}`} style={{ transform: `translate(${xy.x}px, ${xy.y}px)` }}>
+        <circle r={R * 0.95} fill={COLORS[tk.seat]} fillOpacity={on ? 0.34 : 0.16} stroke={hit ? '#ff4d3a' : COLORS[tk.seat]} strokeWidth={R * 0.16} strokeDasharray={`${R * 0.45} ${R * 0.33}`} />
+        {hit && <g stroke="#ff3b2a" strokeWidth={R * 0.2} strokeLinecap="round"><path d={`M${-R * 0.42},${-R * 0.42} L${R * 0.42},${R * 0.42} M${R * 0.42},${-R * 0.42} L${-R * 0.42},${R * 0.42}`} /></g>}
+        {pv.finishes && <polygon points={star(0, 0, R * 0.7)} fill="url(#lgold)" stroke="#7a4d08" strokeWidth={R * 0.08} />}
+      </g>,
+    );
+  });
   return (
     <svg className={`ludo-svg ${board}`} viewBox={viewBoxOf(board)} role="img" aria-label={isSq ? 'Ludo board' : 'Ludo triangle board'}>
       <Defs />
-      {isSq ? <Square seats={seats} /> : <Triangle />}
-      {items.map(({ tk, x, y, sc }) => {
-        const key = `${tk.p}:${tk.i}`, can = legal.has(key);
+      {isSq ? <Square seats={seats} turnSeat={turnSeat} /> : <Triangle turnSeat={turnSeat} />}
+      {trail && trail.pts.length > 0 && (
+        <g className="ludo-trail" key={trail.k}>
+          {trail.pts.map((pt, k) => <circle key={k} cx={pt.x} cy={pt.y} r={R * 0.3} fill={COLORS[trail.seat]} stroke="#fff" strokeWidth={R * 0.08} style={{ animationDelay: `${k * 0.05}s` }} />)}
+        </g>
+      )}
+      {ghosts}
+      {items.map(({ tk, x, y, sc, fin }) => {
+        const key = `${tk.p}:${tk.i}`, can = legal.has(key), fly = flying && flying.has(key);
+        const pick = can ? (e) => { e.preventDefault(); onPick(tk.i); } : undefined;
         return (
-          <g key={key} className={`ludo-tok${can ? ' can' : ''}${hintKey === key ? ' hint' : ''}`} style={{ transform: `translate(${x}px, ${y}px)` }}
-            onPointerDown={can ? (e) => { e.preventDefault(); onPick(tk.i); } : undefined} role={can ? 'button' : undefined} aria-label={can ? `Move ${COLOR_NAMES[tk.seat]} token` : undefined}>
-            {can && <circle r={R * 1.45} className="ring" fill="none" stroke="#fff" strokeWidth={R * 0.2} />}
-            <circle r={R * sc * 1.08} fill="rgba(0,0,0,.35)" transform={`translate(${R * 0.12}, ${R * 0.18})`} />
-            <circle r={R * sc} fill={`url(#lg${tk.seat})`} stroke="#241609" strokeWidth={R * 0.12} />
-            <circle r={R * sc * 0.45} fill="none" stroke="rgba(255,255,255,.55)" strokeWidth={R * 0.1} />
+          <g key={key} className={`ludo-tok${can ? ' can' : ''}${hintKey === key ? ' hint' : ''}${fly ? ' fly' : ''}${tk.moving ? ' moving' : ''}`}
+            style={{ transform: `translate(${x}px, ${y}px)`, '--hop': U.hop }}
+            onPointerDown={pick} onPointerEnter={can ? () => setHover(key) : undefined} onPointerLeave={can ? () => setHover(null) : undefined}
+            onKeyDown={can ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(tk.i); } } : undefined}
+            role={can ? 'button' : undefined} tabIndex={can ? 0 : undefined} aria-label={can ? `Move ${COLOR_NAMES[tk.seat]} token` : undefined}>
+            {can && <circle r={R * 1.6} fill="transparent" />}
+            {can && <circle r={R * 1.35} className="ring" fill="none" stroke="#fff" strokeWidth={R * 0.18} />}
+            <ellipse className="shadow" cx={R * 0.1} cy={R * 0.78 * sc} rx={R * 0.95 * sc} ry={R * 0.34 * sc} fill="rgba(0,0,0,.42)" />
+            <g key={tk.moving ? `m${tk.pos}` : 'still'} className="body"><g transform={`scale(${R * sc})`}><Pawn seat={tk.seat} fin={fin} /></g></g>
           </g>
         );
       })}
+      {fx.map((f) => <Burst key={f.id} fx={f} board={board} />)}
     </svg>
   );
 }
