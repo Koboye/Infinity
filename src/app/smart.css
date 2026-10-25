@@ -1,0 +1,74 @@
+/* ═════════ v16 · "smart boards" — one consistent design language for every game ═════════
+   Loaded LAST. Earlier sheets stretched holes into ovals on some screens; here every hole is a true circle. */
+:root {
+  --sb-gap: clamp(6px, 1.7cqmin, 16px);
+  --sb-rim: rgba(255, 233, 166, .20);
+  --sb-shadow: 0 10px 0 var(--wood-dark, #3b2410), 0 22px 30px rgba(0, 0, 0, .45);
+}
+
+/* ── Gebeta / Ashagro: 12 perfectly round holes on an even grid, two long family trays at the ends ── */
+.match .board {
+  gap: var(--sb-gap) !important;
+  padding: clamp(10px, 3.2cqmin, 26px) !important;
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(255, 255, 255, .14), transparent 55%),
+    repeating-linear-gradient(92deg, rgba(90, 52, 22, .10) 0 2px, transparent 2px 9px),
+    linear-gradient(160deg, var(--wood-hi, #c98f4f), var(--wood, #a8692f) 45%, var(--wood-lo, #7d4a1f)) !important;
+  box-shadow: var(--sb-shadow), inset 0 2px 0 rgba(255, 255, 255, .25), inset 0 0 0 5px rgba(0, 0, 0, .12) !important;
+}
+/* every cell is its own square-measuring container; the hole is the largest circle that fits inside it */
+.match .board .cell { container-type: size; position: relative; display: grid !important; place-items: center !important; }
+.match .board .cell:not(.d6):not(.d13) .pit {
+  width: min(100cqw, 100cqh) !important; height: min(100cqw, 100cqh) !important;
+  max-width: none !important; aspect-ratio: 1 / 1 !important; border-radius: 50% !important;
+}
+/* a carved ring around each hole so the grid reads as one tidy, deliberate tray */
+.match .board .cell:not(.d6):not(.d13)::before {
+  content: ''; position: absolute; left: 50%; top: 50%; width: min(112cqw, 112cqh); height: min(112cqw, 112cqh);
+  transform: translate(-50%, -50%); border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle, rgba(0, 0, 0, .30) 0 70%, var(--sb-rim) 72% 76%, transparent 78%);
+}
+/* the two family piles: long rounded trays, clearly different from the holes */
+.match .board .cell.d6, .match .board .cell.d13 { padding: 0; }
+.match .board .cell.d6 .pit.store, .match .board .cell.d13 .pit.store {
+  width: 100% !important; height: 100% !important; border-radius: min(50cqw, 50cqh) !important;
+  background: radial-gradient(ellipse at 50% 22%, #1a0509 0%, var(--velvet, #3a0d17) 58%, #46141f 100%) !important;
+  box-shadow: inset 0 8px 14px rgba(0, 0, 0, .7), inset 0 -2px 3px rgba(255, 255, 255, .10), 0 0 0 3px var(--sb-rim), 0 1px 0 rgba(255, 255, 255, .35);
+}
+/* a clear centre line separating the two rows */
+.match .board::after { opacity: .7; }
+
+/* ── Dama / Checkers: framed board, crisp squares, calm contrast ── */
+.ckboard {
+  border: 0 !important; border-radius: 14px !important; padding: 0; box-sizing: border-box;
+  width: calc(100% - 30px) !important; margin: 15px auto !important;
+  box-shadow: 0 0 0 7px var(--wood-dark, #3b2410), 0 0 0 9px rgba(242, 182, 50, .55), 0 14px 0 2px var(--wood-dark, #3b2410), 0 24px 30px rgba(0, 0, 0, .45), inset 0 0 0 2px rgba(0, 0, 0, .35) !important;
+}
+.sq.sel { box-shadow: inset 0 0 0 3px var(--gold, #F2B632), 0 0 12px rgba(242, 182, 50, .55) !important; }
+.ck-face { inset: 11% !important; }
+.ck-piece.s0 .ck-face { background: radial-gradient(circle at 36% 30%, #8a5d38, #3b2312 72%) !important; }
+.ck-piece.s1 .ck-face { background: radial-gradient(circle at 36% 30%, #FFF6DC, #DDBE85 78%) !important; }
+
+/* ── Dominoes: green baize table with a wooden rail ── */
+.dtable {
+  padding: clamp(8px, 2.4vmin, 16px); border-radius: 22px;
+  background: radial-gradient(130% 90% at 50% 25%, #2f7a53, #1d5a3c 62%, #143f2a);
+  box-shadow: inset 0 0 0 clamp(5px, 1.6vmin, 9px) var(--wood-dark, #3b2410), inset 0 0 0 clamp(7px, 2vmin, 11px) rgba(242, 182, 50, .45), inset 0 12px 28px rgba(0, 0, 0, .35), 0 12px 24px rgba(0, 0, 0, .35);
+}
+.dhand { background: linear-gradient(180deg, rgba(0, 0, 0, .0), rgba(0, 0, 0, .22)); border-radius: 14px; }
+.dtile { box-shadow: 0 2px 0 #9c8a5f, 0 5px 7px rgba(0, 0, 0, .4), inset 0 1px 0 #fff, inset 0 -2px 3px rgba(120, 90, 40, .15) !important; }
+
+/* ── Bingo: even, square, readable cells on a framed card ── */
+.bcard { gap: clamp(3px, .9vmin, 7px); padding: clamp(5px, 1.4vmin, 10px) !important; border-radius: 16px; background: linear-gradient(160deg, rgba(255, 255, 255, .10), rgba(0, 0, 0, .18)); box-shadow: inset 0 0 0 2px rgba(242, 182, 50, .35); }
+.bcell { border-radius: 12px !important; box-shadow: 0 3px 0 #a99668, inset 0 1px 0 #fff !important; }
+.bcell.on { box-shadow: 0 1px 0 #a99668, inset 0 1px 0 #fff !important; }
+
+@media (prefers-reduced-motion: reduce) { .match .board .cell::before { transition: none; } }
+
+/* ── Coming soon (Dominoes is built but not released) ── */
+.gp.soon { opacity: .72; }
+.gp.soon small { color: var(--gold, #F2B632); font-weight: 700; }
+.coming-soon { position: relative; display: grid; justify-items: center; gap: 10px; padding: 14px 12px 18px; border-radius: 20px; border: 2px dashed rgba(244, 233, 207, .28); background: rgba(0, 0, 0, .2); text-align: center; }
+.coming-soon .demo { opacity: .45; filter: saturate(.6); pointer-events: none; }
+.coming-soon .cs-badge { font: 800 1.05rem var(--font-ui, system-ui); letter-spacing: .04em; padding: 6px 16px; border-radius: 999px; background: var(--gold, #F2B632); color: #2b1a05; }
+.coming-soon p { margin: 0; color: var(--ivory-dim, #cdbf9f); font-size: .9rem; max-width: 30ch; }

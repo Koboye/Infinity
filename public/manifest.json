@@ -1,0 +1,61 @@
+{
+  "name": "ገበጣ · ዳማ",
+  "short_name": "ገበጣ",
+  "description": "Play ገበጣ (Gebeta) and ዳማ (Dama) online with friends or against the computer.",
+  "start_url": "/",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#072A1F",
+  "theme_color": "#072A1F",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "id": "/",
+  "lang": "am",
+  "dir": "ltr",
+  "scope": "/",
+  "categories": [
+    "games",
+    "board",
+    "entertainment"
+  ],
+  "shortcuts": [
+    {
+      "name": "ገበጣ",
+      "url": "/?game=gebeta",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "ዳማ",
+      "url": "/?game=checkers",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+/* v29 ጡዝ rebrand — loaded last. Scoped to the Tuz board (.rs-tuz) and to the match screen that contains it, so the other games keep their look.
+   Palette: Tuz ink-green + saffron + ivory (the app's three brand colours), with ONE accent for the frozen Tuz. */
+.match:has(.board.rs-tuz) {
+  --tz-ink: #06241B; --tz-ink-2: #0B3A2B; --tz-saffron: #FFB627; --tz-saffron-hi: #FFE08A; --tz-ivory: #FFF7E0; --tz-line: rgba(255,224,138,.32);
+}
+.board.rs-tuz {
+  background: linear-gradient(160deg, #0F4A36 0%, var(--tz-ink-2, #0B3A2B) 55%, var(--tz-ink, #06241B) 100%);
+  border: 3px solid var(--tz-saffron, #FFB627);
+  box-shadow: 0 0 0 2px rgba(6,36,27,.9), 0 14px 34px rgba(0,0,0,.5), inset 0 0 32px rgba(255,182,39,.12);
+}
+.board.rs-tuz::before { background: linear-gradient(90deg, transparent, rgba(255,224,138,.55), transparent) border-box; opacity: .55; }
+/* holes: deep wells, saffron ring on the ones you can play */
+.board.rs-tuz .pit { background: radial-gradient(circle at 50% 38%, #02100B 0%, #0A2A1F 58%, #12412F 100%); box-shadow: inset 0 4px 10px rgba(0,0,0,.65), 0 1px 0 rgba(255,224,138,.18); }
+.board.rs-tuz .pit.legal { box-shadow: 0 0 0 3px var(--tz-saffron, #FFB627), 0 0 16px rgba(255,182,39,.55), inset 0 4px 10px rgba(0,0,0,.6); }
+.board.rs-tuz .pit.hot { box-shadow: 0 0 0 3px #fff, 0 0 20px rgba(255,255,255,.55), inset 0 4px 10px rgba(0,0,0,.6); }
+.board.rs-tuz .pit.hint { box-shadow: 0 0 0 4px var(--tz-saffron-hi, #FFE08A), 0 0 22px rgba(255,224,138,.8); }
+/* the Tuz — the only frozen hole: a solid coloured seal per owner (saffron = seat 0, ivory = seat 1), never greyed out */
+.board.rs-tuz .pit.tuz { filter: none; cursor: not-allowed; box-shadow: 0 0 0 4px var(--tz-saffron, #FFB627), 0 0 22px rgba(255,182,39,.7), inset 0 0 18px rgba(255,182,39,.35); }
+.board.rs-tuz .pit.tuz.t1 { box-shadow: 0 0 0 4px var(--tz-ivory, #FFF7E0), 0 0 22px rgba(255,247,224,.6), inset 0 0 18px rgba(255,247,224,.3); }
+.board.rs-tuz .tuzmark { top: -11px; right: -8px; padding: 2px 9px; font: 900 .78rem/1.3 var(--font-display); letter-spacing: .02em; background: var(--tz-saffron, #FFB627); color: #1d1204; border: 1.5px solid #1d1204; }
+.board.rs-tuz .pit.tuz.t1 .tuzmark { background: var(--tz-ivory, #FFF7E0); }
+/* the name plate */
+.board.rs-tuz .rname { font-family: var(--font-display); font-weight: 900; letter-spacing: .04em; color: #1d1204; background: linear-gradient(180deg, var(--tz-saffron-hi, #FFE08A), var(--tz-saffron, #FFB627)); border: 2px solid #1d1204; box-shadow: 0 3px 0 #7a520f, 0 8px 18px rgba(0,0,0,.4); }
+/* status line + buttons on the Tuz match screen */
+.match:has(.board.rs-tuz) .status { color: var(--tz-ivory, #FFF7E0); font-family: var(--font-display); font-weight: 800; background: rgba(6,36,27,.7); border: 1px solid var(--tz-line, rgba(255,224,138,.32)); }
+.match:has(.board.rs-tuz) .btn { color: var(--tz-ivory, #FFF7E0); font-weight: 800; letter-spacing: .01em; background: linear-gradient(180deg, #14513C, #0B3A2B); border: 1.5px solid var(--tz-saffron, #FFB627); box-shadow: 0 3px 0 #04170f; }
+.match:has(.board.rs-tuz) .btn:hover:not(:disabled) { filter: brightness(1.12); }
+.match:has(.board.rs-tuz) .btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 #04170f; }
+.match:has(.board.rs-tuz) .btn.primary { color: #1d1204; background: linear-gradient(180deg, var(--tz-saffron-hi, #FFE08A), var(--tz-saffron, #FFB627)); border-color: #1d1204; box-shadow: 0 3px 0 #7a520f; }
+.match:has(.board.rs-tuz) .btn.ghost { background: transparent; border-color: var(--tz-line, rgba(255,224,138,.32)); }
+.match:has(.board.rs-tuz) .btn:disabled { opacity: .45; }
+@media (prefers-reduced-motion: reduce) { .board.rs-tuz .pit, .match:has(.board.rs-tuz) .btn { transition: none; } }

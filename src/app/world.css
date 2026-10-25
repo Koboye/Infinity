@@ -1,0 +1,178 @@
+/* v23 "World class" layer: brand tokens, fluid responsiveness, smart timer + message display. Loaded last. */
+:root {
+  --brand-emerald: #0B3A2B; --brand-deep: #072A1F; --brand-gold: #F5BE3C; --brand-gold-hi: #FFE08A; --brand-ivory: #FBF3DC;
+  --ok: #3DDC84; --warn: #FFB020; --danger: #FF5A47;
+  --glass: rgba(255,255,255,.07); --glass-edge: rgba(255,224,138,.22);
+  --ease: cubic-bezier(.22,1,.36,1);
+  --safe-t: env(safe-area-inset-top, 0px); --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px); --safe-r: env(safe-area-inset-right, 0px);
+}
+
+/* ---- Rock-solid layout: no sideways scroll, no iOS bounce-stuck, notch safe, fluid text ---- */
+html, body { max-width: 100%; overflow-x: hidden; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body { min-height: 100vh; min-height: 100dvh; padding: var(--safe-t) var(--safe-r) var(--safe-b) var(--safe-l);
+  background: radial-gradient(120% 80% at 50% -10%, #14513C 0%, var(--brand-emerald) 45%, var(--brand-deep) 100%) fixed;
+  -webkit-tap-highlight-color: transparent; }
+*, *::before, *::after { box-sizing: border-box; }
+img, svg, canvas, video { max-width: 100%; }
+button, [role="button"], .dtile, .pit, .sq { touch-action: manipulation; -webkit-user-select: none; user-select: none; }
+button { min-height: 44px; transition: transform .15s var(--ease), box-shadow .2s, filter .2s; }
+button:active:not(:disabled) { transform: scale(.97); }
+button:focus-visible { outline: 3px solid var(--brand-gold-hi); outline-offset: 2px; }
+button:disabled { opacity: .55; cursor: not-allowed; }
+h1 { font-size: clamp(1.6rem, 6vw, 3rem); line-height: 1.1; }
+h2 { font-size: clamp(1.25rem, 4.5vw, 2rem); }
+p, li, .status { font-size: clamp(.92rem, 3.4vw, 1.08rem); overflow-wrap: anywhere; }
+
+/* ---- Premium surfaces ---- */
+.pcard { background: linear-gradient(160deg, rgba(255,255,255,.1), rgba(255,255,255,.03)); border: 1px solid var(--glass-edge);
+  border-radius: 16px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); min-width: 0;
+  box-shadow: 0 6px 20px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.08); transition: box-shadow .3s, border-color .3s, transform .3s var(--ease); }
+.pcard.on { border-color: var(--brand-gold); box-shadow: 0 0 0 2px rgba(245,190,60,.35), 0 10px 28px rgba(245,190,60,.18); transform: translateY(-1px); }
+.pcard * { min-width: 0; }
+
+/* ---- Smart timer: calm green -> amber -> red, tabular, with a live progress bar from --p ---- */
+.timer { position: relative; display: inline-flex; align-items: center; gap: 6px; padding: 3px 12px 3px 10px; border-radius: 99px; overflow: hidden;
+  font: 800 clamp(.8rem, 3vw, .95rem)/1.2 var(--font-ui); letter-spacing: .02em; font-variant-numeric: tabular-nums; color: #052b1c;
+  background: linear-gradient(90deg, var(--ok), #8CF0B4); border: 0; box-shadow: 0 2px 8px rgba(0,0,0,.3); animation: none; }
+.timer::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; opacity: .7; }
+.pcard.clocked::after { content: ""; display: block; height: 4px; margin: 6px 4px 0; border-radius: 4px; transform-origin: left center;
+  transform: scaleX(var(--p, 1)); background: linear-gradient(90deg, var(--ok), var(--warn) 60%, var(--danger)); background-size: 300% 100%;
+  background-position: calc((1 - var(--p, 1)) * 100%) 0; transition: transform .25s linear; }
+.timer.low { color: #fff; background: linear-gradient(90deg, #E5392B, var(--danger)); animation: world-pulse .8s ease-in-out infinite; }
+@keyframes world-pulse { 0%,100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,90,71,.55); } 50% { transform: scale(1.06); box-shadow: 0 0 0 8px rgba(255,90,71,0); } }
+
+/* ---- Smart message display: status banner + toasts (never covers the board, safe-area aware, auto-wraps) ---- */
+.status { margin: 6px auto; padding: 8px 16px; width: fit-content; max-width: min(100%, 560px); border-radius: 14px; text-wrap: balance;
+  background: var(--glass); border: 1px solid var(--glass-edge); color: var(--brand-ivory); font-weight: 700; animation: world-in .35s var(--ease); }
+.toast { top: calc(var(--safe-t) + 12px); bottom: auto; left: 50%; transform: translateX(-50%); width: max-content; max-width: min(92vw, 520px);
+  padding: 12px 18px; border-radius: 16px; text-align: center; text-wrap: balance; line-height: 1.35; pointer-events: none;
+  background: linear-gradient(135deg, var(--brand-gold-hi), var(--brand-gold)); color: #2a1a05; animation: world-drop .45s var(--ease), world-out .4s ease 3.6s forwards; }
+@keyframes world-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes world-drop { from { opacity: 0; transform: translate(-50%, -16px) scale(.96); } to { opacity: 1; transform: translate(-50%, 0) scale(1); } }
+@keyframes world-out { to { opacity: 0; transform: translate(-50%, -10px); } }
+
+/* ---- Breakpoints ---- */
+@media (max-width: 480px) { .pcard { border-radius: 12px; } .toast { max-width: 94vw; font-size: .92rem; } .timer { padding: 2px 9px; } }
+@media (max-height: 520px) and (orientation: landscape) { .status { margin: 2px auto; padding: 4px 12px; } button { min-height: 38px; } }
+@media (min-width: 1200px) { .status, .toast { font-size: 1.1rem; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }
+
+/* ---- ጡዝ (Tuz): a frozen hole owned by one player, shown with a badge in that player's colour ---- */
+.pit.tuz { position: relative; box-shadow: 0 0 0 3px var(--brand-gold), 0 0 18px rgba(245,190,60,.55), inset 0 0 14px rgba(255,255,255,.25); filter: saturate(1.15); cursor: not-allowed; }
+.pit.tuz.t1 { box-shadow: 0 0 0 3px #7fd6ff, 0 0 18px rgba(127,214,255,.5), inset 0 0 14px rgba(255,255,255,.25); }
+.tuzmark { position: absolute; top: -9px; right: -6px; padding: 1px 6px; border-radius: 99px; font: 800 .7rem/1.3 var(--font-ui); background: var(--brand-gold); color: #2a1a05; box-shadow: 0 2px 6px rgba(0,0,0,.4); pointer-events: none; }
+.pit.tuz.t1 .tuzmark { background: #7fd6ff; }
+
+/* ---- Game-type banner in the middle of the Gebeta board: 1 ላሜ ወለደች · 2 አሻግሮ መብል · 3 ጡዝ ---- */
+.board.has-banner { row-gap: clamp(46px, 11vw, 78px); }
+.rulebanner { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 2; width: 74%; max-width: 100%;
+  display: flex; justify-content: center; align-items: center; gap: clamp(4px, 1.6vw, 12px); pointer-events: none; }
+.rb { flex: 1 1 0; min-width: 0; display: flex; align-items: center; justify-content: center; gap: clamp(3px, 1vw, 8px); white-space: nowrap;
+  padding: clamp(3px, 1vw, 8px) clamp(5px, 1.6vw, 14px); border-radius: 99px; font: 700 clamp(.62rem, 2.6vw, 1.15rem)/1.2 var(--font-display);
+  color: rgba(255,244,214,.55); background: rgba(0,0,0,.28); border: 1px solid rgba(255,224,138,.16); overflow: hidden; text-overflow: ellipsis; }
+.rb b { display: inline-grid; place-items: center; width: 1.5em; height: 1.5em; border-radius: 50%; font: 800 .8em var(--font-ui); background: rgba(255,255,255,.12); }
+.rb.on { color: #2a1a05; background: linear-gradient(135deg, var(--brand-gold-hi), var(--brand-gold)); border-color: #fff3c4; font-size: clamp(.72rem, 3.3vw, 1.4rem);
+  box-shadow: 0 0 0 2px rgba(245,190,60,.35), 0 6px 18px rgba(245,190,60,.35); flex-grow: 1.7; }
+.rb.on b { background: rgba(42,26,5,.85); color: var(--brand-gold-hi); }
+@media (max-width: 380px) { .rb:not(.on) b { display: none; } }
+
+/* ---- v26: every orientation, every phone. Heights come from the real visible viewport (--app-h, set by ViewportFit). ---- */
+html.in-game .app { height: var(--app-h, 100dvh); max-height: var(--app-h, 100dvh); }
+html { min-height: var(--app-h, 100dvh); }
+.app, .screen, .match { min-width: 0; }
+.match .board-wrap { max-width: 100%; }
+html[data-size="xs"] .rulebanner { width: 82%; }
+html[data-size="xs"] .rb { padding: 2px 5px; }
+html[data-size="xs"] .pcard { padding-left: 6px; padding-right: 6px; }
+@media (orientation: landscape) and (max-height: 480px) {
+  .board.has-banner { row-gap: clamp(26px, 9vh, 44px); }
+  .rulebanner { width: 70%; }
+  .rb { font-size: clamp(.55rem, 2.4vh, .85rem); padding: 2px 8px; }
+  .rb.on { font-size: clamp(.62rem, 3vh, 1rem); }
+  .pcard { padding-top: 2px; padding-bottom: 2px; }
+  .timer { font-size: .75rem; padding: 1px 8px; }
+  .toast { top: calc(var(--safe-t) + 4px); padding: 6px 12px; font-size: .85rem; }
+}
+@media (min-width: 900px) and (min-height: 700px) { .match .board-wrap { max-width: min(1100px, 100%); margin-inline: auto; } .rb { font-size: clamp(.9rem, 1.6vw, 1.5rem); } }
+@media (orientation: landscape) { html.in-game .app { padding-left: max(0px, var(--safe-l)); padding-right: max(0px, var(--safe-r)); } }
+
+/* =====================================================================================================
+   BRAND SYSTEM v27: ONE palette for every screen, panel, button, input and link.
+   Emerald (depth) + Gold (action) + Ivory (text) + Ruby (danger) + Leaf (success).
+   The legacy tokens are re-pointed here, so older stylesheets pick the brand up automatically.
+   ===================================================================================================== */
+:root {
+  --green-900: #072A1F; --green-800: #0B3A2B; --green-700: #14513C; --green-600: #1C6A4D;
+  --gold: #F5BE3C; --gold-deep: #C98B1A; --gold-dark: #8A5D0E; --ivory: #FBF3DC; --ivory-dim: #D2C7A6;
+  --red: #D83A2A; --leaf: #3DDC84; --accent: var(--brand-gold);
+  --foil: linear-gradient(135deg, #FFF0B8 0%, #F5BE3C 32%, #C98B1A 58%, #FFD97A 80%, #B77A12 100%);
+  --foil-text: linear-gradient(180deg, #FFF3C4 0%, #F5BE3C 48%, #C98B1A 100%);
+  --brand-line: rgba(255, 224, 138, .28); --brand-surface: rgba(255, 255, 255, .06); --brand-surface-2: rgba(0, 0, 0, .26);
+  --brand-glow: 0 0 0 3px rgba(245, 190, 60, .35);
+}
+body { color: var(--brand-ivory); }
+a { color: var(--brand-gold-hi); text-underline-offset: 3px; } a:hover { color: #fff; }
+::selection { background: var(--brand-gold); color: #2a1a05; }
+:focus-visible { outline: 3px solid var(--brand-gold-hi); outline-offset: 2px; }
+
+/* ---- Buttons: primary = gold, secondary = glass, ghost = text, danger = ruby, on = selected ---- */
+.btn, .icon-btn, .bingo-btn { font-family: var(--font-ui); letter-spacing: .01em; border-radius: 14px; cursor: pointer; }
+.btn { color: var(--brand-ivory); background: var(--brand-surface); border: 1px solid var(--brand-line); box-shadow: 0 2px 0 rgba(0,0,0,.35); }
+.btn:hover:not(:disabled) { background: rgba(255, 224, 138, .12); border-color: var(--brand-gold); }
+.btn.primary { color: #2A1A05; font-weight: 800; background: linear-gradient(180deg, var(--brand-gold-hi) 0%, var(--brand-gold) 100%);
+  border-color: var(--gold-deep); box-shadow: 0 4px 0 var(--gold-deep), 0 10px 22px rgba(245, 190, 60, .22); }
+.btn.primary:hover:not(:disabled) { filter: brightness(1.06); background: linear-gradient(180deg, #FFEDB0 0%, #FFC94D 100%); }
+.btn.primary:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 var(--gold-deep); }
+.btn.ghost { background: transparent; border-color: transparent; box-shadow: none; color: var(--ivory-dim); }
+.btn.ghost:hover:not(:disabled) { color: var(--brand-gold-hi); background: var(--brand-surface); }
+.btn.on { color: #2A1A05; font-weight: 800; background: var(--brand-gold); border-color: var(--gold-deep); box-shadow: var(--brand-glow); }
+.btn.primary.danger, .btn.danger { color: #fff; background: linear-gradient(180deg, #F0584A, var(--red)); border-color: #8f2a1d; box-shadow: 0 4px 0 #8f2a1d; }
+.btn.ghost.danger { color: #FF9C90; background: transparent; box-shadow: none; }
+.icon-btn { color: var(--brand-ivory); background: var(--brand-surface); border: 1px solid var(--brand-line); }
+.icon-btn:hover:not(:disabled) { border-color: var(--brand-gold); color: var(--brand-gold-hi); }
+.bingo-btn { background: linear-gradient(180deg, var(--brand-gold-hi), var(--brand-gold)); color: #2A1A05; border: 1px solid var(--gold-deep); font-weight: 800; box-shadow: 0 4px 0 var(--gold-deep); }
+.chip, .tab, .pill { border-color: var(--brand-line); }
+.btn:disabled, .icon-btn:disabled { opacity: .5; filter: grayscale(.35); box-shadow: none; }
+
+/* ---- Inputs, selects, panels, sheets, dialogs, cards ---- */
+input, select, textarea { color: var(--brand-ivory); background: var(--brand-surface-2); border: 1px solid var(--brand-line); border-radius: 12px; }
+input:focus, select:focus, textarea:focus { border-color: var(--brand-gold); box-shadow: var(--brand-glow); outline: none; }
+input::placeholder, textarea::placeholder { color: rgba(251, 243, 220, .45); }
+input[type="checkbox"], input[type="radio"], input[type="range"] { accent-color: var(--brand-gold); }
+.card, .panel, .sheet, .modal, .dialog, .bsheet, .bcard, .spin-card, .overlay-card, .gcard, .menu-card, .result, .room-card, .tile-card {
+  background: linear-gradient(160deg, rgba(255,255,255,.09), rgba(255,255,255,.03)); border: 1px solid var(--brand-line); border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.07); color: var(--brand-ivory); }
+.topbar { background: linear-gradient(180deg, rgba(7,42,31,.92), rgba(7,42,31,.55)); border-bottom: 1px solid var(--brand-line); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+h1, h2, h3 { color: var(--brand-ivory); }
+html[data-contrast="high"] { --ivory-dim: #FBF3DC; --brand-line: rgba(255, 224, 138, .6); }
+
+/* =====================================================================================================
+   v28 colour discipline: THREE colours only — Emerald (surfaces), Gold (actions / highlights), Ivory (text).
+   No red, green, blue or purple chrome. Urgency is shown by motion and by gold/ivory inversion, never by a new colour.
+   ===================================================================================================== */
+:root { --red: #E8C65A; --leaf: #FFE08A; --ok: #F5BE3C; --warn: #F5BE3C; --danger: #FFE08A; }
+
+/* Game-type name: ONE plate in the middle of the board */
+.rulebanner { width: auto; max-width: 78%; display: block; }
+.rname { display: block; padding: clamp(5px, 1.4vw, 10px) clamp(16px, 5vw, 38px); border-radius: 99px; white-space: nowrap; text-align: center;
+  font: 800 clamp(1.05rem, 5.6vw, 2.3rem)/1.15 var(--font-display); letter-spacing: .02em; color: var(--brand-gold-hi);
+  background: linear-gradient(180deg, rgba(7,42,31,.9), rgba(11,58,43,.9)); border: 2px solid var(--brand-gold);
+  box-shadow: 0 6px 18px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,224,138,.25); text-shadow: 0 2px 0 rgba(0,0,0,.5); }
+@media (orientation: landscape) and (max-height: 480px) { .rname { font-size: clamp(.8rem, 4.6vh, 1.3rem); padding: 2px 16px; } }
+
+/* Timer: gold always; the last seconds invert to ivory-on-emerald and pulse */
+.timer { color: #2A1A05; background: linear-gradient(180deg, var(--brand-gold-hi), var(--brand-gold)); }
+.timer.low { color: var(--brand-gold-hi); background: var(--brand-deep); border: 2px solid var(--brand-gold-hi); animation: world-pulse .8s ease-in-out infinite; }
+.pcard.clocked::after { background: var(--brand-gold); background-position: 0 0; }
+@keyframes world-pulse { 0%,100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245,190,60,.6); } 50% { transform: scale(1.06); box-shadow: 0 0 0 8px rgba(245,190,60,0); } }
+
+/* Buttons: no red — destructive actions are an ivory outline with gold on hover */
+.btn.primary.danger, .btn.danger { color: var(--brand-ivory); background: transparent; border: 2px solid var(--brand-ivory); box-shadow: none; }
+.btn.primary.danger:hover:not(:disabled), .btn.danger:hover:not(:disabled) { color: #2A1A05; background: var(--brand-gold); border-color: var(--brand-gold); }
+.btn.ghost.danger { color: var(--ivory-dim); }
+
+/* Tuz holes: gold for the mover's own, ivory for the opponent's */
+.pit.tuz.t1 { box-shadow: 0 0 0 3px var(--brand-ivory), 0 0 16px rgba(251,243,220,.45), inset 0 0 14px rgba(255,255,255,.2); }
+.pit.tuz.t1 .tuzmark { background: var(--brand-ivory); }
+.toast { background: var(--brand-gold); color: #2A1A05; }
