@@ -1,0 +1,16 @@
+/* v48 permanent bottom navigation: Home · Level · Trophy · Rules · Profile */
+.bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px;
+  padding: 6px max(8px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+  background: linear-gradient(180deg, #25207a, #0b0930); border-top: 2px solid rgba(255,226,154,.45); box-shadow: 0 -8px 24px rgba(0,0,0,.5); }
+.bn-tab { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 58px; padding: 4px 2px; border: 0; border-radius: 16px; background: transparent; color: rgba(255,246,227,.75); font: inherit; cursor: pointer; transition: transform .15s, background .2s, color .2s; -webkit-tap-highlight-color: transparent; }
+.bn-ico { font-size: 1.55rem; line-height: 1; filter: grayscale(.35) opacity(.85); transition: transform .2s, filter .2s; }
+.bn-lbl { font-size: .72rem; font-weight: 800; line-height: 1.1; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bn-tab:active { transform: scale(.94); }
+.bn-tab.on { color: #1b1200; background: linear-gradient(180deg, #FFE29A, #E59A12); box-shadow: 0 4px 0 #7a4a00, 0 8px 16px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.6); transform: translateY(-8px); }
+.bn-tab.on .bn-ico { filter: none; transform: scale(1.18); }
+/* content is never hidden behind the bar */
+.app.has-nav { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+.app.has-nav .rail-dock { display: none; }
+html.in-game .bottom-nav { display: none; }
+@media (max-width: 340px) { .bn-lbl { font-size: .64rem; } .bn-ico { font-size: 1.35rem; } }
+@media (prefers-reduced-motion: reduce) { .bn-tab, .bn-ico { transition: none; } }

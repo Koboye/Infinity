@@ -174,16 +174,6 @@ export function Home({ t, go, onlineOn, user, profile, game, onPickGame }) {
           <p>{t.comingSoonSub(t[`${game}Name`])}</p>
         </div>
       )}
-      <SwipeRail className="rail-dock" label="More" dots={false} itemClass="dock-item" value={-1}
-        items={[{ id: 'progress' }, ...(!offlineOnly && !soon ? [{ id: 'leaders' }] : []), ...(!soon ? [{ id: 'rules' }] : []), { id: 'profile' }]}
-        renderItem={({ id }) => (
-          <button type="button" className={`dock-chip dc-${id}`} onClick={() => go(id)}>
-            {id === 'progress' && <>🔥 {t.progress}</>}
-            {id === 'leaders' && <>🏆 {t.leaderboard}</>}
-            {id === 'rules' && <>📖 {t.rules}</>}
-            {id === 'profile' && (user ? <><span className="mini-hero" style={{ background: hero.color }}>{hero.glyph}</span> {profile?.displayName || t.profile}</> : <>👤 {t.profile}</>)}
-          </button>
-        )} />
     </div>
   );
 }

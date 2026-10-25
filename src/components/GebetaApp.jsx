@@ -13,6 +13,7 @@ import DominoesLocal from './dominoes/DominoesLocal';
 import BingoGame from './bingo/BingoGame';
 import LudoGame from './ludo/LudoGame';
 import ModesScreen from './ModesScreen';
+import BottomNav from './BottomNav';
 import { WalletChip, FeeSheet, SpinSheet, WelcomeGift } from './Wallet';
 import { takeWelcome } from '@/lib/wallet';
 import OnlineRoom from './online/OnlineRoom';
@@ -23,6 +24,8 @@ import { setCurrentGame, visit, onUnlock, load as loadProgress, mergeProgress, s
 
 const read = (k, d) => { try { return localStorage.getItem(k) ?? d; } catch { return d; } };
 const write = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
+
+const GAME_LIST_ONLINE = Object.values(GAMES).filter((g) => !g.offlineOnly && !g.comingSoon).map((g) => g.id);
 
 export default function GebetaApp() {
   const [lang, setLang] = useState('en');
@@ -200,9 +203,16 @@ export default function GebetaApp() {
   }
 
   return (
-    <div className="app">
+    <div className={`app${inGame ? '' : ' has-nav'}`}>
       {offline && <div className="offline-bar" role="status">{t.offline}</div>}
       <Tibeb />
+      {!inGame && (
+        <BottomNav lang={lang} view={view.name} profile={profile} onHome={home}
+          onOpen={(to) => {
+            if (to === 'leaders' && GAMES[game]?.offlineOnly) { const g = GAME_LIST_ONLINE[0]; if (g) pickGame(g); }
+            go(to);
+          }} />
+      )}
       {sheet?.type === 'gift' && <WelcomeGift lang={lang} onClose={() => setSheet(null)} />}
       {sheet?.type === 'spin' && <SpinSheet lang={lang} onClose={() => setSheet(null)} />}
       {sheet?.type === 'fee' && (
