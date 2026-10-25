@@ -31,7 +31,7 @@
 /* Spin wheel: live "who is under the pointer", longer read-out, winner banner */
 .spin-live { min-height: 2.2em; display: flex; align-items: center; justify-content: center; gap: 8px; font: 800 1.25rem var(--font-ui, system-ui); }
 .spin-live i { width: 14px; height: 14px; border-radius: 50%; display: inline-block; }
-.spin-live i.a { background: #3b8fd6; } .spin-live i.b { background: #d65a3b; }
+.spin-live i.a { background: #F2B632; } .spin-live i.b { background: #C23B2A; }
 .spin-live.flick span { animation: live-pop .18s ease-out; }
 @keyframes live-pop { from { transform: scale(.85); opacity: .5; } to { transform: none; opacity: 1; } }
 .spin-live.final { color: var(--gold, #F2B632); font-size: 1.45rem; }

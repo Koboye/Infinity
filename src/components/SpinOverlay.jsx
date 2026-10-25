@@ -1,14 +1,15 @@
 'use client';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { sfx } from '@/lib/sound';
-import { SLICE_DEG, POINTER_DEG, ownerOfAngle, pickLanding, finalRotation, angleUnderPointer, easeOut, wheelGradient } from '@/lib/spin.js';
+import { SLICES, SLICE_DEG, POINTER_DEG, ownerOfAngle, pickLanding, finalRotation, angleUnderPointer, easeOut, wheelGradient } from '@/lib/spin.js';
 import { randomInt } from '@/lib/fairRandom.js';
 
 const SPIN_MS = 5800;       // length of the spin: long enough to follow the wheel and read who is under the pointer
 const SPIN_MS_REDUCED = 1600;
 const HOLD_MS = 3400;       // after it stops the result stays up (winner banner + countdown bar) so everybody can read it
 const HOLD_MS_REDUCED = 2400;
-const COLORS = ['#3b8fd6', '#d65a3b'];
+const initial = (n) => (Array.from(String(n || '?').trim())[0] || '?').toUpperCase();
+const COLORS = ['#F2B632', '#C23B2A']; // brand saffron and brand crimson: both read clearly on the dark green card
 
 /**
  * "Who starts?" wheel. The winner (0 or 1) is already decided by the caller (a fair cryptographic coin offline, the
@@ -83,7 +84,14 @@ export default function SpinOverlay({ t, names, winner, onDone, title = null, wo
           {live != null && <span>{landed ? '🏆 ' : '👉 '}<i className={live === 0 ? 'a' : 'b'} /> {names[live]}</span>}
         </div>
         <div className="spin-stage">
-          <div ref={wheelRef} className={`spin-wheel${landed ? ' landed' : ''}`} style={{ background }} />
+          <div className="spin-rays" aria-hidden="true" />
+          <div className="spin-rim" aria-hidden="true">{Array.from({ length: 24 }, (_, i) => <u key={i} style={{ transform: `rotate(${i * 15}deg)` }} />)}</div>
+          <div ref={wheelRef} className={`spin-wheel${landed ? ' landed' : ''}`} style={{ background }}>
+            {Array.from({ length: SLICES }, (_, i) => (
+              <i key={i} className={`spin-lbl ${i % 2 ? 'b' : 'a'}`} style={{ transform: `rotate(${(i + 0.5) * SLICE_DEG}deg)` }}><b style={{ transform: 'translateX(-50%)' }}>{initial(names[i % 2])}</b></i>
+            ))}
+            <span className="spin-gloss" />
+          </div>
           <i ref={pointerRef} className="spin-pointer" data-win={landed ? w : undefined} aria-hidden="true" />
           <b className="spin-hub" aria-hidden="true" />
         </div>
