@@ -1,0 +1,33 @@
+/* v40 "Crown Table" — Ludo + shared game polish. Loaded last; only refines, never removes. */
+:root { --ludo-red:#FF4D5E; --ludo-green:#22C97A; --ludo-yellow:#FFC933; --ludo-blue:#2E9BFF; --ludo-gold:#FFE29A; }
+
+/* Ludo board: deeper lit table, brighter team colours, crisper edge */
+.ludo { gap: 14px; max-width: 600px; }
+.ludo-board { width: min(100%, 76vh, 600px); border-radius: 22px; }
+.ludo-board::before { inset: -10%; filter: blur(16px); }
+.ludo-svg { filter: drop-shadow(0 18px 28px rgba(0,0,0,.6)) saturate(1.18) contrast(1.04); border-radius: 18px; }
+.ludo-svg .ludo-tok .body { filter: drop-shadow(0 3px 2px rgba(0,0,0,.45)); }
+.ludo-svg .ludo-tok.can .body { animation-duration: .8s; filter: drop-shadow(0 0 6px #fff) drop-shadow(0 3px 2px rgba(0,0,0,.5)); }
+
+/* Player cards: bigger touch-friendly, clearer active turn */
+.ludo-chip { border-radius: 18px; padding: 10px 10px 8px; backdrop-filter: blur(6px); }
+.ludo-chip .av { width: 36px; height: 36px; }
+.ludo-chip.on { transform: translateY(-4px) scale(1.04); }
+.ludo-chip:not(.on):not(.done) { opacity: .88; }
+
+/* Dice: larger, glossy, with a clear roll target */
+.ludo-die { width: 72px; height: 72px; border-radius: 18px; box-shadow: 0 8px 0 rgba(0,0,0,.28), 0 18px 28px rgba(0,0,0,.45), inset 0 2px 0 rgba(255,255,255,.9); }
+.ludo-die:not(:disabled):not(.rolling) { animation: v40-pulse 1.3s ease-in-out infinite; cursor: pointer; }
+@keyframes v40-pulse { 0%,100% { box-shadow: 0 8px 0 rgba(0,0,0,.28), 0 0 0 0 rgba(255,226,154,.6); } 50% { box-shadow: 0 8px 0 rgba(0,0,0,.28), 0 0 0 12px rgba(255,226,154,0); } }
+.ludo-log { border-radius: 14px; backdrop-filter: blur(6px); }
+
+/* Shared: game rails and cards across every game type */
+.rail-games > *, .rail > * { border-radius: 22px; transition: transform .2s, box-shadow .2s; }
+.rail-games > *:hover, .rail > *:focus-visible { transform: translateY(-4px); box-shadow: 0 14px 28px rgba(0,0,0,.45), 0 0 0 2px var(--ludo-gold); }
+.rail-dock { backdrop-filter: blur(14px); border-top: 1px solid var(--glass-line); }
+button, [role="button"] { -webkit-tap-highlight-color: transparent; }
+button:focus-visible, [role="button"]:focus-visible { outline: 3px solid var(--ludo-gold); outline-offset: 2px; }
+
+/* Small phones */
+@media (max-width: 380px) { .ludo-chip { font-size: .74rem; padding: 8px 7px; } .ludo-die { width: 62px; height: 62px; } }
+@media (prefers-reduced-motion: reduce) { .ludo-die, .ludo-chip.on, .ludo-board::before { animation: none !important; } }

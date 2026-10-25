@@ -19,6 +19,7 @@ import './v32.css';
 import './v36.css';
 import './v36-rails.css';
 import './v39.css';
+import './v40.css';
 import RegisterSW from '@/components/RegisterSW';
 import ViewportFit from '@/components/ViewportFit';
 import '@fontsource/noto-sans-ethiopic/400.css';
