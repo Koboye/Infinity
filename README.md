@@ -103,3 +103,10 @@ tests/                     engine, rooms, API tests with an in-memory Firestore 
   - The wheel has 12 alternating slices, so each player owns exactly half, evenly spread. It always turns forward to land in the middle zone of a slice owned by the winner (uniform slice, uniform point), so the picture is as random as the result and can never disagree with it.
   - Motion is driven by the clock (not timers), with one tick per slice passing the pointer, a pointer flick, a smooth ease-out that stops dead, and the pointer takes the winner's colour on landing. Reduced-motion users get a shorter spin.
   - `tests/spin.test.mjs`: chi-square / binomial tests of the coin and the landing, 200 000 spins checked to end in the winner's slice, ease-out and online-seat fairness.
+
+## v32 — ጡዝ rules, part 1 (rules & opening)
+- **Nobody can make a Tuz on his own holes.** A Tuz always sits in an *opponent's* hole and belongs to the player who made it.
+- **The opener opens on the opponent's holes.** When the computer starts, it opens on one of YOUR holes; when you start, you tap one of the COMPUTER's holes (they glow). One stone walks round the ring, every hole is back at four except the one opened, which becomes the opener's Tuz. The same goes for two players on one phone and for online rooms (the server rejects an opening on your own hole). A status line says what to tap.
+- **The Tuz is the only freeze.** A four made mid-sowing, or by your own last stone in your own hole, is an ordinary hole: no marker, nothing to collect, touching it lifts and plays it. In ጡዝ the collect tap is gone from the local screen, the online screen and the server (`collect` answers "Nothing to collect there").
+- Attacking a Tuz (your last stone rests on the opponent's Tuz: +2 and play again) and the end-of-round payout of every Tuz to its owner are unchanged.
+- Tests: `tests/tuz.test.mjs` updated, new `tests/tuz-rules.test.mjs` (60 full random games: a Tuz is never in its maker's own hole, only Tuz ever freezes, both seats open on the right side at every AI level).

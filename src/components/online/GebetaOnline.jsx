@@ -1,7 +1,7 @@
 'use client';
 import React, { useEffect, useRef } from 'react';
 import { apiCall } from '@/lib/firebase';
-import { playMove, collect, collectable, holesOf, famText } from '@/lib/gebeta/engine.js';
+import { playMove, collect, collectable, legalMoves, famText } from '@/lib/gebeta/engine.js';
 import { sfx } from '@/lib/sound';
 import { gebetaTaunt, resolveGender } from '@/lib/celebrate.js';
 import { loadSettings } from '@/lib/settings';
@@ -50,11 +50,13 @@ export default function GebetaOnline({ t, lang, room, uid, code, onExit, onSwitc
   const send = (body) => { const p = chain.current.then(() => apiCall(body)); chain.current = p.catch(() => {}); return p; };
   const resync = () => { optState.current = null; optSeq.current = 0; lastQueued.current = roomRef.current.moveSeq; anim.reset(roomRef.current.pits, roomRef.current.own, roomRef.current.flag); };
 
-  const isLegal = (i) => L.myTurn && !anim.busy && holesOf({ own: anim.own }, seat).includes(i) && room.pits[i] > 0 && !(room.flag && room.flag[i]);
+  const tuzGame = room.ruleset === 'tuz'; // ጡዝ: a four is an ordinary hole — nothing to collect
+  // legalMoves also covers the ጡዝ opening, where the starter taps one of his OPPONENT's holes
+  const isLegal = (i) => L.myTurn && !anim.busy && legalMoves({ ...logic(), own: anim.own || logic().own, pits: room.pits, flag: room.flag, over: false }, seat).includes(i);
   // One touch, any time: as soon as the four is visible on the board its owner may tap it — mid-animation, and on the
   // opponent's turn too (your own last stone made it).
   const canCollect = (i) => {
-    if (room.status !== 'playing' || seat == null || seat < 0) return false;
+    if (tuzGame || room.status !== 'playing' || seat == null || seat < 0) return false;
     const want = seat === 0 ? 1 : 2;
     if (!anim.flag || anim.flag[i] !== want) return false;
     return collectable(logic(), seat).includes(i);
@@ -74,7 +76,7 @@ export default function GebetaOnline({ t, lang, room, uid, code, onExit, onSwitc
   // A four is on screen while stones are still travelling (anyone's move): collect it now; the rest of the move re-plays from there.
   const collectMidMove = (i) => {
     const ctx = moveCtx.current;
-    if (!ctx || anim.shown() < 0 || seat == null || seat < 0 || room.status !== 'playing') return false;
+    if (tuzGame || !ctx || anim.shown() < 0 || seat == null || seat < 0 || room.status !== 'playing') return false;
     const want = seat === 0 ? 1 : 2;
     if (!anim.flag || anim.flag[i] !== want || anim.pits[i] !== 4) return false;
     const at = anim.shown();
@@ -107,7 +109,9 @@ export default function GebetaOnline({ t, lang, room, uid, code, onExit, onSwitc
   };
 
   const players = [0, 1].map((s) => ({ name: room.names[s], hero: room.avatars[s] }));
-  const status = room.status === 'playing' ? (L.myTurn ? t.yourTurn : t.theirTurn(players[1 - seat].name)) : '';
+  const status = room.status === 'playing'
+    ? (tuzGame && room.opening ? (L.myTurn ? t.tuzOpenYou : t.tuzOpenThem(players[1 - seat].name)) : (L.myTurn ? t.yourTurn : t.theirTurn(players[1 - seat].name)))
+    : '';
 
   return (
     <MatchView

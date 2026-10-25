@@ -10,6 +10,7 @@ export const STRINGS = {
     you: 'You', computer: 'Computer', player1: 'Player 1', player2: 'Player 2',
     collectHint: 'Tap the glowing hole to collect your four — or it becomes shared!',
     yourTurn: 'Your turn', theirTurn: (n) => `${n}'s turn`, extra: 'Extra turn!',
+    tuzOpenYou: "Open ጡዝ — tap one of your opponent's holes", tuzOpenThem: (n) => `${n}, your opponent opens ጡዝ on one of your holes`, tuzOpenPass: (n) => `${n}: open ጡዝ — tap one of your opponent's holes`,
     tuz: 'ጡዝ! Frozen', tuzTake: 'ጡዝ! +2 — play again', captured: (n) => `Captured ${n}`, eat: (n) => `አሻግሮ! Ate ${n}`, startsNow: (n) => `${n} starts this game`, roundOpens: (n) => `New round — ${n} opens`, relay: 'Relay!', bank: 'Your own stone ✓',
     family: (mine) => (mine ? 'Family of four!' : 'Family captured!'), familiesLabel: 'families', newRound: 'New round!',
     seedTotals: (a, b) => `Seeds captured ${a} : ${b}`,
@@ -41,7 +42,7 @@ export const STRINGS = {
     gebetaTag: 'Seed game', checkersTag: 'Draughts', dominoesTag: 'Tile game',
     pickGame: 'Choose a game',
     rs: {
-      gebeta: { gebeta: ['ላሜ ወለደች', 'Relay sowing + families of four'], ashagro: ['አሻግሮ መብል', 'No freezing. Stop in your own hole and eat the hole across — if it is empty, keep your own stone'], tuz: ['ጡዝ (Tuz)', 'The starter opens on his own hole and makes the first Tuz. Land your LAST stone to turn an opponent\'s 3 into a 4 and it is your Tuz. The Tuz is the only freeze'] },
+      gebeta: { gebeta: ['ላሜ ወለደች', 'Relay sowing + families of four'], ashagro: ['አሻግሮ መብል', 'No freezing. Stop in your own hole and eat the hole across — if it is empty, keep your own stone'], tuz: ['ጡዝ (Tuz)', 'The starter opens on one of his OPPONENT\'s holes and makes the first Tuz there. Land your LAST stone to turn an opponent\'s 3 into a 4 and it is your Tuz. Nobody can Tuz his own holes. The Tuz is the only freeze — any other four is a normal hole'] },
       checkers: { flying: ['Flying kings', 'Diagonal · kings glide · capture is optional'], american: ['Classic', 'Standard 8×8 · capture is optional'] },
       dominoes: { draw: ['Draw', 'Draw tiles when stuck'], block: ['Block', 'No drawing — you pass'] },
       bingo: { line: ['Any line', 'Row, column or diagonal'], corners: ['Four corners', 'Quick and tense'], full: ['Blackout', 'Fill all 24 numbers — Ultra Jackpot'], stamp: ['Postage stamp', '2×2 block in any corner'], xshape: ['X shape', 'Both diagonals'], plus: ['Plus shape', 'Middle row and column'] },
@@ -129,6 +130,7 @@ export const STRINGS = {
     you: 'አንተ', computer: 'ኮምፒውተር', player1: 'ተጫዋች 1', player2: 'ተጫዋች 2',
     collectHint: 'ያበራውን ጉድጓድ ንካና አራትህን ያዝ — አለዚያ የጋራ ይሆናል!',
     yourTurn: 'የአንተ ተራ', theirTurn: (n) => `የ${n} ተራ`, extra: 'ተጨማሪ ተራ!',
+    tuzOpenYou: 'ጡዝ ክፈት — ከተቃዋሚህ ቀዳዳዎች አንዱን ንካ', tuzOpenThem: (n) => `${n}፣ ተቃዋሚህ ከቀዳዳዎችህ አንዱ ላይ ጡዝ ይከፍታል`, tuzOpenPass: (n) => `${n}፣ ጡዝ ክፈት — ከተቃዋሚህ ቀዳዳዎች አንዱን ንካ`,
     tuz: 'ጡዝ! ለአንተ ይቀራል', tuzTake: 'ጡዝ! +2 — እንደገና ተጫወት', captured: (n) => `${n} ያዝክ`, eat: (n) => `አሻግሮ! ${n} በላ`, startsNow: (n) => `${n} ይጀምራል`, roundOpens: (n) => `አዲስ ዙር — ${n} ይጀምራል`, relay: 'ቀጣይ ዙር!', bank: 'ድንጋይህን አነሳህ ✓',
     family: (mine) => (mine ? 'የአራት ቤተሰብ!' : 'ቤተሰብ ተያዘ!'), familiesLabel: 'ቤተሰብ', newRound: 'አዲስ ዙር!',
     seedTotals: (a, b) => `የተያዙ ዘሮች ${a} : ${b}`,
@@ -159,7 +161,7 @@ export const STRINGS = {
     gebetaTag: 'የዘር ጨዋታ', checkersTag: 'ድራፍት', dominoesTag: 'የሰድር ጨዋታ',
     pickGame: 'ጨዋታ ምረጥ',
     rs: {
-      gebeta: { gebeta: ['ላሜ ወለደች', 'ቀጣይ ዙር + የአራት ቤተሰብ'], ashagro: ['አሻግሮ መብል', 'ማቀዝቀዝ የለም። በራስህ ጉድጓድ ቆመህ ተቃራኒውን ትበላለህ'], tuz: ['ጡዝ', 'ጀማሪው ከራሱ ቀዳዳ ይከፍታል፤ የመጀመሪያውን ጡዝ ያደርጋል። የመጨረሻ ጠጠርህ የተቃዋሚን 3 ወደ 4 ሲያደርግ ጡዝህ ይሆናል። ከጡዝ ውጪ ምንም ማቀዝቀዝ የለም'] },
+      gebeta: { gebeta: ['ላሜ ወለደች', 'ቀጣይ ዙር + የአራት ቤተሰብ'], ashagro: ['አሻግሮ መብል', 'ማቀዝቀዝ የለም። በራስህ ጉድጓድ ቆመህ ተቃራኒውን ትበላለህ'], tuz: ['ጡዝ', 'ጀማሪው ከተቃዋሚው ቀዳዳዎች አንዱ ላይ ይከፍታል፤ የመጀመሪያውን ጡዝ እዚያ ያደርጋል። የመጨረሻ ጠጠርህ የተቃዋሚን 3 ወደ 4 ሲያደርግ ጡዝህ ይሆናል። በራስህ ቀዳዳ ጡዝ ማድረግ አይቻልም። ከጡዝ ውጪ ምንም ማቀዝቀዝ የለም — ሌላ አራት ተራ ቀዳዳ ነው'] },
       checkers: { flying: ['የሚበር ንጉሥ', 'ሰያፍ · ንጉሥ ይንሸራተታል · መያዝ ምርጫ ነው'], american: ['ክላሲክ', 'መደበኛ ሕግ 8×8 · መያዝ ምርጫ ነው'] },
       dominoes: { draw: ['መሳብ', 'ሲጣበቁ ሰድር ይሳባል'], block: ['መዝጋት', 'መሳብ የለም — ያልፋል'] },
       bingo: { line: ['ማንኛውም መስመር', 'ረድፍ፣ አምድ ወይም ሰያፍ'], corners: ['አራት ማዕዘን', 'ፈጣንና አጓጊ'], full: ['ሙሉ ካርድ', 'ሙሉውን ካርድ ሙላ'], stamp: ['ማህተም', '2×2 ካሬ በማንኛውም ጥግ'], xshape: ['X ቅርጽ', 'ሁለቱም ሰያፎች'], plus: ['+ ቅርጽ', 'መካከለኛ ረድፍና አምድ'] },

@@ -21,6 +21,7 @@ export default {
   actions: {
     // Tap a ripe family to bank it. A free action: the turn does not change, and it works on either player's turn.
     collect(room, priv, seat, body, now) {
+      if (room.ruleset === 'tuz') return { error: 'Nothing to collect there' }; // ጡዝ: a four is an ordinary hole
       // A tap made WHILE the stones were still travelling (`at` = steps of the move already on screen): the move is
       // replayed from the board before it, with this collect landing at exactly that moment.
       const lm = room.lastMove;

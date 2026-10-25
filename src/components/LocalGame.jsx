@@ -70,6 +70,7 @@ export default function LocalGame({ t, mode, level, ruleset, me, onExit, onLeave
   // Who is entitled to the four in hole i, judged by what the board SHOWS right now (flag 1 → seat 0, 2 → seat 1).
   const entitled = (i) => { const f = anim.flag ? anim.flag[i] : 0; return f === 1 ? 0 : f === 2 ? 1 : -1; };
   const doCollect = (i) => {
+    if (tuzGame) return false; // ጡዝ: a four is an ordinary hole — there is nothing to collect
     const f = gameRef.current.flag ? gameRef.current.flag[i] : 0;
     const r = collect(gameRef.current, i, f === 1 ? 0 : 1);
     if (!r.ok) return false;
@@ -85,7 +86,7 @@ export default function LocalGame({ t, mode, level, ruleset, me, onExit, onLeave
   // One touch, any time: the moment a four is visible on the board its owner may tap it — even while the seeds are still
   // travelling and even if the turn has already passed to the other side (your own last stone made the four).
   const canCollect = (i) => {
-    if (game.over) return false;
+    if (game.over || tuzGame) return false; // ጡዝ: touching a four lifts and plays it like any other hole
     const s = entitled(i);
     if (s < 0 || (mode === 'ai' && s !== 0)) return false;
     return collectable(gameRef.current, s).includes(i);
@@ -94,7 +95,7 @@ export default function LocalGame({ t, mode, level, ruleset, me, onExit, onLeave
   // re-played from that exact moment, so a stone that would have frozen the four now drops into an empty hole.
   const collectMidMove = (i) => {
     const ctx = moveCtx.current;
-    if (!anim.busy || !ctx) return false;
+    if (tuzGame || !anim.busy || !ctx) return false;
     const f = anim.flag ? anim.flag[i] : 0;
     const s = f === 1 ? 0 : f === 2 ? 1 : -1;
     if (s < 0 || (mode === 'ai' && s !== 0) || anim.pits[i] !== 4) return false;
@@ -179,6 +180,7 @@ export default function LocalGame({ t, mode, level, ruleset, me, onExit, onLeave
   let status;
   const untouched = game.pits.every((v, k) => k === 6 || k === 13 || v === 4);
   if (startNote && !game.over && untouched) status = gameNo === 0 ? t.lotteryStart(players[game.turn].name) : (t.startsNow ? t.startsNow(players[game.turn].name) : t.theirTurn(players[game.turn].name));
+  else if (tuzGame && game.opening && !game.over && !spinning && !anim.busy) status = mode === 'ai' ? (game.turn === 0 ? t.tuzOpenYou : t.tuzOpenThem(players[0].name)) : t.tuzOpenPass(players[game.turn].name);
   else if (frozenLeft > 0 && !game.over) status = t.ghostFrozen(frozenLeft);
   else if (game.over) status = '';
   else if (note) status = note;
