@@ -14,7 +14,7 @@ import * as WC from '@/lib/walletCore.js';
 import { randomUUID } from 'node:crypto';
 import { servableAds, bump, withTargeting } from '@/lib/adsServer.js';
 import { smartPick } from '@/lib/adsSmart.js';
-import { publicAd, clampSeconds, SESSION_TTL_MS, DONE_TOLERANCE_MS } from '@/lib/adsCore.js';
+import { publicAd, clampSeconds, houseAd, SESSION_TTL_MS, DONE_TOLERANCE_MS } from '@/lib/adsCore.js';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -104,11 +104,11 @@ async function adStart(db, uid) {
   if (wallet.adsLeft <= 0) fail(409, 'No bonus ads left today. They come back tomorrow.');
   // Smart pick (tap-rate learning with exploration, daily pacing). No lang / hour here: the server does not know the phone's, so those rules are skipped rather than guessed.
   const ad = smartPick((await servableAds(db, now)).map(withTargeting), { placement: 'rewarded', now, explore: true });
-  if (!ad) fail(404, 'No ad is available right now. Try again later.');
-  const durationMs = clampSeconds(ad.durationSec, 'rewarded') * 1000;
+  const shownAd = ad || houseAd('rewarded');   // no paid ad live: the built-in ad, so the reward is always available
+  const durationMs = clampSeconds(shownAd.durationSec, 'rewarded') * 1000;
   const id = randomUUID();
-  await adSessionRef(db, uid).set({ id, adId: ad.id, startedAt: now, durationMs, used: false });
-  return { session: { id, durationMs }, ad: publicAd(ad, 'rewarded'), wallet };
+  await adSessionRef(db, uid).set({ id, adId: shownAd.id, startedAt: now, durationMs, used: false });
+  return { session: { id, durationMs }, ad: publicAd(shownAd, 'rewarded'), wallet };
 }
 async function adDone(db, uid, sessionId) {
   const now = Date.now();
@@ -120,13 +120,13 @@ async function adDone(db, uid, sessionId) {
     if (now - sess.startedAt < sess.durationMs - DONE_TOLERANCE_MS) fail(409, 'The ad was not watched to the end.');
     const { w } = await readWallet(tx, db, uid, now);
     const r = WC.grantAdSpins(w, now);
-    if (!r.ok) fail(409, r.reason === 'bank-full' ? 'You already have plenty of bonus spins. Use some first.' : 'No bonus ads left today. They come back tomorrow.');
+    if (!r.ok) fail(409, 'No bonus ads left today. They come back tomorrow.');
     tx.set(adSessionRef(db, uid), { ...sess, used: true, doneAt: now });
     putWallet(tx, db, uid, r.wallet);
-    return { spins: r.spins, adId: sess.adId, wallet: WC.view(r.wallet, now) };
+    return { spins: r.spins, coins: r.coins, adId: sess.adId, wallet: WC.view(r.wallet, now) };
   });
   await bump(db, out.adId, 'impressions', now); await bump(db, out.adId, 'rewarded', now);
-  return { spins: out.spins, wallet: out.wallet };
+  return { spins: out.spins, coins: out.coins, wallet: out.wallet };
 }
 /** Before opening or entering a match: the player must hold the entry fee. */
 async function requireCoins(db, uid, fee) {

@@ -16,7 +16,8 @@ export const REWARD_MIN_SEC = 5;     // a rewarded ad is never shorter than this
 export const SKIP_AFTER_SEC = 3;     // splash / pre-game ads can be skipped after this long (shorter ads just end)
 
 export const REWARD_SPINS = 2;       // lucky spins earned for one finished rewarded ad
-export const REWARD_MAX_PER_DAY = 5; // rewarded ads that pay out per server day (5 × 2 = up to 10 extra spins a day)
+export const REWARD_COINS = 50;      // coins paid straight away for one finished rewarded ad (server-verified, see grantAdSpins)
+export const REWARD_MAX_PER_DAY = 20; // rewarded ads that pay out per server day
 export const BONUS_CAP = 20;         // banked bonus spins never exceed this
 
 export const SESSION_TTL_MS = 10 * 60 * 1000; // a rewarded ad must be completed within this long after it started
@@ -24,10 +25,16 @@ export const DONE_TOLERANCE_MS = 600;         // network slack when the server c
 
 // Frequency caps. `gapMs` = minimum time since the last ad of the same placement; `everyN` = show on every N-th game start.
 export const CAPS = {
-  splash: { gapMs: 2 * 60 * 1000 },
-  pre_game: { gapMs: 60 * 1000, everyN: 3 },
-  anyGapMs: 45 * 1000,               // never two ads back to back, whatever the placement
+  splash: { gapMs: 0 },                // an ad on every app open
+  pre_game: { gapMs: 0, everyN: 1 },   // an ad on every game start
+  anyGapMs: 3000,                      // only a double-fire guard: the same tap can never show two ads
 };
+
+/** The built-in ad (own picture, no advertiser, no link). It fills any slot when no paid ad is live, so every placement always has something to show. */
+export const HOUSE_AD = { id: 'house', advertiser: 'Gebeta', category: 'other', image: '/house-ad.svg', clickUrl: '',
+  title: 'Play, win, collect coins', titleAm: 'ተጫወት፣ አሸንፍ፣ ሳንቲም ሰብስብ', body: 'Watch an ad any time for free coins.', bodyAm: 'በማንኛውም ጊዜ ማስታወቂያ ይመልከቱ፣ ነፃ ሳንቲም ያግኙ።',
+  cta: 'Play now', ctaAm: 'አሁን ተጫወት', durationSec: 5 };
+export const houseAd = (placement) => ({ ...HOUSE_AD, durationSec: clampSeconds(HOUSE_AD.durationSec, placement) });
 
 const SLUG = /^[a-z0-9][a-z0-9_-]{1,39}$/;
 export const isAdId = (id) => SLUG.test(String(id ?? ''));

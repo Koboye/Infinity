@@ -6,7 +6,7 @@
 //  • Rewarded ads are different: the server picks them and times them (see Wallet.adStart / adDone).
 //  • Which ad? adsSmart.smartPick: language / hour / game targeting, tap-rate learning, daily-budget pacing and per-player fatigue.
 //    New players get an ad-free first 10 minutes.
-import { shouldShow, countStart, markShown, newCapState, clampSeconds } from './adsCore.js';
+import { shouldShow, countStart, markShown, newCapState, clampSeconds, houseAd } from './adsCore.js';
 import { smartPick, seenToday, noteSeen, noteCategory, stampFirst, inGrace } from './adsSmart.js';
 
 const FEED_KEY = 'gebeta.ads.feed', CAP_KEY = 'gebeta.ads.caps', FEED_TTL = 60 * 1000;   // v57: a minute (was 10) — a new or edited ad reaches phones almost at once
@@ -67,7 +67,7 @@ export async function nextAd(placement, { waitMs = 1500, lang = 'en', game = nul
   if (testMode()) {                                           // owner test: any live ad for this placement, no caps, no grace
     const ads = (await Promise.race([loadFeed(), new Promise((r) => setTimeout(() => r([]), Math.max(waitMs, 3000)))])).filter((a) => (a.placements || []).includes(placement));
     const ad = ads[Math.floor(Math.random() * ads.length)];
-    return ad ? { ...ad, durationSec: clampSeconds(ad.durationSec, placement) } : null;
+    return ad ? { ...ad, durationSec: clampSeconds(ad.durationSec, placement) } : houseAd(placement);
   }
   let caps = stampFirst(read(CAP_KEY) || newCapState(), now);
   if (placement === 'pre_game') caps = countStart(caps);
@@ -76,10 +76,11 @@ export async function nextAd(placement, { waitMs = 1500, lang = 'en', game = nul
   if (!shouldShow(placement, caps, now)) return null;
   const ads = await Promise.race([loadFeed(), new Promise((r) => setTimeout(() => r([]), waitMs))]);
   const ad = smartPick(ads, { placement, lang: lang === 'am' ? 'am' : 'en', game, hour: new Date(now).getHours(), seen: seenToday(caps, now), lastCategory: caps.lastCategory, avoidId: caps.lastId, now, explore: true });
-  return ad ? { ...ad, durationSec: clampSeconds(ad.durationSec, placement) } : null;
+  return ad ? { ...ad, durationSec: clampSeconds(ad.durationSec, placement) } : houseAd(placement);   // no paid ad fits: the built-in one, so every open and every game start has an ad
 }
 
 function track(event, ad) {
+  if (ad.id === 'house') return;                              // the built-in ad has no advertiser stats
   try { fetch('/api/ads', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ event, adId: ad.id }), keepalive: true }).catch(() => {}); } catch { /* best effort */ }
 }
 /** The ad is on screen. Splash / pre-game ads are counted here; rewarded ones are counted by the server when they pay out. */

@@ -15,6 +15,7 @@ import LudoGame from './ludo/LudoGame';
 import ModesScreen from './ModesScreen';
 import BottomNav from './BottomNav';
 import { WalletChip, SpinSheet, WelcomeGift } from './Wallet';
+import RewardedAdButton from './RewardedAdButton';
 import AdOverlay from './AdOverlay';
 import * as Ads from '@/lib/ads';
 import * as Wallet from '@/lib/wallet';
@@ -238,6 +239,7 @@ export default function GebetaApp() {
           <button className="icon-btn" onClick={view.name === 'game' ? leaveGame : ['ai', 'pass', 'online', 'leaders', 'rules'].includes(view.name) ? () => go('modes') : home} aria-label={t.backHome}>‹</button>}
         <h2 className="topbar-title">{view.name === 'home' || view.name === 'modes' ? '' : titles[view.name] || (view.name === 'room' ? `# ${view.code}` : 'ገበጣ')}</h2>
         <div className="topbar-actions">
+          {onlineAvailable && <RewardedAdButton lang={lang} signedIn={!!user} onNeedSignIn={() => go('online')} />}
           {onlineAvailable && <WalletChip lang={lang} signedIn={!!user} onOpen={() => (user ? setSheet({ type: 'spin' }) : go('online'))} />}
           <div className="lang-switch" role="group" aria-label={t.language}>
             <button className={lang === 'en' ? 'on' : ''} onClick={() => chooseLang('en')} aria-pressed={lang === 'en'} lang="en" title="English">EN</button>

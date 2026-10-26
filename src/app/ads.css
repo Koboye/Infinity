@@ -117,3 +117,9 @@ button.ad-media { transition: transform .15s ease; } button.ad-media:active { tr
 .adm-drop.busy { opacity: .75; }
 .adm-link summary { cursor: pointer; color: var(--gold); font-size: .85rem; padding: 4px 0; }
 .adm-link label { margin-top: 6px; }
+
+/* Always-available "watch an ad for coins" button in the top bar */
+.reward-btn { display: inline-flex; align-items: center; gap: 4px; height: 34px; padding: 0 10px; border-radius: 999px; border: 1.5px solid var(--gold, #e8b84a); background: rgba(232,184,74,.16); color: inherit; font-weight: 800; cursor: pointer; animation: rewardPulse 2.4s ease-in-out infinite; }
+.reward-btn:disabled { opacity: .6; animation: none; }
+@keyframes rewardPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(232,184,74,.5); } 50% { box-shadow: 0 0 0 6px rgba(232,184,74,0); } }
+@media (prefers-reduced-motion: reduce) { .reward-btn { animation: none; } }

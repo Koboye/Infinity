@@ -48,17 +48,18 @@ t('publicAd leaks no admin data and respects the placement length', () => {
   const p = A.publicAd({ ...base, active: true, weight: 9, createdAt: 1 }, 'rewarded'); assert.equal(p.durationSec, 6);
   for (const k of ['weight', 'active', 'start', 'end', 'createdAt', 'placements']) assert.equal(k in p, false, k);
 });
-t('frequency caps: never two ads back to back, splash once per gap, pre-game on every 3rd start', () => {
+t('frequency caps: an ad on every app open and every game start, only a 3 s double-fire guard, rewarded has no schedule', () => {
   let s = A.newCapState();
   assert.equal(A.shouldShow('splash', s, T0), true); s = A.markShown(s, 'splash', 'a', T0);
-  assert.equal(A.shouldShow('splash', s, T0 + 60_000), false);
-  s = A.countStart(s); assert.equal(A.shouldShow('pre_game', s, T0 + 100_000), false, '1st start: no ad');
-  s = A.countStart(s); assert.equal(A.shouldShow('pre_game', s, T0 + 100_000), false, '2nd start: no ad');
-  s = A.countStart(s); assert.equal(A.shouldShow('pre_game', s, T0 + 20_000), false, '3rd start but an ad was just shown');
-  assert.equal(A.shouldShow('pre_game', s, T0 + 100_000), true, '3rd start, enough time passed');
-  s = A.markShown(s, 'pre_game', 'b', T0 + 100_000); assert.equal(s.lastId, 'b');
-  assert.equal(A.shouldShow('splash', s, T0 + 100_000 + 30_000), false); assert.equal(A.shouldShow('splash', s, T0 + 100_000 + 130_000), true);
+  assert.equal(A.shouldShow('pre_game', s, T0 + 1000), false, 'same tap cannot show two ads');
+  s = A.countStart(s); assert.equal(A.shouldShow('pre_game', s, T0 + 4000), true, '1st game start: ad');
+  s = A.markShown(s, 'pre_game', 'b', T0 + 4000); assert.equal(s.lastId, 'b');
+  s = A.countStart(s); assert.equal(A.shouldShow('pre_game', s, T0 + 8000), true, '2nd game start: ad');
+  assert.equal(A.shouldShow('splash', s, T0 + 8000), true, 'next app open: ad');
   assert.equal(A.shouldShow('rewarded', s, T0), false, 'rewarded ads are the player\'s choice and have no schedule');
+});
+t('house ad: always valid for every placement, no link, rewarded length respected', () => {
+  for (const p of ['splash', 'pre_game', 'rewarded']) { const h = A.houseAd(p); assert.equal(h.id, 'house'); assert.equal(h.clickUrl, ''); assert.ok(h.durationSec >= (p === 'rewarded' ? A.REWARD_MIN_SEC : A.MIN_SEC)); assert.ok(h.image.startsWith('/')); }
 });
 
 t('bonus spins: daily spins go first, bonus spins after, never more than banked', () => {
@@ -74,16 +75,16 @@ t('bonus spins survive the day change; the 10 daily spins refresh', () => {
 });
 t('at most 5 rewarded ads pay per server day; the counter resets the next day', () => {
   let w = W.newWallet(T0);
-  for (let i = 0; i < 5; i++) { const g = W.grantAdSpins(w, T0); assert.ok(g.ok, `ad ${i + 1}`); w = g.wallet; }
+  for (let i = 0; i < 20; i++) { const g = W.grantAdSpins(w, T0); assert.ok(g.ok, `ad ${i + 1}`); w = g.wallet; }
   assert.equal(W.view(w, T0).adsLeft, 0); const no = W.grantAdSpins(w, T0); assert.equal(no.ok, false); assert.equal(no.reason, 'ad-cap');
-  assert.equal(W.view(w, Date.parse('2026-10-27T00:00:01Z')).adsLeft, 5); assert.ok(W.grantAdSpins(w, Date.parse('2026-10-27T00:00:01Z')).ok);
+  assert.equal(W.view(w, Date.parse('2026-10-27T00:00:01Z')).adsLeft, 20); assert.ok(W.grantAdSpins(w, Date.parse('2026-10-27T00:00:01Z')).ok);
 });
-t('the bonus bank is capped at 20 and a full bank pays nothing', () => {
+t('the bonus spin bank is capped at 20, but a full bank still pays the coins', () => {
   const full = { ...W.newWallet(T0), bonus: 19 }; const g = W.grantAdSpins(full, T0); assert.equal(g.spins, 1); assert.equal(g.wallet.bonus, 20);
-  const r = W.grantAdSpins(g.wallet, T0); assert.equal(r.ok, false); assert.equal(r.reason, 'bank-full'); assert.equal(W.view(g.wallet, T0).adsLeft, 0);
+  const r = W.grantAdSpins(g.wallet, T0); assert.equal(r.ok, true); assert.equal(r.spins, 0); assert.equal(r.coins, 50); assert.equal(r.wallet.bonus, 20); assert.equal(r.wallet.coins, g.wallet.coins + 50);
 });
 t('an old wallet with no ad fields still works', () => {
-  const old = { coins: 500, spinDay: '2026-10-26', spins: 3, log: [] }; const v = W.view(old, T0); assert.equal(v.spins, 7); assert.equal(v.adsLeft, 5);
+  const old = { coins: 500, spinDay: '2026-10-26', spins: 3, log: [] }; const v = W.view(old, T0); assert.equal(v.spins, 7); assert.equal(v.adsLeft, 20);
   assert.ok(W.grantAdSpins(old, T0).ok); assert.ok(W.spinOnce(old, T0).ok);
 });
 console.log(`ads tests passed (${n})`);

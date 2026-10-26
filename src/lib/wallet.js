@@ -3,7 +3,7 @@
 import { apiCall } from './firebase';
 export * from './walletCore.js';
 
-let state = { coins: 0, spins: 0, bonus: 0, adsLeft: 0, adSpins: 2, topUp: false, ready: false };
+let state = { coins: 0, spins: 0, bonus: 0, adsLeft: 0, adSpins: 2, adCoins: 50, topUp: false, ready: false };
 const emit = () => { try { globalThis.dispatchEvent?.(new Event('wallet:change')); } catch { /* no window */ } };
 const set = (next) => { state = { ...next, ready: true }; emit(); };
 
@@ -27,7 +27,7 @@ export async function topUp() {
   catch (e) { return { ok: false, error: e.message }; }
 }
 /** Signed out: forget the balance. */
-export function reset() { state = { coins: 0, spins: 0, bonus: 0, adsLeft: 0, adSpins: 2, topUp: false, ready: false }; emit(); }
+export function reset() { state = { coins: 0, spins: 0, bonus: 0, adsLeft: 0, adSpins: 2, adCoins: 50, topUp: false, ready: false }; emit(); }
 
 /** Ask the server for a rewarded ad. It picks the ad, starts the clock, and says how long the ad must run. */
 export async function adStart() {
@@ -36,6 +36,6 @@ export async function adStart() {
 }
 /** Report that the ad ran to the end. The server checks the time itself and banks the bonus spins (or refuses). */
 export async function adDone(session) {
-  try { const r = await apiCall({ action: 'adDone', session }, { retries: 0 }); set(r.wallet); return { ok: true, spins: r.spins }; }
+  try { const r = await apiCall({ action: 'adDone', session }, { retries: 0 }); set(r.wallet); return { ok: true, spins: r.spins, coins: r.coins }; }
   catch (e) { refresh(); return { ok: false, error: e.message }; }   // a lost reply may still have paid: re-read the wallet
 }

@@ -20,9 +20,9 @@ let n = 0; const t = async (name, fn) => { await fn(); n++; console.log('ok', na
 const ad = (id, over = {}) => ({ id, advertiser: id.toUpperCase(), category: 'bank', placements: ['splash', 'pre_game', 'rewarded'], image: 'https://firebasestorage.googleapis.com/v0/b/x/o/a.jpg', clickUrl: 'https://bank.example', title: 'Hello', cta: 'Open', durationSec: 6, weight: 1, active: true, start: '2020-01-01', end: '2099-12-31', ...over });
 const age = (uid, ms) => { const s = __store.get(`adSessions/${uid}`); __store.set(`adSessions/${uid}`, { ...s, startedAt: s.startedAt - ms }); };
 
-await t('with no ads: the public feed is empty and a rewarded ad answers "none available" (no free spins)', async () => {
+await t('with no paid ads: the public feed is empty and a rewarded ad falls back to the built-in house ad (coins still need the full watch)', async () => {
   const f = await pub.GET(); assert.deepEqual(f.body.ads, []);
-  assert.equal((await call('alice', { action: 'adStart' })).status, 404);
+  { const r = await call('alice', { action: 'adStart' }); assert.equal(r.status, 200); assert.equal(r.body.ad.id, 'house'); }
   assert.equal((await call(null, { action: 'adStart' })).status, 401);
 });
 
@@ -50,7 +50,7 @@ await t('impressions and clicks are counted for real ads only, and a flood is cu
 await t('rewarded ad: only a rewarded ad is served, with the length the server will enforce', async () => {
   const r = await ok('alice', { action: 'adStart' });
   assert.ok(['bank1', 'rew1'].includes(r.ad.id)); assert.ok(r.session.id); assert.equal(r.session.durationMs, 6000); assert.ok(r.ad.durationSec >= 5);
-  assert.equal(r.wallet.adsLeft, 5); assert.equal('weight' in r.ad, false);
+  assert.equal(r.wallet.adsLeft, 20); assert.equal('weight' in r.ad, false);
   assert.notEqual(r.ad.id, 'event1', 'an ad that is not for the rewarded placement is never served as one');
 });
 await t('finishing early pays nothing; the session stays open so the player can finish properly', async () => {
@@ -59,7 +59,7 @@ await t('finishing early pays nothing; the session stays open so the player can 
 });
 await t('a finished ad pays exactly 2 spins, once; replays and wrong sessions pay nothing', async () => {
   const s = __store.get('adSessions/alice'); age('alice', 6000);
-  const r = await ok('alice', { action: 'adDone', session: s.id }); assert.equal(r.spins, 2); assert.equal(r.wallet.spins, 12); assert.equal(r.wallet.bonus, 2); assert.equal(r.wallet.adsLeft, 4);
+  const r = await ok('alice', { action: 'adDone', session: s.id }); assert.equal(r.spins, 2); assert.equal(r.wallet.spins, 12); assert.equal(r.wallet.bonus, 2); assert.equal(r.wallet.adsLeft, 19); assert.equal(r.coins, 50, 'coins are paid at once'); assert.equal(r.wallet.coins, 1050);
   assert.equal((await call('alice', { action: 'adDone', session: s.id })).status, 409, 'replay');
   assert.equal((await call('alice', { action: 'adDone', session: 'made-up' })).status, 409);
   assert.equal((await call('alice', { action: 'adDone' })).status, 409);
@@ -84,10 +84,10 @@ await t('bonus spins are spent after the 10 daily spins, through the normal serv
   let spins = 0; for (;;) { const r = await call('bob', { action: 'spin' }); if (r.status !== 200) break; spins++; }
   assert.equal(spins, 12); assert.equal(__store.get('wallets/bob').bonus, 0); assert.equal((await call('bob', { action: 'spin' })).status, 409);
 });
-await t('daily cap: the 6th ad of a day is refused before it even starts, and nothing is paid', async () => {
-  for (let i = 0; i < 4; i++) { const a = await ok('dan', { action: 'adStart' }); age('dan', 7000); await ok('dan', { action: 'adDone', session: a.session.id }); }
+await t('daily cap: the 21st ad of a day is refused before it even starts, and nothing is paid', async () => {
+  for (let i = 0; i < 19; i++) { const a = await ok('dan', { action: 'adStart' }); age('dan', 7000); await ok('dan', { action: 'adDone', session: a.session.id }); }
   const a5 = await ok('dan', { action: 'adStart' }); age('dan', 7000); const last = await ok('dan', { action: 'adDone', session: a5.session.id }); assert.equal(last.wallet.adsLeft, 0);
-  assert.equal(__store.get('wallets/dan').bonus, 10);
+  assert.equal(__store.get('wallets/dan').bonus, 20, 'spin bank stops at its cap'); assert.equal(__store.get('wallets/dan').coins, 1000 + 20 * 50, 'every one of the 20 ads paid its coins');
   const more = await call('dan', { action: 'adStart' }); assert.equal(more.status, 409); assert.match(more.body.error, /come back tomorrow/);
 });
 await t('the wallet cannot be edited through the ad actions', async () => {

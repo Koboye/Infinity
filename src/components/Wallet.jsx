@@ -12,7 +12,7 @@ const TXT = {
     practice: 'Online matches use coins. Computer and Pass & Play are free practice.', offlineErr: 'Could not reach the server. Check your connection.',
     refill: (n) => `Daily refill: top up to ${n} coins`, refilled: (n) => `Refilled +${n} coins`, refillSub: 'Only when you have fewer than 200 coins, once a day.',
     bonusLeft: (n, b) => `${n} spins left${b ? ` (${b} bonus)` : ' today'}`, watch: (n) => `🎬 Watch a short ad → +${n} spins`, watchLeft: (k) => `${k} bonus ${k === 1 ? 'ad' : 'ads'} left today`, watchSub: 'Optional. Spins are added when the ad ends.',
-    adWon: (n) => `+${n} bonus spins added!`, adNone: 'No ad is available right now. Try again a little later.', adFail: 'The ad could not be shown. No spins were used.', adOver: 'No bonus ads left today. They come back tomorrow.' },
+    adWon: (n, c) => `+${c || 0} coins and +${n} bonus spins added!`, adNone: 'No ad is available right now. Try again a little later.', adFail: 'The ad could not be shown. No spins were used.', adOver: 'No bonus ads left today. They come back tomorrow.' },
   am: { coins: 'ሳንቲሞች', spin: 'የዕለት ዕድል ጎማ', spinsLeft: (n) => `ዛሬ ${n} ከ${W.DAILY_SPINS} ዙሮች ቀርተዋል`, doSpin: 'አሽከርክር', won: (n) => `${n} ሳንቲም አሸነፉ!`, none: 'ዛሬ ዙሮች አልቀዋል። አዳዲስ ዙሮች በየቀኑ ይመጣሉ።',
     fee: 'የመግቢያ ክፍያ', feeSub: 'ጨዋታው ሲጀምር ሁለቱም ተጫዋቾች ይከፍላሉ። አሸናፊው 90% ይወስዳል፤ አቻ ሲሆን ሁለቱም ክፍያ ይመለሳል።', low: 'በቂ ሳንቲም የለም', lowSub: 'ተጨማሪ ሳንቲም ለማግኘት ዕለታዊውን ጎማ ያሽከርክሩ።', balance: 'ሳንቲሞችዎ',
     gift: 'የእንኳን ደህና መጡ ስጦታ!', giftSub: 'የመለያዎ ቦርሳ በ1,000 ሳንቲም ይጀምራል። የኢንተርኔት ጨዋታዎች የመግቢያ ክፍያ አላቸው፤ አሸናፊው ሽልማቱን ይወስዳል።', claim: '1,000 ሳንቲም ተቀበል', close: 'ዝጋ', pot: 'ሽልማት', signIn: 'ግባ',
@@ -20,7 +20,7 @@ const TXT = {
     practice: 'የኢንተርኔት ጨዋታዎች ሳንቲም ይጠቀማሉ። ከኮምፒውተር እና Pass & Play ነፃ ልምምድ ናቸው።', offlineErr: 'ሰርቨሩን ማግኘት አልተቻለም። ግንኙነትዎን ይመልከቱ።',
     refill: (n) => `ዕለታዊ መሙያ፦ እስከ ${n} ሳንቲም`, refilled: (n) => `+${n} ሳንቲም ተሞላ`, refillSub: 'ከ200 ሳንቲም በታች ሲኖርዎት ብቻ፣ በቀን አንድ ጊዜ።',
     bonusLeft: (n, b) => `${n} ዙሮች ቀርተዋል${b ? ` (${b} ተጨማሪ)` : ' ዛሬ'}`, watch: (n) => `🎬 አጭር ማስታወቂያ ይመልከቱ → +${n} ዙሮች`, watchLeft: (k) => `ዛሬ ${k} ተጨማሪ ማስታወቂያ ቀርቷል`, watchSub: 'አማራጭ ነው። ዙሮቹ ማስታወቂያው ሲያልቅ ይጨመራሉ።',
-    adWon: (n) => `+${n} ተጨማሪ ዙሮች ተጨመሩ!`, adNone: 'አሁን ምንም ማስታወቂያ የለም። ትንሽ ቆይተው ይሞክሩ።', adFail: 'ማስታወቂያው ሊታይ አልቻለም። ምንም ዙር አልተጠቀመም።', adOver: 'ዛሬ ተጨማሪ ማስታወቂያ አልቀረም። ነገ ይመለሳሉ።' },
+    adWon: (n, c) => `+${c || 0} ሳንቲም እና +${n} ተጨማሪ ዙሮች ተጨመሩ!`, adNone: 'አሁን ምንም ማስታወቂያ የለም። ትንሽ ቆይተው ይሞክሩ።', adFail: 'ማስታወቂያው ሊታይ አልቻለም። ምንም ዙር አልተጠቀመም።', adOver: 'ዛሬ ተጨማሪ ማስታወቂያ አልቀረም። ነገ ይመለሳሉ።' },
 };
 export const walletText = (lang) => TXT[lang === 'am' ? 'am' : 'en'];
 const tx = walletText;
@@ -121,7 +121,7 @@ export function SpinSheet({ lang, onClose }) {
     const cur = ad; setAd(null);
     if (!completed) { if (reason === 'failed') setErr(L.adFail); return; }
     setBusy(true); const r = await W.adDone(cur.session.id); setBusy(false);
-    if (r.ok) setAdMsg(L.adWon(r.spins)); else setErr(r.error || L.offlineErr);
+    if (r.ok) setAdMsg(L.adWon(r.spins, r.coins)); else setErr(r.error || L.offlineErr);
   };
   const grad = `conic-gradient(${W.SPIN_PRIZES.map((_, i) => `${COLS[i % COLS.length]} ${i * SLICE}deg ${(i + 1) * SLICE}deg`).join(',')})`;
   return (

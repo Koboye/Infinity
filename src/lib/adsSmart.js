@@ -19,7 +19,7 @@ export const SMART = {
   sameCategory: 0.6,     // chance multiplier when it is the same kind of ad as the one just shown
   targetBoost: 1.3,      // an ad aimed at exactly this language / game is preferred a little
   defaultMaxPerUser: 3,  // views of one ad per player per day, unless the ad says otherwise
-  graceMs: 10 * 60 * 1000, // a brand-new player gets no ads for the first 10 minutes
+  graceMs: 0, // no ad-free window: ads on every open and game start
   paceMin: 0.2, paceMax: 1.5,
 };
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));

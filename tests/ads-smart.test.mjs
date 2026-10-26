@@ -57,10 +57,10 @@ await t('variety: same kind of ad twice in a row is less likely; the last ad is 
   const c = share([mk({ id: 'bk', category: 'bank' }), mk({ id: 'ev', category: 'event' })], { lastCategory: 'bank' }); assert.ok(c.ev > c.bk * 1.4, JSON.stringify(c));
   assert.equal(S.smartPick([mk({ id: 'p' }), mk({ id: 'q' })], { placement: 'splash', now: T0, avoidId: 'p' }).id, 'q');
 });
-await t('player memory: counts per day, forgets yesterday, new players get an ad-free start', () => {
+await t('player memory: counts per day, forgets yesterday, no ad-free window any more', () => {
   let s = S.noteSeen({}, 'a', T0); s = S.noteSeen(s, 'a', T0 + 1000); s = S.noteSeen(s, 'b', T0); assert.deepEqual(S.seenToday(s, T0), { a: 2, b: 1 });
   assert.deepEqual(S.seenToday(s, T0 + 86_400_000), {}); s = S.noteSeen(s, 'c', T0 + 86_400_000); assert.deepEqual(Object.keys(s.seen), ['c']);
-  const f = S.stampFirst({}, T0); assert.equal(S.stampFirst(f, T0 + 5000).firstAt, T0); assert.equal(S.inGrace(f, T0 + 9 * 60_000), true); assert.equal(S.inGrace(f, T0 + 11 * 60_000), false); assert.equal(S.inGrace({}, T0), false);
+  const f = S.stampFirst({}, T0); assert.equal(S.stampFirst(f, T0 + 5000).firstAt, T0); assert.equal(S.inGrace(f, T0 + 9 * 60_000), false, 'ads on every open, even for new players'); assert.equal(S.inGrace({}, T0), false);
   const keep = A.markShown(S.noteSeen({}, 'a', T0), 'splash', 'a', T0); assert.equal(keep.seen.a.n, 1, 'frequency-cap updates keep the memory');
 });
 await t('advice for the owner', () => {

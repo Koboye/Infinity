@@ -2,7 +2,7 @@
 // place that stores a wallet, and the client only ever shows what the server says. Coins are play-money: they
 // cannot be bought, sold or cashed out.
 import { randomInt } from './fairRandom.js';
-import { REWARD_SPINS, REWARD_MAX_PER_DAY, BONUS_CAP } from './adsCore.js';
+import { REWARD_SPINS, REWARD_COINS, REWARD_MAX_PER_DAY, BONUS_CAP } from './adsCore.js';
 
 export const WELCOME_GIFT = 1000;
 export const DAILY_SPINS = 10;
@@ -35,7 +35,7 @@ export function view(w, now = Date.now()) {
   const daily = Math.max(0, DAILY_SPINS - used);
   const bonus = Math.max(0, w.bonus || 0);
   const adViews = w.adDay === dayKey(now) ? (w.adViews || 0) : 0;
-  return { coins: w.coins, spins: daily + bonus, daily, bonus, adsLeft: bonus >= BONUS_CAP ? 0 : Math.max(0, REWARD_MAX_PER_DAY - adViews), adSpins: REWARD_SPINS, topUp: w.coins < TOPUP_FLOOR && w.topDay !== dayKey(now), log: (w.log || []).slice(0, 10) };
+  return { coins: w.coins, spins: daily + bonus, daily, bonus, adsLeft: Math.max(0, REWARD_MAX_PER_DAY - adViews), adSpins: REWARD_SPINS, adCoins: REWARD_COINS, topUp: w.coins < TOPUP_FLOOR && w.topDay !== dayKey(now), log: (w.log || []).slice(0, 10) };
 }
 const rolled = (w, now) => (w.spinDay === dayKey(now) ? w : { ...w, spinDay: dayKey(now), spins: 0 });
 
@@ -52,14 +52,14 @@ export function spinOnce(w0, now = Date.now(), next = randomInt) {
   return { ok: true, coins, index, wallet: addLog({ ...paid, coins: w.coins + coins }, 'spin', coins, now) };
 }
 
-/** A finished rewarded ad: bank REWARD_SPINS bonus spins. At most REWARD_MAX_PER_DAY a server day, and the bank never exceeds BONUS_CAP. */
+/** A finished rewarded ad: pay REWARD_COINS coins at once and bank REWARD_SPINS bonus spins (the spins stop at BONUS_CAP, the coins never do).
+ *  At most REWARD_MAX_PER_DAY a server day. */
 export function grantAdSpins(w0, now = Date.now()) {
   const w = w0.adDay === dayKey(now) ? w0 : { ...w0, adDay: dayKey(now), adViews: 0 };
   const have = Math.max(0, w.bonus || 0);
   if ((w.adViews || 0) >= REWARD_MAX_PER_DAY) return { ok: false, reason: 'ad-cap' };
-  if (have >= BONUS_CAP) return { ok: false, reason: 'bank-full' };
   const bonus = Math.min(BONUS_CAP, have + REWARD_SPINS);
-  return { ok: true, spins: bonus - have, wallet: addLog({ ...w, bonus, adViews: (w.adViews || 0) + 1 }, 'ad', bonus - have, now) };
+  return { ok: true, spins: bonus - have, coins: REWARD_COINS, wallet: addLog({ ...w, bonus, coins: w.coins + REWARD_COINS, adViews: (w.adViews || 0) + 1 }, 'ad', REWARD_COINS, now) };
 }
 
 /** The daily refill for a player who is nearly out of coins: lifts the balance to TOPUP_FLOOR, once per server day. */
