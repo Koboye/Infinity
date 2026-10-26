@@ -42,3 +42,6 @@ export async function servableAds(db, now = Date.now()) {
     .filter((a) => !(a.dailyCap > 0 && (used[a.id] || 0) >= a.dailyCap))
     .map((a) => ({ ...a, perf: perf[a.id] || { i: 0, c: 0 }, used: used[a.id] || 0, pace: paceFactor(used[a.id] || 0, a.dailyCap || 0, now) }));
 }
+
+/** The shape smartPick expects: targeting under `t` (the public feed sends the same shape to phones). */
+export const withTargeting = (a) => ({ ...a, t: { langs: a.langs || [], games: a.games || [], hours: a.hours || null, maxPerUser: a.maxPerUser || 3 } });

@@ -29,6 +29,26 @@ export const smoothedCtr = (imps = 0, clicks = 0) => (Math.max(0, clicks) + SMAR
 /** How much better / worse than a typical ad (0.5 … 2.5). */
 export const quality = (perf) => clamp(smoothedCtr(perf?.i, perf?.c) / SMART.priorCtr, SMART.minQuality, SMART.maxQuality);
 
+// ── Thompson sampling: instead of trusting the average tap rate, draw a plausible tap rate from what we know about the ad.
+// A new / unlucky ad still gets tried (wide uncertainty); a proven one wins most draws (narrow uncertainty). Opt-in via ctx.explore.
+function normal(rand) { return Math.sqrt(-2 * Math.log(1 - rand())) * Math.cos(2 * Math.PI * rand()); }
+function gamma(k, rand) {                                    // Marsaglia–Tsang, k >= 1 (always true here: the prior is Beta(4, 196))
+  const d = k - 1 / 3, c = 1 / Math.sqrt(9 * d);
+  for (let n = 0; n < 100; n++) {
+    let x, v; do { x = normal(rand); v = 1 + c * x; } while (v <= 0);
+    v = v * v * v; const u = rand();
+    if (u < 1 - 0.0331 * x ** 4 || Math.log(u || 1e-12) < 0.5 * x * x + d * (1 - v + Math.log(v))) return d * v;
+  }
+  return d;
+}
+/** One random draw from Beta(a, b). */
+export function betaSample(a, b, rand = Math.random) { const x = gamma(a, rand), y = gamma(b, rand); return x / (x + y); }
+/** Like `quality`, but from a random draw of the ad's tap rate (0.5 … 2.5). */
+export function thompsonQuality(perf, rand = Math.random) {
+  const a0 = SMART.priorCtr * SMART.priorWeight, b0 = SMART.priorWeight - a0, i = Math.max(0, perf?.i || 0), c = clamp(perf?.c || 0, 0, i);
+  return clamp(betaSample(a0 + c, b0 + i - c, rand) / SMART.priorCtr, SMART.minQuality, SMART.maxQuality);
+}
+
 /** Is `hour` (0–23) inside the window? `from > to` wraps midnight (22 → 6). No window (or from === to) = all day. */
 export function inHours(hours, hour) {
   if (!hours || !Number.isInteger(hours.from) || !Number.isInteger(hours.to) || hours.from === hours.to) return true;
@@ -60,7 +80,7 @@ export function eligible(ad, ctx = {}) {
 /** Relative chance of showing this ad (always > 0 for an eligible ad). */
 export function score(ad, ctx = {}) {
   const t = ad.t || {};
-  let s = Math.max(1, ad.weight || 1) * quality(ad.perf) * (Number.isFinite(ad.pace) ? clamp(ad.pace, SMART.paceMin, SMART.paceMax) : 1);
+  let s = Math.max(1, ad.weight || 1) * (ctx.explore ? thompsonQuality(ad.perf, ctx.rand) : quality(ad.perf)) * (Number.isFinite(ad.pace) ? clamp(ad.pace, SMART.paceMin, SMART.paceMax) : 1);
   s *= Math.pow(SMART.fatigue, ctx.seen?.[ad.id] || 0);
   if (ctx.lastCategory && ad.category === ctx.lastCategory) s *= SMART.sameCategory;
   if (t.langs?.length && t.langs.includes(ctx.lang)) s *= SMART.targetBoost;

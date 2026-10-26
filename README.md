@@ -239,3 +239,9 @@ No ad is better than a wrong ad: if every ad is filtered out, nothing is shown. 
 **Feed** (`GET /api/ads`, cached 60 s) now also carries per ad `t` (targeting), `perf` (last-7-days `i` impressions, `c` taps) and `pace`. Private fields (`dailyCap`, `active`, dates) are not sent. Player memory (views per ad per day, last category, first open) lives in the same local-storage key as the v54 caps.
 
 **Tune it:** numbers are in `SMART` at the top of `src/lib/adsSmart.js`. **Tests:** `tests/ads-smart.test.mjs`. **Deploy:** nothing new to configure; existing ads keep working (new fields default to "no restriction", 3 views per player per day).
+
+## v62 — smarter ads
+- **Thompson-sampling learning** (`adsSmart.js` → `thompsonQuality`, opt-in `explore: true`): each ad's tap rate is drawn from what we know about it, so new or unlucky ads still get tried and proven ads win most views. Still bounded to 0.5–2.5× of an ad's normal share.
+- **Rewarded ads now use the smart pick** (`/api/gebeta` `adStart`): learning, pacing, per-ad rules. The server does not know the phone's language / local hour, so those rules are skipped there instead of guessed.
+- **Click / impression guard** (`adsGuard.js`, used by `POST /api/ads`): at most 3 clicks and 60 impressions per address per ad per hour, so one address cannot inflate tap rates (which drive the learning). Per server instance, like the other rate limits here.
+- Tests: `tests/ads-learn.test.mjs`.

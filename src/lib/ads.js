@@ -75,7 +75,7 @@ export async function nextAd(placement, { waitMs = 1500, lang = 'en', game = nul
   if (inGrace(caps, now)) return null;                       // brand-new player: no ads yet
   if (!shouldShow(placement, caps, now)) return null;
   const ads = await Promise.race([loadFeed(), new Promise((r) => setTimeout(() => r([]), waitMs))]);
-  const ad = smartPick(ads, { placement, lang: lang === 'am' ? 'am' : 'en', game, hour: new Date(now).getHours(), seen: seenToday(caps, now), lastCategory: caps.lastCategory, avoidId: caps.lastId, now });
+  const ad = smartPick(ads, { placement, lang: lang === 'am' ? 'am' : 'en', game, hour: new Date(now).getHours(), seen: seenToday(caps, now), lastCategory: caps.lastCategory, avoidId: caps.lastId, now, explore: true });
   return ad ? { ...ad, durationSec: clampSeconds(ad.durationSec, placement) } : null;
 }
 
