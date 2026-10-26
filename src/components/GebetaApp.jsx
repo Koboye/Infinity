@@ -123,11 +123,15 @@ export default function GebetaApp() {
   }, [user, profile]);
   const confirm = useCallback((message) => new Promise((resolve) => setDialog({ message, resolve })), []);
   // A short full-screen ad (splash / pre_game). Resolves when it is over, or at once when none is due: ads never block the app.
-  const runAd = useCallback(async (placement, opts = {}) => {
+  const runAd = useCallback(async (placement, opts = {}, attempt = 0) => {
     if (adRef.current) return;
-    let ad = null; try { ad = await Ads.nextAd(placement, { lang: langRef.current, game: opts.game || null, waitMs: placement === 'splash' ? 3000 : 1500 }); } catch { ad = null; }
+    let ad = null; try { ad = await Ads.nextAd(placement, { lang: langRef.current, game: opts.game || null, waitMs: placement === 'splash' ? 3000 : 1500, retry: attempt > 0 }); } catch { ad = null; }
     if (!ad || adRef.current) return;
-    await new Promise((resolve) => setAdShow({ ad, placement, resolve }));
+    const reason = await new Promise((resolve) => setAdShow({ ad, placement, resolve }));
+    if (reason === 'failed' && attempt < 2) {                  // v64: its picture would not load — remember that and show the next ad instead of nothing
+      Ads.markBad(ad); await new Promise((r) => setTimeout(r, 60));
+      return runAd(placement, opts, attempt + 1);
+    }
   }, []);
   const splashed = useRef(false);
   useEffect(() => { if (splashed.current) return; splashed.current = true; Ads.warm(); runAd('splash'); }, [runAd]);   // app open
@@ -231,7 +235,7 @@ export default function GebetaApp() {
             go(to);
           }} />
       )}
-      {adShow && <AdOverlay ad={adShow.ad} lang={lang} placement={adShow.placement} seconds={adShow.ad.durationSec} onShown={(a) => Ads.shown(adShow.placement, a)} onClick={(a) => Ads.clicked(a)} onClose={() => { adShow.resolve(); setAdShow(null); }} />}
+      {adShow && <AdOverlay ad={adShow.ad} lang={lang} placement={adShow.placement} seconds={adShow.ad.durationSec} onShown={(a) => Ads.shown(adShow.placement, a)} onClick={(a) => Ads.clicked(a)} onClose={(_done, reason) => { adShow.resolve(reason); setAdShow(null); }} />}
       {sheet?.type === 'gift' && <WelcomeGift lang={lang} onClose={() => setSheet(null)} />}
       {sheet?.type === 'spin' && <SpinSheet lang={lang} onClose={() => setSheet(null)} />}
       <header className="topbar">

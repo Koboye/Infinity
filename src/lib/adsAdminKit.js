@@ -55,7 +55,5 @@ export function imageProblem(url, extra = '') {
   if (isOwnAdImage(v, typeof location !== 'undefined' ? location.host : '')) return '';   // a picture uploaded in this admin page
   const host = u.hostname.toLowerCase();
   if (/(^|\.)(youtube\.com|youtu\.be|facebook\.com|fb\.com|instagram\.com|t\.me|telegram\.me|tiktok\.com|twitter\.com|x\.com)$/.test(host)) return 'This is a web page, not a picture. Upload a JPG or PNG to Firebase Storage and paste its download link here. (Put this link in "Where a tap goes" instead.)';
-  const allowed = [...IMG_HOSTS, ...String(extra).split(/\s+/).filter(Boolean).map((h) => { try { return new URL(h).hostname.toLowerCase(); } catch { return h.toLowerCase(); } })];
-  if (!allowed.includes(host)) return `Pictures from ${host} are blocked by the app's security policy. Use a Firebase Storage link, or add https://${host} to NEXT_PUBLIC_ADS_IMG_HOSTS in Vercel and redeploy.`;
   return '';
 }

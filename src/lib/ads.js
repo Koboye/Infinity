@@ -14,6 +14,8 @@ const read = (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch 
 const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* storage full or blocked */ } };
 
 let feed = null, inflight = null;
+const badImages = new Set();   // v64: ads whose picture failed to load in this session. They are skipped so the next ad shows instead of a silent gap; a reload tries them again.
+export const markBad = (ad) => { if (ad && ad.id && ad.id !== 'house') { badImages.add(ad.id); try { console.warn(`[ads] picture of "${ad.id}" failed to load (${ad.image}); showing another ad`); } catch { /* no console */ } } };
 
 /**
  * Owner test mode: open the app as  https://YOUR-DOMAIN/?adtest=1  (and  ?adtest=0  to leave it).
@@ -29,9 +31,13 @@ export function testMode() {
     return sessionStorage.getItem('gebeta.adtest') === '1';
   } catch { return false; }
 }
+/** Owner test mode: which ad is next. Lives in this tab only. */
+function testTurn() {
+  try { const n = Number(sessionStorage.getItem('gebeta.adtest.n') || 0); sessionStorage.setItem('gebeta.adtest.n', String(n + 1)); return n; } catch { return Math.floor(Math.random() * 1000); }
+}
 function preload(ads) {
   if (typeof Image === 'undefined') return;
-  for (const a of ads) { const i = new Image(); i.decoding = 'async'; i.src = a.image; }
+  for (const a of ads) { const i = new Image(); i.decoding = 'async'; i.referrerPolicy = 'no-referrer'; i.onerror = () => markBad(a); i.onload = () => badImages.delete(a.id); i.src = a.image; }
 }
 
 /** The ads this phone may show on open / before a game. Cached; never throws. */
@@ -62,19 +68,19 @@ export const warm = () => { loadFeed(); };
  * The next ad for a placement, or null when none is due (frequency caps), none is live, or the network is too slow.
  * `pre_game` counts one game start per call.
  */
-export async function nextAd(placement, { waitMs = 1500, lang = 'en', game = null } = {}) {
+export async function nextAd(placement, { waitMs = 1500, lang = 'en', game = null, retry = false } = {}) {
   const now = Date.now();
   if (testMode()) {                                           // owner test: any live ad for this placement, no caps, no grace
-    const ads = (await Promise.race([loadFeed(), new Promise((r) => setTimeout(() => r([]), Math.max(waitMs, 3000)))])).filter((a) => (a.placements || []).includes(placement));
-    const ad = ads[Math.floor(Math.random() * ads.length)];
+    const ads = (await Promise.race([loadFeed(), new Promise((r) => setTimeout(() => r([]), Math.max(waitMs, 3000)))])).filter((a) => (a.placements || []).includes(placement) && !badImages.has(a.id)).sort((a, b) => (a.id < b.id ? -1 : 1));
+    const ad = ads[testTurn() % ads.length];   // v64: take turns (A, B, A, B…). A random pick showed the same ad again half the time, so two test ads looked like one
     return ad ? { ...ad, durationSec: clampSeconds(ad.durationSec, placement) } : houseAd(placement);
   }
   let caps = stampFirst(read(CAP_KEY) || newCapState(), now);
-  if (placement === 'pre_game') caps = countStart(caps);
+  if (placement === 'pre_game' && !retry) caps = countStart(caps);   // a retry after a broken picture is the same game start
   write(CAP_KEY, caps);
   if (inGrace(caps, now)) return null;                       // brand-new player: no ads yet
   if (!shouldShow(placement, caps, now)) return null;
-  const ads = await Promise.race([loadFeed(), new Promise((r) => setTimeout(() => r([]), waitMs))]);
+  const ads = (await Promise.race([loadFeed(), new Promise((r) => setTimeout(() => r([]), waitMs))])).filter((a) => !badImages.has(a.id));
   const ad = smartPick(ads, { placement, lang: lang === 'am' ? 'am' : 'en', game, hour: new Date(now).getHours(), seen: seenToday(caps, now), lastCategory: caps.lastCategory, avoidId: caps.lastId, now, explore: true });
   return ad ? { ...ad, durationSec: clampSeconds(ad.durationSec, placement) } : houseAd(placement);   // no paid ad fits: the built-in one, so every open and every game start has an ad
 }

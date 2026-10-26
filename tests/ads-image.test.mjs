@@ -44,7 +44,7 @@ t('recognises our own picture addresses and nothing look-alike', () => {
 t('the owner page accepts an uploaded picture link and still blocks web pages', () => {
   assert.equal(imageProblem(`https://infinity-now.vercel.app${AD_IMG_PATH}${id}`), '');
   assert.match(imageProblem('https://www.youtube.com/watch?v=x'), /web page/);
-  assert.match(imageProblem('https://random.example/a.png'), /blocked/);
+  assert.equal(imageProblem('https://random.example/a.png'), '');   // v64: any https host loads now
 });
 t('the server-side ad validator saves an ad that uses an uploaded picture', () => {
   const r = sanitizeAd({ id: 'abay-bank-oct26', advertiser: 'Abay Bank', category: 'bank', image: `https://infinity-now.vercel.app${AD_IMG_PATH}${id}`, clickUrl: 'https://abay.example', start: '2026-10-26', end: '2026-11-26', placements: ['splash'], durationSec: 5, weight: 1, maxPerUser: 3, active: true });

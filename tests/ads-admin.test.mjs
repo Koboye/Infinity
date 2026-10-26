@@ -29,8 +29,7 @@ t('ids and dates', () => {
 });
 t('picture link check catches web pages and blocked hosts', () => {
   assert.match(imageProblem('https://www.youtube.com/@Live_Game_Center'), /web page, not a picture/);
-  assert.match(imageProblem('https://i.imgur.com/a.png'), /blocked/);
-  assert.equal(imageProblem('https://i.imgur.com/a.png', 'https://i.imgur.com'), '');
+  assert.equal(imageProblem('https://i.imgur.com/a.png'), '');   // v64: any https host is allowed by the CSP now
   assert.equal(imageProblem('https://firebasestorage.googleapis.com/v0/b/x/o/a.png?alt=media'), '');
   assert.match(imageProblem('http://x.com/a.png'), /https/); assert.equal(imageProblem(''), '');
 });
