@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebaseAdmin';
 import { servableAds, bump, adsCol } from '@/lib/adsServer.js';
 import { publicAd, isAdId } from '@/lib/adsCore.js';
-import { makeGuard } from '@/lib/adsGuard.js';
+import { makeGlobalGuard } from '@/lib/upstashGuard.js';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -35,7 +35,7 @@ export async function GET(req) {
   }
 }
 
-const allow = makeGuard();
+const allow = makeGlobalGuard();
 const EVENTS = { impression: 'impressions', click: 'clicks' };
 export async function POST(req) {
   try {
@@ -43,7 +43,7 @@ export async function POST(req) {
     const body = await req.json().catch(() => ({}));
     const field = EVENTS[body.event]; const adId = String(body.adId || '').toLowerCase();
     if (!field || !isAdId(adId)) return NextResponse.json({ ok: true });
-    if (!allow(body.event, ipOf(req), adId)) return NextResponse.json({ ok: true }); // over the per-address limit: ignored quietly
+    if (!(await allow(body.event, ipOf(req), adId))) return NextResponse.json({ ok: true }); // over the per-address limit: ignored quietly
     const db = adminDb();
     if ((await adsCol(db).doc(adId).get()).exists) await bump(db, adId, field); // only real ads are counted
   } catch { /* stats are best effort */ }
