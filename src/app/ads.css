@@ -92,3 +92,19 @@ button.ad-media { transition: transform .15s ease; } button.ad-media:active { tr
 @keyframes ad-spark { 0% { opacity: 1; transform: rotate(var(--a)) translateX(0) scale(.5); } 100% { opacity: 0; transform: rotate(var(--a)) translateX(var(--d)) scale(1.2); } }
 .ad-earn { border-radius: 18px; background: linear-gradient(180deg, rgba(242, 182, 50, .16), rgba(242, 182, 50, .06)); border: 1px solid rgba(242, 182, 50, .5); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08); }
 @media (prefers-reduced-motion: reduce) { .ad-card, .ad-badge u, .ad-reward, .ad-media::after, .ad-cta::after, .ad-claim::after, .ad-claim, .ad-sparks i { animation: none !important; } .ad-sparks { display: none; } }
+
+/* ───────── v58 owner page: guided form with dropdowns ───────── */
+.adm select { appearance: none; -webkit-appearance: none; padding-right: 34px; background-image: linear-gradient(45deg, transparent 50%, var(--gold) 50%), linear-gradient(135deg, var(--gold) 50%, transparent 50%); background-position: calc(100% - 17px) 55%, calc(100% - 12px) 55%; background-size: 5px 5px; background-repeat: no-repeat; cursor: pointer; }
+.adm select option { background: #0b2a1f; color: var(--ivory); }
+.adm-form { gap: 10px; }
+.adm-step { display: flex; align-items: center; gap: 8px; margin: 10px 0 0; font: 800 1rem var(--font-display); color: var(--gold); }
+.adm-step i { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--gold); color: #2A1A05; font: 800 .8rem var(--font-ui); font-style: normal; }
+.adm-step small { font: 400 .75rem var(--font-ui); color: var(--ivory-dim); }
+.adm-pic { display: grid; grid-template-columns: 96px 1fr; gap: 10px; align-items: start; }
+.adm-pic-fields { display: grid; gap: 8px; }
+.adm-thumb { aspect-ratio: 4 / 5; border-radius: 12px; overflow: hidden; background: rgba(0, 0, 0, .4); border: 1px dashed rgba(244, 233, 207, .3); display: grid; place-items: center; font-size: 1.6rem; }
+.adm-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.adm-note { margin: 0; font-size: .85rem; color: var(--ivory-dim); }
+.adm-sum { margin: 6px 0 0; padding: 10px 12px; border-radius: 12px; font-size: .85rem; line-height: 1.45; background: rgba(242, 182, 50, .1); border: 1px dashed rgba(242, 182, 50, .5); color: var(--ivory); }
+.adm-filter { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+@media (max-width: 420px) { .adm-pic { grid-template-columns: 76px 1fr; } }
