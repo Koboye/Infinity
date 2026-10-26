@@ -72,7 +72,8 @@ export default function AdOverlay({ ad, lang = 'en', placement, seconds, reward 
       <div className="ad-bg" style={{ backgroundImage: `url("${ad.image}")` }} aria-hidden="true" />
       <div className="ad-card">
         <div className="ad-top">
-          <span className="ad-badge"><b>{L.ad}</b><i aria-hidden="true">·</i><span>{ad.advertiser}</span></span>
+          <span className="ad-badge"><u aria-hidden="true" /><b>{L.ad}</b><i aria-hidden="true">·</i><span>{ad.advertiser}</span></span>
+          {rewarded && !done && reward > 0 && <span className="ad-reward" aria-hidden="true">🎁 +{reward}</span>}
           {canSkip
             ? <button ref={skipRef} type="button" className="ad-skip" onClick={() => finish(false, 'skipped')}>{rewarded ? L.skipNo : L.skip} <span aria-hidden="true">✕</span></button>
             : !done && <span className="ad-ring" role="timer" aria-label={L.secs(Math.max(0, total - elapsed))}>
@@ -87,7 +88,10 @@ export default function AdOverlay({ ad, lang = 'en', placement, seconds, reward 
         {(title || body) && <div className="ad-copy">{title && <h3>{title}</h3>}{body && <p>{body}</p>}</div>}
         <div className="ad-actions">
           {rewarded && done
-            ? <button type="button" className="btn primary wide ad-claim" autoFocus onClick={() => finish(true)}>🎁 {L.claim(reward)}</button>
+            ? <div className="ad-claim-wrap">
+                <span className="ad-sparks" aria-hidden="true">{Array.from({ length: 10 }, (_, i) => <i key={i} style={{ '--a': `${i * 36}deg`, '--d': `${46 + (i % 3) * 16}px`, '--c': i % 2 ? '#F2B632' : '#7CE0A8' }} />)}</span>
+                <button type="button" className="btn primary wide ad-claim" autoFocus onClick={() => finish(true)}>🎁 {L.claim(reward)}</button>
+              </div>
             : ad.clickUrl && <button type="button" className="btn primary wide ad-cta" onClick={open}>{cta} <span aria-hidden="true">↗</span></button>}
           {rewarded && !done && <p className="ad-note">🎁 {L.earn(reward)}</p>}
         </div>

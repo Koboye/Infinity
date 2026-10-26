@@ -62,3 +62,33 @@ button.ad-media { cursor: pointer; }
 .adm .tips li.warn { color: #ffd37a; }
 .adm .tips li.good { color: #9be7b0; }
 .adm h3 small { font-weight: 400; opacity: .7; }
+
+/* ───────── v56 design: glass card, gold foil edge, calm motion ───────── */
+.ad-ov { background: radial-gradient(120% 90% at 50% 0%, #0f3a2b 0%, var(--green-900) 62%); }
+.ad-card { padding: 12px; border-radius: 28px; background: linear-gradient(180deg, rgba(14, 52, 39, .78), rgba(5, 24, 17, .9)); border: 1px solid rgba(233, 182, 74, .5); box-shadow: 0 26px 70px rgba(0, 0, 0, .6), inset 0 1px 0 rgba(255, 255, 255, .1), inset 0 0 0 1px rgba(0, 0, 0, .35); backdrop-filter: blur(10px); animation: ad-rise .45s cubic-bezier(.2, 1.15, .35, 1) both; }
+.ad-ov:not(.on) .ad-card { animation: none; opacity: 0; }
+@keyframes ad-rise { from { opacity: 0; transform: translateY(26px) scale(.94); } to { opacity: 1; transform: none; } }
+.ad-badge { gap: 7px; padding: 6px 12px 6px 9px; background: rgba(0, 0, 0, .32); border-color: rgba(233, 182, 74, .4); }
+.ad-badge u { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 0 3px rgba(242, 182, 50, .25); animation: ad-beat 1.8s ease-in-out infinite; text-decoration: none; }
+@keyframes ad-beat { 50% { box-shadow: 0 0 0 6px rgba(242, 182, 50, 0); } }
+.ad-reward { margin-left: auto; padding: 5px 11px; border-radius: 999px; font: 800 .82rem var(--font-ui); color: #2A1A05; background: linear-gradient(180deg, #FFE08A, #E9B64A); box-shadow: 0 2px 0 var(--gold-deep), 0 6px 14px rgba(0, 0, 0, .3); animation: ad-pop .4s .25s cubic-bezier(.2, 1.5, .4, 1) both; }
+.ad-ring { width: 44px; height: 44px; }
+.ad-ring .fg { stroke-width: 3.4; filter: drop-shadow(0 0 4px rgba(242, 182, 50, .7)); transition: stroke-dashoffset .12s linear; }
+.ad-media { border-radius: 20px; background: #04140d; box-shadow: 0 14px 34px rgba(0, 0, 0, .5), 0 0 0 1px rgba(244, 233, 207, .16); }
+.ad-media::after { content: ''; position: absolute; inset: 0; pointer-events: none; border-radius: inherit; background: linear-gradient(115deg, transparent 38%, rgba(255, 255, 255, .13) 50%, transparent 62%); transform: translateX(-120%); animation: ad-gleam 4.2s ease-in-out 1.2s infinite; }
+@keyframes ad-gleam { 0%, 55% { transform: translateX(-120%); } 85%, 100% { transform: translateX(120%); } }
+button.ad-media { transition: transform .15s ease; } button.ad-media:active { transform: scale(.985); }
+.ad-copy h3 { font-size: 1.2rem; letter-spacing: .01em; background: linear-gradient(180deg, #fff6d6, #F4E9CF); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.ad-cta, .ad-claim { position: relative; overflow: hidden; min-height: 50px; font-size: 1rem; border-radius: 16px; }
+.ad-cta::after, .ad-claim::after { content: ''; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, .45) 50%, transparent 65%); transform: translateX(-130%); animation: ad-gleam 3.4s ease-in-out 1.6s infinite; pointer-events: none; }
+.ad-note { padding: 8px 12px; border-radius: 12px; background: rgba(242, 182, 50, .1); border: 1px dashed rgba(242, 182, 50, .45); }
+.ad-bar { height: 5px; background: rgba(244, 233, 207, .14); }
+.ad-bar b { background: linear-gradient(90deg, #7CE0A8, var(--gold)); box-shadow: 0 0 10px rgba(242, 182, 50, .6); border-radius: 4px; }
+.ad-claim-wrap { position: relative; }
+.ad-claim { animation: ad-pop .4s cubic-bezier(.2, 1.5, .4, 1) both, ad-glow 1.6s ease-in-out .5s infinite alternate; }
+@keyframes ad-glow { from { box-shadow: 0 3px 0 var(--gold-deep), 0 0 0 rgba(242, 182, 50, 0); } to { box-shadow: 0 3px 0 var(--gold-deep), 0 0 22px rgba(242, 182, 50, .75); } }
+.ad-sparks { position: absolute; left: 50%; top: 50%; width: 0; height: 0; pointer-events: none; }
+.ad-sparks i { position: absolute; width: 7px; height: 7px; margin: -3px; border-radius: 50%; background: var(--c); opacity: 0; animation: ad-spark .9s ease-out .15s both; }
+@keyframes ad-spark { 0% { opacity: 1; transform: rotate(var(--a)) translateX(0) scale(.5); } 100% { opacity: 0; transform: rotate(var(--a)) translateX(var(--d)) scale(1.2); } }
+.ad-earn { border-radius: 18px; background: linear-gradient(180deg, rgba(242, 182, 50, .16), rgba(242, 182, 50, .06)); border: 1px solid rgba(242, 182, 50, .5); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08); }
+@media (prefers-reduced-motion: reduce) { .ad-card, .ad-badge u, .ad-reward, .ad-media::after, .ad-cta::after, .ad-claim::after, .ad-claim, .ad-sparks i { animation: none !important; } .ad-sparks { display: none; } }
