@@ -108,3 +108,4 @@ button.ad-media { transition: transform .15s ease; } button.ad-media:active { tr
 .adm-sum { margin: 6px 0 0; padding: 10px 12px; border-radius: 12px; font-size: .85rem; line-height: 1.45; background: rgba(242, 182, 50, .1); border: 1px dashed rgba(242, 182, 50, .5); color: var(--ivory); }
 .adm-filter { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
 @media (max-width: 420px) { .adm-pic { grid-template-columns: 76px 1fr; } }
+.adm-diag { gap: 8px; }

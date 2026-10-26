@@ -45,6 +45,6 @@ const page = html({ today: '2026-10-26', ads: [ad, { ...ad, id: 'old', advertise
 t('rendered page has the guided steps and dropdowns', () => {
   for (const s of ['Client', 'Where and how long', 'The ad', 'Schedule', 'Who sees it', 'New advertiser', 'Abay Bank', 'Nile Cafe', 'Duplicate']) assert.ok(page.includes(s), s);
   assert.ok((page.match(/<select/g) || []).length >= 14, 'many dropdowns');
-  assert.ok(page.includes('Filter ads'));
+  assert.ok(page.includes('Filter ads')); assert.ok(page.includes('Why isn’t my ad showing?'));
 });
 console.log(`ads-admin tests passed (${n})`);

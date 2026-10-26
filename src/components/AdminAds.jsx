@@ -30,6 +30,29 @@ export default function AdminAds({ preload = null }) {   // `preload` lets tests
   const advertisers = data ? [...new Set(data.ads.map((a) => a.advertiser).filter(Boolean))].sort() : [];
   // one clear way to say "this advertiser": reuse the last ad of that advertiser for the category and the tap link
   const pickAdvertiser = (name) => setForm((f) => { const last = data?.ads.filter((a) => a.advertiser === name).sort((x, y) => (y.start > x.start ? 1 : -1))[0]; return { ...f, advertiser: name, category: last?.category || f.category, clickUrl: f.clickUrl || last?.clickUrl || '' }; });
+  const [diag, setDiag] = useState(null);
+  // "Why isn't my ad showing?": asks the same public feed phones use, then tries to load each picture the way the app does.
+  const checkFeed = async () => {
+    setDiag({ busy: true, rows: [], feedCount: null });
+    let feed = null, feedErr = '';
+    try { const r = await fetch(`/api/ads?fresh=${Date.now()}`, { cache: 'no-store' }); if (!r.ok) throw new Error(`feed answered ${r.status}`); feed = (await r.json()).ads || []; } catch (e) { feedErr = e.message || 'feed failed'; }
+    const loads = (src) => new Promise((res) => { const i = new Image(); const to = setTimeout(() => res(false), 7000); i.onload = () => { clearTimeout(to); res(true); }; i.onerror = () => { clearTimeout(to); res(false); }; i.referrerPolicy = 'no-referrer'; i.src = src; });
+    const rows = [];
+    for (const a of data.ads) {
+      const why = [];
+      if (a.active === false) why.push('it is switched off');
+      else if (a.end < data.today) why.push(`it ended on ${a.end}`);
+      else if (a.start > data.today) why.push(`it starts on ${a.start} (server date today is ${data.today}, UTC)`);
+      const onlyRewarded = (a.placements || []).length > 0 && (a.placements || []).every((p) => p === 'rewarded');
+      if (onlyRewarded) why.push('it is set to "Watch for free spins" only, so it never shows on open or before a game');
+      const inFeed = feed ? feed.some((x) => x.id === a.id) : null;
+      if (feed && !inFeed && !why.length) why.push(a.dailyCap > 0 ? 'the server is not sending it — its daily limit may be used up for today' : 'the server is not sending it (check Vercel → Logs for "ad stats read failed" or Firebase errors)');
+      const pic = await loads(a.image);
+      if (!pic) why.push('the picture does not load here: use a Firebase Storage link, or add its website to NEXT_PUBLIC_ADS_IMG_HOSTS in Vercel and redeploy');
+      rows.push({ id: a.id, advertiser: a.advertiser, inFeed, pic, why });
+    }
+    setDiag({ busy: false, rows, feedCount: feed ? feed.length : null, feedErr });
+  };
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
   useEffect(() => { if (idAuto) setForm((f) => { const id = autoId(f.advertiser, f.start); return id === f.id ? f : { ...f, id }; }); }, [form.advertiser, form.start, idAuto]);
   const togglePlace = (p) => set('placements', form.placements.includes(p) ? form.placements.filter((x) => x !== p) : [...form.placements, p]);
@@ -190,6 +213,18 @@ export default function AdminAds({ preload = null }) {   // `preload` lets tests
             <button type="button" className="btn primary" disabled={busy || !form.id || !form.advertiser} onClick={() => run({ action: 'save', ad: { ...form, hourFrom: form.hourFrom, hourTo: form.hourTo } }, `Saved “${form.id}”.`)}>Save</button>
             <button type="button" className="btn ghost" onClick={() => { setForm(blank()); setNewAdv(false); setIdAuto(true); setStartKey('today'); setDurKey(30); setPickGames(false); }}>Clear</button>
           </div>
+        </section>
+
+        <section className="adm-diag">
+          <h3 style={{ margin: 0 }}>Why isn’t my ad showing?</h3>
+          <p className="adm-note">Asks the server what players really receive and tests every picture.</p>
+          <button type="button" className="btn" disabled={diag?.busy || !data.ads.length} onClick={checkFeed}>{diag?.busy ? 'Checking…' : 'Check now'}</button>
+          {diag && !diag.busy && <>
+            <p className={diag.feedErr ? 'err' : 'okmsg'}>{diag.feedErr ? `The ad feed failed: ${diag.feedErr}. Players get no ads until this works.` : `The server is sending ${diag.feedCount} ad${diag.feedCount === 1 ? '' : 's'} to phones.`}</p>
+            <ul className="tips">{diag.rows.map((r) => (
+              <li key={r.id} className={r.why.length ? 'warn' : 'good'}>{r.why.length ? '⚠️' : '✅'} <b>{r.advertiser}</b> ({r.id}) — {r.why.length ? r.why.join('; ') : 'live, sent to phones, picture loads. If you still see no ad: close the game fully and reopen it with /?adtest=1 on the end of the address.'}</li>
+            ))}</ul>
+          </>}
         </section>
 
         <section className="adm-filter" aria-label="Filter ads">
