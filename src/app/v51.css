@@ -1,0 +1,32 @@
+/* v51 — Home becomes a real game grid (live records, no demo boards); clearer top bar; Ludo polish. */
+.home { gap: 14px; padding-bottom: 8px; }
+.home .brand { padding-top: 0; }
+.home .brand-am { font-size: clamp(3.2rem, 17vw, 4.8rem); }
+
+.stat-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stat-strip div { display: grid; gap: 2px; justify-items: center; padding: 9px 6px; border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255, 244, 214, .10), rgba(255, 244, 214, .03)); border: 1px solid rgba(255, 214, 120, .22); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08); }
+.stat-strip b { font: 800 1.15rem var(--font-latin); color: #ffe08a; }
+.stat-strip span { font-size: .7rem; opacity: .78; text-align: center; }
+
+.game-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.gg-card { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 16px 10px 12px; min-height: 176px; cursor: pointer; color: #fff6e3; text-align: center;
+  border-radius: 24px; border: 2px solid color-mix(in srgb, var(--accent) 60%, transparent);
+  background: radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--accent) 34%, transparent), transparent 70%), linear-gradient(180deg, rgba(40, 28, 78, .92), rgba(18, 12, 44, .96));
+  box-shadow: 0 6px 0 rgba(0, 0, 0, .38), 0 16px 24px rgba(0, 0, 0, .32), inset 0 1px 0 rgba(255, 255, 255, .14);
+  transition: transform .18s ease, box-shadow .18s ease; -webkit-tap-highlight-color: transparent; animation: gg-in .45s both; animation-delay: calc(var(--i) * 60ms); }
+.gg-card:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0, 0, 0, .38), 0 6px 12px rgba(0, 0, 0, .3); }
+.gg-card:focus-visible { outline: 3px solid #ffe08a; outline-offset: 3px; }
+.gg-card:last-child:nth-child(odd) { grid-column: 1 / -1; min-height: 150px; }
+.gg-art svg, .gg-art img { filter: drop-shadow(0 5px 7px rgba(0, 0, 0, .5)); }
+.gg-name { font: 800 1.35rem var(--font-display); color: color-mix(in srgb, var(--accent) 55%, #fff); line-height: 1.1; }
+.gg-tag { opacity: .8; font-size: .8rem; }
+.gg-foot { margin-top: auto; display: grid; gap: 4px; justify-items: center; width: 100%; padding-top: 8px; }
+.gg-mode { font-size: .66rem; font-weight: 800; letter-spacing: .03em; padding: 2px 9px; border-radius: 99px; background: rgba(0, 0, 0, .35); border: 1px solid rgba(255, 255, 255, .18); }
+.gg-mode.on { background: color-mix(in srgb, #35e0c2 28%, rgba(0, 0, 0, .35)); border-color: rgba(53, 224, 194, .55); }
+.gg-rec { font-size: .74rem; opacity: .9; min-height: 1em; }
+.gg-card.soon { filter: saturate(.5) brightness(.85); cursor: default; }
+@keyframes gg-in { from { opacity: 0; transform: translateY(12px) scale(.97); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .gg-card { animation: none; } }
+
+.lb-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 1.1rem; }

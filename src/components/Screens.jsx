@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import AppActions from './AppActions';
 import {
   collection, query, orderBy, limit, getDocs, doc, updateDoc, getDoc,
@@ -8,113 +8,58 @@ import {
   signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, signInAnonymously, updateProfile,
 } from 'firebase/auth';
 import { auth, db, googleProvider, apiCall } from '@/lib/firebase';
-import { newGame, playMove, collectAll } from '@/lib/gebeta/engine.js';
-import { chooseMove } from '@/lib/gebeta/ai.js';
 import SwipePicker from '@/components/SwipePicker';
-import { newGame as ckNew, playMove as ckPlay, legalMoves as ckLegal } from '@/lib/checkers/engine.js';
-import { chooseCheckersMove } from '@/lib/checkers/ai.js';
 import { HEROES, heroById } from '@/lib/i18n';
 import { GAME_LIST, GAMES, gameInfo, statFields } from '@/lib/games.js';
 import { GameIcon } from './GameIcons';
-import SwipeRail from './SwipeRail';
-import CheckersBoard from './checkers/CheckersBoard';
-import { useCheckersAnimator } from './checkers/useCheckersAnimator';
-import { Tile } from './dominoes/Tile';
 import { sfx } from '@/lib/sound';
-import { load as loadProgress, ACHIEVEMENTS, dailyGame, dailyDone } from '@/lib/progress';
-import Board from './Board';
+import { load as loadProgress, ACHIEVEMENTS, dailyGame, dailyDone, total as totalOf } from '@/lib/progress';
 import { FeePicker } from './Wallet';
-import { useAnimator } from './useAnimator';
 import { KINDS, STONE_SETS, stoneSet, stoneVars } from '@/lib/stones';
 
 export const Tibeb = () => <div className="tibeb" aria-hidden="true" />;
 
 /* ───────── Home ───────── */
-function DemoBoard() {
-  const [g, setG] = useState(() => newGame('gebeta'));
-  const gRef = useRef(g);
-  const anim = useAnimator(g.pits, { relay: '', captured: () => '', extra: '' }, 1, g.own, g.flag);
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
-    if (anim.busy) return;
-    const id = setTimeout(() => {
-      let cur = gRef.current;
-      if (cur.over) { cur = newGame('gebeta'); gRef.current = cur; setG(cur); anim.reset(cur.pits, cur.own, cur.flag); return; }
-      const pre = collectAll(cur);
-      const m = chooseMove(pre.state, 'gebeta', 'easy');
-      const r = playMove(pre.state, m, 'gebeta');
-      gRef.current = r.state; setG(r.state);
-      anim.enqueue({ steps: [...pre.steps, ...r.steps], final: r.state.pits, own: r.state.own, flag: r.state.flag });
-    }, 900);
-    return () => clearTimeout(id);
-  }, [anim.busy]); // eslint-disable-line
+/** Every game as a card. Numbers come from this device's real progress record; nothing is invented. */
+export function GameGrid({ t, onPick }) {
+  const [p, setP] = useState(null);
+  useEffect(() => { setP(loadProgress()); }, []);
   return (
-    <div className="demo" aria-hidden="true">
-      <Board pits={anim.pits} own={anim.own} flag={anim.flag} viewSeat={0} isLegal={() => false} onPit={() => {}} active={anim.active} />
+    <div className="game-grid" role="list" aria-label={t.pickGame}>
+      {GAME_LIST.map((id, i) => {
+        const g = GAMES[id], soon = !!g.comingSoon;
+        const r = p?.rec?.[id] || { w: 0, l: 0, d: 0 };
+        const n = r.w + r.l + r.d;
+        return (
+          <button key={id} type="button" role="listitem" className={`gg-card${soon ? ' soon' : ''}`} disabled={soon} onClick={() => onPick(id)} style={{ '--accent': g.accent, '--i': i }}>
+            <span className="gg-art"><GameIcon game={id} size={58} /></span>
+            <b className="gg-name">{t[`${id}Name`]}</b>
+            <small className="gg-tag">{soon ? t.comingSoon : t[`${id}Tag`]}</small>
+            {!soon && (
+              <span className="gg-foot">
+                <span className={`gg-mode${g.offlineOnly ? '' : ' on'}`}>{g.offlineOnly ? t.badgeOffline : t.homeBoth}</span>
+                <span className="gg-rec">{p == null ? '' : n === 0 ? t.homeFresh : t.homeRecord(r.w, r.l, r.d)}</span>
+              </span>
+            )}
+          </button>
+        );
+      })}
     </div>
   );
 }
 
-function CheckersDemo() {
-  const [g, setG] = useState(() => ckNew('flying'));
-  const gRef = useRef(g);
-  const anim = useCheckersAnimator(g.board, { kinged: '', jumped: () => '' });
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return undefined;
-    if (anim.busy) return undefined;
-    const id = setTimeout(() => {
-      let cur = gRef.current;
-      if (cur.over) { cur = ckNew('flying'); gRef.current = cur; setG(cur); anim.reset(cur.board); return; }
-      const m = chooseCheckersMove(cur, 'flying', 'easy');
-      if (!m) return;
-      const r = ckPlay(cur, m.from, m.path, 'flying');
-      gRef.current = r.state; setG(r.state);
-      anim.enqueue({ hops: r.hops, final: r.state.board, promote: r.promoted });
-    }, 1000);
-    return () => clearTimeout(id);
-  }, [anim.busy]); // eslint-disable-line
-  return <div className="demo ckdemo" aria-hidden="true"><CheckersBoard pieces={anim.pieces} viewSeat={0} last={anim.last} /></div>;
-}
-
-function BingoDemo() {
-  const L = ['B', 'I', 'N', 'G', 'O'];
+/** Streak, wins and games played: straight from the on-device record. */
+function StatStrip({ t }) {
+  const [p, setP] = useState(null);
+  useEffect(() => { setP(loadProgress()); }, []);
+  if (!p) return null;
+  const wins = totalOf(p, 'w'), games = wins + totalOf(p, 'l') + totalOf(p, 'd');
   return (
-    <div className="demo bingodemo" aria-hidden="true">
-      <div className="bdemo-grid">
-        {L.map((c, i) => <span key={c} className={`bhead l${i}`}>{c}</span>)}
-        {[7, 22, 38, 51, 64, 3, 19, 41, 58, 72, 12, 27, 0, 47, 66, 9, 30, 35, 55, 70, 14, 24, 44, 49, 75].map((n, i) => (
-          <i key={i} className={`bcell mini${[0, 6, 12, 18, 24].includes(i) ? ' on' : ''}${i === 12 ? ' free' : ''}`}>{i === 12 ? '★' : n}</i>
-        ))}
-      </div>
+    <div className="stat-strip" aria-label={t.progress}>
+      <div><b>🔥 {p.streak}</b><span>{t.streakDays(p.streak)}</span></div>
+      <div><b>🏆 {wins}</b><span>{t.gamesWon}</span></div>
+      <div><b>🎲 {games}</b><span>{t.games}</span></div>
     </div>
-  );
-}
-
-function DominoDemo() {
-  const tiles = [[3, 5], [5, 5], [5, 1], [1, 6], [6, 2]];
-  return (
-    <div className="demo domdemo" aria-hidden="true" style={{ '--u': '30px' }}>
-      <div className="dline-row">
-        {tiles.map(([a, b], i) => <Tile key={i} a={a} b={b} vertical={a === b} className="placed demo-t" style={{ animationDelay: `${i * 0.35}s` }} />)}
-      </div>
-      <div className="dhand demo-hand">
-        {[[0, 4], [2, 6], [3, 3], [1, 2], [4, 5]].map(([a, b]) => <Tile key={`${a}${b}`} a={a} b={b} vertical className="hand ok" />)}
-      </div>
-    </div>
-  );
-}
-
-export function GamePicker({ t, game, onPick }) {
-  const idx = Math.max(0, GAME_LIST.indexOf(game));
-  return (
-    <SwipeRail className="rail-games" label={t.pickGame} items={GAME_LIST.map((id) => ({ id }))} value={idx} selectOnSwipe onSelect={(i) => onPick(GAME_LIST[i])}
-      renderItem={({ id }, i, on) => (
-        <button type="button" className={`gp gp-card${on ? ' on' : ''}${GAMES[id].comingSoon ? ' soon' : ''}`} onClick={() => onPick(id)} style={{ '--accent': GAMES[id].accent }}>
-          <GameIcon game={id} size={44} />
-          <b>{t[`${id}Name`]}</b>
-          <small>{GAMES[id].comingSoon ? t.comingSoon : t[`${id}Tag`]}</small>
-        </button>
-      )} />
   );
 }
 
@@ -130,32 +75,7 @@ function DailyCard({ t, onPick }) {
   );
 }
 
-function ActionRail({ t, go, offlineOnly, noPass }) {
-  const items = [
-    ...(!offlineOnly ? [{ id: 'online', c: '#FF5C8A', icon: '🌍', title: t.playFriendOnline, sub: t.playFriendOnlineSub }] : []),
-    { id: 'ai', c: '#F2B632', icon: '🤖', title: t.playComputer, sub: t.playComputerSub },
-    ...(!noPass ? [{ id: 'pass', c: '#35E0C2', icon: '🤝', title: t.passPlay, sub: t.passPlaySub }] : []),
-  ];
-  const [cur, setCur] = useState(() => Math.max(0, items.findIndex((x) => x.id === 'ai')));
-  return (
-    <>
-      <SwipeRail className="rail-actions" label="Play" items={items} value={cur} onSettle={setCur} onSelect={(i) => setCur(i)}
-        renderItem={(it) => (
-          <button type="button" className="act-card" style={{ '--c': it.c }} onClick={() => go(it.id)}>
-            <span className="act-icon" aria-hidden="true">{it.icon}</span>
-            <span className="act-txt"><b>{it.title}</b><small>{it.sub}</small></span>
-            <span className="act-go" aria-hidden="true">›</span>
-          </button>
-        )} />
-      {items.length > 1 && <p className="swipe-hint" aria-hidden="true">‹ {t.swipeHint} ›</p>}
-    </>
-  );
-}
-
-export function Home({ t, go, onlineOn, user, profile, game, onPickGame }) {
-  const hero = heroById(profile?.avatar);
-  const offlineOnly = !!gameInfo(game).offlineOnly;
-  const soon = !!gameInfo(game).comingSoon;
+export function Home({ t, onPickGame }) {
   return (
     <div className="home">
       <div className="brand">
@@ -163,18 +83,9 @@ export function Home({ t, go, onlineOn, user, profile, game, onPickGame }) {
         <h1 className="brand-am">ገበጣ</h1>
         <p className="brand-en">{t.subtitle}</p>
       </div>
+      <StatStrip t={t} />
       <DailyCard t={t} onPick={onPickGame} />
-      <GamePicker t={t} game={game} onPick={onPickGame} />
-      {game === 'gebeta' && <DemoBoard />}
-      {game === 'checkers' && <CheckersDemo />}
-      {game === 'bingo' && <BingoDemo />}
-      {soon && (
-        <div className="coming-soon" role="status">
-          <DominoDemo />
-          <span className="cs-badge">{t.comingSoon}</span>
-          <p>{t.comingSoonSub(t[`${game}Name`])}</p>
-        </div>
-      )}
+      <GameGrid t={t} onPick={onPickGame} />
     </div>
   );
 }
@@ -385,6 +296,7 @@ export function Leaders({ t, uid, game }) {
   if (!rows.length) return <div className="panel center"><p className="muted">{t.emptyBoard}</p></div>;
   return (
     <div className="panel">
+      <div className="lb-head"><GameIcon game={game} size={34} /><b>{t[`${game}Name`]}</b></div>
       <ol className="leaders">
         {rows.map((r, i) => {
           const h = heroById(r.avatar);

@@ -160,3 +160,11 @@ tests/                     engine, rooms, API tests with an in-memory Firestore 
 - **An abandoned match holds the fees until it finishes.** If both players leave a running match, the fees stay staked until one side claims the timeout or resigns. Nothing is lost or duplicated.
 - **No coin top-ups.** The welcome gift and the daily spins are the only ways to earn coins. A daily top-up or "double your coins" is easy to add; buying coins for real money would need Play/App Store billing and server-side receipt checks.
 - Spins reset at 00:00 UTC for everyone.
+
+
+## v51 — real Home, no demo content
+- Home is a grid of every game. Each card shows this device's actual record (wins · losses · draws) from the progress store; a game never played says so. The streak / wins / games strip uses the same data.
+- The self-playing demo boards on Home were removed — nothing on Home is staged any more.
+- Top-bar titles are short (they no longer truncate); the leaderboard shows which game it lists.
+- Ludo: the real move log stays open on tall screens (remembered per device).
+- Coins live on the server (v49/v50.1): the account wallet, daily spins, entry fees, prizes and the daily top-up are all decided server-side, so editing local storage or the phone clock changes nothing. Computer and Pass & Play are free practice.

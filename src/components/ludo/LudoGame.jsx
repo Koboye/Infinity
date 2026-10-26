@@ -69,6 +69,7 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
   // restore preferences and offer to resume an unfinished game
   useEffect(() => {
     setFast(store.get('ludo.fast') === '1');
+    const lg = store.get('ludo.log'); setShowLog(lg == null ? window.innerHeight >= 780 : lg === '1');   // tall screens keep the real move log open
     const raw = store.get(saveKey);
     if (!raw) return;
     try {
@@ -189,7 +190,7 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
   const resume = () => { const g = offer; setOffer(null); reset(g); if (g.phase === 'move') setFaces((f) => f.map((v, k) => (k === g.turn ? g.dice : v))); };
   const fresh = () => { store.del(saveKey); setOffer(null); };
 
-  const recent = game.log.slice(-8).reverse();
+  const recent = game.log.slice(-6).reverse();
   const statsTable = game.over && (
     <div className="ludo-stats" role="table" aria-label={t.ludoStatsTitle}>
       <div className="row head" role="row"><span /><span /><span title={t.ludoStatRolls}>🎲</span><span title={t.ludoStatSixes}>6️⃣</span><span title={t.ludoStatHits}>⚔️</span><span title={t.ludoStatLost}>🏠</span></div>
@@ -237,7 +238,7 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
         <div className="ludo-tools">
           <button type="button" className="tool" onClick={hint} disabled={!canHint} title={t.ludoHintBtn}><span aria-hidden="true">💡</span> {t.ludoHintBtn}</button>
           <button type="button" className={`tool${fast ? ' on' : ''}`} onClick={toggleFast} aria-pressed={fast}><span aria-hidden="true">⚡</span> {t.ludoFast}</button>
-          <button type="button" className={`tool${showLog ? ' on' : ''}`} onClick={() => setShowLog((v) => !v)} aria-pressed={showLog}><span aria-hidden="true">📜</span> {t.ludoShowLog}</button>
+          <button type="button" className={`tool${showLog ? ' on' : ''}`} onClick={() => setShowLog((v) => { store.set('ludo.log', v ? '0' : '1'); return !v; })} aria-pressed={showLog}><span aria-hidden="true">📜</span> {t.ludoShowLog}</button>
           <button type="button" className={`tool${auto ? ' on' : ''}`} onClick={() => setAuto((v) => !v)} aria-pressed={auto} title={t.ludoAuto}><span aria-hidden="true">🎯</span> {t.ludoAutoShort || 'Auto'}</button>
         </div>
         {showLog && (

@@ -151,7 +151,7 @@ export default function GebetaApp() {
   const uid = user?.uid;
 
   const gname = t[`${game}Name`];
-  const titles = { modes: gname, game: gname, ai: `${gname} · ${t.playComputer}`, pass: `${gname} · ${t.passPlay}`, online: `${gname} · ${t.playFriendOnline}`, leaders: `${gname} · ${t.leaderboard}`, rules: `${gname} · ${t.rules}`, profile: t.profile, progress: t.progress, settings: t.settings };
+  const titles = { modes: gname, game: gname, ai: gname, pass: gname, online: gname, leaders: t.leaderboard, rules: t.rules, profile: t.profile, progress: t.progress, settings: t.settings };
   const inGame = view.name === 'game' || view.name === 'room';
 
   // Full-screen play ground: the page chrome shrinks away and, where the browser allows it, the whole screen is used.
