@@ -36,6 +36,7 @@ export default function AdminAds() {
   return (
     <main className="adm">
       <h1>Ads</h1>
+      <p className="okmsg">Test it now: <a href="/?adtest=1" target="_blank" rel="noopener">open the game in ad-test mode</a> — your ad shows on every open and every game start, with no waiting and nothing counted. Leave test mode with <code>/?adtest=0</code>.</p>
       <section>
         <label>Admin key<input type="password" value={key} autoComplete="off" onChange={(e) => setKey(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && load()} /></label>
         <button type="button" className="btn primary" disabled={busy || !key} onClick={load}>{data ? 'Refresh' : 'Open'}</button>

@@ -28,4 +28,10 @@ t('both languages have every ad string', () => {
   const m = overlay.match(/const TXT = \{[\s\S]*?\n\};/)[0]; for (const k of ['ad', 'skip', 'skipNo', 'earn', 'claim', 'secs']) assert.equal((m.match(new RegExp(`\\b${k}:`, 'g')) || []).length, 2, k);
   for (const k of ['watch', 'watchLeft', 'watchSub', 'adWon', 'adNone', 'adFail', 'bonusLeft']) assert.equal((wallet.match(new RegExp(`\\b${k}:`, 'g')) || []).length, 2, k);
 });
+t('v57: new ads reach phones fast and the owner has a no-wait test mode that never touches the stats', () => {
+  const ads = read('src/lib/ads.js'), api = read('src/app/api/ads/route.js'), admin = read('src/components/AdminAds.jsx');
+  assert.match(ads, /FEED_TTL = 60 \* 1000/); assert.match(api, /s-maxage=10/); assert.match(api, /'no-store'/);
+  assert.match(ads, /adtest/); assert.match(ads, /if \(testMode\(\)\) \{/); assert.match(ads, /placement === 'rewarded' \|\| testMode\(\)/);
+  assert.match(admin, /adtest=1/);
+});
 console.log(`ads-ui tests passed (${n})`);

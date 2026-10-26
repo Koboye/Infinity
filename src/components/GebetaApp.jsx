@@ -124,7 +124,7 @@ export default function GebetaApp() {
   // A short full-screen ad (splash / pre_game). Resolves when it is over, or at once when none is due: ads never block the app.
   const runAd = useCallback(async (placement, opts = {}) => {
     if (adRef.current) return;
-    let ad = null; try { ad = await Ads.nextAd(placement, { lang: langRef.current, game: opts.game || null }); } catch { ad = null; }
+    let ad = null; try { ad = await Ads.nextAd(placement, { lang: langRef.current, game: opts.game || null, waitMs: placement === 'splash' ? 3000 : 1500 }); } catch { ad = null; }
     if (!ad || adRef.current) return;
     await new Promise((resolve) => setAdShow({ ad, placement, resolve }));
   }, []);

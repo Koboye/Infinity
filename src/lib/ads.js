@@ -9,11 +9,26 @@
 import { shouldShow, countStart, markShown, newCapState, clampSeconds } from './adsCore.js';
 import { smartPick, seenToday, noteSeen, noteCategory, stampFirst, inGrace } from './adsSmart.js';
 
-const FEED_KEY = 'gebeta.ads.feed', CAP_KEY = 'gebeta.ads.caps', FEED_TTL = 10 * 60 * 1000;
+const FEED_KEY = 'gebeta.ads.feed', CAP_KEY = 'gebeta.ads.caps', FEED_TTL = 60 * 1000;   // v57: a minute (was 10) — a new or edited ad reaches phones almost at once
 const read = (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
 const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* storage full or blocked */ } };
 
 let feed = null, inflight = null;
+
+/**
+ * Owner test mode: open the app as  https://YOUR-DOMAIN/?adtest=1  (and  ?adtest=0  to leave it).
+ * While on, the ad list is always fetched fresh, the new-player grace and every frequency cap are skipped, and nothing is counted
+ * in the stats — so a brand-new ad shows on every app open and every game start. Lives only in this browser tab (sessionStorage).
+ */
+export function testMode() {
+  try {
+    if (typeof window === 'undefined') return false;
+    const q = new URLSearchParams(window.location.search).get('adtest');
+    if (q === '1') sessionStorage.setItem('gebeta.adtest', '1');
+    else if (q === '0') sessionStorage.removeItem('gebeta.adtest');
+    return sessionStorage.getItem('gebeta.adtest') === '1';
+  } catch { return false; }
+}
 function preload(ads) {
   if (typeof Image === 'undefined') return;
   for (const a of ads) { const i = new Image(); i.decoding = 'async'; i.src = a.image; }
@@ -22,14 +37,15 @@ function preload(ads) {
 /** The ads this phone may show on open / before a game. Cached; never throws. */
 export function loadFeed() {
   const now = Date.now();
-  if (feed && now - feed.at < FEED_TTL) return Promise.resolve(feed.ads);
+  const fresh = testMode();
+  if (!fresh && feed && now - feed.at < FEED_TTL) return Promise.resolve(feed.ads);
   const cached = read(FEED_KEY);
-  if (cached && Array.isArray(cached.ads) && now - cached.at < FEED_TTL) { feed = cached; preload(cached.ads); return Promise.resolve(cached.ads); }
+  if (!fresh && cached && Array.isArray(cached.ads) && now - cached.at < FEED_TTL) { feed = cached; preload(cached.ads); return Promise.resolve(cached.ads); }
   if (inflight) return inflight;
   inflight = (async () => {
     try {
       const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 4000);
-      const res = await fetch('/api/ads', { signal: ctl.signal }); clearTimeout(to);
+      const res = await fetch(fresh ? `/api/ads?fresh=${Date.now()}` : '/api/ads', { signal: ctl.signal, ...(fresh ? { cache: 'no-store' } : {}) }); clearTimeout(to);
       if (!res.ok) throw new Error('feed');
       const data = await res.json(); const ads = Array.isArray(data.ads) ? data.ads : [];
       feed = { at: Date.now(), ads }; write(FEED_KEY, feed); preload(ads);
@@ -48,6 +64,11 @@ export const warm = () => { loadFeed(); };
  */
 export async function nextAd(placement, { waitMs = 1500, lang = 'en', game = null } = {}) {
   const now = Date.now();
+  if (testMode()) {                                           // owner test: any live ad for this placement, no caps, no grace
+    const ads = (await Promise.race([loadFeed(), new Promise((r) => setTimeout(() => r([]), Math.max(waitMs, 3000)))])).filter((a) => (a.placements || []).includes(placement));
+    const ad = ads[Math.floor(Math.random() * ads.length)];
+    return ad ? { ...ad, durationSec: clampSeconds(ad.durationSec, placement) } : null;
+  }
   let caps = stampFirst(read(CAP_KEY) || newCapState(), now);
   if (placement === 'pre_game') caps = countStart(caps);
   write(CAP_KEY, caps);
@@ -63,9 +84,9 @@ function track(event, ad) {
 }
 /** The ad is on screen. Splash / pre-game ads are counted here; rewarded ones are counted by the server when they pay out. */
 export function shown(placement, ad) {
-  if (placement === 'rewarded') return;
+  if (placement === 'rewarded' || testMode()) return;       // test mode never touches caps or stats
   const now = Date.now();
   write(CAP_KEY, noteCategory(noteSeen(markShown(read(CAP_KEY) || newCapState(), placement, ad.id, now), ad.id, now), ad.category));
   track('impression', ad);
 }
-export const clicked = (ad) => track('click', ad);
+export const clicked = (ad) => { if (!testMode()) track('click', ad); };

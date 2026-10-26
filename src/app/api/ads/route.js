@@ -18,7 +18,8 @@ function limited(ip, max = 60, windowMs = 60_000) {
 }
 const ipOf = (req) => String(req.headers.get('x-forwarded-for') || 'local').split(',')[0].trim();
 
-export async function GET() {
+export async function GET(req) {
+  let fresh = false; try { fresh = new URL(req.url, 'http://x').searchParams.has('fresh'); } catch { /* called without a request */ }   // owner test mode: never cached
   try {
     const ads = (await servableAds(adminDb()))
       .map((a) => ({
@@ -27,7 +28,7 @@ export async function GET() {
         perf: a.perf, pace: Math.round(a.pace * 100) / 100,                                                      // learning + pacing the phone ranks with
       }))
       .filter((a) => a.placements.length);
-    return NextResponse.json({ ads }, { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' } });
+    return NextResponse.json({ ads }, { headers: { 'Cache-Control': fresh ? 'no-store' : 'public, s-maxage=10, stale-while-revalidate=30' } });
   } catch (e) {
     return NextResponse.json({ ads: [] }, { headers: { 'Cache-Control': 'public, s-maxage=15' } }); // no Firebase configured / Firestore hiccup: show no ads
   }
