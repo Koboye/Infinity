@@ -2,9 +2,10 @@
 import React from 'react';
 import { GAMES } from '@/lib/games';
 import { GameIcon } from './GameIcons';
+import { PracticeNote } from './Wallet';
 
 /** Second screen: after choosing a game, pick how to play. Big two-per-row tiles. */
-export default function ModesScreen({ t, game, go, onlineOn }) {
+export default function ModesScreen({ t, lang, game, go, onlineOn }) {
   const g = GAMES[game] || {};
   const offlineOnly = !!g.offlineOnly;
   const tiles = [
@@ -31,6 +32,7 @@ export default function ModesScreen({ t, game, go, onlineOn }) {
           </button>
         ))}
       </div>
+      {onlineOn && !offlineOnly && <PracticeNote lang={lang} />}
     </div>
   );
 }

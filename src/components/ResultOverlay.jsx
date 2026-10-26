@@ -1,6 +1,5 @@
 'use client';
 import React, { useEffect, useMemo, useState } from 'react';
-import { settle } from '@/lib/wallet';
 import { recordResult } from '@/lib/progress';
 import { winLine, loseLine, pick, LOSE_EMOJI } from '@/lib/celebrate.js';
 import Fireworks from './Fireworks';
@@ -12,15 +11,10 @@ const CONFETTI = ['#F2B632', '#4FA36B', '#C23B2A', '#3b8fd6', '#F4E9CF', '#8E3FD
  * End-of-game screen. A win rains confetti and shows a bouncing trophy; a loss is playful (wobbling emoji + a gentle joke);
  * a draw is a handshake. `taunt` (optional list of words) is shown word by word to the loser — used by Gebeta.
  */
-export default function ResultOverlay({ title, sub, tone = 'win', score, children, taunt = null, tauntNote = null, lang: langProp, jackpot = false }) {
+export default function ResultOverlay({ title, sub, tone = 'win', score, children, taunt = null, tauntNote = null, lang: langProp, jackpot = false, coins }) {
   const lang = langProp || (typeof document !== 'undefined' && document.documentElement.lang === 'am' ? 'am' : 'en');
-  const [pay, setPay] = useState(null);
   useEffect(() => {
     recordResult(tone);
-    const r = settle(tone); if (r.fee) setPay(r);          // winner takes the pot, a draw refunds the fee
-    const t0 = Date.now();
-    // when this screen goes away the game may start another round: the app asks for a new entry fee
-    return () => { if (Date.now() - t0 > 600) window.dispatchEvent(new Event('wallet:rematch')); };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const flair = useMemo(() => {
     const r = Math.random;
@@ -61,7 +55,7 @@ export default function ResultOverlay({ title, sub, tone = 'win', score, childre
           </div>
         )}
         {score && <div className="result-score">{score[0]} <span>:</span> {score[1]}</div>}
-        {pay && <div className={`result-coins ${pay.paid > pay.fee || (pay.tone === 'win') ? 'up' : pay.paid ? '' : 'down'}`}>🪙 {pay.paid > 0 ? `+${pay.paid.toLocaleString('en-US')}` : `-${pay.fee.toLocaleString('en-US')}`}</div>}
+        {Number.isFinite(coins) && <div className={`result-coins ${coins > 0 ? 'up' : coins < 0 ? 'down' : ''}`} aria-label={`${coins} coins`}>🪙 {coins > 0 ? '+' : coins < 0 ? '−' : '±'}{Math.abs(coins).toLocaleString('en-US')}</div>}
         {sub && <div className="result-sub">{sub}</div>}
         <div className="result-actions">{children}</div>
       </div>

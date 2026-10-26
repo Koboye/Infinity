@@ -23,6 +23,7 @@ import { Tile } from './dominoes/Tile';
 import { sfx } from '@/lib/sound';
 import { load as loadProgress, ACHIEVEMENTS, dailyGame, dailyDone } from '@/lib/progress';
 import Board from './Board';
+import { FeePicker } from './Wallet';
 import { useAnimator } from './useAnimator';
 import { KINDS, STONE_SETS, stoneSet, stoneVars } from '@/lib/stones';
 
@@ -320,11 +321,12 @@ export function AuthForm({ t }) {
 }
 
 /* ───────── Online lobby ───────── */
-export function Lobby({ t, game, onEnter }) {
+export function Lobby({ t, lang, game, onEnter, onSpin }) {
   const info = gameInfo(game);
   const [ruleset, setRuleset] = useState(info.defaultRuleset);
   const [target, setTarget] = useState(info.defaultTarget);
   const [code, setCode] = useState('');
+  const [fee, setFee] = useState(50);
   const [busy, setBusy] = useState(false); const [err, setErr] = useState('');
   const [saved, setSaved] = useState(null);
   useEffect(() => {
@@ -342,7 +344,7 @@ export function Lobby({ t, game, onEnter }) {
   }, []);
   const call = async (body) => {
     setBusy(true); setErr('');
-    try { const r = await apiCall({ game, ruleset, options: game === 'dominoes' ? { target } : {}, ...body }); if (body.action === 'join' && r.own && r.status === 'waiting') setErr(t.ownRoom); else onEnter(r.code); } catch (e) { setErr(e.message); }
+    try { const r = await apiCall({ game, ruleset, fee, options: game === 'dominoes' ? { target } : {}, ...body }); if (body.action === 'join' && r.own && r.status === 'waiting') setErr(t.ownRoom); else onEnter(r.code); } catch (e) { setErr(e.message); }
     setBusy(false);
   };
   return (
@@ -350,6 +352,7 @@ export function Lobby({ t, game, onEnter }) {
       {saved && <button className="btn primary wide" onClick={() => onEnter(saved)}>{`↺ ${saved}`}</button>}
       <RulesetPicker t={t} game={game} value={ruleset} onChange={setRuleset} />
       {game === 'dominoes' && <TargetPicker t={t} value={target} onChange={setTarget} />}
+      <FeePicker lang={lang} value={fee} onChange={setFee} onSpin={onSpin} />
       <button className="menu-item primary" disabled={busy} onClick={() => call({ action: 'quick' })}>
         <span className="mi-title">{t.quickMatch}</span><span className="mi-sub">{t.quickMatchSub}</span>
       </button>

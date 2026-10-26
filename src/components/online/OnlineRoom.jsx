@@ -28,6 +28,7 @@ function useOnline() {
 }
 
 /** Loads a room, shows the waiting screen, then hands over to the game-specific online view. */
+import { StakeLine } from '../Wallet';
 export default function OnlineRoom({ t, lang, uid, code, onExit, onSwitchRoom, confirm }) {
   const [room, setRoom] = useState(null);
   const [missing, setMissing] = useState(false);
@@ -98,6 +99,7 @@ export default function OnlineRoom({ t, lang, uid, code, onExit, onSwitchRoom, c
         {Banner}
         <div className="wait-seeds"><i /><i /><i /></div>
         <p className="lead">{waited >= HINT_AFTER_S ? t.waitingLong : t.waiting}</p>
+        <StakeLine lang={lang} fee={Number(room.fee) || 0} />
         <p className="muted">{t[`${game}Name`]} · {t.rs[game][room.ruleset]?.[0]}{game === 'dominoes' ? ` · ${t.playTo(room.options?.target ?? room.target)}` : ''}</p>
         {room.public && <p className="muted wait-count">{`${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`}</p>}
         {!room.public && <>

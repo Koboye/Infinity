@@ -10,6 +10,7 @@ import {
 import { gameOf, normalizeGame } from '@/lib/online/games.js';
 import { isPlayable } from '@/lib/games.js';
 import { BONEYARD_DOC } from '@/lib/online/dominoes.js';
+import * as WC from '@/lib/walletCore.js';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -52,6 +53,39 @@ const rooms = (db) => db.collection('gebetaRooms');
 const privRef = (db, code, id) => rooms(db).doc(code).collection('private').doc(id);
 const expiry = () => new Date(Date.now() + ROOM_TTL_MS);
 
+
+// ── Coin wallet: one document per account, written only here (Admin SDK). The client can read its own, never write it.
+const walletRef = (db, uid) => db.collection('wallets').doc(uid);
+/** Read a wallet inside a transaction; an account that has none yet gets the welcome gift (created = true). */
+async function readWallet(tx, db, uid, now) {
+  const s = await tx.get(walletRef(db, uid));
+  return s.exists ? { w: s.data(), created: false } : { w: WC.newWallet(now), created: true };
+}
+const putWallet = (tx, db, uid, w) => tx.set(walletRef(db, uid), w);
+async function walletInfo(db, uid) {
+  const now = Date.now();
+  return db.runTransaction(async (tx) => {
+    const { w, created } = await readWallet(tx, db, uid, now);
+    if (created) putWallet(tx, db, uid, w);
+    return { wallet: WC.view(w, now), gift: created };
+  });
+}
+async function spinWallet(db, uid) {
+  const now = Date.now();
+  return db.runTransaction(async (tx) => {
+    const { w } = await readWallet(tx, db, uid, now);
+    const r = WC.spinOnce(w, now);
+    if (!r.ok) { fail(409, 'No spins left today'); }
+    putWallet(tx, db, uid, r.wallet);
+    return { coins: r.coins, index: r.index, wallet: WC.view(r.wallet, now) };
+  });
+}
+/** Before opening or entering a match: the player must hold the entry fee. */
+async function requireCoins(db, uid, fee) {
+  const { wallet } = await walletInfo(db, uid);
+  if (wallet.coins < fee) fail(402, 'Not enough coins for this entry fee. Spin the daily wheel to earn more.');
+}
+
 async function getProfile(db, uid, tokenName, game) {
   const snap = await db.collection('users').doc(uid).get();
   const d = snap.exists ? snap.data() : {};
@@ -71,11 +105,12 @@ async function freshCode(db) {
   fail(500, 'Could not allocate a room code, try again');
 }
 
-async function createRoom(db, uid, tokenName, { game, ruleset, options, isPublic }) {
+async function createRoom(db, uid, tokenName, { game, ruleset, options, isPublic, fee }) {
   if (!isPlayable(game)) fail(403, 'This game is coming soon');
+  await requireCoins(db, uid, fee); // nobody can open a match they could not pay for
   const profile = await getProfile(db, uid, tokenName, game);
   const code = await freshCode(db);
-  const doc = newRoomDoc({ game, uid, profile, ruleset, options, isPublic, now: FieldValue.serverTimestamp(), expireAt: expiry() });
+  const doc = newRoomDoc({ game, uid, profile, ruleset, options, isPublic, fee, now: FieldValue.serverTimestamp(), expireAt: expiry() });
   await rooms(db).doc(code).set({ ...doc, lastSeen: Date.now() });
   return code;
 }
@@ -92,15 +127,25 @@ async function joinRoom(db, uid, tokenName, code) {
     const room = snap.data();
     if (room.players.includes(uid)) return { code, status: room.status, own: true }; // already seated (own room / rematch double-tap)
     if (room.status !== 'waiting' || room.players.length !== 1) fail(409, 'That room is already full');
+    // The entry fee leaves BOTH wallets at the moment the match starts, in this same transaction.
+    const fee = Number(room.fee) || 0, now = Date.now();
+    let paid = false;
+    if (fee > 0) {
+      const mine = await readWallet(tx, db, uid, now), host = await readWallet(tx, db, room.players[0], now);
+      const a = WC.charge(mine.w, fee, now); if (!a.ok) fail(402, 'Not enough coins for this entry fee. Spin the daily wheel to earn more.');
+      const b = WC.charge(host.w, fee, now); if (!b.ok) fail(409, 'The host can no longer cover the entry fee');
+      putWallet(tx, db, uid, a.wallet); putWallet(tx, db, room.players[0], b.wallet); paid = true;
+    }
     const { room: seated, priv } = seatSecondPlayer(room, { uid, profile });
-    tx.set(ref, seated);
+    tx.set(ref, { ...seated, paid });
     for (const [id, data] of Object.entries(priv || {})) tx.set(privRef(db, code, id), data);
     return { code, status: 'playing' };
   });
 }
 
-async function quickMatch(db, uid, tokenName, { game, ruleset, options }) {
+async function quickMatch(db, uid, tokenName, { game, ruleset, options, fee }) {
   if (!isPlayable(game)) fail(403, 'This game is coming soon');
+  await requireCoins(db, uid, fee);
   const mod = gameOf(game);
   const rs = mod.rulesets.includes(ruleset) ? ruleset : mod.defaultRuleset;
   const opts = mod.normalizeOptions(options);
@@ -110,12 +155,12 @@ async function quickMatch(db, uid, tokenName, { game, ruleset, options }) {
     .orderBy('createdAt', 'asc').limit(30).get();
   for (const d of q.docs) {
     const r = d.data();
-    if ((r.game || 'gebeta') !== game || r.ruleset !== rs || r.players[0] === uid) continue;
+    if ((r.game || 'gebeta') !== game || r.ruleset !== rs || r.players[0] === uid || (Number(r.fee) || 0) !== fee) continue;
     if (Date.now() - (r.lastSeen || 0) > PRESENCE_MS) continue; // owner closed the app: never pair a real player with a ghost
     if (game === 'dominoes' && r.options?.target !== opts.target) continue;
     try { return await joinRoom(db, uid, tokenName, d.id); } catch (e) { if (!(e instanceof HttpError)) throw e; }
   }
-  return { code: await createRoom(db, uid, tokenName, { game, ruleset: rs, options: opts, isPublic: true }), status: 'waiting' };
+  return { code: await createRoom(db, uid, tokenName, { game, ruleset: rs, options: opts, isPublic: true, fee }), status: 'waiting' };
 }
 
 // Runs a mutation on a room; if it ends the match, updates both players' rating and stats in the same transaction.
@@ -144,9 +189,16 @@ async function mutateRoom(db, code, mutator) {
       const f = statFields(room.game);
       const refs = next.players.map((u) => db.collection('users').doc(u));
       const snaps = await Promise.all(refs.map((r) => tx.get(r)));
+      const fee = Number(room.fee) || 0, doPay = fee > 0 && room.paid === true, now = Date.now();
+      const wallets = doPay ? await Promise.all(next.players.map((u) => readWallet(tx, db, u, now))) : [];
       const ratings = snaps.map((s) => (s.exists && Number.isFinite(s.data()[f.rating]) ? s.data()[f.rating] : 1000));
       const out = settle(next, ratings);
       next.ratingChange = out.map((o) => o.delta);
+      if (doPay) { // winner takes 90% of the pot, a draw refunds both fees, paid in the same transaction that ends the match
+        const pays = WC.payouts(fee, next.winner);
+        next.players.forEach((u, i) => putWallet(tx, db, u, WC.pay(wallets[i].w, pays[i], next.winner === 'draw' ? 'refund' : 'prize', now)));
+        next.coinChange = pays.map((p) => p - fee); next.paid = false;
+      }
       out.forEach((o, i) => {
         const field = o.result === 'win' ? f.wins : o.result === 'loss' ? f.losses : f.draws;
         tx.set(refs[i], { [f.rating]: o.rating, [field]: FieldValue.increment(1), [f.games]: FieldValue.increment(1) }, { merge: true });
@@ -174,9 +226,13 @@ export async function POST(req) {
     const db = adminDb();
     const game = normalizeGame(body.game);
     const code = normalizeCode(body.code);
-    const common = { game, ruleset: String(body.ruleset || ''), options: body.options || {} };
+    const common = { game, ruleset: String(body.ruleset || ''), options: body.options || {}, fee: WC.normalizeFee(body.fee) };
 
     switch (body.action) {
+      case 'wallet':
+        return ok(await walletInfo(db, uid));
+      case 'spin':
+        return ok(await spinWallet(db, uid));
       case 'create':
         return ok({ code: await createRoom(db, uid, decoded.name, { ...common, isPublic: false }), status: 'waiting' });
       case 'quick':
@@ -244,7 +300,7 @@ export async function POST(req) {
         const o = old.data();
         if (o.status !== 'finished') fail(400, 'Match is not finished');
         if (o.rematch) return ok(await joinRoom(db, uid, decoded.name, o.rematch));
-        const newCode = await createRoom(db, uid, decoded.name, { game: o.game || 'gebeta', ruleset: o.ruleset, options: { ...(o.options || {}), ...(o.opener ? { avoid: o.opener } : {}) }, isPublic: false });
+        const newCode = await createRoom(db, uid, decoded.name, { game: o.game || 'gebeta', ruleset: o.ruleset, options: { ...(o.options || {}), ...(o.opener ? { avoid: o.opener } : {}) }, isPublic: false, fee: WC.normalizeFee(o.fee) });
         await oldRef.update({ rematch: newCode });
         return ok({ code: newCode, status: 'waiting' });
       }

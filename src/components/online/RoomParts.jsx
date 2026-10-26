@@ -30,7 +30,7 @@ export function RoomResult({ t, room, L, score, detail, taunt = null }) {
   const title = room.winner === 'draw' ? t.draw : mine ? t.youWin : t.youLose;
   const tone = room.winner === 'draw' ? 'draw' : mine ? 'win' : 'lose';
   return (
-    <ResultOverlay title={title} tone={tone} sub={sub} score={score} taunt={taunt}>
+    <ResultOverlay title={title} tone={tone} sub={sub} score={score} taunt={taunt} coins={room.fee > 0 ? room.coinChange?.[L.seat] : undefined}>
       <button className="btn primary" onClick={L.rematch}>{room.rematch ? t.joinRematch : t.rematch}</button>
       <button className="btn" onClick={L.exit}>{t.backHome}</button>
     </ResultOverlay>

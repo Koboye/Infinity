@@ -14,8 +14,8 @@ import BingoGame from './bingo/BingoGame';
 import LudoGame from './ludo/LudoGame';
 import ModesScreen from './ModesScreen';
 import BottomNav from './BottomNav';
-import { WalletChip, FeeSheet, SpinSheet, WelcomeGift } from './Wallet';
-import { takeWelcome } from '@/lib/wallet';
+import { WalletChip, SpinSheet, WelcomeGift } from './Wallet';
+import * as Wallet from '@/lib/wallet';
 import OnlineRoom from './online/OnlineRoom';
 import { Home, Setup, RulesScreen, AuthForm, Lobby, Leaders, ProfileScreen, ProgressScreen, SettingsScreen, Tibeb } from './Screens';
 import { isPlayable, GAMES } from '@/lib/games.js';
@@ -33,9 +33,8 @@ export default function GebetaApp() {
   const [muted, setMutedState] = useState(false);
   const [music, setMusicState] = useState(false);
   const [view, setView] = useState({ name: 'home' });
-  const [sheet, setSheet] = useState(null);                  // { type: 'fee' | 'spin' | 'gift', ... }
+  const [sheet, setSheet] = useState(null);                  // { type: 'spin' | 'gift' }
   const viewRef = useRef(view); viewRef.current = view;
-  const lastStake = useRef({ fee: 50, seats: 2 });
   const [user, setUser] = useState(null);
   const [authReady, setAuthReady] = useState(!onlineAvailable);
   const [profile, setProfile] = useState(null);
@@ -122,17 +121,17 @@ export default function GebetaApp() {
     if (name === 'game' && !isPlayable(extra.game)) return;
     // starting a game is a tap, so the browser lets us take the whole screen right now
     if ((name === 'game' || name === 'room') && !document.fullscreenElement) document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }).catch(() => {});
-    // STRICT RULE: every match (any game, any mode) costs an entry fee. No coins, no match.
-    if ((name === 'game' || name === 'room') && !extra.paid) { setSheet({ type: 'fee', name, extra, seats: extra.opts?.players || 2 }); return; }
     if (name === 'game') setCoach(needsCoach(extra.game) ? extra.game : null); setView({ name, ...extra }); };
   const home = () => setView({ name: 'home' });
-  useEffect(() => { if (takeWelcome()) setSheet({ type: 'gift' }); }, []);
-  // a finished game started another round on its own (play again / rematch): it must be paid for too
+  // The wallet belongs to the signed-in account and lives on the server: ask for it whenever the account changes.
+  const walletFor = useRef(null);
   useEffect(() => {
-    const onRematch = () => setTimeout(() => { if (['game', 'room'].includes(viewRef.current.name)) setSheet({ type: 'fee', rematch: true, seats: lastStake.current.seats }); }, 0);
-    window.addEventListener('wallet:rematch', onRematch);
-    return () => window.removeEventListener('wallet:rematch', onRematch);
-  }, []);
+    if (!authReady) return;
+    if (!user) { walletFor.current = null; Wallet.reset(); return; }
+    if (walletFor.current === user.uid) return;
+    walletFor.current = user.uid;
+    Wallet.refresh().then((r) => { if (r.gift) setSheet({ type: 'gift' }); });
+  }, [authReady, user]);
   // Invite link (?room=CODE): sign in (guest is fine), join the friend's room, then clean the address bar.
   const pendingRoom = useRef(null);
   useEffect(() => {
@@ -181,7 +180,7 @@ export default function GebetaApp() {
   let body;
   switch (view.name) {
     case 'home': body = <Home t={t} go={go} onlineOn={onlineAvailable} user={user} profile={profile} game={game} onPickGame={(g) => { pickGame(g); if (isPlayable(g)) go('modes'); }} />; break;
-    case 'modes': body = <ModesScreen t={t} game={game} go={go} onlineOn={onlineAvailable} />; break;
+    case 'modes': body = <ModesScreen t={t} lang={lang} game={game} go={go} onlineOn={onlineAvailable} />; break;
     case 'ai': case 'pass': body = <Setup t={t} mode={view.name} game={game} onStart={(o) => go('game', { mode: view.name, game, ...o })} />; break;
     case 'game': {
       const P = { t, mode: view.mode, level: view.level, ruleset: view.ruleset, opts: view.opts || {}, me, onExit: home, onLeave: leaveGame };
@@ -197,7 +196,7 @@ export default function GebetaApp() {
     case 'rules': body = <RulesScreen t={t} game={game} />; break;
     case 'leaders': body = !onlineAvailable ? <Unavailable t={t} /> : !user ? (authReady ? <AuthForm t={t} /> : null) : <Leaders t={t} uid={uid} game={game} />; break;
     case 'profile': body = !onlineAvailable ? <Unavailable t={t} /> : authReady ? <ProfileScreen t={t} lang={lang} user={user} profile={profile} onSignOut={() => signOut(auth)} /> : null; break;
-    case 'online': body = !onlineAvailable ? <Unavailable t={t} /> : !authReady ? null : !user ? <AuthForm t={t} /> : <Lobby t={t} game={game} onEnter={(code) => go('room', { code })} />; break;
+    case 'online': body = !onlineAvailable ? <Unavailable t={t} /> : !authReady ? null : !user ? <AuthForm t={t} /> : <Lobby t={t} lang={lang} game={game} onSpin={() => setSheet({ type: 'spin' })} onEnter={(code) => go('room', { code })} />; break;
     case 'room': body = <OnlineRoom key={view.code} t={t} lang={lang} uid={uid} code={view.code} onExit={home} onSwitchRoom={(code) => go('room', { code })} confirm={confirm} />; break;
     default: body = null;
   }
@@ -215,18 +214,12 @@ export default function GebetaApp() {
       )}
       {sheet?.type === 'gift' && <WelcomeGift lang={lang} onClose={() => setSheet(null)} />}
       {sheet?.type === 'spin' && <SpinSheet lang={lang} onClose={() => setSheet(null)} />}
-      {sheet?.type === 'fee' && (
-        <FeeSheet lang={lang} seats={sheet.seats} initial={lastStake.current.fee} rematch={!!sheet.rematch}
-          onSpin={() => setSheet({ type: 'spin' })}
-          onCancel={() => { const r = sheet.rematch; setSheet(null); if (r) home(); }}
-          onPay={(fee) => { lastStake.current = { fee, seats: sheet.seats }; const sh = sheet; setSheet(null); if (!sh.rematch) go(sh.name, { ...sh.extra, paid: true }); }} />
-      )}
       <header className="topbar">
         {view.name === 'home' ? <span className="topbar-spacer" /> :
           <button className="icon-btn" onClick={view.name === 'game' ? leaveGame : ['ai', 'pass', 'online', 'leaders', 'rules'].includes(view.name) ? () => go('modes') : home} aria-label={t.backHome}>‹</button>}
         <h2 className="topbar-title">{view.name === 'home' ? '' : titles[view.name] || (view.name === 'room' ? `# ${view.code}` : 'ገበጣ')}</h2>
         <div className="topbar-actions">
-          <WalletChip lang={lang} onOpen={() => setSheet({ type: 'spin' })} />
+          {onlineAvailable && <WalletChip lang={lang} signedIn={!!user} onOpen={() => (user ? setSheet({ type: 'spin' }) : go('online'))} />}
           <div className="lang-switch" role="group" aria-label={t.language}>
             <button className={lang === 'en' ? 'on' : ''} onClick={() => chooseLang('en')} aria-pressed={lang === 'en'} lang="en" title="English">EN</button>
             <button className={lang === 'am' ? 'on' : ''} onClick={() => chooseLang('am')} aria-pressed={lang === 'am'} lang="am" title="አማርኛ">አማ</button>

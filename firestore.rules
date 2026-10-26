@@ -24,6 +24,12 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Coin wallets. A player can read only their own; every change (gift, spins, fees, prizes) is made by the server.
+    match /wallets/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+
     // Online matches (Gebeta, Checkers, Dominoes). Only the two players can read the room they are in.
     // ALL writes go through /api/gebeta (server validates every move with the shared engines).
     match /gebetaRooms/{code} {

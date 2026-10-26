@@ -144,8 +144,19 @@ tests/                     engine, rooms, API tests with an in-memory Firestore 
 - Fixes found by screenshot on a 390 px phone: the Home demo board no longer spills past its frame; long titles stay on one line; dock chips fit.
 - Original artwork and palette (no third-party assets or branding).
 
-## Coin economy — limits to know about (v47)
-- **Not cheat-proof.** The wallet is stored on the phone, so someone technical could edit their coins or set the clock forward for extra spins. For online matches where real people compete, the server should hold the balance. That needs a Firebase backend change (planned).
-- **One wallet per device.** It isn't tied to the sign-in account, so coins don't follow a player to another phone. A second account on the same phone does not get a second welcome gift.
-- **Pass & Play** (two people on one phone) charges the fee and pays the winner's prize back into the same wallet, so it costs 10% per game.
-- **No coin top-ups.** The 1,000 welcome gift and the daily lucky spins are the only ways to earn coins. A player who runs out waits for the next day's spins. A daily top-up or a "double your coins" option would be easy to add.
+## v49 — Coins held by the server (real, not on the phone)
+**What changed**
+- Every coin now lives in Firestore at `wallets/{uid}`, one wallet per **account**, readable only by its owner and written only by the server (`firestore.rules`). Coins follow the player to any phone.
+- Server actions in `/api/gebeta`: `wallet` (creates the account wallet with the 1,000 gift the first time, once), `spin` (10 a day; the prize is drawn and paid by the server using the server's UTC day, so phone clocks and local storage no longer matter).
+- **Online matches** carry an entry fee (50–1,000). The fee leaves both wallets in the same transaction that seats the second player; the winner is paid 90% of the pot, a draw refunds both, and the prize is paid in the same transaction that finishes the match, so it can never pay twice. Quick match only pairs players who picked the same fee; a player who cannot pay cannot open or enter a match.
+- **Computer and Pass & Play are free practice** (no fee, no coins). A phone cannot prove who won a match played on the phone, so no coins are ever moved by one. This also removes the old 10%-per-game loss on Pass & Play.
+- Pure rules in `src/lib/walletCore.js`; the client `src/lib/wallet.js` only asks the server and displays the answer. Design pass in `src/app/v49.css` (wallet chip, fee picker in the online lobby, spin wheel, result coins).
+- Tests: `tests/wallet.test.mjs` (rules), `tests/wallet-server.test.mjs` (gift once, spins, fee on seating, payout, no double pay, fee tiers, broke players, rematch).
+
+**Deploy:** publish the new `firestore.rules` (`firebase deploy --only firestore:rules`) together with the app. Without it the wallet document is unreadable to the client.
+
+**Limits that remain**
+- **Guest accounts get a gift each.** If guest sign-in is enabled, a new guest account gets its own 1,000 coins. Coins are play-money only, but if you want one gift per person, require Google sign-in for the gift.
+- **An abandoned match holds the fees until it finishes.** If both players leave a running match, the fees stay staked until one side claims the timeout or resigns. Nothing is lost or duplicated.
+- **No coin top-ups.** The welcome gift and the daily spins are the only ways to earn coins. A daily top-up or "double your coins" is easy to add; buying coins for real money would need Play/App Store billing and server-side receipt checks.
+- Spins reset at 00:00 UTC for everyone.

@@ -4,6 +4,7 @@ import { apiCall, serverNow } from '@/lib/firebase';
 import { EMOTES } from '@/lib/i18n';
 import { sfx } from '@/lib/sound';
 import { ONLINE_TURN_SECONDS } from '@/lib/games.js';
+import { refresh as refreshWallet } from '@/lib/wallet';
 
 export const setSaved = (code) => { try { code ? localStorage.setItem('gebeta.room', code) : localStorage.removeItem('gebeta.room'); } catch {} };
 
@@ -20,6 +21,8 @@ export function useMatchLifecycle({ t, lang, room, uid, code, busy, onExit, onSw
   const doneSound = useRef(false);
 
   useEffect(() => { setSaved(code); }, [code]);
+  // the entry fee leaves the wallet when the match starts and the prize arrives when it ends: show the server's numbers
+  useEffect(() => { if (room.status === 'playing' || room.status === 'finished') refreshWallet(); }, [room.status]);
   useEffect(() => { const id = setInterval(() => setNow(serverNow()), 250); return () => clearInterval(id); }, []);
 
   // presence heartbeat while the match is on

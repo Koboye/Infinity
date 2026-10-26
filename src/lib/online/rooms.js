@@ -26,12 +26,12 @@ export function statFields(game) {
   return { rating: `rating${s}`, wins: `wins${s}`, losses: `losses${s}`, draws: `draws${s}`, games: `games${s}` };
 }
 
-export function newRoomDoc({ game, uid, profile, ruleset, options, isPublic, now, expireAt = null }) {
+export function newRoomDoc({ game, uid, profile, ruleset, options, isPublic, fee = 0, now, expireAt = null }) {
   const g = normalizeGame(game), mod = gameOf(g);
   const rs = mod.rulesets.includes(ruleset) ? ruleset : mod.defaultRuleset;
   const opts = mod.normalizeOptions(options);
   return {
-    game: g, ruleset: rs, options: opts, public: !!isPublic, status: 'waiting',
+    game: g, ruleset: rs, options: opts, public: !!isPublic, status: 'waiting', fee, paid: false, coinChange: null,
     players: [uid], names: [profile.displayName], avatars: [profile.avatar],
     turn: 0, winner: null, moveSeq: 0, lastMove: null, deadline: null, turnMs: mod.turnMs, seen: {},
     reason: null, detail: null, emote: null, rematch: null, ratingChange: null,
