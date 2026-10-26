@@ -219,3 +219,23 @@ An ad is live from `start` to `end` (both days included, UTC) while `active` is 
 **Tests:** `tests/ads.test.mjs` (length clamp, validation, dates, weights, frequency caps, bonus-spin economy), `tests/ads-server.test.mjs` (public feed, counters, rewarded sessions: early finish, replay, someone else's session, expiry, daily cap, admin API and key), `tests/ads-ui.test.mjs` (wiring and security guards).
 
 **Policy notes:** ads are labelled "Ad" with a countdown, never styled as game buttons, and rewarded ads are optional. Choose advertisers carefully (no gambling, adult or misleading offers) and keep the Play Console **Data safety** form in line with `/privacy`: ads collect no advertising ID; per-ad view and tap counts only.
+
+## v55 — Smart ads (targeting, learning, pacing, fairness)
+
+The v54 ad system now chooses *which* ad to show instead of picking at random. All rules are pure functions in `src/lib/adsSmart.js`; the hard rules from v54 (dates, placement, `CAPS` frequency limits, server-verified rewards) still apply first.
+
+| Rule | What it does |
+|---|---|
+| **Targeting** (optional per ad) | `langs` (English / አማርኛ players), `hours` (phone-time window, e.g. 22 → 6 crosses midnight), `games` (pre-game ads only before those games). Empty = everyone. |
+| **Learning** | Ads people tap get a bigger share. The tap rate is smoothed toward a 2 % prior (worth 200 impressions), so a new ad is neutral, a few lucky taps do not inflate it, and every ad keeps at least ½ and at most 2.5× of its normal share. Weight still multiplies on top. |
+| **Pacing** | `dailyCap` = impressions per day across all players. The server drops an ad from the feed once the cap is reached (rewarded views count too) and sends a `pace` factor so the budget is spread over the day (ahead of schedule → slower, behind → faster). |
+| **Fairness** | One player sees one ad at most `maxPerUser` times a day (default 3), prefers ads they saw less, and is less likely to get the same category twice in a row. |
+| **New players** | No ads in the first 10 minutes after first open. |
+
+No ad is better than a wrong ad: if every ad is filtered out, nothing is shown. Rewarded ads keep the v54 server flow and also respect `dailyCap`.
+
+**Owner page** (`/admin/ads`): a *Smart targeting* block on the form, today's delivery against the daily cap, and plain-language advice per ad (not shown in 7 days, tap rate far below / above average, daily limit reached, ending soon, no tap link).
+
+**Feed** (`GET /api/ads`, cached 60 s) now also carries per ad `t` (targeting), `perf` (last-7-days `i` impressions, `c` taps) and `pace`. Private fields (`dailyCap`, `active`, dates) are not sent. Player memory (views per ad per day, last category, first open) lives in the same local-storage key as the v54 caps.
+
+**Tune it:** numbers are in `SMART` at the top of `src/lib/adsSmart.js`. **Tests:** `tests/ads-smart.test.mjs`. **Deploy:** nothing new to configure; existing ads keep working (new fields default to "no restriction", 3 views per player per day).

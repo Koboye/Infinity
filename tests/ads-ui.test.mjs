@@ -7,7 +7,7 @@ const app = read('src/components/GebetaApp.jsx'), wallet = read('src/components/
 const overlay = read('src/components/AdOverlay.jsx'), css = read('next.config.mjs'), rules = read('firestore.rules'), layout = read('src/app/layout.tsx');
 
 t('app open and game start both go through runAd; local games and online matchmaking are covered', () => {
-  assert.match(app, /runAd\('splash'\)/); assert.match(app, /runAd\('pre_game'\)\.then\(enter\)/); assert.match(app, /beforeStart=\{\(\) => runAd\('pre_game'\)\}/);
+  assert.match(app, /runAd\('splash'\)/); assert.match(app, /runAd\('pre_game', \{ game: extra\.game \}\)\.then\(enter\)/); assert.match(app, /beforeStart=\{\(\) => runAd\('pre_game', \{ game \}\)\}/);
   assert.match(screens, /await beforeStart\?\.\(\)/);
 });
 t('an ad can never block the app: failures resolve, only one ad at a time, rewards only from the server', () => {

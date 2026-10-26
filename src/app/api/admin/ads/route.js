@@ -36,8 +36,9 @@ export async function GET(req) {
     const from = todayKey(Date.now() - 6 * 86_400_000);
     const stats = {};
     for (const d of (await db.collection('adStats').where('day', '>=', from).get()).docs) {
-      const x = d.data(); const s = (stats[x.adId] ||= { impressions: 0, clicks: 0, rewarded: 0 });
+      const x = d.data(); const s = (stats[x.adId] ||= { impressions: 0, clicks: 0, rewarded: 0, today: 0 });
       s.impressions += x.impressions || 0; s.clicks += x.clicks || 0; s.rewarded += x.rewarded || 0;
+      if (x.day === todayKey()) s.today += (x.impressions || 0) + (x.rewarded || 0);   // delivered today, compared with the ad's daily cap
     }
     return NextResponse.json({ ads, stats, today: todayKey() });
   } catch (e) { console.error('ads admin', e); return NextResponse.json({ error: 'Server error' }, { status: 500 }); }

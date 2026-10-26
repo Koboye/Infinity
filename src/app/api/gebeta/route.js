@@ -12,7 +12,7 @@ import { isPlayable } from '@/lib/games.js';
 import { BONEYARD_DOC } from '@/lib/online/dominoes.js';
 import * as WC from '@/lib/walletCore.js';
 import { randomUUID } from 'node:crypto';
-import { liveAds, bump } from '@/lib/adsServer.js';
+import { servableAds, bump } from '@/lib/adsServer.js';
 import { pickAd, publicAd, clampSeconds, SESSION_TTL_MS, DONE_TOLERANCE_MS } from '@/lib/adsCore.js';
 
 export const dynamic = 'force-dynamic';
@@ -101,7 +101,7 @@ async function adStart(db, uid) {
   const now = Date.now();
   const { wallet } = await walletInfo(db, uid);
   if (wallet.adsLeft <= 0) fail(409, 'No bonus ads left today. They come back tomorrow.');
-  const ad = pickAd(await liveAds(db, now), 'rewarded', { now });
+  const ad = pickAd(await servableAds(db, now), 'rewarded', { now });
   if (!ad) fail(404, 'No ad is available right now. Try again later.');
   const durationMs = clampSeconds(ad.durationSec, 'rewarded') * 1000;
   const id = randomUUID();

@@ -4,7 +4,10 @@
 //    the instant it is due, with no spinner. Offline or failing server = no ad. An ad can NEVER block the app.
 //  • Frequency caps (adsCore.CAPS) are kept in local storage: losing them only means one extra ad, never a broken app.
 //  • Rewarded ads are different: the server picks them and times them (see Wallet.adStart / adDone).
-import { pickAd, shouldShow, countStart, markShown, newCapState, clampSeconds } from './adsCore.js';
+//  • Which ad? adsSmart.smartPick: language / hour / game targeting, tap-rate learning, daily-budget pacing and per-player fatigue.
+//    New players get an ad-free first 10 minutes.
+import { shouldShow, countStart, markShown, newCapState, clampSeconds } from './adsCore.js';
+import { smartPick, seenToday, noteSeen, noteCategory, stampFirst, inGrace } from './adsSmart.js';
 
 const FEED_KEY = 'gebeta.ads.feed', CAP_KEY = 'gebeta.ads.caps', FEED_TTL = 10 * 60 * 1000;
 const read = (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
@@ -43,12 +46,15 @@ export const warm = () => { loadFeed(); };
  * The next ad for a placement, or null when none is due (frequency caps), none is live, or the network is too slow.
  * `pre_game` counts one game start per call.
  */
-export async function nextAd(placement, { waitMs = 1500 } = {}) {
-  let caps = read(CAP_KEY) || newCapState();
-  if (placement === 'pre_game') { caps = countStart(caps); write(CAP_KEY, caps); }
-  if (!shouldShow(placement, caps, Date.now())) return null;
+export async function nextAd(placement, { waitMs = 1500, lang = 'en', game = null } = {}) {
+  const now = Date.now();
+  let caps = stampFirst(read(CAP_KEY) || newCapState(), now);
+  if (placement === 'pre_game') caps = countStart(caps);
+  write(CAP_KEY, caps);
+  if (inGrace(caps, now)) return null;                       // brand-new player: no ads yet
+  if (!shouldShow(placement, caps, now)) return null;
   const ads = await Promise.race([loadFeed(), new Promise((r) => setTimeout(() => r([]), waitMs))]);
-  const ad = pickAd(ads, placement, { avoidId: caps.lastId });
+  const ad = smartPick(ads, { placement, lang: lang === 'am' ? 'am' : 'en', game, hour: new Date(now).getHours(), seen: seenToday(caps, now), lastCategory: caps.lastCategory, avoidId: caps.lastId, now });
   return ad ? { ...ad, durationSec: clampSeconds(ad.durationSec, placement) } : null;
 }
 
@@ -58,7 +64,8 @@ function track(event, ad) {
 /** The ad is on screen. Splash / pre-game ads are counted here; rewarded ones are counted by the server when they pay out. */
 export function shown(placement, ad) {
   if (placement === 'rewarded') return;
-  write(CAP_KEY, markShown(read(CAP_KEY) || newCapState(), placement, ad.id, Date.now()));
+  const now = Date.now();
+  write(CAP_KEY, noteCategory(noteSeen(markShown(read(CAP_KEY) || newCapState(), placement, ad.id, now), ad.id, now), ad.category));
   track('impression', ad);
 }
 export const clicked = (ad) => track('click', ad);

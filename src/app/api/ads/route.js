@@ -3,7 +3,7 @@
 // Neither can ever break the app: any failure answers with an empty list or a quiet ok.
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebaseAdmin';
-import { liveAds, bump, adsCol } from '@/lib/adsServer.js';
+import { servableAds, bump, adsCol } from '@/lib/adsServer.js';
 import { publicAd, isAdId } from '@/lib/adsCore.js';
 
 export const dynamic = 'force-dynamic';
@@ -20,8 +20,12 @@ const ipOf = (req) => String(req.headers.get('x-forwarded-for') || 'local').spli
 
 export async function GET() {
   try {
-    const ads = (await liveAds(adminDb()))
-      .map((a) => ({ ...publicAd(a, 'splash'), placements: (a.placements || []).filter((p) => p !== 'rewarded'), weight: a.weight || 1 }))
+    const ads = (await servableAds(adminDb()))
+      .map((a) => ({
+        ...publicAd(a, 'splash'), placements: (a.placements || []).filter((p) => p !== 'rewarded'), weight: a.weight || 1,
+        t: { langs: a.langs || [], games: a.games || [], hours: a.hours || null, maxPerUser: a.maxPerUser || 3 },   // targeting the phone applies
+        perf: a.perf, pace: Math.round(a.pace * 100) / 100,                                                      // learning + pacing the phone ranks with
+      }))
       .filter((a) => a.placements.length);
     return NextResponse.json({ ads }, { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' } });
   } catch (e) {

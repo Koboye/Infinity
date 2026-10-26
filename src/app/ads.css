@@ -58,3 +58,7 @@ button.ad-media { cursor: pointer; }
 .adm .acts .btn { flex: 1 1 90px; }
 .adm .thumb { width: 64px; height: 64px; object-fit: cover; border-radius: 10px; background: #000; }
 .adm .head { display: flex; gap: 10px; align-items: center; }
+.adm .tips { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: .85rem; }
+.adm .tips li.warn { color: #ffd37a; }
+.adm .tips li.good { color: #9be7b0; }
+.adm h3 small { font-weight: 400; opacity: .7; }

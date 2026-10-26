@@ -65,6 +65,13 @@ export function sanitizeAd(raw) {
   if (errors.length) return { ok: false, errors };
   const category = CATEGORIES.includes(r.category) ? r.category : 'other';
   const w = Math.round(Number(r.weight));
+  // Smart targeting (all optional; empty = no restriction). See adsSmart.js.
+  const langs = [...new Set((Array.isArray(r.langs) ? r.langs : []).filter((l) => l === 'en' || l === 'am'))];
+  const games = [...new Set((Array.isArray(r.games) ? r.games : []).map((g) => clean(g, 20).toLowerCase()).filter((g) => /^[a-z0-9_-]{1,20}$/.test(g)))].slice(0, 12);
+  const hr = (v) => { const s = String(v ?? '').trim(); const n = Number(s); return s !== '' && Number.isInteger(n) && n >= 0 && n <= 23 ? n : null; };
+  const hf = hr(r.hours?.from ?? r.hourFrom), ht = hr(r.hours?.to ?? r.hourTo);
+  const hours = hf !== null && ht !== null && hf !== ht ? { from: hf, to: ht } : null;
+  const mpu = Math.round(Number(r.maxPerUser)), cap = Math.round(Number(r.dailyCap));
   const ad = {
     id, advertiser, category, placements, image: new URL(image).href, clickUrl: clickUrl ? new URL(clickUrl).href : '', start, end,   // .href percent-encodes quotes, so a link can never break out of CSS url("…")
     title: clean(r.title, 60), titleAm: clean(r.titleAm, 60),
@@ -73,6 +80,9 @@ export function sanitizeAd(raw) {
     durationSec: clampSeconds(r.durationSec, placements.includes('rewarded') && placements.length === 1 ? 'rewarded' : 'splash'),
     weight: Math.min(100, Math.max(1, Number.isFinite(w) ? w : 1)),
     active: r.active !== false,
+    langs, games, hours,
+    maxPerUser: Number.isFinite(mpu) && mpu >= 1 ? Math.min(20, mpu) : 3,   // views of this ad per player per day
+    dailyCap: Number.isFinite(cap) && cap > 0 ? Math.min(1_000_000, cap) : 0, // impressions per day across all players (0 = no limit)
   };
   return { ok: true, ad };
 }
