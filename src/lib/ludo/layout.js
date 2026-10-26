@@ -80,3 +80,6 @@ export function homeAngle(board, seat) {
   const a = homeXY(board, seat, 1), b = homeXY(board, seat, 5);
   return Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI;
 }
+
+/** Which corner of the screen each seat's player panel (and its die) sits in, next to that seat's base. */
+export const PANEL_SLOT = { square: ['tl', 'tr', 'br', 'bl'], triangle: ['br', 'bl', 'top'] };

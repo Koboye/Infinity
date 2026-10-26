@@ -4,7 +4,7 @@ import {
   newGame, applyRoll, applyMove, legalMoves, distinctMoves, chooseToken, rollDie, pathOf, finishOf,
   previewAll, hintMove, progressOf, serializeGame, restoreGame,
 } from '@/lib/ludo/engine.js';
-import { tokenXY, trailXY } from '@/lib/ludo/layout.js';
+import { tokenXY, trailXY, PANEL_SLOT as SLOT } from '@/lib/ludo/layout.js';
 import { sfx } from '@/lib/sound';
 import ResultOverlay from '../ResultOverlay';
 import LudoBoard, { COLORS } from './LudoBoard';
@@ -39,6 +39,8 @@ function Die({ value, rolling, rollId, color, disabled, onRoll, label, ms }) {
   );
 }
 
+// where each seat's base sits, so its panel (and its die) goes next to it
+const ORDER = { top: ['tl', 'top', 'tr'], bottom: ['bl', 'br'] };
 const initialOf = (name) => (String(name || '?').trim()[0] || '?').toUpperCase();
 
 /** Ludo vs the computer (or friends on one device). 2 / 3 / 4 players; 3 players play on the fair triangle. */
@@ -47,9 +49,9 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
   const tokens = ruleset === 'quick' ? 2 : 4;
   const saveKey = `ludo.save.${mode}`;
   const [game, setGame] = useState(() => newGame({ players, tokens, start: 0 }));
-  const [face, setFace] = useState(null);
+  const [faces, setFaces] = useState(() => Array(players).fill(null));   // last value each player rolled
   const [rolling, setRolling] = useState(false);
-  const [rollId, setRollId] = useState(0);
+  const [rollIds, setRollIds] = useState(() => Array(players).fill(0));
   const [anim, setAnim] = useState(null);       // { p, i, pos } while a token hops
   const [flash, setFlash] = useState(null);
   const [auto, setAuto] = useState(true);
@@ -128,7 +130,7 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
     const s0 = gameRef.current; if (busy.current || s0.over || s0.phase !== 'roll') return;
     busy.current = true; setRolling(true); setNote(''); setHintKey(null); sfx.dice();
     const value = rollDie();
-    setFace(value); setRollId((n) => n + 1);   // the cube tumbles towards the rolled face
+    const who = s0.turn; setFaces((f) => f.map((v, k) => (k === who ? value : v))); setRollIds((r) => r.map((v, k) => (k === who ? v + 1 : v)));   // the cube in that player's own area tumbles to the rolled face
     await wait(900 * sp);
     if (!alive.current) return;
     setRolling(false);
@@ -182,9 +184,9 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
 
   const winner = game.over ? game.ranks[0] : null;
   const youWon = winner === 0;
-  const reset = (g) => { busy.current = false; setFace(null); setAnim(null); setNote(''); setHintKey(null); setTrail(null); setFx([]); setFlying(new Set()); setFlash(null); commit(g); };
+  const reset = (g) => { busy.current = false; setFaces(Array(players).fill(null)); setAnim(null); setNote(''); setHintKey(null); setTrail(null); setFx([]); setFlying(new Set()); setFlash(null); commit(g); };
   const restart = () => { store.del(saveKey); reset(newGame({ players, tokens, start: Math.floor(Math.random() * players) })); };
-  const resume = () => { const g = offer; setOffer(null); reset(g); if (g.phase === 'move') setFace(g.dice); };
+  const resume = () => { const g = offer; setOffer(null); reset(g); if (g.phase === 'move') setFaces((f) => f.map((v, k) => (k === g.turn ? g.dice : v))); };
   const fresh = () => { store.del(saveKey); setOffer(null); };
 
   const recent = game.log.slice(-8).reverse();
@@ -202,26 +204,35 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
 
   return (
     <div className={`ludo ${game.board}`} style={{ '--tc': color, '--step': `${0.17 * sp}s` }}>
-      <div className="ludo-players" style={{ '--n': players }}>
-        {people.map((pp, p) => {
-          const seat = game.seats[p], on = game.turn === p && !game.over, done = game.ranks.includes(p);
-          return (
-            <div key={p} className={`ludo-chip${on ? ' on' : ''}${done ? ' done' : ''}`} style={{ '--pc': COLORS[seat] }} aria-current={on ? 'true' : undefined} title={t.ludoTokenCount ? t.ludoTokenCount(homeCount(p), game.tokensPer) : undefined}>
-              <span className="av">{pp.human ? initialOf(pp.name) : '🤖'}</span>
-              <span className="pips">{game.pos[p].map((x, k) => <i key={k} className={x === F ? 'home' : x >= 0 ? 'out' : ''} />)}</span>
-              <b className="nm">{pp.name}</b>
-              <span className="bar"><i style={{ width: `${Math.round(progressOf(game, p) * 100)}%` }} /></span>
-              {done && <em>{t.ludoRank(game.ranks.indexOf(p))}</em>}
-            </div>
-          );
-        })}
-      </div>
-      <div className="ludo-board">
+      {['top', 'bottom'].map((row) => {
+        const seatsHere = ORDER[row].map((sl) => game.seats.findIndex((st) => SLOT[game.board][st] === sl)).filter((p) => p >= 0);
+        return (
+          <div key={row} className={`ludo-row ${row}${row === 'bottom' ? ' after' : ''}`} hidden={seatsHere.length === 0} style={row === 'bottom' ? { order: 3 } : { order: 0 }}>
+            {seatsHere.map((p) => {
+              const seat = game.seats[p], pp = people[p], on = game.turn === p && !game.over, done = game.ranks.includes(p), slot = SLOT[game.board][seat];
+              const mine = on && canRoll;
+              return (
+                <div key={p} className={`ludo-panel ${slot}${on ? ' on' : ''}${done ? ' done' : ''}`} style={{ '--pc': COLORS[seat] }} aria-current={on ? 'true' : undefined}
+                  title={t.ludoTokenCount ? t.ludoTokenCount(homeCount(p), game.tokensPer) : undefined}>
+                  <Die value={faces[p]} rolling={rolling && on} rollId={rollIds[p]} color={COLORS[seat]} disabled={!mine} onRoll={doRoll} label={`${t.ludoRoll} — ${pp.name}`} ms={900 * sp} />
+                  <div className="info">
+                    <b className="nm"><span className="av">{pp.human ? initialOf(pp.name) : '🤖'}</span><span className="tx">{pp.name}</span></b>
+                    <span className="pips">{game.pos[p].map((x, k) => <i key={k} className={x === F ? 'home' : x >= 0 ? 'out' : ''} />)}</span>
+                    <span className="bar"><i style={{ width: `${Math.round(progressOf(game, p) * 100)}%` }} /></span>
+                  </div>
+                  {on && game.sixes > 0 && <span className={`sixes${game.sixes >= 2 ? ' warn' : ''}`} title="sixes in a row">6×{game.sixes}</span>}
+                  {done && <em>{t.ludoRank(game.ranks.indexOf(p))}</em>}
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
+      <div className="ludo-board" style={{ order: 1 }}>
         <LudoBoard board={game.board} seats={game.seats} tokens={toks} legal={legal} onPick={doMove} hintKey={hintKey} turnSeat={seatNow} previews={previews} trail={trail} fx={fx} flying={flying} />
         {flash && <div className={`flash ${flash.kind}`} key={flash.k} onAnimationEnd={() => setFlash(null)}>{flash.text}</div>}
       </div>
-      <div className={`ludo-dock${canRoll ? ' ready' : ''}`} style={{ '--dc': color }}>
-        <Die value={face} rolling={rolling} rollId={rollId} color={color} disabled={!canRoll} onRoll={doRoll} label={t.ludoRoll} ms={900 * sp} />
+      <div className={`ludo-dock${canRoll ? ' ready' : ''}`} style={{ '--dc': color, order: 4 }}>
         <div className="ludo-say" aria-live="polite"><b>{status}</b>{canRoll && <small>{t.ludoRollHint}</small>}</div>
         <div className="ludo-tools">
           <button type="button" className="tool" onClick={hint} disabled={!canHint} title={t.ludoHintBtn}><span aria-hidden="true">💡</span> {t.ludoHintBtn}</button>

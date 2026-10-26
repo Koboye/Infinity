@@ -1,0 +1,41 @@
+/* v50 — every player has their own die in their own corner; mode screen no longer repeats Rules / Progress. */
+.ludo { gap: 10px; }
+.ludo-row { display: flex; justify-content: space-between; align-items: stretch; gap: 10px; width: min(100%, 540px); }
+.ludo-row.top:has(.ludo-panel.top) { justify-content: center; }
+.ludo-row[hidden] { display: none; }
+
+.ludo-panel { position: relative; flex: 1 1 0; max-width: calc(50% - 5px); min-width: 0; display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 20px; color: #fff7e0;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--pc) 22%, rgba(255, 250, 240, .12)), rgba(255, 250, 240, .04));
+  border: 2px solid color-mix(in srgb, var(--pc) 45%, transparent); box-shadow: 0 6px 14px rgba(0, 0, 0, .3), inset 0 1px 0 rgba(255, 255, 255, .16);
+  transition: transform .25s, border-color .25s, box-shadow .25s, opacity .3s; }
+.ludo-panel.tr, .ludo-panel.br { flex-direction: row-reverse; text-align: right; }
+.ludo-panel.top { flex: 0 1 calc(50% - 5px); }
+.ludo-panel .ludo-die3d { grid-area: auto; flex: none; --s: 40px; width: calc(var(--s) * 1.75); height: calc(var(--s) * 1.75); }
+.ludo-panel:not(.on) .ludo-die3d { filter: saturate(.55) brightness(.82); }
+.ludo-panel:not(.on) .ludo-die3d.idle .cube { animation: none; }
+.ludo-panel .info { flex: 1 1 auto; min-width: 0; display: grid; gap: 5px; }
+.ludo-panel .nm { display: flex; align-items: center; gap: 6px; min-width: 0; font-weight: 800; font-size: .84rem; }
+.ludo-panel.tr .nm, .ludo-panel.br .nm { flex-direction: row-reverse; }
+.ludo-panel .nm .tx { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ludo-panel .av { flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-weight: 900; font-size: .8rem; color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, .6);
+  background: radial-gradient(circle at 35% 28%, rgba(255, 255, 255, .85), var(--pc) 42%, color-mix(in srgb, var(--pc) 50%, #000)); box-shadow: 0 2px 6px rgba(0, 0, 0, .45), inset 0 -3px 5px rgba(0, 0, 0, .3); }
+.ludo-panel .pips { display: flex; gap: 4px; flex-wrap: wrap; }
+.ludo-panel.tr .pips, .ludo-panel.br .pips { justify-content: flex-end; }
+.ludo-panel .pips i { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid color-mix(in srgb, var(--pc) 75%, #fff); transition: background .3s, box-shadow .3s; }
+.ludo-panel .pips i.out { background: var(--pc); }
+.ludo-panel .pips i.home { background: #ffd24a; border-color: #fff1b8; box-shadow: 0 0 7px #ffd24a; }
+.ludo-panel .bar { height: 5px; border-radius: 99px; background: rgba(0, 0, 0, .38); overflow: hidden; }
+.ludo-panel .bar i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, color-mix(in srgb, var(--pc) 65%, #fff), var(--pc)); transition: width .6s cubic-bezier(.2, .8, .2, 1); }
+.ludo-panel em { position: absolute; top: -9px; right: 8px; font-style: normal; font-size: .68rem; font-weight: 900; background: linear-gradient(180deg, #ffe08a, #f0a91a); color: #2b1a02; padding: 1px 7px; border-radius: 99px; box-shadow: 0 2px 6px rgba(0, 0, 0, .4); }
+.ludo-panel .sixes { position: absolute; bottom: -9px; left: 50%; transform: translateX(-50%); font-size: .7rem; font-weight: 900; padding: 1px 8px; border-radius: 99px; color: #2b1a02; background: linear-gradient(180deg, #fff1b8, #ffd24a); box-shadow: 0 2px 6px rgba(0, 0, 0, .45); }
+.ludo-panel .sixes.warn { background: linear-gradient(180deg, #ffd9d2, #ff8a78); }
+.ludo-panel.on { border-color: var(--pc); transform: translateY(-2px); animation: ludo-turn 1.7s ease-in-out infinite; }
+.ludo-panel.done { opacity: .6; }
+@media (max-width: 420px) {
+  .ludo-row { gap: 6px; } .ludo-panel { padding: 6px 7px; gap: 5px; max-width: calc(50% - 3px); }
+  .ludo-panel .ludo-die3d { --s: 34px; } .ludo-panel .nm { font-size: .74rem; } .ludo-panel .av { width: 22px; height: 22px; font-size: .7rem; }
+}
+@media (prefers-reduced-motion: reduce) { .ludo-panel.on { animation: none; } }
+
+/* the dock keeps only the status line and the tools now */
+.ludo-dock { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'say' 'tools' 'log'; }

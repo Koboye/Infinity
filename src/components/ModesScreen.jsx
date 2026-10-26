@@ -13,8 +13,6 @@ export default function ModesScreen({ t, lang, game, go, onlineOn }) {
     ...(!g.noPass ? [{ id: 'pass', c: '#35E0C2', icon: '🤝', title: t.passPlay, sub: t.passPlaySub, tag: t.badgeOffline }] : []),
     ...(!offlineOnly ? [{ id: 'online', c: '#FF5C8A', icon: '🌍', title: t.playFriendOnline, sub: t.playFriendOnlineSub, tag: t.badgeOnline, live: onlineOn }] : []),
     ...(!offlineOnly ? [{ id: 'leaders', c: '#8E7CFF', icon: '🏆', title: t.leaderboard }] : []),
-    { id: 'rules', c: '#4FA3FF', icon: '📖', title: t.rules },
-    { id: 'progress', c: '#FF8A3D', icon: '🔥', title: t.progress },
   ];
   return (
     <div className="modes" style={{ '--accent': g.accent || '#F2B632' }}>
