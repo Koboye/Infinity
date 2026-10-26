@@ -35,6 +35,7 @@ service cloud.firestore {
     // (/api/ads, /api/admin/ads, /api/gebeta). Phones get ads through the API, never from Firestore directly.
     match /ads/{id} { allow read, write: if false; }
     match /adStats/{id} { allow read, write: if false; }
+    match /adImages/{id} { allow read, write: if false; }   // uploaded ad pictures: only the server touches them (served via /api/ads/img/{id})
     match /adSessions/{uid} { allow read, write: if false; }
 
     // Online matches (Gebeta, Checkers, Dominoes). Only the two players can read the room they are in.

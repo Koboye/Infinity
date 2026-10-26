@@ -1,4 +1,5 @@
 // Presets and helpers behind the owner page's dropdowns (pure, so they are tested).
+import { isOwnAdImage } from './adImageCore.js';
 export const today = () => new Date().toISOString().slice(0, 10);
 export const plus = (d) => new Date(Date.now() + d * 86_400_000).toISOString().slice(0, 10);
 export const GAME_IDS = ['gebeta', 'checkers', 'bingo', 'ludo', 'dominoes'];
@@ -51,6 +52,7 @@ export function imageProblem(url, extra = '') {
   if (!v) return '';
   let u; try { u = new URL(v); } catch { return 'This is not a valid link. It must start with https://'; }
   if (u.protocol !== 'https:') return 'The link must start with https://';
+  if (isOwnAdImage(v, typeof location !== 'undefined' ? location.host : '')) return '';   // a picture uploaded in this admin page
   const host = u.hostname.toLowerCase();
   if (/(^|\.)(youtube\.com|youtu\.be|facebook\.com|fb\.com|instagram\.com|t\.me|telegram\.me|tiktok\.com|twitter\.com|x\.com)$/.test(host)) return 'This is a web page, not a picture. Upload a JPG or PNG to Firebase Storage and paste its download link here. (Put this link in "Where a tap goes" instead.)';
   const allowed = [...IMG_HOSTS, ...String(extra).split(/\s+/).filter(Boolean).map((h) => { try { return new URL(h).hostname.toLowerCase(); } catch { return h.toLowerCase(); } })];

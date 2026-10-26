@@ -109,3 +109,11 @@ button.ad-media { transition: transform .15s ease; } button.ad-media:active { tr
 .adm-filter { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
 @media (max-width: 420px) { .adm-pic { grid-template-columns: 76px 1fr; } }
 .adm-diag { gap: 8px; }
+
+/* ad picture upload */
+.adm-drop { display: grid; gap: 6px; justify-items: start; padding: 10px; border-radius: 14px; border: 2px dashed rgba(244, 233, 207, .32); background: rgba(0, 0, 0, .18); transition: border-color .15s, background .15s; }
+.adm-drop small { color: var(--ivory-dim); line-height: 1.4; }
+.adm-drop.over { border-color: var(--gold); background: rgba(242, 182, 50, .12); }
+.adm-drop.busy { opacity: .75; }
+.adm-link summary { cursor: pointer; color: var(--gold); font-size: .85rem; padding: 4px 0; }
+.adm-link label { margin-top: 6px; }

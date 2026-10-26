@@ -1,6 +1,7 @@
 'use client';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import AdOverlay from './AdOverlay';
+import { adImageFromFile } from '@/lib/adImageClient.js';
 import { PLACEMENTS, CATEGORIES } from '@/lib/adsCore.js';
 import { adviseAd } from '@/lib/adsSmart.js';
 import { today, plus, GAME_IDS, GAME_NAME, PLACE_LABEL, PLACE_PRESETS, placeKey, CTA_PRESETS, WEIGHTS, LENGTHS, STARTS, DURATIONS, TIMES, timeKey, PER_USER, DAILY, HOURS, imageProblem, slug, MONTH, autoId, daysBetween, addDays, plain } from '@/lib/adsAdminKit.js';
@@ -25,6 +26,20 @@ export default function AdminAds({ preload = null }) {   // `preload` lets tests
     setBusy(false);
   }, [api, key]);
   const run = async (body, done) => { setBusy(true); try { await api(body); setMsg({ t: done, ok: true }); await load(); } catch (e) { setMsg({ t: e.message, ok: false }); } setBusy(false); };
+  // Picture upload: choose or drop a file → shrink in the browser → save on the server → the form gets the picture's address.
+  const [up, setUp] = useState({ busy: false, err: '', note: '' }); const [drag, setDrag] = useState(false); const fileRef = useRef(null);
+  const upload = async (file) => {
+    if (!file) return;
+    setUp({ busy: true, err: '', note: 'Preparing picture…' });
+    try {
+      const pic = await adImageFromFile(file);
+      setUp({ busy: true, err: '', note: `Uploading ${pic.w}×${pic.h}, ${pic.kb} KB…` });
+      const res = await fetch('/api/admin/ads/image', { method: 'POST', headers: { 'x-admin-key': key, 'Content-Type': 'application/json' }, body: JSON.stringify({ dataUrl: pic.dataUrl }) });
+      const j = await res.json().catch(() => ({})); if (!res.ok) throw new Error(j.error || `Error ${res.status}`);
+      set('image', j.url);
+      setUp({ busy: false, err: '', note: `✓ Picture ready (${pic.w}×${pic.h}, ${j.kb} KB). Remember to press Save.` });
+    } catch (e) { setUp({ busy: false, err: e.message, note: '' }); }
+  };
   const [newAdv, setNewAdv] = useState(false), [idAuto, setIdAuto] = useState(true), [startKey, setStartKey] = useState('today'), [durKey, setDurKey] = useState(30), [pickGames, setPickGames] = useState(false);
   const [fStatus, setFStatus] = useState('all'), [fAdv, setFAdv] = useState('all'), [fSort, setFSort] = useState('new');
   const advertisers = data ? [...new Set(data.ads.map((a) => a.advertiser).filter(Boolean))].sort() : [];
@@ -118,7 +133,17 @@ export default function AdminAds({ preload = null }) {   // `preload` lets tests
           <div className="adm-pic">
             <div className="adm-thumb" aria-hidden="true">{form.image ? <img src={form.image} alt="" referrerPolicy="no-referrer" /> : <span>🖼</span>}</div>
             <div className="adm-pic-fields">
-              <label>Picture link (https). Best: 1080×1350, under 300 KB<input value={form.image} onChange={(e) => set('image', e.target.value)} placeholder="https://firebasestorage.googleapis.com/…" /></label>
+              <div className={`adm-drop${drag ? ' over' : ''}${up.busy ? ' busy' : ''}`} onDragOver={(e) => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)}
+                onDrop={(e) => { e.preventDefault(); setDrag(false); upload(e.dataTransfer.files?.[0]); }}>
+                <button type="button" className="btn primary" disabled={up.busy || !key} onClick={() => fileRef.current?.click()}>{up.busy ? '⏳ Uploading…' : form.image ? '🖼 Replace picture' : '📤 Upload picture'}</button>
+                <small>{key ? 'or drop a picture here. JPG, PNG or WebP — it is resized for phones automatically (best shape: 4:5, like 1080×1350).' : 'Enter the admin key above first.'}</small>
+                <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; upload(f); }} />
+              </div>
+              {up.note && <p className="adm-note" role="status">{up.note}</p>}
+              {up.err && <p className="err" role="alert">⚠️ {up.err}</p>}
+              <details className="adm-link"><summary>Or paste a picture link instead</summary>
+                <label>Picture link (https)<input value={form.image} onChange={(e) => set('image', e.target.value)} placeholder="https://firebasestorage.googleapis.com/…" /></label>
+              </details>
               {imageProblem(form.image, process.env.NEXT_PUBLIC_ADS_IMG_HOSTS || '') && <p className="err" role="alert">⚠️ {imageProblem(form.image, process.env.NEXT_PUBLIC_ADS_IMG_HOSTS || '')}</p>}
               <label>Where a tap goes (https, optional)<input value={form.clickUrl} onChange={(e) => set('clickUrl', e.target.value)} placeholder="https://abaybank.example/offer" /></label>
             </div>
