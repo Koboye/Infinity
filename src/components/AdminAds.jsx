@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import AdOverlay from './AdOverlay';
 import { PLACEMENTS, CATEGORIES } from '@/lib/adsCore.js';
 import { adviseAd } from '@/lib/adsSmart.js';
-import { today, plus, GAME_IDS, GAME_NAME, PLACE_LABEL, PLACE_PRESETS, placeKey, CTA_PRESETS, WEIGHTS, LENGTHS, STARTS, DURATIONS, TIMES, timeKey, PER_USER, DAILY, HOURS, slug, MONTH, autoId, daysBetween, addDays, plain } from '@/lib/adsAdminKit.js';
+import { today, plus, GAME_IDS, GAME_NAME, PLACE_LABEL, PLACE_PRESETS, placeKey, CTA_PRESETS, WEIGHTS, LENGTHS, STARTS, DURATIONS, TIMES, timeKey, PER_USER, DAILY, HOURS, imageProblem, slug, MONTH, autoId, daysBetween, addDays, plain } from '@/lib/adsAdminKit.js';
 
 // Owner page: add / edit / switch off / delete ads and see the last 7 days of views and taps.
 // Protected by ADS_ADMIN_KEY (typed here, kept only for this browser tab). All checks happen on the server.
@@ -119,6 +119,7 @@ export default function AdminAds({ preload = null }) {   // `preload` lets tests
             <div className="adm-thumb" aria-hidden="true">{form.image ? <img src={form.image} alt="" referrerPolicy="no-referrer" /> : <span>🖼</span>}</div>
             <div className="adm-pic-fields">
               <label>Picture link (https). Best: 1080×1350, under 300 KB<input value={form.image} onChange={(e) => set('image', e.target.value)} placeholder="https://firebasestorage.googleapis.com/…" /></label>
+              {imageProblem(form.image, process.env.NEXT_PUBLIC_ADS_IMG_HOSTS || '') && <p className="err" role="alert">⚠️ {imageProblem(form.image, process.env.NEXT_PUBLIC_ADS_IMG_HOSTS || '')}</p>}
               <label>Where a tap goes (https, optional)<input value={form.clickUrl} onChange={(e) => set('clickUrl', e.target.value)} placeholder="https://abaybank.example/offer" /></label>
             </div>
           </div>
@@ -210,7 +211,7 @@ export default function AdminAds({ preload = null }) {   // `preload` lets tests
           <p className="adm-sum" role="status">{plain(form)}</p>
           <div className="acts">
             <button type="button" className="btn" disabled={!form.image} onClick={() => setPreview({ ...form, durationSec: Number(form.durationSec) || 5 })}>Preview</button>
-            <button type="button" className="btn primary" disabled={busy || !form.id || !form.advertiser} onClick={() => run({ action: 'save', ad: { ...form, hourFrom: form.hourFrom, hourTo: form.hourTo } }, `Saved “${form.id}”.`)}>Save</button>
+            <button type="button" className="btn primary" disabled={busy || !form.id || !form.advertiser || !!imageProblem(form.image, process.env.NEXT_PUBLIC_ADS_IMG_HOSTS || '')} onClick={() => run({ action: 'save', ad: { ...form, hourFrom: form.hourFrom, hourTo: form.hourTo } }, `Saved “${form.id}”.`)}>Save</button>
             <button type="button" className="btn ghost" onClick={() => { setForm(blank()); setNewAdv(false); setIdAuto(true); setStartKey('today'); setDurKey(30); setPickGames(false); }}>Clear</button>
           </div>
         </section>

@@ -42,3 +42,18 @@ export const plain = (f) => {
   const time = timeKey(f.hourFrom, f.hourTo) === 'all' ? 'all day' : `${String(f.hourFrom).padStart(2, '0')}:00–${String(f.hourTo).padStart(2, '0')}:00`;
   return `Shows ${where} · to ${who} · ${(f.placements || []).includes('pre_game') ? games : 'on open'} · ${time} · ${f.durationSec}s · ${f.start} → ${f.end} (${Math.max(1, daysBetween(f.start, f.end))} days) · up to ${f.maxPerUser}× per player a day${f.dailyCap > 0 ? ` · ${Number(f.dailyCap).toLocaleString()} views a day in total` : ''}.`;
 };
+
+/** Hosts the app's Content-Security-Policy lets ad pictures load from (extra ones come from NEXT_PUBLIC_ADS_IMG_HOSTS). */
+export const IMG_HOSTS = ['firebasestorage.googleapis.com', 'storage.googleapis.com', 'lh3.googleusercontent.com'];
+/** A plain-words problem with a picture link, or '' when it looks usable. `extra` = space-separated extra hosts (https://host …). */
+export function imageProblem(url, extra = '') {
+  const v = String(url || '').trim();
+  if (!v) return '';
+  let u; try { u = new URL(v); } catch { return 'This is not a valid link. It must start with https://'; }
+  if (u.protocol !== 'https:') return 'The link must start with https://';
+  const host = u.hostname.toLowerCase();
+  if (/(^|\.)(youtube\.com|youtu\.be|facebook\.com|fb\.com|instagram\.com|t\.me|telegram\.me|tiktok\.com|twitter\.com|x\.com)$/.test(host)) return 'This is a web page, not a picture. Upload a JPG or PNG to Firebase Storage and paste its download link here. (Put this link in "Where a tap goes" instead.)';
+  const allowed = [...IMG_HOSTS, ...String(extra).split(/\s+/).filter(Boolean).map((h) => { try { return new URL(h).hostname.toLowerCase(); } catch { return h.toLowerCase(); } })];
+  if (!allowed.includes(host)) return `Pictures from ${host} are blocked by the app's security policy. Use a Firebase Storage link, or add https://${host} to NEXT_PUBLIC_ADS_IMG_HOSTS in Vercel and redeploy.`;
+  return '';
+}

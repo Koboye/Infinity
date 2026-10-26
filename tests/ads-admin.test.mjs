@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import fs from 'node:fs';
-import { PLACE_PRESETS, placeKey, TIMES, timeKey, autoId, daysBetween, addDays, plain, CTA_PRESETS, WEIGHTS, DURATIONS, STARTS } from '../src/lib/adsAdminKit.js';
+import { imageProblem, PLACE_PRESETS, placeKey, TIMES, timeKey, autoId, daysBetween, addDays, plain, CTA_PRESETS, WEIGHTS, DURATIONS, STARTS } from '../src/lib/adsAdminKit.js';
 import { sanitizeAd } from '../src/lib/adsCore.js';
 let n = 0; const t = (name, fn) => { fn(); n++; console.log('ok', name); };
 
@@ -26,6 +26,13 @@ t('ids and dates', () => {
   assert.equal(autoId('Abay Bank', '2026-10-26'), 'abay-bank-oct26'); assert.equal(autoId('', '2026-10-26'), '');
   assert.equal(daysBetween('2026-10-26', '2026-11-25'), 31); assert.equal(addDays('2026-10-26', 29), '2026-11-24');
   assert.ok(DURATIONS.some(([v]) => v === 0) && STARTS.some(([k]) => k === 'custom'));
+});
+t('picture link check catches web pages and blocked hosts', () => {
+  assert.match(imageProblem('https://www.youtube.com/@Live_Game_Center'), /web page, not a picture/);
+  assert.match(imageProblem('https://i.imgur.com/a.png'), /blocked/);
+  assert.equal(imageProblem('https://i.imgur.com/a.png', 'https://i.imgur.com'), '');
+  assert.equal(imageProblem('https://firebasestorage.googleapis.com/v0/b/x/o/a.png?alt=media'), '');
+  assert.match(imageProblem('http://x.com/a.png'), /https/); assert.equal(imageProblem(''), '');
 });
 t('plain-English summary mentions where, who, when', () => {
   const s = plain({ placements: ['splash'], langs: ['am'], games: [], hourFrom: 22, hourTo: 5, durationSec: 5, start: '2026-10-26', end: '2026-11-01', maxPerUser: 3, dailyCap: 1000 });
