@@ -246,3 +246,15 @@ No ad is better than a wrong ad: if every ad is filtered out, nothing is shown. 
 - **Click / impression guard** (`adsGuard.js`, used by `POST /api/ads`): at most 3 clicks and 60 impressions per address per ad per hour, so one address cannot inflate tap rates (which drive the learning). Per server instance, like the other rate limits here.
 - Tests: `tests/ads-learn.test.mjs`.
 - **Global click guard on Upstash** (`upstashGuard.js`): the same limits as above, now counted in Upstash Redis (REST, no SDK) so they hold across all server instances. Uses the existing `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`. If they are missing or Upstash is slow / down (700 ms timeout), it falls back to the per-instance guard — ads never break. Tests: `tests/ads-upstash.test.mjs`.
+
+## v65 — Ad integrity: signed one-use tap tokens + advertiser CSV report
+
+Adds to the v62.1 global click guard (per-address limit, `src/lib/upstashGuard.js`). That limits *volume per address*; this makes each tap *provable*.
+
+**Signed one-use tap tokens** (`src/lib/adsTrust.js`). Every counted impression returns an HMAC-signed token. A tap counts only if it carries a valid token **for that ad**, younger than 30 minutes, not spent yet (spent atomically with a Firestore `create()` in `adTokens/{nonce}`). So taps can never exceed impressions, can't be replayed, can't be moved to another ad, and a script that never loaded the ad has nothing to tap with. Tap numbers feed the Thompson-sampling learner, so this also protects which ads win.
+
+**Switch on:** set `ADS_SIGNING_SECRET` (16+ random characters), redeploy, publish `firestore.rules` (closed `adTokens` collection) and add a Firestore TTL policy on `adTokens.expireAt`. Without the secret, taps are counted as before.
+
+**Advertiser report:** `GET /api/admin/ads?report=csv[&ad=ID][&days=30]` with header `x-admin-key` downloads daily impressions, taps, tap rate and rewarded views (spreadsheet-formula safe).
+
+**Also:** `esbuild` is a dev dependency so `ads-admin.test.mjs` runs anywhere. **Tests:** `tests/ads-trust.test.mjs`.

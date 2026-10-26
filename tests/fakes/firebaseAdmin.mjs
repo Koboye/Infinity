@@ -35,6 +35,7 @@ const docRef = (path) => ({
   collection: (sub) => collection(`${path}/${sub}`),
   async get() { const d = store.get(path); return { exists: d !== undefined, id: lastId(path), data: () => withTs(d && clone(d)), _raw: d }; },
   async set(data, opts) { store.set(path, apply(store.get(path), data, opts?.merge)); },
+  async create(data) { if (store.has(path)) { const e = new Error('ALREADY_EXISTS'); e.code = 6; throw e; } store.set(path, apply(undefined, data, false)); },
   async update(data) { store.set(path, apply(store.get(path), data, true)); },
   async delete() { store.delete(path); },
 });

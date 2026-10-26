@@ -6,6 +6,7 @@ import { adminDb } from '@/lib/firebaseAdmin';
 import { servableAds, bump, adsCol } from '@/lib/adsServer.js';
 import { publicAd, isAdId } from '@/lib/adsCore.js';
 import { makeGlobalGuard } from '@/lib/upstashGuard.js';
+import { secretOf, signToken, verifyToken, claimToken } from '@/lib/adsTrust.js';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -44,8 +45,14 @@ export async function POST(req) {
     const field = EVENTS[body.event]; const adId = String(body.adId || '').toLowerCase();
     if (!field || !isAdId(adId)) return NextResponse.json({ ok: true });
     if (!(await allow(body.event, ipOf(req), adId))) return NextResponse.json({ ok: true }); // over the per-address limit: ignored quietly
-    const db = adminDb();
-    if ((await adsCol(db).doc(adId).get()).exists) await bump(db, adId, field); // only real ads are counted
+    const db = adminDb(); const secret = secretOf();
+    if (!(await adsCol(db).doc(adId).get()).exists) return NextResponse.json({ ok: true });   // only real ads are counted
+    if (field === 'clicks' && secret) {                                                     // v65: a tap counts only with a valid, unspent token for this ad
+      const v = verifyToken(secret, body.token, adId);
+      if (!v.ok || !(await claimToken(db, v.nonce, adId))) return NextResponse.json({ ok: true });
+    }
+    await bump(db, adId, field);
+    if (field === 'impressions' && secret) return NextResponse.json({ ok: true, token: signToken(secret, adId) });
   } catch { /* stats are best effort */ }
   return NextResponse.json({ ok: true });
 }

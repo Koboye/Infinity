@@ -1,6 +1,7 @@
 // Ad management API for the owner. Protected by the ADS_ADMIN_KEY environment variable (sent as the x-admin-key header).
 // Without that variable set, the whole endpoint is switched off (503). Used by the /admin/ads page; also fine with curl.
 //   GET                          → every ad + the last 7 days of stats per ad
+//   GET ?report=csv[&ad=ID][&days=30] → daily delivery report as CSV (impressions, taps, tap rate, rewarded) to send to an advertiser
 //   POST { action:'save', ad }   → create or replace an ad (validated by sanitizeAd)
 //   POST { action:'toggle', id, active }
 //   POST { action:'delete', id }
@@ -17,6 +18,19 @@ export async function GET(req) {
   const denied = guard(req); if (denied) return denied;
   try {
     const db = adminDb();
+    const q = new URL(req.url, 'http://x').searchParams;
+    if (q.get('report') === 'csv') {
+      const days = Math.min(90, Math.max(1, Math.round(Number(q.get('days'))) || 30)), only = String(q.get('ad') || '').toLowerCase();
+      if (only && !isAdId(only)) return NextResponse.json({ error: 'Bad ad id' }, { status: 400 });
+      const rows = (await db.collection('adStats').where('day', '>=', todayKey(Date.now() - (days - 1) * 86_400_000)).get()).docs.map((d) => d.data())
+        .filter((x) => x.adId && (!only || x.adId === only)).sort((a, b) => `${a.adId}${a.day}`.localeCompare(`${b.adId}${b.day}`));
+      const esc = (v) => (/^[=+\-@]/.test(String(v)) ? `'${v}` : String(v));   // spreadsheet formula injection guard
+      const csv = ['ad,day,impressions,taps,tap_rate_percent,rewarded_views', ...rows.map((x) => {
+        const i = x.impressions || 0, c = x.clicks || 0;
+        return [esc(x.adId), x.day, i, c, i ? (c / i * 100).toFixed(2) : '0.00', x.rewarded || 0].join(',');
+      })].join('\n') + '\n';
+      return new NextResponse(csv, { headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': `attachment; filename="ads-report${only ? `-${only}` : ''}.csv"`, 'Cache-Control': 'no-store' } });
+    }
     const ads = (await adsCol(db).get()).docs.map((d) => ({ ...d.data(), id: d.id })).sort((a, b) => String(b.end).localeCompare(String(a.end)));
     const from = todayKey(Date.now() - 6 * 86_400_000);
     const stats = {};

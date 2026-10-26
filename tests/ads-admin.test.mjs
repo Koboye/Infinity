@@ -38,7 +38,7 @@ t('plain-English summary mentions where, who, when', () => {
   assert.match(s, /App open/); assert.match(s, /አማርኛ/); assert.match(s, /22:00–05:00/); assert.match(s, /7 days/); assert.match(s, /1,000 views a day/);
 });
 t('the page renders with data (server-side render, no browser needed)', async () => {}); // async part below
-const req = createRequire('/opt/npm-tools/package.json');
+let req = createRequire(import.meta.url); try { req.resolve('esbuild'); } catch { req = createRequire('/opt/npm-tools/package.json'); }   // prefer the project's own esbuild
 const es = req('esbuild');
 const out = await es.build({
   stdin: { contents: "import React from 'react'; import { renderToString } from 'react-dom/server'; import AdminAds from '@/components/AdminAds'; export const html = (p) => renderToString(React.createElement(AdminAds, { preload: p }));", resolveDir: process.cwd(), loader: 'js' },

@@ -85,9 +85,15 @@ export async function nextAd(placement, { waitMs = 1500, lang = 'en', game = nul
   return ad ? { ...ad, durationSec: clampSeconds(ad.durationSec, placement) } : houseAd(placement);   // no paid ad fits: the built-in one, so every open and every game start has an ad
 }
 
+const tokens = new Map();   // v65: adId -> signed one-use token from the impression (server proof that this tap follows a real view)
 function track(event, ad) {
   if (ad.id === 'house') return;                              // the built-in ad has no advertiser stats
-  try { fetch('/api/ads', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ event, adId: ad.id }), keepalive: true }).catch(() => {}); } catch { /* best effort */ }
+  try {
+    const body = { event, adId: ad.id };
+    if (event === 'click') { const tk = tokens.get(ad.id); if (tk) { body.token = tk; tokens.delete(ad.id); } }
+    fetch('/api/ads', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), keepalive: true })
+      .then((r) => r.json()).then((d) => { if (event === 'impression' && d?.token) tokens.set(ad.id, d.token); }).catch(() => {});
+  } catch { /* best effort */ }
 }
 /** The ad is on screen. Splash / pre-game ads are counted here; rewarded ones are counted by the server when they pay out. */
 export function shown(placement, ad) {
