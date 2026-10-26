@@ -80,6 +80,16 @@ async function spinWallet(db, uid) {
     return { coins: r.coins, index: r.index, wallet: WC.view(r.wallet, now) };
   });
 }
+async function topUpWallet(db, uid) {
+  const now = Date.now();
+  return db.runTransaction(async (tx) => {
+    const { w } = await readWallet(tx, db, uid, now);
+    const r = WC.topUpOnce(w, now);
+    if (!r.ok) { fail(409, r.reason === 'used' ? 'You already used today\'s refill' : 'You still have enough coins'); }
+    putWallet(tx, db, uid, r.wallet);
+    return { coins: r.coins, wallet: WC.view(r.wallet, now) };
+  });
+}
 /** Before opening or entering a match: the player must hold the entry fee. */
 async function requireCoins(db, uid, fee) {
   const { wallet } = await walletInfo(db, uid);
@@ -233,6 +243,8 @@ export async function POST(req) {
         return ok(await walletInfo(db, uid));
       case 'spin':
         return ok(await spinWallet(db, uid));
+      case 'topup':
+        return ok(await topUpWallet(db, uid));
       case 'create':
         return ok({ code: await createRoom(db, uid, decoded.name, { ...common, isPublic: false }), status: 'waiting' });
       case 'quick':

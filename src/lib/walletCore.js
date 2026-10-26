@@ -8,6 +8,7 @@ export const DAILY_SPINS = 10;
 export const FEES = [50, 100, 200, 300, 500, 1000];
 export const MIN_FEE = FEES[0];
 export const HOUSE_CUT = 0.1; // winner receives 90% of the pot
+export const TOPUP_FLOOR = 200; // a player below this may claim one refill per server day, up to this amount
 // weight = chance out of the total; value = coins
 export const SPIN_PRIZES = [
   { coins: 10, w: 26 }, { coins: 20, w: 22 }, { coins: 30, w: 18 }, { coins: 50, w: 14 },
@@ -29,7 +30,7 @@ export const newWallet = (now = Date.now()) => ({ coins: WELCOME_GIFT, spinDay: 
 /** What the client may see. Spins reset when the server day changes. */
 export function view(w, now = Date.now()) {
   const used = w.spinDay === dayKey(now) ? w.spins : 0;
-  return { coins: w.coins, spins: Math.max(0, DAILY_SPINS - used), log: (w.log || []).slice(0, 10) };
+  return { coins: w.coins, spins: Math.max(0, DAILY_SPINS - used), topUp: w.coins < TOPUP_FLOOR && w.topDay !== dayKey(now), log: (w.log || []).slice(0, 10) };
 }
 const rolled = (w, now) => (w.spinDay === dayKey(now) ? w : { ...w, spinDay: dayKey(now), spins: 0 });
 
@@ -41,6 +42,14 @@ export function spinOnce(w0, now = Date.now(), next = randomInt) {
   for (let i = 0; i < SPIN_PRIZES.length; i++) { const span = SPIN_PRIZES[i].w * 10; if (r < span) { index = i; break; } r -= span; }
   const coins = SPIN_PRIZES[index].coins;
   return { ok: true, coins, index, wallet: addLog({ ...w, spins: w.spins + 1, coins: w.coins + coins }, 'spin', coins, now) };
+}
+
+/** The daily refill for a player who is nearly out of coins: lifts the balance to TOPUP_FLOOR, once per server day. */
+export function topUpOnce(w, now = Date.now()) {
+  if (w.coins >= TOPUP_FLOOR) return { ok: false, reason: 'not-needed' };
+  if (w.topDay === dayKey(now)) return { ok: false, reason: 'used' };
+  const coins = TOPUP_FLOOR - w.coins;
+  return { ok: true, coins, wallet: addLog({ ...w, coins: TOPUP_FLOOR, topDay: dayKey(now) }, 'topup', coins, now) };
 }
 
 export const canAfford = (w, fee) => FEES.includes(fee) && w.coins >= fee;

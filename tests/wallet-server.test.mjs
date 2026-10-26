@@ -64,4 +64,16 @@ await t('rematch keeps the same fee and charges again when it starts', async () 
   const loser = r.players[0], winner = r.players[1];
   assert.equal(coins(winner), before[winner === 'alice' ? 0 : 1] + 180 - 100); assert.equal(coins(loser), before[loser === 'alice' ? 0 : 1] - 100);
 });
+await t('daily refill: only below 200 coins, lifts to 200, once per server day, server-checked', async () => {
+  await ok('dave', { action: 'wallet' });
+  assert.equal((await call('dave', { action: 'topup' })).status, 409, 'a player with enough coins gets nothing');
+  assert.equal(coins('dave'), 1000);
+  __store.set('wallets/dave', { ...__store.get('wallets/dave'), coins: 40 });
+  assert.equal((await ok('dave', { action: 'wallet' })).wallet.topUp, true);
+  const r = await ok('dave', { action: 'topup' }); assert.equal(r.coins, 160); assert.equal(coins('dave'), 200); assert.equal(r.wallet.topUp, false);
+  __store.set('wallets/dave', { ...__store.get('wallets/dave'), coins: 10 });
+  assert.equal((await call('dave', { action: 'topup' })).status, 409, 'second refill the same day is refused'); assert.equal(coins('dave'), 10);
+  __store.set('wallets/dave', { ...__store.get('wallets/dave'), topDay: '2000-01-01' });
+  assert.equal((await ok('dave', { action: 'topup' })).wallet.coins, 200, 'a new server day allows a new refill');
+});
 console.log(`wallet-server tests passed (${n})`);

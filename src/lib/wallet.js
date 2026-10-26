@@ -3,7 +3,7 @@
 import { apiCall } from './firebase';
 export * from './walletCore.js';
 
-let state = { coins: 0, spins: 0, ready: false };
+let state = { coins: 0, spins: 0, topUp: false, ready: false };
 const emit = () => { try { globalThis.dispatchEvent?.(new Event('wallet:change')); } catch { /* no window */ } };
 const set = (next) => { state = { ...next, ready: true }; emit(); };
 
@@ -21,5 +21,10 @@ export async function spin() {
   try { const r = await apiCall({ action: 'spin' }, { retries: 0 }); set(r.wallet); return { ok: true, coins: r.coins, index: r.index }; }
   catch (e) { return { ok: false, error: e.message }; }
 }
+/** The daily refill for a player who is nearly out of coins, decided and paid by the server. */
+export async function topUp() {
+  try { const r = await apiCall({ action: 'topup' }, { retries: 0 }); set(r.wallet); return { ok: true, coins: r.coins }; }
+  catch (e) { return { ok: false, error: e.message }; }
+}
 /** Signed out: forget the balance. */
-export function reset() { state = { coins: 0, spins: 0, ready: false }; emit(); }
+export function reset() { state = { coins: 0, spins: 0, topUp: false, ready: false }; emit(); }

@@ -7,12 +7,14 @@ const TXT = {
     fee: 'Entry fee', feeSub: 'Both players pay it when the match starts. The winner takes 90% of the pot; a draw returns both fees.', low: 'Not enough coins', lowSub: 'Spin the daily wheel to earn more coins.', balance: 'Your coins',
     gift: 'Welcome gift!', giftSub: 'Your account wallet starts with 1,000 coins. Online matches have an entry fee; the winner takes the pot.', claim: 'Claim 1,000 coins', close: 'Close', pot: 'Win', signIn: 'Sign in',
     stake: (f) => `Entry fee 🪙 ${W.FEES.includes(f) ? f.toLocaleString('en-US') : f} each · winner gets 🪙 ${W.prizeFor(f * 2).toLocaleString('en-US')}`,
-    practice: 'Online matches use coins. Computer and Pass & Play are free practice.', offlineErr: 'Could not reach the server. Check your connection.' },
+    practice: 'Online matches use coins. Computer and Pass & Play are free practice.', offlineErr: 'Could not reach the server. Check your connection.',
+    refill: (n) => `Daily refill: top up to ${n} coins`, refilled: (n) => `Refilled +${n} coins`, refillSub: 'Only when you have fewer than 200 coins, once a day.' },
   am: { coins: 'ሳንቲሞች', spin: 'የዕለት ዕድል ጎማ', spinsLeft: (n) => `ዛሬ ${n} ከ${W.DAILY_SPINS} ዙሮች ቀርተዋል`, doSpin: 'አሽከርክር', won: (n) => `${n} ሳንቲም አሸነፉ!`, none: 'ዛሬ ዙሮች አልቀዋል። አዳዲስ ዙሮች በየቀኑ ይመጣሉ።',
     fee: 'የመግቢያ ክፍያ', feeSub: 'ጨዋታው ሲጀምር ሁለቱም ተጫዋቾች ይከፍላሉ። አሸናፊው 90% ይወስዳል፤ አቻ ሲሆን ሁለቱም ክፍያ ይመለሳል።', low: 'በቂ ሳንቲም የለም', lowSub: 'ተጨማሪ ሳንቲም ለማግኘት ዕለታዊውን ጎማ ያሽከርክሩ።', balance: 'ሳንቲሞችዎ',
     gift: 'የእንኳን ደህና መጡ ስጦታ!', giftSub: 'የመለያዎ ቦርሳ በ1,000 ሳንቲም ይጀምራል። የኢንተርኔት ጨዋታዎች የመግቢያ ክፍያ አላቸው፤ አሸናፊው ሽልማቱን ይወስዳል።', claim: '1,000 ሳንቲም ተቀበል', close: 'ዝጋ', pot: 'ሽልማት', signIn: 'ግባ',
     stake: (f) => `የመግቢያ ክፍያ 🪙 ${f.toLocaleString('en-US')} ለእያንዳንዱ · አሸናፊው 🪙 ${W.prizeFor(f * 2).toLocaleString('en-US')} ያገኛል`,
-    practice: 'የኢንተርኔት ጨዋታዎች ሳንቲም ይጠቀማሉ። ከኮምፒውተር እና Pass & Play ነፃ ልምምድ ናቸው።', offlineErr: 'ሰርቨሩን ማግኘት አልተቻለም። ግንኙነትዎን ይመልከቱ።' },
+    practice: 'የኢንተርኔት ጨዋታዎች ሳንቲም ይጠቀማሉ። ከኮምፒውተር እና Pass & Play ነፃ ልምምድ ናቸው።', offlineErr: 'ሰርቨሩን ማግኘት አልተቻለም። ግንኙነትዎን ይመልከቱ።',
+    refill: (n) => `ዕለታዊ መሙያ፦ እስከ ${n} ሳንቲም`, refilled: (n) => `+${n} ሳንቲም ተሞላ`, refillSub: 'ከ200 ሳንቲም በታች ሲኖርዎት ብቻ፣ በቀን አንድ ጊዜ።' },
 };
 export const walletText = (lang) => TXT[lang === 'am' ? 'am' : 'en'];
 const tx = walletText;
@@ -86,7 +88,7 @@ const SLICE = 360 / W.SPIN_PRIZES.length;
 const COLS = ['#F2B632', '#C23B2A', '#4FA36B', '#3b8fd6', '#8E3FD1', '#FF8A3D', '#35E0C2', '#FF5C8A'];
 export function SpinSheet({ lang, onClose }) {
   const L = tx(lang); const w = useWallet();
-  const [rot, setRot] = useState(0); const [busy, setBusy] = useState(false); const [won, setWon] = useState(null); const [err, setErr] = useState('');
+  const [rot, setRot] = useState(0); const [busy, setBusy] = useState(false); const [won, setWon] = useState(null); const [err, setErr] = useState(''); const [refilled, setRefilled] = useState(null);
   const reduce = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   useEffect(() => { W.refresh(); }, []);
   const go = async () => {
@@ -95,6 +97,11 @@ export function SpinSheet({ lang, onClose }) {
     if (!r.ok) { setBusy(false); setErr(r.error || L.offlineErr); return; }
     setRot((cur) => { const base = Math.ceil(cur / 360) * 360; return base + 360 * 5 + (360 - (r.index + 0.5) * SLICE); });
     setTimeout(() => { setWon(r.coins); setBusy(false); }, reduce ? 200 : 4200);
+  };
+  const refill = async () => {
+    if (busy) return; setBusy(true); setErr('');
+    const r = await W.topUp();                         // the server checks the balance and the day, then pays
+    setBusy(false); if (r.ok) setRefilled(r.coins); else setErr(r.error || L.offlineErr);
   };
   const grad = `conic-gradient(${W.SPIN_PRIZES.map((_, i) => `${COLS[i % COLS.length]} ${i * SLICE}deg ${(i + 1) * SLICE}deg`).join(',')})`;
   return (
@@ -108,6 +115,8 @@ export function SpinSheet({ lang, onClose }) {
         </div>
       </div>
       <p className="wheel-result" role="status" aria-live="polite">{err || (won != null ? L.won(won) : w.ready && w.spins === 0 && !busy ? L.none : '\u00a0')}</p>
+      {w.ready && w.topUp && <div className="refill"><button type="button" className="btn small" disabled={busy} onClick={refill}>🪙 {L.refill(W.TOPUP_FLOOR)}</button><small>{L.refillSub}</small></div>}
+      {refilled != null && <p className="wheel-result" role="status">{L.refilled(refilled)}</p>}
       <div className="match-actions"><button className="btn primary" disabled={busy || !w.ready || w.spins === 0} onClick={go}>{L.doSpin}</button><button className="btn ghost" disabled={busy} onClick={onClose}>{L.close}</button></div>
     </Sheet>
   );

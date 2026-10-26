@@ -39,3 +39,6 @@
 
 /* the dock keeps only the status line and the tools now */
 .ludo-dock { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'say' 'tools' 'log'; }
+
+/* daily coin refill button inside the spin sheet (server decides if it is allowed) */
+.refill { display: grid; gap: 4px; justify-items: center; margin: 4px 0 10px; } .refill small { opacity: .75; font-size: .76rem; text-align: center; }
