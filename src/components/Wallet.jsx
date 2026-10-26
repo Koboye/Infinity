@@ -1,6 +1,8 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import * as W from '@/lib/wallet';
+import AdOverlay from './AdOverlay';
+import * as Ads from '@/lib/ads';
 
 const TXT = {
   en: { coins: 'Coins', spin: 'Daily lucky spin', spinsLeft: (n) => `${n} of ${W.DAILY_SPINS} spins left today`, doSpin: 'SPIN', won: (n) => `You won ${n} coins!`, none: 'No spins left today. New spins arrive every day.',
@@ -8,13 +10,17 @@ const TXT = {
     gift: 'Welcome gift!', giftSub: 'Your account wallet starts with 1,000 coins. Online matches have an entry fee; the winner takes the pot.', claim: 'Claim 1,000 coins', close: 'Close', pot: 'Win', signIn: 'Sign in',
     stake: (f) => `Entry fee 🪙 ${W.FEES.includes(f) ? f.toLocaleString('en-US') : f} each · winner gets 🪙 ${W.prizeFor(f * 2).toLocaleString('en-US')}`,
     practice: 'Online matches use coins. Computer and Pass & Play are free practice.', offlineErr: 'Could not reach the server. Check your connection.',
-    refill: (n) => `Daily refill: top up to ${n} coins`, refilled: (n) => `Refilled +${n} coins`, refillSub: 'Only when you have fewer than 200 coins, once a day.' },
+    refill: (n) => `Daily refill: top up to ${n} coins`, refilled: (n) => `Refilled +${n} coins`, refillSub: 'Only when you have fewer than 200 coins, once a day.',
+    bonusLeft: (n, b) => `${n} spins left${b ? ` (${b} bonus)` : ' today'}`, watch: (n) => `🎬 Watch a short ad → +${n} spins`, watchLeft: (k) => `${k} bonus ${k === 1 ? 'ad' : 'ads'} left today`, watchSub: 'Optional. Spins are added when the ad ends.',
+    adWon: (n) => `+${n} bonus spins added!`, adNone: 'No ad is available right now. Try again a little later.', adFail: 'The ad could not be shown. No spins were used.', adOver: 'No bonus ads left today. They come back tomorrow.' },
   am: { coins: 'ሳንቲሞች', spin: 'የዕለት ዕድል ጎማ', spinsLeft: (n) => `ዛሬ ${n} ከ${W.DAILY_SPINS} ዙሮች ቀርተዋል`, doSpin: 'አሽከርክር', won: (n) => `${n} ሳንቲም አሸነፉ!`, none: 'ዛሬ ዙሮች አልቀዋል። አዳዲስ ዙሮች በየቀኑ ይመጣሉ።',
     fee: 'የመግቢያ ክፍያ', feeSub: 'ጨዋታው ሲጀምር ሁለቱም ተጫዋቾች ይከፍላሉ። አሸናፊው 90% ይወስዳል፤ አቻ ሲሆን ሁለቱም ክፍያ ይመለሳል።', low: 'በቂ ሳንቲም የለም', lowSub: 'ተጨማሪ ሳንቲም ለማግኘት ዕለታዊውን ጎማ ያሽከርክሩ።', balance: 'ሳንቲሞችዎ',
     gift: 'የእንኳን ደህና መጡ ስጦታ!', giftSub: 'የመለያዎ ቦርሳ በ1,000 ሳንቲም ይጀምራል። የኢንተርኔት ጨዋታዎች የመግቢያ ክፍያ አላቸው፤ አሸናፊው ሽልማቱን ይወስዳል።', claim: '1,000 ሳንቲም ተቀበል', close: 'ዝጋ', pot: 'ሽልማት', signIn: 'ግባ',
     stake: (f) => `የመግቢያ ክፍያ 🪙 ${f.toLocaleString('en-US')} ለእያንዳንዱ · አሸናፊው 🪙 ${W.prizeFor(f * 2).toLocaleString('en-US')} ያገኛል`,
     practice: 'የኢንተርኔት ጨዋታዎች ሳንቲም ይጠቀማሉ። ከኮምፒውተር እና Pass & Play ነፃ ልምምድ ናቸው።', offlineErr: 'ሰርቨሩን ማግኘት አልተቻለም። ግንኙነትዎን ይመልከቱ።',
-    refill: (n) => `ዕለታዊ መሙያ፦ እስከ ${n} ሳንቲም`, refilled: (n) => `+${n} ሳንቲም ተሞላ`, refillSub: 'ከ200 ሳንቲም በታች ሲኖርዎት ብቻ፣ በቀን አንድ ጊዜ።' },
+    refill: (n) => `ዕለታዊ መሙያ፦ እስከ ${n} ሳንቲም`, refilled: (n) => `+${n} ሳንቲም ተሞላ`, refillSub: 'ከ200 ሳንቲም በታች ሲኖርዎት ብቻ፣ በቀን አንድ ጊዜ።',
+    bonusLeft: (n, b) => `${n} ዙሮች ቀርተዋል${b ? ` (${b} ተጨማሪ)` : ' ዛሬ'}`, watch: (n) => `🎬 አጭር ማስታወቂያ ይመልከቱ → +${n} ዙሮች`, watchLeft: (k) => `ዛሬ ${k} ተጨማሪ ማስታወቂያ ቀርቷል`, watchSub: 'አማራጭ ነው። ዙሮቹ ማስታወቂያው ሲያልቅ ይጨመራሉ።',
+    adWon: (n) => `+${n} ተጨማሪ ዙሮች ተጨመሩ!`, adNone: 'አሁን ምንም ማስታወቂያ የለም። ትንሽ ቆይተው ይሞክሩ።', adFail: 'ማስታወቂያው ሊታይ አልቻለም። ምንም ዙር አልተጠቀመም።', adOver: 'ዛሬ ተጨማሪ ማስታወቂያ አልቀረም። ነገ ይመለሳሉ።' },
 };
 export const walletText = (lang) => TXT[lang === 'am' ? 'am' : 'en'];
 const tx = walletText;
@@ -88,7 +94,7 @@ const SLICE = 360 / W.SPIN_PRIZES.length;
 const COLS = ['#F2B632', '#C23B2A', '#4FA36B', '#3b8fd6', '#8E3FD1', '#FF8A3D', '#35E0C2', '#FF5C8A'];
 export function SpinSheet({ lang, onClose }) {
   const L = tx(lang); const w = useWallet();
-  const [rot, setRot] = useState(0); const [busy, setBusy] = useState(false); const [won, setWon] = useState(null); const [err, setErr] = useState(''); const [refilled, setRefilled] = useState(null);
+  const [rot, setRot] = useState(0); const [busy, setBusy] = useState(false); const [won, setWon] = useState(null); const [err, setErr] = useState(''); const [refilled, setRefilled] = useState(null); const [ad, setAd] = useState(null); const [adMsg, setAdMsg] = useState('');
   const reduce = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   useEffect(() => { W.refresh(); }, []);
   const go = async () => {
@@ -103,21 +109,40 @@ export function SpinSheet({ lang, onClose }) {
     const r = await W.topUp();                         // the server checks the balance and the day, then pays
     setBusy(false); if (r.ok) setRefilled(r.coins); else setErr(r.error || L.offlineErr);
   };
+  // Rewarded ad, by the player's choice. The server picks and times the ad; spins are added only when it confirms the ad ran to the end.
+  const watch = async () => {
+    if (busy) return; setBusy(true); setErr(''); setAdMsg(''); setWon(null);
+    const r = await W.adStart();
+    setBusy(false);
+    if (!r.ok) { setErr(/No ad is available/.test(r.error || '') ? L.adNone : (r.error || L.offlineErr)); return; }
+    setAd(r);
+  };
+  const adClosed = async (completed, reason) => {
+    const cur = ad; setAd(null);
+    if (!completed) { if (reason === 'failed') setErr(L.adFail); return; }
+    setBusy(true); const r = await W.adDone(cur.session.id); setBusy(false);
+    if (r.ok) setAdMsg(L.adWon(r.spins)); else setErr(r.error || L.offlineErr);
+  };
   const grad = `conic-gradient(${W.SPIN_PRIZES.map((_, i) => `${COLS[i % COLS.length]} ${i * SLICE}deg ${(i + 1) * SLICE}deg`).join(',')})`;
   return (
     <Sheet label={L.spin} onClose={busy ? undefined : onClose}>
       <h2>🎡 {L.spin}</h2>
-      <p className="wallet-bal">🪙 <b>{w.ready ? fmt(w.coins) : '…'}</b> · {L.spinsLeft(w.spins)}</p>
+      <p className="wallet-bal">🪙 <b>{w.ready ? fmt(w.coins) : '…'}</b> · {w.bonus > 0 ? L.bonusLeft(w.spins, w.bonus) : L.spinsLeft(w.spins)}</p>
       <div className="wheel-wrap">
         <i className="wheel-pointer" aria-hidden="true" />
         <div className="wheel" style={{ background: grad, transform: `rotate(${rot}deg)`, transition: reduce ? 'none' : 'transform 4s cubic-bezier(.12,.7,.1,1)' }}>
           {W.SPIN_PRIZES.map((p, i) => <span key={i} className="wheel-lbl" style={{ transform: `rotate(${(i + 0.5) * SLICE}deg) translateY(-92px)` }}>{p.coins}</span>)}
         </div>
       </div>
-      <p className="wheel-result" role="status" aria-live="polite">{err || (won != null ? L.won(won) : w.ready && w.spins === 0 && !busy ? L.none : '\u00a0')}</p>
+      <p className="wheel-result" role="status" aria-live="polite">{err || adMsg || (won != null ? L.won(won) : w.ready && w.spins === 0 && !busy ? (w.adsLeft > 0 ? '\u00a0' : L.none) : '\u00a0')}</p>
+      {w.ready && w.adsLeft > 0 && <div className={`ad-earn${w.spins === 0 ? ' urgent' : ''}`}>
+        <button type="button" className={`btn${w.spins === 0 ? ' primary' : ''}`} disabled={busy} onClick={watch}>{L.watch(w.adSpins)}</button>
+        <small>{L.watchLeft(w.adsLeft)} · {L.watchSub}</small>
+      </div>}
       {w.ready && w.topUp && <div className="refill"><button type="button" className="btn small" disabled={busy} onClick={refill}>🪙 {L.refill(W.TOPUP_FLOOR)}</button><small>{L.refillSub}</small></div>}
       {refilled != null && <p className="wheel-result" role="status">{L.refilled(refilled)}</p>}
       <div className="match-actions"><button className="btn primary" disabled={busy || !w.ready || w.spins === 0} onClick={go}>{L.doSpin}</button><button className="btn ghost" disabled={busy} onClick={onClose}>{L.close}</button></div>
+      {ad && <AdOverlay ad={ad.ad} lang={lang} placement="rewarded" seconds={ad.session.durationMs / 1000} reward={w.adSpins} onClick={(a) => Ads.clicked(a)} onClose={adClosed} />}
     </Sheet>
   );
 }

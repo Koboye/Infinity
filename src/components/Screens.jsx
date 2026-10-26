@@ -234,7 +234,7 @@ export function AuthForm({ t }) {
 }
 
 /* ───────── Online lobby ───────── */
-export function Lobby({ t, lang, game, onEnter, onSpin }) {
+export function Lobby({ t, lang, game, onEnter, onSpin, beforeStart }) {
   const info = gameInfo(game);
   const [ruleset, setRuleset] = useState(info.defaultRuleset);
   const [target, setTarget] = useState(info.defaultTarget);
@@ -257,7 +257,7 @@ export function Lobby({ t, lang, game, onEnter, onSpin }) {
   }, []);
   const call = async (body) => {
     setBusy(true); setErr('');
-    try { const r = await apiCall({ game, ruleset, fee, options: game === 'dominoes' ? { target } : {}, ...body }); if (body.action === 'join' && r.own && r.status === 'waiting') setErr(t.ownRoom); else onEnter(r.code); } catch (e) { setErr(e.message); }
+    try { await beforeStart?.(); const r = await apiCall({ game, ruleset, fee, options: game === 'dominoes' ? { target } : {}, ...body }); if (body.action === 'join' && r.own && r.status === 'waiting') setErr(t.ownRoom); else onEnter(r.code); } catch (e) { setErr(e.message); }
     setBusy(false);
   };
   return (

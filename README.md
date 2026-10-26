@@ -173,3 +173,49 @@ tests/                     engine, rooms, API tests with an in-memory Firestore 
 - **Profile picture:** Settings and Profile → choose a photo from the gallery/camera. It is cropped to a small square and kept on this device; signed in, it is also saved on the account (`users/{uid}.photo`, a small JPEG data URL). **Re-deploy `firestore.rules`** (`firebase deploy --only firestore`) so the account may store it. It shows on your Ludo card, your Dama player card and your Dama king.
 - **Dama coronation:** a new king rises, spins in 3D, the crown drops on and a gold ring bursts out (≈1.3 s, skipped under reduced-motion). With a photo set, the king is a thick 3D medal of your picture; without one it is your hero figure as before. Online matches do not show the opponent's photo (not shared between players yet).
 - **Ludo:** compact player cards with the die beside its own base and full names, a larger board, and a turn clock (12 s to roll, 18 s to move, shorter if you keep missing; the game plays for you when it runs out). Toggle with ⏱.
+
+## v54 — Ads (local advertisers: events, banks, shops)
+
+Direct ads, no third-party SDK: a local advertiser gives you one picture and a link; you schedule it; the app shows it.
+
+**Where ads appear**
+
+| Placement | When | Length | Skippable |
+|---|---|---|---|
+| `splash` | The app opens | 2–10 s (per ad) | after 3 s (shorter ads just end) |
+| `pre_game` | A local game starts, and before online matchmaking (Quick match / Create / Join) | 2–10 s (per ad) | after 3 s |
+| `rewarded` | **Only if the player taps** "Watch a short ad → +2 spins" in the lucky-spin sheet | 5–10 s | no (leaving early pays nothing) |
+
+Never during a match. Never two ads back to back (45 s gap). Splash at most once per 2 minutes. Pre-game on every 3rd game start. All of it is in `CAPS` at the top of `src/lib/adsCore.js`; change a number there to change how often ads show.
+
+**Rewarded spins are decided by the server** (the same rule as every coin in this app). `adStart` picks the ad, stores the start time in `adSessions/{uid}` and returns the length; `adDone` pays +2 bonus spins only if the server clock says the full length has passed, once per session, max 5 paid ads per server day (10 extra spins), bank capped at 20. A modified client cannot shorten an ad, replay it, or use another account's session. Bonus spins are used after the 10 daily spins and do not expire.
+
+**How an ad is stored** — one document `ads/{id}` (managed by the owner page, below):
+
+```json
+{ "id": "abay-bank-nov", "advertiser": "Abay Bank", "category": "bank",
+  "placements": ["splash", "pre_game", "rewarded"],
+  "image": "https://firebasestorage.googleapis.com/…/offer.jpg", "clickUrl": "https://abaybank.example/offer",
+  "title": "Open an account", "titleAm": "ሂሳብ ይክፈቱ", "body": "Zero fees in November", "bodyAm": "",
+  "cta": "Learn more", "ctaAm": "ተጨማሪ እወቅ",
+  "durationSec": 6, "weight": 3, "start": "2026-11-01", "end": "2026-11-30", "active": true }
+```
+
+An ad is live from `start` to `end` (both days included, UTC) while `active` is true. `weight` (1–100) is its share when several ads compete: weight 3 is shown three times as often as weight 1. The same ad is not shown twice in a row when there is a choice.
+
+**Managing ads (owner)**
+
+1. Set `ADS_ADMIN_KEY` (16+ random characters) in the server environment (Vercel → Settings → Environment Variables) and redeploy. Without it the admin page and API are switched off.
+2. Open `https://YOUR-DOMAIN/admin/ads`, type the key, and add / edit / preview / switch off / delete ads. Each ad shows its last-7-days **shown / taps / watched-for-spins** so you can report to the advertiser.
+3. Pictures: upload to Firebase Storage (Storage → Files → upload → copy the download link) or use any https host. Hosts other than Firebase Storage must be added to `NEXT_PUBLIC_ADS_IMG_HOSTS` (space separated), because the Content-Security-Policy only allows listed hosts. Best size 1080×1350 (4:5), under 300 KB.
+4. Prefer the command line? `curl -H "x-admin-key: $KEY" https://YOUR-DOMAIN/api/admin/ads` lists ads; `curl -X POST -H "x-admin-key: $KEY" -H "Content-Type: application/json" -d '{"action":"save","ad":{…}}' …` saves one (same JSON as above). You can also edit the `ads` collection in the Firebase console, but the admin page validates for you.
+
+**How it reaches the phone** — `GET /api/ads` returns the live splash / pre-game ads (CDN-cached 60 s). The app keeps them for 10 minutes and preloads the pictures, so an ad appears instantly. No network, no ads, or a broken picture = no ad and the app carries on; an ad can never block play. Impressions and taps go to `POST /api/ads` (rate-limited, real ad ids only) and are counted per ad per day in `adStats`. They are **indicative** (a determined person can inflate taps), so for billing prefer the "watched for spins" number, which the server verifies.
+
+**Files:** rules `src/lib/adsCore.js`, server helpers `src/lib/adsServer.js`, client `src/lib/ads.js`, UI `src/components/AdOverlay.jsx` (+ `src/app/ads.css`), spin-sheet button in `src/components/Wallet.jsx`, owner page `src/components/AdminAds.jsx`, APIs `src/app/api/ads/route.js`, `src/app/api/admin/ads/route.js` and the `adStart` / `adDone` actions in `src/app/api/gebeta/route.js`. Wallet fields added: `bonus`, `adDay`, `adViews`.
+
+**Deploy:** publish `firestore.rules` (`firebase deploy --only firestore:rules`; the three ad collections are closed to clients), set `ADS_ADMIN_KEY`, redeploy, then add your first ad. With no ads in the database nothing changes for players, and the watch button simply says no ad is available.
+
+**Tests:** `tests/ads.test.mjs` (length clamp, validation, dates, weights, frequency caps, bonus-spin economy), `tests/ads-server.test.mjs` (public feed, counters, rewarded sessions: early finish, replay, someone else's session, expiry, daily cap, admin API and key), `tests/ads-ui.test.mjs` (wiring and security guards).
+
+**Policy notes:** ads are labelled "Ad" with a countdown, never styled as game buttons, and rewarded ads are optional. Choose advertisers carefully (no gambling, adult or misleading offers) and keep the Play Console **Data safety** form in line with `/privacy`: ads collect no advertising ID; per-ad view and tap counts only.

@@ -11,6 +11,9 @@ import { gameOf, normalizeGame } from '@/lib/online/games.js';
 import { isPlayable } from '@/lib/games.js';
 import { BONEYARD_DOC } from '@/lib/online/dominoes.js';
 import * as WC from '@/lib/walletCore.js';
+import { randomUUID } from 'node:crypto';
+import { liveAds, bump } from '@/lib/adsServer.js';
+import { pickAd, publicAd, clampSeconds, SESSION_TTL_MS, DONE_TOLERANCE_MS } from '@/lib/adsCore.js';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -89,6 +92,39 @@ async function topUpWallet(db, uid) {
     putWallet(tx, db, uid, r.wallet);
     return { coins: r.coins, wallet: WC.view(r.wallet, now) };
   });
+}
+// ── Rewarded ads. The server picks the ad, remembers when it started, and pays the bonus spins only when the client
+// comes back after the ad's full length. Time is the server's clock, so a modified client cannot shorten the ad,
+// and a session pays once. (Daily cap + bank cap live in walletCore.grantAdSpins.)
+const adSessionRef = (db, uid) => db.collection('adSessions').doc(uid);
+async function adStart(db, uid) {
+  const now = Date.now();
+  const { wallet } = await walletInfo(db, uid);
+  if (wallet.adsLeft <= 0) fail(409, 'No bonus ads left today. They come back tomorrow.');
+  const ad = pickAd(await liveAds(db, now), 'rewarded', { now });
+  if (!ad) fail(404, 'No ad is available right now. Try again later.');
+  const durationMs = clampSeconds(ad.durationSec, 'rewarded') * 1000;
+  const id = randomUUID();
+  await adSessionRef(db, uid).set({ id, adId: ad.id, startedAt: now, durationMs, used: false });
+  return { session: { id, durationMs }, ad: publicAd(ad, 'rewarded'), wallet };
+}
+async function adDone(db, uid, sessionId) {
+  const now = Date.now();
+  const out = await db.runTransaction(async (tx) => {
+    const s = await tx.get(adSessionRef(db, uid));
+    const sess = s.exists ? s.data() : null;
+    if (!sess || sess.used || !sessionId || sess.id !== String(sessionId)) fail(409, 'This ad was already counted.');
+    if (now - sess.startedAt > SESSION_TTL_MS) fail(409, 'This ad expired. Watch it again.');
+    if (now - sess.startedAt < sess.durationMs - DONE_TOLERANCE_MS) fail(409, 'The ad was not watched to the end.');
+    const { w } = await readWallet(tx, db, uid, now);
+    const r = WC.grantAdSpins(w, now);
+    if (!r.ok) fail(409, r.reason === 'bank-full' ? 'You already have plenty of bonus spins. Use some first.' : 'No bonus ads left today. They come back tomorrow.');
+    tx.set(adSessionRef(db, uid), { ...sess, used: true, doneAt: now });
+    putWallet(tx, db, uid, r.wallet);
+    return { spins: r.spins, adId: sess.adId, wallet: WC.view(r.wallet, now) };
+  });
+  await bump(db, out.adId, 'impressions', now); await bump(db, out.adId, 'rewarded', now);
+  return { spins: out.spins, wallet: out.wallet };
 }
 /** Before opening or entering a match: the player must hold the entry fee. */
 async function requireCoins(db, uid, fee) {
@@ -245,6 +281,10 @@ export async function POST(req) {
         return ok(await spinWallet(db, uid));
       case 'topup':
         return ok(await topUpWallet(db, uid));
+      case 'adStart':
+        return ok(await adStart(db, uid));
+      case 'adDone':
+        return ok(await adDone(db, uid, body.session));
       case 'create':
         return ok({ code: await createRoom(db, uid, decoded.name, { ...common, isPublic: false }), status: 'waiting' });
       case 'quick':

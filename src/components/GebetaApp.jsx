@@ -15,6 +15,8 @@ import LudoGame from './ludo/LudoGame';
 import ModesScreen from './ModesScreen';
 import BottomNav from './BottomNav';
 import { WalletChip, SpinSheet, WelcomeGift } from './Wallet';
+import AdOverlay from './AdOverlay';
+import * as Ads from '@/lib/ads';
 import * as Wallet from '@/lib/wallet';
 import OnlineRoom from './online/OnlineRoom';
 import { Home, Setup, RulesScreen, AuthForm, Lobby, Leaders, ProfileScreen, ProgressScreen, SettingsScreen, Tibeb } from './Screens';
@@ -34,6 +36,8 @@ export default function GebetaApp() {
   const [muted, setMutedState] = useState(false);
   const [music, setMusicState] = useState(false);
   const [view, setView] = useState({ name: 'home' });
+  const [adShow, setAdShow] = useState(null);                // { ad, placement, resolve }: the full-screen ad on screen right now
+  const adRef = useRef(null); adRef.current = adShow;
   const [sheet, setSheet] = useState(null);                  // { type: 'spin' | 'gift' }
   const viewRef = useRef(view); viewRef.current = view;
   const [user, setUser] = useState(null);
@@ -116,13 +120,24 @@ export default function GebetaApp() {
     if (text !== profile.progress && text.length < 6000) updateDoc(doc(db, 'users', user.uid), { progress: text }).catch(() => {});
   }, [user, profile]);
   const confirm = useCallback((message) => new Promise((resolve) => setDialog({ message, resolve })), []);
+  // A short full-screen ad (splash / pre_game). Resolves when it is over, or at once when none is due: ads never block the app.
+  const runAd = useCallback(async (placement) => {
+    if (adRef.current) return;
+    let ad = null; try { ad = await Ads.nextAd(placement); } catch { ad = null; }
+    if (!ad || adRef.current) return;
+    await new Promise((resolve) => setAdShow({ ad, placement, resolve }));
+  }, []);
+  const splashed = useRef(false);
+  useEffect(() => { if (splashed.current) return; splashed.current = true; Ads.warm(); runAd('splash'); }, [runAd]);   // app open
   const go = (name, extra = {}) => {
     // a coming-soon game (Dominoes) has no play, setup, rules, online or leaderboard screens
     if (['modes', 'ai', 'pass', 'online', 'leaders', 'rules'].includes(name) && !isPlayable(game)) return;
     if (name === 'game' && !isPlayable(extra.game)) return;
     // starting a game is a tap, so the browser lets us take the whole screen right now
     if ((name === 'game' || name === 'room') && !document.fullscreenElement) document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }).catch(() => {});
-    if (name === 'game') setCoach(needsCoach(extra.game) ? extra.game : null); setView({ name, ...extra }); };
+    const enter = () => { if (name === 'game') setCoach(needsCoach(extra.game) ? extra.game : null); setView({ name, ...extra }); };
+    if (name === 'game') { runAd('pre_game').then(enter); return; }   // a short ad before a local game (capped, see adsCore.CAPS)
+    enter(); };
   const home = () => setView({ name: 'home' });
   // The wallet belongs to the signed-in account and lives on the server: ask for it whenever the account changes.
   const walletFor = useRef(null);
@@ -198,7 +213,7 @@ export default function GebetaApp() {
     case 'rules': body = <RulesScreen t={t} game={game} />; break;
     case 'leaders': body = !onlineAvailable ? <Unavailable t={t} /> : !user ? (authReady ? <AuthForm t={t} /> : null) : <Leaders t={t} uid={uid} game={game} />; break;
     case 'profile': body = !onlineAvailable ? <Unavailable t={t} /> : authReady ? <ProfileScreen t={t} lang={lang} user={user} profile={profile} onSignOut={() => signOut(auth)} /> : null; break;
-    case 'online': body = !onlineAvailable ? <Unavailable t={t} /> : !authReady ? null : !user ? <AuthForm t={t} /> : <Lobby t={t} lang={lang} game={game} onSpin={() => setSheet({ type: 'spin' })} onEnter={(code) => go('room', { code })} />; break;
+    case 'online': body = !onlineAvailable ? <Unavailable t={t} /> : !authReady ? null : !user ? <AuthForm t={t} /> : <Lobby t={t} lang={lang} game={game} beforeStart={() => runAd('pre_game')} onSpin={() => setSheet({ type: 'spin' })} onEnter={(code) => go('room', { code })} />; break;
     case 'room': body = <OnlineRoom key={view.code} t={t} lang={lang} uid={uid} code={view.code} onExit={home} onSwitchRoom={(code) => go('room', { code })} confirm={confirm} />; break;
     default: body = null;
   }
@@ -214,6 +229,7 @@ export default function GebetaApp() {
             go(to);
           }} />
       )}
+      {adShow && <AdOverlay ad={adShow.ad} lang={lang} placement={adShow.placement} seconds={adShow.ad.durationSec} onShown={(a) => Ads.shown(adShow.placement, a)} onClick={(a) => Ads.clicked(a)} onClose={() => { adShow.resolve(); setAdShow(null); }} />}
       {sheet?.type === 'gift' && <WelcomeGift lang={lang} onClose={() => setSheet(null)} />}
       {sheet?.type === 'spin' && <SpinSheet lang={lang} onClose={() => setSheet(null)} />}
       <header className="topbar">

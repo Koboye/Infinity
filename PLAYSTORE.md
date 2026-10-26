@@ -8,3 +8,4 @@
 6. Copy the **App signing key SHA-256** from Play Console (Setup → App signing) into `public/.well-known/assetlinks.json`, redeploy. This removes the browser address bar in the app.
 7. Listing needs: 512×512 icon (`public/icon-512.png`), 1024×500 feature graphic, 2+ phone screenshots, privacy policy URL (`/privacy`), content rating, Data safety form.
 8. New personal developer accounts must run a closed test with 12+ testers for 14 days before production.
+9. Ads (v54): the app shows direct, labelled ads and optional rewarded ads. In the Data safety form, answer that no advertising ID is collected and that per-ad view/tap counts are anonymous app-activity analytics; keep `/privacy` as the policy URL. In the content rating questionnaire, state that the app contains ads. Only accept advertisers whose offers fit Play's ads policy.

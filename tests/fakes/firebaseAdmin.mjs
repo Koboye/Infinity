@@ -41,6 +41,7 @@ const docRef = (path) => ({
 const collection = (name) => ({
   doc: (id) => docRef(`${name}/${id}`),
   where(f, op, v) { return query(name, { f: [[f, op, v]], ord: null, lim: 99 }); },
+  get() { return query(name, { f: [], ord: null, lim: 9999 }).get(); },
 });
 const val = (d, f) => { const x = d[f]; return x && x.__ms !== undefined ? x.__ms : x; };
 const cmp = { '==': (a, b) => a === b, '>=': (a, b) => a >= b, '>': (a, b) => a > b, '<=': (a, b) => a <= b, '<': (a, b) => a < b };

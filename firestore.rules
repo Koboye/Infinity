@@ -31,6 +31,12 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Ads: the ads themselves, their counters and the rewarded-ad sessions are read and written only by the server
+    // (/api/ads, /api/admin/ads, /api/gebeta). Phones get ads through the API, never from Firestore directly.
+    match /ads/{id} { allow read, write: if false; }
+    match /adStats/{id} { allow read, write: if false; }
+    match /adSessions/{uid} { allow read, write: if false; }
+
     // Online matches (Gebeta, Checkers, Dominoes). Only the two players can read the room they are in.
     // ALL writes go through /api/gebeta (server validates every move with the shared engines).
     match /gebetaRooms/{code} {
