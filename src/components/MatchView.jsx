@@ -10,7 +10,7 @@ export function PlayerCard({ player, score, active, timer, timerMax = TURN_SECON
   const hero = heroById(player.hero);
   return (
     <div className={`pcard ${pos}${active ? ' on' : ''}${timer != null ? ' clocked' : ''}`} style={timer != null ? { '--p': Math.max(0, Math.min(1, timer / timerMax)) } : undefined}>
-      <span className="hero" style={{ background: hero.color }}>{hero.glyph}</span>
+      <span className={`hero${player.photo ? ' photo' : ''}`} style={{ background: hero.color }}>{player.photo ? <img src={player.photo} alt="" /> : hero.glyph}</span>
       <span className="pname">{player.name}</span>
       {badge}
       {timer != null && <span className={`timer${timer <= 10 ? ' low' : ''}`}>{t.timeLeft(timer)}</span>}

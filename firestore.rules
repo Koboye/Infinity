@@ -16,7 +16,8 @@ service cloud.firestore {
         && request.resource.data.displayName.size() >= 2
         && request.resource.data.displayName.size() <= 20;
       allow update: if request.auth != null && request.auth.uid == uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'avatar', 'lang', 'progress'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'avatar', 'lang', 'progress', 'photo'])
+        && (!('photo' in request.resource.data) || (request.resource.data.photo is string && request.resource.data.photo.size() < 30000 && (request.resource.data.photo == '' || request.resource.data.photo.matches('^data:image/jpeg;base64,.*'))))
         && (!('progress' in request.resource.data) || (request.resource.data.progress is string && request.resource.data.progress.size() < 6000))
         && request.resource.data.displayName is string
         && request.resource.data.displayName.size() >= 2

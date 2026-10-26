@@ -15,6 +15,8 @@ import { GameIcon } from './GameIcons';
 import { sfx } from '@/lib/sound';
 import { load as loadProgress, ACHIEVEMENTS, dailyGame, dailyDone, total as totalOf } from '@/lib/progress';
 import { FeePicker } from './Wallet';
+import PhotoPicker from './PhotoPicker';
+import { getPhoto, storePhoto } from '@/lib/photo';
 import { KINDS, STONE_SETS, stoneSet, stoneVars } from '@/lib/stones';
 
 export const Tibeb = () => <div className="tibeb" aria-hidden="true" />;
@@ -320,6 +322,7 @@ export function ProfileScreen({ t, lang, user, profile, onSignOut }) {
   const [avatar, setAvatar] = useState(profile?.avatar || 'lion');
   const [saved, setSaved] = useState(false); const [err, setErr] = useState('');
   useEffect(() => { if (profile) { setName(profile.displayName); setAvatar(profile.avatar); } }, [profile?.displayName, profile?.avatar]); // eslint-disable-line
+  useEffect(() => { if (profile?.photo && !getPhoto()) storePhoto(profile.photo); }, [profile?.photo]); // the account's picture follows you to a new device
   if (!user) return <AuthForm t={t} />;
   const save = async () => {
     setErr('');
@@ -344,6 +347,7 @@ export function ProfileScreen({ t, lang, user, profile, onSignOut }) {
           </div>
         );
       })}
+      <PhotoPicker lang={lang} heroId={avatar} onChange={(url) => updateDoc(doc(db, 'users', user.uid), { photo: url || '' }).catch(() => {})} />
       <fieldset className="seg-group">
         <legend>{t.avatar}</legend>
         <div className="heroes">
@@ -434,7 +438,7 @@ function StonePicker({ t, lang, value, onPick }) {
 }
 
 /* ───────── Settings ───────── */
-export function SettingsScreen({ t, lang, onLang, music, onMusic, muted, onMute, settings, onSettings }) {
+export function SettingsScreen({ t, lang, heroId, onLang, music, onMusic, muted, onMute, settings, onSettings }) {
   const set = (k, v) => onSettings({ ...settings, [k]: v });
   const Seg = ({ value, opts, onPick, label }) => (
     <div className="seg" role="group" aria-label={label}>
@@ -443,6 +447,7 @@ export function SettingsScreen({ t, lang, onLang, music, onMusic, muted, onMute,
   );
   return (
     <div className="panel">
+      <PhotoPicker lang={lang} heroId={heroId} />
       <div className="set-row"><span>{t.language}</span><Seg label={t.language} value={lang} onPick={onLang} opts={[['en', t.langEn], ['am', t.langAm]]} /></div>
       <div className="set-row"><span>🎵 {t.music}</span><Seg label={t.music} value={music} onPick={onMusic} opts={[[true, 'On'], [false, 'Off']]} /></div>
       <div className="set-row"><span>{t.volume}</span><input type="range" min="0.1" max="1" step="0.05" value={settings.music} aria-label={t.music + ' ' + t.volume} onChange={(e) => set('music', +e.target.value)} /></div>

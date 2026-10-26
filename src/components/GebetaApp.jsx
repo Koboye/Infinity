@@ -20,6 +20,7 @@ import OnlineRoom from './online/OnlineRoom';
 import { Home, Setup, RulesScreen, AuthForm, Lobby, Leaders, ProfileScreen, ProgressScreen, SettingsScreen, Tibeb } from './Screens';
 import { isPlayable, GAMES } from '@/lib/games.js';
 import Coach, { needsCoach } from './Coach';
+import { usePhoto } from '@/lib/photo';
 import { setCurrentGame, visit, onUnlock, load as loadProgress, mergeProgress, saveMerged } from '@/lib/progress';
 
 const read = (k, d) => { try { return localStorage.getItem(k) ?? d; } catch { return d; } };
@@ -147,7 +148,8 @@ export default function GebetaApp() {
   }, [authReady, user]); // eslint-disable-line react-hooks/exhaustive-deps
   const leaveGame = async () => { if (await confirm(t.leaveConfirm)) home(); };
 
-  const me = { name: profile?.displayName || t.you, hero: profile?.avatar || 'lion', gender: settings.gender };
+  const myPhoto = usePhoto();
+  const me = { name: profile?.displayName || t.you, hero: profile?.avatar || 'lion', gender: settings.gender, photo: myPhoto };
   const uid = user?.uid;
 
   const gname = t[`${game}Name`];
@@ -191,7 +193,7 @@ export default function GebetaApp() {
         : <LocalGame {...P} />;
       break;
     }
-    case 'settings': body = <SettingsScreen t={t} lang={lang} onLang={chooseLang} music={music} onMusic={setMusicTo} muted={muted} onMute={(m) => { setMutedState(m); setMuted(m); write('gebeta.muted', m ? '1' : '0'); }} settings={settings} onSettings={changeSettings} />; break;
+    case 'settings': body = <SettingsScreen t={t} lang={lang} heroId={profile?.avatar} onLang={chooseLang} music={music} onMusic={setMusicTo} muted={muted} onMute={(m) => { setMutedState(m); setMuted(m); write('gebeta.muted', m ? '1' : '0'); }} settings={settings} onSettings={changeSettings} />; break;
     case 'progress': body = <ProgressScreen t={t} lang={lang} />; break;
     case 'rules': body = <RulesScreen t={t} game={game} />; break;
     case 'leaders': body = !onlineAvailable ? <Unavailable t={t} /> : !user ? (authReady ? <AuthForm t={t} /> : null) : <Leaders t={t} uid={uid} game={game} />; break;

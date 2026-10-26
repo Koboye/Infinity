@@ -7,6 +7,7 @@ import {
 import { tokenXY, trailXY, PANEL_SLOT as SLOT } from '@/lib/ludo/layout.js';
 import { sfx } from '@/lib/sound';
 import ResultOverlay from '../ResultOverlay';
+import { useTurnClock } from '../useTurnClock';
 import LudoBoard, { COLORS } from './LudoBoard';
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -62,13 +63,15 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
   const [fx, setFx] = useState([]);
   const [flying, setFlying] = useState(() => new Set());
   const [showLog, setShowLog] = useState(false);
+  const [timerOn, setTimerOn] = useState(true);   // turn timer (remembered per device)
+  const streak = useRef(0);                      // turns in a row the clock had to play for you
   const [offer, setOffer] = useState(null);     // an unfinished game found in storage
   const gameRef = useRef(game), busy = useRef(false), alive = useRef(true), fxId = useRef(0);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
 
   // restore preferences and offer to resume an unfinished game
   useEffect(() => {
-    setFast(store.get('ludo.fast') === '1');
+    setFast(store.get('ludo.fast') === '1'); setTimerOn(store.get('ludo.timer') !== '0');
     const lg = store.get('ludo.log'); setShowLog(lg == null ? window.innerHeight >= 780 : lg === '1');   // tall screens keep the real move log open
     const raw = store.get(saveKey);
     if (!raw) return;
@@ -83,8 +86,8 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
   const people = useMemo(() => Array.from({ length: players }, (_, p) => {
     const human = mode === 'pass' || p === 0;
     const comps = players - 1;
-    return { human, name: p === 0 ? me.name : mode === 'pass' ? t.ludoPlayerN(p + 1) : comps > 1 ? `${t.computer} ${p}` : t.computer };
-  }), [players, mode, me.name, t]);
+    return { human, photo: p === 0 ? me.photo || null : null, name: p === 0 ? me.name : mode === 'pass' ? t.ludoPlayerN(p + 1) : comps > 1 ? `${t.computer} ${p}` : t.computer };
+  }), [players, mode, me.name, me.photo, t]);
 
   const commit = useCallback((s) => { gameRef.current = s; setGame(s); }, []);
   const say = useCallback((text, kind = 'info') => { setFlash({ text, kind, k: Math.random() }); }, []);
@@ -167,6 +170,23 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
   const homeCount = (p) => game.pos[p].filter((x) => x === F).length;
   const canRoll = humanTurn && game.phase === 'roll' && idle && !busy.current;
   const canHint = humanTurn && game.phase === 'move' && idle && legal.size > 1;
+  // smart turn clock: 12 s to roll, 18 s to choose; a player who keeps letting it run out gets less time (never under 6 s)
+  const needsInput = humanTurn && idle && !paused && (game.phase === 'roll' || !(auto && distinctMoves(game).length === 1));
+  const secs = Math.max(6, (game.phase === 'roll' ? 12 : 18) - 3 * Math.min(streak.current, 2));
+  const clock = useTurnClock({
+    running: timerOn && needsInput && !game.over, seat: game.turn, seconds: secs,
+    resetKey: `${game.turn}|${game.phase}|${game.moves}|${game.stats.rolls.reduce((a, b) => a + b, 0)}`,
+    onExpire: () => {
+      if (busy.current || !alive.current) return;
+      streak.current += 1; say(t.ludoAutoPlayed, 'bad');
+      const g = gameRef.current;
+      if (g.phase === 'roll') doRoll(); else doMove(chooseToken(g, 'medium'));
+    },
+  });
+  useEffect(() => { if (clock && clock.left > 0 && clock.left <= 5) sfx.tick?.(); }, [clock?.left]); // eslint-disable-line react-hooks/exhaustive-deps
+  const userRoll = () => { streak.current = 0; doRoll(); };
+  const userPick = (i) => { streak.current = 0; doMove(i); };
+  const toggleTimer = () => setTimerOn((v) => { store.set('ludo.timer', v ? '0' : '1'); return !v; });
   const status = game.over ? '' : rolling ? '…' : note || (game.phase === 'move' ? (humanTurn ? t.ludoPick : t.ludoRolled(cur.name, game.dice))
     : humanTurn ? (mode === 'pass' ? t.ludoTurnOf(cur.name) : t.ludoYourTurn) : t.ludoTurnOf(cur.name));
 
@@ -215,12 +235,13 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
               return (
                 <div key={p} className={`ludo-panel ${slot}${on ? ' on' : ''}${done ? ' done' : ''}`} style={{ '--pc': COLORS[seat] }} aria-current={on ? 'true' : undefined}
                   title={t.ludoTokenCount ? t.ludoTokenCount(homeCount(p), game.tokensPer) : undefined}>
-                  <Die value={faces[p]} rolling={rolling && on} rollId={rollIds[p]} color={COLORS[seat]} disabled={!mine} onRoll={doRoll} label={`${t.ludoRoll} — ${pp.name}`} ms={900 * sp} />
+                  <Die value={faces[p]} rolling={rolling && on} rollId={rollIds[p]} color={COLORS[seat]} disabled={!mine} onRoll={userRoll} label={`${t.ludoRoll} — ${pp.name}`} ms={900 * sp} />
                   <div className="info">
-                    <b className="nm"><span className="av">{pp.human ? initialOf(pp.name) : '🤖'}</span><span className="tx">{pp.name}</span></b>
+                    <b className="nm"><span className={`av${pp.photo ? ' photo' : ''}`}>{pp.photo ? <img src={pp.photo} alt="" /> : pp.human ? initialOf(pp.name) : '🤖'}</span><span className="tx">{pp.name}</span></b>
                     <span className="pips">{game.pos[p].map((x, k) => <i key={k} className={x === F ? 'home' : x >= 0 ? 'out' : ''} />)}</span>
                     <span className="bar"><i style={{ width: `${Math.round(progressOf(game, p) * 100)}%` }} /></span>
                   </div>
+                  {on && clock && <span className={`tclock${clock.left <= 5 ? ' low' : ''}`} role="timer" aria-label={t.ludoTimer}><i style={{ transform: `scaleX(${Math.max(0, Math.min(1, clock.left / clock.max))})` }} /><b>{clock.left}</b></span>}
                   {on && game.sixes > 0 && <span className={`sixes${game.sixes >= 2 ? ' warn' : ''}`} title="sixes in a row">6×{game.sixes}</span>}
                   {done && <em>{t.ludoRank(game.ranks.indexOf(p))}</em>}
                 </div>
@@ -230,7 +251,7 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
         );
       })}
       <div className="ludo-board" style={{ order: 1 }}>
-        <LudoBoard board={game.board} seats={game.seats} tokens={toks} legal={legal} onPick={doMove} hintKey={hintKey} turnSeat={seatNow} previews={previews} trail={trail} fx={fx} flying={flying} />
+        <LudoBoard board={game.board} seats={game.seats} tokens={toks} legal={legal} onPick={userPick} hintKey={hintKey} turnSeat={seatNow} previews={previews} trail={trail} fx={fx} flying={flying} />
         {flash && <div className={`flash ${flash.kind}`} key={flash.k} onAnimationEnd={() => setFlash(null)}>{flash.text}</div>}
       </div>
       <div className={`ludo-dock${canRoll ? ' ready' : ''}`} style={{ '--dc': color, order: 4 }}>
@@ -239,6 +260,7 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
           <button type="button" className="tool" onClick={hint} disabled={!canHint} title={t.ludoHintBtn}><span aria-hidden="true">💡</span> {t.ludoHintBtn}</button>
           <button type="button" className={`tool${fast ? ' on' : ''}`} onClick={toggleFast} aria-pressed={fast}><span aria-hidden="true">⚡</span> {t.ludoFast}</button>
           <button type="button" className={`tool${showLog ? ' on' : ''}`} onClick={() => setShowLog((v) => { store.set('ludo.log', v ? '0' : '1'); return !v; })} aria-pressed={showLog}><span aria-hidden="true">📜</span> {t.ludoShowLog}</button>
+          <button type="button" className={`tool${timerOn ? ' on' : ''}`} onClick={toggleTimer} aria-pressed={timerOn} title={t.ludoTimer}><span aria-hidden="true">⏱</span> {t.ludoTimer}</button>
           <button type="button" className={`tool${auto ? ' on' : ''}`} onClick={() => setAuto((v) => !v)} aria-pressed={auto} title={t.ludoAuto}><span aria-hidden="true">🎯</span> {t.ludoAutoShort || 'Auto'}</button>
         </div>
         {showLog && (

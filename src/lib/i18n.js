@@ -62,7 +62,7 @@ export const STRINGS = {
     ludoAuto: 'Auto-move when there is only one choice', ludoPlayerN: (n) => `Player ${n}`, ludoRank: (r) => ['1st', '2nd', '3rd', '4th'][r] || `${r + 1}th`,
     ludoWinner: (n) => `${n} wins!`, ludoYouWin: 'You win!',
     ludoResumeTitle: 'Unfinished game', ludoResumeSub: 'You left a game in progress. Pick up where you stopped?', ludoNewGame: 'New game', ludoFast: 'Fast', ludoHintBtn: 'Hint', ludoShowLog: 'Moves', ludoMoveNo: (n) => `Move ${n}`,
-    ludoStatRolls: 'Rolls', ludoStatSixes: 'Sixes', ludoStatHits: 'Captures', ludoStatLost: 'Sent home', ludoStatsTitle: 'Match stats', ludoCaptureMsg: (a, b) => `${a} captured ${b}!`, ludoSkip: 'No move for', ludoTokenCount: (n, m) => `${n} of ${m} home`,
+    ludoStatRolls: 'Rolls', ludoStatSixes: 'Sixes', ludoStatHits: 'Captures', ludoStatLost: 'Sent home', ludoStatsTitle: 'Match stats', ludoCaptureMsg: (a, b) => `${a} captured ${b}!`, ludoSkip: 'No move for', ludoTimer: 'Timer', ludoAutoPlayed: 'Time is up — played for you', ludoTokenCount: (n, m) => `${n} of ${m} home`,
     rules_ludo: [
       ['Goal', 'Bring all your tokens once round the board and into the centre. The first player home wins; the others race for the next places.'],
       ['Leaving base', 'You need a 6 to bring a token out onto your coloured start cell.'],
@@ -206,7 +206,7 @@ export const STRINGS = {
     ludoAuto: 'አንድ ምርጫ ብቻ ሲሆን በራስ ተንቀሳቀስ', ludoPlayerN: (n) => `ተጫዋች ${n}`, ludoRank: (r) => ['1ኛ', '2ኛ', '3ኛ', '4ኛ'][r] || `${r + 1}ኛ`,
     ludoWinner: (n) => `${n} አሸነፈ!`, ludoYouWin: 'አሸነፍክ!',
     ludoResumeTitle: 'ያልተጠናቀቀ ጨዋታ', ludoResumeSub: 'ያቆምከው ጨዋታ አለ። ካቆምክበት ትቀጥላለህ?', ludoNewGame: 'አዲስ ጨዋታ', ludoFast: 'ፈጣን', ludoHintBtn: 'ጠቋሚ', ludoShowLog: 'እንቅስቃሴዎች', ludoMoveNo: (n) => `እንቅስቃሴ ${n}`,
-    ludoStatRolls: 'ዳይስ', ludoStatSixes: 'ስድስት', ludoStatHits: 'የያዛቸው', ludoStatLost: 'የተያዘበት', ludoStatsTitle: 'የጨዋታው ስታቲስቲክስ', ludoCaptureMsg: (a, b) => `${a} የ${b}ን ጠጠር ያዘ!`, ludoSkip: 'መንቀሳቀስ አልተቻለም', ludoTokenCount: (n, m) => `${n} ከ${m} ቤት ገብተዋል`,
+    ludoStatRolls: 'ዳይስ', ludoStatSixes: 'ስድስት', ludoStatHits: 'የያዛቸው', ludoStatLost: 'የተያዘበት', ludoStatsTitle: 'የጨዋታው ስታቲስቲክስ', ludoCaptureMsg: (a, b) => `${a} የ${b}ን ጠጠር ያዘ!`, ludoSkip: 'መንቀሳቀስ አልተቻለም', ludoTimer: 'ሰዓት', ludoAutoPlayed: 'ጊዜው አልቋል — ተጫውቶልሃል', ludoTokenCount: (n, m) => `${n} ከ${m} ቤት ገብተዋል`,
     rules_ludo: [
       ['ግብ', 'ሁሉንም ጠጠሮችህን አንድ ጊዜ ሰሌዳውን አዙረህ መሃል ቤት አድርሳቸው። መጀመሪያ የደረሰ ያሸንፋል፤ የተቀሩት ለቀጣዩ ደረጃ ይወዳደራሉ።'],
       ['ከቤት መውጣት', 'ጠጠርን ወደ ቀለም መነሻ ሕዋስህ ለማውጣት 6 ያስፈልግሃል።'],

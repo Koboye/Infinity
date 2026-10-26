@@ -40,7 +40,7 @@ export default function CheckersLocal({ t, mode, level, ruleset, me, opts = {}, 
   const anim = useCheckersAnimator(game.board, t);
 
   const players = mode === 'ai'
-    ? [{ name: me.name, hero: me.hero }, { name: t.computer, hero: 'horse' }]
+    ? [{ name: me.name, hero: me.hero, photo: me.photo }, { name: t.computer, hero: 'horse' }]
     : [{ name: t.player1, hero: 'lion' }, { name: t.player2, hero: 'queen' }];
 
   const free = !!getRules(ruleset).huff; // capturing is optional: nothing is forced, nothing is highlighted, a skipped capture can be claimed
@@ -185,6 +185,7 @@ export default function CheckersLocal({ t, mode, level, ruleset, me, opts = {}, 
       flash={anim.flash} status={status} timer={clock}
       board={(
         <CheckersBoard
+          photos={players.map((x) => x.photo || null)}
           pieces={anim.pieces} viewSeat={0} selected={input.from ?? (game.turn === 1 ? pre?.from ?? null : null)} picked={input.picked} targets={input.targets}
           movable={input.movable} last={anim.last} onSquare={(sq) => { if (spinning) return; if (pending && enabled && pending.options.includes(sq)) pickPiece(sq); else if (mode === 'ai' && game.turn === 1 && !game.over) premoveTap(sq); else input.onSquare(sq); }} pick={[]} showMovable={!free} label={t.checkersName} hint={pre && pre.to != null ? { from: pre.from, to: pre.to } : hint} onSwipe={input.onSwipe} heroes={players.map((p) => p.hero)} fx={anim.fx} shake={anim.shake}
         />

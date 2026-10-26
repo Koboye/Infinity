@@ -7,6 +7,7 @@ import { sfx } from '@/lib/sound';
 const HOP_MS = 300;      // one hop = one clear beat
 const CAPTURE_MS = 430;  // the kicked piece needs this long to fly off the board (see kick.css)
 const TURN_END_MS = 140;
+const CROWN_MS = 1300;    // the coronation: the piece rises, spins in 3D and the crown lands (see kings3d.css)
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const reduced = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
@@ -97,7 +98,7 @@ export function useCheckersAnimator(initialBoard, t) {
           if (job.huffed != null) {
             const v = p.find((x) => x.sq === job.huffed && !x.dying);
             if (v) { if (fast) { v.dying = true; sfx.jump(); } else kickAway(v); commit(p); if (!fast) await wait(HOP_MS + CAPTURE_MS); p = p.filter((x) => !x.dying); commit(p); }
-          } else if (job.promote) { mover.king = true; commit(p); sfx.king(); mark('king'); showFlash(tRef.current.kinged, 'extra'); if (!fast) await wait(HOP_MS); }
+          } else if (job.promote) { mover.king = true; mover.crown = !fast; commit(p); sfx.king(); mark('king'); showFlash(tRef.current.kinged, 'extra'); if (!fast) { await wait(CROWN_MS); if (token.current !== my) return; mover.crown = false; commit(p); } }
           else if (caps > 1) { showFlash(tRef.current.jumped(caps), 'capture'); if (!fast) await wait(HOP_MS); }
           if (!fast) await wait(TURN_END_MS);
         }

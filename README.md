@@ -168,3 +168,8 @@ tests/                     engine, rooms, API tests with an in-memory Firestore 
 - Top-bar titles are short (they no longer truncate); the leaderboard shows which game it lists.
 - Ludo: the real move log stays open on tall screens (remembered per device).
 - Coins live on the server (v49/v50.1): the account wallet, daily spins, entry fees, prizes and the daily top-up are all decided server-side, so editing local storage or the phone clock changes nothing. Computer and Pass & Play are free practice.
+
+## v52 — profile photo, Dama coronation, Ludo table
+- **Profile picture:** Settings and Profile → choose a photo from the gallery/camera. It is cropped to a small square and kept on this device; signed in, it is also saved on the account (`users/{uid}.photo`, a small JPEG data URL). **Re-deploy `firestore.rules`** (`firebase deploy --only firestore`) so the account may store it. It shows on your Ludo card, your Dama player card and your Dama king.
+- **Dama coronation:** a new king rises, spins in 3D, the crown drops on and a gold ring bursts out (≈1.3 s, skipped under reduced-motion). With a photo set, the king is a thick 3D medal of your picture; without one it is your hero figure as before. Online matches do not show the opponent's photo (not shared between players yet).
+- **Ludo:** compact player cards with the die beside its own base and full names, a larger board, and a turn clock (12 s to roll, 18 s to move, shorter if you keep missing; the game plays for you when it runs out). Toggle with ⏱.
