@@ -1,0 +1,85 @@
+/* v53 "Smart layout" — size, layout and order pass. Additive: loads last, touches only the shell, Home, mode tiles and bottom bar.
+   Scale: 4 / 8 / 12 / 16 / 24 spacing · radii 14 / 20 / 26 · touch targets >= 44px · everything capped to the 560px app column. */
+:root { --col-w: 560px; --nav-h: 64px; --gap: 12px; }
+
+/* ───── top bar: a slim glass strip, never an empty slab ───── */
+.topbar { margin: 6px 12px 0; padding: 4px 6px; min-height: 52px; gap: 6px; }
+html .topbar:has(.topbar-spacer), html[data-game] .topbar:has(.topbar-spacer) { background: transparent; border-color: transparent; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; margin-top: 2px; min-height: 48px; }
+.topbar-title { min-width: 0; }
+.topbar-actions { align-items: center; flex: none; }
+.topbar .icon-btn { width: 44px; height: 44px; flex: none; }
+.lang-chip { display: none; min-width: 44px; height: 44px; padding: 0 10px; border-radius: 14px; border: 1.5px solid var(--card-line, rgba(255,226,154,.25)); background: linear-gradient(180deg, var(--brand-gold, #FFD36B), var(--brand-gold-lo, #E59A12)); color: #2a1500; font-weight: 900; font-size: .85rem; box-shadow: 0 3px 0 rgba(0,0,0,.35); }
+.lang-chip:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,.35); }
+/* on phones one compact language button replaces the two-part switch, which frees room for the wallet and the title */
+@media (max-width: 460px) {
+  .app.has-nav .lang-switch { display: none; }
+  .app.has-nav .lang-chip { display: inline-grid; place-items: center; }
+}
+html.in-game .lang-chip { display: none; }
+
+/* ───── Home: brand compact, games first ───── */
+.screen { padding-inline: 14px; }
+.home { gap: var(--gap); padding-bottom: 12px; }
+.home .brand { padding: 0; margin: 0; display: grid; justify-items: center; gap: 0; }
+.home .crest { width: 34px; margin: 0 auto -2px; }
+.home .brand-am { font-size: clamp(2.5rem, 13vw, 3.4rem); }
+.home .brand-en { font-size: .8rem; margin: 2px 0 0; opacity: .8; }
+.home .brand::after { height: 8px; margin: 6px auto 0; width: min(200px, 56%); }
+
+.daily { position: relative; min-height: 68px; padding: 10px 40px 10px 14px; border-radius: 20px; }
+.daily::after { content: '›'; position: absolute; right: 14px; top: 50%; transform: translateY(-52%); font: 900 1.7rem/1 var(--font-ui); color: var(--brand-gold, #FFD36B); }
+.daily:not(.done) { animation: v53-nudge 3.2s ease-in-out infinite; }
+@keyframes v53-nudge { 0%, 100% { box-shadow: 0 5px 0 rgba(0,0,0,.35); } 50% { box-shadow: 0 5px 0 rgba(0,0,0,.35), 0 0 0 4px color-mix(in srgb, var(--ga, #FFB020) 22%, transparent); } }
+
+.game-grid { gap: var(--gap); }
+.gg-card { min-height: 150px; padding: 14px 8px 12px; gap: 3px; border-radius: 22px; }
+.gg-name { font-size: 1.25rem; }
+.gg-tag { font-size: .78rem; }
+.gg-foot { padding-top: 6px; gap: 3px; }
+.gg-rec { font-size: .72rem; }
+/* a lone last card (the "coming soon" one) becomes a slim row instead of a tall slab */
+.gg-card:last-child:nth-child(odd) { grid-column: 1 / -1; min-height: 0; flex-direction: row; justify-content: center; gap: 12px; padding: 12px 16px; }
+.gg-card:last-child:nth-child(odd) .gg-art svg, .gg-card:last-child:nth-child(odd) .gg-art img { width: 40px; height: 40px; }
+.gg-card:last-child:nth-child(odd) .gg-foot { width: auto; margin: 0; padding: 0; }
+.gg-card.soon { filter: saturate(.55) brightness(.9); }
+
+.stat-strip { gap: 6px; }
+.stat-strip div { flex-direction: row; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 6px; border-radius: 14px; }
+.stat-strip b { font-size: 1rem; white-space: nowrap; }
+.stat-strip span { font-size: .68rem; line-height: 1.1; text-align: left; max-width: 7ch; }
+
+/* ───── mode screen: shorter hero + tiles, leaderboard as a slim row ───── */
+.modes { gap: var(--gap); padding: 2px 0 16px; }
+.modes-hero { padding: 10px 14px; gap: 12px; border-radius: 22px; }
+.modes-badge { width: 60px; height: 60px; border-radius: 18px; }
+.modes-hero h1 { font-size: clamp(1.5rem, 7vw, 2rem); }
+.modes-grid { gap: var(--gap); }
+.mode-tile { padding: 22px 8px 14px; border-radius: 22px; gap: 6px; }
+.mode-tile.big { min-height: 168px; }
+.mode-ico { width: 56px; height: 56px; font-size: 1.75rem; }
+.mode-title { font-size: 1rem; }
+.mode-tile.small { grid-column: 1 / -1; flex-direction: row; justify-content: center; min-height: 64px; padding: 10px 16px; gap: 12px; box-shadow: 0 5px 0 color-mix(in srgb, var(--c) 38%, #000), 0 10px 18px rgba(0,0,0,.34), inset 0 2px 0 rgba(255,255,255,.4); }
+.mode-tile.small .mode-ico { width: 40px; height: 40px; font-size: 1.3rem; }
+.mode-tile.small:active { transform: translateY(4px); }
+.mode-tile.small::before { inset: 0 0 55% 0; }
+
+/* ───── bottom bar: lives in the app column, calmer active state ───── */
+.bottom-nav { left: 50%; right: auto; width: min(100%, var(--col-w)); transform: translateX(-50%); border-radius: 22px 22px 0 0; border-left: 1px solid rgba(255,226,154,.18); border-right: 1px solid rgba(255,226,154,.18); }
+.bn-tab { min-height: 54px; }
+.bn-ico { font-size: 1.4rem; }
+.bn-lbl { font-size: .72rem; }
+.bn-tab.on { transform: translateY(-6px); box-shadow: 0 3px 0 #7a4a00, 0 8px 14px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.6); }
+.app.has-nav { padding-bottom: calc(var(--nav-h) + 14px + env(safe-area-inset-bottom)); }
+
+/* short screens (small phones / landscape): tighten without hiding anything */
+@media (max-height: 700px) {
+  .home .brand-am { font-size: 2.3rem; } .home .brand-en { display: none; } .home .brand::after { display: none; }
+  .gg-card { min-height: 132px; } .mode-tile.big { min-height: 140px; }
+}
+@media (max-width: 360px) {
+  .screen { padding-inline: 10px; } .stat-strip span { display: none; } .gg-name { font-size: 1.1rem; }
+}
+/* larger screens: keep the column readable and the cards roomy */
+@media (min-width: 700px) { .gg-card { min-height: 170px; } .mode-tile.big { min-height: 190px; } }
+
+@media (prefers-reduced-motion: reduce) { .daily:not(.done) { animation: none; } }

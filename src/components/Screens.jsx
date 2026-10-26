@@ -28,13 +28,13 @@ export function GameGrid({ t, onPick }) {
   useEffect(() => { setP(loadProgress()); }, []);
   return (
     <div className="game-grid" role="list" aria-label={t.pickGame}>
-      {GAME_LIST.map((id, i) => {
+      {[...GAME_LIST].sort((a, b) => Number(!!GAMES[a].comingSoon) - Number(!!GAMES[b].comingSoon)).map((id, i) => {
         const g = GAMES[id], soon = !!g.comingSoon;
         const r = p?.rec?.[id] || { w: 0, l: 0, d: 0 };
         const n = r.w + r.l + r.d;
         return (
           <button key={id} type="button" role="listitem" className={`gg-card${soon ? ' soon' : ''}`} disabled={soon} onClick={() => onPick(id)} style={{ '--accent': g.accent, '--i': i }}>
-            <span className="gg-art"><GameIcon game={id} size={58} /></span>
+            <span className="gg-art"><GameIcon game={id} size={52} /></span>
             <b className="gg-name">{t[`${id}Name`]}</b>
             <small className="gg-tag">{soon ? t.comingSoon : t[`${id}Tag`]}</small>
             {!soon && (
@@ -85,9 +85,9 @@ export function Home({ t, onPickGame }) {
         <h1 className="brand-am">ገበጣ</h1>
         <p className="brand-en">{t.subtitle}</p>
       </div>
-      <StatStrip t={t} />
       <DailyCard t={t} onPick={onPickGame} />
       <GameGrid t={t} onPick={onPickGame} />
+      <StatStrip t={t} />
     </div>
   );
 }

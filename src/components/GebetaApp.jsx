@@ -219,13 +219,14 @@ export default function GebetaApp() {
       <header className="topbar">
         {view.name === 'home' ? <span className="topbar-spacer" /> :
           <button className="icon-btn" onClick={view.name === 'game' ? leaveGame : ['ai', 'pass', 'online', 'leaders', 'rules'].includes(view.name) ? () => go('modes') : home} aria-label={t.backHome}>‹</button>}
-        <h2 className="topbar-title">{view.name === 'home' ? '' : titles[view.name] || (view.name === 'room' ? `# ${view.code}` : 'ገበጣ')}</h2>
+        <h2 className="topbar-title">{view.name === 'home' || view.name === 'modes' ? '' : titles[view.name] || (view.name === 'room' ? `# ${view.code}` : 'ገበጣ')}</h2>
         <div className="topbar-actions">
           {onlineAvailable && <WalletChip lang={lang} signedIn={!!user} onOpen={() => (user ? setSheet({ type: 'spin' }) : go('online'))} />}
           <div className="lang-switch" role="group" aria-label={t.language}>
             <button className={lang === 'en' ? 'on' : ''} onClick={() => chooseLang('en')} aria-pressed={lang === 'en'} lang="en" title="English">EN</button>
             <button className={lang === 'am' ? 'on' : ''} onClick={() => chooseLang('am')} aria-pressed={lang === 'am'} lang="am" title="አማርኛ">አማ</button>
           </div>
+          <button className="lang-chip" onClick={() => chooseLang(lang === 'en' ? 'am' : 'en')} lang={lang === 'en' ? 'am' : 'en'} aria-label={t.language}>{lang === 'en' ? 'አማ' : 'EN'}</button>
           {inGame && <button className="icon-btn" onClick={toggleFs} aria-label="Full screen" aria-pressed={isFs}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{isFs ? <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" /> : <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />}</svg></button>}
           <button className="icon-btn" onClick={() => go('settings')} aria-label={t.settings}>⚙️</button>
           <button className="icon-btn" onClick={toggleMute} aria-label={t.sound} aria-pressed={!muted}>{muted ? '🔇' : '🔊'}</button>
