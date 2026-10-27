@@ -52,7 +52,7 @@ export default function LudoOnline({ t, lang, room, uid, code, onExit, onSwitchR
           else if (lm.none) { setNote(t.ludoNoMove); sfx.pass(); await wait(650); setNote(''); }
         } else if (lm.kind === 'move') {
           const s0 = gameRef.current;
-          if (s0) for (const pos of pathOf(s0, lm.from, lm.to)) { if (!alive.current) return; setAnim({ p: lm.by, i: lm.i, pos }); sfx.hop(); await wait(lm.from === -1 ? 200 : 140); }
+          if (s0) for (const pos of pathOf(s0, lm.from, lm.to)) { if (!alive.current) return; setAnim({ p: lm.by, i: lm.i, pos }); sfx.hop(); await wait(lm.from === -1 ? 320 : 280); }
           setAnim(null); sfx.land();
           if (lm.caps) {
             const caps = capturedDiff(s0, ns, lm.by, lm.i);
@@ -103,7 +103,7 @@ export default function LudoOnline({ t, lang, room, uid, code, onExit, onSwitchR
   const clock = L.playing && L.secondsLeft != null ? { left: Math.min(L.secondsLeft, L.turnMax), max: L.turnMax } : null;
 
   return (
-    <div className={`ludo ${g.board}`} style={{ '--tc': color, '--step': '0.14s' }}>
+    <div className={`ludo ${g.board}`} style={{ '--tc': color, '--step': '0.28s' }}>
       {['top', 'bottom'].map((row) => {
         const here = ORDER[row].map((sl) => g.seats.findIndex((st) => SLOT[g.board][dp(st)] === sl)).filter((p) => p >= 0);
         return (

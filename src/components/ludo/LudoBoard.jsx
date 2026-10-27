@@ -120,12 +120,13 @@ function Square({ seats, turnSeat, names, youSlot }) {
 
 /** A toy pawn drawn at radius 1: white-rimmed glossy sphere head, collar, tapered body and a chunky rounded base. */
 function Pawn({ seat, fin }) {
-  const rim = { stroke: '#fff', strokeOpacity: 0.92, strokeWidth: 0.1, strokeLinejoin: 'round' };
+  const rim = { stroke: '#fff', strokeOpacity: 0.95, strokeWidth: 0.085, strokeLinejoin: 'round' };
   return (
     <g transform={`translate(0 ${fin ? 0.05 : 0.2})`}>
       <ellipse cx="0" cy="0.58" rx="0.98" ry="0.36" fill={DARK[seat]} {...rim} />
       <ellipse cx="0" cy="0.46" rx="0.98" ry="0.36" fill={`url(#lc${seat})`} stroke="rgba(0,0,0,.45)" strokeWidth="0.05" />
       <ellipse cx="-0.25" cy="0.38" rx="0.4" ry="0.1" fill="#fff" opacity=".5" />
+      <ellipse cx="0" cy="0.62" rx="0.8" ry="0.12" fill="#000" opacity=".12" />
       <path d="M-0.62,0.42 C-0.62,0.06 -0.28,0.04 -0.2,-0.34 L0.2,-0.34 C0.28,0.04 0.62,0.06 0.62,0.42 C0.4,0.58 -0.4,0.58 -0.62,0.42 Z" fill={`url(#lb${seat})`} {...rim} />
       <ellipse cx="0" cy="-0.36" rx="0.5" ry="0.15" fill={`url(#lc${seat})`} {...rim} />
       <circle cx="0" cy="-0.82" r="0.52" fill={`url(#lg${seat})`} {...rim} />
