@@ -76,7 +76,7 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
   // restore preferences and offer to resume an unfinished game
   useEffect(() => {
     setFast(store.get('ludo.fast') === '1'); setTimerOn(store.get('ludo.timer') !== '0');
-    const lg = store.get('ludo.log'); setShowLog(lg == null ? window.innerHeight >= 780 : lg === '1');   // tall screens keep the real move log open
+    const lg = store.get('ludo.log'); setShowLog(lg === '1');   // tall screens keep the real move log open
     const raw = store.get(saveKey);
     if (!raw) return;
     try {
@@ -113,7 +113,7 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
     const m = applyMove(s0, i); if (!m.ok) return;
     busy.current = true; setNote(''); setHintKey(null); setTrail(null);
     const seat = s0.seats[s0.turn], steps = pathOf(s0, m.from, m.to);
-    for (const pos of steps) { if (!alive.current) return; setAnim({ p: s0.turn, i, pos }); sfx.hop(); await wait((m.from === -1 ? 260 : 170) * sp); }
+    for (const pos of steps) { if (!alive.current) return; setAnim({ p: s0.turn, i, pos }); sfx.hop(); await wait((m.from === -1 ? 200 : 140) * sp); }
     if (!alive.current) return;
     const caps = capturedDiff(s0, m.state, s0.turn, i);
     if (caps.length) setRet(retInit(caps));      // keep the hit pawns on their cell for a beat
@@ -137,7 +137,7 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
     busy.current = true; setRolling(true); setNote(''); setHintKey(null); sfx.dice();
     const value = rollDie();
     const who = s0.turn; setFaces((f) => f.map((v, k) => (k === who ? value : v))); setRollIds((r) => r.map((v, k) => (k === who ? v + 1 : v)));   // the cube in that player's own area tumbles to the rolled face
-    await wait(900 * sp);
+    await wait(720 * sp);
     if (!alive.current) return;
     setRolling(false);
     const r = applyRoll(s0, value);
@@ -166,7 +166,7 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
   const legal = useMemo(() => new Set(humanTurn && game.phase === 'move' && idle ? legalMoves(game).map((i) => `${game.turn}:${i}`) : []), [game, humanTurn, idle]);
   const previews = useMemo(() => (legal.size ? new Map(previewAll(game).map((pv) => [`${game.turn}:${pv.i}`, pv])) : null), [game, legal]);
   const toks = [];
-  game.pos.forEach((arr, p) => arr.forEach((pos, i) => { const mv = anim && anim.p === p && anim.i === i; const rk = ret && ret[`${p}:${i}`]; const back = rk !== undefined; toks.push({ p, i, seat: game.seats[p], pos: back ? rk : mv ? anim.pos : pos, moving: mv, back }); }));
+  game.pos.forEach((arr, p) => arr.forEach((pos, i) => { const mv = anim && anim.p === p && anim.i === i; const rk = ret ? ret[`${p}:${i}`] : undefined; const back = rk !== undefined && rk !== null; toks.push({ p, i, seat: game.seats[p], pos: back ? rk : mv ? anim.pos : pos, moving: mv, back }); }));
   const seatNow = game.seats[game.turn], color = COLORS[seatNow];
   const F = finishOf(game.board);
   const homeCount = (p) => game.pos[p].filter((x) => x === F).length;
@@ -228,7 +228,7 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
   );
 
   return (
-    <div className={`ludo ${game.board}`} style={{ '--tc': color, '--step': `${0.17 * sp}s` }}>
+    <div className={`ludo ${game.board}`} style={{ '--tc': color, '--step': `${0.14 * sp}s` }}>
       {['top', 'bottom'].map((row) => {
         const seatsHere = ORDER[row].map((sl) => game.seats.findIndex((st) => SLOT[game.board][st] === sl)).filter((p) => p >= 0);
         return (
@@ -239,7 +239,7 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
               return (
                 <div key={p} className={`ludo-panel ${slot}${on ? ' on' : ''}${done ? ' done' : ''}`} style={{ '--pc': COLORS[seat] }} aria-current={on ? 'true' : undefined}
                   title={t.ludoTokenCount ? t.ludoTokenCount(homeCount(p), game.tokensPer) : undefined}>
-                  <Die value={faces[p]} rolling={rolling && on} rollId={rollIds[p]} color={COLORS[seat]} disabled={!mine} onRoll={userRoll} label={`${t.ludoRoll} — ${pp.name}`} ms={900 * sp} />
+                  <Die value={faces[p]} rolling={rolling && on} rollId={rollIds[p]} color={COLORS[seat]} disabled={!mine} onRoll={userRoll} label={`${t.ludoRoll} — ${pp.name}`} ms={720 * sp} />
                   <div className="info">
                     <b className="nm"><span className={`av${pp.photo ? ' photo' : ''}`}>{pp.photo ? <img src={pp.photo} alt="" /> : pp.human ? initialOf(pp.name) : '🤖'}</span><span className="tx">{pp.name}</span></b>
                     <span className="pips">{game.pos[p].map((x, k) => <i key={k} className={x === F ? 'home' : x >= 0 ? 'out' : ''} />)}</span>

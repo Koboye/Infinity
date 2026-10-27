@@ -45,13 +45,13 @@ export default function LudoOnline({ t, lang, room, uid, code, onExit, onSwitchR
       if (r.moveSeq === seqRef.current + 1 && lm) {
         if (lm.kind === 'roll') {
           setRolling(true); setFaces((f) => f.map((v, k) => (k === lm.by ? lm.value : v))); setRollIds((ids) => ids.map((v, k) => (k === lm.by ? v + 1 : v))); sfx.dice();
-          await wait(850); if (!alive.current) return;
+          await wait(720); if (!alive.current) return;
           setRolling(false);
           if (lm.forfeited) { setFlash({ text: t.ludoSixes, kind: 'bad', k: Math.random() }); sfx.pass(); }
           else if (lm.none) { setNote(t.ludoNoMove); sfx.pass(); await wait(650); setNote(''); }
         } else if (lm.kind === 'move') {
           const s0 = gameRef.current;
-          if (s0) for (const pos of pathOf(s0, lm.from, lm.to)) { if (!alive.current) return; setAnim({ p: lm.by, i: lm.i, pos }); sfx.hop(); await wait(lm.from === -1 ? 240 : 160); }
+          if (s0) for (const pos of pathOf(s0, lm.from, lm.to)) { if (!alive.current) return; setAnim({ p: lm.by, i: lm.i, pos }); sfx.hop(); await wait(lm.from === -1 ? 200 : 140); }
           setAnim(null); sfx.land();
           if (lm.caps) {
             const caps = capturedDiff(s0, ns, lm.by, lm.i);
@@ -91,14 +91,14 @@ export default function LudoOnline({ t, lang, room, uid, code, onExit, onSwitchR
 
   if (!g) return <div className="panel center"><p>{t.roomGone}</p></div>;
   const toks = [];
-  g.pos.forEach((arr, p) => arr.forEach((pos, i) => { const mv = anim && anim.p === p && anim.i === i; const rk = ret && ret[`${p}:${i}`]; const back = rk !== undefined; toks.push({ p, i, seat: g.seats[p], pos: back ? rk : mv ? anim.pos : pos, moving: mv, back }); }));
+  g.pos.forEach((arr, p) => arr.forEach((pos, i) => { const mv = anim && anim.p === p && anim.i === i; const rk = ret ? ret[`${p}:${i}`] : undefined; const back = rk !== undefined && rk !== null; toks.push({ p, i, seat: g.seats[p], pos: back ? rk : mv ? anim.pos : pos, moving: mv, back }); }));
   const seatNow = g.seats[g.turn], color = COLORS[seatNow], F = finishOf(g.board);
   const homeCount = (p) => g.pos[p].filter((x) => x === F).length;
   const status = g.over ? '' : rolling ? '…' : note || (g.phase === 'move' ? (myTurn ? t.ludoPick : t.ludoRolled(people[g.turn].name, g.dice)) : L.myTurn ? t.ludoYourTurn : t.ludoTurnOf(people[g.turn].name));
   const clock = L.playing && L.secondsLeft != null ? { left: Math.min(L.secondsLeft, L.turnMax), max: L.turnMax } : null;
 
   return (
-    <div className={`ludo ${g.board}`} style={{ '--tc': color, '--step': '0.17s' }}>
+    <div className={`ludo ${g.board}`} style={{ '--tc': color, '--step': '0.14s' }}>
       {['top', 'bottom'].map((row) => {
         const here = ORDER[row].map((sl) => g.seats.findIndex((st) => SLOT[g.board][st] === sl)).filter((p) => p >= 0);
         return (
@@ -107,7 +107,7 @@ export default function LudoOnline({ t, lang, room, uid, code, onExit, onSwitchR
               const st = g.seats[p], on = g.turn === p && !g.over, slot = SLOT[g.board][st], mine = on && canRoll && p === seat;
               return (
                 <div key={p} className={`ludo-panel ${slot}${on ? ' on' : ''}`} style={{ '--pc': COLORS[st] }} aria-current={on ? 'true' : undefined}>
-                  <Die value={faces[p]} rolling={rolling && on} rollId={rollIds[p]} color={COLORS[st]} disabled={!mine} onRoll={roll} label={`${t.ludoRoll} — ${people[p].name}`} ms={850} />
+                  <Die value={faces[p]} rolling={rolling && on} rollId={rollIds[p]} color={COLORS[st]} disabled={!mine} onRoll={roll} label={`${t.ludoRoll} — ${people[p].name}`} ms={720} />
                   <div className="info">
                     <b className="nm"><span className="av">{people[p].glyph}</span><span className="tx">{p === seat ? t.you : people[p].name}</span></b>
                     <span className="pips">{g.pos[p].map((x, k) => <i key={k} className={x === F ? 'home' : x >= 0 ? 'out' : ''} />)}</span>

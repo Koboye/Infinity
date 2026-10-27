@@ -169,3 +169,14 @@ html body .bn-tab.on { padding-inline: 0; }
 .ludo-svg .ludo-ret circle { opacity: 0; transform-box: fill-box; transform-origin: center; animation: ludo-retdot .5s ease-out forwards; }
 @keyframes ludo-retdot { 0% { opacity: 0; transform: scale(.2); } 40% { opacity: .95; transform: scale(1.15); } 100% { opacity: .55; transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) { .ludo-die3d:not(.rolling):not(.idle) .cube, .ludo-svg .ludo-tok.back .body, .ludo-svg .ludo-tok .retring { animation: none; } }
+
+/* ═════ v77 seamless pawns: smooth gliding, one clean hop per cell, no clutter ═════ */
+.ludo-svg .ludo-tok { will-change: transform; transition: transform var(--step) cubic-bezier(.33, .1, .4, 1); }
+.ludo-svg .ludo-tok.moving { z-index: 6; }
+.ludo-svg .ludo-tok.moving .body { animation: ludo-hop2 calc(var(--step) * 1.05) cubic-bezier(.3, .6, .4, 1); }
+.ludo-svg .ludo-tok.moving .shadow { animation: ludo-shade calc(var(--step) * 1.05) ease-out; }
+@keyframes ludo-hop2 { 0% { transform: translateY(0) scale(1.04, .94); } 45% { transform: translateY(calc(var(--hop) * -.9px)) scale(.96, 1.06); } 100% { transform: translateY(0) scale(1, 1); } }
+.ludo-svg .ludo-tok.can .body { animation-duration: 1.2s; }
+.ludo-svg .ludo-ret circle { animation: ludo-retdot .9s ease-out forwards; }
+@keyframes ludo-retdot { 0% { opacity: 0; transform: scale(.2); } 30% { opacity: .85; transform: scale(1); } 100% { opacity: 0; transform: scale(.7); } }
+.ludo .ludo-log { max-height: 11vh; }

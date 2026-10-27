@@ -13,14 +13,14 @@ export const retInit = (caps) => Object.fromEntries(caps.map((c) => [`${c.p}:${c
 export async function animateReturn(s0, caps, { setRet, setRetTrail, wait, alive }) {
   if (!caps.length) return;
   setRetTrail(caps.map((c) => ({ seat: c.seat, pts: trailXY(s0.board, c.seat, -1, c.from).reverse() })));
-  await wait(420);                                        // let the hit be seen first
+  await wait(300);                                        // let the hit be seen first
   const len = Math.max(...caps.map((c) => c.from + 1));
-  const step = Math.max(24, Math.min(70, 1500 / len));
+  const step = Math.max(18, Math.min(45, 900 / len));
   for (let k = 1; k <= len; k++) {
     if (!alive()) return;
     setRet(Object.fromEntries(caps.map((c) => [`${c.p}:${c.i}`, k <= c.from ? c.from - k : -1])));
     await wait(step);
   }
-  await wait(200);
+  await wait(120);
   setRet(null); setRetTrail(null);
 }
