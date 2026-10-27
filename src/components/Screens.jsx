@@ -1,4 +1,5 @@
 'use client';
+import { orderGames } from '@/lib/recent.js';
 import React, { useEffect, useState } from 'react';
 import AppActions from './AppActions';
 import {
@@ -26,18 +27,21 @@ export const Tibeb = () => <div className="tibeb" aria-hidden="true" />;
 /** Every game as a card. Numbers come from this device's real progress record; nothing is invented. */
 export function GameGrid({ t, onPick }) {
   const [p, setP] = useState(null);
-  useEffect(() => { setP(loadProgress()); }, []);
+  const [recent, setRecent] = useState([]);
+  useEffect(() => { setP(loadProgress()); try { setRecent(JSON.parse(localStorage.getItem('gebeta.recent')) || []); } catch { /* no history yet */ } }, []);
+  const order = orderGames(GAME_LIST, recent, (id) => !!GAMES[id].comingSoon);
   return (
     <div className="game-grid" role="list" aria-label={t.pickGame}>
-      {[...GAME_LIST].sort((a, b) => Number(!!GAMES[a].comingSoon) - Number(!!GAMES[b].comingSoon)).map((id, i) => {
+      {order.map((id, i) => {
         const g = GAMES[id], soon = !!g.comingSoon;
         const r = p?.rec?.[id] || { w: 0, l: 0, d: 0 };
         const n = r.w + r.l + r.d;
         return (
-          <button key={id} type="button" role="listitem" className={`gg-card${soon ? ' soon' : ''}`} disabled={soon} onClick={() => onPick(id)} style={{ '--accent': g.accent, '--i': i }}>
+          <button key={id} type="button" role="listitem" className={`gg-card${soon ? ' soon' : ''}${!soon && i === 0 && recent.length ? ' recent' : ''}`} disabled={soon} onClick={() => onPick(id)} style={{ '--accent': g.accent, '--i': i }}>
             <span className="gg-art"><GameIcon game={id} size={52} /></span>
             <b className="gg-name">{t[`${id}Name`]}</b>
             <small className="gg-tag">{soon ? t.comingSoon : t[`${id}Tag`]}</small>
+            {!soon && i === 0 && recent.length > 0 && <em className="gg-last">{t.lastPlayed}</em>}
             {!soon && (
               <span className="gg-foot">
                 <span className={`gg-mode${g.offlineOnly ? '' : ' on'}`}>{g.offlineOnly ? t.badgeOffline : t.homeBoth}</span>

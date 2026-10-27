@@ -19,3 +19,8 @@
 @keyframes earn-spin { to { transform: rotate(360deg); } }
 @media (max-width: 360px) { .earn-copy small { font-size: .72rem; } .earn-go { padding-inline: 10px; } }
 @media (prefers-reduced-motion: reduce) { .earn-offer, .earn-offer::after, .earn-ico { animation: none !important; } }
+
+/* v68: the last-played game stands out on the home grid; the always-there reward button is a full thumb target */
+.gg-card.recent { box-shadow: 0 0 0 2px var(--accent, var(--gold)), 0 10px 26px rgba(0, 0, 0, .35); }
+.gg-last { position: absolute; top: 8px; inset-inline-end: 8px; padding: 2px 8px; border-radius: 999px; font: 800 .62rem/1.5 var(--font-ui); font-style: normal; letter-spacing: .03em; color: #2A1A05; background: linear-gradient(180deg, #FFE08A, #E9B64A); box-shadow: 0 1px 0 var(--gold-deep, #9c6f12); }
+.reward-btn { min-height: 40px; min-width: 44px; justify-content: center; }

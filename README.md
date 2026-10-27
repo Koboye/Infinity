@@ -271,3 +271,9 @@ Every live ad now takes its turn in a fixed order (sorted by id: A, B, C, A, B, 
 
 ## v67 — ads in consecutive order, newest first
 Every ad (app open, game start, Play again / Rematch, rewarded) now rotates in a fixed order: the newest ad first, then the next older one, down to the oldest, then around again (`rotatePick` in `src/lib/adsSmart.js`). Weight and tap-rate no longer change the order. Dates, placement, language/game/hour targeting, the per-player daily limit and the ad's own daily cap still decide which ads are in the rotation. The rewarded ad is rotated per player on the server. Tests: `tests/ads-rotate.test.mjs`.
+
+## v68 — faster start, smarter home order
+- **Faster first open.** Each game (Gebeta, Checkers, Dominoes, Bingo, Ludo) and the online room are now separate downloads, fetched only when opened; the download starts while the pre-game ad is on screen, so the ad hides the wait. The home screen no longer loads game code it may never use.
+- **Last played first.** The home grid puts the game you played last at the front with a "Last played" badge, then your other recent games, then unplayed ones in catalogue order; "coming soon" games stay last (`src/lib/recent.js`, history kept on the device only).
+- **Thumb-sized reward button** (40 px high, 44 px wide) in the top bar.
+- Tests: `tests/home-order.test.mjs`.

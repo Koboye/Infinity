@@ -7,11 +7,8 @@ import { STRINGS } from '@/lib/i18n';
 import { setMuted } from '@/lib/sound';
 import { setMusic, pauseMusic } from '@/lib/music';
 import { loadSettings, saveSettings, applySettings, DEFAULTS } from '@/lib/settings';
-import LocalGame from './LocalGame';
-import CheckersLocal from './checkers/CheckersLocal';
-import DominoesLocal from './dominoes/DominoesLocal';
-import BingoGame from './bingo/BingoGame';
-import LudoGame from './ludo/LudoGame';
+import dynamic from 'next/dynamic';
+import { touchRecent } from '@/lib/recent.js';
 import ModesScreen from './ModesScreen';
 import BottomNav from './BottomNav';
 import { WalletChip, SpinSheet, WelcomeGift } from './Wallet';
@@ -20,12 +17,24 @@ import EarnOffer from './EarnOffer';
 import AdOverlay from './AdOverlay';
 import * as Ads from '@/lib/ads';
 import * as Wallet from '@/lib/wallet';
-import OnlineRoom from './online/OnlineRoom';
 import { Home, Setup, RulesScreen, AuthForm, Lobby, Leaders, ProfileScreen, ProgressScreen, SettingsScreen, Tibeb } from './Screens';
 import { isPlayable, GAMES } from '@/lib/games.js';
 import Coach, { needsCoach } from './Coach';
 import { usePhoto } from '@/lib/photo';
 import { setCurrentGame, visit, onUnlock, load as loadProgress, mergeProgress, saveMerged } from '@/lib/progress';
+
+// v68: each game's code is downloaded only when it is opened, so the app opens faster on a slow connection.
+const Loading = () => <div className="boot" role="status" aria-busy="true"><div className="boot-seed" /></div>;
+const lazy = (load) => dynamic(load, { ssr: false, loading: Loading });
+const LocalGame = lazy(() => import('./LocalGame'));
+const CheckersLocal = lazy(() => import('./checkers/CheckersLocal'));
+const DominoesLocal = lazy(() => import('./dominoes/DominoesLocal'));
+const BingoGame = lazy(() => import('./bingo/BingoGame'));
+const LudoGame = lazy(() => import('./ludo/LudoGame'));
+const OnlineRoom = lazy(() => import('./online/OnlineRoom'));
+
+const PRELOAD = { gebeta: () => import('./LocalGame'), checkers: () => import('./checkers/CheckersLocal'), dominoes: () => import('./dominoes/DominoesLocal'), bingo: () => import('./bingo/BingoGame'), ludo: () => import('./ludo/LudoGame') };
+const preload = (g) => { try { PRELOAD[g]?.().catch(() => {}); } catch { /* the normal load will try again */ } };   // starts the download while the pre-game ad is on screen
 
 const read = (k, d) => { try { return localStorage.getItem(k) ?? d; } catch { return d; } };
 const write = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
@@ -71,7 +80,7 @@ export default function GebetaApp() {
   useEffect(() => { setCurrentGame(game); document.documentElement.dataset.game = game; document.documentElement.style.setProperty('--game-accent', (GAMES[game] || GAMES.gebeta).accent); }, [game]);
   useEffect(() => { visit(); return onUnlock((fresh) => { setToast(fresh[0]); setTimeout(() => setToast(null), 3500); }); }, []);
 
-  const pickGame = (g) => { setGame(g); if (isPlayable(g)) write('gebeta.game', g); };
+  const pickGame = (g) => { setGame(g); if (isPlayable(g)) { write('gebeta.game', g); try { write('gebeta.recent', JSON.stringify(touchRecent(JSON.parse(read('gebeta.recent', '[]')), g))); } catch { /* history is a nicety */ } } };
   const chooseLang = (l) => { setLang(l); write('gebeta.lang', l); };
   // Browsers only allow audio after a tap, so music starts on the first interaction.
   useEffect(() => {
@@ -145,7 +154,7 @@ export default function GebetaApp() {
     // starting a game is a tap, so the browser lets us take the whole screen right now
     if ((name === 'game' || name === 'room') && !document.fullscreenElement) document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }).catch(() => {});
     const enter = () => { if (name === 'game') setCoach(needsCoach(extra.game) ? extra.game : null); setView({ name, ...extra }); };
-    if (name === 'game') { runAd('pre_game', { game: extra.game }).then(enter); return; }   // a short ad before a local game (capped, see adsCore.CAPS)
+    if (name === 'game') { preload(extra.game); runAd('pre_game', { game: extra.game }).then(enter); return; }   // a short ad before a local game (capped, see adsCore.CAPS)
     enter(); };
   const home = () => setView({ name: 'home' });
   // The wallet belongs to the signed-in account and lives on the server: ask for it whenever the account changes.
