@@ -268,3 +268,6 @@ Adds to the v62.1 global click guard (per-address limit, `src/lib/upstashGuard.j
 
 ## v67 — ads in consecutive order
 Every live ad now takes its turn in a fixed order (sorted by id: A, B, C, A, B, C …) at app open, game start, between rounds and for rewarded ads (`rotatePick` in `src/lib/adsSmart.js`). Targeting (language, hours, games), dates, placements and each player's daily limit per ad still apply; weight and tap-rate no longer change the order. Rewarded ads rotate per player on the server. Tests: `tests/ads-rotate.test.mjs`.
+
+## v67 — ads in consecutive order, newest first
+Every ad (app open, game start, Play again / Rematch, rewarded) now rotates in a fixed order: the newest ad first, then the next older one, down to the oldest, then around again (`rotatePick` in `src/lib/adsSmart.js`). Weight and tap-rate no longer change the order. Dates, placement, language/game/hour targeting, the per-player daily limit and the ad's own daily cap still decide which ads are in the rotation. The rewarded ad is rotated per player on the server. Tests: `tests/ads-rotate.test.mjs`.
