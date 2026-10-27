@@ -147,7 +147,7 @@ export const STRINGS = {
   am: {
     appName: 'ገበጣ', subtitle: 'ክላሲክ ጨዋታዎች በኢትዮጵያ ዘይቤ',
     playComputer: 'ከኮምፒውተር ጋር ተጫወት', playComputerSub: 'ያለ ኢንተርኔት፣ ሦስት ደረጃዎች',
-    lastPlayed: 'ለመጨረሻ የተጫወቱት', chooseMode: 'እንዴት መጫወት ይፈልጋሉ?', badgeOffline: 'ያለ ኢንተርኔት', badgeOnline: 'በኢንተርኔት', homeBoth: 'በኢንተርኔት + ያለ ኢንተርኔት', homeFresh: 'የመጀመሪያ ጨዋታህን ተጫወት', homeRecord: (w, l, d) => `${w} ድል · ${l} ሽንፈት · ${d} አቻ`,
+    lastPlayed: 'ለመጨረሻ የተጫወቱት', pause: 'አቁም', resume: 'ቀጥል', paused: 'ቆሟል', pausedSub: 'ኳሶቹ ቆመዋል። እስኪቀጥሉ ድረስ ካርድዎ ተደብቋል።', assist: 'ዝግጁ አራቶችን አሳይ', voice: 'የቢንጎ ጠሪ ድምፅ', voiceOn: 'ድምፅ በርቷል', voiceOff: 'ድምፅ ጠፍቷል', noAmVoice: 'በዚህ ስልክ ላይ የአማርኛ ድምፅ የለም — ኳሶቹ በእንግሊዝኛ ይነበባሉ። በስልክዎ የጽሑፍ-ወደ-ንግግር ቅንብር ውስጥ የአማርኛ ድምፅ ይጫኑ።', chooseMode: 'እንዴት መጫወት ይፈልጋሉ?', badgeOffline: 'ያለ ኢንተርኔት', badgeOnline: 'በኢንተርኔት', homeBoth: 'በኢንተርኔት + ያለ ኢንተርኔት', homeFresh: 'የመጀመሪያ ጨዋታህን ተጫወት', homeRecord: (w, l, d) => `${w} ድል · ${l} ሽንፈት · ${d} አቻ`,
     playFriendOnline: 'በኢንተርኔት ተጫወት', playFriendOnlineSub: 'ፈጣን ጨዋታ ወይም በኮድ ጓደኛ ጋብዝ',
     passPlay: 'ሁለት ተጫዋች፣ አንድ ስልክ', passPlaySub: 'ተራ በተራ ስልኩን ተቀባበሉ',
     leaderboard: 'የደረጃ ሰንጠረዥ', profile: 'መገለጫ', rules: 'ሕግጋት', settings: 'ቅንብሮች',

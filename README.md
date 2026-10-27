@@ -277,3 +277,9 @@ Every ad (app open, game start, Play again / Rematch, rewarded) now rotates in a
 - **Last played first.** The home grid puts the game you played last at the front with a "Last played" badge, then your other recent games, then unplayed ones in catalogue order; "coming soon" games stay last (`src/lib/recent.js`, history kept on the device only).
 - **Thumb-sized reward button** (40 px high, 44 px wide) in the top bar.
 - Tests: `tests/home-order.test.mjs`.
+
+## v68.1 — offline-safe lazy games, Amharic gaps closed, install shortcuts
+- **Offline fix.** Because games load on demand (v68), a game never opened before going offline could not start. After the opening ad, when the phone is idle, the app now fetches the other games' code one by one (skipped on Data Saver or offline). The service-worker cache is bumped to `gebeta-v26` so phones re-learn the new files.
+- **Amharic gaps closed.** Nine texts (Bingo pause / resume / voice, "show ready fours", the no-Amharic-voice notice) existed only in English; Amharic players saw English. They are translated now. **Please have a native speaker review these nine.** `tests/i18n-offline.test.mjs` fails if English and Amharic ever drift apart again.
+- **Install shortcuts.** Long-pressing the installed app icon offers Gebeta, Checkers, Ludo and Bingo.
+- Checked, no change needed: Firestore rules (wallet, ads and rooms are server-only).

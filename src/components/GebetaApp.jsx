@@ -147,6 +147,16 @@ export default function GebetaApp() {
   const [splashDone, setSplashDone] = useState(false);          // v66: the free-spins banner waits until the opening ad is over
   useEffect(() => { if (splashed.current) return; splashed.current = true; Ads.warm(); runAd('splash').finally(() => setSplashDone(true)); }, [runAd]);   // app open
   useEffect(() => { Ads.setGate((g) => runAd('pre_game', { game: g })); return () => Ads.setGate(null); }, [runAd]);   // v66: the ad between rounds (Play again / Rematch) in every game
+  // v68.1: lazy game code must also work OFFLINE. Once the opening ad is over and the phone is idle, fetch the other games' code one by one
+  // (the service worker keeps what is fetched), so every game still starts without a connection. Skipped on Data Saver or when offline.
+  useEffect(() => {
+    if (!splashDone) return undefined;
+    try { if (navigator.connection?.saveData || !navigator.onLine) return undefined; } catch { /* unknown: go on */ }
+    const timers = [];
+    const run = () => Object.keys(PRELOAD).forEach((g, i) => timers.push(setTimeout(() => preload(g), i * 1200)));
+    const idle = 'requestIdleCallback' in window ? window.requestIdleCallback(run, { timeout: 8000 }) : setTimeout(run, 4000);
+    return () => { timers.forEach(clearTimeout); try { if ('cancelIdleCallback' in window) window.cancelIdleCallback(idle); else clearTimeout(idle); } catch { /* ignore */ } };
+  }, [splashDone]);
   const go = (name, extra = {}) => {
     // a coming-soon game (Dominoes) has no play, setup, rules, online or leaderboard screens
     if (['modes', 'ai', 'pass', 'online', 'leaders', 'rules'].includes(name) && !isPlayable(game)) return;

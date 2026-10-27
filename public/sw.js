@@ -1,5 +1,5 @@
 // Gebeta service worker: offline play (computer + pass-and-play) after the first visit.
-const V = 'gebeta-v25';
+const V = 'gebeta-v26';   // v68.1: bumped so phones drop the old cache and re-learn the split game files
 const SHELL = ['/', '/manifest.json', '/icon.svg', '/icon-192.png', '/icon-512.png', '/og-image.png'];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(V).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', (e) => {

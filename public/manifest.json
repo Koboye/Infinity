@@ -38,57 +38,50 @@
   ],
   "shortcuts": [
     {
-      "name": "ገበጣ Gebeta",
-      "short_name": "ገበጣ Gebeta",
+      "name": "ገበጣ · Gebeta",
+      "short_name": "Gebeta",
       "url": "/?game=gebeta",
       "icons": [
         {
           "src": "/icon-192.png",
-          "sizes": "192x192"
+          "sizes": "192x192",
+          "type": "image/png"
         }
       ]
     },
     {
-      "name": "ዳማ Dama",
-      "short_name": "ዳማ Dama",
+      "name": "ዳማ · Checkers",
+      "short_name": "Checkers",
       "url": "/?game=checkers",
       "icons": [
         {
           "src": "/icon-192.png",
-          "sizes": "192x192"
+          "sizes": "192x192",
+          "type": "image/png"
         }
       ]
     },
     {
-      "name": "ሉዶ Ludo",
-      "short_name": "ሉዶ Ludo",
+      "name": "ሉዶ · Ludo",
+      "short_name": "Ludo",
       "url": "/?game=ludo",
       "icons": [
         {
           "src": "/icon-192.png",
-          "sizes": "192x192"
+          "sizes": "192x192",
+          "type": "image/png"
         }
       ]
     },
     {
-      "name": "Dominoes",
-      "short_name": "Dominoes",
-      "url": "/?game=dominoes",
-      "icons": [
-        {
-          "src": "/icon-192.png",
-          "sizes": "192x192"
-        }
-      ]
-    },
-    {
-      "name": "Bingo",
+      "name": "ቢንጎ · Bingo",
       "short_name": "Bingo",
       "url": "/?game=bingo",
       "icons": [
         {
           "src": "/icon-192.png",
-          "sizes": "192x192"
+          "sizes": "192x192",
+          "type": "image/png"
         }
       ]
     }
