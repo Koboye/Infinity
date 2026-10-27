@@ -99,6 +99,9 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
     return { human, photo: p === 0 ? me.photo || null : null, name: p === 0 ? me.name : mode === 'pass' ? t.ludoPlayerN(p + 1) : comps > 1 ? `${t.computer} ${p}` : t.computer };
   }), [players, mode, me.name, me.photo, t]);
 
+  const slotNames = useMemo(() => { const o = {}; game.seats.forEach((st, p) => { o[(st + view) % 4] = people[p].name; }); return o; }, [game.seats, view, people]);
+  const youSlot = mode === 'pass' ? null : (game.seats[0] + view) % 4;   // the base that is YOURS on this screen: always bottom-left
+
   const commit = useCallback((s) => { gameRef.current = s; setGame(s); }, []);
   const say = useCallback((text, kind = 'info') => { setFlash({ text, kind, k: Math.random() }); }, []);
   const burst = useCallback((x, y, color, kind) => {
@@ -244,7 +247,7 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
               const seat = game.seats[p], pp = people[p], on = game.turn === p && !game.over, done = game.ranks.includes(p), slot = SLOT[game.board][(seat + view) % 4];
               const mine = on && canRoll;
               return (
-                <div key={p} className={`ludo-panel ${slot}${on ? ' on' : ''}${done ? ' done' : ''}`} style={{ '--pc': colOf(seat) }} aria-current={on ? 'true' : undefined}
+                <div key={p} className={`ludo-panel ${slot}${on ? ' on' : ''}${done ? ' done' : ''}${mode !== 'pass' && p === 0 ? ' me' : ''}`} style={{ '--pc': colOf(seat) }} aria-current={on ? 'true' : undefined}
                   title={t.ludoTokenCount ? t.ludoTokenCount(homeCount(p), game.tokensPer) : undefined}>
                   <Die value={faces[p]} rolling={rolling && on} rollId={rollIds[p]} color={colOf(seat)} disabled={!mine} onRoll={userRoll} label={`${t.ludoRoll} — ${pp.name}`} ms={720 * sp} />
                   <div className="info">
@@ -262,7 +265,7 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
         );
       })}
       <div className="ludo-board" style={{ order: 1 }}>
-        <LudoBoard board={game.board} seats={game.seats} tokens={toks} legal={legal} onPick={userPick} hintKey={hintKey} turnSeat={seatNow} previews={previews} trail={trail} retTrail={retTrail} fx={fx} flying={flying} view={view} />
+        <LudoBoard board={game.board} seats={game.seats} tokens={toks} legal={legal} onPick={userPick} hintKey={hintKey} turnSeat={seatNow} previews={previews} trail={trail} retTrail={retTrail} fx={fx} flying={flying} view={view} names={slotNames} youSlot={youSlot} />
         {flash && <div className={`flash ${flash.kind}`} key={flash.k} onAnimationEnd={() => setFlash(null)}>{flash.text}</div>}
       </div>
       <div className={`ludo-dock${canRoll ? ' ready' : ''}`} style={{ '--dc': color, order: 4 }}>

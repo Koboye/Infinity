@@ -284,6 +284,13 @@ Every ad (app open, game start, Play again / Rematch, rewarded) now rotates in a
 - **Install shortcuts.** Long-pressing the installed app icon offers Gebeta, Checkers, Ludo and Bingo.
 - Checked, no change needed: Firestore rules (wallet, ads and rooms are server-only).
 
+## v80 — Ludo: "You" is always in view, named bases, richer player strips
+
+- **Every base is named on the board.** Each corner carries a nameplate; yours (always bottom-left) is a gold **You** plate with a softly glowing gold border. The base whose turn it is pulses white. Works offline, pass-and-play (no "You" plate) and online. Code: `names` / `youSlot` props of `LudoBoard.jsx`.
+- **Your row never leaves the screen.** The whole table (players, board, dock) is centred in the visible height (`--app-h`), so your strip and die stay on screen on short phones too (checked at 360×640 and 390×844).
+- **Player strips.** Gold-trimmed, slightly larger strip for you; computer names ("Computer 1…") are no longer cut off; glass look tinted by each colour.
+- **Board.** Gold rivets on the wooden frame. Styles in `v80.css`.
+
 ## v79 — Ludo: every player sees themselves bottom-left in yellow; Gebeta board fills the screen
 
 - **Ludo, your own view.** On every device the board is turned so YOUR pawns, home column and dice sit at the bottom-left in yellow, and the opponents appear in red, green and blue around you (online 2-player, vs computer and 4-player). Game state and server rules are unchanged; only the drawing is rotated.

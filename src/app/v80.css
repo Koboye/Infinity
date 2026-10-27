@@ -1,0 +1,40 @@
+/* v80 — Ludo: "You" is always in view, plus a richer board and player strip.
+   1) the board itself names every base; yours (bottom-left) wears a gold "You" plate and a glowing border.
+   2) your player strip is gold-trimmed and a little bigger than the computers'; names are no longer cut ("Comput…").
+   3) the whole table (rows + board + dock) is centred in the visible height, so your row never slides off the bottom or leaves a dead gap. */
+
+.ludo { min-height: calc(var(--app-h, 100dvh) - 70px); justify-content: center; }
+.ludo .ludo-board { width: min(100% - 4px, calc(var(--app-h, 100dvh) - 282px), 640px); }
+
+/* board: gold glow on your base, soft pulse on the base whose turn it is */
+.ludo-svg .ludo-youglow { filter: drop-shadow(0 0 .22px #ffd24a); animation: ludo-youglow 2.2s ease-in-out infinite; }
+.ludo-svg .ludo-baseturn { animation: ludo-baseturn 1.4s ease-in-out infinite; }
+.ludo-svg .ludo-you rect { filter: drop-shadow(0 .05px .08px rgba(0, 0, 0, .5)); }
+@keyframes ludo-youglow { 0%, 100% { stroke-opacity: .55; } 50% { stroke-opacity: 1; } }
+@keyframes ludo-baseturn { 0%, 100% { stroke-opacity: .15; } 50% { stroke-opacity: .85; } }
+
+/* player strips: names always fit, glass look, tiny colour ribbon on the outer edge */
+.ludo .ludo-panel { overflow: visible; background: linear-gradient(160deg, color-mix(in srgb, var(--pc) 18%, rgba(255, 250, 240, .14)), rgba(255, 250, 240, .04)); border: 2px solid color-mix(in srgb, var(--pc) 42%, transparent); box-shadow: 0 6px 14px rgba(0, 0, 0, .3), inset 0 1px 0 rgba(255, 255, 255, .18); }
+.ludo .ludo-panel .nm { font-size: .74rem; letter-spacing: -.01em; }
+.ludo .ludo-panel .nm .tx { -webkit-line-clamp: 2; line-height: 1.1; }
+.ludo .ludo-panel .av { width: 22px; height: 22px; font-size: .68rem; }
+.ludo .ludo-panel.on { border-color: var(--pc); }
+
+/* YOU: gold trim, larger die, name in gold */
+.ludo .ludo-panel.me { border-color: #ffd24a; background: linear-gradient(160deg, color-mix(in srgb, #ffd24a 24%, rgba(255, 250, 240, .16)), rgba(255, 250, 240, .05)); box-shadow: 0 8px 18px rgba(0, 0, 0, .35), 0 0 16px rgba(255, 210, 74, .35), inset 0 1px 0 rgba(255, 255, 255, .25); }
+.ludo .ludo-panel.me .nm { color: #ffe9a3; font-size: .84rem; font-weight: 900; }
+.ludo .ludo-panel.me .ludo-die3d { --s: 40px; width: 72px; height: 72px; }
+.ludo .ludo-panel.me.on { animation: ludo-turn 1.5s ease-in-out infinite; }
+
+/* dock: the status line reads as a banner under your row */
+.ludo .ludo-dock { background: linear-gradient(160deg, color-mix(in srgb, var(--dc) 18%, rgba(255, 250, 240, .14)), rgba(255, 250, 240, .04)); }
+.ludo .ludo-say b { font-size: .92rem; }
+
+@media (max-width: 420px) {
+  .ludo .ludo-panel .nm { font-size: .7rem; }
+  .ludo .ludo-panel.me .nm { font-size: .78rem; }
+  .ludo .ludo-panel.me .ludo-die3d { --s: 36px; width: 66px; height: 66px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ludo-svg .ludo-youglow, .ludo-svg .ludo-baseturn, .ludo .ludo-panel.me.on { animation: none; }
+}

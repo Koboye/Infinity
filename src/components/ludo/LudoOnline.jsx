@@ -94,6 +94,7 @@ export default function LudoOnline({ t, lang, room, uid, code, onExit, onSwitchR
   }, [myTurn, g, sending, room.moveSeq, pick]);
 
   if (!g) return <div className="panel center"><p>{t.roomGone}</p></div>;
+  const slotNames = {}; g.seats.forEach((st, p) => { slotNames[dp(st)] = p === seat ? t.you : people[p]?.name; });
   const toks = [];
   g.pos.forEach((arr, p) => arr.forEach((pos, i) => { const mv = anim && anim.p === p && anim.i === i; const rk = ret ? ret[`${p}:${i}`] : undefined; const back = rk !== undefined && rk !== null; toks.push({ p, i, seat: g.seats[p], pos: back ? rk : mv ? anim.pos : pos, moving: mv, back }); }));
   const seatNow = g.seats[g.turn], color = COLORS[dp(seatNow)], F = finishOf(g.board);
@@ -110,7 +111,7 @@ export default function LudoOnline({ t, lang, room, uid, code, onExit, onSwitchR
             {here.map((p) => {
               const st = g.seats[p], on = g.turn === p && !g.over, slot = SLOT[g.board][dp(st)], mine = on && canRoll && p === seat;
               return (
-                <div key={p} className={`ludo-panel ${slot}${on ? ' on' : ''}`} style={{ '--pc': COLORS[dp(st)] }} aria-current={on ? 'true' : undefined}>
+                <div key={p} className={`ludo-panel ${slot}${on ? ' on' : ''}${p === seat ? ' me' : ''}`} style={{ '--pc': COLORS[dp(st)] }} aria-current={on ? 'true' : undefined}>
                   <Die value={faces[p]} rolling={rolling && on} rollId={rollIds[p]} color={COLORS[dp(st)]} disabled={!mine} onRoll={roll} label={`${t.ludoRoll} — ${people[p].name}`} ms={720} />
                   <div className="info">
                     <b className="nm"><span className="av">{people[p].glyph}</span><span className="tx">{p === seat ? t.you : people[p].name}</span></b>
@@ -126,7 +127,7 @@ export default function LudoOnline({ t, lang, room, uid, code, onExit, onSwitchR
         );
       })}
       <div className="ludo-board" style={{ order: 1 }}>
-        <LudoBoard board={g.board} seats={g.seats} tokens={toks} legal={legal} onPick={pick} hintKey={null} turnSeat={seatNow} previews={previews} trail={null} retTrail={retTrail} fx={[]} flying={NO_FLY} view={view} />
+        <LudoBoard board={g.board} seats={g.seats} tokens={toks} legal={legal} onPick={pick} hintKey={null} turnSeat={seatNow} previews={previews} trail={null} retTrail={retTrail} fx={[]} flying={NO_FLY} view={view} names={slotNames} youSlot={dp(g.seats[seat] ?? 0)} />
         {flash && <div className={`flash ${flash.kind}`} key={flash.k} onAnimationEnd={() => setFlash(null)}>{flash.text}</div>}
       </div>
       <div className={`ludo-dock${canRoll ? ' ready' : ''}`} style={{ '--dc': color, order: 4 }}>

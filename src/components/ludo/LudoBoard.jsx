@@ -42,7 +42,7 @@ const Chevron = ({ x, y, a, s = 1, o = 0.6 }) => (
 );
 
 /** The classic cross: bases, ring, start cells, stars, home columns and the centre. */
-function Square({ seats, turnSeat }) {
+function Square({ seats, turnSeat, names, youSlot }) {
   const cells = [], B = BOARDS.square;
   for (let i = 0; i < 52; i++) {
     const { x, y } = ringXY('square', i), si = B.seatStart.indexOf(i), safe = B.seatStart.some((st) => B.safeOffsets.some((o) => (st + o) % 52 === i));
@@ -86,6 +86,17 @@ function Square({ seats, turnSeat }) {
           <ellipse cx={p.x - 0.18} cy={p.y - 0.4} rx="0.32" ry="0.12" fill="#fff" opacity=".45" />
         </g>
       ); })}
+      {youSlot === s && <rect className="ludo-youglow" x={x + 0.03} y={y + 0.03} width="5.94" height="5.94" rx="0.5" fill="none" stroke="#ffe08a" strokeWidth="0.16" />}
+      {turnSeat === s && youSlot !== s && <rect className="ludo-baseturn" x={x + 0.03} y={y + 0.03} width="5.94" height="5.94" rx="0.5" fill="none" stroke="#fff" strokeWidth="0.12" />}
+      {names && names[s] && (() => {
+        const nm = String(names[s]), you = youSlot === s, w = Math.min(4.7, Math.max(1.9, nm.length * 0.36 + 1));
+        return (
+          <g className={you ? 'ludo-you' : 'ludo-nameplate'} style={{ pointerEvents: 'none' }}>
+            <rect x={x + 3 - w / 2} y={y + 5.3} width={w} height="0.62" rx="0.31" fill={you ? 'url(#lgold)' : '#2a1d10'} fillOpacity={you ? 1 : 0.74} stroke={you ? '#fff4c2' : '#fff'} strokeOpacity={you ? 0.95 : 0.35} strokeWidth="0.04" />
+            <text x={x + 3} y={y + 5.62} textAnchor="middle" dominantBaseline="central" fontSize="0.42" fontWeight="800" fill={you ? '#3a2205' : '#fff7e0'}>{nm}</text>
+          </g>
+        );
+      })()}
     </g>
   ));
   const jewel = COLORS[turnSeat] || '#fff';
@@ -93,6 +104,7 @@ function Square({ seats, turnSeat }) {
     <g>
       <rect x="-0.4" y="-0.4" width="15.8" height="15.8" rx="1" fill="url(#lframe)" />
       <rect x="-0.28" y="-0.28" width="15.56" height="15.56" rx="0.85" fill="none" stroke="#e8c27d" strokeOpacity=".5" strokeWidth="0.05" />
+      {[[-0.2, -0.2], [7.5, -0.2], [15.2, -0.2], [-0.2, 7.5], [15.2, 7.5], [-0.2, 15.2], [7.5, 15.2], [15.2, 15.2]].map(([rx, ry], k) => <circle key={k} cx={rx} cy={ry} r="0.085" fill="url(#lgold)" stroke="#4a2e15" strokeWidth="0.02" />)}
       <rect x="0" y="0" width="15" height="15" rx="0.45" fill="url(#lpaper)" />
       {bases}{cells}{home}
       <polygon points="6,6 9,6 7.5,7.5" fill="url(#lc1)" /><polygon points="9,6 9,9 7.5,7.5" fill="url(#lc2)" />
@@ -143,7 +155,7 @@ function Burst({ fx, board }) {
  * legal    : Set of "p:i" keys the human may tap.     previews: Map "p:i" → { to, captured, finishes } for those tokens.
  * trail    : { seat, pts:[{x,y}], k } the cells the last move crossed.   fx: [{id,x,y,color,kind,k}] bursts.   flying: Set of keys sliding home after a capture.
  */
-export default function LudoBoard({ board, seats: seatsIn, tokens, legal, onPick, hintKey, turnSeat: turnIn, previews, trail, retTrail = null, fx = [], flying, view = 0 }) {
+export default function LudoBoard({ board, seats: seatsIn, tokens, legal, onPick, hintKey, turnSeat: turnIn, previews, trail, retTrail = null, fx = [], flying, view = 0, names = null, youSlot = null }) {
   const U = UNIT[board], R = U.r, F = finishOf(board);
   const dp = (s) => (s + view) % 4;                       // seat → where it sits on THIS screen
   const seats = seatsIn.map(dp), turnSeat = dp(turnIn);
@@ -173,7 +185,7 @@ export default function LudoBoard({ board, seats: seatsIn, tokens, legal, onPick
   return (
     <svg className={`ludo-svg ${board}`} viewBox={viewBoxOf(board)} role="img" aria-label="Ludo board">
       <Defs />
-      <Square seats={seats} turnSeat={turnSeat} />
+      <Square seats={seats} turnSeat={turnSeat} names={names} youSlot={youSlot} />
       {trail && trail.pts.length > 0 && (
         <g className="ludo-trail" key={trail.k}>
           {trail.pts.map((pt, k) => <circle key={k} cx={pt.x} cy={pt.y} r={R * 0.3} fill={COLORS[dp(trail.seat)]} stroke="#fff" strokeWidth={R * 0.08} style={{ animationDelay: `${k * 0.05}s` }} />)}
