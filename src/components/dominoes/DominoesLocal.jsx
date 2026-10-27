@@ -1,5 +1,6 @@
 'use client';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import * as Ads from '@/lib/ads';
 import { newMatch, dealRound, playTile, drawTile, mustDraw as engineMustDraw, getRules } from '@/lib/dominoes/engine.js';
 import { chooseDominoPlay } from '@/lib/dominoes/ai.js';
 import { sfx } from '@/lib/sound';
@@ -103,7 +104,9 @@ export default function DominoesLocal({ t, mode, level, ruleset, target, me, onE
     commit(prev); sfx.tap();
   };
   const nextRound = () => { setCurtainFor(null); setLastCode(null); commit(dealRound(gameRef.current)); };
-  const again = () => { setSpinning(false); setHist([]); setHintTile(null); setHintsLeft(3); const g = newMatch(ruleset, target); gameRef.current = g; doneSound.current = false; setGame(g); setRound((r) => r + 1); setCurtainFor(null); setLastCode(null); };
+  const doAgain = () => { setSpinning(false); setHist([]); setHintTile(null); setHintsLeft(3); const g = newMatch(ruleset, target); gameRef.current = g; doneSound.current = false; setGame(g); setRound((r) => r + 1); setCurtainFor(null); setLastCode(null); };
+  const againBusy = useRef(false);   // v66: an ad may run between rounds; a double tap never restarts twice
+  const again = async () => { if (againBusy.current) return; againBusy.current = true; try { await Ads.gate(); } finally { againBusy.current = false; } doAgain(); };
 
   let status = '';
   const fresh = game.round === 1 && !game.chain.length && game.hands.every((h) => h.length === (getRules(ruleset).hand));

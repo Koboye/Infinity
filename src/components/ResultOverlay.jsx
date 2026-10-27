@@ -4,6 +4,7 @@ import { recordResult } from '@/lib/progress';
 import { winLine, loseLine, pick, LOSE_EMOJI } from '@/lib/celebrate.js';
 import Fireworks from './Fireworks';
 import { LoseScene, Candle, Trophy } from './Ambience';
+import EarnOffer from './EarnOffer';
 
 const CONFETTI = ['#F2B632', '#4FA36B', '#C23B2A', '#3b8fd6', '#F4E9CF', '#8E3FD1'];
 
@@ -58,6 +59,7 @@ export default function ResultOverlay({ title, sub, tone = 'win', score, childre
         {Number.isFinite(coins) && <div className={`result-coins ${coins > 0 ? 'up' : coins < 0 ? 'down' : ''}`} aria-label={`${coins} coins`}>🪙 {coins > 0 ? '+' : coins < 0 ? '−' : '±'}{Math.abs(coins).toLocaleString('en-US')}</div>}
         {sub && <div className="result-sub">{sub}</div>}
         <div className="result-actions">{children}</div>
+        <EarnOffer lang={lang} context="result" tone={tone} variant="card" />
       </div>
     </div>
   );

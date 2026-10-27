@@ -142,7 +142,7 @@ export function SpinSheet({ lang, onClose }) {
       {w.ready && w.topUp && <div className="refill"><button type="button" className="btn small" disabled={busy} onClick={refill}>🪙 {L.refill(W.TOPUP_FLOOR)}</button><small>{L.refillSub}</small></div>}
       {refilled != null && <p className="wheel-result" role="status">{L.refilled(refilled)}</p>}
       <div className="match-actions"><button className="btn primary" disabled={busy || !w.ready || w.spins === 0} onClick={go}>{L.doSpin}</button><button className="btn ghost" disabled={busy} onClick={onClose}>{L.close}</button></div>
-      {ad && <AdOverlay ad={ad.ad} lang={lang} placement="rewarded" seconds={ad.session.durationMs / 1000} reward={w.adSpins} onClick={(a) => Ads.clicked(a)} onClose={adClosed} />}
+      {ad && <AdOverlay ad={ad.ad} lang={lang} placement="rewarded" seconds={ad.session.durationMs / 1000} reward={w.adCoins || 50} rewardSpins={w.adSpins || 0} onClick={(a) => Ads.clicked(a)} onClose={adClosed} />}
     </Sheet>
   );
 }

@@ -1,5 +1,6 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import * as Ads from '@/lib/ads';
 import { apiCall, serverNow } from '@/lib/firebase';
 import { EMOTES } from '@/lib/i18n';
 import { sfx } from '@/lib/sound';
@@ -73,7 +74,7 @@ export function useMatchLifecycle({ t, lang, room, uid, code, busy, onExit, onSw
   const api = useCallback(async (body) => { try { setErr(''); return await apiCall({ code, ...body }); } catch (e) { setErr(e.message); throw e; } }, [code]);
   const resign = async () => { if (await confirm(t.resignConfirm)) { try { await api({ action: 'resign' }); } catch {} } };
   const sendEmote = (id) => apiCall({ action: 'emote', code, id }).catch(() => {});
-  const rematch = async () => { try { const r = await api({ action: 'rematch' }); setSaved(null); onSwitchRoom(r.code); } catch {} };
+  const rematch = async () => { try { await Ads.gate(); const r = await api({ action: 'rematch' }); setSaved(null); onSwitchRoom(r.code); } catch {} };
   const exit = () => { setSaved(null); onExit(); };
 
   return { turnMax, oppAway, seat, playing, myTurn, secondsLeft, err, setErr, emotes, finished, now, api, resign, sendEmote, rematch, exit };

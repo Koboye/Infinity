@@ -27,6 +27,7 @@ export const DONE_TOLERANCE_MS = 600;         // network slack when the server c
 export const CAPS = {
   splash: { gapMs: 0 },                // an ad on every app open
   pre_game: { gapMs: 0, everyN: 1 },   // an ad on every game start
+  rematchGapMs: 2 * 60 * 1000,         // v66: "Play again" shows an ad only if the last game-start ad was more than this long ago (menu starts always show one)
   anyGapMs: 3000,                      // only a double-fire guard: the same tap can never show two ads
 };
 

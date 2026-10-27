@@ -1,5 +1,6 @@
 'use client';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import * as Ads from '@/lib/ads';
 import {
   newGame, callNext, mark, canMark, claim, toGo, completed, cardsOf, chestAt, instantDaub, doubleDaub, grantShield,
   letterOf, LETTERS, FREE, CALL_SECONDS, AI_LEVELS, FREEZE_MS, PERFECT_MS, POWER_MAX,
@@ -147,10 +148,12 @@ export default function BingoGame({ t, level, ruleset, me, opts = {}, onExit, on
     doneSound.current = true;
     if (game.winner === 1) sfx.lose(); else if (game.winner === 0) sfx.cheer();
   }, [finished, game.winner]);
-  const again = () => {
+  const doAgain = () => {
     timers.current.forEach(clearTimeout); timers.current = [];
     const g = newGame(ruleset, Math.random, numCards); gameRef.current = g; doneSound.current = false; frozenUntil.current = 0; setFrozenLeft(0); setCharge(0); setCoins(0); setGame(g); setSecs(3); pausedRef.current = false; setPaused(false); setRound((r) => r + 1);
   };
+  const againBusy = useRef(false);   // v66: an ad may run between rounds; a double tap never restarts twice
+  const again = async () => { if (againBusy.current) return; againBusy.current = true; try { await Ads.gate(); } finally { againBusy.current = false; } doAgain(); };
 
     const winLine = game.winner === 0 || game.winner === 1 ? game.winLine : null;
   const locked = game.lock[0] > 0;

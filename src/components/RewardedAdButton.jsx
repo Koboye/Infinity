@@ -39,7 +39,7 @@ export default function RewardedAdButton({ lang, signedIn, onNeedSignIn }) {
         <span aria-hidden="true">🎬</span><b>{L.watch(w.adCoins || 50)}</b>
       </button>
       {msg && <div className="toast" role="status">{msg}</div>}
-      {ad && <AdOverlay ad={ad.ad} lang={lang} placement="rewarded" seconds={ad.session.durationMs / 1000} reward={w.adCoins || 50} onClick={(a) => Ads.clicked(a)} onClose={closed} />}
+      {ad && <AdOverlay ad={ad.ad} lang={lang} placement="rewarded" seconds={ad.session.durationMs / 1000} reward={w.adCoins || 50} rewardSpins={w.adSpins || 0} onClick={(a) => Ads.clicked(a)} onClose={closed} />}
     </>
   );
 }

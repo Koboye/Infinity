@@ -258,3 +258,10 @@ Adds to the v62.1 global click guard (per-address limit, `src/lib/upstashGuard.j
 **Advertiser report:** `GET /api/admin/ads?report=csv[&ad=ID][&days=30]` with header `x-admin-key` downloads daily impressions, taps, tap rate and rewarded views (spreadsheet-formula safe).
 
 **Also:** `esbuild` is a dev dependency so `ads-admin.test.mjs` runs anywhere. **Tests:** `tests/ads-trust.test.mjs`.
+
+## v66 — smarter ads: free-spin offers everywhere, ads between rounds
+
+- **Free-spin offers in every game** (`EarnOffer`, rules in `src/lib/adsOffer.js`). A gold banner on the menus after the opening ad, and a card on every result screen (all games, local and online) and in the low-coins lobby: watch a short ad → coins + spins. It shows only when it helps: out of spins or low on coins, after a loss, or when a player cannot afford a match (always). It keeps a gap between offers, a daily limit, and goes quiet for a day after two ignored offers. Signed-out players, an empty daily ad allowance and a full bonus bank show nothing.
+- **Ad between rounds.** "Play again" and online "Rematch" now call `Ads.gate()` in every game (Gebeta variants, Checkers, Dominoes, Bingo, Ludo). It is skipped when the last game-start ad was under 2 minutes ago (`CAPS.rematchGapMs`); menu starts still show one every time. Double taps cannot restart twice.
+- **Honest reward text.** The rewarded ad screen now says what it pays (coins and spins, English and Amharic); it used to say "free spins" while showing the coin amount.
+- Payout is unchanged and server-only (`adStart` / `adDone`). Tests: `tests/ads-offer.test.mjs`.

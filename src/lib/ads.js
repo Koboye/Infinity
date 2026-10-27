@@ -6,7 +6,7 @@
 //  • Rewarded ads are different: the server picks them and times them (see Wallet.adStart / adDone).
 //  • Which ad? adsSmart.smartPick: language / hour / game targeting, tap-rate learning, daily-budget pacing and per-player fatigue.
 //    New players get an ad-free first 10 minutes.
-import { shouldShow, countStart, markShown, newCapState, clampSeconds, houseAd } from './adsCore.js';
+import { shouldShow, countStart, markShown, newCapState, clampSeconds, houseAd, CAPS } from './adsCore.js';
 import { smartPick, seenToday, noteSeen, noteCategory, stampFirst, inGrace } from './adsSmart.js';
 
 const FEED_KEY = 'gebeta.ads.feed', CAP_KEY = 'gebeta.ads.caps', FEED_TTL = 60 * 1000;   // v57: a minute (was 10) — a new or edited ad reaches phones almost at once
@@ -103,3 +103,18 @@ export function shown(placement, ad) {
   track('impression', ad);
 }
 export const clicked = (ad) => { if (!testMode()) track('click', ad); };
+
+// ── v66: the ad between rounds ("Play again" / "Rematch") ──────────────────────────────────────────────────────────
+// The app shell registers how to run a full-screen ad; every game calls `gate()` before it restarts. The gate never throws and never
+// waits for anything but the ad itself. A quick second rematch is not spammed: the gap since the last game-start ad must exceed CAPS.rematchGapMs.
+let gateRunner = null;
+export const setGate = (fn) => { gateRunner = typeof fn === 'function' ? fn : null; };
+export const rematchDue = (caps, now = Date.now()) => now - (caps?.last?.pre_game || 0) >= CAPS.rematchGapMs;
+export async function gate(game = null) {
+  try {
+    game = game || (typeof document !== 'undefined' ? document.documentElement.dataset.game : null) || null;
+    if (!gateRunner) return;
+    if (!testMode() && !rematchDue(read(CAP_KEY), Date.now())) return;
+    await gateRunner(game);
+  } catch { /* an ad problem never stops a game */ }
+}

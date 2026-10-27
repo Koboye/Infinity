@@ -1,5 +1,6 @@
 'use client';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import * as Ads from '@/lib/ads';
 import { newGame, playMove, collect, collectAll, collectable, holesOf, legalMoves, famText } from '@/lib/gebeta/engine.js';
 import { chooseMove } from '@/lib/gebeta/ai.js';
 import { chooseMoveAsync } from '@/lib/gebeta/aiClient.js';
@@ -175,7 +176,9 @@ export default function LocalGame({ t, mode, level, ruleset, me, onExit, onLeave
     (mode === 'ai' && game.winner === 1) ? sfx.lose() : sfx.win();
   }, [finished, game.winner, mode]);
 
-  const again = () => { firstRef.current = 1 - firstRef.current; setGameNo((n) => n + 1); queued.current = null; frozenUntil.current = 0; setFrozenLeft(0); setHist([]); setHintPit(null); setHintsLeft(3); const g = newGame(ruleset, firstRef.current); gameRef.current = g; setStartNote(true); doneSound.current = false; setGame(g); anim.reset(g.pits, g.own, g.flag); setRound((r) => r + 1); };
+  const doAgain = () => { firstRef.current = 1 - firstRef.current; setGameNo((n) => n + 1); queued.current = null; frozenUntil.current = 0; setFrozenLeft(0); setHist([]); setHintPit(null); setHintsLeft(3); const g = newGame(ruleset, firstRef.current); gameRef.current = g; setStartNote(true); doneSound.current = false; setGame(g); anim.reset(g.pits, g.own, g.flag); setRound((r) => r + 1); };
+  const againBusy = useRef(false);   // v66: an ad may run between rounds; a double tap never restarts twice
+  const again = async () => { if (againBusy.current) return; againBusy.current = true; try { await Ads.gate(); } finally { againBusy.current = false; } doAgain(); };
 
   let status;
   const untouched = game.pits.every((v, k) => k === 6 || k === 13 || v === 4);

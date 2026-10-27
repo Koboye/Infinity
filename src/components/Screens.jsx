@@ -15,6 +15,7 @@ import { GameIcon } from './GameIcons';
 import { sfx } from '@/lib/sound';
 import { load as loadProgress, ACHIEVEMENTS, dailyGame, dailyDone, total as totalOf } from '@/lib/progress';
 import { FeePicker } from './Wallet';
+import EarnOffer from './EarnOffer';
 import PhotoPicker from './PhotoPicker';
 import { getPhoto, storePhoto } from '@/lib/photo';
 import { KINDS, STONE_SETS, stoneSet, stoneVars } from '@/lib/stones';
@@ -266,6 +267,7 @@ export function Lobby({ t, lang, game, onEnter, onSpin, beforeStart }) {
       <RulesetPicker t={t} game={game} value={ruleset} onChange={setRuleset} />
       {game === 'dominoes' && <TargetPicker t={t} value={target} onChange={setTarget} />}
       <FeePicker lang={lang} value={fee} onChange={setFee} onSpin={onSpin} />
+      <EarnOffer lang={lang} context="lowcoins" variant="card" onSpin={onSpin} />
       <button className="menu-item primary" disabled={busy} onClick={() => call({ action: 'quick' })}>
         <span className="mi-title">{t.quickMatch}</span><span className="mi-sub">{t.quickMatchSub}</span>
       </button>

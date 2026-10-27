@@ -1,5 +1,6 @@
 'use client';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import * as Ads from '@/lib/ads';
 import {
   newGame, applyRoll, applyMove, legalMoves, distinctMoves, chooseToken, rollDie, pathOf, finishOf,
   previewAll, hintMove, progressOf, serializeGame, restoreGame,
@@ -206,7 +207,9 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
   const winner = game.over ? game.ranks[0] : null;
   const youWon = winner === 0;
   const reset = (g) => { busy.current = false; setFaces(Array(players).fill(null)); setAnim(null); setNote(''); setHintKey(null); setTrail(null); setFx([]); setFlying(new Set()); setFlash(null); commit(g); };
-  const restart = () => { store.del(saveKey); reset(newGame({ players, tokens, start: Math.floor(Math.random() * players) })); };
+  const doRestart = () => { store.del(saveKey); reset(newGame({ players, tokens, start: Math.floor(Math.random() * players) })); };
+  const restartBusy = useRef(false);   // v66: an ad may run between rounds; a double tap never restarts twice
+  const restart = async () => { if (restartBusy.current) return; restartBusy.current = true; try { await Ads.gate(); } finally { restartBusy.current = false; } doRestart(); };
   const resume = () => { const g = offer; setOffer(null); reset(g); if (g.phase === 'move') setFaces((f) => f.map((v, k) => (k === g.turn ? g.dice : v))); };
   const fresh = () => { store.del(saveKey); setOffer(null); };
 

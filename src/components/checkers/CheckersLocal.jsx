@@ -1,5 +1,6 @@
 'use client';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import * as Ads from '@/lib/ads';
 import { newGame, playMove, resolveHuff, legalMoves, counts, suddenDeath, forfeit, capturers, getRules, seatOf, ULTRA_MAX } from '@/lib/checkers/engine.js';
 import { chooseCheckersMove } from '@/lib/checkers/ai.js';
 import { chooseCheckersMoveAsync, chooseHuffPickAsync } from '@/lib/checkers/aiClient.js';
@@ -161,7 +162,9 @@ export default function CheckersLocal({ t, mode, level, ruleset, me, opts = {}, 
     const prev = hist[hist.length - 1]; setHist(hist.slice(0, -1)); setHint(null);
     gameRef.current = prev; setGame(prev); anim.reset(prev.board); sfx.tap();
   };
-  const again = () => { setHist([]); setPre(null); setHint(null); setHintsLeft(3); firstRef.current = 1 - firstRef.current; const g = newGame(ruleset, { ultra: !!opts.ultra, first: firstRef.current }); gameRef.current = g; setStartNote(true); doneSound.current = false; setGame(g); anim.reset(g.board); setRound((r) => r + 1); };
+  const doAgain = () => { setHist([]); setPre(null); setHint(null); setHintsLeft(3); firstRef.current = 1 - firstRef.current; const g = newGame(ruleset, { ultra: !!opts.ultra, first: firstRef.current }); gameRef.current = g; setStartNote(true); doneSound.current = false; setGame(g); anim.reset(g.board); setRound((r) => r + 1); };
+  const againBusy = useRef(false);   // v66: an ad may run between rounds; a double tap never restarts twice
+  const again = async () => { if (againBusy.current) return; againBusy.current = true; try { await Ads.gate(); } finally { againBusy.current = false; } doAgain(); };
 
   const c = counts(game.board);
   let status = '';

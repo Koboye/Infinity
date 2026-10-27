@@ -4,8 +4,8 @@ import { createPortal } from 'react-dom';
 import { SKIP_AFTER_SEC } from '@/lib/adsCore.js';
 
 const TXT = {
-  en: { ad: 'Ad', skip: 'Skip', skipNo: 'Skip (no reward)', earn: (n) => `Watch to the end to earn ${n} free spins`, claim: (n) => `Collect +${n} spins`, secs: (s) => `${s} seconds left` },
-  am: { ad: 'ማስታወቂያ', skip: 'ዝለል', skipNo: 'ዝለል (ያለ ሽልማት)', earn: (n) => `እስከ መጨረሻ ይመልከቱና ${n} ነፃ ዙሮች ያግኙ`, claim: (n) => `+${n} ዙሮች ተቀበል`, secs: (s) => `${s} ሰከንድ ቀርቷል` },
+  en: { ad: 'Ad', skip: 'Skip', skipNo: 'Skip (no reward)', earn: (n, sp) => `Watch to the end to earn ${n} coins${sp ? ` + ${sp} free spins` : ''}`, claim: (n, sp) => `Collect +${n} coins${sp ? ` +${sp} spins` : ''}`, secs: (s) => `${s} seconds left` },
+  am: { ad: 'ማስታወቂያ', skip: 'ዝለል', skipNo: 'ዝለል (ያለ ሽልማት)', earn: (n, sp) => `እስከ መጨረሻ ይመልከቱና ${n} ሳንቲም${sp ? ` + ${sp} ነፃ ዙሮች` : ''} ያግኙ`, claim: (n, sp) => `+${n} ሳንቲም${sp ? ` +${sp} ዙሮች` : ''} ተቀበል`, secs: (s) => `${s} ሰከንድ ቀርቷል` },
 };
 const LOAD_TIMEOUT_MS = 6000;
 
@@ -18,7 +18,7 @@ const LOAD_TIMEOUT_MS = 6000;
  *  • A picture that fails to load closes the ad at once (`onClose(false, 'failed')`): a broken ad can never trap anybody.
  * onClose(completed, reason) is called exactly once.
  */
-export default function AdOverlay({ ad, lang = 'en', placement, seconds, reward = 0, onShown, onClick, onClose }) {
+export default function AdOverlay({ ad, lang = 'en', placement, seconds, reward = 0, rewardSpins = 0, onShown, onClick, onClose }) {
   const L = TXT[lang === 'am' ? 'am' : 'en'];
   const rewarded = placement === 'rewarded';
   const total = Math.max(2, Math.round(seconds || ad.durationSec || 5));
@@ -73,7 +73,7 @@ export default function AdOverlay({ ad, lang = 'en', placement, seconds, reward 
       <div className="ad-card">
         <div className="ad-top">
           <span className="ad-badge"><u aria-hidden="true" /><b>{L.ad}</b><i aria-hidden="true">·</i><span>{ad.advertiser}</span></span>
-          {rewarded && !done && reward > 0 && <span className="ad-reward" aria-hidden="true">🎁 +{reward}</span>}
+          {rewarded && !done && reward > 0 && <span className="ad-reward" aria-hidden="true">🎁 +{reward} 🪙{rewardSpins > 0 ? ` +${rewardSpins} 🎡` : ''}</span>}
           {canSkip
             ? <button ref={skipRef} type="button" className="ad-skip" onClick={() => finish(false, 'skipped')}>{rewarded ? L.skipNo : L.skip} <span aria-hidden="true">✕</span></button>
             : !done && <span className="ad-ring" role="timer" aria-label={L.secs(Math.max(0, total - elapsed))}>
@@ -90,10 +90,10 @@ export default function AdOverlay({ ad, lang = 'en', placement, seconds, reward 
           {rewarded && done
             ? <div className="ad-claim-wrap">
                 <span className="ad-sparks" aria-hidden="true">{Array.from({ length: 10 }, (_, i) => <i key={i} style={{ '--a': `${i * 36}deg`, '--d': `${46 + (i % 3) * 16}px`, '--c': i % 2 ? '#F2B632' : '#7CE0A8' }} />)}</span>
-                <button type="button" className="btn primary wide ad-claim" autoFocus onClick={() => finish(true)}>🎁 {L.claim(reward)}</button>
+                <button type="button" className="btn primary wide ad-claim" autoFocus onClick={() => finish(true)}>🎁 {L.claim(reward, rewardSpins)}</button>
               </div>
             : ad.clickUrl && <button type="button" className="btn primary wide ad-cta" onClick={open}>{cta} <span aria-hidden="true">↗</span></button>}
-          {rewarded && !done && <p className="ad-note">🎁 {L.earn(reward)}</p>}
+          {rewarded && !done && <p className="ad-note">🎁 {L.earn(reward, rewardSpins)}</p>}
         </div>
         <div className="ad-bar" aria-hidden="true"><b /></div>
       </div>

@@ -16,6 +16,7 @@ import ModesScreen from './ModesScreen';
 import BottomNav from './BottomNav';
 import { WalletChip, SpinSheet, WelcomeGift } from './Wallet';
 import RewardedAdButton from './RewardedAdButton';
+import EarnOffer from './EarnOffer';
 import AdOverlay from './AdOverlay';
 import * as Ads from '@/lib/ads';
 import * as Wallet from '@/lib/wallet';
@@ -134,7 +135,9 @@ export default function GebetaApp() {
     }
   }, []);
   const splashed = useRef(false);
-  useEffect(() => { if (splashed.current) return; splashed.current = true; Ads.warm(); runAd('splash'); }, [runAd]);   // app open
+  const [splashDone, setSplashDone] = useState(false);          // v66: the free-spins banner waits until the opening ad is over
+  useEffect(() => { if (splashed.current) return; splashed.current = true; Ads.warm(); runAd('splash').finally(() => setSplashDone(true)); }, [runAd]);   // app open
+  useEffect(() => { Ads.setGate((g) => runAd('pre_game', { game: g })); return () => Ads.setGate(null); }, [runAd]);   // v66: the ad between rounds (Play again / Rematch) in every game
   const go = (name, extra = {}) => {
     // a coming-soon game (Dominoes) has no play, setup, rules, online or leaderboard screens
     if (['modes', 'ai', 'pass', 'online', 'leaders', 'rules'].includes(name) && !isPlayable(game)) return;
@@ -236,6 +239,7 @@ export default function GebetaApp() {
           }} />
       )}
       {adShow && <AdOverlay ad={adShow.ad} lang={lang} placement={adShow.placement} seconds={adShow.ad.durationSec} onShown={(a) => Ads.shown(adShow.placement, a)} onClick={(a) => Ads.clicked(a)} onClose={(_done, reason) => { adShow.resolve(reason); setAdShow(null); }} />}
+      {onlineAvailable && (view.name === 'home' || view.name === 'modes') && !adShow && <EarnOffer lang={lang} context="open" variant="banner" active={splashDone && !sheet} onSpin={() => setSheet({ type: 'spin' })} />}
       {sheet?.type === 'gift' && <WelcomeGift lang={lang} onClose={() => setSheet(null)} />}
       {sheet?.type === 'spin' && <SpinSheet lang={lang} onClose={() => setSheet(null)} />}
       <header className="topbar">
