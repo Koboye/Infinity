@@ -105,7 +105,7 @@ export function Setup({ t, mode, game, onStart, initialRuleset, onHelp }) {
   const [ruleset, setRuleset] = useState(info.rulesets.includes(initialRuleset) ? initialRuleset : info.defaultRuleset);
   const [target, setTarget] = useState(info.defaultTarget);
   const [numCards, setNumCards] = useState(1);      // Bingo: 1-4 cards
-  const [ludoPlayers, setLudoPlayers] = useState(4);  // Ludo: 2 / 3 (fair triangle) / 4
+  const [ludoPlayers, setLudoPlayers] = useState(4);  // Ludo: 2 or 4
   return (
     <div className="panel">
       {mode === 'ai' && (
@@ -122,9 +122,9 @@ export function Setup({ t, mode, game, onStart, initialRuleset, onHelp }) {
         <fieldset className="seg-group">
           <legend>{t.ludoPlayers}</legend>
           <div className="seg">
-            {[2, 3, 4].map((n) => <button key={n} className={ludoPlayers === n ? 'on' : ''} onClick={() => setLudoPlayers(n)} aria-pressed={ludoPlayers === n}>{n}</button>)}
+            {[2, 4].map((n) => <button key={n} className={ludoPlayers === n ? 'on' : ''} onClick={() => setLudoPlayers(n)} aria-pressed={ludoPlayers === n}>{n}</button>)}
           </div>
-          <p className="muted small">{ludoPlayers === 3 ? t.ludoTriangleNote : t.ludoSquareNote}</p>
+          <p className="muted small">{t.ludoSquareNote}</p>
         </fieldset>
       )}
       {game === 'bingo' && (

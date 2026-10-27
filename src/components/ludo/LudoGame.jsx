@@ -2,9 +2,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as Ads from '@/lib/ads';
 import {
-  newGame, applyRoll, applyMove, legalMoves, distinctMoves, chooseToken, rollDie, pathOf, finishOf,
-  previewAll, hintMove, progressOf, serializeGame, restoreGame,
+  newGame, applyRoll, applyMove, legalMoves, distinctMoves, rollDie, pathOf, finishOf,
+  previewAll, progressOf, serializeGame, restoreGame,
 } from '@/lib/ludo/engine.js';
+import { chooseSmart as chooseToken, bestMove as hintMove } from '@/lib/ludo/ai.js';   // look-ahead computer (captures, escapes, plans two moves ahead)
 import { tokenXY, trailXY, PANEL_SLOT as SLOT } from '@/lib/ludo/layout.js';
 import { sfx } from '@/lib/sound';
 import ResultOverlay from '../ResultOverlay';
@@ -13,6 +14,8 @@ import LudoBoard, { COLORS } from './LudoBoard';
 import { capturedDiff, retInit, animateReturn } from '@/lib/ludo/ret.js';
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+const STEP_MS = 360;     // one hop from cell to cell (v78: was 140 ms — pawns looked like they teleported). ⚡ Fast mode runs at 55 %.
+const OUT_MS = 480;      // stepping out of the base onto the start cell
 const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
 // rotation (x, y in degrees) that brings each face of the cube to the front; opposite faces sum to 7
 const ORIENT = { 1: [0, 0], 2: [0, -90], 3: [-90, 0], 4: [90, 0], 5: [0, 90], 6: [0, 180] };
@@ -46,9 +49,9 @@ export function Die({ value, rolling, rollId, color, disabled, onRoll, label, ms
 const ORDER = { top: ['tl', 'top', 'tr'], bottom: ['bl', 'br'] };
 const initialOf = (name) => (String(name || '?').trim()[0] || '?').toUpperCase();
 
-/** Ludo vs the computer (or friends on one device). 2 / 3 / 4 players; 3 players play on the fair triangle. */
+/** Ludo vs the computer (or friends on one device). 2 or 4 players on the classic cross board. */
 export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic', opts = {}, me, onExit }) {
-  const players = [2, 3, 4].includes(opts.players) ? opts.players : 4;
+  const players = opts.players === 2 ? 2 : 4;
   const tokens = ruleset === 'quick' ? 2 : 4;
   const saveKey = `ludo.save.${mode}`;
   const [game, setGame] = useState(() => newGame({ players, tokens, start: 0 }));
@@ -113,12 +116,13 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
     const m = applyMove(s0, i); if (!m.ok) return;
     busy.current = true; setNote(''); setHintKey(null); setTrail(null);
     const seat = s0.seats[s0.turn], steps = pathOf(s0, m.from, m.to);
-    for (const pos of steps) { if (!alive.current) return; setAnim({ p: s0.turn, i, pos }); sfx.hop(); await wait((m.from === -1 ? 200 : 140) * sp); }
+    for (const pos of steps) { if (!alive.current) return; setAnim({ p: s0.turn, i, pos }); sfx.hop(); await wait((m.from === -1 ? OUT_MS : STEP_MS) * sp); }
     if (!alive.current) return;
     const caps = capturedDiff(s0, m.state, s0.turn, i);
     if (caps.length) setRet(retInit(caps));      // keep the hit pawns on their cell for a beat
     setAnim(null); commit(m.state); sfx.land();
     setTrail({ seat, pts: trailXY(s0.board, seat, m.from, m.to), k: m.state.moves });
+    if (!m.leaves && !m.captured.length && !m.finishes) { const xy = tokenXY(s0.board, seat, m.to, i); burst(xy.x, xy.y, COLORS[seat], 'land'); }   // a soft ripple where it lands
     if (m.leaves) { const xy = tokenXY(s0.board, seat, 0, i); burst(xy.x, xy.y, COLORS[seat], 'out'); }
     if (m.captured.length) {
       m.captured.forEach((c) => { const cs = s0.seats[c.p], xy = tokenXY(s0.board, cs, s0.pos[c.p][c.i], c.i); burst(xy.x, xy.y, COLORS[cs], 'hit'); });
@@ -142,7 +146,7 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
     setRolling(false);
     const r = applyRoll(s0, value);
     if (r.forfeited) { say(t.ludoSixes, 'bad'); sfx.pass(); commit(r.state); }
-    else if (r.none) { setNote(t.ludoNoMove); sfx.pass(); await wait(700 * sp); if (!alive.current) return; commit(r.state); }
+    else if (r.none) { setNote(t.ludoNoMove); sfx.pass(); await wait(900 * sp); if (!alive.current) return; commit(r.state); }
     else commit(r.state);
     busy.current = false;
   }, [commit, say, t, sp]);
@@ -152,9 +156,9 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
   useEffect(() => {
     if (paused || game.over || busy.current || rolling || anim) return undefined;
     const cur = people[game.turn]; let id;
-    if (game.phase === 'roll' && !cur.human) id = setTimeout(doRoll, (700 + Math.random() * 450) * sp);
+    if (game.phase === 'roll' && !cur.human) id = setTimeout(doRoll, (850 + Math.random() * 500) * sp);
     else if (game.phase === 'move') {
-      if (!cur.human) id = setTimeout(() => doMove(chooseToken(gameRef.current, level)), (650 + Math.random() * 400) * sp);
+      if (!cur.human) id = setTimeout(() => doMove(chooseToken(gameRef.current, level)), (800 + Math.random() * 450) * sp);
       else if (auto && distinctMoves(game).length === 1) id = setTimeout(() => doMove(distinctMoves(gameRef.current)[0]), 420 * sp);
     }
     return () => clearTimeout(id);
@@ -228,7 +232,7 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
   );
 
   return (
-    <div className={`ludo ${game.board}`} style={{ '--tc': color, '--step': `${0.14 * sp}s` }}>
+    <div className={`ludo ${game.board}`} style={{ '--tc': color, '--step': `${(STEP_MS / 1000) * sp}s` }}>
       {['top', 'bottom'].map((row) => {
         const seatsHere = ORDER[row].map((sl) => game.seats.findIndex((st) => SLOT[game.board][st] === sl)).filter((p) => p >= 0);
         return (

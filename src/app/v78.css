@@ -1,0 +1,23 @@
+/* v78 — Ludo motion + board polish (loaded last, so it wins over v74's quick glide).
+   • A pawn now hops cell by cell at a calm pace (see STEP_MS in LudoGame.jsx), glides at a constant speed between cells
+     (linear: an eased transition would stop and start on every cell) and bounces on each landing.
+   • A captured pawn walks home visibly, in a red glow.
+   • Dock / player cards get a little more depth. */
+.ludo-svg .ludo-tok { will-change: transform; transition: transform var(--step) linear; }
+.ludo-svg .ludo-tok.moving { z-index: 6; filter: drop-shadow(0 0 calc(var(--hop) * .4px) rgba(255, 255, 255, .9)); }
+.ludo-svg .ludo-tok.moving .body { animation: ludo-hop var(--step) cubic-bezier(.35, .1, .55, 1); }
+.ludo-svg .ludo-tok.moving .shadow { animation: ludo-shade var(--step) ease-in-out; }
+.ludo-svg .ludo-tok.back { transition: transform .1s linear; z-index: 5; }
+.ludo-svg .ludo-tok.back .body { animation: ludo-hurry .42s ease-in-out infinite; }
+.ludo-svg .ludo-fx.land .fx-ring { animation-duration: .6s; stroke-opacity: .75; }
+
+/* the trail of the last move stays a little longer so the eye can follow where the pawn went */
+.ludo-svg .ludo-trail circle { animation-duration: .6s; }
+
+/* player cards: a quiet lift for the player whose turn it is */
+.ludo-panel.on { box-shadow: 0 10px 26px rgba(0, 0, 0, .38), 0 0 0 2px color-mix(in srgb, var(--pc) 70%, transparent); }
+
+@media (prefers-reduced-motion: reduce) {
+  .ludo-svg .ludo-tok, .ludo-svg .ludo-tok.back { transition: none; }
+  .ludo-svg .ludo-tok.moving .body, .ludo-svg .ludo-tok.moving .shadow, .ludo-svg .ludo-tok.back .body { animation: none; }
+}

@@ -10,6 +10,8 @@ import { shouldShow, countStart, markShown, newCapState, clampSeconds, houseAd, 
 import { rotatePick, newestFirst, seenToday, noteSeen, noteCategory, stampFirst, inGrace } from './adsSmart.js';
 
 const FEED_KEY = 'gebeta.ads.feed', CAP_KEY = 'gebeta.ads.caps', FEED_TTL = 60 * 1000;   // v57: a minute (was 10) — a new or edited ad reaches phones almost at once
+/** v78: the server only sends ads that are live right now, so an ad without dates (an older cached feed) counts as live instead of being dropped. */
+export const vouched = (a) => ({ ...a, start: typeof a?.start === 'string' ? a.start : '1970-01-01', end: typeof a?.end === 'string' ? a.end : '9999-12-31', active: a?.active !== false });
 const read = (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
 const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* storage full or blocked */ } };
 
@@ -46,17 +48,17 @@ export function loadFeed() {
   const fresh = testMode();
   if (!fresh && feed && now - feed.at < FEED_TTL) return Promise.resolve(feed.ads);
   const cached = read(FEED_KEY);
-  if (!fresh && cached && Array.isArray(cached.ads) && now - cached.at < FEED_TTL) { feed = cached; preload(cached.ads); return Promise.resolve(cached.ads); }
+  if (!fresh && cached && Array.isArray(cached.ads) && now - cached.at < FEED_TTL) { cached.ads = cached.ads.map(vouched); feed = cached; preload(cached.ads); return Promise.resolve(cached.ads); }
   if (inflight) return inflight;
   inflight = (async () => {
     try {
       const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 4000);
       const res = await fetch(fresh ? `/api/ads?fresh=${Date.now()}` : '/api/ads', { signal: ctl.signal, ...(fresh ? { cache: 'no-store' } : {}) }); clearTimeout(to);
       if (!res.ok) throw new Error('feed');
-      const data = await res.json(); const ads = Array.isArray(data.ads) ? data.ads : [];
+      const data = await res.json(); const ads = (Array.isArray(data.ads) ? data.ads : []).map(vouched);
       feed = { at: Date.now(), ads }; write(FEED_KEY, feed); preload(ads);
       return ads;
-    } catch { return Array.isArray(cached?.ads) ? cached.ads : []; } finally { inflight = null; }
+    } catch { return Array.isArray(cached?.ads) ? cached.ads.map(vouched) : []; } finally { inflight = null; }
   })();
   return inflight;
 }

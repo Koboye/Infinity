@@ -1,14 +1,10 @@
-// Ludo — pure rules engine (no UI, no timers). Two boards share ONE rule set:
-//   square   : the classic 52-cell cross, 2 or 4 players
-//   triangle : a 54-cell ring with three identical sides, 3 players. Every seat is the same turn of 120°, so every seat has
-//              exactly the same path length, the same safe cells and the same distance to home — nobody has an advantage.
+// Ludo — pure rules engine (no UI, no timers). One board, the classic 52-cell cross, for 2 or 4 players.
 // Token position `pos`:  -1 = in base · 0 … ringLen-2 = on the ring (relative to its own start cell)
 //                        ringLen-1 … ringLen+3 = the 5 home-column cells · FINISH = ringLen+4 = home.
 import { randomInt } from '../fairRandom.js';
 
 export const BOARDS = {
   square: { ringLen: 52, seatStart: [0, 13, 26, 39], safeOffsets: [0, 8], seatCount: 4 },
-  triangle: { ringLen: 54, seatStart: [9, 27, 45], safeOffsets: [0, 9], seatCount: 3 },
 };
 export const HOME_CELLS = 5;
 export const finishOf = (board) => BOARDS[board].ringLen + HOME_CELLS - 1;
@@ -17,9 +13,8 @@ export const lastRingRel = (board) => BOARDS[board].ringLen - 2;
 /** Which seats play: 2 players sit opposite each other on the square board. */
 export function seatsFor(players) {
   if (players === 2) return { board: 'square', seats: [0, 2] };
-  if (players === 3) return { board: 'triangle', seats: [0, 1, 2] };
   if (players === 4) return { board: 'square', seats: [0, 1, 2, 3] };
-  throw new RangeError('Ludo is for 2, 3 or 4 players');
+  throw new RangeError('Ludo is for 2 or 4 players');
 }
 
 /** A fair die: uniform 1..6 (rejection sampling on a cryptographic source — no modulo bias). */
@@ -256,7 +251,7 @@ export const serializeGame = (s) => JSON.stringify({ v: 2, ...s, log: (s.log || 
 export function restoreGame(json, expect = {}) {
   try {
     const o = typeof json === 'string' ? JSON.parse(json) : json;
-    if (!o || o.v !== 2 || !BOARDS[o.board] || !Number.isInteger(o.n) || o.n < 2 || o.n > 4) return null;
+    if (!o || o.v !== 2 || !BOARDS[o.board] || !Number.isInteger(o.n) || (o.n !== 2 && o.n !== 4)) return null;
     const ref = newGame({ players: o.n, tokens: o.tokensPer });
     if (o.board !== ref.board || JSON.stringify(o.seats) !== JSON.stringify(ref.seats)) return null;
     if (expect.players && o.n !== expect.players) return null;

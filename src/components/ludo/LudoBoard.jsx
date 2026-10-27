@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import { BOARDS, finishOf } from '@/lib/ludo/engine.js';
-import { ringXY, homeXY, baseXY, finishXY, tokenXY, viewBoxOf, homeAngle, UNIT, TRI } from '@/lib/ludo/layout.js';
+import { ringXY, homeXY, baseXY, finishXY, tokenXY, viewBoxOf, homeAngle, UNIT } from '@/lib/ludo/layout.js';
 
 export const COLORS = ['#E0452B', '#2E9E4F', '#F2B632', '#2F6FD6'];
 export const COLOR_NAMES = ['red', 'green', 'yellow', 'blue'];
@@ -47,6 +47,7 @@ function Square({ seats, turnSeat }) {
     const { x, y } = ringXY('square', i), si = B.seatStart.indexOf(i), safe = B.seatStart.some((st) => B.safeOffsets.some((o) => (st + o) % 52 === i));
     cells.push(
       <g key={i}>
+        <rect x={x - 0.46} y={y - 0.37} width="0.92" height="0.92" rx="0.16" fill="#2a1d10" opacity=".2" />
         <rect x={x - 0.46} y={y - 0.46} width="0.92" height="0.92" rx="0.14" fill={si >= 0 ? `url(#lc${si})` : 'url(#lpaper)'} stroke={INK} strokeOpacity=".55" strokeWidth="0.035" opacity={si >= 0 && !seats.includes(si) ? 0.5 : 1} />
         <rect x={x - 0.4} y={y - 0.4} width="0.8" height="0.4" rx="0.1" fill="#fff" opacity={si >= 0 ? 0.2 : 0.55} />
         {safe && si < 0 && <><polygon points={star(x, y, 0.4)} fill="#ffcf4a" opacity=".55" filter="url(#lglowS)" /><polygon points={star(x, y, 0.33)} fill="url(#lgold)" stroke="#7a4d08" strokeWidth="0.03" strokeLinejoin="round" /></>}
@@ -72,9 +73,17 @@ function Square({ seats, turnSeat }) {
     <g key={s} opacity={seats.includes(s) ? 1 : 0.32}>
       <rect x={x} y={y} width="6" height="6" rx="0.5" fill={`url(#lc${s})`} stroke={INK} strokeWidth="0.06" />
       <rect x={x + 0.12} y={y + 0.12} width="5.76" height="2.4" rx="0.4" fill="#fff" opacity=".13" />
-      <rect x={x + 0.85} y={y + 0.85} width="4.3" height="4.3" rx="0.9" fill="url(#lplate)" stroke={DARK[s]} strokeOpacity=".55" strokeWidth="0.07" />
+      <rect x={x + 0.85} y={y + 0.95} width="4.3" height="4.3" rx="0.95" fill="#000" opacity=".22" />
+      <rect x={x + 0.85} y={y + 0.85} width="4.3" height="4.3" rx="0.95" fill="url(#lplate)" stroke={DARK[s]} strokeOpacity=".6" strokeWidth="0.08" />
+      <rect x={x + 1.05} y={y + 1.05} width="3.9" height="3.9" rx="0.78" fill="none" stroke={COLORS[s]} strokeOpacity=".45" strokeWidth="0.05" strokeDasharray="0.16 0.2" />
       {[0, 1, 2, 3].map((k) => { const p = baseXY('square', s, k); return (
-        <g key={k}><circle cx={p.x} cy={p.y} r="0.66" fill="url(#lsock)" /><circle cx={p.x} cy={p.y} r="0.66" fill="none" stroke={COLORS[s]} strokeWidth="0.1" opacity=".75" /><circle cx={p.x - 0.12} cy={p.y - 0.14} r="0.18" fill="#fff" opacity=".35" /></g>
+        <g key={k}>
+          <circle cx={p.x} cy={p.y + 0.06} r="0.78" fill="#000" opacity=".2" />
+          <circle cx={p.x} cy={p.y} r="0.78" fill={`url(#lw${s})`} stroke={DARK[s]} strokeOpacity=".7" strokeWidth="0.05" />
+          <circle cx={p.x} cy={p.y} r="0.56" fill="url(#lsock)" />
+          <circle cx={p.x} cy={p.y} r="0.56" fill="none" stroke="#fff" strokeOpacity=".55" strokeWidth="0.04" />
+          <ellipse cx={p.x - 0.18} cy={p.y - 0.4} rx="0.32" ry="0.12" fill="#fff" opacity=".45" />
+        </g>
       ); })}
     </g>
   ));
@@ -92,61 +101,6 @@ function Square({ seats, turnSeat }) {
       <circle cx="7.5" cy="7.5" r="0.62" fill={jewel} opacity=".5" filter="url(#lglowS)" className="ludo-jewel-glow" />
       <circle cx="7.5" cy="7.5" r="0.42" fill="url(#lgold)" stroke="#7a4d08" strokeWidth="0.04" />
       <circle cx="7.5" cy="7.5" r="0.26" fill={jewel} stroke="#fff" strokeOpacity=".8" strokeWidth="0.04" className="ludo-jewel" />
-    </g>
-  );
-}
-
-function Triangle({ turnSeat }) {
-  const B = BOARDS.triangle, cells = [];
-  for (let i = 0; i < 54; i++) {
-    const { x, y } = ringXY('triangle', i), si = B.seatStart.indexOf(i), safe = B.seatStart.some((st) => B.safeOffsets.some((o) => (st + o) % 54 === i));
-    cells.push(
-      <g key={i}>
-        <circle cx={x} cy={y} r="1.95" fill={si >= 0 ? `url(#lw${si})` : 'url(#lplate)'} stroke={INK} strokeOpacity=".7" strokeWidth="0.28" />
-        <ellipse cx={x - 0.3} cy={y - 0.7} rx="1.05" ry="0.55" fill="#fff" opacity={si >= 0 ? 0.25 : 0.6} />
-        {safe && <><polygon points={star(x, y, 1.75)} fill="#ffcf4a" opacity={si >= 0 ? 0 : 0.55} filter="url(#lglowT)" /><polygon points={star(x, y, si >= 0 ? 1.3 : 1.45)} fill={si >= 0 ? '#fff' : 'url(#lgold)'} stroke={si >= 0 ? 'none' : '#7a4d08'} strokeWidth="0.14" strokeLinejoin="round" /></>}
-      </g>,
-    );
-  }
-  const home = [];
-  [0, 1, 2].forEach((s) => {
-    for (let m = 1; m <= 5; m++) {
-      const { x, y } = homeXY('triangle', s, m), a = homeAngle('triangle', s);
-      home.push(
-        <g key={`${s}${m}`}>
-          <circle cx={x} cy={y} r="1.78" fill={`url(#lw${s})`} stroke={INK} strokeOpacity=".7" strokeWidth="0.28" />
-          <g transform={`translate(${x} ${y}) rotate(${a}) scale(${m === 5 ? 1.15 : 0.95})`}><path d="M-0.9,-1 L0.55,0 L-0.9,1" fill="none" stroke="#fff" strokeOpacity={m === 5 ? 0.95 : 0.6} strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round" /></g>
-        </g>,
-      );
-    }
-  });
-  const bases = [0, 1, 2].map((s) => {
-    const b = baseXY('triangle', s, 0);
-    return (
-      <g key={s}>
-        <circle cx={b.bx} cy={b.by} r="9.2" fill={`url(#lw${s})`} stroke={INK} strokeWidth="0.5" />
-        <circle cx={b.bx} cy={b.by} r="7.5" fill="url(#lplate)" stroke={DARK[s]} strokeOpacity=".55" strokeWidth="0.45" />
-        {[0, 1, 2, 3].map((k) => { const p = baseXY('triangle', s, k); return (
-          <g key={k}><circle cx={p.x} cy={p.y} r="2.35" fill="url(#lsock)" /><circle cx={p.x} cy={p.y} r="2.35" fill="none" stroke={COLORS[s]} strokeWidth="0.6" opacity=".75" /><circle cx={p.x - 0.6} cy={p.y - 0.7} r="0.7" fill="#fff" opacity=".35" /></g>
-        ); })}
-      </g>
-    );
-  });
-  const wedge = [0, 1, 2].map((s) => { // centre hub: three wedges, one per seat, pointing at that seat's home column
-    const f = finishXY('triangle', s, 1.5), a = Math.atan2(f.y - TRI.cy, f.x - TRI.cx), r = 5.4, a0 = a - Math.PI / 3, a1 = a + Math.PI / 3;
-    const p = (t) => `${(TRI.cx + r * Math.cos(t)).toFixed(2)},${(TRI.cy + r * Math.sin(t)).toFixed(2)}`;
-    return <path key={s} d={`M${TRI.cx},${TRI.cy} L${p(a0)} A${r},${r} 0 0 1 ${p(a1)} Z`} fill={`url(#lw${s})`} stroke="#fff" strokeOpacity=".7" strokeWidth="0.3" />;
-  });
-  const [A, Bv, C] = TRI.V, jewel = COLORS[turnSeat] || '#fff', pts = `${A.x},${A.y} ${Bv.x},${Bv.y} ${C.x},${C.y}`;
-  return (
-    <g>
-      <polygon points={pts} fill="url(#lframe)" stroke="url(#lframe)" strokeWidth="10.5" strokeLinejoin="round" />
-      <polygon points={pts} fill="none" stroke="#e8c27d" strokeOpacity=".5" strokeWidth="0.5" strokeLinejoin="round" transform={`translate(${TRI.cx} ${TRI.cy}) scale(1.115) translate(${-TRI.cx} ${-TRI.cy})`} />
-      <polygon points={pts} fill="url(#lpaper)" stroke="#3a2412" strokeWidth="5" strokeLinejoin="round" />
-      {bases}{cells}{home}{wedge}
-      <circle cx={TRI.cx} cy={TRI.cy} r="3.2" fill={jewel} opacity=".5" filter="url(#lglowT)" className="ludo-jewel-glow" />
-      <circle cx={TRI.cx} cy={TRI.cy} r="2.2" fill="url(#lgold)" stroke="#7a4d08" strokeWidth="0.25" />
-      <circle cx={TRI.cx} cy={TRI.cy} r="1.3" fill={jewel} stroke="#fff" strokeOpacity=".8" strokeWidth="0.25" className="ludo-jewel" />
     </g>
   );
 }
@@ -170,7 +124,7 @@ function Pawn({ seat, fin }) {
 
 /** Particles for a capture / home / leave-base burst, drawn at a board position. */
 function Burst({ fx, board }) {
-  const U = UNIT[board], n = fx.kind === 'out' ? 0 : 12;
+  const U = UNIT[board], n = fx.kind === 'out' || fx.kind === 'land' ? 0 : 12;
   return (
     <g className={`ludo-fx ${fx.kind}`} style={{ transform: `translate(${fx.x}px, ${fx.y}px)`, '--u': U.r }}>
       <circle className="fx-ring" r={U.r * 1.1} fill="none" stroke={fx.kind === 'home' ? '#ffd24a' : fx.color} strokeWidth={U.r * 0.22} />
@@ -189,7 +143,7 @@ function Burst({ fx, board }) {
  * trail    : { seat, pts:[{x,y}], k } the cells the last move crossed.   fx: [{id,x,y,color,kind,k}] bursts.   flying: Set of keys sliding home after a capture.
  */
 export default function LudoBoard({ board, seats, tokens, legal, onPick, hintKey, turnSeat, previews, trail, retTrail = null, fx = [], flying }) {
-  const isSq = board === 'square', U = UNIT[board], R = U.r, F = finishOf(board);
+  const U = UNIT[board], R = U.r, F = finishOf(board);
   const [hover, setHover] = useState(null);
   // spread tokens that share a point
   const groups = new Map();
@@ -214,9 +168,9 @@ export default function LudoBoard({ board, seats, tokens, legal, onPick, hintKey
     );
   });
   return (
-    <svg className={`ludo-svg ${board}`} viewBox={viewBoxOf(board)} role="img" aria-label={isSq ? 'Ludo board' : 'Ludo triangle board'}>
+    <svg className={`ludo-svg ${board}`} viewBox={viewBoxOf(board)} role="img" aria-label="Ludo board">
       <Defs />
-      {isSq ? <Square seats={seats} turnSeat={turnSeat} /> : <Triangle turnSeat={turnSeat} />}
+      <Square seats={seats} turnSeat={turnSeat} />
       {trail && trail.pts.length > 0 && (
         <g className="ludo-trail" key={trail.k}>
           {trail.pts.map((pt, k) => <circle key={k} cx={pt.x} cy={pt.y} r={R * 0.3} fill={COLORS[trail.seat]} stroke="#fff" strokeWidth={R * 0.08} style={{ animationDelay: `${k * 0.05}s` }} />)}

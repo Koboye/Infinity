@@ -6,7 +6,7 @@ import {
   chooseToken, rollDie, validState, distinctMoves,
 } from '../src/lib/ludo/engine.js';
 
-// ── 1. geometry: the 3-player triangle (and the square) is perfectly symmetric = fair ──
+// ── 1. geometry: the classic square is perfectly symmetric = fair ──
 for (const [name, B] of Object.entries(BOARDS)) {
   const gap = B.ringLen / B.seatCount;
   assert.ok(Number.isInteger(gap), name + ' ring splits evenly');
@@ -16,9 +16,10 @@ for (const [name, B] of Object.entries(BOARDS)) {
   // every seat walks the same number of cells to reach home
   const F = finishOf(name); assert.equal(F, B.ringLen + 4);
 }
-assert.equal(BOARDS.triangle.seatCount, 3); assert.equal(BOARDS.triangle.ringLen, 54);
-assert.deepEqual(seatsFor(2).seats, [0, 2]); assert.deepEqual(seatsFor(3).seats, [0, 1, 2]); assert.equal(seatsFor(3).board, 'triangle');
-console.log('ok boards are symmetric (fair triangle, classic square)');
+assert.deepEqual(Object.keys(BOARDS), ['square'], 'the triangle board is gone');
+assert.deepEqual(seatsFor(2).seats, [0, 2]); assert.deepEqual(seatsFor(4).seats, [0, 1, 2, 3]);
+assert.throws(() => seatsFor(3), RangeError, 'three players is no longer offered');
+console.log('ok classic square board is symmetric; 2 or 4 players only');
 
 // ── 2. the die is uniform ──
 { const c = new Uint32Array(1); const next = () => { webcrypto.getRandomValues(c); return c[0]; };
@@ -63,10 +64,6 @@ const mk = (o = {}) => ({ ...newGame({ players: o.players || 4, tokens: 4 }), ..
   const s = mk(); s.pos[0] = [49, -1, -1, -1]; s.pos[1] = [0, -1, -1, -1]; // p1 on its own start
   const pv = previewMove({ ...s, dice: 4 }, 0, 0, 4); assert.equal(pv.to, 53); assert.equal(pv.captured.length, 0);
   console.log('ok home column'); }
-{ // triangle: same rules, 3 seats
-  const s = newGame({ players: 3 }); assert.equal(s.board, 'triangle'); assert.equal(finishOf('triangle'), 58); assert.equal(lastRingRel('triangle'), 52);
-  const abs = [0, 1, 2].map((p) => absOf(s, p, 0)); assert.deepEqual(abs, [9, 27, 45]);
-  console.log('ok triangle 3 players'); }
 
 // ── 4. whole random games, every board, both token counts ──
 function play(players, tokens, levels, rng, maxMoves = 20000) {
@@ -83,40 +80,25 @@ function play(players, tokens, levels, rng, maxMoves = 20000) {
   assert.ok(s.pos[s.ranks[0]].every((x) => x === finishOf(s.board)));
   return s;
 }
-for (const players of [2, 3, 4]) for (const tokens of [2, 4]) for (let g = 0; g < 60; g++) play(players, tokens, ['easy', 'medium', 'hard'], Math.random);
-console.log('ok random full games 2/3/4 players × 2/4 tokens finish with valid ranks');
+for (const players of [2, 4]) for (const tokens of [2, 4]) for (let g = 0; g < 60; g++) play(players, tokens, ['easy', 'medium', 'hard'], Math.random);
+console.log('ok random full games 2/4 players × 2/4 tokens finish with valid ranks');
 
-// ── 5. fairness of seats on the triangle (and strength order of the levels) ──
-{ const wins = [0, 0, 0], N = 6000; for (let g = 0; g < N; g++) wins[play(3, 4, ['medium'], Math.random).ranks[0]]++;
-  wins.forEach((w) => assert.ok(Math.abs(w / N - 1 / 3) < 0.035, 'triangle seat share ' + wins.join('/')));
-  console.log('ok triangle seats win evenly', wins.map((w) => Math.round(100 * w / N) + '%').join(' / ')); }
+// ── 5. strength order of the levels ──
 { let hardWins = 0, N = 1500;
   for (let g = 0; g < N; g++) { const first = g % 2; const s = play(2, 4, first ? ['hard', 'easy'] : ['easy', 'hard'], Math.random); if (s.ranks[0] === (first ? 0 : 1)) hardWins++; }
   assert.ok(hardWins / N > 0.55, 'hard beats easy: ' + hardWins / N); console.log('ok hard beats easy', Math.round(100 * hardWins / N) + '%'); }
 console.log('ludo tests passed');
 
 // ── 6. drawing geometry ──
-import { ringXY, homeXY, tokenXY, TRI } from '../src/lib/ludo/layout.js';
+import { ringXY, homeXY } from '../src/lib/ludo/layout.js';
 { // classic board: ring steps are one square (4 diagonal corner turns)
   let diag = 0;
   for (let i = 0; i < 52; i++) { const a = ringXY('square', i), b = ringXY('square', (i + 1) % 52), d = Math.hypot(a.x - b.x, a.y - b.y);
     if (Math.abs(d - 1) < 1e-9) continue; assert.ok(Math.abs(d - Math.SQRT2) < 1e-9, 'square ring step ' + i); diag++; } // the 4 corners around the centre block turn diagonally, as on a real board
   assert.equal(diag, 4);
-  // triangle: rotating any cell by 120° about the centre lands on the cell 18 further on — the board is truly 3-fold symmetric
-  for (let i = 0; i < 54; i++) {
-    const a = ringXY('triangle', i), b = ringXY('triangle', (i + 18) % 54), th = 2 * Math.PI / 3;
-    const dx = a.x - TRI.cx, dy = a.y - TRI.cy, rx = TRI.cx + dx * Math.cos(th) - dy * Math.sin(th), ry = TRI.cy + dx * Math.sin(th) + dy * Math.cos(th);
-    assert.ok(Math.hypot(rx - b.x, ry - b.y) < 1e-9, 'triangle rotation ' + i);
-  }
-  const gaps = Array.from({ length: 54 }, (_, i) => { const a = ringXY('triangle', i), b = ringXY('triangle', (i + 1) % 54); return Math.hypot(a.x - b.x, a.y - b.y); });
-  assert.ok(Math.max(...gaps) - Math.min(...gaps) < 1e-9 && Math.min(...gaps) > 4, 'ring spacing is exactly even, corners included');
-  // every seat's home column and base are the same distance from the centre
-  const dist = (p) => Math.hypot(p.x - TRI.cx, p.y - TRI.cy);
-  for (let m = 1; m <= 5; m++) assert.ok(Math.abs(dist(homeXY('triangle', 0, m)) - dist(homeXY('triangle', 1, m))) < 1e-9 && Math.abs(dist(homeXY('triangle', 1, m)) - dist(homeXY('triangle', 2, m))) < 1e-9);
-  assert.ok(Math.abs(dist(tokenXY('triangle', 0, -1, 0)) - dist(tokenXY('triangle', 2, -1, 0))) < 1e-9);
   // the square's home column leads into the middle
   assert.deepEqual(homeXY('square', 0, 5), { x: 5.5, y: 7.5 });
-  console.log('ok board drawing is exact (square steps = 1, triangle rotates onto itself)'); }
+  console.log('ok board drawing is exact (square steps = 1)'); }
 console.log('ludo layout tests passed');
 
 // ── 7. v38 system upgrade: stats, move log, previews, hint, save / restore ──
@@ -149,15 +131,15 @@ import { previewAll, hintMove, progressOf, serializeGame, restoreGame } from '..
   s.pos[0] = [56, 56, 56, 56]; assert.equal(progressOf(s, 0), 1);
   console.log('ok progress'); }
 { // save / restore round trip and rejection of garbage
-  let s = newGame({ players: 3, tokens: 2 }); s = applyRoll(s, 6).state;
-  const back = restoreGame(serializeGame(s), { players: 3, tokens: 2 });
+  let s = newGame({ players: 2, tokens: 2 }); s = applyRoll(s, 6).state;
+  const back = restoreGame(serializeGame(s), { players: 2, tokens: 2 });
   assert.deepEqual(back.pos, s.pos); assert.equal(back.turn, s.turn); assert.equal(back.phase, 'move'); assert.equal(back.dice, 6); assert.deepEqual(back.stats, s.stats);
   assert.ok(applyMove(back, 0).ok, 'a restored game keeps playing');
   assert.equal(restoreGame(serializeGame(s), { players: 4 }), null, 'a different player count is not resumed');
   assert.equal(restoreGame(serializeGame(s), { tokens: 4 }), null, 'a different token count is not resumed');
-  for (const bad of ['', 'nope', '{}', '{"v":1}', JSON.stringify({ ...JSON.parse(serializeGame(s)), pos: [[99, 0], [0, 0], [0, 0]] }),
+  for (const bad of ['', 'nope', '{}', '{"v":1}', JSON.stringify({ ...JSON.parse(serializeGame(s)), pos: [[99, 0], [0, 0]] }),
     JSON.stringify({ ...JSON.parse(serializeGame(s)), turn: 9 }), JSON.stringify({ ...JSON.parse(serializeGame(s)), phase: 'move', dice: 0 }),
-    JSON.stringify({ ...JSON.parse(serializeGame(s)), board: 'square' }), null, 42]) assert.equal(restoreGame(bad), null, 'rejects ' + String(bad).slice(0, 30));
+    JSON.stringify({ ...JSON.parse(serializeGame(s)), board: 'triangle' }), JSON.stringify({ ...JSON.parse(serializeGame(s)), n: 3 }), null, 42]) assert.equal(restoreGame(bad), null, 'rejects ' + String(bad).slice(0, 30));
   const fin = newGame({ players: 2 }); fin.over = true; assert.equal(restoreGame(serializeGame(fin)), null, 'a finished game is not resumed');
   console.log('ok save / restore'); }
 console.log('ludo v38 system tests passed');

@@ -25,7 +25,8 @@ export async function GET(req) {
   try {
     const ads = (await servableAds(adminDb()))
       .map((a) => ({
-        ...publicAd(a, 'splash'), placements: (a.placements || []).filter((p) => p !== 'rewarded'), weight: a.weight || 1,
+        ...publicAd(a, 'splash'), start: a.start, end: a.end,   // v78: the phone re-checks the dates (an ad that ends while the feed is cached) — without them every paid ad was dropped and only the house ad ever showed
+        placements: (a.placements || []).filter((p) => p !== 'rewarded'), weight: a.weight || 1,
         t: { langs: a.langs || [], games: a.games || [], hours: a.hours || null, maxPerUser: a.maxPerUser || 3 },   // targeting the phone applies
         createdAt: a.createdAt || 0, perf: a.perf, pace: Math.round(a.pace * 100) / 100,                                                      // learning + pacing the phone ranks with
       }))
