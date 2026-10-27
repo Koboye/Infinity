@@ -260,11 +260,11 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
       <div className={`ludo-dock${canRoll ? ' ready' : ''}`} style={{ '--dc': color, order: 4 }}>
         <div className="ludo-say" aria-live="polite"><b>{status}</b>{canRoll && <small>{t.ludoRollHint}</small>}</div>
         <div className="ludo-tools">
-          <button type="button" className="tool" onClick={hint} disabled={!canHint} title={t.ludoHintBtn}><span aria-hidden="true">💡</span> {t.ludoHintBtn}</button>
-          <button type="button" className={`tool${fast ? ' on' : ''}`} onClick={toggleFast} aria-pressed={fast}><span aria-hidden="true">⚡</span> {t.ludoFast}</button>
-          <button type="button" className={`tool${showLog ? ' on' : ''}`} onClick={() => setShowLog((v) => { store.set('ludo.log', v ? '0' : '1'); return !v; })} aria-pressed={showLog}><span aria-hidden="true">📜</span> {t.ludoShowLog}</button>
-          <button type="button" className={`tool${timerOn ? ' on' : ''}`} onClick={toggleTimer} aria-pressed={timerOn} title={t.ludoTimer}><span aria-hidden="true">⏱</span> {t.ludoTimer}</button>
-          <button type="button" className={`tool${auto ? ' on' : ''}`} onClick={() => setAuto((v) => !v)} aria-pressed={auto} title={t.ludoAuto}><span aria-hidden="true">🎯</span> {t.ludoAutoShort || 'Auto'}</button>
+          <button type="button" className="tool" onClick={hint} disabled={!canHint} title={t.ludoHintBtn} aria-label={t.ludoHintBtn}><span aria-hidden="true">💡</span><span className="lbl">{t.ludoHintBtn}</span></button>
+          <button type="button" className={`tool${fast ? ' on' : ''}`} onClick={toggleFast} aria-pressed={fast} title={t.ludoFast} aria-label={t.ludoFast}><span aria-hidden="true">⚡</span><span className="lbl">{t.ludoFast}</span></button>
+          <button type="button" className={`tool${showLog ? ' on' : ''}`} onClick={() => setShowLog((v) => { store.set('ludo.log', v ? '0' : '1'); return !v; })} aria-pressed={showLog} title={t.ludoShowLog} aria-label={t.ludoShowLog}><span aria-hidden="true">📜</span><span className="lbl">{t.ludoShowLog}</span></button>
+          <button type="button" className={`tool${timerOn ? ' on' : ''}`} onClick={toggleTimer} aria-pressed={timerOn} title={t.ludoTimer} aria-label={t.ludoTimer}><span aria-hidden="true">⏱</span><span className="lbl">{t.ludoTimer}</span></button>
+          <button type="button" className={`tool${auto ? ' on' : ''}`} onClick={() => setAuto((v) => !v)} aria-pressed={auto} title={t.ludoAuto} aria-label={t.ludoAuto}><span aria-hidden="true">🎯</span><span className="lbl">{t.ludoAutoShort || 'Auto'}</span></button>
         </div>
         {showLog && (
           <ol className="ludo-log" aria-label={t.ludoShowLog}>

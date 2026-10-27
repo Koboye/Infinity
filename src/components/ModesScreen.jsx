@@ -18,15 +18,14 @@ export default function ModesScreen({ t, lang, game, go, onlineOn }) {
     <div className="modes" style={{ '--accent': g.accent || '#F2B632' }}>
       <div className="modes-hero">
         <span className="modes-badge"><GameIcon game={game} size={52} /></span>
-        <div><h1>{t[`${game}Name`]}</h1><p>{t.chooseMode}</p></div>
+        <div><h1>{t[`${game}Name`]}</h1></div>
       </div>
       <div className="modes-grid">
         {tiles.map((m, i) => (
-          <button key={m.id} type="button" className={`mode-tile${m.sub ? ' big' : ' small'}`} style={{ '--c': m.c, '--i': i }} onClick={() => go(m.id)}>
-            {m.tag && <span className={`mode-tag${m.live ? ' live' : ''}`}>{m.tag}</span>}
+          <button key={m.id} type="button" className="mode-tile small" style={{ '--c': m.c, '--i': i }} onClick={() => go(m.id)} aria-label={m.title}>
+            {m.live && <span className="mode-tag live" aria-hidden="true" />}
             <span className="mode-ico" aria-hidden="true">{m.icon}</span>
             <b className="mode-title">{m.title}</b>
-            {m.sub && <small className="mode-sub">{m.sub}</small>}
           </button>
         ))}
       </div>

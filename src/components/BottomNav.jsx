@@ -22,7 +22,7 @@ export default function BottomNav({ lang, view, onHome, onOpen, profile, badge =
       {TABS.map((tab) => {
         const active = tab.on.includes(view);
         return (
-          <button key={tab.id} type="button" className={`bn-tab${active ? ' on' : ''}`} aria-current={active ? 'page' : undefined}
+          <button key={tab.id} type="button" className={`bn-tab${active ? ' on' : ''}`} aria-current={active ? 'page' : undefined} aria-label={tab.id === 'profile' && profile?.displayName ? t.profile : t[tab.id]}
             onClick={() => (tab.id === 'home' ? onHome() : onOpen(tab.to))}>
             <span className="bn-ico" aria-hidden="true">{tab.icon}{tab.id === 'friends' && badge > 0 && <em className="badge">{badge > 9 ? '9+' : badge}</em>}</span>
             <span className="bn-lbl">{tab.id === 'profile' && profile?.displayName ? t.profile : t[tab.id]}</span>

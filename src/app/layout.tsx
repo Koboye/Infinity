@@ -37,6 +37,7 @@ import './ads.css';
 import './earn.css';
 import './brand.css';
 import './v73.css';
+import './v74.css';
 import RegisterSW from '@/components/RegisterSW';
 import ViewportFit from '@/components/ViewportFit';
 import '@fontsource/noto-sans-ethiopic/400.css';
