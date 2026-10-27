@@ -7,6 +7,7 @@ import { heroById } from '@/lib/i18n';
 import { sfx } from '@/lib/sound';
 import LudoBoard, { COLORS } from './LudoBoard';
 import { Die } from './LudoGame';
+import { capturedDiff, retInit, animateReturn } from '@/lib/ludo/ret.js';
 import { useMatchLifecycle } from '../online/useMatch';
 import { RoomControls, RoomResult } from '../online/RoomParts';
 
@@ -27,6 +28,7 @@ export default function LudoOnline({ t, lang, room, uid, code, onExit, onSwitchR
   const [flash, setFlash] = useState(null);
   const [note, setNote] = useState('');
   const [sending, setSending] = useState(false);
+  const [ret, setRet] = useState(null), [retTrail, setRetTrail] = useState(null);
   const seqRef = useRef(room.moveSeq), queuedRef = useRef(room.moveSeq), queue = useRef([]), running = useRef(false), alive = useRef(true), autoSent = useRef(-1);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
 
@@ -51,7 +53,12 @@ export default function LudoOnline({ t, lang, room, uid, code, onExit, onSwitchR
           const s0 = gameRef.current;
           if (s0) for (const pos of pathOf(s0, lm.from, lm.to)) { if (!alive.current) return; setAnim({ p: lm.by, i: lm.i, pos }); sfx.hop(); await wait(lm.from === -1 ? 240 : 160); }
           setAnim(null); sfx.land();
-          if (lm.caps) { setFlash({ text: t.ludoCapture, kind: 'good', k: Math.random() }); sfx.kick?.(false); }
+          if (lm.caps) {
+            const caps = capturedDiff(s0, ns, lm.by, lm.i);
+            gameRef.current = ns; setGame(ns); setRet(retInit(caps));
+            setFlash({ text: t.ludoCapture, kind: 'good', k: Math.random() }); sfx.kick?.(false);
+            await animateReturn(s0, caps, { setRet, setRetTrail, wait, alive: () => alive.current });
+          }
           else if (lm.home) { setFlash({ text: t.ludoHomeFlash, kind: 'good', k: Math.random() }); sfx.home?.(); }
         }
       } else { setAnim(null); setRolling(false); }
@@ -84,7 +91,7 @@ export default function LudoOnline({ t, lang, room, uid, code, onExit, onSwitchR
 
   if (!g) return <div className="panel center"><p>{t.roomGone}</p></div>;
   const toks = [];
-  g.pos.forEach((arr, p) => arr.forEach((pos, i) => { const mv = anim && anim.p === p && anim.i === i; toks.push({ p, i, seat: g.seats[p], pos: mv ? anim.pos : pos, moving: mv }); }));
+  g.pos.forEach((arr, p) => arr.forEach((pos, i) => { const mv = anim && anim.p === p && anim.i === i; const rk = ret && ret[`${p}:${i}`]; const back = rk !== undefined; toks.push({ p, i, seat: g.seats[p], pos: back ? rk : mv ? anim.pos : pos, moving: mv, back }); }));
   const seatNow = g.seats[g.turn], color = COLORS[seatNow], F = finishOf(g.board);
   const homeCount = (p) => g.pos[p].filter((x) => x === F).length;
   const status = g.over ? '' : rolling ? '…' : note || (g.phase === 'move' ? (myTurn ? t.ludoPick : t.ludoRolled(people[g.turn].name, g.dice)) : L.myTurn ? t.ludoYourTurn : t.ludoTurnOf(people[g.turn].name));
@@ -115,7 +122,7 @@ export default function LudoOnline({ t, lang, room, uid, code, onExit, onSwitchR
         );
       })}
       <div className="ludo-board" style={{ order: 1 }}>
-        <LudoBoard board={g.board} seats={g.seats} tokens={toks} legal={legal} onPick={pick} hintKey={null} turnSeat={seatNow} previews={previews} trail={null} fx={[]} flying={NO_FLY} />
+        <LudoBoard board={g.board} seats={g.seats} tokens={toks} legal={legal} onPick={pick} hintKey={null} turnSeat={seatNow} previews={previews} trail={null} retTrail={retTrail} fx={[]} flying={NO_FLY} />
         {flash && <div className={`flash ${flash.kind}`} key={flash.k} onAnimationEnd={() => setFlash(null)}>{flash.text}</div>}
       </div>
       <div className={`ludo-dock${canRoll ? ' ready' : ''}`} style={{ '--dc': color, order: 4 }}>

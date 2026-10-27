@@ -10,6 +10,7 @@ import { sfx } from '@/lib/sound';
 import ResultOverlay from '../ResultOverlay';
 import { useTurnClock } from '../useTurnClock';
 import LudoBoard, { COLORS } from './LudoBoard';
+import { capturedDiff, retInit, animateReturn } from '@/lib/ludo/ret.js';
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
@@ -63,6 +64,8 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
   const [trail, setTrail] = useState(null);
   const [fx, setFx] = useState([]);
   const [flying, setFlying] = useState(() => new Set());
+  const [ret, setRet] = useState(null);           // captured pawns walking home: { 'p:i': pos }
+  const [retTrail, setRetTrail] = useState(null);
   const [showLog, setShowLog] = useState(false);
   const [timerOn, setTimerOn] = useState(true);   // turn timer (remembered per device)
   const streak = useRef(0);                      // turns in a row the clock had to play for you
@@ -112,17 +115,15 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
     const seat = s0.seats[s0.turn], steps = pathOf(s0, m.from, m.to);
     for (const pos of steps) { if (!alive.current) return; setAnim({ p: s0.turn, i, pos }); sfx.hop(); await wait((m.from === -1 ? 260 : 170) * sp); }
     if (!alive.current) return;
+    const caps = capturedDiff(s0, m.state, s0.turn, i);
+    if (caps.length) setRet(retInit(caps));      // keep the hit pawns on their cell for a beat
     setAnim(null); commit(m.state); sfx.land();
     setTrail({ seat, pts: trailXY(s0.board, seat, m.from, m.to), k: m.state.moves });
     if (m.leaves) { const xy = tokenXY(s0.board, seat, 0, i); burst(xy.x, xy.y, COLORS[seat], 'out'); }
     if (m.captured.length) {
-      const fly = new Set();
-      m.captured.forEach((c) => {
-        const cs = s0.seats[c.p], xy = tokenXY(s0.board, cs, s0.pos[c.p][c.i], c.i);
-        burst(xy.x, xy.y, COLORS[cs], 'hit'); fly.add(`${c.p}:${c.i}`);
-      });
-      setFlying(fly); setTimeout(() => { if (alive.current) setFlying(new Set()); }, 900);
+      m.captured.forEach((c) => { const cs = s0.seats[c.p], xy = tokenXY(s0.board, cs, s0.pos[c.p][c.i], c.i); burst(xy.x, xy.y, COLORS[cs], 'hit'); });
       sfx.kick(false); say(t.ludoCaptureMsg ? t.ludoCaptureMsg(people[s0.turn].name, people[m.captured[0].p].name) : t.ludoCapture, 'good');
+      await animateReturn(s0, caps, { setRet, setRetTrail, wait: (ms) => wait(ms * sp), alive: () => alive.current });
     } else if (m.finishes) {
       const xy = tokenXY(s0.board, seat, finishOf(s0.board), i); burst(xy.x, xy.y, COLORS[seat], 'home');
       sfx.home(); say(t.ludoHomeFlash, 'good');
@@ -165,7 +166,7 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
   const legal = useMemo(() => new Set(humanTurn && game.phase === 'move' && idle ? legalMoves(game).map((i) => `${game.turn}:${i}`) : []), [game, humanTurn, idle]);
   const previews = useMemo(() => (legal.size ? new Map(previewAll(game).map((pv) => [`${game.turn}:${pv.i}`, pv])) : null), [game, legal]);
   const toks = [];
-  game.pos.forEach((arr, p) => arr.forEach((pos, i) => { const mv = anim && anim.p === p && anim.i === i; toks.push({ p, i, seat: game.seats[p], pos: mv ? anim.pos : pos, moving: mv }); }));
+  game.pos.forEach((arr, p) => arr.forEach((pos, i) => { const mv = anim && anim.p === p && anim.i === i; const rk = ret && ret[`${p}:${i}`]; const back = rk !== undefined; toks.push({ p, i, seat: game.seats[p], pos: back ? rk : mv ? anim.pos : pos, moving: mv, back }); }));
   const seatNow = game.seats[game.turn], color = COLORS[seatNow];
   const F = finishOf(game.board);
   const homeCount = (p) => game.pos[p].filter((x) => x === F).length;
@@ -254,7 +255,7 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
         );
       })}
       <div className="ludo-board" style={{ order: 1 }}>
-        <LudoBoard board={game.board} seats={game.seats} tokens={toks} legal={legal} onPick={userPick} hintKey={hintKey} turnSeat={seatNow} previews={previews} trail={trail} fx={fx} flying={flying} />
+        <LudoBoard board={game.board} seats={game.seats} tokens={toks} legal={legal} onPick={userPick} hintKey={hintKey} turnSeat={seatNow} previews={previews} trail={trail} retTrail={retTrail} fx={fx} flying={flying} />
         {flash && <div className={`flash ${flash.kind}`} key={flash.k} onAnimationEnd={() => setFlash(null)}>{flash.text}</div>}
       </div>
       <div className={`ludo-dock${canRoll ? ' ready' : ''}`} style={{ '--dc': color, order: 4 }}>

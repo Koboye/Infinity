@@ -151,16 +151,19 @@ function Triangle({ turnSeat }) {
   );
 }
 
-/** A pawn drawn at radius 1 (base ellipse, flared body, neck ring, glossy head). */
+/** A toy pawn drawn at radius 1: white-rimmed glossy sphere head, collar, tapered body and a chunky rounded base. */
 function Pawn({ seat, fin }) {
+  const rim = { stroke: '#fff', strokeOpacity: 0.92, strokeWidth: 0.1, strokeLinejoin: 'round' };
   return (
-    <g transform={`translate(0 ${fin ? 0.05 : 0.18})`}>
-      <ellipse cx="0" cy="0.5" rx="0.88" ry="0.3" fill={DARK[seat]} stroke="rgba(0,0,0,.55)" strokeWidth="0.06" />
-      <path d="M-0.7,0.46 C-0.7,0.12 -0.3,0.08 -0.22,-0.36 L0.22,-0.36 C0.3,0.08 0.7,0.12 0.7,0.46 C0.45,0.62 -0.45,0.62 -0.7,0.46 Z" fill={`url(#lb${seat})`} stroke="rgba(0,0,0,.5)" strokeWidth="0.06" strokeLinejoin="round" />
-      <ellipse cx="0" cy="-0.38" rx="0.42" ry="0.13" fill={DARK[seat]} stroke="rgba(0,0,0,.45)" strokeWidth="0.05" />
-      <circle cx="0" cy="-0.8" r="0.46" fill={`url(#lg${seat})`} stroke="rgba(0,0,0,.55)" strokeWidth="0.06" />
-      <ellipse cx="-0.16" cy="-0.97" rx="0.17" ry="0.1" fill="#fff" opacity=".85" transform="rotate(-25 -0.16 -0.97)" />
-      <path d="M-0.5,0.16 C-0.34,0.04 -0.3,0 -0.26,-0.2" fill="none" stroke="#fff" strokeOpacity=".38" strokeWidth="0.07" strokeLinecap="round" />
+    <g transform={`translate(0 ${fin ? 0.05 : 0.2})`}>
+      <ellipse cx="0" cy="0.58" rx="0.98" ry="0.36" fill={DARK[seat]} {...rim} />
+      <ellipse cx="0" cy="0.46" rx="0.98" ry="0.36" fill={`url(#lc${seat})`} stroke="rgba(0,0,0,.45)" strokeWidth="0.05" />
+      <ellipse cx="-0.25" cy="0.38" rx="0.4" ry="0.1" fill="#fff" opacity=".5" />
+      <path d="M-0.62,0.42 C-0.62,0.06 -0.28,0.04 -0.2,-0.34 L0.2,-0.34 C0.28,0.04 0.62,0.06 0.62,0.42 C0.4,0.58 -0.4,0.58 -0.62,0.42 Z" fill={`url(#lb${seat})`} {...rim} />
+      <ellipse cx="0" cy="-0.36" rx="0.5" ry="0.15" fill={`url(#lc${seat})`} {...rim} />
+      <circle cx="0" cy="-0.82" r="0.52" fill={`url(#lg${seat})`} {...rim} />
+      <ellipse cx="-0.18" cy="-1.02" rx="0.2" ry="0.11" fill="#fff" opacity=".9" transform="rotate(-28 -0.18 -1.02)" />
+      <circle cx="0.2" cy="-0.6" r="0.09" fill="#fff" opacity=".35" />
     </g>
   );
 }
@@ -185,7 +188,7 @@ function Burst({ fx, board }) {
  * legal    : Set of "p:i" keys the human may tap.     previews: Map "p:i" → { to, captured, finishes } for those tokens.
  * trail    : { seat, pts:[{x,y}], k } the cells the last move crossed.   fx: [{id,x,y,color,kind,k}] bursts.   flying: Set of keys sliding home after a capture.
  */
-export default function LudoBoard({ board, seats, tokens, legal, onPick, hintKey, turnSeat, previews, trail, fx = [], flying }) {
+export default function LudoBoard({ board, seats, tokens, legal, onPick, hintKey, turnSeat, previews, trail, retTrail = null, fx = [], flying }) {
   const isSq = board === 'square', U = UNIT[board], R = U.r, F = finishOf(board);
   const [hover, setHover] = useState(null);
   // spread tokens that share a point
@@ -219,17 +222,23 @@ export default function LudoBoard({ board, seats, tokens, legal, onPick, hintKey
           {trail.pts.map((pt, k) => <circle key={k} cx={pt.x} cy={pt.y} r={R * 0.3} fill={COLORS[trail.seat]} stroke="#fff" strokeWidth={R * 0.08} style={{ animationDelay: `${k * 0.05}s` }} />)}
         </g>
       )}
+      {retTrail && retTrail.map((rt, n) => (
+        <g className="ludo-ret" key={`r${n}`}>
+          {rt.pts.map((pt, k) => <circle key={k} cx={pt.x} cy={pt.y} r={R * 0.26} fill="#ff3b2a" stroke="#fff" strokeWidth={R * 0.07} style={{ animationDelay: `${k * 0.03}s` }} />)}
+        </g>
+      ))}
       {ghosts}
       {items.map(({ tk, x, y, sc, fin }) => {
         const key = `${tk.p}:${tk.i}`, can = legal.has(key), fly = flying && flying.has(key);
         const pick = can ? (e) => { e.preventDefault(); onPick(tk.i); } : undefined;
         return (
-          <g key={key} className={`ludo-tok${can ? ' can' : ''}${hintKey === key ? ' hint' : ''}${fly ? ' fly' : ''}${tk.moving ? ' moving' : ''}`}
+          <g key={key} className={`ludo-tok${can ? ' can' : ''}${hintKey === key ? ' hint' : ''}${fly ? ' fly' : ''}${tk.moving ? ' moving' : ''}${tk.back ? ' back' : ''}`}
             style={{ transform: `translate(${x}px, ${y}px)`, '--hop': U.hop }}
             onPointerDown={pick} onPointerEnter={can ? () => setHover(key) : undefined} onPointerLeave={can ? () => setHover(null) : undefined}
             onKeyDown={can ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(tk.i); } } : undefined}
             role={can ? 'button' : undefined} tabIndex={can ? 0 : undefined} aria-label={can ? `Move ${COLOR_NAMES[tk.seat]} token` : undefined}>
             {can && <circle r={R * 1.6} fill="transparent" />}
+            {tk.back && <circle r={R * 1.3} className="retring" fill="none" stroke="#ff3b2a" strokeWidth={R * 0.2} />}
             {can && <circle r={R * 1.35} className="ring" fill="none" stroke="#fff" strokeWidth={R * 0.18} />}
             <ellipse className="shadow" cx={R * 0.1} cy={R * 0.78 * sc} rx={R * 0.95 * sc} ry={R * 0.34 * sc} fill="rgba(0,0,0,.42)" />
             <g key={tk.moving ? `m${tk.pos}` : 'still'} className="body"><g transform={`scale(${R * sc})`}><Pawn seat={tk.seat} fin={fin} /></g></g>

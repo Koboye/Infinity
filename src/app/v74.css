@@ -155,3 +155,17 @@ html body .bn-tab.on { padding-inline: 0; }
 
 /* online Ludo: emote bubble over a player strip */
 .ludo .ludo-panel .emo { position: absolute; left: 50%; bottom: -10px; transform: translateX(-50%); z-index: 4; max-width: 90%; padding: 2px 9px; border-radius: 99px; font-style: normal; font-weight: 800; font-size: .72rem; color: var(--gold-ink); background: linear-gradient(180deg, var(--gold-hi), var(--gold-lo)); box-shadow: 0 2px 6px rgba(0,0,0,.4); white-space: nowrap; }
+
+/* ═════ Ludo: the die lands FLAT and centred (number facing you), pawns look like toys, captured pawns walk home visibly ═════ */
+.ludo-die3d .tilt { transform: none; }
+.ludo .ludo-panel .ludo-die3d { --s: 38px; }
+.ludo-die3d .face { border-radius: 20%; }
+.ludo-die3d:not(.rolling):not(.idle) .cube { animation: ludo-settle .35s ease-out; }
+@keyframes ludo-settle { 0% { transform: rotateX(var(--fx)) rotateY(var(--fy)) scale(1.18); } 60% { transform: rotateX(var(--fx)) rotateY(var(--fy)) scale(.96); } 100% { transform: rotateX(var(--fx)) rotateY(var(--fy)) scale(1); } }
+.ludo-svg .ludo-tok.back { transition: transform .06s linear; z-index: 5; }
+.ludo-svg .ludo-tok.back .body { filter: drop-shadow(0 0 .35px #ff3b2a) saturate(1.25); animation: ludo-hurry .3s ease-in-out infinite; }
+.ludo-svg .ludo-tok .retring { transform-box: fill-box; transform-origin: center; animation: ludo-pulse .5s ease-in-out infinite; }
+@keyframes ludo-hurry { 0%, 100% { transform: translateY(0) rotate(-6deg); } 50% { transform: translateY(calc(var(--hop) * -.45px)) rotate(6deg); } }
+.ludo-svg .ludo-ret circle { opacity: 0; transform-box: fill-box; transform-origin: center; animation: ludo-retdot .5s ease-out forwards; }
+@keyframes ludo-retdot { 0% { opacity: 0; transform: scale(.2); } 40% { opacity: .95; transform: scale(1.15); } 100% { opacity: .55; transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .ludo-die3d:not(.rolling):not(.idle) .cube, .ludo-svg .ludo-tok.back .body, .ludo-svg .ludo-tok .retring { animation: none; } }
