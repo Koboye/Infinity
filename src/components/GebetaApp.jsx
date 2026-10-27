@@ -17,6 +17,8 @@ import EarnOffer from './EarnOffer';
 import AdOverlay from './AdOverlay';
 import * as Ads from '@/lib/ads';
 import * as Wallet from '@/lib/wallet';
+import FriendsScreen, { InviteInbox } from './Friends';
+import { useSocial } from '@/lib/useSocial';
 import { Home, Setup, RulesScreen, AuthForm, Lobby, Leaders, ProfileScreen, ProgressScreen, SettingsScreen, Tibeb } from './Screens';
 import { isPlayable, GAMES } from '@/lib/games.js';
 import Coach, { needsCoach } from './Coach';
@@ -60,6 +62,8 @@ export default function GebetaApp() {
   const [coach, setCoach] = useState(null);
   const [settings, setSettings] = useState(DEFAULTS);
   const [offline, setOffline] = useState(false);
+  const [joining, setJoining] = useState(false);
+  const social = useSocial(user?.uid);                       // v73: friends, chats and invites: one set of listeners for the whole app
   const t = STRINGS[lang];
 
   useEffect(() => {
@@ -189,6 +193,27 @@ export default function GebetaApp() {
     try { const u = new URL(window.location.href); u.searchParams.delete('room'); window.history.replaceState(null, '', u.toString()); } catch { /* ignore */ }
     apiCall({ action: 'join', code }).then((r) => go('room', { code: r.code })).catch((e) => { setToast({ text: e.message }); setTimeout(() => setToast(null), 3500); home(); });
   }, [authReady, user]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Friend link (?friend=CODE): sign in (guest is fine), send the request, open the Friends screen, clean the address bar.
+  const pendingFriend = useRef(null);
+  useEffect(() => {
+    try { const c = new URLSearchParams(window.location.search).get('friend'); if (c) pendingFriend.current = c.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6); } catch { /* no URL */ }
+  }, []);
+  useEffect(() => {
+    const code = pendingFriend.current;
+    if (!code || code.length !== 6 || !onlineAvailable || !authReady) return;
+    if (!user) { go('online'); return; }
+    pendingFriend.current = null;
+    try { const u = new URL(window.location.href); u.searchParams.delete('friend'); window.history.replaceState(null, '', u.toString()); } catch { /* ignore */ }
+    apiCall({ action: 'friendRequest', friendCode: code }).then((r) => { setToast({ text: r.result === 'accepted' ? t.frNow(r.name) : r.result === 'already' ? t.frAlready : t.frSent(r.name) }); setTimeout(() => setToast(null), 3500); go('friends'); })
+      .catch((e) => { setToast({ text: e.message }); setTimeout(() => setToast(null), 3500); go('friends'); });
+  }, [authReady, user]); // eslint-disable-line react-hooks/exhaustive-deps
+  const joinInvite = async (inv) => {
+    setJoining(true);
+    try { const r = await apiCall({ action: 'join', code: inv.code }); apiCall({ action: 'inviteDismiss', id: inv.id }, { retries: 0 }).catch(() => {}); if (inv.game && isPlayable(inv.game)) pickGame(inv.game); go('room', { code: r.code }); }
+    catch (e) { setToast({ text: e.message || t.inviteGone }); setTimeout(() => setToast(null), 3500); apiCall({ action: 'inviteDismiss', id: inv.id }, { retries: 0 }).catch(() => {}); }
+    setJoining(false);
+  };
+  const dismissInvite = (inv) => apiCall({ action: 'inviteDismiss', id: inv.id }, { retries: 0 }).catch(() => {});
   const leaveGame = async () => { if (await confirm(t.leaveConfirm)) home(); };
 
   const myPhoto = usePhoto();
@@ -196,7 +221,7 @@ export default function GebetaApp() {
   const uid = user?.uid;
 
   const gname = t[`${game}Name`];
-  const titles = { modes: gname, game: gname, ai: gname, pass: gname, online: gname, leaders: t.leaderboard, rules: t.rules, profile: t.profile, progress: t.progress, settings: t.settings };
+  const titles = { friends: t.friends, modes: gname, game: gname, ai: gname, pass: gname, online: gname, leaders: t.leaderboard, rules: t.rules, profile: t.profile, progress: t.progress, settings: t.settings };
   const inGame = view.name === 'game' || view.name === 'room';
 
   // Full-screen play ground: the page chrome shrinks away and, where the browser allows it, the whole screen is used.
@@ -226,7 +251,7 @@ export default function GebetaApp() {
   switch (view.name) {
     case 'home': body = <Home t={t} go={go} onlineOn={onlineAvailable} user={user} profile={profile} game={game} onPickGame={(g) => { pickGame(g); if (isPlayable(g)) go('modes'); }} />; break;
     case 'modes': body = <ModesScreen t={t} lang={lang} game={game} go={go} onlineOn={onlineAvailable} />; break;
-    case 'ai': case 'pass': body = <Setup t={t} mode={view.name} game={game} onStart={(o) => go('game', { mode: view.name, game, ...o })} />; break;
+    case 'ai': case 'pass': body = <Setup t={t} mode={view.name} game={game} initialRuleset={view.ruleset} onHelp={(type) => go('rules', { type })} onStart={(o) => go('game', { mode: view.name, game, ...o })} />; break;
     case 'game': {
       const P = { t, mode: view.mode, level: view.level, ruleset: view.ruleset, opts: view.opts || {}, me, onExit: home, onLeave: leaveGame };
       body = view.game === 'checkers' ? <CheckersLocal {...P} />
@@ -238,11 +263,12 @@ export default function GebetaApp() {
     }
     case 'settings': body = <SettingsScreen t={t} lang={lang} heroId={profile?.avatar} onLang={chooseLang} music={music} onMusic={setMusicTo} muted={muted} onMute={(m) => { setMutedState(m); setMuted(m); write('gebeta.muted', m ? '1' : '0'); }} settings={settings} onSettings={changeSettings} />; break;
     case 'progress': body = <ProgressScreen t={t} lang={lang} />; break;
-    case 'rules': body = <RulesScreen t={t} game={game} />; break;
+    case 'rules': body = <RulesScreen t={t} lang={lang} game={game} type={view.type} onPlay={(type) => go('ai', { ruleset: type })} />; break;
+    case 'friends': body = !onlineAvailable ? <Unavailable t={t} /> : !authReady ? null : !user ? <AuthForm t={t} /> : <FriendsScreen t={t} lang={lang} uid={uid} social={social} onEnterRoom={(code) => go('room', { code })} openChat={view.chat || null} onOpenChat={(id) => setView({ name: 'friends', chat: id })} />; break;
     case 'leaders': body = !onlineAvailable ? <Unavailable t={t} /> : !user ? (authReady ? <AuthForm t={t} /> : null) : <Leaders t={t} uid={uid} game={game} />; break;
     case 'profile': body = !onlineAvailable ? <Unavailable t={t} /> : authReady ? <ProfileScreen t={t} lang={lang} user={user} profile={profile} onSignOut={() => signOut(auth)} /> : null; break;
-    case 'online': body = !onlineAvailable ? <Unavailable t={t} /> : !authReady ? null : !user ? <AuthForm t={t} /> : <Lobby t={t} lang={lang} game={game} beforeStart={() => runAd('pre_game', { game })} onSpin={() => setSheet({ type: 'spin' })} onEnter={(code) => go('room', { code })} />; break;
-    case 'room': body = <OnlineRoom key={view.code} t={t} lang={lang} uid={uid} code={view.code} onExit={home} onSwitchRoom={(code) => go('room', { code })} confirm={confirm} />; break;
+    case 'online': body = !onlineAvailable ? <Unavailable t={t} /> : !authReady ? null : !user ? <AuthForm t={t} /> : <Lobby t={t} lang={lang} game={game} initialRuleset={view.ruleset} onHelp={(type) => go('rules', { type })} onFriends={() => go('friends')} beforeStart={() => runAd('pre_game', { game })} onSpin={() => setSheet({ type: 'spin' })} onEnter={(code) => go('room', { code })} />; break;
+    case 'room': body = <OnlineRoom key={view.code} t={t} lang={lang} uid={uid} friends={social.friends} code={view.code} onExit={home} onSwitchRoom={(code) => go('room', { code })} confirm={confirm} />; break;
     default: body = null;
   }
 
@@ -251,12 +277,13 @@ export default function GebetaApp() {
       {offline && <div className="offline-bar" role="status">{t.offline}</div>}
       <Tibeb />
       {!inGame && (
-        <BottomNav lang={lang} view={view.name} profile={profile} onHome={home}
+        <BottomNav lang={lang} view={view.name} profile={profile} badge={social.badge} onHome={home}
           onOpen={(to) => {
             if (to === 'leaders' && GAMES[game]?.offlineOnly) { const g = GAME_LIST_ONLINE[0]; if (g) pickGame(g); }
             go(to);
           }} />
       )}
+      {user && !inGame && !adShow && <InviteInbox t={t} invites={social.invites} busy={joining} onJoin={joinInvite} onDismiss={dismissInvite} />}
       {adShow && <AdOverlay ad={adShow.ad} lang={lang} placement={adShow.placement} seconds={adShow.ad.durationSec} onShown={(a) => Ads.shown(adShow.placement, a)} onClick={(a) => Ads.clicked(a)} onClose={(_done, reason) => { adShow.resolve(reason); setAdShow(null); }} />}
       {onlineAvailable && (view.name === 'home' || view.name === 'modes') && !adShow && <EarnOffer lang={lang} context="open" variant="banner" active={splashDone && !sheet} onSpin={() => setSheet({ type: 'spin' })} />}
       {sheet?.type === 'gift' && <WelcomeGift lang={lang} onClose={() => setSheet(null)} />}

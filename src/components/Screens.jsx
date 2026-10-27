@@ -18,6 +18,7 @@ import { load as loadProgress, ACHIEVEMENTS, dailyGame, dailyDone, total as tota
 import { FeePicker } from './Wallet';
 import EarnOffer from './EarnOffer';
 import PhotoPicker from './PhotoPicker';
+import GebetaRules from './GebetaRules';
 import { getPhoto, storePhoto } from '@/lib/photo';
 import { KINDS, STONE_SETS, stoneSet, stoneVars } from '@/lib/stones';
 
@@ -98,10 +99,10 @@ export function Home({ t, onPickGame }) {
 }
 
 /* ───────── Setup (computer / pass) ───────── */
-export function Setup({ t, mode, game, onStart }) {
+export function Setup({ t, mode, game, onStart, initialRuleset, onHelp }) {
   const info = gameInfo(game);
   const [level, setLevel] = useState('medium');
-  const [ruleset, setRuleset] = useState(info.defaultRuleset);
+  const [ruleset, setRuleset] = useState(info.rulesets.includes(initialRuleset) ? initialRuleset : info.defaultRuleset);
   const [target, setTarget] = useState(info.defaultTarget);
   const [numCards, setNumCards] = useState(1);      // Bingo: 1-4 cards
   const [ludoPlayers, setLudoPlayers] = useState(4);  // Ludo: 2 / 3 (fair triangle) / 4
@@ -114,7 +115,7 @@ export function Setup({ t, mode, game, onStart }) {
           items={LEVELS.map((l) => ({ id: l.id, title: t[l.id], sub: t.levelSub[l.id], pips: l.pips, tone: l.tone }))}
         />
       )}
-      <RulesetPicker t={t} game={game} value={ruleset} onChange={setRuleset} />
+      <RulesetPicker t={t} game={game} value={ruleset} onChange={setRuleset} onHelp={onHelp} />
       {game === 'dominoes' && <TargetPicker t={t} value={target} onChange={setTarget} />}
       {game === 'checkers' && <p className="muted small">{t.ckFirst}</p>}
       {game === 'ludo' && (
@@ -142,14 +143,17 @@ export function Setup({ t, mode, game, onStart }) {
 const TONES = ['#FFB020', '#35E0C2', '#FF5C8A', '#8A78FF', '#7BE06B', '#FF8A4C'];
 const LEVELS = [{ id: 'easy', pips: 1, tone: '#7BE06B' }, { id: 'medium', pips: 2, tone: '#FFB020' }, { id: 'hard', pips: 3, tone: '#FF5C8A' }];
 
-export function RulesetPicker({ t, game, value, onChange }) {
+export function RulesetPicker({ t, game, value, onChange, onHelp }) {
   if (gameInfo(game).rulesets.length < 2) return null; // only one way to play — nothing to choose
   return (
+    <>
     <SwipePicker
       label={t.gameTypeTitle} prevLabel={t.swipePrev} nextLabel={t.swipeNext}
       value={value} onChange={onChange}
       items={gameInfo(game).rulesets.map((id, k) => { const [name, sub] = t.rs[game][id]; return { id, title: name, sub: t.rsShort?.[game]?.[id] || sub, tone: TONES[k % TONES.length] }; })}
     />
+    {game === 'gebeta' && onHelp && <button type="button" className="btn ghost wide rules-help" onClick={() => onHelp(value)}>📖 {t.rulesHelp}</button>}
+    </>
   );
 }
 
@@ -167,7 +171,8 @@ export function TargetPicker({ t, value, onChange }) {
 }
 
 /* ───────── Rules ───────── */
-export function RulesScreen({ t, game }) {
+export function RulesScreen({ t, lang, game, type, onPlay }) {
+  if (game === 'gebeta') return <GebetaRules t={t} lang={lang} type={type} onPlay={onPlay} />;   // v73: the three Gebeta types, one rule at a time + ask box
   const title = game === 'checkers' ? t.rulesTitleCheckers : game === 'dominoes' ? t.rulesTitleDominoes : game === 'bingo' ? t.rulesTitleBingo : game === 'ludo' ? t.rulesTitleLudo : t.rulesTitle;
   return (
     <div className="panel rules">
@@ -228,9 +233,9 @@ export function AuthForm({ t }) {
 }
 
 /* ───────── Online lobby ───────── */
-export function Lobby({ t, lang, game, onEnter, onSpin, beforeStart }) {
+export function Lobby({ t, lang, game, onEnter, onSpin, beforeStart, initialRuleset, onHelp, onFriends }) {
   const info = gameInfo(game);
-  const [ruleset, setRuleset] = useState(info.defaultRuleset);
+  const [ruleset, setRuleset] = useState(info.rulesets.includes(initialRuleset) ? initialRuleset : info.defaultRuleset);
   const [target, setTarget] = useState(info.defaultTarget);
   const [code, setCode] = useState('');
   const [fee, setFee] = useState(50);
@@ -257,7 +262,7 @@ export function Lobby({ t, lang, game, onEnter, onSpin, beforeStart }) {
   return (
     <div className="panel">
       {saved && <button className="btn primary wide" onClick={() => onEnter(saved)}>{`↺ ${saved}`}</button>}
-      <RulesetPicker t={t} game={game} value={ruleset} onChange={setRuleset} />
+      <RulesetPicker t={t} game={game} value={ruleset} onChange={setRuleset} onHelp={onHelp} />
       {game === 'dominoes' && <TargetPicker t={t} value={target} onChange={setTarget} />}
       <FeePicker lang={lang} value={fee} onChange={setFee} onSpin={onSpin} />
       <EarnOffer lang={lang} context="lowcoins" variant="card" onSpin={onSpin} />
@@ -267,6 +272,9 @@ export function Lobby({ t, lang, game, onEnter, onSpin, beforeStart }) {
       <button className="menu-item" disabled={busy} onClick={() => call({ action: 'create' })}>
         <span className="mi-title">{t.createRoom}</span>
       </button>
+      {onFriends && <button className="menu-item" disabled={busy} onClick={onFriends}>
+        <span className="mi-title">👥 {t.inviteFromFriends}</span><span className="mi-sub">{t.friends}</span>
+      </button>}
       <form className="joinrow" onSubmit={(e) => { e.preventDefault(); if (code.length === 5) call({ action: 'join', code }); }}>
         <input value={code} onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5))}
           placeholder={t.enterCode} aria-label={t.enterCode} autoCapitalize="characters" autoComplete="off" inputMode="text" />

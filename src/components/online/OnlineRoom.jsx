@@ -8,6 +8,7 @@ import CheckersOnline from '../checkers/CheckersOnline';
 import DominoesOnline from '../dominoes/DominoesOnline';
 import BingoOnline from '../bingo/BingoOnline';
 import SpinOverlay from '../SpinOverlay';
+import { InviteFriendsRow } from '../Friends';
 
 const BODIES = { gebeta: GebetaOnline, checkers: CheckersOnline, dominoes: DominoesOnline, bingo: BingoOnline };
 const WAIT_LIMIT_S = 120;   // same as the server's WAIT_MS: after this nobody can join any more
@@ -29,7 +30,7 @@ function useOnline() {
 
 /** Loads a room, shows the waiting screen, then hands over to the game-specific online view. */
 import { StakeLine } from '../Wallet';
-export default function OnlineRoom({ t, lang, uid, code, onExit, onSwitchRoom, confirm }) {
+export default function OnlineRoom({ t, lang, uid, friends, code, onExit, onSwitchRoom, confirm }) {
   const [room, setRoom] = useState(null);
   const [missing, setMissing] = useState(false);
   const [copied, setCopied] = useState('');
@@ -109,6 +110,7 @@ export default function OnlineRoom({ t, lang, uid, code, onExit, onSwitchRoom, c
             <button className="btn primary" onClick={share}>{copied === 'link' ? t.linkCopied : `📨 ${t.shareInvite}`}</button>
             <button className="btn" onClick={() => copy(code, 'code')}>{copied === 'code' ? t.copied : t.copy}</button>
           </div>
+          <InviteFriendsRow t={t} code={code} friends={friends} />
         </>}
         {waited >= HINT_AFTER_S && <button className="btn" onClick={cancelWaiting}>🤖 {t.playComputerMeanwhile}</button>}
         <button className="btn ghost" onClick={cancelWaiting}>{t.cancelSearch}</button>

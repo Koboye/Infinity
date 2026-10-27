@@ -19,8 +19,9 @@ import { publicAd, clampSeconds, houseAd, SESSION_TTL_MS, DONE_TOLERANCE_MS } fr
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-class HttpError extends Error { constructor(status, msg) { super(msg); this.status = status; } }
-const fail = (status, msg) => { throw new HttpError(status, msg); };
+import { HttpError, fail } from '@/lib/online/httpError.js';
+import * as Social from '@/lib/online/socialApi.js';
+import { pushRoomChat } from '@/lib/social.js';
 
 // Best-effort per-instance rate limit (add Upstash/Redis for a hard global limit).
 const hits = new Map();
@@ -340,6 +341,35 @@ export async function POST(req) {
         });
         return ok({ ok: true });
       }
+      // ── friends, direct chat and invites (v73): see src/lib/online/socialApi.js
+      case 'friendCode':
+        return ok({ code: await Social.friendCode(db, uid) });
+      case 'friendRequest':
+        return ok(await Social.sendRequest(db, uid, { code: body.friendCode, to: body.to }));
+      case 'friendAccept':
+        return ok(await Social.respond(db, uid, body.to, true));
+      case 'friendDecline':
+        return ok(await Social.respond(db, uid, body.to, false));
+      case 'friendRemove':
+        return ok(await Social.remove(db, uid, body.to));
+      case 'chatSend':
+        return ok(await Social.chatSend(db, uid, body.to, body.text));
+      case 'chatRead':
+        return ok(await Social.chatRead(db, uid, body.to));
+      case 'friendInvite':
+        return ok(await Social.inviteFriend(db, uid, { to: body.to, room: code || null, makeRoom: () => createRoom(db, uid, decoded.name, { ...common, isPublic: false }) }));
+      case 'inviteDismiss':
+        return ok(await Social.inviteDismiss(db, uid, body.id));
+      case 'presence':
+        return ok(await Social.presence(db, uid));
+      case 'roomChat': // free text between the two players of a match (last 30 lines are kept on the room)
+        return ok(await mutateRoom(db, code, (room) => {
+          const seat = room.players.indexOf(uid);
+          if (seat < 0) return { error: 'You are not in this match', status: 403 };
+          const out = pushRoomChat(room.chat, seat, body.text);
+          if (out.error) return { error: out.error };
+          return { room: { ...room, chat: out.chat } };
+        }));
       case 'emote': {
         const id = String(body.id || '').slice(0, 12);
         return ok(await mutateRoom(db, code, (room) => {

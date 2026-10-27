@@ -1,3 +1,4 @@
+import { SOCIAL_EN, SOCIAL_AM } from './i18nSocial.js';
 export const STRINGS = {
   en: {
     appName: 'ገበጣ', subtitle: 'Classic games, Ethiopian style',
@@ -304,6 +305,8 @@ export const HEROES = [
   { id: 'coffee', glyph: '☕', name: { en: 'Coffee Keeper', am: 'ቡና ጠጡ' }, color: '#8B5A2B' },
 ];
 export const heroById = (id) => HEROES.find((h) => h.id === id) || HEROES[0];
+
+Object.assign(STRINGS.en, SOCIAL_EN); Object.assign(STRINGS.am, SOCIAL_AM);
 
 export const EMOTES = [
   { id: 'gobez', en: 'Well played!', am: 'ጎበዝ!' },

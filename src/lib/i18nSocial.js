@@ -1,0 +1,43 @@
+// v73 texts: friends, chat, invites and the one-by-one rulebook. Merged into STRINGS at the end of i18n.js.
+// Keep English and Amharic in step — tests/i18n-offline.test.mjs checks both directions.
+export const SOCIAL_EN = {
+  friends: 'Friends', myFriendCode: 'My friend code', friendCodeHint: 'Share this code. Your friend types it under “Add a friend”.',
+  shareMyCode: 'Share my code', addMeText: (c) => `Add me on Infinity! My friend code is ${c}`, codeCopied: 'Code copied',
+  addFriend: 'Add a friend', enterFriendCode: '6-letter friend code', sendRequest: 'Send request',
+  frSent: (n) => `Request sent to ${n}`, frNow: (n) => `You and ${n} are now friends`, frAlready: 'Already your friend', frPending: 'Request already sent',
+  frRequests: 'Requests', frNoRequests: 'No requests right now', frAccept: 'Accept', frDecline: 'Decline', frCancel: 'Cancel request', frWaitingFor: 'Waiting for an answer',
+  frNone: 'No friends yet. Share your code or add a friend by code.', frOnline: 'Online', frOffline: 'Offline',
+  frRemove: 'Remove friend', frRemoveConfirm: (n) => `Remove ${n} from your friends?`,
+  chat: 'Chat', chatWrite: 'Write a message…', chatSend: 'Send', chatEmpty: 'Say hello 👋', chatYou: 'You',
+  inviteToPlay: 'Invite to play', inviteChoose: 'Which game?', inviteFriendly: 'Friendly game · no coins', inviteSentTo: (n) => `Invite sent to ${n}. Waiting for them…`,
+  inviteFrom: (n, g) => `${n} invites you to play ${g}`, inviteJoin: 'Join', inviteLater: 'Not now', inviteGone: 'That invite has expired',
+  inviteFromFriends: 'Invite a friend', inviteNoFriends: 'Add friends to invite them here',
+  friendsSignIn: 'Sign in to add friends, chat and play together.', friendsOffline: 'Friends need an internet connection.',
+  roomChat: 'Chat with your opponent', roomChatHint: 'Say something…', roomChatSend: 'Send',
+  askTitle: 'Ask about the rules', askHint: 'Type a question, for example “when do I capture?”', askBtn: 'Ask',
+  askNone: 'I have no answer for that yet. Ask a friend to explain:', askFriend: 'Ask a friend', askTry: 'Popular questions',
+  rulesPickType: 'Choose a Gebeta type', rulesStep: (i, n) => `Rule ${i} of ${n}`, rulesPrev: 'Back', rulesNext: 'Next rule', rulesAll: 'Show all rules', rulesOne: 'One by one',
+  rulesSend: 'Send these rules', rulesCopied: 'Rules copied', rulesPlay: 'Play this type', rulesDone: 'That is every rule. Ready to play?',
+  rulesHelp: 'How this type works',
+};
+
+export const SOCIAL_AM = {
+  friends: 'ጓደኞች', myFriendCode: 'የእኔ የጓደኛ ኮድ', friendCodeHint: 'ይህን ኮድ ላክ። ጓደኛህ “ጓደኛ ጨምር” ስር ያስገባዋል።',
+  shareMyCode: 'ኮዴን አጋራ', addMeText: (c) => `በInfinity ላይ ጨምረኝ! የጓደኛ ኮዴ ${c} ነው`, codeCopied: 'ኮዱ ተቀድቷል',
+  addFriend: 'ጓደኛ ጨምር', enterFriendCode: 'ባለ6 ፊደል የጓደኛ ኮድ', sendRequest: 'ጥያቄ ላክ',
+  frSent: (n) => `ለ${n} ጥያቄ ተልኳል`, frNow: (n) => `አንተና ${n} አሁን ጓደኛሞች ናችሁ`, frAlready: 'ቀድሞውኑ ጓደኛህ ነው', frPending: 'ጥያቄ አስቀድሞ ተልኳል',
+  frRequests: 'ጥያቄዎች', frNoRequests: 'አሁን ምንም ጥያቄ የለም', frAccept: 'ተቀበል', frDecline: 'አትቀበል', frCancel: 'ጥያቄውን ሰርዝ', frWaitingFor: 'መልስ በመጠበቅ ላይ',
+  frNone: 'እስካሁን ጓደኛ የለም። ኮድህን አጋራ ወይም በኮድ ጓደኛ ጨምር።', frOnline: 'ተገናኝቷል', frOffline: 'አልተገናኘም',
+  frRemove: 'ጓደኛን አስወግድ', frRemoveConfirm: (n) => `${n}ን ከጓደኞችህ ልታስወግድ ትፈልጋለህ?`,
+  chat: 'ውይይት', chatWrite: 'መልእክት ጻፍ…', chatSend: 'ላክ', chatEmpty: 'ሰላም በል 👋', chatYou: 'አንተ',
+  inviteToPlay: 'ለጨዋታ ጋብዝ', inviteChoose: 'የትኛውን ጨዋታ?', inviteFriendly: 'የወዳጅነት ጨዋታ · ያለ ሳንቲም', inviteSentTo: (n) => `ለ${n} ግብዣ ተልኳል። እየጠበቅን ነው…`,
+  inviteFrom: (n, g) => `${n} ${g} እንድትጫወት ይጋብዝሃል`, inviteJoin: 'ተቀላቀል', inviteLater: 'አሁን አይሆንም', inviteGone: 'ይህ ግብዣ ጊዜው አልፎበታል',
+  inviteFromFriends: 'ጓደኛ ጋብዝ', inviteNoFriends: 'እዚህ ለመጋበዝ ጓደኞችን ጨምር',
+  friendsSignIn: 'ጓደኛ ለመጨመር፣ ለመወያየትና አብሮ ለመጫወት ግባ።', friendsOffline: 'ጓደኞች የኢንተርኔት ግንኙነት ያስፈልጋቸዋል።',
+  roomChat: 'ከተጋጣሚህ ጋር ተወያይ', roomChatHint: 'የሆነ ነገር ጻፍ…', roomChatSend: 'ላክ',
+  askTitle: 'ስለ ሕጉ ጠይቅ', askHint: 'ጥያቄ ጻፍ፣ ለምሳሌ “መቼ እበላለሁ?”', askBtn: 'ጠይቅ',
+  askNone: 'ለዚህ እስካሁን መልስ የለኝም። ጓደኛህን እንዲያስረዳህ ጠይቅ፦', askFriend: 'ጓደኛን ጠይቅ', askTry: 'የተለመዱ ጥያቄዎች',
+  rulesPickType: 'የገበጣ አይነት ምረጥ', rulesStep: (i, n) => `ሕግ ${i} ከ${n}`, rulesPrev: 'ተመለስ', rulesNext: 'ቀጣዩ ሕግ', rulesAll: 'ሁሉንም ሕጎች አሳይ', rulesOne: 'አንድ በአንድ',
+  rulesSend: 'እነዚህን ሕጎች ላክ', rulesCopied: 'ሕጎቹ ተቀድተዋል', rulesPlay: 'ይህን አይነት ተጫወት', rulesDone: 'ሕጎቹ እነዚህ ብቻ ናቸው። ለመጫወት ዝግጁ ነህ?',
+  rulesHelp: 'ይህ አይነት እንዴት እንደሚሠራ',
+};

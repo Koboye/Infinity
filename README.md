@@ -283,3 +283,11 @@ Every ad (app open, game start, Play again / Rematch, rewarded) now rotates in a
 - **Amharic gaps closed.** Nine texts (Bingo pause / resume / voice, "show ready fours", the no-Amharic-voice notice) existed only in English; Amharic players saw English. They are translated now. **Please have a native speaker review these nine.** `tests/i18n-offline.test.mjs` fails if English and Amharic ever drift apart again.
 - **Install shortcuts.** Long-pressing the installed app icon offers Gebeta, Checkers, Ludo and Bingo.
 - Checked, no change needed: Firestore rules (wallet, ads and rooms are server-only).
+
+## v73 — brand upgrade, friends & chat, Gebeta rulebook
+- **Brand:** `src/app/v73.css` (loaded last) carries the indigo/gold tokens of `brand.css` into every area that was still on the old look: inputs, dialogs, toasts, result screens, match chrome, rules, leaderboard, profile, waiting room. One type scale, one spacing ladder, phone/tablet/desktop sizes. Change a token in `:root` and the whole app follows.
+- **Friends:** every player has a 6-letter friend code (`friends/{uid}`); add by code or by link `?friend=CODE`; requests, accept/decline, online dots (`presence/{uid}`), badge on the new 👥 tab. Server code: `src/lib/online/socialApi.js`, pure rules: `src/lib/social.js`.
+- **Chat:** one-to-one chat with friends (`chats/{a_b}`, last 50 lines) and free-text chat inside a running match (`room.chat`, last 30 lines).
+- **Play with friends:** 🎮 on a friend opens a private room and drops an invite into their inbox (`invites/{uid}`); they see it on any screen and tap Join. A waiting room can also invite friends from its own screen.
+- **Rulebook:** Rules tab → Gebeta shows Ethio Gebeta, አሻግሮ መብል and ጡዝ one rule at a time (or all at once), in English and አማርኛ, with an Ask box that answers from the rulebook offline (`src/lib/gebetaRules.js`) and a help link from the game-type picker.
+- **Deploy:** run `firebase deploy --only firestore:rules` — the new collections (`friends`, `chats`, `invites`, `presence`, `friendCodes`) are read-only from phones; every write goes through `/api/gebeta`.

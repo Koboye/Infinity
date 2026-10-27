@@ -39,6 +39,28 @@ service cloud.firestore {
     match /adSessions/{uid} { allow read, write: if false; }
     match /adTokens/{id} { allow read, write: if false; }   // one-use tap tokens (click-fraud guard); set a TTL policy on expireAt
 
+    // Friends, chat and invites (v73). Every write goes through /api/gebeta (the Admin SDK); phones only read their own.
+    // friends/{uid}: my friend code, friend list and requests. chats/{a_b}: one document per pair, readable by the two of them.
+    // invites/{uid}: game invites waiting for me. presence/{uid}: "last seen" so friends can see who is online.
+    // friendCodes/{code} maps a code to a uid and is server-only: codes cannot be listed or guessed from a phone.
+    match /friends/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+    match /invites/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+    match /chats/{pair} {
+      allow read: if request.auth != null && request.auth.uid in resource.data.users;
+      allow write: if false;
+    }
+    match /presence/{uid} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+    match /friendCodes/{code} { allow read, write: if false; }
+
     // Online matches (Gebeta, Checkers, Dominoes). Only the two players can read the room they are in.
     // ALL writes go through /api/gebeta (server validates every move with the shared engines).
     match /gebetaRooms/{code} {
