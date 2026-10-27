@@ -60,3 +60,15 @@ html body .bn-lbl { font-size: .72rem; font-weight: 800; }
 @media (max-width: 360px) { :root { --gap: 8px; --r-card: 16px; } html body .screen { padding-inline: 10px; } }
 @media (min-width: 700px) { :root { --col-w: 640px; } html body .gg-card, html body .mode-tile.big { min-height: 190px; } }
 @media (prefers-reduced-motion: reduce) { html body * { transition: none !important; } }
+
+/* ad + splash overlays: were still on the old green palette, now on the same indigo/gold brand */
+html body .ad-ov { background: radial-gradient(120% 90% at 50% 0%, var(--bg-2) 0%, var(--bg-1) 45%, var(--bg-0) 100%); }
+html body .ad-card { border-radius: 28px; border: 1.5px solid var(--gold); background: linear-gradient(180deg, rgba(36,26,87,.85), rgba(11,10,30,.95)); box-shadow: 0 26px 70px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.1); }
+html body .ad-badge, html body .ad-skip { background: rgba(11,10,30,.7); border: 1.5px solid var(--line); color: var(--ink); }
+html body .ad-skip { border-radius: var(--r-pill); min-height: var(--tap); border-color: var(--gold); }
+html body .ad-ring circle { fill: rgba(11,10,30,.7); }
+html body .ad-media { background: rgba(11,10,30,.6); border-radius: var(--r-card); }
+html body .ad-bar { background: rgba(255,246,227,.16); }
+html body .ad-bar b { background: linear-gradient(90deg, var(--gold-lo), var(--gold-hi)); }
+html body .ad-bg { filter: blur(34px) saturate(1.3) brightness(.5); }
+html body .ad-media { background: var(--bg-0); box-shadow: 0 14px 34px rgba(0,0,0,.5), 0 0 0 1.5px var(--line); }
