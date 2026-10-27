@@ -71,6 +71,7 @@ export const STRINGS = {
       ['Capturing', 'Land exactly on a cell with one opponent token to send it back to its base — and roll again. Stars and start cells are safe, and two tokens of one colour on a cell form a block that cannot be captured.'],
       ['Going home', 'Your last stretch is a coloured home column no opponent can enter. You need the exact number to reach home, and reaching home gives you another roll.'],
       ['The fair triangle', 'With 3 players the board is a perfectly symmetric triangle: every seat has the same path length, the same safe stars and the same distance home. The dice use a fair, unbiased random generator.'],
+      ['Quick mode and players', 'Quick mode gives each player only 2 tokens, so the race is shorter. You can play with 2, 3 or 4 players; every other rule stays the same.'],
     ],
     playTo: (n) => `Play to ${n}`, target: 'Match length', points: 'points',
     // ── checkers ──
@@ -107,7 +108,7 @@ export const STRINGS = {
     rules_bingo: [
       ['The card', 'Your 5×5 card has the columns B-I-N-G-O. B holds 1-15, I 16-30, N 31-45, G 46-60 and O 61-75. The star in the middle is free.'],
       ['The caller', 'A ball is called every 6 seconds. When you see a called number on your card, tap it to mark it. The game never shows you which numbers you have — watching is your job. Tapping a number that was not called does nothing.'],
-      ['Winning patterns', 'Any line: five in a row across, down or on either diagonal. Four corners: the four corner squares. Full house: every square on the card.'],
+      ['Winning patterns', 'Any line: five in a row across, down or on either diagonal. Four corners: the four corner squares. Full house: every square on the card. Postage stamp: a 2×2 block in any corner. X shape: both diagonals. Plus: the middle row and the middle column.'],
       ['Call BINGO!', 'When your pattern is complete, press BINGO! before the computer does. The computer marks at human speed — a hard opponent is quick, an easy one sometimes overlooks a number.'],
       ['False calls', 'Pressing BINGO! too early is a false call: you are locked out of calling for the next three balls.'],
       ['Mini card and sheet', 'The small card shows how far the computer has got. The sheet shows every ball called so far.'],
@@ -123,6 +124,7 @@ export const STRINGS = {
       ['End of a round', 'When the player to move has no seeds on their side, the other player takes all the seeds left on the board.'],
       ['Next round', 'Every hole is dealt exactly four stones. Each player gets one hole per four stones he owns. The stones left over make one more hole: if one player has 1 left and the other 3, the player with 3 gets it; if both have 2, a lottery decides. The opener alternates every round. Rounds go on until a player owns no hole.'],
       ['አሻግሮ መብል (second mode)', 'Same sowing and relays, but no families of four and no freezing — no hole is ever locked. There is only one way to take stones: if your last stone stops in one of YOUR OWN holes and the hole straight across belongs to your opponent and has stones, you take everything in that hole plus your last stone. It applies in every round until the game ends.'],
+      ['ጡዝ (Tuz) (third mode)', 'Normal Gebeta sowing and relays, plus the Tuz. Nobody can make a Tuz on their own holes: it always sits in an opponent\'s hole and belongs to the player who made it. The starter opens by tapping one of his own holes; the carried stone freezes as his first Tuz in the opponent\'s hole straight across, and his turn ends. Later, if your last stone makes a four in an opponent\'s hole, it freezes as your Tuz and your turn ends. Nobody can lift a Tuz, but stones can still pass through it or land on it. If your last stone rests on an opponent\'s Tuz, you take exactly two stones from it and play again. A Tuz emptied this way is remembered: the next last stone to land there is captured. When the round ends, each Tuz is paid to its owner. A player with nothing to lift is skipped; the round ends only when neither player can lift anything.'],
       ['Winning', 'The game ends when one player has lost every seed and has nothing left to fill a hole with. The other player wins.'],
     ],
     rules_checkers: [
@@ -215,6 +217,7 @@ export const STRINGS = {
       ['መያዝ', 'አንድ የተቃዋሚ ጠጠር ባለበት ሕዋስ በትክክል ብታርፍ ወደ ቤቱ ይመለሳል — አንተም እንደገና ትጥላለህ። ኮከቦች እና መነሻ ሕዋሳት ደህና ናቸው፤ የአንድ ቀለም ሁለት ጠጠሮች አንድ ሕዋስ ላይ ሲሆኑ አይያዙም።'],
       ['ወደ ቤት መግባት', 'የመጨረሻው ርቀት ማንም ተቃዋሚ የማይገባበት የቀለም መንገድ ነው። ቤት ለመድረስ ትክክለኛ ቁጥር ያስፈልጋል፤ ቤት መድረስ እንደገና የመጣል እድል ይሰጣል።'],
       ['ፍትሃዊው ሦስት ማዕዘን', '3 ተጫዋቾች ሲሆኑ ሰሌዳው ፍጹም ተመጣጣኝ ሦስት ማዕዘን ነው፤ ሁሉም መቀመጫ እኩል የመንገድ ርዝመት፣ እኩል ኮከቦች እና እኩል የቤት ርቀት አለው። ዳይሱ ፍትሃዊ የዘፈቀደ ማመንጫ ይጠቀማል።'],
+      ['ፈጣን ዓይነትና ተጫዋቾች', 'በፈጣን ዓይነት እያንዳንዱ ተጫዋች 2 ኳሶች ብቻ ስላሉት ውድድሩ አጭር ነው። በ2፣ በ3 ወይም በ4 ተጫዋቾች መጫወት ይቻላል፤ ሌሎቹ ሕጎች ሁሉ ተመሳሳይ ናቸው።'],
     ],
     playTo: (n) => `እስከ ${n} ነጥብ`, target: 'የጨዋታ ርዝመት', points: 'ነጥብ',
     // ── checkers ──
@@ -251,7 +254,7 @@ export const STRINGS = {
     rules_bingo: [
       ['ካርዱ', 'የ5×5 ካርድህ B-I-N-G-O አምዶች አሉት። B ከ1-15፣ I ከ16-30፣ N ከ31-45፣ G ከ46-60፣ O ከ61-75። መሃል ያለው ኮከብ ነፃ ነው።'],
       ['ጠሪው', 'በየ6 ሴኮንዱ አንድ ኳስ ይጠራል። የተጠራ ቁጥር በካርድህ ላይ ካየህ ነክተህ ምልክት አድርግበት። ጨዋታው የትኞቹ ቁጥሮች እንዳሉህ አይነግርህም — መከታተል የአንተ ሥራ ነው። ያልተጠራ ቁጥር መንካት ምንም አያደርግም።'],
-      ['አሸናፊ ቅርጾች', 'ማንኛውም መስመር፡ በአግድም፣ በአቀባዊ ወይም በሰያፍ አምስት። አራት ማዕዘን፡ አራቱ ጥግ ቤቶች። ሙሉ ካርድ፡ ሁሉም ቤቶች።'],
+      ['አሸናፊ ቅርጾች', 'ማንኛውም መስመር፡ በአግድም፣ በአቀባዊ ወይም በሰያፍ አምስት። አራት ማዕዘን፡ አራቱ ጥግ ቤቶች። ሙሉ ካርድ፡ ሁሉም ቤቶች። የፖስታ ቴምብር፡ በማንኛውም ጥግ 2×2 ቤቶች። የ X ቅርጽ፡ ሁለቱም ሰያፎች። የመደመር ምልክት፡ መካከለኛው ረድፍና መካከለኛው ዓምድ።'],
       ['ቢንጎ በል!', 'ቅርጽህ ሲሞላ ኮምፒውተሩ ሳይቀድምህ ቢንጎ! ተጫን። ኮምፒውተሩ እንደ ሰው ፍጥነት ምልክት ያደርጋል — ከባዱ ፈጣን ነው፣ ቀላሉ አንዳንዴ ቁጥር ይዘነጋል።'],
       ['የተሳሳተ ጥሪ', 'ቢንጎ! ቀድመህ ከተጫንክ የተሳሳተ ጥሪ ነው፤ ለቀጣዮቹ ሦስት ኳሶች መጥራት ትታገዳለህ።'],
       ['ትንሹ ካርድና ሠንጠረዥ', 'ትንሹ ካርድ ኮምፒውተሩ የደረሰበትን ያሳያል። ሠንጠረዡ እስካሁን የተጠሩትን ኳሶች ሁሉ ያሳያል።'],
@@ -267,6 +270,7 @@ export const STRINGS = {
       ['የዙር መጨረሻ', 'ተራው የደረሰው ተጫዋች በጎኑ ዘር ከሌለው፣ ሌላው ተጫዋች በሰሌዳው የቀሩትን ዘሮች በሙሉ ይወስዳል።'],
       ['ቀጣይ ዙር', 'እያንዳንዱ ጉድጓድ በትክክል አራት ድንጋይ ይሞላል። ተጫዋቹ ባለው በእያንዳንዱ አራት ድንጋይ አንድ ጉድጓድ ያገኛል። የተረፉት ድንጋዮች አንድ ተጨማሪ ጉድጓድ ይሆናሉ፦ አንደኛው 1 ሌላው 3 ከቀረው፣ 3 ያለው ይወስደዋል፤ ሁለቱም 2 ከሆኑ በዕጣ ይወሰናል። ጀማሪው በየዙሩ ይፈራረቃል። አንድ ተጫዋች ጉድጓድ እስኪያጣ ዙሮች ይቀጥላሉ።'],
       ['አሻግሮ መብል (ሁለተኛ ዓይነት)', 'ተመሳሳይ አዘራር እና ቀጣይ ዙር፣ ግን የአራት ቤተሰብም ሆነ ማቀዝቀዝ የለም — ምንም ጉድጓድ አይቆለፍም። ድንጋይ የምትወስደው በአንድ መንገድ ብቻ ነው፦ የመጨረሻው ድንጋይህ በራስህ ጉድጓድ ቆሞ፣ ተቃራኒው ጉድጓድ የተቃዋሚህ ሆኖ ድንጋይ ካለው፣ በዚያ ጉድጓድ ያለውን ሁሉና የመጨረሻውን ድንጋይህን ትወስዳለህ። ጨዋታው እስኪያበቃ በሁሉም ዙሮች ይሠራል።'],
+      ['ጡዝ (ሦስተኛው ዓይነት)', 'እንደ ተለመደው ገበጣ መዝራትና ማስተላለፍ አለ፣ ከዚያ በተጨማሪ ጡዝ አለ። ማንም በራሱ ጉድጓድ ጡዝ መሥራት አይችልም፤ ጡዝ ሁልጊዜ በተቃዋሚ ጉድጓድ ውስጥ ይሆናል፣ የሠራውም ተጫዋች ንብረት ነው። ጀማሪው ከራሱ ጉድጓዶች አንዱን ይነካል፤ የተያዘው ድንጋይ በትይዩ ባለው የተቃዋሚ ጉድጓድ ውስጥ የመጀመሪያው ጡዙ ሆኖ ይታሰራል፣ ተራውም ያበቃል። በኋላ የመጨረሻ ድንጋይህ በተቃዋሚ ጉድጓድ አራት ከሠራ፣ ያ ጉድጓድ ጡዝህ ሆኖ ይታሰራል፣ ተራህም ያበቃል። ጡዝን ማንም ማንሳት አይችልም፤ ድንጋዮች ግን ሊያልፉበት ወይም ሊያርፉበት ይችላሉ። የመጨረሻ ድንጋይህ በተቃዋሚ ጡዝ ላይ ካረፈ ከእሱ በትክክል ሁለት ድንጋዮች ወስደህ እንደገና ትጫወታለህ። በዚህ መንገድ የተራቆተ ጡዝ ይታወሳል፤ ቀጥሎ እዚያ የሚያርፈው የመጨረሻ ድንጋይ ይያዛል። ዙሩ ሲያበቃ እያንዳንዱ ጡዝ ለባለቤቱ ይከፈላል። የሚያነሳው ድንጋይ የሌለው ተጫዋች ይዘለላል፤ ዙሩ የሚያበቃው ሁለቱም ምንም ማንሳት ሲያቅታቸው ብቻ ነው።'],
       ['ማሸነፍ', 'አንድ ተጫዋች ሁሉንም ዘር አጥቶ ጉድጓድ የሚሞላበት ሲያጣ ጨዋታው ያበቃል። ሌላው ያሸንፋል።'],
     ],
     rules_checkers: [

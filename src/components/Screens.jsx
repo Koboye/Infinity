@@ -103,9 +103,6 @@ export function Setup({ t, mode, game, onStart }) {
   const [level, setLevel] = useState('medium');
   const [ruleset, setRuleset] = useState(info.defaultRuleset);
   const [target, setTarget] = useState(info.defaultTarget);
-  const [ultra, setUltra] = useState(false);        // Checkers: Ultra meter
-  const [careless, setCareless] = useState(false);  // Checkers: the computer may overlook captures (you can claim the piece)
-  const [sudden, setSudden] = useState(false);      // Checkers: Sudden Death after 5 minutes
   const [numCards, setNumCards] = useState(1);      // Bingo: 1-4 cards
   const [ludoPlayers, setLudoPlayers] = useState(4);  // Ludo: 2 / 3 (fair triangle) / 4
   return (
@@ -120,14 +117,6 @@ export function Setup({ t, mode, game, onStart }) {
       <RulesetPicker t={t} game={game} value={ruleset} onChange={setRuleset} />
       {game === 'dominoes' && <TargetPicker t={t} value={target} onChange={setTarget} />}
       {game === 'checkers' && <p className="muted small">{t.ckFirst}</p>}
-      {game === 'checkers' && (
-        <fieldset className="seg-group">
-          <legend>{t.modesTitle}</legend>
-          <label className="check"><input type="checkbox" checked={ultra} onChange={(e) => setUltra(e.target.checked)} /> {t.ultraMeter}</label>
-          {mode === 'ai' && <label className="check"><input type="checkbox" checked={careless} onChange={(e) => setCareless(e.target.checked)} /> {t.careless}</label>}
-          <label className="check"><input type="checkbox" checked={sudden} onChange={(e) => setSudden(e.target.checked)} /> {t.suddenDeath}</label>
-        </fieldset>
-      )}
       {game === 'ludo' && (
         <fieldset className="seg-group">
           <legend>{t.ludoPlayers}</legend>
@@ -145,7 +134,7 @@ export function Setup({ t, mode, game, onStart }) {
           </div>
         </fieldset>
       )}
-      <button className="btn primary wide start-cta" onClick={() => onStart({ level, ruleset, target, opts: { ultra, suddenDeath: sudden, careless, cards: numCards, players: ludoPlayers } })}>{mode === 'ai' ? t.playComputer : t.passPlay}</button>
+      <button className="btn primary wide start-cta" onClick={() => onStart({ level, ruleset, target, opts: { ultra: false, suddenDeath: false, careless: false, cards: numCards, players: ludoPlayers } })}>{mode === 'ai' ? t.playComputer : t.passPlay}</button>
     </div>
   );
 }
