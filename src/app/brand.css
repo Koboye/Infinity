@@ -1,0 +1,62 @@
+/* v69 "Infinity Brand" — one identity for every screen, matched to the approved screenshots:
+   midnight indigo canvas, ember-gold actions, per-game tinted cards, pill chips, 3D press buttons.
+   Loaded LAST: change a token here and the whole app follows. */
+:root {
+  --bg-0: #0B0A1E; --bg-1: #15103A; --bg-2: #241A57;
+  --ink: #FFF6E3; --ink-dim: #C9BFA8;
+  --gold: #F5BE3C; --gold-hi: #FFD36B; --gold-lo: #E59A12; --gold-ink: #2A1500;
+  --teal: #35E0C2; --rose: #FF6B9A; --violet: #8B7CFF; --leaf: #6BE3A4;
+  --glass: rgba(255,246,227,.07); --line: rgba(255,226,154,.22);
+  --r-card: 20px; --r-ctl: 14px; --r-pill: 999px;
+  --tap: 44px; --gap: 12px; --col-w: 560px; --nav-h: 66px;
+  --brand-gold: var(--gold-hi); --brand-gold-lo: var(--gold-lo); --brand-ink: var(--gold-ink);
+  --brand-glass: var(--glass); --brand-line: var(--line); --card-line: var(--line);
+}
+
+/* canvas */
+html body { color: var(--ink); background: radial-gradient(120% 60% at 50% -5%, var(--bg-2) 0%, var(--bg-1) 40%, var(--bg-0) 100%) fixed; }
+html body .app { max-width: var(--col-w); }
+
+/* top bar + round icon buttons + language chip */
+html body .topbar { padding: 6px 10px; gap: 8px; }
+html body .topbar-title { font: 800 1.1rem var(--font-display); color: var(--ink); }
+html body .icon-btn { width: var(--tap); height: var(--tap); border-radius: var(--r-ctl); background: var(--glass); border: 1.5px solid var(--line); box-shadow: 0 3px 0 rgba(0,0,0,.35); }
+html body .lang-chip { border-radius: var(--r-pill); background: linear-gradient(180deg, var(--gold-hi), var(--gold-lo)); color: var(--gold-ink); }
+
+/* wallet / coin pills */
+html body .coin-chip, html body .wallet-bal, html body .ad-earn { border-radius: var(--r-pill); border: 1.5px solid var(--gold); background: linear-gradient(180deg, rgba(245,190,60,.22), rgba(0,0,0,.35)); color: var(--ink); font-weight: 800; box-shadow: 0 3px 0 rgba(0,0,0,.35); }
+
+/* panels and sheets */
+html body .panel, html body .wallet-card, html body .wallet-sheet, html body .stonepick { border-radius: var(--r-card); border: 1.5px solid var(--line); background: linear-gradient(165deg, rgba(255,246,227,.09), rgba(8,6,30,.55)); box-shadow: 0 12px 28px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.1); }
+
+/* game + mode cards: dark glass, border and glow take the card's accent colour */
+html body .gg-card, html body .mode-tile { --c: var(--accent, var(--gold)); border-radius: var(--r-card); border: 1.5px solid color-mix(in srgb, var(--c) 70%, transparent);
+  background: linear-gradient(170deg, color-mix(in srgb, var(--c) 24%, #120E33) 0%, #0E0B28 100%); color: var(--ink);
+  box-shadow: 0 5px 0 color-mix(in srgb, var(--c) 35%, #000), 0 12px 22px rgba(0,0,0,.4); }
+html body .gg-card::before, html body .mode-tile::before { display: none; }
+html body .gg-card:active:not(:disabled), html body .mode-tile:active { transform: translateY(4px); box-shadow: 0 1px 0 color-mix(in srgb, var(--c) 35%, #000), 0 4px 10px rgba(0,0,0,.35); }
+html body .gg-name, html body .mode-title { color: var(--ink); font-weight: 800; }
+html body .gg-tag, html body .mode-sub { color: var(--ink-dim); }
+html body .mode-tag, html body .gg-mode { border-radius: var(--r-pill); background: rgba(0,0,0,.4); border: 1px solid var(--line); color: var(--ink); }
+html body .gg-card.soon { opacity: .6; }
+
+/* buttons, segmented chips, level/option tiles */
+html body .btn { min-height: var(--tap); border-radius: var(--r-ctl); font-weight: 800; }
+html body .btn.primary, html body .start-cta { background: linear-gradient(180deg, var(--gold-hi), var(--gold-lo)); color: var(--gold-ink); border: 0; box-shadow: 0 5px 0 rgba(110,60,0,.6), 0 12px 22px rgba(0,0,0,.35); }
+html body .btn.ghost { background: var(--glass); border: 1.5px solid var(--line); color: var(--ink); }
+html body .seg { border-radius: var(--r-pill); background: rgba(0,0,0,.4); border: 1.5px solid var(--line); }
+html body .seg button.on { background: linear-gradient(180deg, var(--gold-hi), var(--gold-lo)); color: var(--gold-ink); }
+html body .fee-tile, html body .stone-opt, html body .menu-item { border-radius: var(--r-ctl); border: 1.5px solid var(--line); background: var(--glass); }
+html body .fee-tile.on, html body .stone-opt.on, html body .hero-pick.on { border-color: var(--gold); box-shadow: 0 0 0 2px rgba(245,190,60,.35); background: rgba(245,190,60,.14); }
+html body .set-row { border-bottom: 1px solid var(--line); }
+
+/* bottom navigation: indigo bar, raised gold pill for the active tab */
+html body .bottom-nav { background: linear-gradient(180deg, #17123F, #0B0A1E); border: 1.5px solid var(--line); border-bottom: 0; border-radius: 24px 24px 0 0; box-shadow: 0 -8px 24px rgba(0,0,0,.45); }
+html body .bn-tab { min-height: 56px; color: var(--ink-dim); border-radius: 16px; }
+html body .bn-tab.on { color: var(--gold-ink); background: linear-gradient(180deg, var(--gold-hi), var(--gold-lo)); transform: translateY(-8px); }
+html body .bn-lbl { font-size: .72rem; font-weight: 800; }
+
+/* sizing: phones get compact tiles, tablets get roomier ones */
+@media (max-width: 360px) { :root { --gap: 8px; --r-card: 16px; } html body .screen { padding-inline: 10px; } }
+@media (min-width: 700px) { :root { --col-w: 640px; } html body .gg-card, html body .mode-tile.big { min-height: 190px; } }
+@media (prefers-reduced-motion: reduce) { html body * { transition: none !important; } }
