@@ -4,10 +4,10 @@ import { BOARDS, finishOf } from '@/lib/ludo/engine.js';
 import { ringXY, homeXY, baseXY, finishXY, tokenXY, viewBoxOf, homeAngle, UNIT } from '@/lib/ludo/layout.js';
 
 // colours are by SCREEN position (top-left, top-right, bottom-right, bottom-left): the bottom-left one is always YOU, in yellow
-export const COLORS = ['#E0452B', '#2E9E4F', '#2F6FD6', '#F2B632'];
+export const COLORS = ['#D93A2E', '#1F9D55', '#2563C9', '#F1B52C'];
 export const COLOR_NAMES = ['red', 'green', 'blue', 'yellow'];
-const DARK = ['#8e2412', '#17592b', '#163f86', '#a8740d'];
-const LIGHT = ['#ff8e74', '#77d98f', '#8db8ff', '#ffe08a'];
+const DARK = ['#7d1d10', '#0f4d26', '#12378a', '#9a6a0a'];
+const LIGHT = ['#ff9a82', '#7fe0a0', '#98c2ff', '#ffe49a'];
 const INK = '#2a1d10';
 
 const star = (x, y, r) => {
@@ -19,7 +19,7 @@ function Defs() {
   return (
     <defs>
       <linearGradient id="lframe" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#8a5a2b" /><stop offset=".5" stopColor="#4a2e15" /><stop offset="1" stopColor="#2a1a0b" /></linearGradient>
-      <linearGradient id="lpaper" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#fff9e8" /><stop offset="1" stopColor="#efe2bf" /></linearGradient>
+      <linearGradient id="lpaper" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#fffdf6" /><stop offset="1" stopColor="#f3e9cf" /></linearGradient>
       <radialGradient id="lplate" cx="50%" cy="40%" r="70%"><stop offset="0" stopColor="#fffdf4" /><stop offset="1" stopColor="#ecdfbd" /></radialGradient>
       <linearGradient id="lgold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#ffe9a3" /><stop offset=".55" stopColor="#e2a921" /><stop offset="1" stopColor="#a8700b" /></linearGradient>
       <radialGradient id="lsock" cx="50%" cy="40%" r="65%"><stop offset="0" stopColor="#000" stopOpacity=".28" /><stop offset="1" stopColor="#000" stopOpacity=".06" /></radialGradient>
@@ -48,8 +48,8 @@ function Square({ seats, turnSeat, names, youSlot }) {
     const { x, y } = ringXY('square', i), si = B.seatStart.indexOf(i), safe = B.seatStart.some((st) => B.safeOffsets.some((o) => (st + o) % 52 === i));
     cells.push(
       <g key={i}>
-        <rect x={x - 0.46} y={y - 0.37} width="0.92" height="0.92" rx="0.16" fill="#2a1d10" opacity=".2" />
-        <rect x={x - 0.46} y={y - 0.46} width="0.92" height="0.92" rx="0.14" fill={si >= 0 ? `url(#lc${si})` : 'url(#lpaper)'} stroke={INK} strokeOpacity=".55" strokeWidth="0.035" opacity={si >= 0 && !seats.includes(si) ? 0.5 : 1} />
+        <rect x={x - 0.46} y={y - 0.37} width="0.92" height="0.92" rx="0.16" fill="#2a1d10" opacity=".12" />
+        <rect x={x - 0.46} y={y - 0.46} width="0.92" height="0.92" rx="0.14" fill={si >= 0 ? `url(#lc${si})` : 'url(#lpaper)'} stroke={INK} strokeOpacity=".28" strokeWidth="0.03" opacity={si >= 0 && !seats.includes(si) ? 0.5 : 1} />
         <rect x={x - 0.4} y={y - 0.4} width="0.8" height="0.4" rx="0.1" fill="#fff" opacity={si >= 0 ? 0.2 : 0.55} />
         {safe && si < 0 && <><polygon points={star(x, y, 0.4)} fill="#ffcf4a" opacity=".55" filter="url(#lglowS)" /><polygon points={star(x, y, 0.33)} fill="url(#lgold)" stroke="#7a4d08" strokeWidth="0.03" strokeLinejoin="round" /></>}
         {si >= 0 && <polygon points={star(x, y, 0.3)} fill="#fff" opacity=".92" />}

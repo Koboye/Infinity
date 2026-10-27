@@ -31,7 +31,7 @@
 @keyframes ludo-jewel { 0%, 100% { transform: scale(.9); } 50% { transform: scale(1.18); } }
 
 /* pawns */
-.ludo-svg .ludo-tok { transition: transform var(--step) linear; cursor: default; outline: none; }
+.ludo-svg .ludo-tok { transition: transform var(--step) cubic-bezier(.33, .1, .67, .9); cursor: default; outline: none; }
 .ludo-svg .ludo-tok.fly { transition: transform .85s cubic-bezier(.55, 0, .25, 1); }
 .ludo-svg .ludo-tok.can { cursor: pointer; }
 .ludo-svg .ludo-tok .body { transform-origin: 0 0; }
