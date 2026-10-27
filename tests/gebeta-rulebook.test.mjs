@@ -43,10 +43,10 @@ t('the written rules agree with the engine: one family-of-four rule, one capture
   assert.equal(RULESETS.ashagro.families, false); assert.equal(RULESETS.ashagro.capture, true);
   assert.equal(RULESETS.tuz.families, false); assert.equal(RULESETS.tuz.tuz, true);
   assert.equal(newGame('gebeta').pits.slice(0, 6).every((x) => x === 4), true);
-  // Tuz opening: the starter's hole keeps three, one stone goes to his pile, the hole across freezes as his Tuz and the turn passes.
+  // Tuz opening: the alternating 3/5 chain; the first opponent hole turned 3->4 freezes as his Tuz, no stone goes to a pile, the turn passes.
   const g = newGame('tuz', 0); const pit = legalMoves(g, g.turn)[0]; const r = playMove(g, pit, 'tuz');
-  assert.ok(r.ok); assert.equal(r.state.pits[pit], 3); assert.equal(r.state.pits[12 - pit], 4); assert.equal(r.state.turn, 1 - g.turn);
-  assert.equal(r.state.pits[g.turn === 0 ? 6 : 13], 1);
+  assert.ok(r.ok); assert.equal(r.state.flag.filter((x) => x).length, 1); assert.equal(r.state.turn, 1 - g.turn);
+  assert.equal(r.state.pits[6] + r.state.pits[13], 0);
 });
 t('the in-app screens are wired: Rules tab shows the rulebook for Gebeta, each type has a help link, both languages have the new texts', () => {
   for (const k of ['rulesStep', 'askTitle', 'askNone', 'rulesNext', 'rulesPlay', 'rulesSend', 'askFriend']) { assert.ok(STRINGS.en[k] && STRINGS.am[k], k); }

@@ -64,7 +64,7 @@ console.log('ok 6 last stone in an empty hole ends the turn');
       while (!s.over && n++ < 1500) {
         const m = G.legalMoves(s); assert.ok(m.length, 'a player to move always has a legal move');
         const pick = m[Math.floor(Math.random() * m.length)];
-        if (s.opening) assert.ok(m.every((i) => G.ownerOf(i, s.own) === s.turn && G.ownerOf(G.oppositeOf(i), s.own) !== s.turn), 'opening only from own holes with an opponent hole across');
+        if (s.opening) assert.ok(m.every((i) => G.ownerOf(i, s.own) === s.turn), 'opening only from the opener\'s own holes');
         const r = G.playMove(s, pick, 'tuz'); assert.ok(r.ok, r.error);
         if (r.newRound) { rounds++; assert.equal(r.state.opening, G.legalMoves({ ...r.state, opening: true }).length > 0, 'a new round starts with the opening whenever one is possible'); assert.ok(r.state.flag.every((f) => f === 0)); }
         assert.ok(G.validState(r.state, true)); s = r.state;
@@ -80,7 +80,7 @@ console.log('ok 6 last stone in an empty hole ends the turn');
     const s = { pits: [4,4,4,4,4,4,0,4,4,4,4,4,4,0], own: [1,1,1,1,1,0,0,1,1,1,1,1,1,1], flag: new Array(14).fill(0), turn: 1, starter: 1, over: false, winner: null, opening: true };
     assert.deepEqual(G.legalMoves(s), [], 'no opening that freezes the opponent\'s only hole');
     const t = { ...s, own: [1,1,1,1,0,0,0,1,1,1,1,1,1,1], turn: 1 }; // seat 0 owns holes 4 and 5: opening from 7 (Tuz on 5) leaves hole 4 playable
-    assert.deepEqual(G.legalMoves(t), [7, 8].filter((i) => G.legalMoves(t).includes(i)));
-    assert.ok(G.legalMoves(t).includes(7) || G.legalMoves(t).includes(8), 'an opening that leaves the opponent a move stays legal');
+    assert.ok(G.legalMoves(t).length > 0, 'an opening that leaves the opponent a move stays legal');
+    for (const m of G.legalMoves(t)) { const r = G.playMove(t, m, 'tuz'); assert.ok(r.ok); assert.ok(r.extraTurn === false && G.legalMoves(r.state).length > 0, 'the opponent can always move after a legal opening'); }
     console.log('ok 9 an opening never leaves the opponent without a move');
   }); }

@@ -3,21 +3,22 @@ import { newGame, playMove, legalMoves, validState, tuzFlag, holesOf, cloneState
 import { chooseMove, evaluate } from '../src/lib/gebeta/ai.js';
 const sum = (s) => s.pits.reduce((a, b) => a + b, 0);
 
-// 1. the starter opens FROM one of HIS OWN holes (it keeps 3); the opponent's hole straight across becomes his Tuz; the carried stone goes to his pile
+// 1. the starter opens FROM one of HIS OWN holes with the alternating 3/5 two-lap chain; the first opponent hole turned 3->4 becomes his Tuz (start h3 -> h7); no stone goes to a pile
 let g = newGame('tuz', 0);
 assert.equal(g.opening, true);
 assert.deepEqual(legalMoves(g), holesOf(g, 0));
 assert.equal(playMove(g, 9, 'tuz').ok, false, 'cannot open from the opponent\'s hole');
 let r = playMove(g, 2, 'tuz');
 assert.ok(r.ok); g = r.state;
-assert.equal(g.pits[2], 3, 'the tapped hole keeps three'); assert.equal(g.flag[10], tuzFlag(0), 'the hole across is the opener\'s Tuz'); assert.equal(g.pits[10], 4);
-assert.equal(g.pits[6], 1, 'the carried stone is in the pile'); assert.equal(g.flag[2], 0, 'nothing is frozen on his own hole');
+assert.deepEqual(g.pits, [3, 4, 4, 4, 4, 4, 0, 4, 5, 3, 5, 3, 5, 0], 'start h3: the alternating chain, then lap 2 turns h3, h5 (own) and h7 (opponent) to four');
+assert.equal(g.flag[7], tuzFlag(0), 'h7 is the opener\'s Tuz'); assert.equal(g.pits[7], 4);
+assert.equal(g.pits[6], 0, 'no stone goes to the pile'); assert.equal(g.flag[2], 0, 'nothing is frozen on his own hole');
 assert.equal(g.turn, 1); assert.ok(!g.opening); assert.ok(validState(g, true));
-assert.ok(!legalMoves(g).includes(10), 'a Tuz cannot be lifted');
+assert.ok(!legalMoves(g).includes(7), 'a Tuz cannot be lifted');
 { const c = newGame('tuz', 1); assert.deepEqual(legalMoves(c), holesOf(c, 1), 'the computer opens from ITS OWN holes');
   assert.equal(playMove(c, 3, 'tuz').ok, false, 'the computer cannot open from the human\'s hole');
-  const rc = playMove(c, 9, 'tuz'); assert.ok(rc.ok); assert.equal(rc.state.flag[3], tuzFlag(1), 'the Tuz is on the HUMAN\'s hole 3 (across from 9) and belongs to the computer'); assert.equal(rc.state.pits[9], 3); assert.equal(rc.state.turn, 0); }
-console.log('ok opening: own hole -> Tuz in the opponent hole across');
+  const rc = playMove(c, 9, 'tuz'); assert.ok(rc.ok); assert.equal(rc.state.flag[0], tuzFlag(1), 'the computer\'s opening from hole 9 makes the Tuz on the HUMAN\'s first hole and it belongs to the computer'); assert.equal(rc.state.pits[0], 4); assert.equal(rc.state.turn, 0); }
+console.log('ok opening: alternating 3/5 chain from an own hole -> Tuz in an opponent hole');
 
 // 2. later: last stone makes an opponent's 3 a 4 -> second Tuz, turn ends, owner is the mover; Tuz count is unlimited
 let s = newGame('tuz', 0); s.opening = false;
@@ -73,7 +74,7 @@ console.log('ok computer plays Tuz');
 import { applyStep, applyFlag } from '../src/lib/gebeta/engine.js';
 { const g0 = newGame('tuz', 1); const r0 = playMove(g0, 9, 'tuz'); assert.ok(r0.ok);
   const p = g0.pits.slice(), f = g0.flag.slice(); r0.steps.forEach((st) => { applyStep(p, st); applyFlag(f, st); });
-  assert.deepEqual(p, r0.state.pits); assert.deepEqual(f, r0.state.flag); assert.equal(r0.steps.filter((x) => x.t === 'sow').length, 7, 'the stone walks 7 holes from hole 9 to hole 3');
+  assert.deepEqual(p, r0.state.pits); assert.deepEqual(f, r0.state.flag); assert.equal(r0.steps.filter((x) => x.t === 'sow').length, 9, 'six drops on lap 1 and three on lap 2 from hole 9'); assert.equal(r0.steps.filter((x) => x.t === 'lift1').length, 9); assert.equal(r0.steps.at(-1).t, 'tuz');
   assert.equal(g0.opening, true); assert.equal(r0.state.opening, false);
   console.log('ok the opening walk replays to the real board'); }
 // 6. online: the room keeps `opening` so the server asks for the opening move
@@ -84,8 +85,8 @@ import gebetaMod from '../src/lib/online/gebeta.js';
 { const room0 = { ...gebetaMod.create('tuz'), ruleset: 'tuz', players: ['a', 'b'], turn: 0, starter: 0, moveSeq: 0, options: {} };
   const bad = gebetaMod.actions.move(room0, null, 0, { pit: 9 }, Date.now()); assert.ok(bad.error, 'an opponent hole is refused at the opening');
   const ok = gebetaMod.actions.move(room0, null, 0, { pit: 2 }, Date.now()); assert.ok(!ok.error, ok.error);
-  assert.equal(ok.room.flag[10], tuzFlag(0)); assert.equal(ok.room.opening, false); assert.equal(ok.room.turn, 1);
-  const nxt = gebetaMod.actions.move(ok.room, null, 1, { pit: 7 }, Date.now()); assert.ok(!nxt.error, nxt.error);
+  assert.equal(ok.room.flag[7], tuzFlag(0)); assert.equal(ok.room.opening, false); assert.equal(ok.room.turn, 1);
+  const nxt = gebetaMod.actions.move(ok.room, null, 1, { pit: 8 }, Date.now()); assert.ok(!nxt.error, nxt.error);
   console.log('ok online opening accepted by the server'); }
 
 // 9. whole games: computer vs computer, both seats opening, never an illegal state, stones conserved, and only Tuz flags ever appear

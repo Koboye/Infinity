@@ -122,7 +122,7 @@ tests/                     engine, rooms, API tests with an in-memory Firestore 
 - Tests: `tests/tuz.test.mjs`, `tests/tuz-rules.test.mjs`.
 
 ## v34 — ጡዝ opening starts from YOUR OWN hole
-- The starter (you, the computer, either seat online) taps one of **his own** holes. It keeps 3 stones; one stone walks round the ring to the opponent's hole **straight across** (12 − i), which becomes the starter's first **Tuz** (four stones). The carried stone goes to the starter's pile, so 48 stones stay accounted for.
+- (Replaced in v83 — see below.) The starter taps one of **his own** holes and the alternating 3/5 chain makes his first **Tuz** in an opponent hole.
 - A Tuz is therefore never on its maker's own hole — the opening included (the old opening put it on the starter's own hole). Checked over 60 full random games in `tests/tuz-rules.test.mjs`.
 - This replaces the "opens on the opponent's holes" wording in v32.
 
@@ -310,3 +310,16 @@ Every ad (app open, game start, Play again / Rematch, rewarded) now rotates in a
 - **Play with friends:** 🎮 on a friend opens a private room and drops an invite into their inbox (`invites/{uid}`); they see it on any screen and tap Join. A waiting room can also invite friends from its own screen.
 - **Rulebook:** Rules tab → Gebeta shows Ethio Gebeta, አሻግሮ መብል and ጡዝ one rule at a time (or all at once), in English and አማርኛ, with an Ask box that answers from the rulebook offline (`src/lib/gebetaRules.js`) and a help link from the game-type picker.
 - **Deploy:** run `firebase deploy --only firestore:rules` — the new collections (`friends`, `chats`, `invites`, `presence`, `friendCodes`) are read-only from phones; every write goes through `/api/gebeta`.
+
+## v83 — ጡዝ opening: the alternating 3/5 chain
+
+The v34 "walk one stone straight across" opening is replaced. Rule (`src/lib/gebeta/tuzOpening.js`, used by `legalMoves` / `playMove` in the engine, so browser, server and computer all agree):
+
+- All 12 holes hold 4. The starter taps one of **his own** holes.
+- **Lap 1:** lift ONE stone (4→3), drop it in the next hole (4→5); lift one from the hole after that, drop it in the next … six pairs round the ring, so the holes alternate 3, 5, 3, 5 …
+- **Lap 2:** continuing from the last 5-hole, each step lifts one stone from a 5-hole (5→4) and drops it on the 3-hole just after it (3→4). The **first opponent hole turned 3→4 is his first Tuz**; the chain stops and the turn passes.
+- No stone goes to a pile (all 48 stay on the board). Example: start at h3 → pairs 3-4, 5-6, 7-8, 9-10, 11-12, 1-2, then 2-3, 4-5, 6-7 → Tuz on **h7**. From the first player's h1/h3/h5 the Tuz is h7, from h2/h4/h6 it is h8 (mirrored for the other seat).
+- An opening is only legal when the chain reaches an opponent hole **and** the opponent still has a hole to lift afterwards; a round with no legal opening starts normally.
+- Animation: the existing `lift1` / `sow` steps, then one `tuz` step (no `tuztake`).
+- Tests: `tests/tuzOpening.test.mjs` (new), and `tuz`, `tuz-rules`, `tuz-rulebook`, `gebeta-rulebook` updated.
+- Amharic rule text for the new opening was written by the developer — please have a native speaker review it.

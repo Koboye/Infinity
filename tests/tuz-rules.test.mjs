@@ -2,7 +2,7 @@
 //  1. nobody ever makes a Tuz on his own holes (opening included) — checked over many full random games
 //  2. the only freeze is the Tuz: no ripe / shared marker ever appears, and a four is an ordinary hole
 //  3. touching a four lifts and plays it; there is nothing to "collect" (engine + server)
-//  4. both seats can open (human on the computer's holes, computer on the human's)
+//  4. both seats open from their OWN holes with the alternating 3/5 two-lap chain; the Tuz forms in an opponent hole
 import assert from 'node:assert/strict';
 import { cloneState, newGame, playMove, legalMoves, collect, collectable, holesOf, tuzFlag, validState, ownerOf, RING } from '../src/lib/gebeta/engine.js';
 import { chooseMove } from '../src/lib/gebeta/ai.js';
@@ -19,15 +19,18 @@ for (const first of [0, 1]) {
   for (const other of holesOf(g, 1 - first)) assert.equal(playMove(g, other, 'tuz').ok, false, `seat ${first} cannot open from the opponent's hole ${other}`);
   for (const h of legal) {
     const r = playMove(g, h, 'tuz'); assert.ok(r.ok, `opening from ${h}`);
-    const tgt = 12 - h;
+    // expected Tuz from the rule: the 3-holes are every second hole from the start; the first one that is not the opener's
+    const k0 = RING.indexOf(h); let tgt = -1;
+    for (let k = k0; tgt < 0 && k < k0 + 12; k += 2) if (ownerOf(RING[k % 12], g.own) !== first) tgt = RING[k % 12];
     assert.equal(r.state.flag[tgt], tuzFlag(first)); assert.equal(r.state.pits[tgt], 4);
+    assert.equal(r.state.flag.filter((x) => x).length, 1, 'exactly one Tuz after the opening');
     assert.notEqual(ownerOf(tgt, r.state.own), first, 'the Tuz is in the OPPONENT\'s hole');
-    assert.equal(r.state.pits[h], 3, 'the tapped hole keeps three'); assert.equal(r.state.flag[h], 0);
-    assert.equal(r.state.pits[first === 0 ? 6 : 13], 1, 'the carried stone is in the opener\'s pile');
+    assert.equal(r.state.pits[6] + r.state.pits[13], 0, 'no stone goes to a pile: all 48 stay on the board');
     assert.equal(r.state.turn, 1 - first); assert.ok(validState(r.state, true));
+    assert.equal(r.steps.filter((x) => x.t === 'tuz').length, 1);
   }
 }
-console.log('ok both seats open from their own hole, Tuz across in the opponent\'s hole');
+console.log('ok both seats open from every own hole; the first opponent 3-hole becomes the Tuz');
 
 // 1 + 2. full random games: a Tuz is never in its maker's own hole, nothing but a Tuz freezes, stones are conserved
 let tuzMade = 0, games = 0;

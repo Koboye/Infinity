@@ -1,3 +1,4 @@
+import { planOpening } from './tuzOpening.js';
 // Gebeta rules engine (Ethio Gebeta — Version 1.0) — pure functions, no UI, no Firebase.
 // Shared by the browser (practice, animation) and the server (authoritative online moves).
 //
@@ -47,9 +48,10 @@ export const oppositeOf = (i) => 12 - i;
 
 // ጡዝ (Tuz): normal Gebeta (lift the whole hole, relay) PLUS the Tuz rule:
 //   - NOBODY CAN MAKE A TUZ ON HIS OWN HOLES. A Tuz always sits in an OPPONENT's hole and belongs to the player who made it.
-//   - the game starter OPENS from one of HIS OWN holes: he lifts one stone (the hole keeps three), walks it round the ring to the
-//     OPPONENT's hole straight across (12 − i), which becomes his first Tuz (four stones, his property). The carried stone is
-//     captured into his pile, so all 48 stones stay accounted for (see playMove, `opening`).
+//   - the game starter OPENS from one of HIS OWN holes with the alternating 3/5 chain (see tuzOpening.js): he lifts ONE stone
+//     (4→3) and drops it in the next hole (4→5), lifts one from the hole after that … round the whole ring (3,5,3,5 …); on the
+//     second lap each step lifts one from a 5-hole and drops it on the 3-hole just after it (3→4). The first OPPONENT hole turned
+//     3→4 is his first Tuz and the chain stops. No stone goes to a pile: all 48 stay on the board (see playMove, `opening`).
 //   - later, whenever a player's LAST stone lands in an OPPONENT's hole holding exactly three (making four), that hole is
 //     frozen as the mover's Tuz and his turn ends. Nobody can lift a Tuz; stones may still pass through or land on it.
 //   - THE ONLY FREEZE IS THE TUZ. A hole that reaches four any other way (mid-sowing, or by your own last stone in your own
@@ -101,12 +103,15 @@ export function nextSlot(pos) {
 
 export function legalMoves(state, seat = state.turn) {
   if (state.over) return [];
-  // Tuz opening: the starter taps one of HIS OWN holes whose opposite hole is the opponent's (the Tuz forms there, never on his own holes)
+  // Tuz opening: the starter taps one of HIS OWN holes from which the alternating 3/5 chain ends in an OPPONENT hole (his first Tuz)
   // ...and the opponent must still have a stone he can lift once that hole is frozen (otherwise the game would dead-lock after the opening)
   if (state.opening && seat === state.turn) {
-    const ownerAt = (h) => (state.own ? state.own[h] : (h <= 6 ? 0 : 1));
-    return holesOf(state, seat).filter((i) => state.pits[i] > 0 && flagOf(state, i) === 0 && ownerAt(oppositeOf(i)) !== seat
-      && holesOf(state, 1 - seat).some((h) => h !== oppositeOf(i) && state.pits[h] > 0 && flagOf(state, h) === 0));
+    const own = state.own || defaultOwn();
+    return holesOf(state, seat).filter((i) => {
+      if (flagOf(state, i) !== 0) return false;
+      const plan = planOpening(state.pits, own, seat, i);
+      return !!plan && holesOf(state, 1 - seat).some((h) => h !== plan.tuz && plan.pits[h] > 0 && flagOf(state, h) === 0);
+    });
   }
   return holesOf(state, seat).filter((i) => state.pits[i] > 0 && flagOf(state, i) === 0);
 }
@@ -230,20 +235,17 @@ export const collectable = (state, seat) => (state.over ? [] : RING.filter((i) =
 export function playMove(state, pit, rulesetId = 'gebeta', schedule = [], autoSeat = -1) {
   const rules = getRules(rulesetId);
   if (state.over) return { ok: false, error: 'Game is over' };
-  if (state.opening && rules.tuz) { // the starter's opening: from one of HIS OWN holes; the Tuz forms in the opponent's hole across
+  if (state.opening && rules.tuz) { // the starter's opening: the alternating 3/5 chain from one of HIS OWN holes; the Tuz forms in an opponent hole
     if (!Number.isInteger(pit) || !legalMoves(state, state.turn).includes(pit)) return { ok: false, error: 'Open from one of your own holes' };
-    const seat0 = state.turn, tgt = oppositeOf(pit);
+    const seat0 = state.turn;
+    const plan = planOpening(state.pits, state.own || defaultOwn(), seat0, pit);
     const o = cloneState(state); o.opening = false; o.turn = 1 - seat0;
-    o.pits[pit] -= 1; o.pits[STORE[seat0]] += 1; o.flag[tgt] = tuzFlag(seat0); // the hole keeps three; the carried stone is captured; the hole across becomes the Tuz
-    // shown stone by stone: lift ONE stone, drop it in the next hole, lift ONE from there, … until it reaches the hole across
-    const w = [{ t: 'lift1', i: pit }]; const k0 = RING.indexOf(pit), d = (RING.indexOf(tgt) - k0 + 12) % 12;
-    for (let j = 1; j <= d; j++) { const h = RING[(k0 + j) % 12]; w.push({ t: 'sow', i: h }); if (j < d) w.push({ t: 'lift1', i: h }); }
-    w.push({ t: 'tuztake', i: tgt, store: STORE[seat0], n: 1, by: seat0, empty: false, opening: true }); // the carried stone goes to the pile
-    w.push({ t: 'tuz', i: tgt, by: seat0, opening: true });
+    for (let k = 0; k < 14; k++) o.pits[k] = plan.pits[k];
+    o.flag[plan.tuz] = tuzFlag(seat0);
     // the opening may freeze the opponent's ONLY hole (a lopsided deal): a player with nothing to lift is skipped, as in every other move
     const skip = !holesOf(o, 1 - seat0).some((i) => o.pits[i] > 0 && flagOf(o, i) === 0);
     if (skip) o.turn = seat0;
-    return { ok: true, state: o, steps: w, extraTurn: skip, captured: FAMILY, newRound: false };
+    return { ok: true, state: o, steps: plan.steps, extraTurn: skip, captured: 0, newRound: false };
   }
   if (!Number.isInteger(pit) || !holesOf(state, state.turn).includes(pit)) return { ok: false, error: 'Not your pit' };
   if (state.pits[pit] === 0) return { ok: false, error: 'Pit is empty' };
