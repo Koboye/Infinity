@@ -6,7 +6,7 @@ import {
   previewAll, progressOf, serializeGame, restoreGame,
 } from '@/lib/ludo/engine.js';
 import { chooseSmart as chooseToken, bestMove as hintMove } from '@/lib/ludo/ai.js';   // look-ahead computer (captures, escapes, plans two moves ahead)
-import { tokenXY, trailXY, PANEL_SLOT as SLOT } from '@/lib/ludo/layout.js';
+import { tokenXY, trailXY, PANEL_SLOT as SLOT, viewOf } from '@/lib/ludo/layout.js';
 import { sfx } from '@/lib/sound';
 import ResultOverlay from '../ResultOverlay';
 import { useTurnClock } from '../useTurnClock';
@@ -73,6 +73,9 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
   const [timerOn, setTimerOn] = useState(true);   // turn timer (remembered per device)
   const streak = useRef(0);                      // turns in a row the clock had to play for you
   const [offer, setOffer] = useState(null);     // an unfinished game found in storage
+  const view = mode === 'pass' ? 0 : viewOf(game.seats[0]);   // you: bottom-left, yellow
+  const viewRef = useRef(view); viewRef.current = view;
+  const colOf = (st) => COLORS[(st + view) % 4];
   const gameRef = useRef(game), busy = useRef(false), alive = useRef(true), fxId = useRef(0);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
 
@@ -121,15 +124,15 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
     const caps = capturedDiff(s0, m.state, s0.turn, i);
     if (caps.length) setRet(retInit(caps));      // keep the hit pawns on their cell for a beat
     setAnim(null); commit(m.state); sfx.land();
-    setTrail({ seat, pts: trailXY(s0.board, seat, m.from, m.to), k: m.state.moves });
-    if (!m.leaves && !m.captured.length && !m.finishes) { const xy = tokenXY(s0.board, seat, m.to, i); burst(xy.x, xy.y, COLORS[seat], 'land'); }   // a soft ripple where it lands
-    if (m.leaves) { const xy = tokenXY(s0.board, seat, 0, i); burst(xy.x, xy.y, COLORS[seat], 'out'); }
+    setTrail({ seat, pts: trailXY(s0.board, seat, m.from, m.to, viewRef.current), k: m.state.moves });
+    if (!m.leaves && !m.captured.length && !m.finishes) { const xy = tokenXY(s0.board, seat, m.to, i, viewRef.current); burst(xy.x, xy.y, colOf(seat), 'land'); }   // a soft ripple where it lands
+    if (m.leaves) { const xy = tokenXY(s0.board, seat, 0, i, viewRef.current); burst(xy.x, xy.y, colOf(seat), 'out'); }
     if (m.captured.length) {
-      m.captured.forEach((c) => { const cs = s0.seats[c.p], xy = tokenXY(s0.board, cs, s0.pos[c.p][c.i], c.i); burst(xy.x, xy.y, COLORS[cs], 'hit'); });
+      m.captured.forEach((c) => { const cs = s0.seats[c.p], xy = tokenXY(s0.board, cs, s0.pos[c.p][c.i], c.i, viewRef.current); burst(xy.x, xy.y, colOf(cs), 'hit'); });
       sfx.kick(false); say(t.ludoCaptureMsg ? t.ludoCaptureMsg(people[s0.turn].name, people[m.captured[0].p].name) : t.ludoCapture, 'good');
-      await animateReturn(s0, caps, { setRet, setRetTrail, wait: (ms) => wait(ms * sp), alive: () => alive.current });
+      await animateReturn(s0, caps, { setRet, setRetTrail, wait: (ms) => wait(ms * sp), alive: () => alive.current, view: viewRef.current });
     } else if (m.finishes) {
-      const xy = tokenXY(s0.board, seat, finishOf(s0.board), i); burst(xy.x, xy.y, COLORS[seat], 'home');
+      const xy = tokenXY(s0.board, seat, finishOf(s0.board), i, viewRef.current); burst(xy.x, xy.y, colOf(seat), 'home');
       sfx.home(); say(t.ludoHomeFlash, 'good');
     } else if (m.bonus) { say(t.ludoBonus, 'info'); }
     if (m.state.over) { if (mode === 'pass' || m.state.ranks[0] === 0) sfx.win(); else sfx.lose(); }
@@ -171,7 +174,7 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
   const previews = useMemo(() => (legal.size ? new Map(previewAll(game).map((pv) => [`${game.turn}:${pv.i}`, pv])) : null), [game, legal]);
   const toks = [];
   game.pos.forEach((arr, p) => arr.forEach((pos, i) => { const mv = anim && anim.p === p && anim.i === i; const rk = ret ? ret[`${p}:${i}`] : undefined; const back = rk !== undefined && rk !== null; toks.push({ p, i, seat: game.seats[p], pos: back ? rk : mv ? anim.pos : pos, moving: mv, back }); }));
-  const seatNow = game.seats[game.turn], color = COLORS[seatNow];
+  const seatNow = game.seats[game.turn], color = colOf(seatNow);
   const F = finishOf(game.board);
   const homeCount = (p) => game.pos[p].filter((x) => x === F).length;
   const canRoll = humanTurn && game.phase === 'roll' && idle && !busy.current;
@@ -223,7 +226,7 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
     <div className="ludo-stats" role="table" aria-label={t.ludoStatsTitle}>
       <div className="row head" role="row"><span /><span /><span title={t.ludoStatRolls}>🎲</span><span title={t.ludoStatSixes}>6️⃣</span><span title={t.ludoStatHits}>⚔️</span><span title={t.ludoStatLost}>🏠</span></div>
       {game.ranks.map((p, r) => (
-        <div className="row" role="row" key={p} style={{ '--pc': COLORS[game.seats[p]] }}>
+        <div className="row" role="row" key={p} style={{ '--pc': colOf(game.seats[p]) }}>
           <span className="rk">{t.ludoRank(r)}</span><b><i className="dot" />{people[p].name}</b>
           <span>{game.stats.rolls[p]}</span><span>{game.stats.sixes[p]}</span><span>{game.stats.captures[p]}</span><span>{game.stats.lost[p]}</span>
         </div>
@@ -234,16 +237,16 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
   return (
     <div className={`ludo ${game.board}`} style={{ '--tc': color, '--step': `${(STEP_MS / 1000) * sp}s` }}>
       {['top', 'bottom'].map((row) => {
-        const seatsHere = ORDER[row].map((sl) => game.seats.findIndex((st) => SLOT[game.board][st] === sl)).filter((p) => p >= 0);
+        const seatsHere = ORDER[row].map((sl) => game.seats.findIndex((st) => SLOT[game.board][(st + view) % 4] === sl)).filter((p) => p >= 0);
         return (
           <div key={row} className={`ludo-row ${row}${row === 'bottom' ? ' after' : ''}`} hidden={seatsHere.length === 0} style={row === 'bottom' ? { order: 3 } : { order: 0 }}>
             {seatsHere.map((p) => {
-              const seat = game.seats[p], pp = people[p], on = game.turn === p && !game.over, done = game.ranks.includes(p), slot = SLOT[game.board][seat];
+              const seat = game.seats[p], pp = people[p], on = game.turn === p && !game.over, done = game.ranks.includes(p), slot = SLOT[game.board][(seat + view) % 4];
               const mine = on && canRoll;
               return (
-                <div key={p} className={`ludo-panel ${slot}${on ? ' on' : ''}${done ? ' done' : ''}`} style={{ '--pc': COLORS[seat] }} aria-current={on ? 'true' : undefined}
+                <div key={p} className={`ludo-panel ${slot}${on ? ' on' : ''}${done ? ' done' : ''}`} style={{ '--pc': colOf(seat) }} aria-current={on ? 'true' : undefined}
                   title={t.ludoTokenCount ? t.ludoTokenCount(homeCount(p), game.tokensPer) : undefined}>
-                  <Die value={faces[p]} rolling={rolling && on} rollId={rollIds[p]} color={COLORS[seat]} disabled={!mine} onRoll={userRoll} label={`${t.ludoRoll} — ${pp.name}`} ms={720 * sp} />
+                  <Die value={faces[p]} rolling={rolling && on} rollId={rollIds[p]} color={colOf(seat)} disabled={!mine} onRoll={userRoll} label={`${t.ludoRoll} — ${pp.name}`} ms={720 * sp} />
                   <div className="info">
                     <b className="nm"><span className={`av${pp.photo ? ' photo' : ''}`}>{pp.photo ? <img src={pp.photo} alt="" /> : pp.human ? initialOf(pp.name) : '🤖'}</span><span className="tx">{pp.name}</span></b>
                     <span className="pips">{game.pos[p].map((x, k) => <i key={k} className={x === F ? 'home' : x >= 0 ? 'out' : ''} />)}</span>
@@ -259,7 +262,7 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
         );
       })}
       <div className="ludo-board" style={{ order: 1 }}>
-        <LudoBoard board={game.board} seats={game.seats} tokens={toks} legal={legal} onPick={userPick} hintKey={hintKey} turnSeat={seatNow} previews={previews} trail={trail} retTrail={retTrail} fx={fx} flying={flying} />
+        <LudoBoard board={game.board} seats={game.seats} tokens={toks} legal={legal} onPick={userPick} hintKey={hintKey} turnSeat={seatNow} previews={previews} trail={trail} retTrail={retTrail} fx={fx} flying={flying} view={view} />
         {flash && <div className={`flash ${flash.kind}`} key={flash.k} onAnimationEnd={() => setFlash(null)}>{flash.text}</div>}
       </div>
       <div className={`ludo-dock${canRoll ? ' ready' : ''}`} style={{ '--dc': color, order: 4 }}>
@@ -275,7 +278,7 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
           <ol className="ludo-log" aria-label={t.ludoShowLog}>
             {recent.length === 0 && <li className="empty">—</li>}
             {recent.map((e) => (
-              <li key={e.n} style={{ '--pc': COLORS[game.seats[e.p]] }}><i className="dot" /><span className="n">{e.n}</span><b>{people[e.p].name}</b><span className="d">🎲 {e.dice}</span>
+              <li key={e.n} style={{ '--pc': colOf(game.seats[e.p]) }}><i className="dot" /><span className="n">{e.n}</span><b>{people[e.p].name}</b><span className="d">🎲 {e.dice}</span>
                 {e.out && <span title="out">🚀</span>}{e.cap > 0 && <span title="capture">⚔️{e.cap > 1 ? `×${e.cap}` : ''}</span>}{e.home && <span title="home">🏠</span>}</li>
             ))}
           </ol>

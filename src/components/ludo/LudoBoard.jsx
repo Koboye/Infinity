@@ -3,10 +3,11 @@ import React, { useState } from 'react';
 import { BOARDS, finishOf } from '@/lib/ludo/engine.js';
 import { ringXY, homeXY, baseXY, finishXY, tokenXY, viewBoxOf, homeAngle, UNIT } from '@/lib/ludo/layout.js';
 
-export const COLORS = ['#E0452B', '#2E9E4F', '#F2B632', '#2F6FD6'];
-export const COLOR_NAMES = ['red', 'green', 'yellow', 'blue'];
-const DARK = ['#8e2412', '#17592b', '#a8740d', '#163f86'];
-const LIGHT = ['#ff8e74', '#77d98f', '#ffe08a', '#8db8ff'];
+// colours are by SCREEN position (top-left, top-right, bottom-right, bottom-left): the bottom-left one is always YOU, in yellow
+export const COLORS = ['#E0452B', '#2E9E4F', '#2F6FD6', '#F2B632'];
+export const COLOR_NAMES = ['red', 'green', 'blue', 'yellow'];
+const DARK = ['#8e2412', '#17592b', '#163f86', '#a8740d'];
+const LIGHT = ['#ff8e74', '#77d98f', '#8db8ff', '#ffe08a'];
 const INK = '#2a1d10';
 
 const star = (x, y, r) => {
@@ -142,12 +143,14 @@ function Burst({ fx, board }) {
  * legal    : Set of "p:i" keys the human may tap.     previews: Map "p:i" → { to, captured, finishes } for those tokens.
  * trail    : { seat, pts:[{x,y}], k } the cells the last move crossed.   fx: [{id,x,y,color,kind,k}] bursts.   flying: Set of keys sliding home after a capture.
  */
-export default function LudoBoard({ board, seats, tokens, legal, onPick, hintKey, turnSeat, previews, trail, retTrail = null, fx = [], flying }) {
+export default function LudoBoard({ board, seats: seatsIn, tokens, legal, onPick, hintKey, turnSeat: turnIn, previews, trail, retTrail = null, fx = [], flying, view = 0 }) {
   const U = UNIT[board], R = U.r, F = finishOf(board);
+  const dp = (s) => (s + view) % 4;                       // seat → where it sits on THIS screen
+  const seats = seatsIn.map(dp), turnSeat = dp(turnIn);
   const [hover, setHover] = useState(null);
   // spread tokens that share a point
   const groups = new Map();
-  tokens.forEach((tk) => { const xy = tokenXY(board, tk.seat, tk.pos, tk.i); const k = `${xy.x.toFixed(2)},${xy.y.toFixed(2)}`; (groups.get(k) || groups.set(k, []).get(k)).push({ tk, xy }); });
+  tokens.forEach((tk) => { const xy = tokenXY(board, tk.seat, tk.pos, tk.i, view); const k = `${xy.x.toFixed(2)},${xy.y.toFixed(2)}`; (groups.get(k) || groups.set(k, []).get(k)).push({ tk, xy }); });
   const items = [];
   groups.forEach((g) => g.forEach(({ tk, xy }, idx) => {
     const n = g.length, ang = (idx / n) * Math.PI * 2 - Math.PI / 2, spread = n > 1 ? R * (n > 2 ? 0.8 : 0.62) : 0;
@@ -158,10 +161,10 @@ export default function LudoBoard({ board, seats, tokens, legal, onPick, hintKey
   legal.forEach((key) => {
     const pv = previews && previews.get(key); if (!pv) return;
     const [p, i] = key.split(':').map(Number), tk = tokens.find((t) => t.p === p && t.i === i); if (!tk) return;
-    const xy = tokenXY(board, tk.seat, pv.to, i), on = hover === key || hintKey === key, hit = pv.captured.length > 0;
+    const xy = tokenXY(board, tk.seat, pv.to, i, view), on = hover === key || hintKey === key, hit = pv.captured.length > 0;
     ghosts.push(
       <g key={key} className={`ludo-ghost${on ? ' on' : ''}${hit ? ' hit' : ''}`} style={{ transform: `translate(${xy.x}px, ${xy.y}px)` }}>
-        <circle r={R * 0.95} fill={COLORS[tk.seat]} fillOpacity={on ? 0.34 : 0.16} stroke={hit ? '#ff4d3a' : COLORS[tk.seat]} strokeWidth={R * 0.16} strokeDasharray={`${R * 0.45} ${R * 0.33}`} />
+        <circle r={R * 0.95} fill={COLORS[dp(tk.seat)]} fillOpacity={on ? 0.34 : 0.16} stroke={hit ? '#ff4d3a' : COLORS[dp(tk.seat)]} strokeWidth={R * 0.16} strokeDasharray={`${R * 0.45} ${R * 0.33}`} />
         {hit && <g stroke="#ff3b2a" strokeWidth={R * 0.2} strokeLinecap="round"><path d={`M${-R * 0.42},${-R * 0.42} L${R * 0.42},${R * 0.42} M${R * 0.42},${-R * 0.42} L${-R * 0.42},${R * 0.42}`} /></g>}
         {pv.finishes && <polygon points={star(0, 0, R * 0.7)} fill="url(#lgold)" stroke="#7a4d08" strokeWidth={R * 0.08} />}
       </g>,
@@ -173,7 +176,7 @@ export default function LudoBoard({ board, seats, tokens, legal, onPick, hintKey
       <Square seats={seats} turnSeat={turnSeat} />
       {trail && trail.pts.length > 0 && (
         <g className="ludo-trail" key={trail.k}>
-          {trail.pts.map((pt, k) => <circle key={k} cx={pt.x} cy={pt.y} r={R * 0.3} fill={COLORS[trail.seat]} stroke="#fff" strokeWidth={R * 0.08} style={{ animationDelay: `${k * 0.05}s` }} />)}
+          {trail.pts.map((pt, k) => <circle key={k} cx={pt.x} cy={pt.y} r={R * 0.3} fill={COLORS[dp(trail.seat)]} stroke="#fff" strokeWidth={R * 0.08} style={{ animationDelay: `${k * 0.05}s` }} />)}
         </g>
       )}
       {retTrail && retTrail.map((rt, n) => (
@@ -190,12 +193,12 @@ export default function LudoBoard({ board, seats, tokens, legal, onPick, hintKey
             style={{ transform: `translate(${x}px, ${y}px)`, '--hop': U.hop }}
             onPointerDown={pick} onPointerEnter={can ? () => setHover(key) : undefined} onPointerLeave={can ? () => setHover(null) : undefined}
             onKeyDown={can ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(tk.i); } } : undefined}
-            role={can ? 'button' : undefined} tabIndex={can ? 0 : undefined} aria-label={can ? `Move ${COLOR_NAMES[tk.seat]} token` : undefined}>
+            role={can ? 'button' : undefined} tabIndex={can ? 0 : undefined} aria-label={can ? `Move ${COLOR_NAMES[dp(tk.seat)]} token` : undefined}>
             {can && <circle r={R * 1.6} fill="transparent" />}
             {tk.back && <circle r={R * 1.3} className="retring" fill="none" stroke="#ff3b2a" strokeWidth={R * 0.2} />}
             {can && <circle r={R * 1.35} className="ring" fill="none" stroke="#fff" strokeWidth={R * 0.18} />}
             <ellipse className="shadow" cx={R * 0.1} cy={R * 0.78 * sc} rx={R * 0.95 * sc} ry={R * 0.34 * sc} fill="rgba(0,0,0,.42)" />
-            <g key={tk.moving ? `m${tk.pos}` : 'still'} className="body"><g transform={`scale(${R * sc})`}><Pawn seat={tk.seat} fin={fin} /></g></g>
+            <g key={tk.moving ? `m${tk.pos}` : 'still'} className="body"><g transform={`scale(${R * sc})`}><Pawn seat={dp(tk.seat)} fin={fin} /></g></g>
           </g>
         );
       })}

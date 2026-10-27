@@ -284,6 +284,11 @@ Every ad (app open, game start, Play again / Rematch, rewarded) now rotates in a
 - **Install shortcuts.** Long-pressing the installed app icon offers Gebeta, Checkers, Ludo and Bingo.
 - Checked, no change needed: Firestore rules (wallet, ads and rooms are server-only).
 
+## v79 — Ludo: every player sees themselves bottom-left in yellow; Gebeta board fills the screen
+
+- **Ludo, your own view.** On every device the board is turned so YOUR pawns, home column and dice sit at the bottom-left in yellow, and the opponents appear in red, green and blue around you (online 2-player, vs computer and 4-player). Game state and server rules are unchanged; only the drawing is rotated.
+- **Gebeta board size.** Desktop/tablet: the play area no longer collapses to zero width. Phone portrait: Undo / Hint / Leave sit on one row and the family trays are slimmer, so the holes grew from about 53 px to 73 px.
+
 ## v78 — Ludo: classic board only, calmer pawns, a computer that plans, ads that really show
 - **Triangle removed.** The 3-player triangular board is gone (engine, layout, drawing, rules text, tests). Ludo is 2 or 4 players on the classic cross board; an old 3-player save is ignored.
 - **Board polish.** Glossy colour nests in every base, a dashed inner plate, soft shadows under every cell.

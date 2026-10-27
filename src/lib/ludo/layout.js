@@ -29,8 +29,14 @@ export const baseXY = (board, seat, slot) => {
   const [x0, y0] = SQ_BASE[seat]; return { x: x0 + 1.8 + (slot % 2) * 2.4, y: y0 + 1.8 + Math.floor(slot / 2) * 2.4 };
 };
 
-/** Where is a token (of the seat) with relative position `pos`? slot = its index (only used for base / finish). */
-export function tokenXY(board, seat, pos, slot = 0) {
+/** Turn a point k quarter-turns clockwise about the board centre — so every device can show ITS player at the bottom-left. */
+export const turnXY = (k, { x, y }) => { let p = { x, y }; for (let n = 0; n < ((k % 4) + 4) % 4; n++) p = { x: 15 - p.y, y: p.x }; return p; };
+
+/** Where is a token (of the seat) with relative position `pos`? slot = its index (only used for base / finish). k = view rotation. */
+export function tokenXY(board, seat, pos, slot = 0, k = 0) {
+  return turnXY(k, tokenXYraw(board, seat, pos, slot));
+}
+function tokenXYraw(board, seat, pos, slot = 0) {
   const B = BOARDS[board];
   if (pos === -1) return baseXY(board, seat, slot);
   if (pos === finishOf(board)) return finishXY(board, seat, slot);
@@ -44,11 +50,11 @@ export const homeCells = HOME_CELLS;
 export const UNIT = { square: { r: 0.36, hop: 0.5 } };
 
 /** Centres of the cells a token crosses going from relative position `from` to `to` (used to draw the last-move trail). */
-export function trailXY(board, seat, from, to) {
+export function trailXY(board, seat, from, to, k = 0) {
   if (from === to) return [];
   const out = [];
-  for (let x = from === -1 ? 0 : from + 1; x <= to; x++) out.push(tokenXY(board, seat, x, 0));
-  return from === -1 ? [baseXY(board, seat, 0), ...out] : out;
+  for (let x = from === -1 ? 0 : from + 1; x <= to; x++) out.push(tokenXY(board, seat, x, 0, k));
+  return from === -1 ? [turnXY(k, baseXY(board, seat, 0)), ...out] : out;
 }
 
 /** Angle (degrees) of a seat's home column, pointing towards the finish — for the chevrons painted on it. */
@@ -59,3 +65,6 @@ export function homeAngle(board, seat) {
 
 /** Which corner of the screen each seat's player panel (and its die) sits in, next to that seat's base. */
 export const PANEL_SLOT = { square: ['tl', 'tr', 'br', 'bl'] };
+
+/** Quarter-turns that bring `seat` to the bottom-left corner (display position 3). */
+export const viewOf = (seat) => (7 - seat) % 4;

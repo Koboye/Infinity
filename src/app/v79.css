@@ -1,0 +1,15 @@
+/* v79 — Gebeta board fills the screen.
+   1) desktop / tablet: the play area was shrink-wrapped (margin-inline:auto in a flex column) so its width — and the board's — collapsed to ~0.
+   2) phone portrait: the three buttons wrapped onto two rows and the family trays were tall, which squeezed the holes to ~53 px. */
+.match > .board-wrap { width: 100%; align-self: stretch; }
+@media (min-width: 900px) and (min-height: 700px) { .match > .board-wrap { max-width: min(1100px, 100%); } }
+
+.match .match-actions { flex-wrap: nowrap; gap: 6px; width: 100%; }
+.match .match-actions .btn { flex: 1 1 0; min-width: 0; padding: 7px 6px; font-size: .8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+@media (orientation: portrait) {
+  .match .board { grid-template-rows: .42fr repeat(6, 1fr) .42fr; --sb-gap: clamp(3px, 1cqmin, 8px); }
+  .match .board { padding: clamp(6px, 1.6cqmin, 14px) !important; }
+  .match .status { min-height: 0; padding-block: 2px; font-size: .88rem; }
+  .match { gap: 3px; }
+}

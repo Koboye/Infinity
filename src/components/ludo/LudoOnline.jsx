@@ -2,7 +2,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { apiCall } from '@/lib/firebase';
 import { legalMoves, distinctMoves, pathOf, finishOf, previewAll, progressOf } from '@/lib/ludo/engine.js';
-import { PANEL_SLOT as SLOT } from '@/lib/ludo/layout.js';
+import { PANEL_SLOT as SLOT, viewOf } from '@/lib/ludo/layout.js';
 import { heroById } from '@/lib/i18n';
 import { sfx } from '@/lib/sound';
 import LudoBoard, { COLORS } from './LudoBoard';
@@ -34,6 +34,7 @@ export default function LudoOnline({ t, lang, room, uid, code, onExit, onSwitchR
 
   const L = useMatchLifecycle({ t, lang, room, uid, code, busy, onExit, onSwitchRoom, confirm });
   const { seat } = L;
+  const viewRef = useRef(0);
 
   // play every server update in order: roll → tumble the die, move → hop the pawn, then show the new state
   const drain = useCallback(async () => {
@@ -57,7 +58,7 @@ export default function LudoOnline({ t, lang, room, uid, code, onExit, onSwitchR
             const caps = capturedDiff(s0, ns, lm.by, lm.i);
             gameRef.current = ns; setGame(ns); setRet(retInit(caps));
             setFlash({ text: t.ludoCapture, kind: 'good', k: Math.random() }); sfx.kick?.(false);
-            await animateReturn(s0, caps, { setRet, setRetTrail, wait, alive: () => alive.current });
+            await animateReturn(s0, caps, { setRet, setRetTrail, wait, alive: () => alive.current, view: viewRef.current });
           }
           else if (lm.home) { setFlash({ text: t.ludoHomeFlash, kind: 'good', k: Math.random() }); sfx.home?.(); }
         }
@@ -73,6 +74,9 @@ export default function LudoOnline({ t, lang, room, uid, code, onExit, onSwitchR
 
   const people = [0, 1].map((p) => { const h = heroById(room.avatars?.[p]); return { name: room.names?.[p] || '…', glyph: h?.glyph || '🙂' }; });
   const g = game || parse(room);
+  const view = g ? viewOf(g.seats[seat] ?? 0) : 0;   // my pawns are ALWAYS bottom-left (yellow) on my own screen
+  viewRef.current = view;
+  const dp = (st) => (st + view) % 4;
   const idle = !busy && !rolling && !anim;
   const myTurn = L.myTurn && idle && g && !g.over;
   const canRoll = myTurn && g.phase === 'roll' && !sending;
@@ -92,7 +96,7 @@ export default function LudoOnline({ t, lang, room, uid, code, onExit, onSwitchR
   if (!g) return <div className="panel center"><p>{t.roomGone}</p></div>;
   const toks = [];
   g.pos.forEach((arr, p) => arr.forEach((pos, i) => { const mv = anim && anim.p === p && anim.i === i; const rk = ret ? ret[`${p}:${i}`] : undefined; const back = rk !== undefined && rk !== null; toks.push({ p, i, seat: g.seats[p], pos: back ? rk : mv ? anim.pos : pos, moving: mv, back }); }));
-  const seatNow = g.seats[g.turn], color = COLORS[seatNow], F = finishOf(g.board);
+  const seatNow = g.seats[g.turn], color = COLORS[dp(seatNow)], F = finishOf(g.board);
   const homeCount = (p) => g.pos[p].filter((x) => x === F).length;
   const status = g.over ? '' : rolling ? '…' : note || (g.phase === 'move' ? (myTurn ? t.ludoPick : t.ludoRolled(people[g.turn].name, g.dice)) : L.myTurn ? t.ludoYourTurn : t.ludoTurnOf(people[g.turn].name));
   const clock = L.playing && L.secondsLeft != null ? { left: Math.min(L.secondsLeft, L.turnMax), max: L.turnMax } : null;
@@ -100,14 +104,14 @@ export default function LudoOnline({ t, lang, room, uid, code, onExit, onSwitchR
   return (
     <div className={`ludo ${g.board}`} style={{ '--tc': color, '--step': '0.14s' }}>
       {['top', 'bottom'].map((row) => {
-        const here = ORDER[row].map((sl) => g.seats.findIndex((st) => SLOT[g.board][st] === sl)).filter((p) => p >= 0);
+        const here = ORDER[row].map((sl) => g.seats.findIndex((st) => SLOT[g.board][dp(st)] === sl)).filter((p) => p >= 0);
         return (
           <div key={row} className={`ludo-row ${row}${row === 'bottom' ? ' after' : ''}`} hidden={here.length === 0} style={{ order: row === 'bottom' ? 3 : 0 }}>
             {here.map((p) => {
-              const st = g.seats[p], on = g.turn === p && !g.over, slot = SLOT[g.board][st], mine = on && canRoll && p === seat;
+              const st = g.seats[p], on = g.turn === p && !g.over, slot = SLOT[g.board][dp(st)], mine = on && canRoll && p === seat;
               return (
-                <div key={p} className={`ludo-panel ${slot}${on ? ' on' : ''}`} style={{ '--pc': COLORS[st] }} aria-current={on ? 'true' : undefined}>
-                  <Die value={faces[p]} rolling={rolling && on} rollId={rollIds[p]} color={COLORS[st]} disabled={!mine} onRoll={roll} label={`${t.ludoRoll} — ${people[p].name}`} ms={720} />
+                <div key={p} className={`ludo-panel ${slot}${on ? ' on' : ''}`} style={{ '--pc': COLORS[dp(st)] }} aria-current={on ? 'true' : undefined}>
+                  <Die value={faces[p]} rolling={rolling && on} rollId={rollIds[p]} color={COLORS[dp(st)]} disabled={!mine} onRoll={roll} label={`${t.ludoRoll} — ${people[p].name}`} ms={720} />
                   <div className="info">
                     <b className="nm"><span className="av">{people[p].glyph}</span><span className="tx">{p === seat ? t.you : people[p].name}</span></b>
                     <span className="pips">{g.pos[p].map((x, k) => <i key={k} className={x === F ? 'home' : x >= 0 ? 'out' : ''} />)}</span>
@@ -122,7 +126,7 @@ export default function LudoOnline({ t, lang, room, uid, code, onExit, onSwitchR
         );
       })}
       <div className="ludo-board" style={{ order: 1 }}>
-        <LudoBoard board={g.board} seats={g.seats} tokens={toks} legal={legal} onPick={pick} hintKey={null} turnSeat={seatNow} previews={previews} trail={null} retTrail={retTrail} fx={[]} flying={NO_FLY} />
+        <LudoBoard board={g.board} seats={g.seats} tokens={toks} legal={legal} onPick={pick} hintKey={null} turnSeat={seatNow} previews={previews} trail={null} retTrail={retTrail} fx={[]} flying={NO_FLY} view={view} />
         {flash && <div className={`flash ${flash.kind}`} key={flash.k} onAnimationEnd={() => setFlash(null)}>{flash.text}</div>}
       </div>
       <div className={`ludo-dock${canRoll ? ' ready' : ''}`} style={{ '--dc': color, order: 4 }}>

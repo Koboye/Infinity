@@ -10,9 +10,9 @@ export function capturedDiff(s0, ns, by, idx) {
 export const retInit = (caps) => Object.fromEntries(caps.map((c) => [`${c.p}:${c.i}`, c.from]));
 
 /** Walk every captured pawn back, cell by cell, then into its base. Resolves when all are home. */
-export async function animateReturn(s0, caps, { setRet, setRetTrail, wait, alive }) {
+export async function animateReturn(s0, caps, { setRet, setRetTrail, wait, alive, view = 0 }) {
   if (!caps.length) return;
-  setRetTrail(caps.map((c) => ({ seat: c.seat, pts: trailXY(s0.board, c.seat, -1, c.from).reverse() })));
+  setRetTrail(caps.map((c) => ({ seat: c.seat, pts: trailXY(s0.board, c.seat, -1, c.from, view).reverse() })));
   await wait(650);                                        // let the hit be seen first
   const len = Math.max(...caps.map((c) => c.from + 1));
   const step = Math.max(70, Math.min(110, 2000 / len));    // v78: a captured pawn walks home visibly (was 18–45 ms a cell)
