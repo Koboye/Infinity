@@ -7,10 +7,11 @@ import GebetaOnline from './GebetaOnline';
 import CheckersOnline from '../checkers/CheckersOnline';
 import DominoesOnline from '../dominoes/DominoesOnline';
 import BingoOnline from '../bingo/BingoOnline';
+import LudoOnline from '../ludo/LudoOnline';
 import SpinOverlay from '../SpinOverlay';
 import { InviteFriendsRow } from '../Friends';
 
-const BODIES = { gebeta: GebetaOnline, checkers: CheckersOnline, dominoes: DominoesOnline, bingo: BingoOnline };
+const BODIES = { gebeta: GebetaOnline, checkers: CheckersOnline, dominoes: DominoesOnline, bingo: BingoOnline, ludo: LudoOnline };
 const WAIT_LIMIT_S = 120;   // same as the server's WAIT_MS: after this nobody can join any more
 const HINT_AFTER_S = 20;    // after this the waiting screen offers to play the computer meanwhile
 

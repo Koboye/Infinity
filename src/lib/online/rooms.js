@@ -54,7 +54,7 @@ export function seatSecondPlayer(room, { uid, profile }, rng = randomFloat, now 
   return out;
 }
 
-const TURN_ACTIONS = new Set(['move', 'huff', 'drawTile']) // 'collect' (Gebeta) is deliberately not turn-bound;
+const TURN_ACTIONS = new Set(['move', 'huff', 'drawTile', 'roll']) // 'collect' (Gebeta) is deliberately not turn-bound;
 
 /** Validate + apply an in-match action. Returns { error } or { room, priv?, finished, noop? }. */
 export function applyRoomAction(room, priv, uid, action, body = {}, now = Date.now(), rng = randomFloat) {

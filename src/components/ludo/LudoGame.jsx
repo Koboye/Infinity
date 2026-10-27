@@ -22,7 +22,7 @@ const store = {
 };
 
 /** A real 3D die: it tumbles in the air and lands exactly on the rolled face. */
-function Die({ value, rolling, rollId, color, disabled, onRoll, label, ms }) {
+export function Die({ value, rolling, rollId, color, disabled, onRoll, label, ms }) {
   const [fx, fy] = ORIENT[value || 1];
   const sx = fx + 360 * (2 + (rollId % 2)), sy = fy - 360 * (2 + (rollId % 3));
   return (

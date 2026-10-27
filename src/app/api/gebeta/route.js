@@ -296,6 +296,7 @@ export async function POST(req) {
       case 'join':
         return ok(await joinRoom(db, uid, decoded.name, code));
       case 'move':
+      case 'roll':  // Ludo: the SERVER rolls the die
       case 'collect': // Gebeta: tap a ripe four to bank it (free action, either player's turn)
       case 'drawTile':
       case 'offerDraw':

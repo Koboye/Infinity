@@ -122,3 +122,36 @@ html body .dialog, html body .result { border-width: 2px; border-radius: 20px; }
   .ludo .ludo-panel .nm { font-size: .72rem; }
 }
 @media (prefers-reduced-motion: reduce) { .ludo .ludo-panel .ludo-die3d::before { transition: none; } }
+
+/* ═════ Ludo-King style tiles: icon on a glossy blue top, name on a gold band, thick gold frame ═════ */
+html body .gg-card, html body .mode-tile, html body .mode-tile.small, html body .mode-tile.big {
+  display: flex; flex-direction: column; align-items: stretch; justify-content: stretch; gap: 0; padding: 0; overflow: hidden;
+  border: 3px solid var(--gold); border-radius: 16px; min-height: var(--tile-h);
+  background: radial-gradient(120% 90% at 50% 0%, #4A86FF 0%, #1F55D6 45%, #12308F 100%);
+  box-shadow: 0 4px 0 #9A5B00, 0 9px 14px rgba(0,0,0,.45), inset 0 2px 0 rgba(255,255,255,.35); }
+html body .gg-card::after, html body .mode-tile::after { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 40%; background: linear-gradient(180deg, rgba(255,255,255,.22), transparent); pointer-events: none; }
+html body .mode-ico, html body .gg-art { flex: 1 1 auto; width: 100%; height: auto; min-height: 0; border-radius: 0; background: none; box-shadow: none; display: grid; place-items: center; transform: none; font-size: 2.1rem; filter: drop-shadow(0 3px 3px rgba(0,0,0,.45)); }
+html body .gg-art svg, html body .gg-art img { width: var(--tile-art); height: var(--tile-art); }
+html body .mode-title, html body .gg-name { flex: none; margin: 0; padding: 5px 4px 6px; font-size: .92rem; font-weight: 900; letter-spacing: .02em; text-align: center; color: #14245E; text-shadow: 0 1px 0 rgba(255,255,255,.65);
+  background: linear-gradient(180deg, #FFE27A 0%, var(--gold) 55%, var(--gold-lo) 100%); border-top: 2px solid #FFF1B0; }
+html body .gg-card:active:not(:disabled), html body .mode-tile:active { transform: translateY(3px); box-shadow: 0 1px 0 #9A5B00, 0 4px 8px rgba(0,0,0,.4), inset 0 2px 0 rgba(255,255,255,.25); }
+html body .gg-card.soon { filter: saturate(.5); opacity: .7; }
+html body .gg-card.recent { box-shadow: 0 4px 0 #9A5B00, 0 0 0 3px rgba(255,216,90,.55), 0 9px 14px rgba(0,0,0,.45); }
+
+/* mode grid: Online is the wide hero tile, the rest sit in a row (like Ludo King: ONLINE on top, then the others) */
+.modes-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
+.modes-grid .mode-tile { grid-column: span 2; }
+.modes-grid .mode-tile:last-child:nth-child(odd) { grid-column: span 2; }
+.modes-grid.n2 .mode-tile { grid-column: span 3; }
+.modes-grid .mode-tile[data-id="online"] { grid-column: 1 / -1; min-height: 86px; flex-direction: row; }
+.modes-grid .mode-tile[data-id="online"] .mode-ico { flex: 0 0 38%; font-size: 2.4rem; }
+.modes-grid .mode-tile[data-id="online"] .mode-title { flex: 1 1 auto; display: grid; place-items: center; font-size: 1.1rem; border-top: 0; border-left: 2px solid #FFF1B0; }
+html body .mode-tag.live { z-index: 2; }
+
+/* bottom nav: always ONE row of six equal tabs */
+html body .bottom-nav { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 2px; align-items: center; padding-inline: 4px; }
+html body .bn-tab { width: auto; min-width: 0; }
+html body .bn-tab.on { padding-inline: 0; }
+
+/* online Ludo: emote bubble over a player strip */
+.ludo .ludo-panel .emo { position: absolute; left: 50%; bottom: -10px; transform: translateX(-50%); z-index: 4; max-width: 90%; padding: 2px 9px; border-radius: 99px; font-style: normal; font-weight: 800; font-size: .72rem; color: var(--gold-ink); background: linear-gradient(180deg, var(--gold-hi), var(--gold-lo)); box-shadow: 0 2px 6px rgba(0,0,0,.4); white-space: nowrap; }
