@@ -120,3 +120,44 @@ html body .swipe-track .swipe-card.on .sc-title { color: #14245E; text-shadow: 0
 html body .swipe-track .swipe-card.on .sc-sub { color: #2B3A7A; }
 html body .swipe-track .swipe-card.on .sc-pips i { background: rgba(20,36,94,.28); }
 html body .swipe-track .swipe-card.on .sc-pips i.f { background: #14245E; }
+
+/* v71 "Big & Bold": scale type, art and tiles so the app fills the screen like a real game lobby */
+html { font-size: clamp(16px, 4.1vw, 19px); }
+html body .screen { padding: 8px 14px calc(var(--nav-h) + 22px); }
+html body .brand-am { font-size: clamp(3.6rem, 17vw, 5.4rem); line-height: 1; text-shadow: 0 4px 0 rgba(0,0,0,.4), 0 0 28px rgba(255,197,46,.45); }
+html body .brand-en { font-size: 1.02rem; font-weight: 700; letter-spacing: .04em; color: #E4EEFF; }
+html body .daily { padding: 16px 16px; min-height: 78px; font-size: 1.05rem; gap: 12px; }
+html body .game-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; grid-auto-rows: minmax(206px, 1fr); flex: 1; }
+html body .gg-card { min-height: 206px; justify-content: space-evenly; padding: 16px 10px 14px; }
+html body .gg-art { width: 92px; height: 92px; display: grid; place-items: center; }
+html body .gg-art svg, html body .gg-art img { width: 100%; height: 100%; object-fit: contain; }
+html body .gg-name { font-size: 1.7rem; line-height: 1.1; }
+html body .gg-tag { font-size: .98rem; }
+html body .gg-mode { font-size: .82rem; font-weight: 800; padding: 6px 14px; min-height: 30px; }
+html body .gg-last, html body .gg-rec { font-size: .88rem; font-weight: 700; color: #FFE9A0; }
+html body .stat-strip { gap: 10px; }
+html body .stat-strip > * { min-height: 58px; font-size: 1rem; font-weight: 800; justify-content: center; }
+html body .mode-tile { min-height: 200px; justify-content: space-evenly; }
+html body .mode-title { font-size: 1.4rem; }
+html body .mode-ico { width: 88px; height: 88px; }
+html body .mode-tag { font-size: .82rem; padding: 5px 12px; }
+html body .btn { font-size: 1.08rem; min-height: 54px; }
+html body .btn.primary, html body .start-cta { min-height: 62px; font-size: 1.25rem; }
+html body .icon-btn { width: 52px; height: 52px; font-size: 1.35rem; }
+html body .lang-chip { min-height: 48px; font-size: 1.02rem; }
+html body .topbar-title { font-size: 1.35rem; }
+html body .swipe-card { min-height: 132px; padding: 14px 10px; }
+html body .sc-title { font-size: 1.3rem; }
+html body .sc-sub { font-size: .9rem; }
+html body .bottom-nav { min-height: 82px; }
+html body .bn-tab { min-height: 66px; }
+html body .bn-ico { font-size: 1.95rem; }
+html body .bn-lbl { font-size: .84rem; }
+@media (max-width: 360px) { html { font-size: 15px; } html body .game-grid { grid-auto-rows: minmax(176px, 1fr); } html body .gg-art, html body .mode-ico { width: 72px; height: 72px; } }
+@media (min-width: 700px) { html { font-size: 19px; } html body .game-grid { grid-template-columns: repeat(2, 1fr); } }
+html body .game-grid { grid-auto-rows: minmax(178px, auto); gap: 12px; flex: 0 0 auto; }
+html body .gg-card { min-height: 178px; padding: 12px 8px 12px; }
+html body .gg-art { width: 80px; height: 80px; }
+html body .gg-name { font-size: 1.55rem; }
+html body .gg-last, html body .gg-rec { font-size: .8rem; }
+html body .brand { margin-block: 0 6px; }
