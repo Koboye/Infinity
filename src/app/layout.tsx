@@ -41,6 +41,7 @@ import './v74.css';
 import './v78.css';
 import './v79.css';
 import './v80.css';
+import './v84.css';
 import RegisterSW from '@/components/RegisterSW';
 import ViewportFit from '@/components/ViewportFit';
 import '@fontsource/noto-sans-ethiopic/400.css';
