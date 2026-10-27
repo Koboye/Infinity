@@ -13,7 +13,7 @@ import { BONEYARD_DOC } from '@/lib/online/dominoes.js';
 import * as WC from '@/lib/walletCore.js';
 import { randomUUID } from 'node:crypto';
 import { servableAds, bump, withTargeting } from '@/lib/adsServer.js';
-import { smartPick } from '@/lib/adsSmart.js';
+import { rotatePick } from '@/lib/adsSmart.js';
 import { publicAd, clampSeconds, houseAd, SESSION_TTL_MS, DONE_TOLERANCE_MS } from '@/lib/adsCore.js';
 
 export const dynamic = 'force-dynamic';
@@ -103,7 +103,8 @@ async function adStart(db, uid) {
   const { wallet } = await walletInfo(db, uid);
   if (wallet.adsLeft <= 0) fail(409, 'No bonus ads left today. They come back tomorrow.');
   // Smart pick (tap-rate learning with exploration, daily pacing). No lang / hour here: the server does not know the phone's, so those rules are skipped rather than guessed.
-  const ad = smartPick((await servableAds(db, now)).map(withTargeting), { placement: 'rewarded', now, explore: true });
+  const prev = await adSessionRef(db, uid).get();   // v67: consecutive order — the ad after the one this player was shown last
+  const ad = rotatePick((await servableAds(db, now)).map(withTargeting), { placement: 'rewarded', now, lastId: prev.exists ? prev.data().adId : null });
   const shownAd = ad || houseAd('rewarded');   // no paid ad live: the built-in ad, so the reward is always available
   const durationMs = clampSeconds(shownAd.durationSec, 'rewarded') * 1000;
   const id = randomUUID();

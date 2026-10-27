@@ -265,3 +265,6 @@ Adds to the v62.1 global click guard (per-address limit, `src/lib/upstashGuard.j
 - **Ad between rounds.** "Play again" and online "Rematch" now call `Ads.gate()` in every game (Gebeta variants, Checkers, Dominoes, Bingo, Ludo). It is skipped when the last game-start ad was under 2 minutes ago (`CAPS.rematchGapMs`); menu starts still show one every time. Double taps cannot restart twice.
 - **Honest reward text.** The rewarded ad screen now says what it pays (coins and spins, English and Amharic); it used to say "free spins" while showing the coin amount.
 - Payout is unchanged and server-only (`adStart` / `adDone`). Tests: `tests/ads-offer.test.mjs`.
+
+## v67 — ads in consecutive order
+Every live ad now takes its turn in a fixed order (sorted by id: A, B, C, A, B, C …) at app open, game start, between rounds and for rewarded ads (`rotatePick` in `src/lib/adsSmart.js`). Targeting (language, hours, games), dates, placements and each player's daily limit per ad still apply; weight and tap-rate no longer change the order. Rewarded ads rotate per player on the server. Tests: `tests/ads-rotate.test.mjs`.

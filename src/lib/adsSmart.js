@@ -103,6 +103,21 @@ export function smartPick(ads, ctx = {}) {
   return list[list.length - 1];
 }
 
+/**
+ * v67: ads in CONSECUTIVE ORDER. Every ad that passes the hard rules (dates, placement, targeting, per-player daily limit) is
+ * shown in turn from the NEWEST ad to the oldest, then around again: new, newer-than-old, …, oldest, new … The ad after `lastId` is next; an unknown or missing `lastId` starts at the newest.
+ * Weight and tap-rate learning do not change the order (the owner asked for a fair, predictable rotation).
+ */
+/** Newest ad first: by creation time, then start date, then id (all descending), so the order is the same on every phone. */
+export const newestFirst = (a, b) => ((b.createdAt || 0) - (a.createdAt || 0)) || (a.start === b.start ? 0 : (a.start < b.start ? 1 : -1)) || (a.id < b.id ? 1 : a.id > b.id ? -1 : 0);
+export function rotatePick(ads, ctx = {}) {
+  const { placement, now = Date.now(), lastId = null } = ctx;
+  const list = forPlacement(ads, placement, now).filter((a) => eligible(a, ctx)).sort(newestFirst);
+  if (!list.length) return null;
+  const i = list.findIndex((a) => a.id === lastId);
+  return list[(i + 1) % list.length];   // i = -1 (nothing shown yet / that ad is gone) → index 0
+}
+
 // ── Per-player memory (kept by the client next to the frequency caps) ──
 /** How many times this player saw each ad today. */
 export function seenToday(state, now = Date.now()) {

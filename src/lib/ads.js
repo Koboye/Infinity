@@ -4,10 +4,10 @@
 //    the instant it is due, with no spinner. Offline or failing server = no ad. An ad can NEVER block the app.
 //  • Frequency caps (adsCore.CAPS) are kept in local storage: losing them only means one extra ad, never a broken app.
 //  • Rewarded ads are different: the server picks them and times them (see Wallet.adStart / adDone).
-//  • Which ad? adsSmart.smartPick: language / hour / game targeting, tap-rate learning, daily-budget pacing and per-player fatigue.
+//  • Which ad? adsSmart.rotatePick (v67): every eligible ad in consecutive order A, B, C, A…; targeting and per-player daily limits still apply.
 //    New players get an ad-free first 10 minutes.
 import { shouldShow, countStart, markShown, newCapState, clampSeconds, houseAd, CAPS } from './adsCore.js';
-import { smartPick, seenToday, noteSeen, noteCategory, stampFirst, inGrace } from './adsSmart.js';
+import { rotatePick, newestFirst, seenToday, noteSeen, noteCategory, stampFirst, inGrace } from './adsSmart.js';
 
 const FEED_KEY = 'gebeta.ads.feed', CAP_KEY = 'gebeta.ads.caps', FEED_TTL = 60 * 1000;   // v57: a minute (was 10) — a new or edited ad reaches phones almost at once
 const read = (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
@@ -71,7 +71,7 @@ export const warm = () => { loadFeed(); };
 export async function nextAd(placement, { waitMs = 1500, lang = 'en', game = null, retry = false } = {}) {
   const now = Date.now();
   if (testMode()) {                                           // owner test: any live ad for this placement, no caps, no grace
-    const ads = (await Promise.race([loadFeed(), new Promise((r) => setTimeout(() => r([]), Math.max(waitMs, 3000)))])).filter((a) => (a.placements || []).includes(placement) && !badImages.has(a.id)).sort((a, b) => (a.id < b.id ? -1 : 1));
+    const ads = (await Promise.race([loadFeed(), new Promise((r) => setTimeout(() => r([]), Math.max(waitMs, 3000)))])).filter((a) => (a.placements || []).includes(placement) && !badImages.has(a.id)).sort(newestFirst);
     const ad = ads[testTurn() % ads.length];   // v64: take turns (A, B, A, B…). A random pick showed the same ad again half the time, so two test ads looked like one
     return ad ? { ...ad, durationSec: clampSeconds(ad.durationSec, placement) } : houseAd(placement);
   }
@@ -81,7 +81,7 @@ export async function nextAd(placement, { waitMs = 1500, lang = 'en', game = nul
   if (inGrace(caps, now)) return null;                       // brand-new player: no ads yet
   if (!shouldShow(placement, caps, now)) return null;
   const ads = (await Promise.race([loadFeed(), new Promise((r) => setTimeout(() => r([]), waitMs))])).filter((a) => !badImages.has(a.id));
-  const ad = smartPick(ads, { placement, lang: lang === 'am' ? 'am' : 'en', game, hour: new Date(now).getHours(), seen: seenToday(caps, now), lastCategory: caps.lastCategory, avoidId: caps.lastId, now, explore: true });
+  const ad = rotatePick(ads, { placement, lang: lang === 'am' ? 'am' : 'en', game, hour: new Date(now).getHours(), seen: seenToday(caps, now), lastId: caps.lastId, now });   // v67: consecutive order, one after the other
   return ad ? { ...ad, durationSec: clampSeconds(ad.durationSec, placement) } : houseAd(placement);   // no paid ad fits: the built-in one, so every open and every game start has an ad
 }
 

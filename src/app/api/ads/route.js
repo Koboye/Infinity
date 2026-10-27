@@ -27,7 +27,7 @@ export async function GET(req) {
       .map((a) => ({
         ...publicAd(a, 'splash'), placements: (a.placements || []).filter((p) => p !== 'rewarded'), weight: a.weight || 1,
         t: { langs: a.langs || [], games: a.games || [], hours: a.hours || null, maxPerUser: a.maxPerUser || 3 },   // targeting the phone applies
-        perf: a.perf, pace: Math.round(a.pace * 100) / 100,                                                      // learning + pacing the phone ranks with
+        createdAt: a.createdAt || 0, perf: a.perf, pace: Math.round(a.pace * 100) / 100,                                                      // learning + pacing the phone ranks with
       }))
       .filter((a) => a.placements.length);
     return NextResponse.json({ ads }, { headers: { 'Cache-Control': fresh ? 'no-store' : 'public, s-maxage=10, stale-while-revalidate=30' } });
