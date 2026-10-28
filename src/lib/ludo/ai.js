@@ -109,6 +109,8 @@ export function rankMoves(state, depth = SEARCH.hard.depth) {
     const m = applyMove(s, i);
     let v = value(m.state, me, depth - 1);
     const pv = previewMove(s, me, i, s.dice);
+    // a kill is the computer's favourite move: sending a pawn home costs the opponent everything it travelled plus a six to get out again
+    if (pv.captured.length) v += pv.captured.reduce((n, c) => n + tokenValue(s, s.pos[c.p][c.i]) + 8, 0) * 0.9;
     v += pv.captured.length * 0.01 + (pv.finishes ? 0.02 : 0) + pv.to * 1e-4;          // tie-breakers: hit, finish, then the pawn furthest along
     seen.set(key, v); out.push({ i, v });
   }
@@ -120,8 +122,13 @@ export function chooseSmart(state, level = 'medium', rng = Math.random) {
   const moves = legalMoves(state); if (!moves.length) return null;
   if (moves.length === 1) return moves[0];
   const cfg = SEARCH[level] || SEARCH.medium;
-  if (cfg.depth === 0) return basicChoose(state, 'easy', rng);
-  if (rng() < cfg.slip) return moves[Math.floor(rng() * moves.length)];
+  if (cfg.depth === 0) {
+    const k = moves.filter((i) => { const pv = previewMove(state, state.turn, i, state.dice); return pv && pv.captured.length > 0; });
+    if (k.length && rng() < 0.7) return k[0];                                              // even the easy computer usually takes a kill
+    return basicChoose(state, 'easy', rng);
+  }
+  const kills = moves.filter((i) => { const pv = previewMove(state, state.turn, i, state.dice); return pv && pv.captured.length > 0; });
+  if (!kills.length && rng() < cfg.slip) return moves[Math.floor(rng() * moves.length)];   // never slips when a kill is on the table
   return rankMoves(state, cfg.depth)[0].i;
 }
 

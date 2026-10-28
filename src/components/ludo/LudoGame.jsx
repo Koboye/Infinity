@@ -55,7 +55,7 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
   const players = opts.players === 2 ? 2 : 4;
   const tokens = ruleset === 'quick' ? 2 : 4;
   const saveKey = `ludo.save.${mode}`;
-  const [game, setGame] = useState(() => newGame({ players, tokens, start: 0 }));
+  const [game, setGame] = useState(() => newGame({ players, tokens, start: Math.floor(Math.random() * players) }))   // who opens the game is random;
   const [faces, setFaces] = useState(() => Array(players).fill(null));   // last value each player rolled
   const [rolling, setRolling] = useState(false);
   const [rollIds, setRollIds] = useState(() => Array(players).fill(0));

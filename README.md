@@ -335,3 +335,8 @@ The v34 "walk one stone straight across" opening is replaced. Rule (`src/lib/geb
 - The table settles in with a single entrance instead of popping in piece by piece.
 - Nothing moves while you play: the status line, strips and dock keep fixed sizes and the board is layout-isolated. Measured over 14 rolls and turn changes, the board, your strip and the dock each kept one position and size.
 - Turns hand over smoothly: strips, dice, pawns and the dock fade between states, and the status text eases in when it changes. Respects reduced-motion. CSS in `v92.css`.
+
+## v94 — Ludo: random opener, kill-first computer
+
+- **Random opener.** Every new offline game (computer or pass-and-play) now starts with a random player, not always you. Online rooms already tossed a coin.
+- **Kill-first computer.** A capture is now worth the victim's whole journey plus the six it needs to leave the yard, and the computer never makes a random slip when a kill is available. In 300 simulated 4-player games it took the kill 100% of the time on medium and hard (easy: 90%), apart from rare moves that finish a pawn instead. Code: `rankMoves` / `chooseSmart` in `src/lib/ludo/ai.js`.
