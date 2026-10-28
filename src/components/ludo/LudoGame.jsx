@@ -11,6 +11,7 @@ import { sfx } from '@/lib/sound';
 import ResultOverlay from '../ResultOverlay';
 import { useTurnClock } from '../useTurnClock';
 import LudoBoard, { COLORS } from './LudoBoard';
+import PlayerFace from './PlayerFace';
 import { capturedDiff, retInit, animateReturn } from '@/lib/ludo/ret.js';
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -249,13 +250,13 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
               return (
                 <div key={p} className={`ludo-panel ${slot}${on ? ' on' : ''}${done ? ' done' : ''}${mode !== 'pass' && p === 0 ? ' me' : ''}`} style={{ '--pc': colOf(seat) }} aria-current={on ? 'true' : undefined}
                   title={t.ludoTokenCount ? t.ludoTokenCount(homeCount(p), game.tokensPer) : undefined}>
+                  <PlayerFace photo={pp.photo} glyph={pp.human ? initialOf(pp.name) : '🤖'} on={on} left={clock ? clock.left : null} max={clock ? clock.max : 1} label={t.ludoTimer} />
                   <Die value={faces[p]} rolling={rolling && on} rollId={rollIds[p]} color={colOf(seat)} disabled={!mine} onRoll={userRoll} label={`${t.ludoRoll} — ${pp.name}`} ms={720 * sp} />
                   <div className="info">
-                    <b className="nm"><span className={`av${pp.photo ? ' photo' : ''}`}>{pp.photo ? <img src={pp.photo} alt="" /> : pp.human ? initialOf(pp.name) : '🤖'}</span><span className="tx">{pp.name}</span></b>
+                    <b className="nm"><span className="tx">{pp.name}</span></b>
                     <span className="pips">{game.pos[p].map((x, k) => <i key={k} className={x === F ? 'home' : x >= 0 ? 'out' : ''} />)}</span>
                     <span className="bar"><i style={{ width: `${Math.round(progressOf(game, p) * 100)}%` }} /></span>
                   </div>
-                  {on && clock && <span className={`tclock${clock.left <= 5 ? ' low' : ''}`} role="timer" aria-label={t.ludoTimer}><i style={{ transform: `scaleX(${Math.max(0, Math.min(1, clock.left / clock.max))})` }} /><b>{clock.left}</b></span>}
                   {on && game.sixes > 0 && <span className={`sixes${game.sixes >= 2 ? ' warn' : ''}`} title="sixes in a row">6×{game.sixes}</span>}
                   {done && <em>{t.ludoRank(game.ranks.indexOf(p))}</em>}
                 </div>

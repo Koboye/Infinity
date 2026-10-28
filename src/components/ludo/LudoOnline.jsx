@@ -6,6 +6,7 @@ import { PANEL_SLOT as SLOT, viewOf } from '@/lib/ludo/layout.js';
 import { heroById } from '@/lib/i18n';
 import { sfx } from '@/lib/sound';
 import LudoBoard, { COLORS } from './LudoBoard';
+import PlayerFace from './PlayerFace';
 import { Die } from './LudoGame';
 import { capturedDiff, retInit, animateReturn } from '@/lib/ludo/ret.js';
 import { useMatchLifecycle } from '../online/useMatch';
@@ -112,13 +113,13 @@ export default function LudoOnline({ t, lang, room, uid, code, onExit, onSwitchR
               const st = g.seats[p], on = g.turn === p && !g.over, slot = SLOT[g.board][dp(st)], mine = on && canRoll && p === seat;
               return (
                 <div key={p} className={`ludo-panel ${slot}${on ? ' on' : ''}${p === seat ? ' me' : ''}`} style={{ '--pc': COLORS[dp(st)] }} aria-current={on ? 'true' : undefined}>
+                  <PlayerFace glyph={people[p].glyph} on={on} left={clock ? clock.left : null} max={clock ? clock.max : 1} label={t.ludoTimer} />
                   <Die value={faces[p]} rolling={rolling && on} rollId={rollIds[p]} color={COLORS[dp(st)]} disabled={!mine} onRoll={roll} label={`${t.ludoRoll} — ${people[p].name}`} ms={720} />
                   <div className="info">
-                    <b className="nm"><span className="av">{people[p].glyph}</span><span className="tx">{p === seat ? t.you : people[p].name}</span></b>
+                    <b className="nm"><span className="tx">{p === seat ? t.you : people[p].name}</span></b>
                     <span className="pips">{g.pos[p].map((x, k) => <i key={k} className={x === F ? 'home' : x >= 0 ? 'out' : ''} />)}</span>
                     <span className="bar"><i style={{ width: `${Math.round(progressOf(g, p) * 100)}%` }} /></span>
                   </div>
-                  {on && clock && <span className={`tclock${clock.left <= 5 ? ' low' : ''}`} role="timer"><i style={{ transform: `scaleX(${Math.max(0, Math.min(1, clock.left / clock.max))})` }} /><b>{clock.left}</b></span>}
                   {L.emotes[p] && <em className="emo" key={L.emotes[p].k}>{L.emotes[p].text}</em>}
                 </div>
               );
