@@ -74,7 +74,7 @@ function Square({ seats, turnSeat, names, youSlot }) {
     cells.push(
       <g key={i}>
         <rect x={x - 0.47} y={y - 0.47} width="0.94" height="0.94" rx="0.15" fill={si >= 0 ? `url(#lc${si})` : 'url(#ltile)'} opacity={si >= 0 && !seats.includes(si) ? 0.55 : 1} />
-        <rect x={x - 0.42} y={y - 0.44} width="0.84" height="0.34" rx="0.11" fill="#fff" opacity={si >= 0 ? 0.28 : 0.7} />
+        <rect x={x - 0.42} y={y - 0.44} width="0.84" height="0.34" rx="0.11" fill="#fff" opacity={si >= 0 ? 0.28 : 0.35} />
         {safe && <><polygon points={star(x, y, 0.45)} fill="#ffcf4a" opacity=".5" filter="url(#lglowS)" /><polygon points={star(x, y, 0.38)} fill="url(#lgold)" stroke="#7a4d08" strokeWidth="0.03" strokeLinejoin="round" /></>}
         {si >= 0 && <path d="M-0.2,-0.22 L0.12,0 L-0.2,0.22 M-0.02,-0.22 L0.3,0 L-0.02,0.22" transform={`translate(${x} ${y}) rotate(${ang})`} fill="none" stroke="#fff" strokeOpacity=".95" strokeWidth="0.09" strokeLinecap="round" strokeLinejoin="round" />}
       </g>,
@@ -109,7 +109,6 @@ function Square({ seats, turnSeat, names, youSlot }) {
       <rect x={x + 0.1} y={y + 0.1} width={Y - 0.2} height="1.7" rx="0.58" fill="#fff" opacity=".16" />
       <rect x={x + 0.55} y={y + 0.6} width={Y - 1.1} height={Y - 1.1} rx="0.95" fill="#000" opacity=".2" />
       <rect x={x + 0.55} y={y + 0.55} width={Y - 1.1} height={Y - 1.1} rx="0.95" fill="url(#lplate)" stroke={DARK[s]} strokeOpacity=".55" strokeWidth="0.07" />
-      <rect x={x + 0.75} y={y + 0.75} width={Y - 1.5} height={Y - 1.5} rx="0.8" fill="none" stroke={COLORS[s]} strokeOpacity=".4" strokeWidth="0.05" strokeDasharray="0.14 0.2" />
       {[0, 1, 2, 3].map((k) => { const p = baseXY('square', s, k); return (
         <g key={k}>
           <circle cx={p.x} cy={p.y + 0.05} r="0.6" fill="#000" opacity=".16" />
@@ -140,13 +139,11 @@ function Square({ seats, turnSeat, names, youSlot }) {
       <rect x="-0.3" y="-0.3" width="15.6" height="15.6" rx="0.95" fill="none" stroke="url(#lgold)" strokeWidth="0.07" />
       {[[-0.2, -0.2], [7.5, -0.2], [15.2, -0.2], [-0.2, 7.5], [15.2, 7.5], [-0.2, 15.2], [7.5, 15.2], [15.2, 15.2]].map(([rx, ry], k) => <circle key={k} cx={rx} cy={ry} r="0.085" fill="url(#lgold)" stroke="#1d2056" strokeWidth="0.02" />)}
       <rect x="0" y="0" width="15" height="15" rx="0.5" fill="url(#lpaper)" />
-      <rect x="0" y="0" width="15" height="15" rx="0.5" fill="url(#lweave)" />
       {bases}{road}{cells}{home}
       <polygon points="6,6 9,6 7.5,7.5" fill="url(#lc1)" /><polygon points="9,6 9,9 7.5,7.5" fill="url(#lc2)" />
       <polygon points="9,9 6,9 7.5,7.5" fill="url(#lc3)" /><polygon points="6,9 6,6 7.5,7.5" fill="url(#lc0)" />
       <path d="M6,6 L9,9 M9,6 L6,9" stroke="#fff" strokeOpacity=".5" strokeWidth="0.05" />
       <rect x="6" y="6" width="3" height="3" fill="none" stroke={INK} strokeOpacity=".7" strokeWidth="0.06" />
-      <path className="ludo-roadflow" d={pathOf([...pts, pts[0]])} fill="none" stroke="#1d2056" strokeOpacity=".28" strokeWidth="0.075" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="0.02 0.43" />
       <circle cx="7.5" cy="7.5" r="0.62" fill={jewel} opacity=".5" filter="url(#lglowS)" className="ludo-jewel-glow" />
       <circle cx="7.5" cy="7.5" r="0.42" fill="url(#lgold)" stroke="#7a4d08" strokeWidth="0.04" />
       <circle cx="7.5" cy="7.5" r="0.26" fill={jewel} stroke="#fff" strokeOpacity=".8" strokeWidth="0.04" className="ludo-jewel" />
@@ -176,6 +173,15 @@ function Pawn({ seat, fin }) {
   );
 }
 
+/** Where the idx-th of n pawns on one point stands, and how big it is (1 = full size): one pawn is full size, two stand side by side,
+ *  three in a triangle, four in a square, more in a ring — each step smaller, so nothing is ever hidden behind its neighbour. */
+const STACK = [null, [[0, 0]], [[-0.27, 0.05], [0.27, 0.05]], [[-0.3, 0.16], [0.3, 0.16], [0, -0.2]], [[-0.3, 0.2], [0.3, 0.2], [-0.3, -0.2], [0.3, -0.2]]];
+const STACK_SIZE = [1, 1, 0.62, 0.54, 0.5];
+function stackSlot(n, idx) {
+  if (n <= 4) { const [x, y] = STACK[n][idx]; return [x, y, STACK_SIZE[n]]; }
+  const a = (idx / n) * Math.PI * 2 - Math.PI / 2; return [Math.cos(a) * 0.36, Math.sin(a) * 0.34, 0.44];
+}
+
 /** Particles for a capture / home / leave-base burst, drawn at a board position. */
 function Burst({ fx, board }) {
   const U = UNIT[board], n = fx.kind === 'out' || fx.kind === 'land' ? 0 : 12;
@@ -201,13 +207,13 @@ export default function LudoBoard({ board, seats: seatsIn, tokens, legal, onPick
   const dp = (s) => (s + view) % 4;                       // seat → where it sits on THIS screen
   const seats = seatsIn.map(dp), turnSeat = dp(turnIn);
   const [hover, setHover] = useState(null);
-  // spread tokens that share a point
+  // pawns that share a stopping point (the start tile, a safe star, the yard door …) shrink and line up neatly so every one stays visible
   const groups = new Map();
   tokens.forEach((tk) => { const xy = tokenXY(board, tk.seat, tk.pos, tk.i, view); const k = `${xy.x.toFixed(2)},${xy.y.toFixed(2)}`; (groups.get(k) || groups.set(k, []).get(k)).push({ tk, xy }); });
   const items = [];
   groups.forEach((g) => g.forEach(({ tk, xy }, idx) => {
-    const n = g.length, ang = (idx / n) * Math.PI * 2 - Math.PI / 2, spread = n > 1 ? R * (n > 2 ? 0.8 : 0.62) : 0;
-    items.push({ tk, x: xy.x + Math.cos(ang) * spread, y: xy.y + Math.sin(ang) * spread, sc: (n > 1 ? 0.78 : 1) * (tk.pos === F ? 0.85 : 1), fin: tk.pos === F });
+    const n = g.length, fin = tk.pos === F, [ox, oy, sz] = stackSlot(n, idx);
+    items.push({ tk, x: xy.x + ox, y: xy.y + oy, sc: fin ? 0.5 : sz, fin });
   }));
   items.sort((a, b) => (a.tk.moving ? 1 : 0) - (b.tk.moving ? 1 : 0) || a.y - b.y);
   const ghosts = [];
@@ -247,7 +253,7 @@ export default function LudoBoard({ board, seats: seatsIn, tokens, legal, onPick
         const key = `${tk.p}:${tk.i}`, can = legal.has(key), fly = flying && flying.has(key), idle = legal.size > 0 && !can && !tk.moving;
         const pick = can ? (e) => { e.preventDefault(); onPick(tk.i); } : undefined;
         return (
-          <g key={key} className={`ludo-tok${can ? ' can' : ''}${idle ? ' idle' : ''}${hintKey === key ? ' hint' : ''}${fly ? ' fly' : ''}${tk.moving ? ' moving' : ''}${tk.back ? ' back' : ''}`}
+          <g key={key} className={`ludo-tok${can ? ' can' : ''}${idle ? ' idle' : ''}${hintKey === key ? ' hint' : ''}${fly ? ' fly' : ''}${tk.moving ? ' moving' : ''}${tk.back ? ' back' : ''}${fin ? ' fin' : ''}${items.length && sc < 1 && !fin ? ' stacked' : ''}`}
             style={{ transform: `translate(${x}px, ${y}px)`, '--hop': U.hop, '--r': R }}
             onPointerDown={pick} onPointerEnter={can ? () => setHover(key) : undefined} onPointerLeave={can ? () => setHover(null) : undefined}
             onKeyDown={can ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(tk.i); } } : undefined}
@@ -257,7 +263,7 @@ export default function LudoBoard({ board, seats: seatsIn, tokens, legal, onPick
             {can && <circle r={R * 1.3} className="ring" fill="none" stroke={COLORS[dp(tk.seat)]} strokeWidth={R * 0.2} />}
             {can && <circle r={R * 1.3} className="ring2" fill="none" stroke="#fff" strokeWidth={R * 0.07} />}
             <ellipse className="shadow" cx={R * 0.1} cy={R * 0.78 * sc} rx={R * 0.95 * sc} ry={R * 0.34 * sc} fill="rgba(0,0,0,.42)" />
-            <g key={tk.moving ? `m${tk.pos}` : 'still'} className="body"><g transform={`scale(${R * sc})`}><Pawn seat={dp(tk.seat)} fin={fin} /></g></g>
+            <g key={tk.moving ? `m${tk.pos}` : 'still'} className="body"><g className="sz" style={{ transform: `scale(${R * sc})` }}><Pawn seat={dp(tk.seat)} fin={fin} /></g></g>
           </g>
         );
       })}

@@ -54,3 +54,10 @@
 .ludo .ludo-board { width: min(100%, calc(var(--app-h, 100dvh) - 282px), 680px); }
 .screen.ingame:has(.ludo) { padding-inline: 0; }
 .ludo .ludo-board { width: min(100%, calc(var(--app-h, 100dvh) - 282px), 720px); }
+
+/* v88 — pawns that share a point glide into their smaller size; a pawn that reaches home pops once with a golden glow */
+.ludo-svg .ludo-tok .sz { transition: transform .35s cubic-bezier(.3, 1.4, .5, 1); }
+.ludo-svg .ludo-tok.fin .body { animation: ludo-arrive .9s cubic-bezier(.3, 1.5, .5, 1) 1; filter: drop-shadow(0 0 calc(var(--r, .7) * .3px) rgba(255, 214, 74, .9)); }
+@keyframes ludo-arrive { 0% { transform: scale(1.5) translateY(-6px); } 55% { transform: scale(.9); } 100% { transform: scale(1); } }
+.ludo-svg .ludo-roadflow { display: none; }
+@media (prefers-reduced-motion: reduce) { .ludo-svg .ludo-tok.fin .body { animation: none; } .ludo-svg .ludo-tok .sz { transition: none; } }

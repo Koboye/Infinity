@@ -22,7 +22,7 @@ export const viewBoxOf = () => '0 0 15 15';
 export const ringXY = (board, idx) => rc(RING_RC[idx]);
 export const homeXY = (board, seat, m) => rc(HOME_RC[seat][m - 1]); // m = 1…5
 export const finishXY = (board, seat, slot = 0) => {
-  const d = [[-0.85, 0], [0, -0.85], [0.85, 0], [0, 0.85]][seat], o = (slot - 1.5) * 0.28;
+  const d = [[-0.85, 0], [0, -0.85], [0.85, 0], [0, 0.85]][seat], o = (slot - 1.5) * 0.4;
   return { x: 7.5 + d[0] + (d[0] ? 0 : o), y: 7.5 + d[1] + (d[1] ? 0 : o) };
 };
 export const baseXY = (board, seat, slot) => {
