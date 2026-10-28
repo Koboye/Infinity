@@ -26,7 +26,7 @@ export const finishXY = (board, seat, slot = 0) => {
   return { x: 7.5 + d[0] + (d[0] ? 0 : o), y: 7.5 + d[1] + (d[1] ? 0 : o) };
 };
 export const baseXY = (board, seat, slot) => {
-  const [x0, y0] = SQ_BASE[seat]; return { x: x0 + 1.8 + (slot % 2) * 2.4, y: y0 + 1.8 + Math.floor(slot / 2) * 2.4 };
+  const [x0, y0] = SQ_BASE[seat]; return { x: x0 + 1.95 + (slot % 2) * 2.1, y: y0 + 1.95 + Math.floor(slot / 2) * 2.1 - 0.15 };
 };
 
 /** Turn a point k quarter-turns clockwise about the board centre — so every device can show ITS player at the bottom-left. */
@@ -47,7 +47,7 @@ export const homeCells = HOME_CELLS;
 
 /* ── drawing helpers shared by the renderer and the game ── */
 /** Token radius and hop height in SVG units, per board. */
-export const UNIT = { square: { r: 0.44, hop: 0.56 } };
+export const UNIT = { square: { r: 0.5, hop: 0.62 } };
 
 /** Centres of the cells a token crosses going from relative position `from` to `to` (used to draw the last-move trail). */
 export function trailXY(board, seat, from, to, k = 0) {

@@ -65,7 +65,7 @@ function Square({ seats, turnSeat, names, youSlot }) {
   }
   for (let q = 0; q < 4; q++) {
     const part = []; for (let k = 0; k <= seg; k++) part.push(pts[(q * seg + k) % N]);
-    road.push(<path key={`r${q}`} d={pathOf(part)} fill="none" stroke={COLORS[q]} strokeOpacity={seats.includes(q) ? 1 : 0.5} strokeWidth="1.02" strokeLinecap="round" strokeLinejoin="round" />);
+    road.push(<path key={`r${q}`} d={pathOf(part)} fill="none" stroke={COLORS[q]} strokeOpacity={seats.includes(q) ? 1 : 0.5} strokeWidth="1.04" strokeLinecap="round" strokeLinejoin="round" />);
   }
   const cells = [];
   for (let i = 0; i < N; i++) {
@@ -73,9 +73,9 @@ function Square({ seats, turnSeat, names, youSlot }) {
     const nx = pts[(i + 1) % N], ang = Math.atan2(nx.y - y, nx.x - x) * 180 / Math.PI;
     cells.push(
       <g key={i}>
-        <rect x={x - 0.4} y={y - 0.4} width="0.8" height="0.8" rx="0.15" fill={si >= 0 ? `url(#lc${si})` : 'url(#ltile)'} opacity={si >= 0 && !seats.includes(si) ? 0.55 : 1} />
-        <rect x={x - 0.34} y={y - 0.37} width="0.68" height="0.3" rx="0.1" fill="#fff" opacity={si >= 0 ? 0.28 : 0.7} />
-        {safe && <><polygon points={star(x, y, 0.37)} fill="#ffcf4a" opacity=".5" filter="url(#lglowS)" /><polygon points={star(x, y, 0.3)} fill="url(#lgold)" stroke="#7a4d08" strokeWidth="0.03" strokeLinejoin="round" /></>}
+        <rect x={x - 0.44} y={y - 0.44} width="0.88" height="0.88" rx="0.16" fill={si >= 0 ? `url(#lc${si})` : 'url(#ltile)'} opacity={si >= 0 && !seats.includes(si) ? 0.55 : 1} />
+        <rect x={x - 0.38} y={y - 0.41} width="0.76" height="0.32" rx="0.11" fill="#fff" opacity={si >= 0 ? 0.28 : 0.7} />
+        {safe && <><polygon points={star(x, y, 0.41)} fill="#ffcf4a" opacity=".5" filter="url(#lglowS)" /><polygon points={star(x, y, 0.34)} fill="url(#lgold)" stroke="#7a4d08" strokeWidth="0.03" strokeLinejoin="round" /></>}
         {si >= 0 && <path d="M-0.2,-0.22 L0.12,0 L-0.2,0.22 M-0.02,-0.22 L0.3,0 L-0.02,0.22" transform={`translate(${x} ${y}) rotate(${ang})`} fill="none" stroke="#fff" strokeOpacity=".95" strokeWidth="0.09" strokeLinecap="round" strokeLinejoin="round" />}
       </g>,
     );
@@ -91,44 +91,47 @@ function Square({ seats, turnSeat, names, youSlot }) {
         const { x, y } = homeXY('square', s, m);
         return (
           <g key={m}>
-            <rect x={x - 0.4} y={y - 0.4} width="0.8" height="0.8" rx="0.15" fill={`url(#lt${s})`} />
-            <rect x={x - 0.34} y={y - 0.37} width="0.68" height="0.28" rx="0.1" fill="#fff" opacity=".55" />
+            <rect x={x - 0.44} y={y - 0.44} width="0.88" height="0.88" rx="0.16" fill={`url(#lt${s})`} />
+            <rect x={x - 0.38} y={y - 0.41} width="0.76" height="0.3" rx="0.11" fill="#fff" opacity=".55" />
             <Chevron x={x} y={y} a={a} s={m === 5 ? 1.15 : 0.9} o={m === 5 ? 1 : 0.8} c={COLORS[s]} />
           </g>
         );
       })}
     </g>);
   });
-  const bases = [[0, 0], [9, 0], [9, 9], [0, 9]].map(([x, y], s) => (
+  const bases = [[0, 0], [9, 0], [9, 9], [0, 9]].map(([x0, y0], s) => {
+    const x = x0 + 0.4, y = y0 + 0.4; // the yard is a 5.2 square centred in its 6x6 corner: more room for the road
+    return (
     <g key={s} opacity={seats.includes(s) ? 1 : 0.34}>
-      <rect x={x} y={y + 0.08} width="6" height="6" rx="0.7" fill="#1d2056" opacity=".22" />
-      <rect x={x} y={y} width="6" height="6" rx="0.7" fill={`url(#lc${s})`} />
-      <rect x={x + 0.12} y={y + 0.12} width="5.76" height="2.2" rx="0.58" fill="#fff" opacity=".16" />
-      <rect x={x + 0.75} y={y + 0.82} width="4.5" height="4.5" rx="1.1" fill="#000" opacity=".2" />
-      <rect x={x + 0.75} y={y + 0.75} width="4.5" height="4.5" rx="1.1" fill="url(#lplate)" stroke={DARK[s]} strokeOpacity=".55" strokeWidth="0.07" />
-      <rect x={x + 0.98} y={y + 0.98} width="4.04" height="4.04" rx="0.9" fill="none" stroke={COLORS[s]} strokeOpacity=".4" strokeWidth="0.05" strokeDasharray="0.14 0.2" />
+      <rect x={x} y={y + 0.08} width="5.2" height="5.2" rx="0.7" fill="#1d2056" opacity=".22" />
+      <rect x={x} y={y} width="5.2" height="5.2" rx="0.7" fill={`url(#lc${s})`} />
+      <rect x={x + 0.1} y={y + 0.1} width="5" height="1.9" rx="0.58" fill="#fff" opacity=".16" />
+      <rect x={x + 0.7} y={y + 0.76} width="3.8" height="3.8" rx="1" fill="#000" opacity=".2" />
+      <rect x={x + 0.7} y={y + 0.7} width="3.8" height="3.8" rx="1" fill="url(#lplate)" stroke={DARK[s]} strokeOpacity=".55" strokeWidth="0.07" />
+      <rect x={x + 0.9} y={y + 0.9} width="3.4" height="3.4" rx="0.85" fill="none" stroke={COLORS[s]} strokeOpacity=".4" strokeWidth="0.05" strokeDasharray="0.14 0.2" />
       {[0, 1, 2, 3].map((k) => { const p = baseXY('square', s, k); return (
         <g key={k}>
-          <circle cx={p.x} cy={p.y + 0.05} r="0.74" fill="#000" opacity=".16" />
-          <circle cx={p.x} cy={p.y} r="0.74" fill={`url(#lw${s})`} stroke={DARK[s]} strokeOpacity=".65" strokeWidth="0.05" />
-          <circle cx={p.x} cy={p.y} r="0.54" fill="url(#lsock)" />
-          <circle cx={p.x} cy={p.y} r="0.54" fill="none" stroke="#fff" strokeOpacity=".5" strokeWidth="0.04" />
-          <ellipse cx={p.x - 0.17} cy={p.y - 0.38} rx="0.3" ry="0.11" fill="#fff" opacity=".4" />
+          <circle cx={p.x} cy={p.y + 0.05} r="0.66" fill="#000" opacity=".16" />
+          <circle cx={p.x} cy={p.y} r="0.66" fill={`url(#lw${s})`} stroke={DARK[s]} strokeOpacity=".65" strokeWidth="0.05" />
+          <circle cx={p.x} cy={p.y} r="0.48" fill="url(#lsock)" />
+          <circle cx={p.x} cy={p.y} r="0.48" fill="none" stroke="#fff" strokeOpacity=".5" strokeWidth="0.04" />
+          <ellipse cx={p.x - 0.15} cy={p.y - 0.34} rx="0.27" ry="0.1" fill="#fff" opacity=".4" />
         </g>
       ); })}
-      {youSlot === s && <rect className="ludo-youglow" x={x + 0.03} y={y + 0.03} width="5.94" height="5.94" rx="0.68" fill="none" stroke="#ffe08a" strokeWidth="0.16" />}
-      {turnSeat === s && youSlot !== s && <rect className="ludo-baseturn" x={x + 0.03} y={y + 0.03} width="5.94" height="5.94" rx="0.68" fill="none" stroke="#fff" strokeWidth="0.12" />}
+      {youSlot === s && <rect className="ludo-youglow" x={x + 0.03} y={y + 0.03} width="5.14" height="5.14" rx="0.68" fill="none" stroke="#ffe08a" strokeWidth="0.16" />}
+      {turnSeat === s && youSlot !== s && <rect className="ludo-baseturn" x={x + 0.03} y={y + 0.03} width="5.14" height="5.14" rx="0.68" fill="none" stroke="#fff" strokeWidth="0.12" />}
       {names && names[s] && (() => {
-        const nm = String(names[s]), you = youSlot === s, w = Math.min(4.7, Math.max(1.9, nm.length * 0.36 + 1));
+        const nm = String(names[s]), you = youSlot === s, w = Math.min(4.2, Math.max(1.8, nm.length * 0.34 + 0.9));
         return (
           <g className={you ? 'ludo-you' : 'ludo-nameplate'} style={{ pointerEvents: 'none' }}>
-            <rect x={x + 3 - w / 2} y={y + 5.3} width={w} height="0.62" rx="0.31" fill={you ? 'url(#lgold)' : '#1d2056'} fillOpacity={you ? 1 : 0.8} stroke={you ? '#fff4c2' : '#fff'} strokeOpacity={you ? 0.95 : 0.35} strokeWidth="0.04" />
-            <text x={x + 3} y={y + 5.62} textAnchor="middle" dominantBaseline="central" fontSize="0.42" fontWeight="800" fill={you ? '#3a2205' : '#fff7e0'}>{nm}</text>
+            <rect x={x + 2.6 - w / 2} y={y + 4.6} width={w} height="0.56" rx="0.28" fill={you ? 'url(#lgold)' : '#1d2056'} fillOpacity={you ? 1 : 0.8} stroke={you ? '#fff4c2' : '#fff'} strokeOpacity={you ? 0.95 : 0.35} strokeWidth="0.04" />
+            <text x={x + 2.6} y={y + 4.88} textAnchor="middle" dominantBaseline="central" fontSize="0.38" fontWeight="800" fill={you ? '#3a2205' : '#fff7e0'}>{nm}</text>
           </g>
         );
       })()}
     </g>
-  ));
+    );
+  });
   const jewel = COLORS[turnSeat] || '#fff';
   return (
     <g>
@@ -215,7 +218,7 @@ export default function LudoBoard({ board, seats: seatsIn, tokens, legal, onPick
     const col = COLORS[dp(tk.seat)];
     ghosts.push(
       <g key={key} className={`ludo-ghost${on ? ' on' : ''}${hit ? ' hit' : ''}`} style={{ transform: `translate(${xy.x}px, ${xy.y}px)` }}>
-        <rect x={-0.46} y={-0.46} width="0.92" height="0.92" rx="0.17" fill={hit ? '#ff4d3a' : col} fillOpacity={on ? 0.36 : 0.2} stroke={hit ? '#ff4d3a' : col} strokeWidth="0.09" />
+        <rect x={-0.5} y={-0.5} width="1" height="1" rx="0.18" fill={hit ? '#ff4d3a' : col} fillOpacity={on ? 0.36 : 0.2} stroke={hit ? '#ff4d3a' : col} strokeWidth="0.09" />
         {hit && <g stroke="#fff" strokeWidth={R * 0.2} strokeLinecap="round"><path d={`M${-R * 0.42},${-R * 0.42} L${R * 0.42},${R * 0.42} M${R * 0.42},${-R * 0.42} L${-R * 0.42},${R * 0.42}`} /></g>}
         {!hit && !pv.finishes && <circle r={R * 0.2} fill="#fff" />}
         {pv.finishes && <polygon points={star(0, 0, R * 0.78)} fill="url(#lgold)" stroke="#7a4d08" strokeWidth={R * 0.08} />}

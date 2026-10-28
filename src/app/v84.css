@@ -15,7 +15,7 @@
 @keyframes ludo-land { 0% { opacity: .9; transform: scale(.6); } 100% { opacity: 0; transform: scale(1.5); } }
 
 /* ── pawns: pivot on the base, hop, stretch in the air and wobble like jelly when they land ── */
-.ludo-svg .ludo-tok .body { transform-origin: 0 calc(var(--r, .44) * .62px); }
+.ludo-svg .ludo-tok .body { transform-origin: 0 calc(var(--r, .5) * .62px); }
 .ludo-svg .ludo-tok.moving .body { animation: ludo-hop84 var(--step) cubic-bezier(.35, .1, .55, 1); }
 @keyframes ludo-hop84 {
   0% { transform: translateY(0) scale(1.08, .88) rotate(0); }
@@ -29,7 +29,7 @@
 /* while a roll is waiting to be played, the pawns that cannot move step back so the ones that can stand out */
 .ludo-svg .ludo-tok.idle { opacity: .72; }
 .ludo-svg .ludo-tok .ring2 { opacity: .55; }
-.ludo-svg .ludo-tok .ring { filter: drop-shadow(0 0 calc(var(--r, .44) * .25px) currentColor); }
+.ludo-svg .ludo-tok .ring { filter: drop-shadow(0 0 calc(var(--r, .5) * .25px) currentColor); }
 
 /* ── where the chosen pawn would land: a tile-shaped target that breathes ── */
 .ludo-svg .ludo-ghost > rect { transform-box: fill-box; transform-origin: center; animation: ludo-ghost 1.3s ease-in-out infinite; }
