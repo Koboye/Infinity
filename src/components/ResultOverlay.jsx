@@ -12,7 +12,7 @@ const CONFETTI = ['#F2B632', '#4FA36B', '#C23B2A', '#3b8fd6', '#F4E9CF', '#8E3FD
  * End-of-game screen. A win rains confetti and shows a bouncing trophy; a loss is playful (wobbling emoji + a gentle joke);
  * a draw is a handshake. `taunt` (optional list of words) is shown word by word to the loser — used by Gebeta.
  */
-export default function ResultOverlay({ title, sub, tone = 'win', score, children, taunt = null, tauntNote = null, lang: langProp, jackpot = false, coins }) {
+export default function ResultOverlay({ palette = null, title, sub, tone = 'win', score, children, taunt = null, tauntNote = null, lang: langProp, jackpot = false, coins }) {
   const lang = langProp || (typeof document !== 'undefined' && document.documentElement.lang === 'am' ? 'am' : 'en');
   useEffect(() => {
     recordResult(tone);
@@ -24,7 +24,7 @@ export default function ResultOverlay({ title, sub, tone = 'win', score, childre
       face: tone === 'lose' ? pick(LOSE_EMOJI, r) : '',
       bits: tone === 'win' ? Array.from({ length: 64 }, (_, i) => ({
         left: Math.round(r() * 100), delay: +(r() * 1.4).toFixed(2), dur: +(2.4 + r() * 2).toFixed(2), size: Math.round(6 + r() * 7),
-        rot: Math.round(r() * 360), color: CONFETTI[i % CONFETTI.length], drift: Math.round(-40 + r() * 80),
+        rot: Math.round(r() * 360), color: (palette || CONFETTI)[i % (palette || CONFETTI).length], drift: Math.round(-40 + r() * 80),
       })) : [],
     };
   }, [tone, lang]);

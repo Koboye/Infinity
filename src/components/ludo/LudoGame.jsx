@@ -129,7 +129,7 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
     setAnim(null); commit(m.state); sfx.land();
     setTrail({ seat, pts: trailXY(s0.board, seat, m.from, m.to, viewRef.current), k: m.state.moves });
     if (!m.leaves && !m.captured.length && !m.finishes) { const xy = tokenXY(s0.board, seat, m.to, i, viewRef.current); burst(xy.x, xy.y, colOf(seat), 'land'); }   // a soft ripple where it lands
-    if (m.leaves) { const xy = tokenXY(s0.board, seat, 0, i, viewRef.current); burst(xy.x, xy.y, colOf(seat), 'out'); }
+    if (m.leaves) { const xy = tokenXY(s0.board, seat, 0, i, viewRef.current); burst(xy.x, xy.y, colOf(seat), 'out'); sfx.out(); if (!m.captured.length) say(t.ludoOutFlash, 'good'); }
     if (m.captured.length) {
       m.captured.forEach((c) => { const cs = s0.seats[c.p], xy = tokenXY(s0.board, cs, s0.pos[c.p][c.i], c.i, viewRef.current); burst(xy.x, xy.y, colOf(cs), 'hit'); });
       sfx.kick(false); say(t.ludoCaptureMsg ? t.ludoCaptureMsg(people[s0.turn].name, people[m.captured[0].p].name) : t.ludoCapture, 'good');
@@ -137,8 +137,8 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
     } else if (m.finishes) {
       const xy = tokenXY(s0.board, seat, finishOf(s0.board), i, viewRef.current); burst(xy.x, xy.y, colOf(seat), 'home');
       sfx.home(); say(t.ludoHomeFlash, 'good');
-    } else if (m.bonus) { say(t.ludoBonus, 'info'); }
-    if (m.state.over) { if (mode === 'pass' || m.state.ranks[0] === 0) sfx.win(); else sfx.lose(); }
+    } else if (m.bonus && !m.leaves) { say(t.ludoBonus, 'info'); }
+    if (m.state.over) { if (mode === 'pass' || m.state.ranks[0] === 0) { sfx.win(); setTimeout(() => sfx.champion(), 500); } else sfx.lose(); }
     busy.current = false;
   }, [commit, say, burst, t, sp, people, mode]);
 
@@ -298,7 +298,7 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
         </div>
       )}
       {game.over && (
-        <ResultOverlay title={mode === 'pass' ? t.ludoWinner(people[winner].name) : youWon ? t.ludoYouWin : t.ludoWinner(people[winner].name)} tone={mode === 'pass' || youWon ? 'win' : 'lose'}
+        <ResultOverlay title={mode === 'pass' ? t.ludoWinner(people[winner].name) : youWon ? t.ludoYouWin : t.ludoWinner(people[winner].name)} tone={mode === 'pass' || youWon ? 'win' : 'lose'} jackpot palette={[colOf(game.seats[winner]), '#ffd24a', '#ffffff', colOf(game.seats[winner]), '#fff3b0']}
           sub={statsTable}>
           <button className="btn primary" onClick={restart}>{t.playAgain}</button>
           <button className="btn ghost" onClick={onExit}>{t.backHome}</button>

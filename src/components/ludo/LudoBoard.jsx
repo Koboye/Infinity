@@ -128,14 +128,23 @@ function stackSlot(n, idx) {
 
 /** Particles for a capture / home / leave-base burst, drawn at a board position. */
 function Burst({ fx, board }) {
-  const U = UNIT[board], n = fx.kind === 'out' || fx.kind === 'land' ? 0 : 12;
+  const U = UNIT[board], r = U.r, kind = fx.kind;
+  const n = kind === 'land' ? 0 : kind === 'out' ? 12 : kind === 'hit' ? 18 : 24;       // how many sparks fly out
+  const gold = kind === 'home';
   return (
-    <g className={`ludo-fx ${fx.kind}`} style={{ transform: `translate(${fx.x}px, ${fx.y}px)`, '--u': U.r }}>
-      <circle className="fx-ring" r={U.r * 1.1} fill="none" stroke={fx.kind === 'home' ? '#ffd24a' : fx.color} strokeWidth={U.r * 0.22} />
-      {fx.kind === 'hit' && <circle className="fx-flash" r={U.r * 1.4} fill="#fff" />}
+    <g className={`ludo-fx ${kind}`} style={{ transform: `translate(${fx.x}px, ${fx.y}px)`, '--u': r }}>
+      <circle className="fx-ring" r={r * 1.1} fill="none" stroke={gold ? '#ffd24a' : kind === 'hit' ? '#ff3b2a' : fx.color} strokeWidth={r * 0.22} />
+      {(kind === 'out' || kind === 'home' || kind === 'hit') && <circle className="fx-ring fx-ring2" r={r * 1.1} fill="none" stroke={kind === 'hit' ? '#fff' : '#fff'} strokeWidth={r * 0.12} />}
+      {kind === 'hit' && <circle className="fx-flash" r={r * 1.5} fill="#fff" />}
+      {kind === 'out' && <circle className="fx-flash" r={r * 1.1} fill={fx.color} />}
+      {gold && <polygon className="fx-bigstar" points={star(0, 0, r * 1.5)} fill="url(#lgold)" stroke="#7a4d08" strokeWidth={r * 0.08} strokeLinejoin="round" />}
       {Array.from({ length: n }, (_, k) => {
-        const a = (k / n) * Math.PI * 2 + fx.k * 0.7, d = U.r * (2.4 + (k % 3) * 0.7);
-        return <circle key={k} className="fx-p" r={U.r * (0.12 + (k % 3) * 0.05)} fill={fx.kind === 'home' ? (k % 2 ? '#ffd24a' : '#fff7c2') : (k % 2 ? fx.color : '#fff')} style={{ '--dx': Math.cos(a) * d, '--dy': Math.sin(a) * d, animationDelay: `${(k % 4) * 0.02}s` }} />;
+        const a = (k / n) * Math.PI * 2 + fx.k * 0.7, d = r * (2.2 + (k % 3) * 0.9) * (kind === 'home' ? 1.25 : 1), sz = r * (0.13 + (k % 3) * 0.06);
+        const col = gold ? (k % 2 ? '#ffd24a' : '#fff7c2') : kind === 'hit' ? (k % 3 === 0 ? '#ff3b2a' : k % 3 === 1 ? '#fff' : fx.color) : (k % 2 ? fx.color : '#fff');
+        const st = { '--dx': Math.cos(a) * d, '--dy': Math.sin(a) * d - (kind === 'out' ? r * 1.2 : 0), animationDelay: `${(k % 4) * 0.02}s` };
+        return gold && k % 2 === 0
+          ? <polygon key={k} className="fx-p" points={star(0, 0, sz * 2.4)} fill={col} style={st} />
+          : <circle key={k} className="fx-p" r={sz} fill={col} style={st} />;
       })}
     </g>
   );

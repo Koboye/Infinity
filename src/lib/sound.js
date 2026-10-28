@@ -100,9 +100,12 @@ export const sfx = {
   hop: () => blip(R(430, 520), 0.05, 'sine', 0.07, 170),
   land: () => { knock(R(480, 640), 0.05, 0.32); blip(R(170, 200), 0.09, 'triangle', 0.12, -50); },
   home: () => [587, 784, 988, 1175].forEach((f, i) => setTimeout(() => { blip(f, 0.2, 'triangle', 0.12); blip(f * 2, 0.16, 'sine', 0.04); }, i * 85)),
+  // ludo: a bright rising pop when a pawn leaves the yard, and a fanfare when someone wins the whole game
+  out: () => [392, 523, 659, 880].forEach((f, i) => setTimeout(() => blip(f, 0.1, 'triangle', 0.11, 60), i * 55)),
+  champion: () => [523, 659, 784, 1047, 784, 1047, 1319].forEach((f, i) => setTimeout(() => { blip(f, 0.24, 'triangle', 0.14); blip(f / 2, 0.24, 'sine', 0.06); }, i * 140)),
   bingoCall: () => { blip(440, 0.1, 'square', 0.08); setTimeout(() => blip(660, 0.18, 'square', 0.08), 90); },
 };
 
 // Haptics: wrap selected effects with a short vibration (Android).
-const HAPTIC = { capture: [18, 30, 28], jump: [14, 20, 22], king: [20, 40, 20, 40, 60], win: [30, 50, 30, 50, 90], cheer: [30, 40, 30, 40, 30, 40, 120], ball: 12, lose: [120], move: 8, place: 10, store: 14, dice: [8, 30, 8, 30, 8, 30, 14], land: 10, home: [16, 30, 16, 30, 40] };
+const HAPTIC = { capture: [18, 30, 28], jump: [14, 20, 22], king: [20, 40, 20, 40, 60], win: [30, 50, 30, 50, 90], cheer: [30, 40, 30, 40, 30, 40, 120], ball: 12, lose: [120], move: 8, place: 10, store: 14, dice: [8, 30, 8, 30, 8, 30, 14], land: 10, home: [16, 30, 16, 30, 40], out: [10, 20, 14], champion: [30, 40, 30, 40, 30, 40, 160] };
 Object.keys(HAPTIC).forEach((k) => { const f = sfx[k]; sfx[k] = () => { buzz(HAPTIC[k]); f(); }; });
