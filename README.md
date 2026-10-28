@@ -329,3 +329,9 @@ The v34 "walk one stone straight across" opening is replaced. Rule (`src/lib/geb
 - **Board.** Safe cells carry gold stars, entry cells a white star, each home lane has chevrons pointing to the centre, yards are rounded cream plates with depth, and the centre has a glowing jewel in the colour of whoever's turn it is.
 - **Strips.** Your strip keeps a gold trim and gold name; the strip of the player on turn sits above the board so a tossed die is never hidden; top strips are a little lower to give the board room.
 - Drawing only (`LudoBoard.jsx`, `v92.css`); rules and engine untouched.
+
+## v93 — Ludo: seamless table
+
+- The table settles in with a single entrance instead of popping in piece by piece.
+- Nothing moves while you play: the status line, strips and dock keep fixed sizes and the board is layout-isolated. Measured over 14 rolls and turn changes, the board, your strip and the dock each kept one position and size.
+- Turns hand over smoothly: strips, dice, pawns and the dock fade between states, and the status text eases in when it changes. Respects reduced-motion. CSS in `v92.css`.

@@ -270,7 +270,7 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
         {flash && <div className={`flash ${flash.kind}`} key={flash.k} onAnimationEnd={() => setFlash(null)}>{flash.text}</div>}
       </div>
       <div className={`ludo-dock${canRoll ? ' ready' : ''}`} style={{ '--dc': color, order: 4 }}>
-        <div className="ludo-say" aria-live="polite"><b>{status}</b>{canRoll && <small>{t.ludoRollHint}</small>}</div>
+        <div className="ludo-say" aria-live="polite"><b key={status}>{status}</b>{canRoll && <small>{t.ludoRollHint}</small>}</div>
         <div className="ludo-tools">
           <button type="button" className="tool" onClick={hint} disabled={!canHint} title={t.ludoHintBtn} aria-label={t.ludoHintBtn}><span aria-hidden="true">💡</span><span className="lbl">{t.ludoHintBtn}</span></button>
           <button type="button" className={`tool${fast ? ' on' : ''}`} onClick={toggleFast} aria-pressed={fast} title={t.ludoFast} aria-label={t.ludoFast}><span aria-hidden="true">⚡</span><span className="lbl">{t.ludoFast}</span></button>

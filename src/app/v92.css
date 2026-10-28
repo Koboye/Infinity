@@ -10,3 +10,29 @@
 .ludo .ludo-dock { border-width: 2px; }
 .ludo .ludo-say b { font-size: .95rem; }
 @media (prefers-reduced-motion: reduce) { .ludo .ludo-panel.me.on { animation: none; } }
+
+/* v93 — seamless: the table settles in once, nothing jumps while you play, turns hand over smoothly. */
+/* one entrance for the whole table (not per element) */
+.ludo { animation: ludo-enter .42s cubic-bezier(.2, .8, .2, 1) both; overscroll-behavior: none; }
+@keyframes ludo-enter { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: none; } }
+
+/* nothing shifts: fixed heights for the status line and the strips, and the board is isolated from layout changes around it */
+.ludo .ludo-dock { min-height: 52px; contain: layout style; }
+.ludo .ludo-say { min-height: 2.4em; justify-content: center; }
+.ludo .ludo-say b { animation: ludo-say .28s ease-out both; }
+@keyframes ludo-say { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.ludo .ludo-board { contain: layout paint; }
+.ludo .ludo-panel { contain: layout style; min-height: calc(var(--sz) + 52px); }
+.pf-secs { transition: background .3s; }
+
+/* turn hand-over: strips, dice and pawns fade between states instead of snapping */
+.ludo .ludo-panel { transition: border-color .35s, box-shadow .35s, background .35s, opacity .35s, transform .35s; }
+.ludo .ludo-panel:not(.on) .ludo-die3d { transition: filter .35s, opacity .35s; }
+.ludo .ludo-panel.on .ludo-die3d { transition: filter .35s, opacity .35s; }
+.ludo-svg .ludo-tok { will-change: transform; transition-property: transform, opacity; }
+.ludo-svg .ludo-tok.idle { transition: opacity .3s, transform var(--step) linear; }
+.ludo .ludo-dock { transition: border-color .4s, box-shadow .4s, background .4s; }
+.ludo-svg .ludo-jewel, .ludo-svg .ludo-jewel-glow { transition: fill .45s; }
+.ludo-board::before { transition: background .6s; }
+
+@media (prefers-reduced-motion: reduce) { .ludo, .ludo .ludo-say b { animation: none; } }

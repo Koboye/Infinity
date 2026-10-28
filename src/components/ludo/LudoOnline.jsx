@@ -132,7 +132,7 @@ export default function LudoOnline({ t, lang, room, uid, code, onExit, onSwitchR
         {flash && <div className={`flash ${flash.kind}`} key={flash.k} onAnimationEnd={() => setFlash(null)}>{flash.text}</div>}
       </div>
       <div className={`ludo-dock${canRoll ? ' ready' : ''}`} style={{ '--dc': color, order: 4 }}>
-        <div className="ludo-say" aria-live="polite"><b>{L.err || status}</b></div>
+        <div className="ludo-say" aria-live="polite"><b key={L.err || status}>{L.err || status}</b></div>
       </div>
       <div style={{ order: 5, width: '100%' }}><RoomControls t={t} lang={lang} L={L} /></div>
       <RoomResult t={t} room={room} L={L} score={[homeCount(seat), homeCount(1 - seat)]} detail="" />
