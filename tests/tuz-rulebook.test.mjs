@@ -19,16 +19,17 @@ console.log('ok 1 landing on your own Tuz');
   assert.equal(r.state.flag[3], tuzFlag(1)); assert.equal(r.state.turn, 0, 'another turn'); assert.equal(total(r.state), total(q)); }
 console.log('ok 3 capturing two from the opponent\'s Tuz');
 
-// 2. Emptied Tuz: becomes available, receives stones, a LAST stone there is captured (single stone); no 4 or more
+// 2. Emptied Tuz: it STAYS its owner's until the round ends, however it was emptied
 { let q = base(0); q.pits[3] = 1; q.flag[3] = tuzFlag(1); q.pits[1] = 2; q.pits[0] = 2; q.pits[12] = 5; // a Tuz of 1 (after earlier attacks)
-  let r = playMove(q, 1, 'tuz'); assert.ok(r.ok); assert.equal(r.state.pits[3], 0, 'emptied'); assert.equal(r.state.pits[6], 2); assert.equal(r.state.flag[3], 6, 'remembered as an emptied Tuz');
-  assert.equal(legalMoves(r.state).includes(3), false);
-  // later: a last stone in that empty hole captures just the stone placed there, turn ends
-  const a = cloneState(r.state); a.pits.fill(0); a.pits[2] = 1; a.pits[0] = 3; a.pits[12] = 5; a.turn = 0; a.pits[6] = 0; a.flag[3] = 6;
-  const c = playMove(a, 2, 'tuz'); assert.ok(c.ok); assert.equal(c.state.pits[3], 0); assert.equal(c.state.pits[6], 1, 'only the single placed stone'); assert.equal(c.state.turn, 1);
-  // …but a stone merely passing through makes it an ordinary hole that receives stones
-  const b = cloneState(a); b.pits[2] = 0; b.pits[1] = 3; b.flag[3] = 6; const d = playMove(b, 1, 'tuz'); assert.ok(d.ok);
-  assert.equal(d.state.flag[3], 0); assert.equal(d.state.pits[3], 1, 'it received a stone'); }
+  let r = playMove(q, 1, 'tuz'); assert.ok(r.ok); assert.equal(r.state.pits[3], 0, 'emptied'); assert.equal(r.state.pits[6], 2); assert.equal(r.state.flag[3], tuzFlag(1), 'still its owner\'s Tuz');
+  assert.equal(legalMoves(r.state).includes(3), false, 'an empty Tuz cannot be lifted');
+  // a stone merely passing through does NOT turn it into an ordinary hole
+  const a = cloneState(r.state); a.pits.fill(0); a.pits[1] = 3; a.pits[12] = 5; a.turn = 0; a.pits[6] = 0;
+  const d = playMove(a, 1, 'tuz'); assert.ok(d.ok);
+  assert.equal(d.state.flag[3], tuzFlag(1), 'the passing stone did not cancel the Tuz'); assert.equal(d.state.pits[3], 1, 'it received the stone');
+  // the opponent's LAST stone on it raids it again; it is still the owner's afterwards
+  const g = cloneState(r.state); g.pits.fill(0); g.pits[2] = 1; g.pits[0] = 3; g.pits[12] = 5; g.turn = 0; g.pits[6] = 0;
+  const h = playMove(g, 2, 'tuz'); assert.ok(h.ok); assert.equal(h.state.pits[3], 0); assert.equal(h.state.pits[6], 1); assert.equal(h.state.flag[3], tuzFlag(1), 'raided empty again, still the owner\'s'); }
 console.log('ok 2 emptied Tuz');
 
 // 4. Ownership: nobody can lift a frozen Tuz (owner or opponent); each Tuz has an owner

@@ -54,10 +54,11 @@ export const oppositeOf = (i) => 12 - i;
 //     3→4 is his first Tuz and the chain stops. No stone goes to a pile: all 48 stay on the board (see playMove, `opening`).
 //   - later, whenever a player's LAST stone lands in an OPPONENT's hole holding exactly three (making four), that hole is
 //     frozen as the mover's Tuz and his turn ends. Nobody can lift a Tuz; stones may still pass through or land on it.
+//   - A TUZ STAYS ITS OWNER'S UNTIL THE ROUND ENDS, however many stones are taken from it — even if the opponent empties it.
 //   - THE ONLY FREEZE IS THE TUZ. A hole that reaches four any other way (mid-sowing, or by your own last stone in your own
 //     hole) is a perfectly normal hole: no marker, nothing to collect, no waiting, no freezing — it is lifted / relayed like any other.
-//   - attacking a Tuz: your LAST stone resting on the opponent's Tuz takes exactly two stones from it and you
-//     play again; the rest stays frozen. A Tuz emptied this way is remembered (flag 6): the next LAST stone to land there is captured.
+//   - attacking a Tuz: your LAST stone resting on the opponent's Tuz takes (up to) two stones from it and you
+//     play again; the rest stays frozen. An emptied Tuz is STILL its owner's: it is never cleared, passed stones just pile up in it.
 //   - when a round ends, each Tuz is paid to its owner's pile. A player may own any number of Tuz holes.
 export const tuzFlag = (seat) => (seat === 0 ? 4 : 5);
 RULESETS.tuz = { id: 'tuz', seeds: 4, relay: true, family: FAMILY, families: false, extraTurn: false, capture: false, tuz: true };
@@ -189,7 +190,7 @@ export function applyFlag(flag, step) {
     case 'family': case 'split': case 'pick': case 'relay': flag[step.i] = 0; break;
     case 'capture': flag[step.i] = 0; flag[step.j] = 0; break;
     case 'tuz': flag[step.i] = tuzFlag(step.by); break;
-    case 'tuztake': if (step.empty) flag[step.i] = step.single ? 0 : 6; break; // an emptied Tuz is remembered (6) until a stone lands there
+    case 'tuztake': break; // a raided Tuz keeps its owner's flag (4 / 5) — even when empty — until the round ends ('deal' clears it)
     case 'deal': for (let k = 0; k < 14; k++) flag[k] = 0; break;
     default: break;
   }
@@ -294,23 +295,13 @@ export function playMove(state, pit, rulesetId = 'gebeta', schedule = [], autoSe
       steps.push({ t: 'sow', i: pos });
       // A stone landing in a four nobody collected in time freezes it: a four never silently grows into a five.
       if (fl[pos] === 1 || fl[pos] === 2) { fl[pos] = 3; steps.push({ t: 'share', i: pos }); }
-      // ጡዝ: a hole that WAS a Tuz and has been emptied (flag 6). A stone passing through makes it an ordinary hole again;
-      // the LAST stone captures itself — the single stone placed there goes to the mover's pile and the turn ends.
-      if (rules.tuz && fl[pos] === 6) {
-        if (hand === 0) {
-          steps.push({ t: 'tuztake', i: pos, store: STORE[seat], n: 1, by: seat, empty: true, single: true });
-          p[pos] -= 1; p[STORE[seat]] += 1; fl[pos] = 0; captured += 1; ended = true;
-          continue;
-        }
-        fl[pos] = 0;
-      }
       // ጡዝ: the LAST stone comes to rest on the OPPONENT's frozen Tuz → capture exactly TWO stones from it, the rest stays
       // frozen (a Tuz of 4 plus my landing stone is left with 3), and play again.
       // (Resting on your OWN Tuz just ends the turn: a frozen hole is never lifted, so there is no relay.)
       if (rules.tuz && hand === 0 && (fl[pos] === 4 || fl[pos] === 5) && fl[pos] - 4 !== seat) {
         const take = Math.min(2, p[pos]); // exactly two stones are captured; my landing stone stays in the hole like any stone dropped there
         steps.push({ t: 'tuztake', i: pos, store: STORE[seat], n: take, by: seat, empty: p[pos] - take === 0 });
-        p[pos] -= take; p[STORE[seat]] += take; if (p[pos] === 0) fl[pos] = 6;
+        p[pos] -= take; p[STORE[seat]] += take; // the hole STAYS the owner's Tuz, even when raided empty, until the round ends
         captured += take; extra = true; ended = true;
         continue;
       }

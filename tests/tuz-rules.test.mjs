@@ -55,7 +55,6 @@ for (let seed = 1; seed <= 60; seed++) {
     for (const i of RING) {
       const f = s.flag[i];
       assert.ok(f === 0 || f >= 4, `seed ${seed}: only a Tuz may freeze (flag ${f} on ${i})`);
-      if (f === 6) assert.equal(s.pits[i], 0, 'an emptied-Tuz marker sits on an empty hole');
       if (f === 4 || f === 5) assert.notEqual(ownerOf(i, s.own), f - 4, `seed ${seed}: Tuz of seat ${f - 4} sits in its own hole ${i}`);
     }
     for (const seat of [0, 1]) assert.deepEqual(collectable(s, seat), [], 'nothing is ever waiting to be collected');
