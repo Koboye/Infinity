@@ -323,3 +323,9 @@ The v34 "walk one stone straight across" opening is replaced. Rule (`src/lib/geb
 - Animation: the existing `lift1` / `sow` steps, then one `tuz` step (no `tuztake`).
 - Tests: `tests/tuzOpening.test.mjs` (new), and `tuz`, `tuz-rules`, `tuz-rulebook`, `gebeta-rulebook` updated.
 - Amharic rule text for the new opening was written by the developer — please have a native speaker review it.
+
+## v92 — Ludo polish on the v91 board
+
+- **Board.** Safe cells carry gold stars, entry cells a white star, each home lane has chevrons pointing to the centre, yards are rounded cream plates with depth, and the centre has a glowing jewel in the colour of whoever's turn it is.
+- **Strips.** Your strip keeps a gold trim and gold name; the strip of the player on turn sits above the board so a tossed die is never hidden; top strips are a little lower to give the board room.
+- Drawing only (`LudoBoard.jsx`, `v92.css`); rules and engine untouched.
