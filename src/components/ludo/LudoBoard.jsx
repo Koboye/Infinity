@@ -4,10 +4,10 @@ import { BOARDS, finishOf } from '@/lib/ludo/engine.js';
 import { ringXY, homeXY, baseXY, finishXY, tokenXY, viewBoxOf, homeAngle, UNIT } from '@/lib/ludo/layout.js';
 
 // colours are by SCREEN position (top-left, top-right, bottom-right, bottom-left): the bottom-left one is always YOU, in yellow
-export const COLORS = ['#E5484D', '#2DB66F', '#3A7BF2', '#F6B73C'];
-export const COLOR_NAMES = ['red', 'green', 'blue', 'yellow'];
-const DARK = ['#8f1f26', '#13633a', '#1b3f99', '#a86a0a'];
-const LIGHT = ['#ffa5a8', '#93f0ba', '#aecbff', '#ffe6a0'];
+export const COLORS = ['#E9202B', '#00A651', '#FFDD12', '#2AA9FF'];
+export const COLOR_NAMES = ['red', 'green', 'yellow', 'blue'];
+const DARK = ['#8f0f16', '#00642f', '#a88a00', '#0a62a8'];
+const LIGHT = ['#ff9a9e', '#8be8ae', '#fff58f', '#a5dcff'];
 const INK = '#1d2056';
 
 const star = (x, y, r) => {
@@ -48,127 +48,71 @@ const Chevron = ({ x, y, a, s = 1, o = 0.6, c = '#fff' }) => (
 const pathOf = (pts) => 'M' + pts.map((p) => `${+p.x.toFixed(3)} ${+p.y.toFixed(3)}`).join(' L');
 
 /**
- * The classic cross, redrawn as a ROAD:
- *   • a continuous rounded road runs round the board; it changes colour every 13 cells (red → green → yellow → blue, the way play
- *     travels), so you always see whose quarter you are in;
- *   • light tiles sit on the road, each player's start tile is solid colour with an arrow into the road, safe tiles carry a gold star;
- *   • faint dots flow along the road in the direction of play;
- *   • each home lane is a coloured strip with chevrons pointing at the centre.
+ * The classic Ludo board, drawn flat and crisp: four solid yards each with a white inner square, white grid cells, home lanes and
+ * start tiles filled with the player's colour, hollow stars on the safe cells, an arrow where each lane enters, and the four
+ * colour triangles in the middle.
  */
 function Square({ seats, turnSeat, names, youSlot }) {
-  const B = BOARDS.square, N = B.ringLen, seg = N / 4;
-  const pts = Array.from({ length: N }, (_, i) => ringXY('square', i));
-  const road = [];
-  for (let q = 0; q < 4; q++) {
-    const part = []; for (let k = 0; k <= seg; k++) part.push(pts[(q * seg + k) % N]);
-    road.push(<path key={`rs${q}`} d={pathOf(part)} fill="none" stroke="#1d2056" strokeOpacity=".2" strokeWidth="1.08" strokeLinecap="round" strokeLinejoin="round" transform="translate(0 .07)" />);
-  }
-  for (let q = 0; q < 4; q++) {
-    const part = []; for (let k = 0; k <= seg; k++) part.push(pts[(q * seg + k) % N]);
-    road.push(<path key={`r${q}`} d={pathOf(part)} fill="none" stroke={COLORS[q]} strokeOpacity={seats.includes(q) ? 1 : 0.5} strokeWidth="1.08" strokeLinecap="round" strokeLinejoin="round" />);
-  }
+  const B = BOARDS.square, N = B.ringLen;
+  const grid = { stroke: '#8f8f8f', strokeWidth: 0.035 };
   const cells = [];
   for (let i = 0; i < N; i++) {
-    const { x, y } = pts[i], si = B.seatStart.indexOf(i), safe = si < 0 && B.seatStart.some((st) => B.safeOffsets.some((o) => (st + o) % N === i));
-    const nx = pts[(i + 1) % N], ang = Math.atan2(nx.y - y, nx.x - x) * 180 / Math.PI;
+    const { x, y } = ringXY('square', i), si = B.seatStart.indexOf(i), safe = si < 0 && B.seatStart.some((st) => B.safeOffsets.some((o) => (st + o) % N === i));
     cells.push(
       <g key={i}>
-        <rect x={x - 0.47} y={y - 0.47} width="0.94" height="0.94" rx="0.15" fill={si >= 0 ? `url(#lc${si})` : 'url(#ltile)'} opacity={si >= 0 && !seats.includes(si) ? 0.55 : 1} />
-        <rect x={x - 0.42} y={y - 0.44} width="0.84" height="0.34" rx="0.11" fill="#fff" opacity={si >= 0 ? 0.28 : 0.35} />
-        {safe && <><polygon points={star(x, y, 0.45)} fill="#ffcf4a" opacity=".5" filter="url(#lglowS)" /><polygon points={star(x, y, 0.38)} fill="url(#lgold)" stroke="#7a4d08" strokeWidth="0.03" strokeLinejoin="round" /></>}
-        {si >= 0 && <path d="M-0.2,-0.22 L0.12,0 L-0.2,0.22 M-0.02,-0.22 L0.3,0 L-0.02,0.22" transform={`translate(${x} ${y}) rotate(${ang})`} fill="none" stroke="#fff" strokeOpacity=".95" strokeWidth="0.09" strokeLinecap="round" strokeLinejoin="round" />}
+        <rect x={x - 0.5} y={y - 0.5} width="1" height="1" fill={si >= 0 ? COLORS[si] : '#fff'} opacity={si >= 0 && !seats.includes(si) ? 0.5 : 1} {...grid} />
+        {safe && <polygon points={star(x, y, 0.36)} fill="#fff" stroke="#7a7a7a" strokeWidth="0.045" strokeLinejoin="round" />}
       </g>,
     );
   }
   const home = [];
-  [0, 1, 2, 3].forEach((s) => {
-    const a = homeAngle('square', s), on = seats.includes(s), p1 = homeXY('square', s, 1), p5 = homeXY('square', s, 5);
-    home.push(<g key={`h${s}`} opacity={on ? 1 : 0.4}>
-      <line x1={p1.x} y1={p1.y + 0.05} x2={p5.x} y2={p5.y + 0.05} stroke="#1d2056" strokeOpacity=".2" strokeWidth="1.04" strokeLinecap="round" />
-      <line x1={p1.x} y1={p1.y} x2={p5.x} y2={p5.y} stroke={DARK[s]} strokeWidth="1.02" strokeLinecap="round" />
-      <line x1={p1.x} y1={p1.y} x2={p5.x} y2={p5.y} stroke={COLORS[s]} strokeOpacity=".55" strokeWidth=".9" strokeLinecap="round" />
-      {[1, 2, 3, 4, 5].map((m) => {
-        const { x, y } = homeXY('square', s, m);
-        return (
-          <g key={m}>
-            <rect x={x - 0.47} y={y - 0.47} width="0.94" height="0.94" rx="0.15" fill={`url(#lt${s})`} />
-            <rect x={x - 0.42} y={y - 0.44} width="0.84" height="0.32" rx="0.11" fill="#fff" opacity=".55" />
-            <Chevron x={x} y={y} a={a} s={m === 5 ? 1.15 : 0.9} o={m === 5 ? 1 : 0.8} c={COLORS[s]} />
-          </g>
-        );
-      })}
-    </g>);
+  [0, 1, 2, 3].forEach((q) => {
+    for (let m = 1; m <= 5; m++) { const { x, y } = homeXY('square', q, m); home.push(<rect key={`h${q}${m}`} x={x - 0.5} y={y - 0.5} width="1" height="1" fill={COLORS[q]} opacity={seats.includes(q) ? 1 : 0.5} {...grid} />); }
   });
-  const bases = [[0, 0], [9, 0], [9, 9], [0, 9]].map(([x0, y0], s) => {
-    const Y = 4.7, x = x0 + (x0 === 0 ? 0.25 : 6 - 0.25 - Y), y = y0 + (y0 === 0 ? 0.25 : 6 - 0.25 - Y); // a 4.7 yard tucked into the outer corner: the road gets the room
-    const c = Y / 2;
+  // the arrow where each colour's lane begins (on the edge cell, pointing at the centre)
+  const arrows = [[0.5, 7.5, 0], [7.5, 0.5, 90], [14.5, 7.5, 180], [7.5, 14.5, 270]].map(([x, y, a], q) => (
+    <path key={`ar${q}`} d="M-0.34,0 L0.34,0 M0.08,-0.24 L0.34,0 L0.08,0.24" transform={`translate(${x} ${y}) rotate(${a})`} fill="none" stroke={COLORS[q]} strokeWidth="0.075" strokeLinecap="round" strokeLinejoin="round" />
+  ));
+  const bases = [[0, 0], [9, 0], [9, 9], [0, 9]].map(([x, y], q) => {
+    const top = y === 0, nm = names && names[q] ? String(names[q]) : null, you = youSlot === q;
     return (
-    <g key={s} opacity={seats.includes(s) ? 1 : 0.34}>
-      <rect x={x} y={y + 0.08} width={Y} height={Y} rx="0.7" fill="#1d2056" opacity=".22" />
-      <rect x={x} y={y} width={Y} height={Y} rx="0.7" fill={`url(#lc${s})`} />
-      <rect x={x + 0.1} y={y + 0.1} width={Y - 0.2} height="1.7" rx="0.58" fill="#fff" opacity=".16" />
-      <rect x={x + 0.55} y={y + 0.6} width={Y - 1.1} height={Y - 1.1} rx="0.95" fill="#000" opacity=".2" />
-      <rect x={x + 0.55} y={y + 0.55} width={Y - 1.1} height={Y - 1.1} rx="0.95" fill="url(#lplate)" stroke={DARK[s]} strokeOpacity=".55" strokeWidth="0.07" />
-      {[0, 1, 2, 3].map((k) => { const p = baseXY('square', s, k); return (
-        <g key={k}>
-          <circle cx={p.x} cy={p.y + 0.05} r="0.6" fill="#000" opacity=".16" />
-          <circle cx={p.x} cy={p.y} r="0.6" fill={`url(#lw${s})`} stroke={DARK[s]} strokeOpacity=".65" strokeWidth="0.05" />
-          <circle cx={p.x} cy={p.y} r="0.43" fill="url(#lsock)" />
-          <circle cx={p.x} cy={p.y} r="0.43" fill="none" stroke="#fff" strokeOpacity=".5" strokeWidth="0.04" />
-        </g>
-      ); })}
-      {youSlot === s && <rect className="ludo-youglow" x={x + 0.03} y={y + 0.03} width={Y - 0.06} height={Y - 0.06} rx="0.68" fill="none" stroke="#ffe08a" strokeWidth="0.16" />}
-      {turnSeat === s && youSlot !== s && <rect className="ludo-baseturn" x={x + 0.03} y={y + 0.03} width={Y - 0.06} height={Y - 0.06} rx="0.68" fill="none" stroke="#fff" strokeWidth="0.12" />}
-      {names && names[s] && (() => {
-        const nm = String(names[s]), you = youSlot === s, w = Math.min(3.8, Math.max(1.7, nm.length * 0.32 + 0.9));
-        return (
-          <g className={you ? 'ludo-you' : 'ludo-nameplate'} style={{ pointerEvents: 'none' }}>
-            <rect x={x + c - w / 2} y={y + Y - 0.66} width={w} height="0.5" rx="0.25" fill={you ? 'url(#lgold)' : '#1d2056'} fillOpacity={you ? 1 : 0.8} stroke={you ? '#fff4c2' : '#fff'} strokeOpacity={you ? 0.95 : 0.35} strokeWidth="0.04" />
-            <text x={x + c} y={y + Y - 0.41} textAnchor="middle" dominantBaseline="central" fontSize="0.34" fontWeight="800" fill={you ? '#3a2205' : '#fff7e0'}>{nm}</text>
+      <g key={q} opacity={seats.includes(q) ? 1 : 0.4}>
+        <rect x={x} y={y} width="6" height="6" fill={COLORS[q]} />
+        <rect x={x + 1} y={y + 1} width="4" height="4" fill="#fff" />
+        {[0, 1, 2, 3].map((k) => { const p = baseXY('square', q, k); return (
+          <g key={k}>
+            <circle cx={p.x} cy={p.y + 0.4} r="0.56" fill={COLORS[q]} />
+            <circle cx={p.x} cy={p.y + 0.4} r="0.4" fill="none" stroke={DARK[q]} strokeWidth="0.09" />
           </g>
-        );
-      })()}
-    </g>
+        ); })}
+        {(youSlot === q || turnSeat === q) && <rect className={youSlot === q ? 'ludo-youglow' : 'ludo-baseturn'} x={x + 0.06} y={y + 0.06} width="5.88" height="5.88" fill="none" stroke={youSlot === q ? '#fff4a8' : '#fff'} strokeWidth="0.12" />}
+        {nm && <text x={x + 3} y={top ? y + 0.52 : y + 5.5} textAnchor="middle" dominantBaseline="central" fontSize="0.62" fontWeight="800" fill={you ? '#fff1a0' : '#fff'} stroke="#222" strokeWidth="0.1" paintOrder="stroke" strokeLinejoin="round" style={{ pointerEvents: 'none' }}>{nm}</text>}
+      </g>
     );
   });
-  const jewel = COLORS[turnSeat] || '#fff';
   return (
     <g>
-      <rect x="-0.45" y="-0.37" width="15.9" height="15.9" rx="1.1" fill="#000" opacity=".25" />
-      <rect x="-0.45" y="-0.45" width="15.9" height="15.9" rx="1.1" fill="url(#lframe)" />
-      <rect x="-0.3" y="-0.3" width="15.6" height="15.6" rx="0.95" fill="none" stroke="url(#lgold)" strokeWidth="0.07" />
-      {[[-0.2, -0.2], [7.5, -0.2], [15.2, -0.2], [-0.2, 7.5], [15.2, 7.5], [-0.2, 15.2], [7.5, 15.2], [15.2, 15.2]].map(([rx, ry], k) => <circle key={k} cx={rx} cy={ry} r="0.085" fill="url(#lgold)" stroke="#1d2056" strokeWidth="0.02" />)}
-      <rect x="0" y="0" width="15" height="15" rx="0.5" fill="url(#lpaper)" />
-      {bases}{road}{cells}{home}
-      <polygon points="6,6 9,6 7.5,7.5" fill="url(#lc1)" /><polygon points="9,6 9,9 7.5,7.5" fill="url(#lc2)" />
-      <polygon points="9,9 6,9 7.5,7.5" fill="url(#lc3)" /><polygon points="6,9 6,6 7.5,7.5" fill="url(#lc0)" />
-      <path d="M6,6 L9,9 M9,6 L6,9" stroke="#fff" strokeOpacity=".5" strokeWidth="0.05" />
-      <rect x="6" y="6" width="3" height="3" fill="none" stroke={INK} strokeOpacity=".7" strokeWidth="0.06" />
-      <circle cx="7.5" cy="7.5" r="0.62" fill={jewel} opacity=".5" filter="url(#lglowS)" className="ludo-jewel-glow" />
-      <circle cx="7.5" cy="7.5" r="0.42" fill="url(#lgold)" stroke="#7a4d08" strokeWidth="0.04" />
-      <circle cx="7.5" cy="7.5" r="0.26" fill={jewel} stroke="#fff" strokeOpacity=".8" strokeWidth="0.04" className="ludo-jewel" />
+      <rect x="-0.06" y="-0.06" width="15.12" height="15.12" fill="#2b2b2b" />
+      <rect x="0" y="0" width="15" height="15" fill="#fff" />
+      {bases}{cells}{home}{arrows}
+      <polygon points="6,6 9,6 7.5,7.5" fill={COLORS[1]} /><polygon points="9,6 9,9 7.5,7.5" fill={COLORS[2]} />
+      <polygon points="9,9 6,9 7.5,7.5" fill={COLORS[3]} /><polygon points="6,9 6,6 7.5,7.5" fill={COLORS[0]} />
     </g>
   );
 }
 
 /**
- * The toy pawn, drawn at radius 1: a little peg-doll — round glossy head with two eyes, shoulders, a flared skirt with a gold belt and
- * a chunky base, all with a white rim so it stays readable on every colour. A pawn that has reached home wears a gold crown.
+ * The pawn, drawn at radius 1: a map-pin — a white pin with a glossy colour ball for a head and its tip on the ground
+ * (tip at y = 0.62), the way every Ludo player knows it. A pawn that has reached home wears a small gold crown.
  */
 function Pawn({ seat, fin }) {
-  const rim = { stroke: '#fff', strokeOpacity: 0.95, strokeWidth: 0.085, strokeLinejoin: 'round' };
   return (
-    <g transform={`translate(0 ${fin ? 0.1 : 0.2}) scale(0.82 1.12)`}>
-      <ellipse cx="0" cy="0.6" rx="0.92" ry="0.3" fill={DARK[seat]} {...rim} />
-      <path d="M-0.5,-0.32 C-0.5,0.12 -0.84,0.3 -0.86,0.5 C-0.5,0.68 0.5,0.68 0.86,0.5 C0.84,0.3 0.5,0.12 0.5,-0.32 Z" fill={`url(#lb${seat})`} {...rim} />
-      <path d="M-0.66,0.2 Q0,0.4 0.66,0.2 L0.72,0.34 Q0,0.56 -0.72,0.34 Z" fill="url(#lgold)" stroke="#7a4d08" strokeOpacity=".6" strokeWidth="0.03" />
-      <ellipse cx="-0.3" cy="0.05" rx="0.09" ry="0.26" fill="#fff" opacity=".4" transform="rotate(8 -0.3 0.05)" />
-      <ellipse cx="0" cy="-0.34" rx="0.66" ry="0.22" fill={`url(#lc${seat})`} {...rim} />
-      <circle cx="0" cy="-0.86" r="0.5" fill={`url(#lg${seat})`} {...rim} />
-      <ellipse cx="-0.17" cy="-1.08" rx="0.19" ry="0.1" fill="#fff" opacity=".9" transform="rotate(-28 -0.17 -1.08)" />
-      <ellipse cx="-0.16" cy="-0.82" rx="0.075" ry="0.1" fill="#1d2056" /><ellipse cx="0.16" cy="-0.82" rx="0.075" ry="0.1" fill="#1d2056" />
-      <circle cx="-0.185" cy="-0.855" r="0.025" fill="#fff" /><circle cx="0.135" cy="-0.855" r="0.025" fill="#fff" />
-      {fin && <path d="M-0.34,-1.28 L-0.28,-1.62 L-0.12,-1.4 L0,-1.68 L0.12,-1.4 L0.28,-1.62 L0.34,-1.28 Z" fill="url(#lgold)" stroke="#7a4d08" strokeWidth="0.05" strokeLinejoin="round" />}
+    <g>
+      <path d="M0,0.62 C-0.2,0.3 -0.64,-0.25 -0.64,-0.72 A0.64,0.64 0 1 1 0.64,-0.72 C0.64,-0.25 0.2,0.3 0,0.62 Z" fill="#f4f4f4" stroke="#8c8c8c" strokeWidth="0.07" strokeLinejoin="round" />
+      <path d="M-0.5,-0.78 C-0.5,-1.12 -0.28,-1.34 0,-1.34 C-0.3,-1.2 -0.42,-0.9 -0.4,-0.5 C-0.5,-0.55 -0.5,-0.66 -0.5,-0.78 Z" fill="#fff" opacity=".9" />
+      <circle cx="0" cy="-0.72" r="0.4" fill={`url(#lg${seat})`} stroke={DARK[seat]} strokeWidth="0.05" />
+      <ellipse cx="-0.13" cy="-0.88" rx="0.13" ry="0.08" fill="#fff" opacity=".85" transform="rotate(-30 -0.13 -0.88)" />
+      {fin && <path d="M-0.3,-1.42 L-0.24,-1.74 L-0.1,-1.56 L0,-1.8 L0.1,-1.56 L0.24,-1.74 L0.3,-1.42 Z" fill="url(#lgold)" stroke="#7a4d08" strokeWidth="0.05" strokeLinejoin="round" />}
     </g>
   );
 }
@@ -262,7 +206,7 @@ export default function LudoBoard({ board, seats: seatsIn, tokens, legal, onPick
             {tk.back && <circle r={R * 1.3} className="retring" fill="none" stroke="#ff3b2a" strokeWidth={R * 0.2} />}
             {can && <circle r={R * 1.3} className="ring" fill="none" stroke={COLORS[dp(tk.seat)]} strokeWidth={R * 0.2} />}
             {can && <circle r={R * 1.3} className="ring2" fill="none" stroke="#fff" strokeWidth={R * 0.07} />}
-            <ellipse className="shadow" cx={R * 0.1} cy={R * 0.78 * sc} rx={R * 0.95 * sc} ry={R * 0.34 * sc} fill="rgba(0,0,0,.42)" />
+            <ellipse className="shadow" cx={R * 0.1} cy={R * 0.66 * sc} rx={R * 0.5 * sc} ry={R * 0.16 * sc} fill="rgba(0,0,0,.28)" />
             <g key={tk.moving ? `m${tk.pos}` : 'still'} className="body"><g className="sz" style={{ transform: `scale(${R * sc})` }}><Pawn seat={dp(tk.seat)} fin={fin} /></g></g>
           </g>
         );

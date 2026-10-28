@@ -26,9 +26,9 @@ export const finishXY = (board, seat, slot = 0) => {
   return { x: 7.5 + d[0] + (d[0] ? 0 : o), y: 7.5 + d[1] + (d[1] ? 0 : o) };
 };
 export const baseXY = (board, seat, slot) => {
-  // the 4.7 yard sits in the OUTER corner of its 6x6 region (see LudoBoard): its centre is 2.6 from the board edge, 3.4 from the inner side
-  const [x0, y0] = SQ_BASE[seat], cx = x0 + (x0 === 0 ? 2.6 : 3.4), cy = y0 + (y0 === 0 ? 2.6 : 3.4);
-  return { x: cx + ((slot % 2) - 0.5) * 1.95, y: cy - 0.1 + (Math.floor(slot / 2) - 0.5) * 1.95 };
+  // classic yard: a 6x6 corner with a white 4x4 square inside; the four pawns stand 2 apart round its centre
+  const [x0, y0] = SQ_BASE[seat];
+  return { x: x0 + 3 + ((slot % 2) - 0.5) * 2, y: y0 + 3 - 0.4 + (Math.floor(slot / 2) - 0.5) * 2 };
 };
 
 /** Turn a point k quarter-turns clockwise about the board centre — so every device can show ITS player at the bottom-left. */
@@ -49,7 +49,7 @@ export const homeCells = HOME_CELLS;
 
 /* ── drawing helpers shared by the renderer and the game ── */
 /** Token radius and hop height in SVG units, per board. */
-export const UNIT = { square: { r: 0.7, hop: 0.8 } };
+export const UNIT = { square: { r: 0.72, hop: 0.7 } };
 
 /** Centres of the cells a token crosses going from relative position `from` to `to` (used to draw the last-move trail). */
 export function trailXY(board, seat, from, to, k = 0) {
