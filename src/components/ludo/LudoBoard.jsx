@@ -61,13 +61,14 @@ function Square({ seats, turnSeat, names, youSlot }) {
     cells.push(
       <g key={i}>
         <rect x={x - 0.5} y={y - 0.5} width="1" height="1" fill={si >= 0 ? COLORS[si] : '#fff'} opacity={si >= 0 && !seats.includes(si) ? 0.5 : 1} {...grid} />
-        {safe && <polygon points={star(x, y, 0.36)} fill="#fff" stroke="#7a7a7a" strokeWidth="0.045" strokeLinejoin="round" />}
+        {safe && <polygon points={star(x, y, 0.38)} fill="url(#lgold)" stroke="#9a6a0a" strokeWidth="0.045" strokeLinejoin="round" />}
+        {si >= 0 && <polygon points={star(x, y, 0.3)} fill="#fff" opacity=".9" />}
       </g>,
     );
   }
   const home = [];
   [0, 1, 2, 3].forEach((q) => {
-    for (let m = 1; m <= 5; m++) { const { x, y } = homeXY('square', q, m); home.push(<rect key={`h${q}${m}`} x={x - 0.5} y={y - 0.5} width="1" height="1" fill={COLORS[q]} opacity={seats.includes(q) ? 1 : 0.5} {...grid} />); }
+    for (let m = 1; m <= 5; m++) { const { x, y } = homeXY('square', q, m); home.push(<g key={`h${q}${m}`} opacity={seats.includes(q) ? 1 : 0.5}><rect x={x - 0.5} y={y - 0.5} width="1" height="1" fill={COLORS[q]} {...grid} /><path d="M-0.14,-0.2 L0.1,0 L-0.14,0.2" transform={`translate(${x} ${y}) rotate(${homeAngle('square', q)})`} fill="none" stroke="#fff" strokeOpacity={m === 5 ? 0.95 : 0.6} strokeWidth="0.09" strokeLinecap="round" strokeLinejoin="round" /></g>); }
   });
   // the arrow where each colour's lane begins (on the edge cell, pointing at the centre)
   const arrows = [[0.5, 7.5, 0], [7.5, 0.5, 90], [14.5, 7.5, 180], [7.5, 14.5, 270]].map(([x, y, a], q) => (
@@ -78,7 +79,9 @@ function Square({ seats, turnSeat, names, youSlot }) {
     return (
       <g key={q} opacity={seats.includes(q) ? 1 : 0.4}>
         <rect x={x} y={y} width="6" height="6" fill={COLORS[q]} />
-        <rect x={x + 1} y={y + 1} width="4" height="4" fill="#fff" />
+        <rect x={x} y={y} width="6" height="2.8" fill="#fff" opacity=".1" />
+        <rect x={x + 1} y={y + 1.08} width="4" height="4" rx="0.5" fill="#000" opacity=".16" />
+        <rect x={x + 1} y={y + 1} width="4" height="4" rx="0.5" fill="url(#lplate)" stroke={DARK[q]} strokeOpacity=".5" strokeWidth="0.06" />
         {[0, 1, 2, 3].map((k) => { const p = baseXY('square', q, k); return (
           <g key={k}>
             <circle cx={p.x} cy={p.y + 0.4} r="0.56" fill={COLORS[q]} />
@@ -97,6 +100,10 @@ function Square({ seats, turnSeat, names, youSlot }) {
       {bases}{cells}{home}{arrows}
       <polygon points="6,6 9,6 7.5,7.5" fill={COLORS[1]} /><polygon points="9,6 9,9 7.5,7.5" fill={COLORS[2]} />
       <polygon points="9,9 6,9 7.5,7.5" fill={COLORS[3]} /><polygon points="6,9 6,6 7.5,7.5" fill={COLORS[0]} />
+      <path d="M6,6 L9,9 M9,6 L6,9" stroke="#fff" strokeOpacity=".45" strokeWidth="0.05" />
+      <circle cx="7.5" cy="7.5" r="0.66" fill={COLORS[turnSeat] || '#fff'} opacity=".5" filter="url(#lglowS)" className="ludo-jewel-glow" />
+      <circle cx="7.5" cy="7.5" r="0.44" fill="url(#lgold)" stroke="#7a4d08" strokeWidth="0.04" />
+      <circle cx="7.5" cy="7.5" r="0.27" fill={COLORS[turnSeat] || '#fff'} stroke="#fff" strokeOpacity=".85" strokeWidth="0.04" className="ludo-jewel" />
     </g>
   );
 }

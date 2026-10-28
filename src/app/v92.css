@@ -1,0 +1,12 @@
+/* v92 — Ludo polish on top of v91: your strip reads as yours, a tossed die is never hidden by the board, tidier top strips. */
+.ludo .ludo-panel.on { z-index: 4; }
+.ludo .ludo-panel.me .nm { color: #ffe9a3; font-weight: 900; }
+.ludo .ludo-panel.me { border-color: #ffd24a; box-shadow: 0 8px 18px rgba(0, 0, 0, .35), 0 0 16px rgba(255, 210, 74, .32), inset 0 1px 0 rgba(255, 255, 255, .22); }
+.ludo .ludo-panel.me.on { animation: ludo-turn 1.5s ease-in-out infinite; }
+/* the strips above the board are a little lower so the board and your row get the room */
+.ludo .ludo-row.top .ludo-panel { padding-block: 6px 5px; }
+.ludo .ludo-row.top .ludo-panel .pips i { width: 7px; height: 7px; }
+/* the dock reads as a banner under your row, in your colour */
+.ludo .ludo-dock { border-width: 2px; }
+.ludo .ludo-say b { font-size: .95rem; }
+@media (prefers-reduced-motion: reduce) { .ludo .ludo-panel.me.on { animation: none; } }

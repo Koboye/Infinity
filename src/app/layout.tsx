@@ -42,6 +42,7 @@ import './v78.css';
 import './v79.css';
 import './v80.css';
 import './v84.css';
+import './v92.css';
 import RegisterSW from '@/components/RegisterSW';
 import ViewportFit from '@/components/ViewportFit';
 import '@fontsource/noto-sans-ethiopic/400.css';
@@ -86,7 +87,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ViewportFit />
         {/* tiny build label: shows which version of the app is really running on a phone */}
         <div aria-hidden="true" style={{ position: 'fixed', right: 6, bottom: 2, fontSize: 9, opacity: 0.35, pointerEvents: 'none', zIndex: 1, color: '#fff' }}>
-          {'v80  ' + (process.env.VERCEL_GIT_COMMIT_SHA || 'dev').slice(0, 7)}
+          {'v92  ' + (process.env.VERCEL_GIT_COMMIT_SHA || 'dev').slice(0, 7)}
         </div>
       </body>
     </html>
