@@ -46,6 +46,7 @@ export const STRINGS = {
 
     // ── game picker ──
     leaveConfirm: 'Leave this game? Your progress will be lost.',
+    pressBackAgain: 'Press back again to exit', installApp: 'Install app',
     games: 'Games', gebetaName: 'ገበጣ', checkersName: 'ዳማ', dominoesName: 'ዱምና',
     gebetaTag: 'Seed game', checkersTag: 'Draughts', dominoesTag: 'Tile game',
     pickGame: 'Choose a game',
@@ -191,6 +192,7 @@ export const STRINGS = {
 
     // ── game picker ──
     leaveConfirm: 'ከጨዋታው ትወጣለህ? እድገቱ ይጠፋል።',
+    pressBackAgain: 'ለመውጣት ተመለስን እንደገና ይጫኑ', installApp: 'መተግበሪያውን ጫን',
     games: 'ጨዋታዎች', gebetaName: 'ገበጣ', checkersName: 'ዳማ', dominoesName: 'ዱምና',
     gebetaTag: 'የዘር ጨዋታ', checkersTag: 'ድራፍት', dominoesTag: 'የሰድር ጨዋታ',
     pickGame: 'ጨዋታ ምረጥ',

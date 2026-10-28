@@ -14,6 +14,7 @@ import BottomNav from './BottomNav';
 import { WalletChip, SpinSheet, WelcomeGift } from './Wallet';
 import RewardedAdButton from './RewardedAdButton';
 import EarnOffer from './EarnOffer';
+import InstallPill from './InstallPill';
 import AdOverlay from './AdOverlay';
 import * as Ads from '@/lib/ads';
 import * as Wallet from '@/lib/wallet';
@@ -214,7 +215,28 @@ export default function GebetaApp() {
     setJoining(false);
   };
   const dismissInvite = (inv) => apiCall({ action: 'inviteDismiss', id: inv.id }, { retries: 0 }).catch(() => {});
-  const leaveGame = async () => { if (await confirm(t.leaveConfirm)) home(); };
+  const leaving = useRef(false);
+  const leaveGame = async () => { if (leaving.current) return; leaving.current = true; try { if (await confirm(t.leaveConfirm)) home(); } finally { leaving.current = false; } };
+
+  // The phone's BACK button works like the ‹ button instead of closing the app: one screen up, a confirmation inside a game, and a
+  // second press within 2 s at the home screen to really leave. A spare history entry is kept under the app so Back is always ours to handle.
+  const backRef = useRef(null), exitArm = useRef(0);
+  backRef.current = () => {
+    if (adRef.current) return 'stay';
+    if (sheet) { setSheet(null); return 'stay'; }
+    if (view.name === 'game' || view.name === 'room') { leaveGame(); return 'stay'; }
+    if (['ai', 'pass', 'online', 'leaders', 'rules'].includes(view.name)) { go('modes'); return 'stay'; }
+    if (view.name !== 'home') { home(); return 'stay'; }
+    if (Date.now() - exitArm.current < 2000) return 'exit';
+    exitArm.current = Date.now(); setToast({ text: t.pressBackAgain, info: true }); setTimeout(() => setToast(null), 2000); return 'stay';
+  };
+  useEffect(() => {
+    const keep = () => { try { window.history.pushState({ gebeta: 1 }, ''); } catch { /* ignore */ } };
+    keep();
+    const onPop = () => { const r = backRef.current ? backRef.current() : 'stay'; if (r === 'exit') { try { window.history.back(); } catch { /* ignore */ } } else keep(); };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
 
   const myPhoto = usePhoto();
   const me = { name: profile?.displayName || t.you, hero: profile?.avatar || 'lion', gender: settings.gender, photo: myPhoto };
@@ -286,6 +308,7 @@ export default function GebetaApp() {
       {user && !inGame && !adShow && <InviteInbox t={t} invites={social.invites} busy={joining} onJoin={joinInvite} onDismiss={dismissInvite} />}
       {adShow && <AdOverlay ad={adShow.ad} lang={lang} placement={adShow.placement} seconds={adShow.ad.durationSec} onShown={(a) => Ads.shown(adShow.placement, a)} onClick={(a) => Ads.clicked(a)} onClose={(_done, reason) => { adShow.resolve(reason); setAdShow(null); }} />}
       {onlineAvailable && (view.name === 'home' || view.name === 'modes') && !adShow && <EarnOffer lang={lang} context="open" variant="banner" active={splashDone && !sheet} onSpin={() => setSheet({ type: 'spin' })} />}
+      {view.name === 'home' && !adShow && !sheet && <InstallPill t={t} />}
       {sheet?.type === 'gift' && <WelcomeGift lang={lang} onClose={() => setSheet(null)} />}
       {sheet?.type === 'spin' && <SpinSheet lang={lang} onClose={() => setSheet(null)} />}
       <header className="topbar">
@@ -307,7 +330,7 @@ export default function GebetaApp() {
       </header>
       <main className={`screen${inGame ? ' ingame' : ''}`}>{body}</main>
       {coach && view.name === 'game' && <Coach t={t} game={coach} onClose={() => setCoach(null)} />}
-      {toast && <div className="toast" role="status">{toast.text ? `⚠️ ${toast.text}` : `${toast.icon} ${t.unlocked} ${toast[lang] || toast.en}`}</div>}
+      {toast && <div className="toast" role="status">{toast.text ? `${toast.info ? 'ℹ️' : '⚠️'} ${toast.text}` : `${toast.icon} ${t.unlocked} ${toast[lang] || toast.en}`}</div>}
       {dialog && (
         <div className="overlay" role="alertdialog" aria-modal="true">
           <div className="dialog">

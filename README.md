@@ -349,3 +349,9 @@ The v34 "walk one stone straight across" opening is replaced. Rule (`src/lib/geb
 - **Status banner.** Quiet night-glass, turning saffron when it is your turn to roll.
 - **Short screens.** Under 740 px of height the strips go compact and the board is sized so your row and the banner always stay on screen (checked at 360×640 and 400×860).
 - Styles in `v95.css`; engine and rules untouched.
+
+## v96 — Back button, install button
+
+- **Phone Back button no longer closes the app.** One screen up (setup/rules/online → modes → home); inside a game or an online room it asks "Leave this game?"; at the home screen the first press shows "Press back again to exit" and a second press within 2 s leaves. It also closes an open sheet first. Done with a spare history entry kept under the app (`GebetaApp.jsx`, `popstate` handler), so it works in the browser, the installed PWA and the Play Store (TWA) build.
+- **Install.** The browser's one-time `beforeinstallprompt` is now kept for the whole app (`RegisterSW.jsx`), so the Settings "Install app" button works whenever it is opened, and a new **Install app** pill (`InstallPill.jsx`) appears on the home screen where the browser can install (hidden once installed or dismissed).
+- For an Android store/APK build see `PLAYSTORE.md` (Trusted Web Activity); it needs the deployed domain and a signing key.

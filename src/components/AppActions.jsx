@@ -10,15 +10,18 @@ export default function AppActions() {
   useEffect(() => {
     const standalone = window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone;
     if (standalone) setInstalled(true);
+    if (window.__gebetaInstall) setEvt(window.__gebetaInstall);
+    const onReady = () => setEvt(window.__gebetaInstall || null);
+    window.addEventListener('gebeta-install-ready', onReady);
     const onPrompt = (e) => { e.preventDefault(); setEvt(e); };
     const onDone = () => { setInstalled(true); setEvt(null); };
     window.addEventListener('beforeinstallprompt', onPrompt);
     window.addEventListener('appinstalled', onDone);
-    return () => { window.removeEventListener('beforeinstallprompt', onPrompt); window.removeEventListener('appinstalled', onDone); };
+    return () => { window.removeEventListener('gebeta-install-ready', onReady); window.removeEventListener('beforeinstallprompt', onPrompt); window.removeEventListener('appinstalled', onDone); };
   }, []);
   const note = (m) => { setMsg(m); setTimeout(() => setMsg(''), 3500); };
   const install = async () => {
-    if (evt) { evt.prompt(); await evt.userChoice.catch(() => {}); setEvt(null); }
+    if (evt) { evt.prompt(); await evt.userChoice.catch(() => {}); window.__gebetaInstall = null; setEvt(null); }
     else if (ios) note('Tap Share, then “Add to Home Screen”.');
     else note('Open your browser menu and choose “Install app”.');
   };
