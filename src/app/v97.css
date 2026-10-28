@@ -1,0 +1,65 @@
+/* v97 — Ludo: "You" is ALWAYS on the visible screen, in every orientation.
+   Before: strips, board and banner were stacked in one column and the board was sized by guessing the viewport height, so on landscape
+   phones, tablets and desktop the bottom-left "You" strip fell below the screen edge.
+   Now the table is a grid that fills exactly the visible area. The board takes whatever is left AFTER the strips and the banner
+   (measured with container units), so nothing can overflow:
+     portrait   top strips · board · YOU (bottom-left) + bottom-right strip · banner
+     landscape  left column: top-left strip, YOU (bottom-left) · centre: board · right column: top-right strip, banner, bottom-right strip */
+
+html.in-game .screen.ingame:has(> .ludo) { overflow: hidden; }
+
+html.in-game .screen .ludo.ludo {
+  container-type: size;
+  flex: 1 1 0; min-height: 0; width: 100%; max-width: 760px; margin: 0 auto; padding: 0 0 2px;
+  display: grid; justify-content: stretch; align-content: stretch; align-items: stretch; justify-items: stretch; gap: 6px 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  grid-template-areas: 'tl tr' 'stage stage' 'bl br' 'dock dock';
+}
+/* the two rows are only wrappers now: their strips sit directly in the grid, placed by the corner of their own base */
+html.in-game .screen .ludo.ludo .ludo-row { display: contents; }
+html.in-game .screen .ludo.ludo .ludo-row[hidden] { display: none; }
+html.in-game .screen .ludo.ludo .ludo-panel { width: auto; max-width: none; min-width: 0; flex: none; margin: 0; align-self: stretch; }
+html.in-game .screen .ludo.ludo .ludo-panel.tl { grid-area: tl; }
+html.in-game .screen .ludo.ludo .ludo-panel.tr { grid-area: tr; }
+html.in-game .screen .ludo.ludo .ludo-panel.bl { grid-area: bl; }
+html.in-game .screen .ludo.ludo .ludo-panel.br { grid-area: br; }
+html.in-game .screen .ludo.ludo .ludo-dock { grid-area: dock; align-self: center; width: auto; margin: 0; }
+
+/* the stage is the board's room: the board is the biggest square that fits in it */
+html.in-game .screen .ludo.ludo .ludo-stage { grid-area: stage; container-type: size; display: grid; place-items: center; min-width: 0; min-height: 0; }
+html.in-game .screen .ludo.ludo .ludo-board { width: min(100cqw, 100cqh); height: min(100cqw, 100cqh); max-width: none; max-height: none; margin: 0; }
+
+/* landscape: strips beside the board so the board can use the full height */
+@media (orientation: landscape) {
+  html.in-game .screen .ludo.ludo {
+    max-width: 1100px;
+    grid-template-columns: clamp(170px, 25vw, 290px) minmax(0, 1fr) clamp(170px, 25vw, 290px);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-areas: 'tl stage tr' '. stage dock' 'bl stage br';
+  }
+}
+
+/* landscape: the banner lives in the right column, so say + tools stack instead of squeezing each other ("No m…") */
+@media (orientation: landscape) {
+  html.in-game .screen .ludo.ludo { grid-template-columns: clamp(170px, 21vw, 260px) minmax(0, 1fr) clamp(170px, 21vw, 260px); }
+  html.in-game .screen .ludo.ludo .ludo-dock { display: flex; flex-direction: column; align-items: stretch; gap: 6px; padding: 8px 10px; text-align: center; }
+  html.in-game .screen .ludo.ludo .ludo-say { flex: none; align-items: center; }
+  html.in-game .screen .ludo.ludo .ludo-say b { -webkit-line-clamp: 3; }
+  html.in-game .screen .ludo.ludo .ludo-tools { justify-content: center; flex-wrap: wrap; }
+  html.in-game .screen .ludo.ludo .ludo-log { flex: none; width: 100%; max-height: 22vh; }
+}
+
+/* tall phones / tablets in portrait: spend the spare height on bigger strips, dice and faces instead of dead gaps */
+@media (orientation: portrait) and (min-height: 860px) {
+  html.in-game .screen .ludo.ludo .ludo-panel { --sz: 54px; }
+  html.in-game .screen .ludo.ludo .ludo-panel.me { --sz: 60px; }
+  html.in-game .screen .ludo.ludo .ludo-panel .nm { font-size: .8rem; }
+  html.in-game .screen .ludo.ludo .ludo-dock { min-height: 58px; }
+}
+
+/* a table lamp: the pool of light behind the board takes the colour of whoever is playing, and changes smoothly each turn */
+html.in-game .screen .ludo.ludo .ludo-stage { position: relative; }
+html.in-game .screen .ludo.ludo .ludo-stage::before { content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 0; transition: background .6s;
+  background: radial-gradient(closest-side at 50% 50%, color-mix(in srgb, var(--tc) 38%, transparent) 0, color-mix(in srgb, var(--tc) 14%, transparent) 62%, transparent 100%); }
+html.in-game .screen .ludo.ludo .ludo-board { position: relative; z-index: 1; }

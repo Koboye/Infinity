@@ -127,9 +127,11 @@ export default function LudoOnline({ t, lang, room, uid, code, onExit, onSwitchR
           </div>
         );
       })}
+      <div className="ludo-stage">
       <div className="ludo-board" style={{ order: 1 }}>
         <LudoBoard board={g.board} seats={g.seats} tokens={toks} legal={legal} onPick={pick} hintKey={null} turnSeat={seatNow} previews={previews} trail={null} retTrail={retTrail} fx={[]} flying={NO_FLY} view={view} names={slotNames} youSlot={dp(g.seats[seat] ?? 0)} />
         {flash && <div className={`flash ${flash.kind}`} key={flash.k} onAnimationEnd={() => setFlash(null)}>{flash.text}</div>}
+      </div>
       </div>
       <div className={`ludo-dock${canRoll ? ' ready' : ''}`} style={{ '--dc': color, order: 4 }}>
         <div className="ludo-say" aria-live="polite"><b key={L.err || status}>{L.err || status}</b></div>

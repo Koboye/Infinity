@@ -265,9 +265,11 @@ export default function LudoGame({ t, mode, level = 'medium', ruleset = 'classic
           </div>
         );
       })}
+      <div className="ludo-stage">
       <div className="ludo-board" style={{ order: 1 }}>
         <LudoBoard board={game.board} seats={game.seats} tokens={toks} legal={legal} onPick={userPick} hintKey={hintKey} turnSeat={seatNow} previews={previews} trail={trail} retTrail={retTrail} fx={fx} flying={flying} view={view} names={slotNames} youSlot={youSlot} />
         {flash && <div className={`flash ${flash.kind}`} key={flash.k} onAnimationEnd={() => setFlash(null)}>{flash.text}</div>}
+      </div>
       </div>
       <div className={`ludo-dock${canRoll ? ' ready' : ''}`} style={{ '--dc': color, order: 4 }}>
         <div className="ludo-say" aria-live="polite"><b key={status}>{status}</b>{canRoll && <small>{t.ludoRollHint}</small>}</div>
