@@ -49,7 +49,7 @@ export const homeCells = HOME_CELLS;
 
 /* ── drawing helpers shared by the renderer and the game ── */
 /** Token radius and hop height in SVG units, per board. */
-export const UNIT = { square: { r: 0.58, hop: 0.7 } };
+export const UNIT = { square: { r: 0.7, hop: 0.8 } };
 
 /** Centres of the cells a token crosses going from relative position `from` to `to` (used to draw the last-move trail). */
 export function trailXY(board, seat, from, to, k = 0) {

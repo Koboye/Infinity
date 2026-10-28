@@ -161,7 +161,7 @@ function Square({ seats, turnSeat, names, youSlot }) {
 function Pawn({ seat, fin }) {
   const rim = { stroke: '#fff', strokeOpacity: 0.95, strokeWidth: 0.085, strokeLinejoin: 'round' };
   return (
-    <g transform={`translate(0 ${fin ? 0.1 : 0.2}) scale(0.9 1.1)`}>
+    <g transform={`translate(0 ${fin ? 0.1 : 0.2}) scale(0.82 1.12)`}>
       <ellipse cx="0" cy="0.6" rx="0.92" ry="0.3" fill={DARK[seat]} {...rim} />
       <path d="M-0.5,-0.32 C-0.5,0.12 -0.84,0.3 -0.86,0.5 C-0.5,0.68 0.5,0.68 0.86,0.5 C0.84,0.3 0.5,0.12 0.5,-0.32 Z" fill={`url(#lb${seat})`} {...rim} />
       <path d="M-0.66,0.2 Q0,0.4 0.66,0.2 L0.72,0.34 Q0,0.56 -0.72,0.34 Z" fill="url(#lgold)" stroke="#7a4d08" strokeOpacity=".6" strokeWidth="0.03" />
