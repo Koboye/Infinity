@@ -1,0 +1,59 @@
+/* v95 — Ludo, complete design upgrade: "mesob table at night".
+   Palette  night #121641 · deep #0b0e2e · saffron #F2B632 · gold #FFC928 · ivory #FFF8E8 (+ red #E23B3B, green #1FA35B, yellow #FFC928, blue #2D8CFF for the players)
+   Type     Figtree for names and status (already loaded); numbers tabular.
+   Idea     the board is the one bold thing — a lacquered frame with a woven tilet trim; everything around it stays quiet. */
+
+/* the table: deep indigo with a faint woven texture, lit from the top */
+body:has(.ludo) { background: radial-gradient(120% 60% at 50% -5%, #2c3290 0%, #171c59 42%, #0b0e2e 100%) fixed; }
+body:has(.ludo)::before { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: .6;
+  background: repeating-conic-gradient(from 45deg at 50% 50%, rgba(255, 248, 232, .045) 0 25%, transparent 0 50%) 0 0 / 20px 20px; }
+.ludo { position: relative; z-index: 1; }
+
+/* the board: a lacquered object that sits on the table */
+.ludo-svg { filter: drop-shadow(0 16px 20px rgba(3, 4, 20, .6)); border-radius: 22px; }
+.ludo-board::before { opacity: .45; }
+
+/* player cards: night-glass nameplates with a coloured ribbon on top */
+.ludo .ludo-panel { background: linear-gradient(180deg, rgba(255, 248, 232, .11), rgba(255, 248, 232, .03)), #151a52; border: 1.5px solid rgba(255, 248, 232, .16); border-top: 5px solid var(--pc); border-radius: 18px;
+  box-shadow: 0 10px 20px rgba(3, 4, 20, .4), inset 0 1px 0 rgba(255, 255, 255, .1); }
+.ludo .ludo-panel .nm { color: #FFF8E8; letter-spacing: .01em; font-weight: 800; }
+.ludo .ludo-panel .pips i { border-color: rgba(255, 248, 232, .55); }
+.ludo .ludo-panel .pips i.out { background: var(--pc); border-color: var(--pc); }
+.ludo .ludo-panel .bar { background: rgba(0, 0, 0, .45); height: 5px; }
+.ludo .ludo-panel.on { border-color: var(--pc); border-top-width: 5px; box-shadow: 0 0 0 2px var(--pc), 0 0 26px color-mix(in srgb, var(--pc) 55%, transparent), 0 10px 20px rgba(3, 4, 20, .4); animation: none; }
+.ludo .ludo-panel:not(.on) { opacity: .88; }
+
+/* YOU: saffron ribbon, warm night-glass and a small crown before your name */
+.ludo .ludo-panel.me { background: linear-gradient(180deg, rgba(242, 182, 50, .2), rgba(255, 248, 232, .04)), #1a1d5a; border-top-color: #F2B632; border-color: rgba(242, 182, 50, .6); border-top-width: 5px; opacity: 1; box-shadow: 0 10px 20px rgba(3, 4, 20, .4), 0 0 18px rgba(242, 182, 50, .25), inset 0 1px 0 rgba(255, 255, 255, .14); }
+.ludo .ludo-panel.me .nm { color: #FFE08A; }
+.ludo .ludo-panel.me .nm .tx::before { content: '♛ '; color: #FFC928; text-shadow: 0 0 8px rgba(255, 201, 40, .7); }
+.ludo .ludo-panel.me.on { box-shadow: 0 0 0 2px #F2B632, 0 0 28px rgba(242, 182, 50, .6), 0 10px 20px rgba(3, 4, 20, .4); }
+
+/* dice: ivory ivory-soft faces, ink pips */
+.ludo-die3d .face { background: linear-gradient(145deg, #fffdf6 0%, #f6ecd2 55%, #e2d2a8 100%); }
+.ludo-die3d .face i.pip { background: radial-gradient(circle at 35% 30%, #4a4f9a, #121641 72%); }
+
+/* the status banner: quiet night-glass, and saffron when it is time for you to roll */
+.ludo .ludo-dock { background: linear-gradient(180deg, rgba(255, 248, 232, .10), rgba(255, 248, 232, .03)), #151a52; border: 1.5px solid rgba(255, 248, 232, .18); border-radius: 18px; color: #FFF8E8; transition: background .4s, border-color .4s, box-shadow .4s; }
+.ludo .ludo-dock.ready { background: linear-gradient(180deg, #FFE08A, #F2B632); border-color: #FFF1B8; box-shadow: 0 0 0 2px rgba(242, 182, 50, .5), 0 0 30px rgba(242, 182, 50, .55), 0 10px 20px rgba(3, 4, 20, .4); }
+.ludo .ludo-dock.ready .ludo-say b { color: #2b1a02; }
+.ludo .ludo-dock.ready .ludo-tools .tool { background: rgba(43, 26, 2, .12); border-color: rgba(43, 26, 2, .3); color: #2b1a02; }
+.ludo .ludo-dock.ready .ludo-tools .tool.on { background: #2b1a02; color: #FFE08A; }
+.ludo .ludo-say b { color: #FFF8E8; }
+
+@media (prefers-reduced-motion: reduce) { .ludo .ludo-panel.on { transition: none; } }
+.ludo .ludo-dock.ready .ludo-tools .tool { background-image: none; }
+.ludo .ludo-dock.ready .ludo-tools .tool.on { background: #2b1a02; border-color: #2b1a02; color: #FFE08A; }
+.ludo .ludo-dock.ready .ludo-tools .tool:disabled { opacity: .45; }
+
+/* short screens: compact strips and a board sized for what is left, so your row and the status banner never leave the screen */
+@media (max-height: 740px) {
+  .ludo .ludo-panel { --sz: 44px; min-height: 0; padding: 6px 8px 5px; gap: 3px 10px; }
+  .ludo .ludo-panel.me { --sz: 50px; }
+  .ludo .ludo-panel .pips { display: none; }
+  .ludo .ludo-panel .nm { font-size: .68rem; }
+  .ludo .ludo-dock { min-height: 44px; padding-block: 4px; }
+  .ludo .ludo-tools .tool { width: 32px; height: 32px; min-height: 32px; }
+  .ludo .ludo-board { width: min(100%, calc(var(--app-h, 100dvh) - 300px), 680px); }
+  .ludo { min-height: 0; }
+}

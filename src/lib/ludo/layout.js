@@ -16,7 +16,7 @@ const SQ_BASE = [[0, 0], [9, 0], [9, 9], [0, 9]]; // [x0, y0] of each 6×6 base:
 SQ_BASE[0] = [0, 0]; SQ_BASE[1] = [9, 0]; SQ_BASE[2] = [9, 9]; SQ_BASE[3] = [0, 9];
 const rc = ([r, c]) => ({ x: c + 0.5, y: r + 0.5 });
 
-export const viewBoxOf = () => '0 0 15 15';
+export const viewBoxOf = () => '-0.5 -0.5 16 16';   // the 15×15 grid plus a half-cell margin for the frame
 
 /** Absolute centre of every ring cell (index 0 … ringLen-1). */
 export const ringXY = (board, idx) => rc(RING_RC[idx]);

@@ -340,3 +340,12 @@ The v34 "walk one stone straight across" opening is replaced. Rule (`src/lib/geb
 
 - **Random opener.** Every new offline game (computer or pass-and-play) now starts with a random player, not always you. Online rooms already tossed a coin.
 - **Kill-first computer.** A capture is now worth the victim's whole journey plus the six it needs to leave the yard, and the computer never makes a random slip when a kill is available. In 300 simulated 4-player games it took the kill 100% of the time on medium and hard (easy: 90%), apart from rare moves that finish a pawn instead. Code: `rankMoves` / `chooseSmart` in `src/lib/ludo/ai.js`.
+
+## v95 — Ludo: complete design upgrade ("mesob table at night")
+
+- **Board.** The board now sits in a lacquered indigo frame with a woven tilet-style trim and a gold line (the SVG grid gained a half-cell margin: `viewBoxOf` is `-0.5 -0.5 16 16`). Warm ivory tiles, richer player colours (red `#E23B3B`, green `#1FA35B`, yellow `#FFC928`, blue `#2D8CFF`), gold safe stars, and a gold ring round the centre jewel.
+- **Table.** Deep-indigo background lit from the top with a faint woven texture.
+- **Players.** Night-glass nameplates with a coloured ribbon; the player on turn glows in their colour. Your strip has a saffron ribbon and a ♛ before your name.
+- **Status banner.** Quiet night-glass, turning saffron when it is your turn to roll.
+- **Short screens.** Under 740 px of height the strips go compact and the board is sized so your row and the banner always stay on screen (checked at 360×640 and 400×860).
+- Styles in `v95.css`; engine and rules untouched.

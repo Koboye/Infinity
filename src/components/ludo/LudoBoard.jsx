@@ -4,11 +4,12 @@ import { BOARDS, finishOf } from '@/lib/ludo/engine.js';
 import { ringXY, homeXY, baseXY, finishXY, tokenXY, viewBoxOf, homeAngle, UNIT } from '@/lib/ludo/layout.js';
 
 // colours are by SCREEN position (top-left, top-right, bottom-right, bottom-left): the bottom-left one is always YOU, in yellow
-export const COLORS = ['#E9202B', '#00A651', '#FFDD12', '#2AA9FF'];
+export const COLORS = ['#E23B3B', '#1FA35B', '#FFC928', '#2D8CFF'];
 export const COLOR_NAMES = ['red', 'green', 'yellow', 'blue'];
-const DARK = ['#8f0f16', '#00642f', '#a88a00', '#0a62a8'];
-const LIGHT = ['#ff9a9e', '#8be8ae', '#fff58f', '#a5dcff'];
-const INK = '#1d2056';
+const DARK = ['#8a1620', '#0d6a38', '#a67c00', '#124f9e'];
+const LIGHT = ['#ffa3a0', '#8fe6b0', '#fff0a0', '#a9d3ff'];
+const INK = '#121641';
+const IVORY = '#FFF8E8', TILET = ['#E23B3B', '#FFC928', '#1FA35B', '#FFF8E8', '#2D8CFF', '#FFC928'];
 
 const star = (x, y, r) => {
   const pts = Array.from({ length: 10 }, (_, i) => { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * 0.42 : r; return `${(x + rr * Math.cos(a)).toFixed(3)},${(y + rr * Math.sin(a)).toFixed(3)}`; });
@@ -54,13 +55,13 @@ const pathOf = (pts) => 'M' + pts.map((p) => `${+p.x.toFixed(3)} ${+p.y.toFixed(
  */
 function Square({ seats, turnSeat, names, youSlot }) {
   const B = BOARDS.square, N = B.ringLen;
-  const grid = { stroke: '#8f8f8f', strokeWidth: 0.035 };
+  const grid = { stroke: '#b9a98a', strokeWidth: 0.035 };
   const cells = [];
   for (let i = 0; i < N; i++) {
     const { x, y } = ringXY('square', i), si = B.seatStart.indexOf(i), safe = si < 0 && B.seatStart.some((st) => B.safeOffsets.some((o) => (st + o) % N === i));
     cells.push(
       <g key={i}>
-        <rect x={x - 0.5} y={y - 0.5} width="1" height="1" fill={si >= 0 ? COLORS[si] : '#fff'} opacity={si >= 0 && !seats.includes(si) ? 0.5 : 1} {...grid} />
+        <rect x={x - 0.5} y={y - 0.5} width="1" height="1" fill={si >= 0 ? COLORS[si] : IVORY} opacity={si >= 0 && !seats.includes(si) ? 0.5 : 1} {...grid} />
         {safe && <polygon points={star(x, y, 0.38)} fill="url(#lgold)" stroke="#9a6a0a" strokeWidth="0.045" strokeLinejoin="round" />}
         {si >= 0 && <polygon points={star(x, y, 0.3)} fill="#fff" opacity=".9" />}
       </g>,
@@ -95,12 +96,17 @@ function Square({ seats, turnSeat, names, youSlot }) {
   });
   return (
     <g>
-      <rect x="-0.06" y="-0.06" width="15.12" height="15.12" fill="#2b2b2b" />
-      <rect x="0" y="0" width="15" height="15" fill="#fff" />
+      <rect x="-0.5" y="-0.5" width="16" height="16" fill="url(#lframe)" />
+      <rect x="-0.455" y="-0.455" width="15.91" height="15.91" rx="0.5" fill="none" stroke="url(#lgold)" strokeWidth="0.06" />
+      {Array.from({ length: 30 }, (_, i) => { const t = 0.25 + i * 0.5, c = TILET[i % TILET.length]; return [[t, -0.27], [t, 15.27], [-0.27, t], [15.27, t]].map(([tx, ty], k) => <path key={`t${i}${k}`} d="M0,-0.13 L0.13,0 L0,0.13 L-0.13,0 Z" transform={`translate(${tx} ${ty})`} fill={c} stroke="#0b0e2e" strokeOpacity=".5" strokeWidth="0.02" />); })}
+      <rect x="-0.06" y="-0.06" width="15.12" height="15.12" fill="#0b0e2e" />
+      <rect x="0" y="0" width="15" height="15" fill={IVORY} />
       {bases}{cells}{home}{arrows}
       <polygon points="6,6 9,6 7.5,7.5" fill={COLORS[1]} /><polygon points="9,6 9,9 7.5,7.5" fill={COLORS[2]} />
       <polygon points="9,9 6,9 7.5,7.5" fill={COLORS[3]} /><polygon points="6,9 6,6 7.5,7.5" fill={COLORS[0]} />
       <path d="M6,6 L9,9 M9,6 L6,9" stroke="#fff" strokeOpacity=".45" strokeWidth="0.05" />
+      <circle cx="7.5" cy="7.5" r="0.95" fill="none" stroke="url(#lgold)" strokeWidth="0.09" />
+      <circle cx="7.5" cy="7.5" r="0.8" fill="none" stroke="#fff" strokeOpacity=".6" strokeWidth="0.03" strokeDasharray="0.08 0.12" />
       <circle cx="7.5" cy="7.5" r="0.66" fill={COLORS[turnSeat] || '#fff'} opacity=".5" filter="url(#lglowS)" className="ludo-jewel-glow" />
       <circle cx="7.5" cy="7.5" r="0.44" fill="url(#lgold)" stroke="#7a4d08" strokeWidth="0.04" />
       <circle cx="7.5" cy="7.5" r="0.27" fill={COLORS[turnSeat] || '#fff'} stroke="#fff" strokeOpacity=".85" strokeWidth="0.04" className="ludo-jewel" />
