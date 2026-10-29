@@ -66,6 +66,13 @@ export function GameGrid({ t, onPick }) {
         <small className="gg-tag">Hill climb + race the clock</small>
         <span className="gg-foot"><span className="gg-mode">{t.badgeOffline}</span></span>
       </a>
+      {/* Pedal Rush: stand-alone cycle racer (/games/pedal-rush/), a link card like the other arcade pages. */}
+      <a role="listitem" className="gg-card" href="/games/pedal-rush/" style={{ '--accent': '#25C68E', '--i': order.length + 2, textDecoration: 'none' }}>
+        <span className="gg-art"><GameIcon game="pedalrush" size={52} /></span>
+        <b className="gg-name">Pedal Rush</b>
+        <small className="gg-tag">Cycle racing</small>
+        <span className="gg-foot"><span className="gg-mode">{t.badgeOffline}</span></span>
+      </a>
     </div>
   );
 }

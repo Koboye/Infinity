@@ -60,6 +60,19 @@ export function GameIcon({ game, size = 44 }) {
       </svg>
     );
   }
+  if (game === 'pedalrush') {
+    return (
+      <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden="true">
+        <rect x="3" y="3" width="42" height="42" rx="9" fill="#17606B" />
+        <path d="M20 22 L4 45 H44 L28 22Z" fill="#454A56" />
+        <path d="M24 24 V45" stroke="#fff" strokeWidth="1.6" strokeDasharray="4 3" />
+        <ellipse cx="24" cy="38" rx="2.6" ry="7" fill="#14161F" />
+        <rect x="19" y="22" width="10" height="13" rx="4" fill="#fff" stroke="#06191D" strokeWidth="1.4" />
+        <circle cx="24" cy="18" r="4.6" fill="#35D0FF" stroke="#06191D" strokeWidth="1.4" />
+        <circle cx="38" cy="12" r="4" fill="#FFC83D" />
+      </svg>
+    );
+  }
   if (game === 'dominoes') {
     const pip = (x, y) => <circle key={`${x}-${y}`} cx={x} cy={y} r="2.1" fill="#1b1209" />;
     return (
