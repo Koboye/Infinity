@@ -24,7 +24,6 @@ A curated list of free, open-source games, grouped by type.
 ## Car stunts and driving
 - **Stunt Rally**: rally and stunt racing with ramps, loops and jumps
 - **Rigs of Rods**: soft-body physics vehicle simulator
-- **Ultimate Stunts**: remake of the DOS game Stunts (inactive since 2017)
 - **Trigger Rally**: off-road rally
 - **Speed Dreams**: motorsport simulator
 
