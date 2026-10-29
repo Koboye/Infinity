@@ -1,4 +1,0 @@
-// Bundles only the three.js classes Sky Crawler uses into public/games/sky-crawler/three.min.js (global THREE).
-// Rebuild: npx -p three -p esbuild esbuild games-src/sky-crawler/three-shim.js --bundle --minify --format=iife --outfile=public/games/sky-crawler/three.min.js
-import { WebGLRenderer, Scene, PerspectiveCamera, AmbientLight, DirectionalLight, Mesh, Group, BoxGeometry, CylinderGeometry, SphereGeometry, ConeGeometry, OctahedronGeometry, RingGeometry, MeshLambertMaterial, MeshBasicMaterial, BufferGeometry, BufferAttribute, Points, PointsMaterial, Color, Fog, DoubleSide } from 'three';
-window.THREE = { WebGLRenderer, Scene, PerspectiveCamera, AmbientLight, DirectionalLight, Mesh, Group, BoxGeometry, CylinderGeometry, SphereGeometry, ConeGeometry, OctahedronGeometry, RingGeometry, MeshLambertMaterial, MeshBasicMaterial, BufferGeometry, BufferAttribute, Points, PointsMaterial, Color, Fog, DoubleSide };
