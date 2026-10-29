@@ -11,6 +11,7 @@ canvas{position:fixed;inset:0}
 #hud .bar{flex:1;max-width:220px;height:14px;border:2px solid #fff;border-radius:8px;overflow:hidden;background:#0006}
 #fuel{display:block;height:100%;background:linear-gradient(90deg,#ff5a36,#ffd23f);width:100%}
 #pb{margin-left:auto;pointer-events:auto;font-size:20px;background:#0007;color:#fff;border:0;border-radius:10px;padding:6px 12px}
+#ab{margin-left:auto;pointer-events:auto;font-size:20px;background:#0007;color:#fff;border:0;border-radius:10px;padding:6px 12px}#ab.on{background:#2b8a3e}#pb{margin-left:0}
 #pad{position:fixed;left:0;right:0;bottom:env(safe-area-inset-bottom,0);display:flex;justify-content:space-between;padding:14px}
 #pad button{width:min(30vw,150px);height:min(22vh,100px);border:0;border-radius:20px;font-size:22px;font-weight:800;color:#fff;background:#0007;backdrop-filter:blur(4px)}
 #pad button.on{background:#ffb703;color:#222}
@@ -30,7 +31,7 @@ h1{margin:0;letter-spacing:3px;font-size:28px;background:linear-gradient(90deg,#
 .hide{display:none!important}
 </style></head><body>
 <canvas id="c"></canvas>
-<div id="hud" class="hide"><div><b id="dist">0</b> m</div><div>🪙 <b id="coin">0</b></div><div class="bar"><i id="fuel"></i></div><button id="pb">⏸</button></div>
+<div id="hud" class="hide"><div><b id="dist">0</b> m</div><div>🪙 <b id="coin">0</b></div><div class="bar"><i id="fuel"></i></div><button id="ab">🧠</button><button id="pb">⏸</button></div>
 <div id="pad" class="hide"><button id="bBrake">BRAKE</button><button id="bGas">GAS</button></div>
 <div id="menu"></div>
 <script>
@@ -40,7 +41,7 @@ function rs(){const d=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight
 addEventListener('resize',rs);rs();
 
 /* ---------- save ---------- */
-let save={coins:0,best:{},veh:0,world:0,ownV:[1,0,0],ownW:[1,0,0],upg:[[0,0,0,0],[0,0,0,0],[0,0,0,0]]};
+let save={assist:1,coins:0,best:{},veh:0,world:0,ownV:[1,0,0],ownW:[1,0,0],upg:[[0,0,0,0],[0,0,0,0],[0,0,0,0]]};
 try{const s=localStorage.getItem('skycrawler1');if(s)save=Object.assign(save,JSON.parse(s))}catch(e){}
 const persist=()=>{try{localStorage.setItem('skycrawler1',JSON.stringify(save))}catch(e){}};
 
@@ -94,7 +95,7 @@ function stats(){
 }
 
 /* ---------- game state ---------- */
-let car,run,state='menu',mode='garage',cam={x:0,y:0},parts=[],pops=[];
+let SIM=0,SIMDEAD=0,car,run,state='menu',mode='garage',cam={x:0,y:0},parts=[],pops=[];
 const keys={gas:0,brake:0};
 let SC=1;const OX=()=>W*.38,OY=()=>H*.58;
 
@@ -104,15 +105,31 @@ function start(){
   run={dist:0,coins:0,flips:0,combo:0,ct:0,got:new Set(),over:''};
   parts=[];pops=[];cam.x=0;cam.y=car.y;state='play';
   menu.classList.add('hide');$('hud').classList.remove('hide');$('pad').classList.remove('hide');
-  audio();showPrev();
+  $('ab').classList.toggle('on',!!save.assist);audio();showPrev();
+}
+function sim(vi,mode=1,secs=7){ /* test-drive a vehicle on the current planet (bot: full gas, hands-off in the air); returns metres */
+  const sv=[save.veh,car,run,parts,pops,state,keys.gas,keys.brake];SIM=mode;SIMDEAD=0;save.veh=vi;const S=stats();let d=0;
+  car={S,x:0,y:-S.h-S.r+4,a:0,vx:0,vy:0,w:0,wr:[0,0],fuel:S.fuel,air:0,acc:0,idle:0};run={dist:0,coins:0,flips:0,combo:0,ct:0,got:new Set(),over:''};parts=[];pops=[];state='play';
+  for(let f=0;f<secs*60&&!SIMDEAD;f++){keys.gas=car.air>0?0:1;keys.brake=0;for(let i=0;i<8;i++)step(1/480);car.fuel=Math.max(0,car.fuel-1.5/60);d=Math.max(d,car.x/40)}
+  [save.veh,car,run,parts,pops,state,keys.gas,keys.brake]=sv;sim.dead=SIMDEAD;SIM=0;return d}
+let advMsg='';
+function smartPick(){
+  applyWorld();const own=i=>i<3||save.ownV[i];let bi=save.veh,bs=-1,buy=-1,bb=0;
+  const top=(f,n)=>VEH.map((v,i)=>i).filter(f).sort((x,y)=>VEH[y].e-VEH[x].e).slice(0,n); /* test only the 12 strongest owned and 10 strongest affordable, so it answers instantly */
+  new Set([...(own(save.veh)?[save.veh]:[]),...top(i=>own(i),12)]).forEach(i=>{const d=sim(i,1,5);if(d>bs){bs=d;bi=i}});
+  top(i=>!own(i)&&VEH[i].cost<=save.coins,10).forEach(i=>{const d=sim(i,1,5);if(d>bb){bb=d;buy=i}});
+  save.veh=bi;
+  advMsg=buy>=0&&bb>bs*1.08?'🧠 Best buy here: <b>'+VEH[buy].n+'</b> (🪙'+VEH[buy].cost+') drives '+Math.round((bb/Math.max(1,bs)-1)*100)+'% farther':'🧠 Picked <b>'+VEH[bi].n+'</b>: '+Math.round(bs)+' m in a 5 s test';
 }
 function pop(t){pops.push({t,l:2})}
 
 function crash(why){
+  if(SIM){SIMDEAD=1;return}
   if(state!=='play')return;
+  run.tip=why==='OUT OF FUEL'?'Grab the red fuel cans and ease off the gas on flat road to save fuel.':car.air>.2?(save.assist?'You landed badly. In the air, hold BRAKE to tip the nose down, GAS to tip it up.':'You landed badly. Turn on the 🧠 button and let go in the air: it levels the car for you.'):Math.abs(car.a)>1.1?'Too steep. Ease off the gas on big climbs so the front does not flip over.':'Look ahead: slow down before sharp drops and ramps.';
   state='dying';run.over=why;car.dead=1;
   for(let i=0;i<30;i++)parts.push({x:car.x,y:car.y,vx:(Math.random()-.5)*500,vy:-Math.random()*500,l:1,c:car.S.col});
-  setTimeout(over,900);
+  setTimeout(over,450);
 }
 function over(){
   const m=Math.floor(run.dist),bonus=Math.floor(m/5),key=save.veh+'-'+save.world;
@@ -143,7 +160,12 @@ function step(dt){
         parts.push({x:px,y:gy,vx:-vt*.15+(Math.random()-.5)*80,vy:-Math.random()*200,l:.6,c:Wd.dirt});
     }else c.wr[i]+=(thr?22:keys.brake?0:7)*dt;
   }
-  if(!touch)c.w+=(keys.brake-thr)*S.air*dt;
+  if(!touch){c.w+=(keys.brake-thr)*S.air*dt;
+    if((save.assist||SIM===1)&&!keys.gas&&!keys.brake){ /* 🧠 hands-off: predict the landing and level the car with that slope */
+      let px=c.x,py=c.y,vx=c.vx,vy=c.vy,tl=-1;
+      for(let k=1;k<=24;k++){vy+=g*.05;px+=vx*.05;py+=vy*.05;if(py+S.h+S.r>ground(px)){tl=k*.05;break}}
+      if(tl>0&&tl<.9){let er=Math.atan((ground(px+2)-ground(px-2))/4)-c.a;er=Math.atan2(Math.sin(er),Math.cos(er));c.w+=Math.max(-40,Math.min(40,er*26-c.w*5.5))*dt}
+    }}
   c.w+=tq/S.I*dt;c.w*=1-.25*dt;
   c.vx+=fx*dt;c.vy+=fy*dt;c.x+=c.vx*dt;c.y+=c.vy*dt;c.a+=c.w*dt;
   const pts=[[2,-(S.h+20)],[-S.L*.55,-(S.h+4)],[S.L*.55,-(S.h+4)]];
@@ -295,7 +317,8 @@ function render(){
     <div class=stat>📏 ${Math.floor(run.dist)} m ${run.newBest?'🏆 NEW BEST!':'(best '+bt+' m)'}</div>
     <div class=stat>🪙 ${run.coins} collected + ${run.bonus} distance = <b>${run.total}</b></div>
     <div class=stat>🔄 ${run.flips} flips</div>
-    <button class=go data-a=start>RETRY</button><button class=go style="background:#3a4160;color:#fff;margin-top:8px;font-size:18px" data-a=garage>GARAGE</button></div>`;return;
+    <p class=sub>💡 ${run.tip||''}</p>
+    <button class=go data-a=start>RETRY ↵</button><button class=go style="background:#3a4160;color:#fff;margin-top:8px;font-size:18px" data-a=garage>GARAGE</button></div>`;return;
   }
   if(mode==='pause'){
     menu.innerHTML=`<div class=card><h1>PAUSED</h1><button class=go data-a=resume>RESUME</button><button class=go style="background:#3a4160;color:#fff;margin-top:8px;font-size:18px" data-a=garage>QUIT TO GARAGE</button></div>`;return;
@@ -310,11 +333,13 @@ function render(){
   <div class=sel><button data-a=pw>‹</button><div><b>${w.n}</b><small>${RDN[w.rd||0]} · ${w.g<600?'low gravity':w.g>1000?'heavy gravity':'normal gravity'}${w.gm<.6?' · icy':''} · ${ownW?'owned':'🪙'+w.cost}</small></div><button data-a=nw>›</button></div>
   <select data-s=world>${WORLD.map((x,i)=>`<option value=${i} ${i===save.world?'selected':''}>${i+1}. ${x.n}${i===0||save.ownW[i]?'':' 🪙'+x.cost}</option>`).join('')}</select>
   ${ownW?'':`<button class=buy data-a=buyw>Unlock world 🪙${w.cost}</button>`}
+  <button class=buy style="background:#5b3fd0;margin-top:6px" data-a=smart>🧠 SMART PICK for this planet</button>${advMsg?`<p class=sub>${advMsg}</p>`:''}
   ${up}
   <button class=go data-a=start ${ownV&&ownW?'':'disabled'}>DRIVE</button>
   <p><small>Hit the ramps, chain flips for COMBO x5 · </small><small>RIGHT / D / W = gas (tilt back in air) · LEFT / A / S = brake (tilt forward)</small></p></div>`;
 }
 menu.addEventListener('change',e=>{const k=e.target.dataset.s;if(!k)return;save[k]=+e.target.value;persist();render()});
+$('ab').onclick=()=>{save.assist=save.assist?0:1;persist();$('ab').classList.toggle('on',!!save.assist);pop(save.assist?'🧠 ASSIST ON':'ASSIST OFF')};
 const cyc=(k,n,d)=>save[k]=(save[k]+d+n)%n;
 menu.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b||b.disabled)return;
@@ -324,6 +349,7 @@ menu.addEventListener('click',e=>{
   else if(a==='buyv'&&save.coins>=VEH[save.veh].cost){save.coins-=VEH[save.veh].cost;save.ownV[save.veh]=1}
   else if(a==='buyw'&&save.coins>=WORLD[save.world].cost){save.coins-=WORLD[save.world].cost;save.ownW[save.world]=1}
   else if(a==='up'){const u=UP(),cost=150*(u[i]+1)**2;if(u[i]<5&&save.coins>=cost){save.coins-=cost;u[i]++}}
+  else if(a==='smart'){smartPick()}
   else if(a==='start'){persist();start();return}
   else if(a==='resume'){menu.classList.add('hide');state='play';return}
   else if(a==='garage'){state='menu';mode='garage';$('hud').classList.add('hide');$('pad').classList.add('hide')}
@@ -335,6 +361,8 @@ $('pb').onclick=pause;
 /* ---------- input ---------- */
 const KG=['ArrowRight','ArrowUp','KeyD','KeyW','Space'],KB=['ArrowLeft','ArrowDown','KeyA','KeyS'];
 addEventListener('keydown',e=>{
+  if(state==='menu'&&mode==='over'&&['Enter','Space','KeyR'].includes(e.code)){e.preventDefault();start();return}
+  if(state==='menu'&&mode==='pause'&&e.code==='Enter'){menu.classList.add('hide');state='play';return}
   if(e.code==='Escape'||e.code==='KeyP'){pause();return}
   if(KG.includes(e.code))keys.gas=1;if(KB.includes(e.code))keys.brake=1;
   if(state==='play'&&(KG.includes(e.code)||KB.includes(e.code)||e.code==='Space'))e.preventDefault();setPad();
