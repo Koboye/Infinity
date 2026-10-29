@@ -133,11 +133,17 @@ html,body{font-family:"Arial Rounded MT Bold","Trebuchet MS","Segoe UI",system-u
 .xpb{height:16px;border-radius:10px;background:#0a1230;border:3px solid var(--ink);overflow:hidden}.xpb i{display:block;height:100%;background:linear-gradient(180deg,#8be8ff,#2f8cff);transition:width .8s}
 .lvup{margin:8px 0 0;padding:8px;border-radius:12px;background:linear-gradient(90deg,var(--orange),var(--gold));border:3px solid var(--ink);font-weight:900;color:#fff;text-shadow:0 2px 0 var(--ink)}
 @media (prefers-reduced-motion:reduce){.stars span.on,#hud .coinp.bump,.card .ic.gift,.wb{animation:none}}
+
+#pad #bSprint{width:min(26vw,130px);height:min(14vh,70px);margin:0 auto 6px;position:relative;overflow:hidden;font-size:16px;background:#0a1230;border:3px solid var(--ink);border-bottom-width:7px;border-radius:20px}
+#pad #bSprint::before{content:"";position:absolute;left:0;bottom:0;width:var(--p,0%);height:100%;background:linear-gradient(180deg,#8be8ff,#2f8cff)}
+#pad #bSprint span{position:relative}#pad #bSprint.rdy{animation:rdy .5s infinite alternate;border-color:var(--gold)}@keyframes rdy{to{filter:brightness(1.35)}}
+#gear .g b{color:var(--gold)}
+@media (prefers-reduced-motion:reduce){#pad #bSprint.rdy{animation:none}}
 </style></head><body>
 <canvas id="c"></canvas>
 <div id="hud" class="hide"><div class="pill big"><b id="dist">0</b><small>m</small></div><div class="pill coinp" id="coinp"><span class="cn"></span><b id="coin">0</b></div><div class="pill stage"><small>STAGE</small><b id="lv">1</b></div><div class="pill plv" title="Player level"><small>LV</small><b id="hplv">1</b></div><div class="meters"><div class="bar"><i id="fuel"></i></div><div class="bar n"><i id="nit"></i></div></div><button id="ab">🧠</button><button id="pb">⏸</button></div><div id="combo" class="hide"><span id="cmb"></span><i id="cmt"></i></div>
-<div id="gear" class="hide"><div class="rpm"><i id="rpm"></i></div><div class="g">GEAR <b id="gr">1</b> · <b id="spd">0</b> km/h</div></div><div id="toast"></div>
-<div id="pad" class="hide"><button id="bBrake">BRAKE</button><button id="bGas">GAS</button></div>
+<div id="gear" class="hide"><div class="rpm"><i id="rpm"></i></div><div class="g">⏱ <b id="tmr">0:00</b></div><div class="g">GEAR <b id="gr">1</b> · <b id="spd">0</b> km/h</div></div><div id="toast"></div>
+<div id="pad" class="hide"><button id="bBrake">BRAKE</button><button id="bSprint"><span>SPRINT</span></button><button id="bGas">GAS</button></div>
 <div id="menu"></div>
 <script>
 const $=id=>document.getElementById(id),cv=$('c'),cx=cv.getContext('2d'),menu=$('menu');
@@ -243,14 +249,14 @@ function start(){
   welcome=0;
   applyWorld();const S=stats();
   car={S,x:0,y:-S.h-S.r+4,a:0,vx:0,vy:0,w:0,wr:[0,0],fuel:S.fuel,air:0,acc:0,idle:0,nit:0,ab:0,rpm:.2,gear:1,tc:0};
-  run={dist:0,coins:0,flips:0,combo:0,ct:0,got:new Set(),over:'',cp:0,stunt:0,cpc:0,pk:0,air:0,cc:0,cct:0};
+  run={dist:0,coins:0,flips:0,combo:0,ct:0,got:new Set(),over:'',cp:0,stunt:0,cpc:0,pk:0,air:0,cc:0,cct:0,sp:0,t:0};
   parts=[];pops=[];fls=[];cam.x=0;cam.y=car.y;state='play';
   menu.classList.add('hide');$('hud').classList.remove('hide');$('pad').classList.remove('hide');$('gear').classList.remove('hide');
   $('ab').classList.toggle('on',!!save.assist);$('hplv').textContent=plvl(save.xp).l;audio();showPrev();
 }
 function sim(vi,mode=1,secs=7){ /* test-drive a vehicle on the current planet (bot: full gas, hands-off in the air); returns metres */
   const sv=[save.veh,car,run,parts,pops,state,keys.gas,keys.brake];keys.boost=0;SIM=mode;SIMDEAD=0;save.veh=vi;const S=stats();let d=0;
-  car={S,x:0,y:-S.h-S.r+4,a:0,vx:0,vy:0,w:0,wr:[0,0],fuel:S.fuel,air:0,acc:0,idle:0,nit:0,ab:0,rpm:.2,gear:1,tc:0};run={dist:0,coins:0,flips:0,combo:0,ct:0,got:new Set(),over:'',cp:0,stunt:0,cpc:0,pk:0,air:0,cc:0,cct:0};parts=[];pops=[];state='play';
+  car={S,x:0,y:-S.h-S.r+4,a:0,vx:0,vy:0,w:0,wr:[0,0],fuel:S.fuel,air:0,acc:0,idle:0,nit:0,ab:0,rpm:.2,gear:1,tc:0};run={dist:0,coins:0,flips:0,combo:0,ct:0,got:new Set(),over:'',cp:0,stunt:0,cpc:0,pk:0,air:0,cc:0,cct:0,sp:0,t:0};parts=[];pops=[];state='play';
   for(let f=0;f<secs*60&&!SIMDEAD;f++){keys.gas=car.air>0?0:1;keys.brake=0;for(let i=0;i<8;i++)step(1/480);car.fuel=Math.max(0,car.fuel-S.burn*(keys.gas?1:.17)/60);d=Math.max(d,car.x/40)}
   [save.veh,car,run,parts,pops,state,keys.gas,keys.brake]=sv;sim.dead=SIMDEAD;SIM=0;return d}
 let advMsg='';
@@ -335,7 +341,7 @@ function step(dt){
     if(c.air>.4){
       const f=Math.floor(Math.abs(c.acc)/6.283+.3);
       const m=Math.min(5,1+run.combo);
-      if(f>0){const b=f*100*m;run.flips+=f;run.stunt+=b;run.combo++;run.ct=4;pop((c.acc<0?'BACK':'FRONT')+' FLIP'+(f>1?' x'+f:'')+(m>1?'  COMBO x'+m:'')+'  +'+b)}
+      if(f>0){const b=f*100*m;run.flips+=f;run.sp=Math.min(1,(run.sp||0)+.3*f);run.stunt+=b;run.combo++;run.ct=4;pop((c.acc<0?'BACK':'FRONT')+' FLIP'+(f>1?' x'+f:'')+(m>1?'  COMBO x'+m:'')+'  +'+b)}
       else if(c.air>1.2){const b=Math.floor(c.air*15)*m;run.stunt+=b;run.combo++;run.ct=4;pop((c.air>2.4?'MEGA JUMP':'BIG AIR')+(m>1?'  COMBO x'+m:'')+'  +'+b)}
     }
     c.air=0;c.acc=0;
@@ -347,29 +353,30 @@ function frame(dt){
   if(state==='play'){
     for(let i=0;i<n&&state==='play';i++)step(dt/n);
     const c=car,S=c.S;
-    c.fuel=Math.max(0,c.fuel-dt*S.burn*(keys.gas?1:.17)*(c.ab>0?1.25:1));
+    c.fuel=Math.max(0,c.fuel-dt*S.burn*.7*(c.ab>0?1.6:1)); /* constant drain like the classic: gas or not, the tank empties; a sprint burns it faster */
     if(run.ct>0){run.ct-=dt;if(run.ct<=0)run.combo=0}
     if(run.cct>0){run.cct-=dt;if(run.cct<=0)run.cc=0}
-    run.dist=Math.max(run.dist,c.x/40);
+    run.dist=Math.max(run.dist,c.x/40);run.t+=dt;
     for(const it of itemsIn(c.x-70-S.mg,c.x+70+S.mg)){
       if(run.got.has(it.id))continue;
       const RR=it.t==='fuel'?48:48+S.mg;
       if(Math.abs(it.x-c.x)<RR&&Math.abs(it.y-c.y)<RR+12){
         run.got.add(it.id);
-        if(it.t==='fuel'){c.fuel=Math.min(S.fuel,c.fuel+45);c.ab=5;pop('FUEL +45  🔥 AUTO BOOST')}
+        if(it.t==='fuel'){c.fuel=S.fuel;pop('⛽ TANK FULL')}
         else{const ch=Math.min(5,Math.floor(run.cc/3)),val=(it.t==='gem'?25:5)+ch,col=it.t==='gem'?'#7ff0ff':'#ffd23f';
-          run.coins+=val;run.pk++;run.cc++;run.cct=1.6;floatT('+'+val,it.x,it.y-18,col);burst(it.x,it.y,col);coinBump();
+          run.coins+=val;run.pk++;run.sp=Math.min(1,run.sp+.05);run.cc++;run.cct=1.6;floatT('+'+val,it.x,it.y-18,col);burst(it.x,it.y,col);coinBump();
           if(run.cc===10||run.cc===25||run.cc===50)pop('🪙 COIN CHAIN x'+run.cc+'!')}
       }
     }
     if(c.fuel<=0&&Math.hypot(c.vx,c.vy)<14){c.idle+=dt;if(c.idle>1.2)crash('OUT OF FUEL')}else c.idle=0;
     const cpn=Math.floor(run.dist/LVD);
-    if(cpn>run.cp){run.cp=cpn;c.fuel=Math.min(S.fuel,c.fuel+S.fuel*.35);const gift=Math.min(300,30+20*cpn);c.ab=5;run.cpc+=gift;pop('STAGE '+cpn+' CLEAR 🎁 +'+gift);toast('⛽ Refuel + 🔥 auto boost!');burst(c.x,c.y-20,'#ffd23f',10);burst(c.x,c.y-20,'#ff6b1a',8);burst(c.x,c.y-20,'#35d0ff',8);burst(c.x,c.y-20,'#9be564',8)}
+    if(cpn>run.cp){run.cp=cpn;const gift=Math.min(300,30+20*cpn);run.cpc+=gift;pop('STAGE '+cpn+' CLEAR 🎁 +'+gift);toast('🏁 Stage '+cpn+' cleared!');burst(c.x,c.y-20,'#ffd23f',10);burst(c.x,c.y-20,'#ff6b1a',8);burst(c.x,c.y-20,'#35d0ff',8);burst(c.x,c.y-20,'#9be564',8)}
     $('dist').textContent=Math.floor(run.dist);$('coin').textContent=run.coins+run.stunt+run.cpc;
     $('fuel').classList.toggle('low',c.fuel/S.fuel<.2);
     {const cb=$('combo');if(run.combo>0&&run.ct>0){cb.classList.remove('hide');$('cmb').textContent='COMBO ×'+Math.min(5,1+run.combo);$('cmt').style.transform='scaleX('+Math.max(0,run.ct/4)+')'}else cb.classList.add('hide')}
     if(keys.gas&&c.fuel>0&&parts.length<190&&Math.random()<.35)parts.push({x:c.x-S.L*Math.cos(c.a)*1.15,y:c.y-S.L*Math.sin(c.a)*1.15,vx:-c.vx*.15-40,vy:-30-Math.random()*40,l:.5,c:'#9aa0b0',sm:1});
     $('fuel').style.width=(c.fuel/S.fuel*100)+'%';$('nit').style.width=(run.dist%LVD/LVD*100)+'%';$('lv').textContent=run.cp+1;
+    {const sb=$('bSprint');sb.style.setProperty('--p',Math.round(run.sp*100)+'%');sb.classList.toggle('rdy',run.sp>=1);const T=Math.floor(run.t);$('tmr').textContent=Math.floor(T/60)+':'+String(T%60).padStart(2,'0')}
     $('rpm').style.width=Math.round(c.rpm*100)+'%';$('gr').textContent=c.gear;$('spd').textContent=Math.round(Math.abs(c.vx)*.09);
     /* planet weather */
     const wd=WORLD[save.world];if(wd.wx&&Math.random()<.5)parts.push({x:cam.x+(Math.random()*1.4-.2)*W/SC,y:cam.y-H/SC*.6,vx:wd.wx==='snow'?-30:-260,vy:wd.wx==='snow'?90:40,l:2.2,c:wd.wx==='snow'?'#fff':wd.wx==='dust'?'#e8a07a':'#ff3df2',wx:1});
@@ -589,7 +596,7 @@ function render(){
     <div class=stars>${[1,2,3].map(n=>`<span class="${run.stars>=n?'on':''}" style="--d:${n*.18}s">★</span>`).join('')}</div>
     <div class=big><span class=cn></span>+${run.total}</div>
     <div class=g4><div><b>📏 ${Math.floor(run.dist)} m</b><small>${run.newBest?'🏆 new best':'best '+bt}</small></div><div><b>🔄 ${run.flips}</b><small>flips</small></div><div><b>🪙 ${run.coins}</b><small>${run.pk} pickups</small></div><div><b>🤸 ${run.stunt}</b><small>stunts</small></div></div>
-    <p class=sub style="margin:8px 0">🌍 ×${run.pm}${run.cb>1?' · 💰 ×'+run.cb.toFixed(1):''} · 🎁 stage gifts ${run.cpc} · 🏁 stage ${run.cp+1}</p>
+    <p class=sub style="margin:8px 0">⏱ ${Math.floor(run.t/60)}:${String(Math.floor(run.t%60)).padStart(2,'0')} · 🌍 ×${run.pm}${run.cb>1?' · 💰 ×'+run.cb.toFixed(1):''} · 🎁 stage gifts ${run.cpc} · 🏁 stage ${run.cp+1}</p>
     ${run.mdone.map(q=>`<div class=ln style="color:#9be564"><span>✅ ${q.txt}</span><b>+${q.rew}</b></div>`).join('')}
     <div class=xpl><span>Level ${p1.l}</span><span>+${run.xp} XP</span></div><div class=xpb><i style="width:${pc}%"></i></div>
     ${up?`<div class=lvup>⬆ LEVEL ${p1.l}! +${run.lvc} coins</div>`:''}
@@ -646,7 +653,7 @@ menu.addEventListener('click',e=>{
   else if(a==='chest'&&!run.chest){run.chest=Math.round((40+Math.random()*160)*(1+run.cp*.15)/5)*5;save.coins+=run.chest;toast('🎁 +'+run.chest+' coins!')}
   else if(a==='smart'){smartPick();toast(advMsg.replace(/<[^>]+>/g,''))}
   else if(a==='tab'){tab=b.dataset.v}else if(a==='vf'){vf=b.dataset.v}else if(a==='pickv'){save.veh=i}else if(a==='pickw'){save.world=i}
-  else if(a==='help'){toast('RIGHT/D gas · LEFT/A brake · refuel = 5 s auto boost · let go in the air to auto-level')}
+  else if(a==='help'){toast('RIGHT/D gas · LEFT/A brake · SHIFT = sprint · grab red cans to refuel · let go in the air to auto-level')}
   else if(a==='start'){persist();start();return}
   else if(a==='resume'){menu.classList.add('hide');$('gear').classList.remove('hide');state='play';return}
   else if(a==='garage'){state='menu';mode='garage';$('hud').classList.add('hide');$('pad').classList.add('hide');$('gear').classList.add('hide')}
@@ -661,10 +668,13 @@ addEventListener('keydown',e=>{
   if(state==='menu'&&mode==='over'&&['Enter','Space','KeyR'].includes(e.code)){e.preventDefault();start();return}
   if(state==='menu'&&mode==='pause'&&e.code==='Enter'){menu.classList.add('hide');$('gear').classList.remove('hide');state='play';return}
   if(e.code==='Escape'||e.code==='KeyP'){pause();return}
+  if(KN.includes(e.code)){sprint();return}
   if(KG.includes(e.code))keys.gas=1;if(KB.includes(e.code))keys.brake=1;
   if(state==='play'&&(KG.includes(e.code)||KB.includes(e.code)||e.code==='Space'))e.preventDefault();setPad();
 });
 addEventListener('keyup',e=>{if(KG.includes(e.code))keys.gas=0;if(KB.includes(e.code))keys.brake=0;setPad()});
+function sprint(){if(state!=='play'||!car||run.sp<1||car.fuel<=0)return;car.ab=4;run.sp=0;pop('🔥 SPRINT!');shake=Math.max(shake,.4)}
+$('bSprint').addEventListener('pointerdown',e=>{e.preventDefault();sprint()});
 function setPad(){$('bGas').classList.toggle('on',!!keys.gas);$('bBrake').classList.toggle('on',!!keys.brake)}
 [['bGas','gas'],['bBrake','brake']].forEach(([id,k])=>{
   const el=$(id),up=()=>{keys[k]=0;setPad()};
