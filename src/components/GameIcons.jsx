@@ -46,6 +46,19 @@ export function GameIcon({ game, size = 44 }) {
       </svg>
     );
   }
+  if (game === 'ultimatestunts') {
+    return (
+      <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden="true">
+        <rect x="3" y="3" width="42" height="42" rx="9" fill="#9AD0F5" />
+        <path d="M3 40 H14 Q24 6 34 40 H45 V45 H3Z" fill="#555B6E" />
+        <path d="M14 40 Q24 6 34 40" fill="none" stroke="#F2B632" strokeWidth="2.5" strokeDasharray="3 3" />
+        <g transform="rotate(-38 24 16)">
+          <rect x="16" y="12" width="16" height="6" rx="2" fill="#C23B2A" />
+          <circle cx="20" cy="19.5" r="2.8" fill="#2a1d10" /><circle cx="29" cy="19.5" r="2.8" fill="#2a1d10" />
+        </g>
+      </svg>
+    );
+  }
   if (game === 'dominoes') {
     const pip = (x, y) => <circle key={`${x}-${y}`} cx={x} cy={y} r="2.1" fill="#1b1209" />;
     return (
