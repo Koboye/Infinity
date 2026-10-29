@@ -62,6 +62,31 @@ h1{margin:0;letter-spacing:3px;font-size:28px;background:linear-gradient(90deg,#
 .ms{display:flex;justify-content:space-between;align-items:center;background:#232837;border-radius:10px;margin:4px 0;padding:6px 10px;font-size:13px;text-align:left}.ms.d{opacity:.55}.ms.d span{text-decoration:line-through}
 .hd{font-size:12px;letter-spacing:2px;opacity:.6;margin:12px 0 4px;text-align:left;font-weight:800}
 .row small{display:block;opacity:.55;font-size:10px}.row span:first-child{width:120px}
+
+/* v3 garage: tabs + tiles */
+#toast{z-index:50}
+.gar{display:flex;flex-direction:column;height:min(700px,calc(100dvh - 24px));padding:12px;overflow:hidden;text-align:left}
+.gar .top{display:flex;align-items:center;gap:8px}
+.pill2{background:#0007;border:1px solid #ffffff22;border-radius:99px;padding:5px 12px;font-weight:800;font-size:15px}
+.card .ic{width:38px;height:38px;padding:0;border-radius:12px;font-size:18px;display:flex;align-items:center;justify-content:center;color:#ffd23f;text-decoration:none;font-weight:900;position:relative;background:#232837}
+.card .ic.gift{animation:pu 1.2s infinite alternate}@keyframes pu{to{transform:scale(1.12);background:#5b3fd0}}
+.ic i{position:absolute;top:3px;right:3px;width:9px;height:9px;border-radius:50%;background:#ff3d3d}
+.hero{display:flex;align-items:center;gap:10px;background:linear-gradient(180deg,#2a3048,#1c2030);border-radius:16px;padding:10px;margin:10px 0 8px}
+.hero .e{font-size:40px;filter:drop-shadow(0 3px 6px #0008)}.hm{flex:1;min-width:0}.hm b{display:block;font-size:16px}.hm small{opacity:.65;font-size:11px}
+.hb{width:110px}.hb .st{margin:2px 0;font-size:11px;gap:5px}.hb .st span{width:16px}
+.tabs{display:flex;gap:6px}.card .tab{flex:1;padding:7px 2px;border-radius:12px;background:#232837;font-size:18px;line-height:1.1;position:relative;display:flex;flex-direction:column;align-items:center}
+.tab small{font-size:10px;opacity:.85;font-weight:700}.card .tab.on{background:linear-gradient(180deg,#ffb703,#ff7a36);color:#222}
+.dot{position:absolute;top:-4px;right:-2px;background:#ff3d3d;color:#fff;border-radius:99px;font-size:10px;font-style:normal;padding:1px 6px;font-weight:800}
+.gar .body{flex:1;overflow:auto;margin:10px -4px 8px;padding:0 4px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:8px}
+.card .tile{position:relative;background:#232837;border:2px solid transparent;border-radius:14px;padding:8px 3px 6px;font-size:11px;font-weight:700;line-height:1.15;display:flex;flex-direction:column;align-items:center;gap:3px;min-height:76px}
+.tile .e{font-size:26px}.tile .sw{width:100%;height:30px;border-radius:8px}.tile small{opacity:.8;font-size:10px}
+.card .tile.sel{border-color:#ffd23f;background:#2f3658}.card .tile.lock{opacity:.55}
+.chips{display:flex;gap:6px;overflow:auto;margin-bottom:8px}.card .chip2{flex:none;padding:5px 11px;font-size:17px;border-radius:99px;background:#232837}.card .chip2.on{background:#ffd23f;color:#222}
+.upr{display:flex;align-items:center;gap:10px;background:#232837;border-radius:14px;padding:8px 10px;margin-bottom:8px}.upr .ui{font-size:26px}.upr>div{flex:1}.upr b{font-size:15px}.upr .pips{font-size:13px}.upr button{min-width:74px}
+.g4,.st2{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0}.g4>div,.st2>div{background:#232837;border-radius:12px;padding:8px 2px;text-align:center}.g4 b,.st2 b{display:block;font-size:14px}.g4 small,.st2 small{opacity:.65;font-size:10px}.st2{margin-top:14px}
+.foot{display:flex;gap:8px}.foot .go{flex:1;margin:0;padding:14px}.card .foot .smart{width:56px;font-size:24px;padding:0;background:#5b3fd0}.card .go.buy2{background:linear-gradient(90deg,#2b8a3e,#40c057);color:#fff}
+.hero .st span{text-align:center}
 </style></head><body>
 <canvas id="c"></canvas>
 <div id="hud" class="hide"><div class="pill big"><b id="dist">0</b><small>m</small></div><div class="pill">🪙 <b id="coin">0</b></div><div class="meters"><div class="bar"><i id="fuel"></i></div><div class="bar n"><i id="nit"></i></div></div><button id="ab">🧠</button><button id="pb">⏸</button></div><div id="combo" class="hide"><span id="cmb"></span><i id="cmt"></i></div>
@@ -481,51 +506,56 @@ function snd(){
 }
 
 /* ---------- menu ---------- */
-function bars(S){return[['PWR',S.pw/1800],['GRIP',S.gr/2.6],['FUEL',S.fuel/300],['SPD',S.ms/1500]].map(([n,p])=>`<div class=st><span>${n}</span><i><b style="width:${Math.max(4,Math.min(100,Math.round(p*100)))}%"></b></i></div>`).join('')}
+/* ---------- menu (tabbed, icon-first) ---------- */
+let tab='car',vf='all',lastTab='';
+const CI={Bicycle:'🚲',Scooter:'🛴','Dirt Bike':'🏍️',Buggy:'🏎️',Jeep:'🚙',Truck:'🛻',Monster:'🚜','Sports Car':'🏁'};
+const UI=['⚙️','🛞','⛽','🔩','🌿','💰'];
+function bars(S){return[['⚡',S.pw/1800],['🛞',S.gr/2.6],['⛽',S.fuel/300],['🚀',S.ms/1500]].map(([n,p])=>`<div class=st><span>${n}</span><i><b style="width:${Math.max(4,Math.min(100,Math.round(p*100)))}%"></b></i></div>`).join('')}
 function render(){
+  {const _b=menu.querySelector&&menu.querySelector('.body');keepTop=_b?_b.scrollTop:0}
   const v=VEH[save.veh],w=WORLD[save.world],u=UP(),ownV=save.veh<3||save.ownV[save.veh],ownW=save.ownW[save.world];
   const bt=save.best[save.veh+'-'+save.world]||0;
   menu.classList.remove('hide');applyWorld();showPrev();
   const S=stats(),pmv=pmul(w);
   if(mode==='over'){
-    menu.innerHTML=`<div class=card><h1>${run.over}</h1><p class=sub>${v.n} · ${w.n}</p>
-    <div class=big>+${run.total}<small>🪙 earned</small></div>
-    <div class=stat>📏 ${Math.floor(run.dist)} m ${run.newBest?'🏆 NEW BEST!':'(best '+bt+' m)'} · 🔄 ${run.flips} flips</div>
-    <div class=ln><span>🪙 Coins picked up (${run.pk})</span><b>${run.coins}</b></div>
-    <div class=ln><span>🤸 Stunts</span><b>${run.stunt}</b></div>
-    <div class=ln><span>⛽ Checkpoints</span><b>${run.cpc}</b></div>
-    <div class=ln><span>📏 Distance bonus</span><b>${run.bonus}</b></div>
-    <div class=ln><span>🌍 Planet ×${run.pm}${run.cb>1?' · 💰 Bonus ×'+run.cb.toFixed(1):''}</span><b>${Math.round(run.sub*run.pm*run.cb)}</b></div>
+    menu.innerHTML=`<div class=card><h1>${run.over}</h1><p class=sub>${CI[v.cls]} ${v.n} · ${w.n}</p>
+    <div class=big>+${run.total}<small>🪙</small></div>
+    <div class=g4><div><b>📏 ${Math.floor(run.dist)} m</b><small>${run.newBest?'🏆 new best':'best '+bt}</small></div><div><b>🔄 ${run.flips}</b><small>flips</small></div><div><b>🪙 ${run.coins}</b><small>${run.pk} pickups</small></div><div><b>🤸 ${run.stunt}</b><small>stunts</small></div></div>
+    <p class=sub style="margin:8px 0">🌍 ×${run.pm}${run.cb>1?' · 💰 ×'+run.cb.toFixed(1):''} · ⛽ checkpoints ${run.cpc}</p>
     ${run.mdone.map(q=>`<div class=ln style="color:#7CFC9A"><span>✅ ${q.txt}</span><b>+${q.rew}</b></div>`).join('')}
-    <div class="ln" style="font-size:18px;border-top:1px solid #ffffff22;margin-top:4px;padding-top:8px"><span>Total</span><b>🪙 ${run.total}</b></div>
-    <p class=sub>💡 ${run.tip||''}</p>
+    <p class=sub style="font-size:13px">💡 ${run.tip||''}</p>
     <button class=go data-a=start>RETRY ↵</button><button class=go style="background:#3a4160;color:#fff;margin-top:8px;font-size:18px" data-a=garage>GARAGE</button></div>`;return;
   }
   if(mode==='pause'){
     menu.innerHTML=`<div class=card><h1>PAUSED</h1><button class=go data-a=resume>RESUME</button><button class=go style="background:#3a4160;color:#fff;margin-top:8px;font-size:18px" data-a=garage>QUIT TO GARAGE</button></div>`;return;
   }
-  const up=UPN.map(([n,b,d],i)=>{
-    const lv=u[i],cost=upCost(i,lv);
-    return `<div class=row><span>${n}<small>${d}</small></span><span class=pips>${'●'.repeat(lv)+'○'.repeat(5-lv)}</span><button ${!ownV||lv>=5||save.coins<cost?'disabled':''} data-a=up data-i=${i}>${lv>=5?'MAX':'🪙'+cost}</button></div>`}).join('');
-  const ms=missions(),sd=mstate();
-  const ns=nextStreak(),dailyOn=save.dl!==dayN();
-  menu.innerHTML=`<div class=card><a href="/" style="display:block;text-align:left;color:#ffd23f;font-weight:700;text-decoration:none;margin-bottom:6px">‹ Back to app</a><h1>SKY CRAWLER</h1><p class=sub>🪙 <b>${save.coins}</b> · 🔥 streak ${save.streak||0} · 🏁 ${save.st.runs} runs</p>
-  ${dailyOn?`<button class=buy style="background:linear-gradient(90deg,#ff9f1c,#ff5a36);color:#222;margin-bottom:6px" data-a=daily>🎁 Claim daily bonus +${dailyRew(ns)} (day ${ns})</button>`:''}
-  <div class=hd>TODAY'S MISSIONS</div>${ms.map((q,j)=>`<div class="ms ${sd.done[j]?'d':''}"><span>${sd.done[j]?'✅':'🎯'} ${q.txt}</span><b>🪙${q.rew}</b></div>`).join('')}
-  <div class=hd>VEHICLE</div>
-  <div class=sel><button data-a=pv>‹</button><div><b>${v.n}</b><small>${v.cls} · ⚡${Math.round(v.e*50)} · ${ownV?'owned':'🪙'+v.cost} · best ${bt} m</small></div><button data-a=nv>›</button></div>
-  ${bars(S)}<div class=stat style="font-size:13px;opacity:.85">⛽ ${Math.round(S.fuel/S.burn)} s at full throttle · 💰 coins ×${S.cb.toFixed(1)}</div>
-  <select data-s=veh>${VEH.map((x,i)=>`<option value=${i} ${i===save.veh?'selected':''}>${i+1}. ${x.n}${i<3||save.ownV[i]?'':' 🪙'+x.cost}</option>`).join('')}</select>
-  ${ownV?'':`<button class=buy data-a=buyv ${save.coins<v.cost?'disabled':''}>Unlock vehicle 🪙${v.cost}</button>`}
-  <div class=hd>PLANET</div>
-  <div class=sel><button data-a=pw>‹</button><span class=chip style="background:linear-gradient(180deg,${w.sky[0]},${w.sky[1]});--top:${w.top}"></span><div style="flex:1"><b>${w.n}</b><small>${RDN[w.rd||0]} · ${w.g<600?'low gravity':w.g>1000?'heavy gravity':'normal gravity'}${w.gm<.6?' · icy':''} · 🪙 ×${pmv} · ${ownW?'owned':'🪙'+w.cost}</small></div><button data-a=nw>›</button></div>
-  <select data-s=world>${WORLD.map((x,i)=>`<option value=${i} ${i===save.world?'selected':''}>${i+1}. ${x.n} (×${pmul(x)})${i===0||save.ownW[i]?'':' 🪙'+x.cost}</option>`).join('')}</select>
-  ${ownW?'':`<button class=buy data-a=buyw ${save.coins<w.cost?'disabled':''}>Unlock planet 🪙${w.cost}</button>`}
-  <button class=buy style="background:#5b3fd0;margin-top:6px" data-a=smart>🧠 SMART PICK for this planet</button>${advMsg?`<p class=sub>${advMsg}</p>`:''}
-  <div class=hd>UPGRADES · ${v.n}</div>${up}
-  <button class=go data-a=start ${ownV&&ownW?'':'disabled'}>DRIVE</button>
-  <p><span class=badge>⛽ checkpoints every 250 m</span><span class=badge>🚀 flips fill nitro</span><span class=badge>⚙ auto gearbox</span><span class=badge>🤸 chain stunts for ×5</span></p><p><small>RIGHT / D / W = gas (tilt back in air) · LEFT / A / S = brake (tilt forward) · SHIFT / B = nitro boost</small></p></div>`;
+  const ms=missions(),sd=mstate(),left=sd.done.filter(x=>!x).length,dailyOn=save.dl!==dayN();
+  let body='';
+  if(tab==='car'){
+    const cls=['all',...VCL.map(c=>c[0])];
+    body=`<div class=chips>${cls.map(c=>`<button class="chip2 ${vf===c?'on':''}" data-a=vf data-v="${c}">${c==='all'?'ALL':CI[c]}</button>`).join('')}</div>
+    <div class=grid>${VEH.map((x,i)=>vf!=='all'&&x.cls!==vf?'':`<button class="tile ${i===save.veh?'sel':''} ${i<3||save.ownV[i]?'':'lock'}" data-a=pickv data-i=${i}><span class=e>${CI[x.cls]}</span>${VT[x.t]}<small>${i<3?'FREE':save.ownV[i]?'✓':'🔒 '+x.cost}</small></button>`).join('')}</div>`;
+  }else if(tab==='world'){
+    body=`<div class=grid>${WORLD.map((x,i)=>`<button class="tile ${i===save.world?'sel':''} ${i===0||save.ownW[i]?'':'lock'}" data-a=pickw data-i=${i}><span class=sw style="background:linear-gradient(180deg,${x.sky[0]},${x.sky[1]} 60%,${x.top} 60%)"></span>${x.n}<small>×${pmul(x)} ${i===0||save.ownW[i]?'✓':'🔒 '+x.cost}</small></button>`).join('')}</div>`;
+  }else if(tab==='up'){
+    body=ownV?UPN.map(([n,b,d],i)=>{const lv=u[i],cost=upCost(i,lv);
+      return `<div class=upr title="${d}"><span class=ui>${UI[i]}</span><div><b>${n}</b><div class=pips>${'●'.repeat(lv)+'○'.repeat(5-lv)}</div></div><button ${lv>=5||save.coins<cost?'disabled':''} data-a=up data-i=${i}>${lv>=5?'MAX':'🪙'+cost}</button></div>`}).join(''):`<p class=sub>🔒 Unlock this vehicle to upgrade it</p>`;
+  }else{
+    body=ms.map((q,j)=>`<div class="ms ${sd.done[j]?'d':''}"><span>${sd.done[j]?'✅':'🎯'} ${q.txt}</span><b>🪙${q.rew}</b></div>`).join('')+
+      `<div class=st2><div><b>🏁 ${save.st.runs}</b><small>runs</small></div><div><b>🔄 ${save.st.flips}</b><small>flips</small></div><div><b>📏 ${save.st.dist}</b><small>metres</small></div><div><b>🪙 ${save.st.earned}</b><small>earned</small></div></div>`;
+  }
+  const foot=!ownV?`<button class="go buy2" data-a=buyv ${save.coins<v.cost?'disabled':''}>🔓 ${CI[v.cls]} 🪙${v.cost}</button>`:!ownW?`<button class="go buy2" data-a=buyw ${save.coins<w.cost?'disabled':''}>🔓 🪙${w.cost}</button>`:`<button class=go data-a=start>▶ DRIVE</button>`;
+  menu.innerHTML=`<div class="card gar">
+  <div class=top><a class=ic href="/">‹</a><div class=pill2>🪙 <b>${save.coins}</b></div><div class=pill2>🔥 ${save.streak||0}</div><span style="flex:1"></span><button class="ic ${dailyOn?'gift':''}" data-a=daily title="Daily bonus">🎁${dailyOn?'<i></i>':''}</button><button class=ic data-a=help>?</button></div>
+  <div class=hero><span class=e>${CI[v.cls]}</span><div class=hm><b>${v.n}</b><small>🌍 ${w.n} · ×${pmv} · 🏆 ${bt} m</small></div><div class=hb>${bars(S)}</div></div>
+  <div class=tabs>${[['car','🚗','Vehicles'],['world','🪐','Planets'],['up','🔧','Upgrades'],['mis','🎯','Missions']].map(([k,e,n])=>`<button class="tab ${tab===k?'on':''}" data-a=tab data-v=${k}>${e}<small>${n}</small>${k==='mis'&&left?'<i class=dot>'+left+'</i>':''}</button>`).join('')}</div>
+  <div class=body>${body}</div>
+  <div class=foot>${foot}<button class="smart" data-a=smart title="Smart pick">🧠</button></div></div>`;
+  const bd=menu.querySelector&&menu.querySelector('.body');
+  if(bd){if(lastTab===tab+vf)bd.scrollTop=keepTop;else{const sel=bd.querySelector('.tile.sel');if(sel&&sel.scrollIntoView)sel.scrollIntoView({block:'center'})}}
+  lastTab=tab+vf;
 }
+let keepTop=0;
 menu.addEventListener('change',e=>{const k=e.target.dataset.s;if(!k)return;save[k]=+e.target.value;persist();render()});
 $('ab').onclick=()=>{save.assist=save.assist?0:1;persist();$('ab').classList.toggle('on',!!save.assist);pop(save.assist?'🧠 ASSIST ON':'ASSIST OFF')};
 const cyc=(k,n,d)=>save[k]=(save[k]+d+n)%n;
@@ -538,7 +568,9 @@ menu.addEventListener('click',e=>{
   else if(a==='buyw'&&save.coins>=WORLD[save.world].cost){save.coins-=WORLD[save.world].cost;save.ownW[save.world]=1}
   else if(a==='up'){const u=UP(),cost=upCost(i,u[i]);if(u[i]<5&&save.coins>=cost){save.coins-=cost;u[i]++}}
   else if(a==='daily'){claimDaily()}
-  else if(a==='smart'){smartPick()}
+  else if(a==='smart'){smartPick();toast(advMsg.replace(/<[^>]+>/g,''))}
+  else if(a==='tab'){tab=b.dataset.v}else if(a==='vf'){vf=b.dataset.v}else if(a==='pickv'){save.veh=i}else if(a==='pickw'){save.world=i}
+  else if(a==='help'){toast('RIGHT/D gas · LEFT/A brake · SHIFT boost · let go in the air to auto-level')}
   else if(a==='start'){persist();start();return}
   else if(a==='resume'){menu.classList.add('hide');$('gear').classList.remove('hide');state='play';return}
   else if(a==='garage'){state='menu';mode='garage';$('hud').classList.add('hide');$('pad').classList.add('hide');$('gear').classList.add('hide')}
