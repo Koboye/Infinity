@@ -59,13 +59,6 @@ export function GameGrid({ t, onPick }) {
         <small className="gg-tag">Hill-climb racing</small>
         <span className="gg-foot"><span className="gg-mode">{t.badgeOffline}</span></span>
       </a>
-      {/* Ultimate Stunts: an open-source PC game (GPL). It cannot run in the app, so this card opens its official download site. */}
-      <a role="listitem" className="gg-card" href="https://www.ultimatestunts.nl/" target="_blank" rel="noopener noreferrer" style={{ '--accent': '#2F6FD6', '--i': order.length + 1, textDecoration: 'none' }}>
-        <span className="gg-art"><GameIcon game="ultimatestunts" size={52} /></span>
-        <b className="gg-name">Ultimate Stunts</b>
-        <small className="gg-tag">Open-source stunt racing</small>
-        <span className="gg-foot"><span className="gg-mode">PC download</span></span>
-      </a>
     </div>
   );
 }
