@@ -33,6 +33,19 @@ export function GameIcon({ game, size = 44 }) {
       </svg>
     );
   }
+  if (game === 'skycrawler') {
+    return (
+      <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden="true">
+        <rect x="3" y="3" width="42" height="42" rx="9" fill="#7EC8F2" />
+        <path d="M3 36 Q14 22 24 31 T45 26 V45 H3Z" fill="#4FA36B" />
+        <g transform="rotate(-14 24 27)">
+          <rect x="14" y="21" width="20" height="7" rx="2.5" fill="#E0452B" />
+          <rect x="19" y="16" width="11" height="6" rx="2" fill="#F6ECD2" />
+          <circle cx="18" cy="30" r="4.2" fill="#2a1d10" /><circle cx="31" cy="30" r="4.2" fill="#2a1d10" />
+        </g>
+      </svg>
+    );
+  }
   if (game === 'dominoes') {
     const pip = (x, y) => <circle key={`${x}-${y}`} cx={x} cy={y} r="2.1" fill="#1b1209" />;
     return (

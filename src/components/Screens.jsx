@@ -52,6 +52,13 @@ export function GameGrid({ t, onPick }) {
           </button>
         );
       })}
+      {/* Sky Crawler: a stand-alone arcade page (/games/sky-crawler/), so it is a link card and not part of GAME_LIST (no ratings, no online matches). */}
+      <a role="listitem" className="gg-card" href="/games/sky-crawler/" style={{ '--accent': '#FF7A2F', '--i': order.length, textDecoration: 'none' }}>
+        <span className="gg-art"><GameIcon game="skycrawler" size={52} /></span>
+        <b className="gg-name">Sky Crawler</b>
+        <small className="gg-tag">Hill-climb racing</small>
+        <span className="gg-foot"><span className="gg-mode">{t.badgeOffline}</span></span>
+      </a>
     </div>
   );
 }

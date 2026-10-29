@@ -274,7 +274,7 @@ function render(){
   const up=['Engine','Grip','Fuel Tank','Suspension'].map((n,i)=>{
     const lv=u[i],cost=150*(lv+1)*(lv+1);
     return `<div class=row><span>${n}</span><span class=pips>${'●'.repeat(lv)+'○'.repeat(5-lv)}</span><button ${!ownV||lv>=5?'disabled':''} data-a=up data-i=${i}>${lv>=5?'MAX':'🪙'+cost}</button></div>`}).join('');
-  menu.innerHTML=`<div class=card><h1>SKY CRAWLER</h1><p class=sub>🪙 ${save.coins}</p>
+  menu.innerHTML=`<div class=card><a href="/" style="display:block;text-align:left;color:#ffd23f;font-weight:700;text-decoration:none;margin-bottom:6px">‹ Back to app</a><h1>SKY CRAWLER</h1><p class=sub>🪙 ${save.coins}</p>
   <div class=sel><button data-a=pv>‹</button><div><b>${v.n}</b><small>Best ${bt} m</small></div><button data-a=nv>›</button></div>
   ${ownV?'':`<button class=buy data-a=buyv>Unlock vehicle 🪙${v.cost}</button>`}
   <div class=sel><button data-a=pw>‹</button><div><b>${w.n}</b><small>${w.g<800?'Low gravity – huge air time':w.gm<1?'Slippery sand':'Classic hills'}</small></div><button data-a=nw>›</button></div>
