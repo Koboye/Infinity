@@ -59,6 +59,13 @@ export function GameGrid({ t, onPick }) {
         <small className="gg-tag">Hill-climb racing</small>
         <span className="gg-foot"><span className="gg-mode">{t.badgeOffline}</span></span>
       </a>
+      {/* Ultimate: stand-alone hill-climb arcade (/games/ultimate/) with a race-the-clock mode; link card like Sky Crawler. */}
+      <a role="listitem" className="gg-card" href="/games/ultimate/" style={{ '--accent': '#FF2E88', '--i': order.length + 1, textDecoration: 'none' }}>
+        <span className="gg-art"><GameIcon game="ultimate" size={52} /></span>
+        <b className="gg-name">Ultimate</b>
+        <small className="gg-tag">Hill climb + race the clock</small>
+        <span className="gg-foot"><span className="gg-mode">{t.badgeOffline}</span></span>
+      </a>
     </div>
   );
 }
