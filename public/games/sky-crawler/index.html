@@ -51,11 +51,22 @@ const VEH=[
 const WORLD=[
 {n:'Green Hills',cost:0,g:1200,gm:1,sky:['#7ecbff','#d8f1ff'],far:'#8fc8a0',near:'#5fae6d',top:'#4fbf3f',dirt:'#7a5230',amp:1},
 {n:'Dune Sea',cost:600,g:1200,gm:.8,sky:['#ffb36b','#ffe6b3'],far:'#e0a066',near:'#cf8a4f',top:'#f0c56a',dirt:'#b8793c',amp:1.2},
-{n:'Moon Run',cost:1500,g:520,gm:.9,sky:['#05060f','#1c2150'],far:'#3a3f6b',near:'#2a2e55',top:'#b9bdd6',dirt:'#5b5f7c',amp:1.3,stars:1}];
-let A=1;
+{n:'Moon Run',cost:1500,g:520,gm:.9,sky:['#05060f','#1c2150'],far:'#3a3f6b',near:'#2a2e55',top:'#b9bdd6',dirt:'#5b5f7c',amp:1.3,stars:1,rp:.7,pl:'#8ea0d8'},
+{n:'Mars Canyon',cost:1200,g:800,gm:.95,sky:['#5a2a1c','#e8a07a'],far:'#a4533a',near:'#7e3a28',top:'#d9714a',dirt:'#6b2e1f',amp:1.4,rp:1,rt:1,pl:'#e07a52'},
+{n:'Ice Moon',cost:2200,g:700,gm:.42,sky:['#0b2a4a','#9fe0ff'],far:'#7fb7d8',near:'#5d9bc2',top:'#eaf9ff',dirt:'#7fb2d4',amp:.9,rp:1.1,stars:1,pl:'#f0d9a0'},
+{n:'Neon Rings',cost:3500,g:450,gm:.85,sky:['#12002b','#5b1a8f'],far:'#3d1a6e',near:'#2a1050',top:'#ff3df2',dirt:'#1b0a3a',amp:.6,rp:1.6,stars:1,pl:'#ffb347'}];
+let A=1,RP=0,RT=0;
+/* stunt kickers: a long climb then a steep lip, so the car launches (every planet but Green Hills) */
+function feat(x){
+  if(!RP||x<900)return 0;
+  const k=Math.floor((x-900)/950),xk=900+k*950+hash(k+77)%260,t=x-xk,H0=(70+hash(k+5)%60)*RP;
+  if(t<0||t>300)return 0;
+  if(t<190){const u=t/190;return H0*u*u}
+  const u=(t-190)/110;return H0*(1-u*u*(3-2*u));
+}
 function ground(x){
   let r=Math.min(1,Math.max(0,(x-350)/450)),sm=r*r*(3-2*r),k=Math.min(1.1,.4+x/9000)*A;
-  return -Math.max(x,0)*.03-sm*k*(70*Math.sin(x/230)+30*Math.sin(x/95+1.3)+60*Math.sin(x/520+2))-(x<-100?(-100-x)*3:0);
+  return -Math.max(x,0)*.03-sm*k*(70*Math.sin(x/230)+30*Math.sin(x/95+1.3)+60*Math.sin(x/520+2))-feat(x)-(RT?sm*(11*Math.sin(x/17)+7*Math.sin(x/41+2)):0)-(x<-100?(-100-x)*3:0);
 }
 const hash=n=>{let h=Math.imul(n,374761393)+668265263|0;h=Math.imul(h^(h>>>13),1274126177);return(h^(h>>>16))>>>0};
 function item(n){
@@ -76,9 +87,9 @@ const keys={gas:0,brake:0};
 let SC=1;const OX=()=>W*.38,OY=()=>H*.58;
 
 function start(){
-  A=WORLD[save.world].amp;const S=stats();
+  A=WORLD[save.world].amp;RP=WORLD[save.world].rp||0;RT=WORLD[save.world].rt||0;const S=stats();
   car={S,x:0,y:-S.h-S.r+4,a:0,vx:0,vy:0,w:0,wr:[0,0],fuel:S.fuel,air:0,acc:0,idle:0};
-  run={dist:0,coins:0,flips:0,got:new Set(),over:''};
+  run={dist:0,coins:0,flips:0,combo:0,ct:0,got:new Set(),over:''};
   parts=[];pops=[];cam.x=0;cam.y=car.y;state='play';
   menu.classList.add('hide');$('hud').classList.remove('hide');$('pad').classList.remove('hide');
   audio();
@@ -132,8 +143,9 @@ function step(dt){
   else{
     if(c.air>.4){
       const f=Math.floor(Math.abs(c.acc)/6.283+.3);
-      if(f>0){const b=f*100;run.flips+=f;run.coins+=b;pop((c.acc<0?'BACK':'FRONT')+' FLIP'+(f>1?' x'+f:'')+'  +'+b)}
-      else if(c.air>1.2){const b=Math.floor(c.air*15);run.coins+=b;pop('AIRTIME  +'+b)}
+      const m=Math.min(5,1+run.combo);
+      if(f>0){const b=f*100*m;run.flips+=f;run.coins+=b;run.combo++;run.ct=4;pop((c.acc<0?'BACK':'FRONT')+' FLIP'+(f>1?' x'+f:'')+(m>1?'  COMBO x'+m:'')+'  +'+b)}
+      else if(c.air>1.2){const b=Math.floor(c.air*15)*m;run.coins+=b;run.combo++;run.ct=4;pop((c.air>2.4?'MEGA JUMP':'BIG AIR')+(m>1?'  COMBO x'+m:'')+'  +'+b)}
     }
     c.air=0;c.acc=0;
   }
@@ -145,6 +157,7 @@ function frame(dt){
     for(let i=0;i<n&&state==='play';i++)step(dt/n);
     const c=car,S=c.S;
     c.fuel=Math.max(0,c.fuel-dt*(keys.gas?1.5:.25));
+    if(run.ct>0){run.ct-=dt;if(run.ct<=0)run.combo=0}
     run.dist=Math.max(run.dist,c.x/40);
     const k0=Math.floor((c.x-400)/140);
     for(let k=k0-2;k<=k0+3;k++){
@@ -213,6 +226,7 @@ function draw(){
   const g=cx.createLinearGradient(0,0,0,H);g.addColorStop(0,Wd.sky[0]);g.addColorStop(1,Wd.sky[1]);
   cx.fillStyle=g;cx.fillRect(0,0,W,H);
   if(Wd.stars){cx.fillStyle='#fff';for(let i=0;i<70;i++){const x=(((i*197)%W-cam.x*.03*(1+i%3))%W+W)%W;cx.fillRect(x,(i*83)%(H*.6),2,2)}}
+  if(Wd.pl){const px=((W*.8-cam.x*.01)%(W+300)+W+300)%(W+300)-100;cx.fillStyle=Wd.pl;cx.beginPath();cx.arc(px,H*.2,Math.min(W,H)*.12,0,7);cx.fill();cx.strokeStyle=Wd.pl;cx.globalAlpha=.6;cx.lineWidth=5;cx.beginPath();cx.ellipse(px,H*.2,Math.min(W,H)*.2,Math.min(W,H)*.04,-.3,0,7);cx.stroke();cx.globalAlpha=1}
   ridge(Wd.far,.1,H*.5,50,.004);ridge(Wd.near,.25,H*.62,35,.007);
   if(!car)return;
   const wx=sx=>(sx-ox)/s+cam.x,pts=[];
@@ -277,18 +291,18 @@ function render(){
   menu.innerHTML=`<div class=card><a href="/" style="display:block;text-align:left;color:#ffd23f;font-weight:700;text-decoration:none;margin-bottom:6px">‹ Back to app</a><h1>SKY CRAWLER</h1><p class=sub>🪙 ${save.coins}</p>
   <div class=sel><button data-a=pv>‹</button><div><b>${v.n}</b><small>Best ${bt} m</small></div><button data-a=nv>›</button></div>
   ${ownV?'':`<button class=buy data-a=buyv>Unlock vehicle 🪙${v.cost}</button>`}
-  <div class=sel><button data-a=pw>‹</button><div><b>${w.n}</b><small>${w.g<800?'Low gravity – huge air time':w.gm<1?'Slippery sand':'Classic hills'}</small></div><button data-a=nw>›</button></div>
+  <div class=sel><button data-a=pw>‹</button><div><b>${w.n}</b><small>${w.n==='Neon Rings'?'Tiny gravity · giant stunt ramps':w.n==='Ice Moon'?'Very slippery · long launch ramps':w.n==='Mars Canyon'?'Rocky road · stunt kickers':w.g<800?'Low gravity – huge air time':w.gm<1?'Slippery sand':'Classic hills'}</small></div><button data-a=nw>›</button></div>
   ${ownW?'':`<button class=buy data-a=buyw>Unlock world 🪙${w.cost}</button>`}
   ${up}
   <button class=go data-a=start ${ownV&&ownW?'':'disabled'}>DRIVE</button>
-  <p><small>RIGHT / D / W = gas (tilt back in air) · LEFT / A / S = brake (tilt forward)</small></p></div>`;
+  <p><small>Hit the ramps, chain flips for COMBO x5 · </small><small>RIGHT / D / W = gas (tilt back in air) · LEFT / A / S = brake (tilt forward)</small></p></div>`;
 }
 const cyc=(k,n,d)=>save[k]=(save[k]+d+n)%n;
 menu.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b||b.disabled)return;
   const a=b.dataset.a,i=+b.dataset.i;
   if(a==='pv')cyc('veh',3,-1);else if(a==='nv')cyc('veh',3,1);
-  else if(a==='pw')cyc('world',3,-1);else if(a==='nw')cyc('world',3,1);
+  else if(a==='pw')cyc('world',WORLD.length,-1);else if(a==='nw')cyc('world',WORLD.length,1);
   else if(a==='buyv'&&save.coins>=VEH[save.veh].cost){save.coins-=VEH[save.veh].cost;save.ownV[save.veh]=1}
   else if(a==='buyw'&&save.coins>=WORLD[save.world].cost){save.coins-=WORLD[save.world].cost;save.ownW[save.world]=1}
   else if(a==='up'){const u=save.upg[save.veh],cost=150*(u[i]+1)**2;if(u[i]<5&&save.coins>=cost){save.coins-=cost;u[i]++}}
