@@ -134,16 +134,20 @@ html,body{font-family:"Arial Rounded MT Bold","Trebuchet MS","Segoe UI",system-u
 .lvup{margin:8px 0 0;padding:8px;border-radius:12px;background:linear-gradient(90deg,var(--orange),var(--gold));border:3px solid var(--ink);font-weight:900;color:#fff;text-shadow:0 2px 0 var(--ink)}
 @media (prefers-reduced-motion:reduce){.stars span.on,#hud .coinp.bump,.card .ic.gift,.wb{animation:none}}
 
-#pad #bSprint{width:min(26vw,130px);height:min(14vh,70px);margin:0 auto 6px;position:relative;overflow:hidden;font-size:16px;background:#0a1230;border:3px solid var(--ink);border-bottom-width:7px;border-radius:20px}
-#pad #bSprint::before{content:"";position:absolute;left:0;bottom:0;width:var(--p,0%);height:100%;background:linear-gradient(180deg,#8be8ff,#2f8cff)}
-#pad #bSprint span{position:relative}#pad #bSprint.rdy{animation:rdy .5s infinite alternate;border-color:var(--gold)}@keyframes rdy{to{filter:brightness(1.35)}}
 #gear .g b{color:var(--gold)}
-@media (prefers-reduced-motion:reduce){#pad #bSprint.rdy{animation:none}}
+/* v5: fuel gauge fix (flex:1 collapsed the bars in the column), labels, power readout */
+#hud .meters .bar{flex:none;position:relative;height:22px}
+#hud .meters .bar.n{height:12px}
+#hud .bar em{position:absolute;left:0;right:0;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-style:normal;font-size:12px;font-weight:900;color:#fff;letter-spacing:.5px;text-shadow:0 1px 0 var(--ink),0 0 3px var(--ink),0 0 3px var(--ink)}
+#fuel{transition:width .15s linear}
+#fuel.low{background:linear-gradient(180deg,#ff8a7a,#e02626)}
+#gear .g.pw b{color:#9be564}#gear .g.pw.lo b{color:#ff6b5a}
+#pad{justify-content:space-between}
 </style></head><body>
 <canvas id="c"></canvas>
-<div id="hud" class="hide"><div class="pill big"><b id="dist">0</b><small>m</small></div><div class="pill coinp" id="coinp"><span class="cn"></span><b id="coin">0</b></div><div class="pill stage"><small>STAGE</small><b id="lv">1</b></div><div class="pill plv" title="Player level"><small>LV</small><b id="hplv">1</b></div><div class="meters"><div class="bar"><i id="fuel"></i></div><div class="bar n"><i id="nit"></i></div></div><button id="ab">🧠</button><button id="pb">⏸</button></div><div id="combo" class="hide"><span id="cmb"></span><i id="cmt"></i></div>
-<div id="gear" class="hide"><div class="rpm"><i id="rpm"></i></div><div class="g">⏱ <b id="tmr">0:00</b></div><div class="g">GEAR <b id="gr">1</b> · <b id="spd">0</b> km/h</div></div><div id="toast"></div>
-<div id="pad" class="hide"><button id="bBrake">BRAKE</button><button id="bSprint"><span>SPRINT</span></button><button id="bGas">GAS</button></div>
+<div id="hud" class="hide"><div class="pill big"><b id="dist">0</b><small>m</small></div><div class="pill coinp" id="coinp"><span class="cn"></span><b id="coin">0</b></div><div class="pill stage"><small>STAGE</small><b id="lv">1</b></div><div class="pill plv" title="Player level"><small>LV</small><b id="hplv">1</b></div><div class="meters"><div class="bar"><i id="fuel"></i><em id="fp">&#9981; 100%</em></div><div class="bar n"><i id="nit"></i></div></div><button id="ab">🧠</button><button id="pb">⏸</button></div><div id="combo" class="hide"><span id="cmb"></span><i id="cmt"></i></div>
+<div id="gear" class="hide"><div class="rpm"><i id="rpm"></i></div><div class="g">⏱ <b id="tmr">0:00</b></div><div class="g">GEAR <b id="gr">1</b> · <b id="spd">0</b> km/h</div><div class="g pw" id="pwl">⚡ POWER <b id="pwr">125</b>%</div></div><div id="toast"></div>
+<div id="pad" class="hide"><button id="bBrake">BRAKE</button><button id="bGas">GAS</button></div>
 <div id="menu"></div>
 <script>
 const $=id=>document.getElementById(id),cv=$('c'),cx=cv.getContext('2d'),menu=$('menu');
@@ -186,9 +190,26 @@ function feat(x){
 }
 function ground(x){
   let r=Math.min(1,Math.max(0,(x-350)/450)),sm=r*r*(3-2*r),k=Math.min(1.1,.2+x/16000)*A;
-  return -Math.max(x,0)*.03-sm*k*(58*Math.sin(x/230)+20*Math.sin(x/95+1.3)+48*Math.sin(x/520+2))-feat(x)-sm*EX(x)-(RT?sm*(3.5*Math.sin(x/29)+2.5*Math.sin(x/67+2)):0)-(x<-100?(-100-x)*3:0);
+  return -Math.max(x,0)*.03-sm*k*(58*Math.sin(x/230)+20*Math.sin(x/95+1.3)+48*Math.sin(x/520+2))-feat(x)-sm*EX(x)-HM()*HARD(x)-(RT?sm*(3.5*Math.sin(x/29)+2.5*Math.sin(x/67+2)):0)-(x<-100?(-100-x)*3:0);
 }
 const hash=n=>{let h=Math.imul(n,374761393)+668265263|0;h=Math.imul(h^(h>>>13),1274126177);return(h^(h>>>16))>>>0};
+/* HARD SECTIONS: from 37 m on, every 55 m a new obstacle zone (about 5 in 7 are hard) that grows tougher with distance:
+   rocky field, steep mound, deep pit, stairs, washboard. Each zone fades in/out so the road stays continuous. */
+const HS=1500,HZ=2200,SM=a=>{a=Math.max(0,Math.min(1,a));return a*a*(3-2*a)};
+const HM=()=>Math.min(1,Math.max(.7,A));
+function HARD(x){
+  if(x<HS)return 0;
+  const k=Math.floor((x-HS)/HZ),t=x-HS-k*HZ,h=hash(k*17+11),ty=k===0?2:h%7,d=Math.min(1.7,.45+k*.05);
+  if(ty<2)return 0;
+  const u=t/HZ,e=Math.min(1,u/.1,(1-u)/.1),env=e*e*(3-2*e);
+  switch(ty){
+    case 2:{const q=Math.min(d,1.3);return env*q*(9*Math.sin(x/19)+5*Math.sin(x/47+1.7)+3*Math.sin(x/13))}            /* rocky field */
+    case 3:{const R=70+45*d;return R*(SM((t-500)/240)-SM((t-1060)/240))}                                              /* steep mound */
+    case 4:{const D=55+35*d;return -D*(SM((t-500)/210)-SM((t-1050)/210))}                                             /* deep pit */
+    case 5:{const H=20+8*d;let v=0;for(let i=0;i<4;i++)v+=SM((t-300-170*i)/55)-SM((t-1100-170*i)/55);return H*v}      /* stairs up and down */
+    default:{return env*13*Math.min(d,1.4)*Math.sin(x/21)}                                                           /* washboard */
+  }
+}
 const RDN=['Rolling hills','Dunes','Rocky road','Stunt ramps','Washboard','Giant waves','Stair steps','Jump park','Whoops','Roller coaster'];
 const PN=['Kepler','Zorath','Nova','Vega','Orion','Titan','Helix','Draco','Lyra','Argo','Pulsar','Quasar','Cygnus','Atlas'],PS=['Prime','Minor','Alpha','Beta','Gamma','Delta','Omega'];
 for(let i=6;i<104;i++){const h=hash(i*31+7),hue=h%360,rd=i%10,t=i-6;
@@ -217,7 +238,7 @@ const UP=()=>{const u=save.upg[save.veh]||(save.upg[save.veh]=[]);while(u.length
 function EX(x){switch(RD){case 4:return 6*Math.sin(x/34);case 5:return 120*Math.sin(x/900);case 6:return 26*Math.tanh(3*Math.sin(x/300));case 8:return 34*Math.abs(Math.sin(x/190));case 9:return 90*Math.sin(x/340)+40*Math.sin(x/110)}return 0}
 function item(n){
   const x=400+n*140,h=hash(n);
-  if(n%11===5)return{x,y:ground(x)-40,t:'fuel'};
+  if(n%19===9)return{x,y:ground(x)-40,t:'fuel'};
   if(n%23===7)return{x,y:ground(x)-60,t:'gem'};
   if(h%10<6)return{x,y:ground(x)-45-(h%3===0?90:0),t:'coin'};
   return null;
@@ -248,7 +269,7 @@ let SC=1,SX=0,SY=0,shake=0;const OX=()=>W*.38+SX,OY=()=>H*.58+SY;
 function start(){
   welcome=0;
   applyWorld();const S=stats();
-  car={S,x:0,y:-S.h-S.r+4,a:0,vx:0,vy:0,w:0,wr:[0,0],fuel:S.fuel,air:0,acc:0,idle:0,nit:0,ab:0,rpm:.2,gear:1,tc:0};
+  car={S,x:0,y:-S.h-S.r+4,a:0,vx:0,vy:0,w:0,wr:[0,0],cm:[0,0],fuel:S.fuel,air:0,acc:0,idle:0,nit:0,ab:0,rpm:.2,gear:1,tc:0};
   run={dist:0,coins:0,flips:0,combo:0,ct:0,got:new Set(),over:'',cp:0,stunt:0,cpc:0,pk:0,air:0,cc:0,cct:0,sp:0,t:0};
   parts=[];pops=[];fls=[];cam.x=0;cam.y=car.y;state='play';
   menu.classList.add('hide');$('hud').classList.remove('hide');$('pad').classList.remove('hide');$('gear').classList.remove('hide');
@@ -256,7 +277,7 @@ function start(){
 }
 function sim(vi,mode=1,secs=7){ /* test-drive a vehicle on the current planet (bot: full gas, hands-off in the air); returns metres */
   const sv=[save.veh,car,run,parts,pops,state,keys.gas,keys.brake];keys.boost=0;SIM=mode;SIMDEAD=0;save.veh=vi;const S=stats();let d=0;
-  car={S,x:0,y:-S.h-S.r+4,a:0,vx:0,vy:0,w:0,wr:[0,0],fuel:S.fuel,air:0,acc:0,idle:0,nit:0,ab:0,rpm:.2,gear:1,tc:0};run={dist:0,coins:0,flips:0,combo:0,ct:0,got:new Set(),over:'',cp:0,stunt:0,cpc:0,pk:0,air:0,cc:0,cct:0,sp:0,t:0};parts=[];pops=[];state='play';
+  car={S,x:0,y:-S.h-S.r+4,a:0,vx:0,vy:0,w:0,wr:[0,0],cm:[0,0],fuel:S.fuel,air:0,acc:0,idle:0,nit:0,ab:0,rpm:.2,gear:1,tc:0};run={dist:0,coins:0,flips:0,combo:0,ct:0,got:new Set(),over:'',cp:0,stunt:0,cpc:0,pk:0,air:0,cc:0,cct:0,sp:0,t:0};parts=[];pops=[];state='play';
   for(let f=0;f<secs*60&&!SIMDEAD;f++){keys.gas=car.air>0?0:1;keys.brake=0;for(let i=0;i<8;i++)step(1/480);car.fuel=Math.max(0,car.fuel-S.burn*(keys.gas?1:.17)/60);d=Math.max(d,car.x/40)}
   [save.veh,car,run,parts,pops,state,keys.gas,keys.brake]=sv;sim.dead=SIMDEAD;SIM=0;return d}
 let advMsg='';
@@ -298,19 +319,20 @@ function step(dt){
   let fx=-c.vx*.03,fy=g-c.vy*.03,tq=0,touch=0;
   const ca=Math.cos(c.a),sa=Math.sin(c.a);let thr=c.fuel>0?keys.gas:0;
   /* SMART ENGINE: wheelie guard (assist) cuts power when the nose points too high on the ground, so the car can't flip backwards under full gas */
-  const nb=c.ab>0&&thr&&!SIM?1:0;if(c.ab>0)c.ab=Math.max(0,c.ab-dt);
+  const ff=c.fuel/S.fuel, /* full tank = strong and fast; half = normal; nearly empty = weak and slow */
+    fp=ff>=.5?1+.25*(ff-.5)*2:.3+.7*Math.pow(ff*2,.8),fs=ff>=.5?1+.08*(ff-.5)*2:.55+.45*Math.min(1,ff*2);c.fp=fp;const nb=0;
   if(thr&&(save.assist||SIM===1)&&c.a<-.85&&c.air<.05){thr=.35;c.tc=1}else c.tc=0;
-  let pwm=1+(nb?.55:0);
+  let pwm=fp;
   for(let i=0;i<2;i++){
     const lx=i?S.L:-S.L,rx=lx*ca-S.h*sa,ry=lx*sa+S.h*ca,px=c.x+rx,py=c.y+ry,gy=ground(px),d=py+S.r-gy;
     if(d>0){
-      touch++;
+      touch++;c.cm[i]+=(Math.min(d,S.r*.6)-c.cm[i])*Math.min(1,dt*40);
       const sl=(ground(px+1)-ground(px-1))/2,il=1/Math.hypot(1,sl),tx=il,ty=sl*il,nx=sl*il,ny=-il;
       const vx=c.vx-c.w*ry,vy=c.vy+c.w*rx,vn=vx*nx+vy*ny,vt=vx*tx+vy*ty;
       const Fn=Math.max(0,S.k*Math.min(d,S.r)-S.c*vn),lim=S.gr*Wd.gm*Fn,share=S.drive===2?.5:1;
       let Ft=-vt*.35;
       if(thr&&(S.drive===2||i===0)){ /* torque curve: strong pull in the low/mid revs, fades toward top speed; 5-speed auto box shows the gear */
-        const ms=S.ms*(nb?1.12:1),rp=Math.max(0,Math.min(1.05,vt/ms)),curve=.78+.5*Math.sin(Math.min(1,rp*5%1+.0)*Math.PI*.9+.1)*(1-rp*.35);
+        const ms=S.ms*fs,rp=Math.max(0,Math.min(1.05,vt/ms)),curve=.78+.5*Math.sin(Math.min(1,rp*5%1+.0)*Math.PI*.9+.1)*(1-rp*.35);
         c.rpm+=((rp*5%1)*.8+.2-c.rpm)*.2;c.gear=Math.max(1,Math.min(5,Math.ceil(rp*5+.001)));
         Ft+=S.pw*pwm*share*Math.max(0,1-vt/ms)*Math.min(1.25,curve)*thr}
       if(keys.brake){if(vt>25)Ft-=lim*.8;else Ft-=S.pw*share*.5*Math.max(0,1+vt/(S.ms*.4))}
@@ -319,7 +341,7 @@ function step(dt){
       fx+=Fx;fy+=Fy;tq+=rx*Fy-ry*Fx;c.wr[i]+=vt/S.r*dt;
       if(Math.abs(Ft)>150&&Math.abs(vt)>80&&parts.length<160&&Math.random()<.25)
         parts.push({x:px,y:gy,vx:-vt*.15+(Math.random()-.5)*80,vy:-Math.random()*200,l:.6,c:Wd.dirt});
-    }else c.wr[i]+=(thr?22:keys.brake?0:7)*dt;
+    }else{c.cm[i]*=Math.max(0,1-dt*8);c.wr[i]+=(thr?22:keys.brake?0:7)*dt}
   }
   if(nb&&!SIM){if(parts.length<200&&Math.random()<.7){const bx=c.x-S.L*ca*1.2,by=c.y-S.L*sa*1.2;parts.push({x:bx,y:by,vx:-c.vx*.2-120+Math.random()*40,vy:(Math.random()-.5)*60,l:.35,c:Math.random()<.5?'#6fe3ff':'#ffd23f'})}}
   if(!touch){c.w+=(keys.brake-thr)*S.air*dt;
@@ -341,7 +363,7 @@ function step(dt){
     if(c.air>.4){
       const f=Math.floor(Math.abs(c.acc)/6.283+.3);
       const m=Math.min(5,1+run.combo);
-      if(f>0){const b=f*100*m;run.flips+=f;run.sp=Math.min(1,(run.sp||0)+.3*f);sfx('flip');run.stunt+=b;run.combo++;run.ct=4;pop((c.acc<0?'BACK':'FRONT')+' FLIP'+(f>1?' x'+f:'')+(m>1?'  COMBO x'+m:'')+'  +'+b)}
+      if(f>0){const b=f*100*m;run.flips+=f;sfx('flip');run.stunt+=b;run.combo++;run.ct=4;pop((c.acc<0?'BACK':'FRONT')+' FLIP'+(f>1?' x'+f:'')+(m>1?'  COMBO x'+m:'')+'  +'+b)}
       else if(c.air>1.2){const b=Math.floor(c.air*15)*m;run.stunt+=b;run.combo++;run.ct=4;pop((c.air>2.4?'MEGA JUMP':'BIG AIR')+(m>1?'  COMBO x'+m:'')+'  +'+b)}
     }
     c.air=0;c.acc=0;
@@ -353,7 +375,7 @@ function frame(dt){
   if(state==='play'){
     for(let i=0;i<n&&state==='play';i++)step(dt/n);
     const c=car,S=c.S;
-    c.fuel=Math.max(0,c.fuel-dt*S.burn*.7*(c.ab>0?1.6:1)); /* constant drain like the classic: gas or not, the tank empties; a sprint burns it faster */
+    c.fuel=Math.max(0,c.fuel-dt*S.burn*.9); /* constant drain like the classic: gas or not, the tank empties; a sprint burns it faster */
     if(run.ct>0){run.ct-=dt;if(run.ct<=0)run.combo=0}
     if(run.cct>0){run.cct-=dt;if(run.cct<=0)run.cc=0}
     run.dist=Math.max(run.dist,c.x/40);run.t+=dt;
@@ -362,9 +384,9 @@ function frame(dt){
       const RR=it.t==='fuel'?48:48+S.mg;
       if(Math.abs(it.x-c.x)<RR&&Math.abs(it.y-c.y)<RR+12){
         run.got.add(it.id);
-        if(it.t==='fuel'){c.fuel=S.fuel;pop('⛽ TANK FULL');sfx('fuel')}
+        if(it.t==='fuel'){c.fuel=S.fuel;pop('⛽ TANK FULL · POWER UP!');sfx('fuel');burst(it.x,it.y,'#ff5a4a',12);burst(it.x,it.y,'#ffd23f',8);shake=Math.max(shake,.25)}
         else{const ch=Math.min(5,Math.floor(run.cc/3)),val=(it.t==='gem'?25:5)+ch,col=it.t==='gem'?'#7ff0ff':'#ffd23f';
-          run.coins+=val;run.pk++;run.sp=Math.min(1,run.sp+.05);sfx('coin',run.cc);run.cc++;run.cct=1.6;floatT('+'+val,it.x,it.y-18,col);burst(it.x,it.y,col);coinBump();
+          run.coins+=val;run.pk++;c.fuel=Math.min(S.fuel,c.fuel+S.fuel*(it.t==='gem'?.06:.012));sfx('coin',run.cc);run.cc++;run.cct=1.6;floatT('+'+val,it.x,it.y-18,col);burst(it.x,it.y,col);coinBump();
           if(run.cc===10||run.cc===25||run.cc===50)pop('🪙 COIN CHAIN x'+run.cc+'!')}
       }
     }
@@ -376,7 +398,9 @@ function frame(dt){
     {const cb=$('combo');if(run.combo>0&&run.ct>0){cb.classList.remove('hide');$('cmb').textContent='COMBO ×'+Math.min(5,1+run.combo);$('cmt').style.transform='scaleX('+Math.max(0,run.ct/4)+')'}else cb.classList.add('hide')}
     if(keys.gas&&c.fuel>0&&parts.length<190&&Math.random()<.35)parts.push({x:c.x-S.L*Math.cos(c.a)*1.15,y:c.y-S.L*Math.sin(c.a)*1.15,vx:-c.vx*.15-40,vy:-30-Math.random()*40,l:.5,c:'#9aa0b0',sm:1});
     $('fuel').style.width=(c.fuel/S.fuel*100)+'%';$('nit').style.width=(run.dist%LVD/LVD*100)+'%';$('lv').textContent=run.cp+1;
-    {const sb=$('bSprint');sb.style.setProperty('--p',Math.round(run.sp*100)+'%');sb.classList.toggle('rdy',run.sp>=1);const T=Math.floor(run.t);$('tmr').textContent=Math.floor(T/60)+':'+String(T%60).padStart(2,'0')}
+    {const T=Math.floor(run.t);$('tmr').textContent=Math.floor(T/60)+':'+String(T%60).padStart(2,'0')}
+    {const ff=c.fuel/S.fuel;$('fp').textContent='⛽ '+Math.round(ff*100)+'%';$('pwr').textContent=Math.round((c.fp||1)*100);$('pwl').classList.toggle('lo',ff<.3);
+     if(ff<.2&&!run.lw&&c.fuel>0){run.lw=1;toast('⛽ LOW FUEL: the engine is losing power! Grab coins and red cans')}else if(ff>.35)run.lw=0}
     $('rpm').style.width=Math.round(c.rpm*100)+'%';$('gr').textContent=c.gear;$('spd').textContent=Math.round(Math.abs(c.vx)*.09);
     /* planet weather */
     const wd=WORLD[save.world];if(wd.wx&&Math.random()<.5)parts.push({x:cam.x+(Math.random()*1.4-.2)*W/SC,y:cam.y-H/SC*.6,vx:wd.wx==='snow'?-30:-260,vy:wd.wx==='snow'?90:40,l:2.2,c:wd.wx==='snow'?'#fff':wd.wx==='dust'?'#e8a07a':'#ff3df2',wx:1});
@@ -402,19 +426,22 @@ const CL=[];for(let i=0;i<9;i++)CL.push({x:(hash(i*5)%1000)/1000,y:.06+(hash(i*1
 function ridge(col,par,base,amp,fr,ph){
   cx.fillStyle=col;cx.beginPath();cx.moveTo(0,H);
   for(let x=0;x<=W+10;x+=10){const u=(x+cam.x*par)*fr+(ph||0);cx.lineTo(x,base+amp*Math.sin(u)+amp*.5*Math.sin(u*2.3+1)+amp*.25*Math.sin(u*5.1+2))}
-  cx.lineTo(W,H);cx.fill();
+  cx.lineTo(W,H);cx.fill();const gg=cx.createLinearGradient(0,base-amp*1.5,0,H);gg.addColorStop(0,'rgba(255,255,255,.14)');gg.addColorStop(1,'rgba(0,0,40,.3)');cx.fillStyle=gg;cx.fill();
 }
 function wheel(x,y,r,a,t){
   cx.save();cx.translate(x,y);
-  cx.fillStyle='#14151a';cx.beginPath();cx.arc(0,0,r,0,7);cx.fill();
+  cx.fillStyle='#17181d';cx.strokeStyle='#2a1400';cx.lineWidth=2.5;cx.beginPath();cx.arc(0,0,r,0,7);cx.fill();cx.stroke();
   cx.rotate(a);
-  cx.strokeStyle='#2c2e38';cx.lineWidth=3;
-  for(let i=0;i<12;i++){cx.rotate(Math.PI/6);cx.beginPath();cx.moveTo(r-3,0);cx.lineTo(r,0);cx.stroke()}
-  cx.fillStyle=t>=8?'#7ee8ff':'#c9ced6';cx.beginPath();cx.arc(0,0,r*.62,0,7);cx.fill();
-  cx.fillStyle='#4a4f5e';cx.beginPath();cx.arc(0,0,r*.5,0,7);cx.fill();
-  cx.strokeStyle='#c9ced6';cx.lineWidth=2.5;
-  for(let i=0;i<5;i++){cx.rotate(Math.PI*2/5);cx.beginPath();cx.moveTo(0,0);cx.lineTo(r*.5,0);cx.stroke()}
-  cx.fillStyle='#e8ebf2';cx.beginPath();cx.arc(0,0,r*.12,0,7);cx.fill();
+  cx.strokeStyle='#454957';cx.lineWidth=Math.max(3,r*.2);cx.lineCap='butt';
+  for(let i=0;i<14;i++){cx.rotate(Math.PI/7);cx.beginPath();cx.moveTo(r*.84,0);cx.lineTo(r-1.2,0);cx.stroke()}
+  cx.strokeStyle='#0c0d10';cx.lineWidth=1.5;cx.beginPath();cx.arc(0,0,r*.8,0,7);cx.stroke();
+  const rg=cx.createRadialGradient(-r*.18,-r*.18,1,0,0,r*.62);
+  if(t>=8){rg.addColorStop(0,'#eaffff');rg.addColorStop(1,'#37c6ee')}else{rg.addColorStop(0,'#f4f6fa');rg.addColorStop(1,'#8f98ab')}
+  cx.fillStyle=rg;cx.beginPath();cx.arc(0,0,r*.62,0,7);cx.fill();cx.strokeStyle='#2a1400';cx.lineWidth=1.5;cx.stroke();
+  cx.fillStyle='#3d4256';cx.beginPath();cx.arc(0,0,r*.46,0,7);cx.fill();
+  cx.strokeStyle='#cfd5e2';cx.lineWidth=Math.max(2,r*.12);cx.lineCap='round';
+  for(let i=0;i<5;i++){cx.rotate(Math.PI*2/5);cx.beginPath();cx.moveTo(0,0);cx.lineTo(r*.46,0);cx.stroke()}
+  cx.fillStyle='#fff';cx.beginPath();cx.arc(0,0,r*.13,0,7);cx.fill();
   cx.restore();
 }
 function drawCar(){
@@ -424,71 +451,97 @@ function drawCar(){
   const ln=(w,s,...p)=>{cx.strokeStyle=s;cx.lineWidth=w;cx.beginPath();cx.moveTo(p[0],p[1]);for(let i=2;i<p.length;i+=2)cx.lineTo(p[i],p[i+1]);cx.stroke()};
   const pl=(f,...p)=>{cx.fillStyle=f;cx.beginPath();cx.moveTo(p[0],p[1]);for(let i=2;i<p.length;i+=2)cx.lineTo(p[i],p[i+1]);cx.closePath();cx.fill();if(typeof f==='string'){cx.strokeStyle='#2a1400';cx.lineWidth=2.5;cx.stroke()}};
   const dark='#1d2030',steel='#aeb6c8',glass='#a8defc';
-  const head=(x,y)=>{const sp=Math.min(1,Math.abs(c.vx)/900),fl=Math.sin(performance.now()/90)*3*sp,K='#2a1400';
-    cx.strokeStyle='#ff6b1a';cx.lineWidth=5;cx.beginPath();cx.moveTo(x-5,y+6);cx.quadraticCurveTo(x-16-14*sp,y+8+fl,x-24-20*sp,y+4-fl*1.5);cx.stroke();
-    cx.strokeStyle=K;cx.lineWidth=2;cx.fillStyle='#f6c796';cx.beginPath();cx.arc(x,y,7.5,0,7);cx.fill();cx.stroke();
-    cx.fillStyle='#35d0ff';cx.beginPath();cx.arc(x,y-1,8.6,Math.PI,0);cx.closePath();cx.fill();cx.stroke();
-    cx.fillStyle='#fff';cx.beginPath();cx.ellipse(x+3.6,y-1,4.6,3.8,0,0,7);cx.fill();cx.stroke();
-    cx.fillStyle=car.dead?'#d62828':'#1b2b5e';cx.beginPath();cx.arc(x+4.8,y-1,1.9,0,7);cx.fill();
-    cx.strokeStyle=K;cx.lineWidth=1.5;cx.beginPath();cx.arc(x+2,y+3.4,2.6,.1,Math.PI-.3);cx.stroke()};
-  const rider=(sx,sy,hx,hy,fx,fy,lean)=>{
-    const shx=sx+lean,shy=sy-20;
-    ln(6,'#22377a',sx,sy,(sx+fx)/2+7,(sy+fy)/2-3,fx,fy);
-    ln(9,'#e8590c',sx,sy,shx,shy);
-    ln(5,'#e8590c',shx,shy,(shx+hx)/2,(shy+hy)/2+5,hx,hy);
-    ln(4,'#222',hx-2,hy,hx+3,hy);
-    head(shx+2,shy-10)};
+  const K='#2a1400',skin='#f2b98a',skin2='#dd9c6c';
+  const limb=(w,col,...p)=>{ln(w+4,K,...p);ln(w,col,...p)};
+  const shoe=(x,y)=>{cx.fillStyle='#f3f3f8';cx.strokeStyle=K;cx.lineWidth=2;cx.beginPath();cx.ellipse(x+3,y+1,6,3.6,0,0,7);cx.fill();cx.stroke()};
+  const glove=(x,y)=>{cx.fillStyle='#2b2b33';cx.strokeStyle=K;cx.lineWidth=1.5;cx.beginPath();cx.arc(x,y,3.4,0,7);cx.fill();cx.stroke()};
+  /* a real head: neck, ear, nose, mouth, eye behind goggles, helmet with peak and chin strap, streaming scarf */
+  const head=(x,y)=>{
+    const sp=Math.min(1,Math.abs(c.vx)/900),fl=Math.sin(performance.now()/90)*3*sp,dead=car.dead;
+    for(const[w,col]of[[8.5,K],[4.6,'#ff6b1a']]){cx.strokeStyle=col;cx.lineWidth=w;cx.beginPath();cx.moveTo(x-5,y+7);cx.quadraticCurveTo(x-16-14*sp,y+9+fl,x-24-20*sp,y+5-fl*1.5);cx.stroke()}
+    ln(9,K,x-1,y+5,x,y+11);ln(5.5,skin2,x-1,y+5,x,y+11);
+    cx.strokeStyle=K;cx.lineWidth=2;cx.fillStyle=skin;cx.beginPath();cx.arc(x,y,8,0,7);cx.fill();cx.stroke();
+    cx.fillStyle=skin2;cx.beginPath();cx.moveTo(x+7.4,y);cx.lineTo(x+11,y+2.8);cx.lineTo(x+6.8,y+3.8);cx.closePath();cx.fill();cx.stroke();
+    cx.fillStyle=skin2;cx.beginPath();cx.arc(x-2.6,y+1.6,2.3,0,7);cx.fill();cx.lineWidth=1.2;cx.stroke();
+    cx.strokeStyle=K;cx.lineWidth=1.5;cx.beginPath();cx.arc(x+3.2,y+4.4,2.6,.15,Math.PI-.5);cx.stroke();
+    ln(1.4,K,x-2,y+3.6,x+3.4,y+8);
+    cx.lineWidth=2;cx.fillStyle='#35d0ff';cx.beginPath();cx.arc(x-.4,y-1,9.6,Math.PI,0);cx.lineTo(x+9.2,y-1.6);cx.lineTo(x-9.8,y-1.6);cx.closePath();cx.fill();cx.stroke();
+    pl('#1b9fd0',x+4,y-6.4,x+12.5,y-2.6,x+3,y-2.6);
+    cx.fillStyle='#ffffff55';cx.beginPath();cx.ellipse(x-3,y-6.6,4,1.8,-.3,0,7);cx.fill();
+    ln(2.6,'#1b2b5e',x-9,y-1.8,x+9,y-1.8);
+    cx.fillStyle='#fff';cx.strokeStyle=K;cx.lineWidth=1.6;cx.beginPath();cx.ellipse(x+3.6,y-.4,3.9,3.1,0,0,7);cx.fill();cx.stroke();
+    if(dead){ln(1.6,'#d62828',x+1.8,y-1.8,x+5.4,y+1);ln(1.6,'#d62828',x+5.4,y-1.8,x+1.8,y+1)}
+    else{cx.fillStyle='#1b2b5e';cx.beginPath();cx.arc(x+4.4,y-.3,1.7,0,7);cx.fill()}
+  };
+  /* rider on a bike / scooter: far leg and arm, jacket, near leg, bent arm to the grip, gloves, shoes, body bobs and leans with gas and brake */
+  const rider=(sx,sy,hx,hy,fx,fy,lean,f2)=>{
+    const bob=Math.sin(performance.now()/130)*Math.min(1,Math.abs(c.vx)/900)*1.2,
+      shx=sx+lean+(keys.gas?2.5:keys.brake?-3:0),shy=sy-20+bob;
+    const f0=f2||[fx-9,fy-1];
+    limb(7,'#17235a',sx,sy,(sx+f0[0])/2+9,(sy+f0[1])/2-3,f0[0],f0[1]);shoe(f0[0],f0[1]);
+    limb(5,'#b8430a',shx,shy+1,(shx+hx)/2-1,(shy+hy)/2+8,hx+1,hy+1);glove(hx+1,hy+1);
+    limb(7,'#22377a',sx,sy,(sx+fx)/2+9,(sy+fy)/2-3,fx,fy);shoe(fx,fy);
+    limb(12,'#e8590c',sx,sy-1,shx,shy);ln(3,'#ff9a3c',sx+3,sy-5,shx+3,shy+4);ln(3,'#fff',sx-4,sy-3,shx-4,shy+5);
+    limb(5.5,'#e8590c',shx,shy+1,(shx+hx)/2-2,(shy+hy)/2+7,hx,hy);glove(hx,hy);
+    head(shx+2,shy-13)};
+  /* driver in a car: jacket shoulders, arm on the steering wheel, same head */
+  const driver=(x,y)=>{
+    limb(11,'#e8590c',x-3,y+14,x-1,y+8);
+    limb(5,'#e8590c',x+1,y+10,x+9,y+14,x+16,y+11);glove(x+16,y+11);
+    ln(5,K,x+15,y+5,x+19,y+16);ln(2.6,'#cfd5e2',x+15,y+5,x+19,y+16);
+    head(x+1,y-1)};
   const lights=(x,y)=>{cx.fillStyle='#fff2a8';cx.beginPath();cx.arc(x,y,3.5,0,7);cx.fill()};
   if(Wd.stars&&state==='play'){const bg=cx.createLinearGradient(L+10,0,L+300,0);bg.addColorStop(0,'rgba(255,240,170,.26)');bg.addColorStop(1,'rgba(255,240,170,0)');pl(bg,L+10,-h-2,L+300,-h-80,L+300,-h+50)}
   if(t>=8){cx.shadowColor=col;cx.shadowBlur=7+t}
-  wheel(-L,h,r,c.wr[0],t);
+  const wy0=h-c.cm[0],wy1=h-c.cm[1];
+  wheel(-L,wy0,r,c.wr[0],t);
   if(cl==='Bicycle'){
-    const R=[-L,h],BB=[-6,4],SS=[-L*.4,-14],HD=[L*.55,-8],F=[L,h];
+    const R=[-L,wy0],BB=[-6,4],SS=[-L*.4,-14],HD=[L*.55,-8],F=[L,wy1];
     ln(4,col,R[0],R[1],BB[0],BB[1]);ln(4,col,BB[0],BB[1],HD[0],HD[1]);ln(4,col,SS[0],SS[1],HD[0],HD[1]);ln(4,col,SS[0],SS[1],BB[0],BB[1]);ln(4,col,R[0],R[1],SS[0],SS[1]);
     ln(3,steel,HD[0],HD[1],F[0],F[1]);ln(3,dark,HD[0]-2,HD[1]-2,L*.5,-17,L*.72,-17);ln(5,dark,SS[0]-6,SS[1]-2,SS[0]+5,SS[1]-2);ln(3,steel,BB[0],BB[1],2,9);
-    cx.shadowBlur=0;rider(SS[0],SS[1]-3,L*.72,-17,2,8,6);
+    cx.shadowBlur=0;{const pa=c.wr[0]*.8,pcx=-4,pcy=7,pr=7;rider(SS[0],SS[1]-3,L*.72,-17,pcx+Math.cos(pa)*pr,pcy+Math.sin(pa)*pr+1,6,[pcx-Math.cos(pa)*pr,pcy-Math.sin(pa)*pr+1])}
   }else if(cl==='Scooter'){
-    ln(8,col,-L*.9,h-4,L*.55,h-4);ln(5,col,-L*.9,h-4,-L,h-12);ln(4,steel,L*.55,h-4,L*.62,-22);ln(4,steel,L*.55,h-4,L,h);ln(5,dark,L*.62-5,-22,L*.62+4,-22);
+    ln(8,col,-L*.9,h-4,L*.55,h-4);ln(5,col,-L*.9,h-4,-L,h-12);ln(4,steel,L*.55,h-4,L*.62,-22);ln(4,steel,L*.55,h-4,L,wy1);ln(5,dark,L*.62-5,-22,L*.62+4,-22);
     ln(3,'#fff',-L*.6,h-4,L*.4,h-4);lights(L*.62+4,-14);
     cx.shadowBlur=0;rider(-4,-6,L*.62,-22,-6,h-7,2);
   }else if(cl==='Dirt Bike'){
-    ln(6,col,-L,h,-8,4);cx.fillStyle=dark;rr(-12,-4,24,18,4);cx.fill();cx.strokeStyle='#2a1400';cx.lineWidth=2.5;cx.stroke();
+    ln(6,col,-L,wy0,-8,4);cx.fillStyle=dark;rr(-12,-4,24,18,4);cx.fill();cx.strokeStyle='#2a1400';cx.lineWidth=2.5;cx.stroke();
     pl(col,-8,-10,L*.45,-14,L*.52,-2,-4,2);ln(7,dark,-L*.62,-11,10,-13);ln(5,col,-L*.62,-11,-L*.95,-7);
-    ln(4,steel,L,h,L*.62,-16);ln(5,dark,L*.62-4,-18,L*.5,-24);ln(4,'#bbb',-4,8,-L*.85,0);
+    ln(4,steel,L,wy1,L*.62,-16);ln(5,dark,L*.62-4,-18,L*.5,-24);ln(4,'#bbb',-4,8,-L*.85,0);
     cx.fillStyle='#fff';rr(L*.5,-14,9,8,2);cx.fill();cx.strokeStyle='#2a1400';cx.lineWidth=2.5;cx.stroke();lights(L*.66,-14);
     cx.shadowBlur=0;rider(-6,-14,L*.5,-24,6,6,8);
   }
-  if(S.bike){wheel(L,h,r,c.wr[1],t);cx.restore();return}
+  if(S.bike){wheel(L,wy1,r,c.wr[1],t);cx.restore();return}
   const col2=cl==='Sports Car'?col:col;
   if(cl==='Sports Car'){
     pl(col,-L-10,-3,-L-8,-h-4,-L*.45,-h-8,-L*.15,-h-20,L*.3,-h-20,L*.65,-h-6,L+10,-h-3,L+12,-3);
     pl(glass,-L*.2,-h-9,-L*.08,-h-17,L*.26,-h-17,L*.48,-h-8);
     ln(3,'rgba(255,255,255,.7)',-L-6,-h+1,L+8,-h+1);ln(3,dark,-L-4,-h-2,-L-6,-h-12);ln(5,col,-L-14,-h-12,-L+2,-h-12);
     pl('#fff2a8',L+8,-h-5,L+13,-h-4,L+12,-h+1,L+6,-h+1);cx.fillStyle='#ff2d2d';cx.fillRect(-L-12,-h-4,4,6);
-    cx.shadowBlur=0;head(L*.05,-h-14);
+    cx.shadowBlur=0;driver(L*.05,-h-14);
   }else if(cl==='Jeep'){
     cx.fillStyle=col;rr(-L-8,-h-8,2*L+16,h+8,6);cx.fill();cx.strokeStyle='#2a1400';cx.lineWidth=2.5;cx.stroke();
     pl(col,-L*.7,-h-8,-L*.7,-h-26,L*.15,-h-26,L*.32,-h-8);pl(glass,-L*.56,-h-11,-L*.56,-h-23,L*.08,-h-23,L*.2,-h-11);
     ln(3,dark,-L*.72,-h-28,L*.15,-h-28);cx.fillStyle='#14151a';cx.beginPath();cx.arc(-L-13,-h-2,r*.55,0,7);cx.fill();
-    cx.fillStyle=dark;cx.fillRect(L+3,-h-4,5,10);lights(L+6,-h-8);cx.shadowBlur=0;head(-L*.2,-h-16);
+    cx.fillStyle=dark;cx.fillRect(L+3,-h-4,5,10);lights(L+6,-h-8);cx.shadowBlur=0;driver(-L*.2,-h-16);
   }else if(cl==='Truck'){
     cx.fillStyle=col;rr(-L-10,-h-12,L*.95,h+12,3);cx.fill();cx.strokeStyle='#2a1400';cx.lineWidth=2.5;cx.stroke();cx.fillStyle='rgba(0,0,0,.3)';rr(-L-6,-h-10,L*.85,h*.35,2);cx.fill();cx.strokeStyle='#2a1400';cx.lineWidth=2.5;cx.stroke();
     pl(col,0,-h-8,0,-h-30,L*.5,-h-30,L*.85,-h-8);cx.fillStyle=col;rr(0,-h-10,L+8,h+10,5);cx.fill();cx.strokeStyle='#2a1400';cx.lineWidth=2.5;cx.stroke();
     pl(glass,L*.08,-h-12,L*.08,-h-26,L*.46,-h-26,L*.68,-h-12);ln(5,steel,L+8,-4,L+8,h-4);lights(L+6,-h-4);ln(4,steel,-L-8,-h-14,-L-8,-h-34);
-    cx.shadowBlur=0;head(L*.25,-h-17);
+    cx.shadowBlur=0;driver(L*.25,-h-17);
   }else if(cl==='Monster'){
     cx.fillStyle=col;rr(-L*.95,-h-18,L*1.9,h*.55+18,9);cx.fill();cx.strokeStyle='#2a1400';cx.lineWidth=2.5;cx.stroke();
     pl(col,-L*.5,-h-18,-L*.3,-h-36,L*.35,-h-36,L*.6,-h-18);pl(glass,-L*.38,-h-21,-L*.26,-h-33,L*.28,-h-33,L*.48,-h-21);
     pl('#ff9f1c',-L*.9,-h-4,-L*.2,-h-10,-L*.9,-h-12);pl('#ff5a36',-L*.9,-h,-L*.1,-h-6,-L*.9,-h-8);
-    ln(7,steel,-L,h,-L*.8,-h-2);ln(7,steel,L,h,L*.8,-h-2);lights(L*.95,-h-12);cx.shadowBlur=0;head(-L*.02,-h-27);
+    ln(7,steel,-L,wy0,-L*.8,-h-2);ln(7,steel,L,wy1,L*.8,-h-2);lights(L*.95,-h-12);cx.shadowBlur=0;driver(-L*.02,-h-27);
   }else{ /* Buggy */
     cx.fillStyle=col;rr(-L-6,-h-4,2*L+12,h*.5+6,7);cx.fill();cx.strokeStyle='#2a1400';cx.lineWidth=2.5;cx.stroke();cx.fillStyle=dark;rr(-L-8,-h-16,L*.6,13,3);cx.fill();cx.strokeStyle='#2a1400';cx.lineWidth=2.5;cx.stroke();
     ln(4,steel,-L*.7,-h-2,-L*.55,-h-28,L*.2,-h-28,L*.5,-h-2);ln(4,steel,-L*.1,-h-2,-L*.1,-h-28);
-    pl(col,L*.5,-h-4,L+10,-h-1,L+8,-h+6,L*.5,-h+6);ln(5,dark,-L*.3,-h-8,L*.05,-h-8);lights(L+8,-h);cx.shadowBlur=0;head(-L*.12,-h-15);
+    pl(col,L*.5,-h-4,L+10,-h-1,L+8,-h+6,L*.5,-h+6);ln(5,dark,-L*.3,-h-8,L*.05,-h-8);lights(L+8,-h);cx.shadowBlur=0;driver(-L*.12,-h-15);
   }
   cx.shadowBlur=0;
-  ln(5,'#7d8498',-L,h,-L*.85,-h*.2);ln(5,'#7d8498',L,h,L*.85,-h*.2);
-  wheel(L,h,r,c.wr[1],t);
+  ln(5,'#7d8498',-L,wy0,-L*.85,-h*.2);ln(5,'#7d8498',L,wy1,L*.85,-h*.2);
+  wheel(L,wy1,r,c.wr[1],t);
   cx.restore();
 }
 function carShadow(){
@@ -499,7 +552,12 @@ function carShadow(){
 function coinDraw(x,y,s,ph,t){
   if(t==='coin'){const w=Math.max(.18,Math.abs(Math.cos(ph)));cx.shadowColor='#ffd23f';cx.shadowBlur=8;cx.fillStyle='#ffd23f';cx.beginPath();cx.ellipse(x,y,10*s*w,10*s,0,0,7);cx.fill();cx.shadowBlur=0;cx.fillStyle='#e09f00';cx.beginPath();cx.ellipse(x,y,5*s*w,6*s,0,0,7);cx.fill();cx.fillStyle='#fff9';cx.fillRect(x-3*s*w,y-7*s,2*s*w,4*s)}
   else if(t==='gem'){cx.shadowColor='#4de1ff';cx.shadowBlur=12;cx.fillStyle='#4de1ff';cx.beginPath();cx.moveTo(x,y-14*s);cx.lineTo(x+11*s,y);cx.lineTo(x,y+14*s);cx.lineTo(x-11*s,y);cx.fill();cx.shadowBlur=0;cx.fillStyle='#fff7';cx.beginPath();cx.moveTo(x,y-14*s);cx.lineTo(x+11*s,y);cx.lineTo(x,y);cx.fill()}
-  else{cx.fillStyle='#d62828';rr(x-12*s,y-15*s,24*s,30*s,5*s);cx.fill();cx.fillStyle='#fff';cx.font='bold '+16*s+'px system-ui';cx.textAlign='center';cx.fillText('F',x,y+6*s)}
+  else{cx.save();cx.translate(x,y+Math.sin(ph*.5)*3);
+    cx.shadowColor='#ff3b3b';cx.shadowBlur=14;cx.fillStyle='#e02626';cx.strokeStyle='#2a1400';cx.lineWidth=2.5;rr(-12*s,-15*s,24*s,30*s,5*s);cx.fill();cx.shadowBlur=0;cx.stroke();
+    cx.fillStyle='#ff8a7a';rr(-9*s,-12*s,5*s,24*s,2.5*s);cx.fill();
+    cx.fillStyle='#2a1400';rr(2*s,-22*s,10*s,8*s,2*s);cx.fill();
+    cx.fillStyle='#fff';cx.font='900 '+16*s+'px system-ui';cx.textAlign='center';cx.fillText('F',1*s,6*s);
+    cx.fillStyle='#ffd23f';cx.strokeStyle='#2a1400';cx.lineWidth=2;cx.beginPath();cx.moveTo(-7*s,-38*s);cx.lineTo(7*s,-38*s);cx.lineTo(0,-28*s);cx.closePath();cx.fill();cx.stroke();cx.restore()}
 }
 function scenery(k,Wd,sx,sy,z,h){
   cx.save();cx.translate(sx,sy+2*z);const t=Wd.dc||'rock';
@@ -535,10 +593,11 @@ function draw(){
   cx.fillStyle=Wd.dirt;cx.fill();cx.fillStyle=dg;cx.fill();
   cx.strokeStyle='rgba(0,0,0,.13)';cx.lineWidth=9*s;cx.lineJoin='round';
   for(let j=1;j<=3;j++){cx.beginPath();pts.forEach((p,i)=>i?cx.lineTo(p[0],p[1]+j*44*s):cx.moveTo(p[0],p[1]+j*44*s));cx.stroke()}
+  {const x0=Math.floor(wx(-10)/60)*60;for(let x=x0;x<wx(W+10);x+=60){const hh=hash((x/60|0)+99),xx=x+hh%50,sx=(xx-cam.x)*s+ox,sy=(ground(xx)-cam.y)*s+oy+(34+hh%110)*s;if(sy>H+20)continue;cx.fillStyle=hh&1?'rgba(0,0,0,.18)':'rgba(255,255,255,.10)';cx.beginPath();cx.ellipse(sx,sy,(4+hh%7)*s,(3+hh%4)*s,0,0,7);cx.fill()}}
   const line=(w,c,dy)=>{cx.beginPath();pts.forEach((p,i)=>i?cx.lineTo(p[0],p[1]+dy):cx.moveTo(p[0],p[1]+dy));cx.strokeStyle=c;cx.lineWidth=w;cx.stroke()};
-  line(27*s,'#1a0f06',4*s);line(21*s,Wd.dirt,3*s);line(16*s,Wd.top,0);line(5*s,'rgba(255,255,255,.38)',-5*s);
+  line(21*s,'#1a0f06',9*s);line(16*s,Wd.top,8*s);line(5*s,Wd.dirt,16*s);line(4*s,'rgba(255,255,255,.4)',3*s);
   {const x0=Math.floor(wx(-10)/24)*24;cx.strokeStyle=Wd.top;cx.lineWidth=2*s;cx.beginPath();
-   for(let x=x0;x<wx(W+10);x+=24){const hh=hash(x|0),xx=x+hh%14,sx=(xx-cam.x)*s+ox,sy=(ground(xx)-cam.y)*s+oy-7*s;cx.moveTo(sx,sy);cx.lineTo(sx+(hh%3-1)*2*s,sy-(3+hh%5)*s)}cx.stroke()}
+   for(let x=x0;x<wx(W+10);x+=24){const hh=hash(x|0),xx=x+hh%14,sx=(xx-cam.x)*s+ox,sy=(ground(xx)-cam.y)*s+oy+1*s;cx.moveTo(sx,sy);cx.lineTo(sx+(hh%3-1)*2*s,sy-(3+hh%5)*s)}cx.stroke()}
   {const d0=Math.floor(wx(-40)/110),d1=Math.ceil(wx(W+40)/110);
    for(let k=d0;k<=d1;k++){if(k<4)continue;const h=hash(k*13+3);if(h%3===0)continue;const x=k*110+h%60;scenery(k,Wd,(x-cam.x)*s+ox,(ground(x)-cam.y)*s+oy,(.7+(h>>>5)%60/100)*s,h)}}
   if(RP){const k0=Math.max(0,Math.floor((wx(-120)-900)/950)-1),k1=Math.floor((wx(W+120)-900)/950)+1;
@@ -580,7 +639,7 @@ function audio(){
 function snd(){
   if(!osc)return;
   const on=state==='play'&&car.fuel>0&&!save.mute;
-  osc.frequency.value=40+(car?car.rpm*70+car.gear*6:0)+(keys.gas?25:0)+(car&&car.ab>0?20:0);
+  osc.frequency.value=(40+(car?car.rpm*70+car.gear*6:0)+(keys.gas?25:0))*(car?.72+.28*Math.min(1,car.fuel/car.S.fuel*2):1);
   gn.gain.value=on?(keys.gas?.05:.02):0;
 }
 
@@ -670,10 +729,10 @@ menu.addEventListener('click',e=>{
   else if(a==='chest'&&!run.chest){run.chest=Math.round((40+Math.random()*160)*(1+run.cp*.15)/5)*5;save.coins+=run.chest;toast('🎁 +'+run.chest+' coins!');sfx('lvl')}
   else if(a==='smart'){smartPick();toast(advMsg.replace(/<[^>]+>/g,''))}
   else if(a==='tab'){tab=b.dataset.v}else if(a==='vf'){vf=b.dataset.v}else if(a==='pickv'){save.veh=i}else if(a==='pickw'){save.world=i}
-  else if(a==='help'){toast('RIGHT/D gas · LEFT/A brake · SHIFT = sprint · grab red cans to refuel · let go in the air to auto-level')}
+  else if(a==='help'){toast('RIGHT/D gas · LEFT/A brake · coins and red cans refuel you · low fuel = less power · let go in the air to auto-level')}
   else if(a==='start'){persist();start();return}
   else if(a==='resume'){menu.classList.add('hide');$('gear').classList.remove('hide');state='play';return}
-  else if(a==='garage'){state='menu';mode='garage';$('hud').classList.add('hide');$('pad').classList.add('hide');$('gear').classList.add('hide')}
+  else if(a==='garage'){if(mode==='pause'&&car&&run){run.over='RUN ENDED';over();return}state='menu';mode='garage';$('hud').classList.add('hide');$('pad').classList.add('hide');$('gear').classList.add('hide')}
   persist();render();
 });
 function pause(){if(state!=='play')return;state='menu';mode='pause';keys.gas=keys.brake=keys.boost=0;setPad();$('gear').classList.add('hide');render()}
@@ -685,13 +744,10 @@ addEventListener('keydown',e=>{
   if(state==='menu'&&mode==='over'&&['Enter','Space','KeyR'].includes(e.code)){e.preventDefault();start();return}
   if(state==='menu'&&mode==='pause'&&e.code==='Enter'){menu.classList.add('hide');$('gear').classList.remove('hide');state='play';return}
   if(e.code==='Escape'||e.code==='KeyP'){pause();return}
-  if(KN.includes(e.code)){sprint();return}
   if(KG.includes(e.code))keys.gas=1;if(KB.includes(e.code))keys.brake=1;
   if(state==='play'&&(KG.includes(e.code)||KB.includes(e.code)||e.code==='Space'))e.preventDefault();setPad();
 });
 addEventListener('keyup',e=>{if(KG.includes(e.code))keys.gas=0;if(KB.includes(e.code))keys.brake=0;setPad()});
-function sprint(){if(state!=='play'||!car||run.sp<1||car.fuel<=0)return;car.ab=4;run.sp=0;pop('🔥 SPRINT!');sfx('sprint');shake=Math.max(shake,.4)}
-$('bSprint').addEventListener('pointerdown',e=>{e.preventDefault();sprint()});
 function setPad(){$('bGas').classList.toggle('on',!!keys.gas);$('bBrake').classList.toggle('on',!!keys.brake)}
 [['bGas','gas'],['bBrake','brake']].forEach(([id,k])=>{
   const el=$(id),up=()=>{keys[k]=0;setPad()};
