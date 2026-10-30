@@ -52,10 +52,10 @@ export function GameGrid({ t, onPick }) {
           </button>
         );
       })}
-      {/* Sky Crawler: a stand-alone arcade page (/games/summit-surge/), so it is a link card and not part of GAME_LIST (no ratings, no online matches). */}
-      <a role="listitem" className="gg-card" href="/games/summit-surge/" style={{ '--accent': '#FF7A2F', '--i': order.length, textDecoration: 'none' }}>
+      {/* Sky Crawler: a stand-alone arcade page (/games/hill-climb-racer/), so it is a link card and not part of GAME_LIST (no ratings, no online matches). */}
+      <a role="listitem" className="gg-card" href="/games/hill-climb-racer/" style={{ '--accent': '#FF7A2F', '--i': order.length, textDecoration: 'none' }}>
         <span className="gg-art"><GameIcon game="skycrawler" size={52} /></span>
-        <b className="gg-name">Summit Surge</b>
+        <b className="gg-name">Hill Climb Racer</b>
         <small className="gg-tag">Hill-climb racing</small>
         <span className="gg-foot"><span className="gg-mode">{t.badgeOffline}</span></span>
       </a>
