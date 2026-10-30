@@ -6,7 +6,7 @@
 :root{--u:1px}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;touch-action:none}
 html,body{margin:0;height:100%;overflow:hidden;background:#0b1426;font-family:"Segoe UI",Roboto,Arial,sans-serif;color:#fff}
-canvas#c{position:fixed;inset:0}
+canvas#c{position:fixed;left:0;top:0;width:100%;height:100%}
 .a{position:absolute;width:calc(var(--w)*var(--u))}
 .hide{display:none!important}
 #hud{position:fixed;inset:0;pointer-events:none}
@@ -85,7 +85,7 @@ canvas#c{position:fixed;inset:0}
 'use strict';
 const $=s=>document.querySelector(s),cv=$('#c'),g=cv.getContext('2d'),dx=$('#dash').getContext('2d');
 let W=0,H=0,DPR=1,U=1;
-function rs(){DPR=Math.min(2,devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;U=H/1024;document.documentElement.style.setProperty('--u',U+'px')}
+function rs(){DPR=Math.min(2,devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;cv.style.width=W+'px';cv.style.height=H+'px';U=H/1024;document.documentElement.style.setProperty('--u',U+'px')}
 addEventListener('resize',rs);rs();
 /* ---------- assets ---------- */
 const NAMES='jeep wheel bgmid dirt coin can crate flag gem rock tree barrel logo i_engine i_susp i_tire i_fuel'.split(' ');
