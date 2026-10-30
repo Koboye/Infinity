@@ -201,6 +201,22 @@ canvas{filter:saturate(1.16) contrast(1.05) brightness(1.03)}
 .cn{border:1.5px solid #6b4a00;box-shadow:inset 0 0 0 2px #ffe27a55}
 .stars span{color:#2a303c}.stars span.on{color:var(--gold)}
 .lvup{border:1px solid #ffffff22;background:linear-gradient(90deg,#a85a10,#e8a31f);text-shadow:none}
+
+/* ---- exact-mockup garage / upgrades / level complete ---- */
+.mk-hero{display:flex;gap:10px;background:linear-gradient(180deg,#14233f,#0b1426)!important;border:3px solid #f5c542!important;border-radius:14px;padding:8px;margin:8px 0}
+.mk-hero img{width:52%;object-fit:contain;border-radius:8px}.mk-hero .nm{font-weight:800;color:#fff;margin-top:4px}.mk-hero .st{color:#f5c542;letter-spacing:2px}
+.mk-bars{flex:1;display:flex;flex-direction:column;justify-content:center;gap:9px;text-align:left;font-size:12px;color:#cfe3ff}
+.mk-bars i{display:block;height:7px;border-radius:4px;background:#1b2c4c;margin-top:3px}.mk-bars u{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,#2c8cff,#38b6ff)}
+.mk-up{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0}
+.mk-uc{background:linear-gradient(180deg,#14233f,#0c1730)!important;border:2px solid #243a63!important;border-radius:12px;padding:8px;color:#fff}
+.mk-uc b{display:block;font-size:13px;letter-spacing:1px}.mk-uc img{width:56px;height:54px;object-fit:contain}.mk-uc small{display:block;color:#cfe3ff;font-size:11px}
+.mk-seg{display:flex;gap:3px;justify-content:center;margin:5px 0}.mk-seg s{width:14px;height:8px;border-radius:2px;background:#2a3550;text-decoration:none}
+.mk-uc button{width:100%;min-width:0;border-radius:10px;background:#0a1226;border:2px solid #243a63;color:#fff;font-weight:800;padding:7px}
+.mk-uc button:disabled{opacity:.5}
+.mk-done .t{font-size:30px;font-weight:900;font-style:italic;color:#f5d13a;letter-spacing:1px;text-shadow:0 3px 12px #000}
+.mk-done .r{display:flex;align-items:center;gap:8px;color:#fff;font-size:16px;padding:7px 4px}.mk-done .r b{margin-left:auto}.mk-done .r em{color:#f5c542;font-style:normal}
+.mk-done .rec{display:inline-block;background:#f5c542;color:#2a1a00;font-weight:900;font-size:11px;padding:2px 8px;transform:rotate(-4deg);margin:2px 0 8px}
+.mk-btns{display:flex;gap:8px}.mk-btns button{flex:1;border-radius:10px;font-weight:800;padding:12px 4px;border:2px solid #243a63;background:#0e1b36;color:#fff}.mk-btns .nx{background:linear-gradient(180deg,#27c24c,#169a36);border-color:#2fe05c}
 </style><style>
 /* v8 arcade UI: big rubber pedals, round nitro, bold HUD */
 #pad button{width:min(27vw,168px)!important;height:min(30vh,142px)!important;border-radius:16px!important;border:4px solid #08080a!important;display:flex!important;align-items:flex-end;justify-content:center;padding-bottom:7px!important;color:#f1f1f1!important;font-size:22px!important;letter-spacing:1px!important;text-shadow:0 2px 0 #000!important;box-shadow:0 6px 0 #000a,inset 0 2px 0 #fff5!important;
@@ -902,17 +918,14 @@ function render(){
   const S=stats(),pmv=pmul(w),P=plvl(save.xp);
   if(mode==='over'){
     const p0=run.pl0,p1=run.pl1,up=p1.l>p0.l,pc=Math.round(p1.cur/p1.need*100);
-    menu.innerHTML=`<div class="card ov"><div class=ttl>${run.stars>0&&!/CRASH|OUT OF/.test(run.over)?"LEVEL COMPLETE!":run.over}</div><p class=sub>${CI[v.cls]} ${v.n} · ${w.n}</p>
-    <div class=stars>${[1,2,3].map(n=>`<span class="${run.stars>=n?'on':''}" style="--d:${n*.18}s">★</span>`).join('')}</div>
-    <div class=big><span class=cn></span>+${run.total}</div>
-    <div class=g4><div><b>📏 ${Math.floor(run.dist)} m</b><small>${run.newBest?'🏆 new best':'best '+bt}</small></div><div><b>🔄 ${run.flips}</b><small>flips</small></div><div><b>🪙 ${run.coins}</b><small>${run.pk} pickups</small></div><div><b>🤸 ${run.stunt}</b><small>stunts</small></div></div>
+    menu.innerHTML=`<div class="card ov"><div class="mkwrap"><div class=mk-done><div class=t>${run.stars>0&&!/CRASH|OUT OF/.test(run.over)?'LEVEL COMPLETE!':run.over}</div><p class=sub>${CI[v.cls]} ${v.n} \u00b7 ${w.n}</p><div class=stars>${[1,2,3].map(n=>`<span class="${run.stars>=n?'on':''}" style="--d:${n*.18}s">\u2605</span>`).join('')}</div><div class=r><em>\u2605</em>Distance<b>${Math.floor(run.dist).toLocaleString()} m \ud83e\ude99</b></div><div class=r><em>\u2605</em>Coins Collected<b>${run.coins+run.stunt+run.cpc} \ud83e\ude99</b></div><div class=r><em>\ud83d\udd11</em>Stunts<b>${run.flips} \u2605</b></div>${run.newBest?'<div class=rec>NEW RECORD!</div>':''}</div>
     <p class=sub style="margin:8px 0">⏱ ${Math.floor(run.t/60)}:${String(Math.floor(run.t%60)).padStart(2,'0')} · 🌍 ×${run.pm}${run.cb>1?' · 💰 ×'+run.cb.toFixed(1):''} · 🎁 stage gifts ${run.cpc} · 🏁 stage ${run.cp+1}</p>
     ${run.mdone.map(q=>`<div class=ln style="color:#9be564"><span>✅ ${q.txt}</span><b>+${q.rew}</b></div>`).join('')}
     <div class=xpl><span>Level ${p1.l}</span><span>+${run.xp} XP</span></div><div class=xpb><i style="width:${pc}%"></i></div>
     ${up?`<div class=lvup>⬆ LEVEL ${p1.l}! +${run.lvc} coins</div>`:''}
     <p class=sub style="font-size:13px">💡 ${run.tip||''}</p>
     <button class="go chest" data-a=chest ${run.chest?'disabled':''}>${run.chest?'🎁 Chest: +'+run.chest+' coins':'🎁 OPEN LUCKY CHEST'}</button>
-    <button class=go data-a=start>↻ RETRY</button><button class="go alt" data-a=garage>🏠 HOME / GARAGE</button></div>`;return;
+    <div class=mk-btns><button data-a=garage>🏠 HOME</button><button data-a=start>↻ RETRY</button><button class=nx data-a=start>▶ NEXT</button></div></div></div>`;return;
   }
   if(mode==='pause'){
     menu.innerHTML=`<div class=card><div class=ttl>PAUSED</div><button class=go data-a=resume>RESUME</button><button class="go alt" data-a=mute>${save.mute?'🔇 SOUND OFF':'🔊 SOUND ON'}</button><button class="go alt" data-a=tilt>📱 TILT CONTROL: ${save.tilt?'ON':'OFF'}</button>${save.tilt?`<button class="go alt" data-a=tinv>↕ INVERT TILT: ${save.tinv?'ON':'OFF'}</button>`:''}<button class="go alt" data-a=garage>QUIT TO GARAGE</button></div>`;return;
@@ -923,13 +936,13 @@ function render(){
   let body='';
   if(tab==='car'){
     const cls=['all',...VCL.map(c=>c[0])];
-    body=`<div class=chips>${cls.map(c=>`<button class="chip2 ${vf===c?'on':''}" data-a=vf data-v="${c}">${c==='all'?'ALL':CI[c]}</button>`).join('')}</div>
+    const mx=k=>Math.max(...VEH.map(q=>q[k]||0))||1,sb=(n,k)=>`<div>${n}<i><u style="width:${Math.round(100*(v[k]||0)/mx(k))}%"></u></i></div>`,stn=Math.min(3,1+Math.floor(save.veh/3));
+    body=`<div class=mk-hero><div style="flex:1"><img src="sprites/jeep_garage.png" alt=""><div class=nm>${v.n}</div><div class=st>${'\u2605'.repeat(stn)+'\u2606'.repeat(3-stn)}</div></div><div class=mk-bars>${sb('Speed','pw')}${sb('Acceleration','pw')}${sb('Grip','gr')}${sb('Fuel','fuel')}</div></div><div class=chips>${cls.map(c=>`<button class="chip2 ${vf===c?'on':''}" data-a=vf data-v="${c}">${c==='all'?'ALL':CI[c]}</button>`).join('')}</div>
     <div class=grid>${VEH.map((x,i)=>vf!=='all'&&x.cls!==vf?'':`<button class="tile ${i===save.veh?'sel':''} ${i<3||save.ownV[i]?'':'lock'}" data-a=pickv data-i=${i}><span class=e>${CI[x.cls]}</span>${VT[x.t]}<small>${i<3?'FREE':save.ownV[i]?'✓':'🔒 '+x.cost}</small></button>`).join('')}</div>`;
   }else if(tab==='world'){
     body=`<div class=grid>${WORLD.map((x,i)=>`<button class="tile ${i===save.world?'sel':''} ${i===0||save.ownW[i]?'':'lock'}" data-a=pickw data-i=${i}><span class=sw style="background:linear-gradient(180deg,${x.sky[0]},${x.sky[1]} 60%,${x.top} 60%)"></span>${x.n}<small>×${pmul(x)} ${i===0||save.ownW[i]?'✓':'🔒 '+x.cost}</small></button>`).join('')}</div>`;
   }else if(tab==='up'){
-    body=ownV?UPN.map(([n,b,d],i)=>{const lv=u[i],cost=upCost(i,lv);
-      return `<div class=upr title="${d}"><span class=ui>${UI[i]}</span><div><b>${n}</b><div class=pips>${'●'.repeat(lv)+'○'.repeat(5-lv)}</div></div><button ${lv>=5||save.coins<cost?'disabled':''} data-a=up data-i=${i}>${lv>=5?'MAX':'🪙'+cost}</button></div>`}).join(''):`<p class=sub>🔒 Unlock this vehicle to upgrade it</p>`;
+    body=ownV?`<div class=mk-up>${[[0,'i_engine','ENGINE'],[3,'i_susp','SUSPENSION'],[1,'i_tire','TIRES'],[2,'i_fuel','FUEL TANK']].map(([i,ic,n])=>{const lv=u[i],cost=upCost(i,lv);return `<div class=mk-uc><b>${n}</b><img src="sprites/${ic}.png" alt=""><small>Lv. ${lv}</small><div class=mk-seg>${[0,1,2,3,4].map(k=>`<s style="${k<lv?'background:#35c759':''}"></s>`).join('')}</div><button ${lv>=5||save.coins<cost?'disabled':''} data-a=up data-i=${i}>${lv>=5?'MAX':'\ud83e\ude99 '+cost}</button></div>`}).join('')}</div>`+UPN.map(([n,b,d],i)=>i<4?'':`<div class=upr title="${d}"><span class=ui>${UI[i]}</span><div><b>${n}</b><div class=pips>${'\u25cf'.repeat(u[i])+'\u25cb'.repeat(5-u[i])}</div></div><button ${u[i]>=5||save.coins<upCost(i,u[i])?'disabled':''} data-a=up data-i=${i}>${u[i]>=5?'MAX':'\ud83e\ude99'+upCost(i,u[i])}</button></div>`).join('')+`<p class=sub style="margin:8px 0">\ud83d\udd27 Upgrade your vehicle and go further!</p>`:`<p class=sub>\ud83d\udd12 Unlock this vehicle to upgrade it</p>`;
   }else{
     body=ms.map((q,j)=>`<div class="ms ${sd.done[j]?'d':''}"><span>${sd.done[j]?'✅':'🎯'} ${q.txt}</span><b>🪙${q.rew}</b></div>`).join('')+
       `<div class=st2><div><b>🏁 ${save.st.runs}</b><small>runs</small></div><div><b>🔄 ${save.st.flips}</b><small>flips</small></div><div><b>📏 ${save.st.dist}</b><small>metres</small></div><div><b>🪙 ${save.st.earned}</b><small>earned</small></div></div>`;
