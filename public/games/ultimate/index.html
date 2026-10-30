@@ -156,6 +156,9 @@ html,body{background:var(--navy)}
 .card .go.alt{background:linear-gradient(180deg,#6a52c9,#3b2a8a)}
 .lvup{background:linear-gradient(90deg,#ff2e88,#8f6bff)}
 @media(max-width:480px){#hud{flex-wrap:wrap;gap:6px;padding:8px 8px;box-sizing:border-box;font-size:16px}#hud .pill{padding:4px 9px;border-width:2px}#hud .pill.big{font-size:21px}#hud .meters{order:9;flex:1 1 100%;max-width:none;flex-direction:row;align-items:center;gap:8px;padding-top:2px}#hud .meters .bar{flex:1;min-width:0}#hud button{padding:4px 9px!important}}
+#pad #bBrake,#pad #bGas{font-size:0!important;color:transparent!important;text-shadow:none!important;background:transparent url(art/ui_brake.png) center/contain no-repeat!important;border:0!important;border-radius:0!important;width:min(30vw,138px);height:min(18vh,132px);filter:drop-shadow(0 6px 6px #0008)}
+#pad #bGas{background-image:url(art/ui_gas.png)!important}
+#pad #bBrake.on,#pad #bGas.on{transform:translateY(6px) scale(.96);filter:brightness(1.25) drop-shadow(0 2px 3px #0008);border:0!important}
 </style></head><body>
 <canvas id="c"></canvas>
 <div id="hud" class="hide"><div class="pill big"><b id="dist">0</b><small>m</small></div><div class="pill coinp" id="coinp"><span class="cn"></span><b id="coin">0</b></div><div class="pill stage"><small>STAGE</small><b id="lv">1</b></div><div class="pill plv" title="Player level"><small>LV</small><b id="hplv">1</b></div><div class="meters"><div class="bar"><i id="fuel"></i></div><div class="bar n"><i id="nit"></i></div></div><button id="ab">🧠</button><button id="pb">⏸</button></div><div id="combo" class="hide"><span id="cmb"></span><i id="cmt"></i></div>
@@ -557,9 +560,14 @@ function carShadow(){
   const a=Math.max(0,.34-hh/500);if(a<=0)return;
   cx.fillStyle='rgba(0,0,0,'+a+')';cx.beginPath();cx.ellipse(sx,sy+3*SC,S.L*1.5*SC,5*SC,Math.atan((ground(c.x+6)-ground(c.x-6))/12),0,7);cx.fill();
 }
+const PUI={};['coin','gem','can'].forEach(n=>{const i=new Image();i.src='/games/ultimate/art/ui_'+n+'.png';PUI[n]=i});
 function coinDraw(x,y,s,ph,t){
-  if(t==='coin'){const w=Math.max(.18,Math.abs(Math.cos(ph)));cx.shadowColor='#ffd23f';cx.shadowBlur=8;cx.fillStyle='#ffd23f';cx.beginPath();cx.ellipse(x,y,10*s*w,10*s,0,0,7);cx.fill();cx.shadowBlur=0;cx.fillStyle='#e09f00';cx.beginPath();cx.ellipse(x,y,5*s*w,6*s,0,0,7);cx.fill();cx.fillStyle='#fff9';cx.fillRect(x-3*s*w,y-7*s,2*s*w,4*s)}
-  else if(t==='gem'){cx.shadowColor='#4de1ff';cx.shadowBlur=12;cx.fillStyle='#4de1ff';cx.beginPath();cx.moveTo(x,y-14*s);cx.lineTo(x+11*s,y);cx.lineTo(x,y+14*s);cx.lineTo(x-11*s,y);cx.fill();cx.shadowBlur=0;cx.fillStyle='#fff7';cx.beginPath();cx.moveTo(x,y-14*s);cx.lineTo(x+11*s,y);cx.lineTo(x,y);cx.fill()}
+  const k=t==='coin'?'coin':t==='gem'?'gem':'can',im=PUI[k];
+  if(im&&im.complete&&im.naturalWidth){
+    const h=(k==='can'?40:k==='gem'?34:28)*s,w=h*im.naturalWidth/im.naturalHeight,sq=k==='coin'?Math.max(.18,Math.abs(Math.cos(ph))):1;
+    cx.shadowColor=k==='gem'?'#4de1ff':k==='coin'?'#ffd23f':'#ff5a4a';cx.shadowBlur=10;cx.drawImage(im,x-w*sq/2,y-h/2,w*sq,h);cx.shadowBlur=0;return}
+  if(t==='coin'){const w=Math.max(.18,Math.abs(Math.cos(ph)));cx.shadowColor='#ffd23f';cx.shadowBlur=8;cx.fillStyle='#ffd23f';cx.beginPath();cx.ellipse(x,y,10*s*w,10*s,0,0,7);cx.fill();cx.shadowBlur=0;cx.fillStyle='#e09f00';cx.beginPath();cx.ellipse(x,y,5*s*w,6*s,0,0,7);cx.fill()}
+  else if(t==='gem'){cx.shadowColor='#4de1ff';cx.shadowBlur=12;cx.fillStyle='#4de1ff';cx.beginPath();cx.moveTo(x,y-14*s);cx.lineTo(x+11*s,y);cx.lineTo(x,y+14*s);cx.lineTo(x-11*s,y);cx.fill();cx.shadowBlur=0}
   else{cx.fillStyle='#d62828';rr(x-12*s,y-15*s,24*s,30*s,5*s);cx.fill();cx.fillStyle='#fff';cx.font='bold '+16*s+'px system-ui';cx.textAlign='center';cx.fillText('F',x,y+6*s)}
 }
 function scenery(k,Wd,sx,sy,z,h){
