@@ -176,7 +176,8 @@ document.addEventListener('selectstart',function(e){e.preventDefault()},true);
 <script>
 const $=id=>document.getElementById(id),cv=$('c'),cx=cv.getContext('2d'),menu=$('menu');
 let W,H;
-function rs(){const vv=window.visualViewport,d=Math.min(devicePixelRatio||1,2);
+let QCAP=1.5,_qs=0,_qn=0;function adaptQ(dt){if(QCAP<=1)return;_qs+=dt;if(++_qn>=90){const avg=_qs/_qn;_qs=0;_qn=0;if(avg>.026){QCAP=Math.max(1,QCAP-.25);rs()}}}
+function rs(){const vv=window.visualViewport,d=Math.min(devicePixelRatio||1,QCAP);
   W=Math.max(1,Math.round(vv?vv.width:innerWidth)||document.documentElement.clientWidth||360);H=Math.max(1,Math.round(vv?vv.height:innerHeight)||document.documentElement.clientHeight||640);
   cv.style.width=W+'px';cv.style.height=H+'px';cv.width=Math.round(W*d);cv.height=Math.round(H*d);cx.setTransform(d,0,0,d,0,0)}
 addEventListener('resize',rs);addEventListener('orientationchange',()=>setTimeout(rs,120));if(window.visualViewport)visualViewport.addEventListener('resize',rs);rs();
@@ -790,7 +791,7 @@ let last=performance.now();
 function loop(t){
   requestAnimationFrame(loop);
   const dt=Math.min(.05,(t-last)/1000||0);last=t;
-  frame(dt);draw();snd();
+  if(state==='play')adaptQ(dt);frame(dt);draw();snd();
 }
 render();requestAnimationFrame(loop);
 </script></body></html>

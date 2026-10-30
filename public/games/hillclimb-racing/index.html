@@ -95,7 +95,8 @@ document.addEventListener('selectstart',function(e){e.preventDefault()},true);
 'use strict';
 const $=s=>document.querySelector(s),cv=$('#c'),g=cv.getContext('2d'),dx=$('#dash').getContext('2d');
 let W=0,H=0,DPR=1,U=1;
-function rs(){DPR=Math.min(2,devicePixelRatio||1);const iw=innerWidth,ih=innerHeight,por=ih>iw,st=$('#stage');W=por?ih:iw;H=por?iw:ih;st.style.width=W+'px';st.style.height=H+'px';st.style.transform=por?'translateX('+iw+'px) rotate(90deg)':'none';cv.width=W*DPR;cv.height=H*DPR;cv.style.width=W+'px';cv.style.height=H+'px';U=H/1024;document.documentElement.style.setProperty('--u',U+'px')}
+let QCAP=1.5,_qs=0,_qn=0;function adaptQ(dt){if(QCAP<=1)return;_qs+=dt;if(++_qn>=90){const avg=_qs/_qn;_qs=0;_qn=0;if(avg>.026){QCAP=Math.max(1,QCAP-.25);rs()}}}
+function rs(){DPR=Math.min(QCAP,devicePixelRatio||1);const iw=innerWidth,ih=innerHeight,por=ih>iw,st=$('#stage');W=por?ih:iw;H=por?iw:ih;st.style.width=W+'px';st.style.height=H+'px';st.style.transform=por?'translateX('+iw+'px) rotate(90deg)':'none';cv.width=W*DPR;cv.height=H*DPR;cv.style.width=W+'px';cv.style.height=H+'px';U=H/1024;document.documentElement.style.setProperty('--u',U+'px')}
 addEventListener('resize',rs);rs();
 /* ---------- assets ---------- */
 const NAMES='jeep wheel bgmid dirt coin can crate flag gem rock tree barrel logo i_engine i_susp i_tire i_fuel'.split(' ');
@@ -342,7 +343,7 @@ document.addEventListener('pointerdown',ev=>{const t=ev.target.closest('[data-go
 /* ---------- main loop ---------- */
 let last=0,acc=0,tm=0;
 function frame(t){requestAnimationFrame(frame);const dt=Math.min(.05,(t-last)/1000||0);last=t;
- if(mode==='play'&&!paused){acc+=dt;while(acc>1/240){step(1/240);acc-=1/240}
+ if(mode==='play'&&!paused){adaptQ(dt);acc+=dt;while(acc>1/240){step(1/240);acc-=1/240}
   for(const p of parts){p.l-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=60*dt}parts=parts.filter(p=>p.l>0);
   drawScene();hudUpd()}
  else if(mode==='over'){for(const p of parts){p.l-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt}drawScene()}

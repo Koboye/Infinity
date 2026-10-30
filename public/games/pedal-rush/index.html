@@ -57,7 +57,8 @@ document.addEventListener('selectstart',function(e){e.preventDefault()},true);
 <script>
 const $=id=>document.getElementById(id),cv=$('c'),cx=cv.getContext('2d'),menu=$('menu');
 let W=360,H=640,hy=230,by=550;
-function rs(){const d=Math.min(devicePixelRatio||1,2);W=Math.max(1,innerWidth);H=Math.max(1,innerHeight);cv.style.width=W+'px';cv.style.height=H+'px';cv.width=Math.round(W*d);cv.height=Math.round(H*d);cx.setTransform(d,0,0,d,0,0);hy=H*.36;by=H*.84}
+let QCAP=1.5,_qs=0,_qn=0;function adaptQ(dt){if(QCAP<=1)return;_qs+=dt;if(++_qn>=90){const avg=_qs/_qn;_qs=0;_qn=0;if(avg>.026){QCAP=Math.max(1,QCAP-.25);rs()}}}
+function rs(){const d=Math.min(devicePixelRatio||1,QCAP);W=Math.max(1,innerWidth);H=Math.max(1,innerHeight);cv.style.width=W+'px';cv.style.height=H+'px';cv.width=Math.round(W*d);cv.height=Math.round(H*d);cx.setTransform(d,0,0,d,0,0);hy=H*.36;by=H*.84}
 addEventListener('resize',rs);rs();
 let toastT=0;function toast(t){const e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>e.classList.remove('on'),1500)}
 /* ---------- save ---------- */
@@ -187,6 +188,6 @@ let sx0=0;cv.addEventListener('pointerdown',e=>{sx0=e.clientX;mv(e.clientX<W/2?-
 document.addEventListener('visibilitychange',()=>{if(document.hidden)pause()});addEventListener('contextmenu',e=>e.preventDefault());
 /* ---------- loop ---------- */
 let last=performance.now();
-function loop(t){requestAnimationFrame(loop);const dt=Math.min(.05,(t-last)/1000||0);last=t;if(st==='play')step(dt);draw()}
+function loop(t){requestAnimationFrame(loop);const dt=Math.min(.05,(t-last)/1000||0);last=t;if(st==='play'){adaptQ(dt);step(dt)}draw()}
 render();requestAnimationFrame(loop);
 </script></body></html>
