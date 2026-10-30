@@ -902,7 +902,7 @@ function render(){
   const S=stats(),pmv=pmul(w),P=plvl(save.xp);
   if(mode==='over'){
     const p0=run.pl0,p1=run.pl1,up=p1.l>p0.l,pc=Math.round(p1.cur/p1.need*100);
-    menu.innerHTML=`<div class="card ov"><div class=ttl>${run.over}</div><p class=sub>${CI[v.cls]} ${v.n} · ${w.n}</p>
+    menu.innerHTML=`<div class="card ov"><div class=ttl>${run.stars>0&&!/CRASH|OUT OF/.test(run.over)?"LEVEL COMPLETE!":run.over}</div><p class=sub>${CI[v.cls]} ${v.n} · ${w.n}</p>
     <div class=stars>${[1,2,3].map(n=>`<span class="${run.stars>=n?'on':''}" style="--d:${n*.18}s">★</span>`).join('')}</div>
     <div class=big><span class=cn></span>+${run.total}</div>
     <div class=g4><div><b>📏 ${Math.floor(run.dist)} m</b><small>${run.newBest?'🏆 new best':'best '+bt}</small></div><div><b>🔄 ${run.flips}</b><small>flips</small></div><div><b>🪙 ${run.coins}</b><small>${run.pk} pickups</small></div><div><b>🤸 ${run.stunt}</b><small>stunts</small></div></div>
@@ -912,14 +912,14 @@ function render(){
     ${up?`<div class=lvup>⬆ LEVEL ${p1.l}! +${run.lvc} coins</div>`:''}
     <p class=sub style="font-size:13px">💡 ${run.tip||''}</p>
     <button class="go chest" data-a=chest ${run.chest?'disabled':''}>${run.chest?'🎁 Chest: +'+run.chest+' coins':'🎁 OPEN LUCKY CHEST'}</button>
-    <button class=go data-a=start>RETRY ↵</button><button class="go alt" data-a=garage>GARAGE</button></div>`;return;
+    <button class=go data-a=start>↻ RETRY</button><button class="go alt" data-a=garage>🏠 HOME / GARAGE</button></div>`;return;
   }
   if(mode==='pause'){
     menu.innerHTML=`<div class=card><div class=ttl>PAUSED</div><button class=go data-a=resume>RESUME</button><button class="go alt" data-a=mute>${save.mute?'🔇 SOUND OFF':'🔊 SOUND ON'}</button><button class="go alt" data-a=tilt>📱 TILT CONTROL: ${save.tilt?'ON':'OFF'}</button>${save.tilt?`<button class="go alt" data-a=tinv>↕ INVERT TILT: ${save.tinv?'ON':'OFF'}</button>`:''}<button class="go alt" data-a=garage>QUIT TO GARAGE</button></div>`;return;
   }
-  if(splash){menu.innerHTML=`<div class="card spl"><div class=logo><b>HILL CLIMB</b><b class=b2>RACER</b></div><p class=tag>Bigger Hills, Bigger Dreams</p><div class=hero2>${CI[v.cls]}</div>
+  if(splash){menu.innerHTML=`<div class="card spl"><div class=logo><b>HILLCLIMB</b><b class=b2>RACING</b></div><p class=tag>HIGHER \u00b7 FARTHER \u00b7 STRONGER</p><div class=hero2>${CI[v.cls]}</div><p class=tag style="font-style:italic;color:#ffb02e">Conquer Every Hill!</p>
     <div class=row2><div class="pill2 gold"><span class=cn></span><b>${save.coins}</b></div><div class=plb><b>${P.l}</b><i><u style="width:${Math.round(P.cur/P.need*100)}%"></u></i></div></div>
-    <button class=go data-a=splash>▶ PLAY</button></div>`;return}
+    <button class=go data-a=splash>\u25b6 PLAY</button><button class="go alt" data-a=sgarage>\ud83d\ude97 GARAGE</button><button class="go alt" data-a=supg>\ud83d\udd27 UPGRADES</button><button class="go alt" data-a=mute>\u2699 SETTINGS: ${save.mute?'SOUND OFF':'SOUND ON'}</button></div>`;return}
   const ms=missions(),sd=mstate(),left=sd.done.filter(x=>!x).length,dailyOn=save.dl!==dayN();
   let body='';
   if(tab==='car'){
@@ -960,6 +960,8 @@ menu.addEventListener('click',e=>{
   else if(a==='up'){const u=UP(),cost=upCost(i,u[i]);if(u[i]<5&&save.coins>=cost){save.coins-=cost;u[i]++}}
   else if(a==='daily'){claimDaily()}
   else if(a==='splash'){splash=0}
+  else if(a==='sgarage'){splash=0;tab='car'}
+  else if(a==='supg'){splash=0;tab='up'}
   else if(a==='mute'){save.mute=save.mute?0:1}
   else if(a==='tilt'){save.tilt=save.tilt?0:1;if(save.tilt){tiltEnable();tiltCal()}}
   else if(a==='tinv'){save.tinv=save.tinv?0:1;TL.n0=null}
