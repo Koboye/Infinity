@@ -184,11 +184,11 @@ const fr=v=>v.bike&&v.t===0?0:1;
 VEH.sort((a,b)=>fr(a)-fr(b)||a.e-b.e); // the 3 Rookie bike types come first and are FREE; every other vehicle costs coins by its efficiency
 VEH.forEach((v,i)=>v.cost=i<3?0:Math.max(100,Math.round(Math.pow(v.e,5)*150/10)*10));
 const WORLD=[
-{n:'Green Hills',cost:0,dc:'tree',g:1200,gm:1,sky:['#2fa8ff','#c8f0ff'],far:'#7fcf9a',near:'#4fb35f',top:'#6fd13a',dirt:'#9a5f2e',amp:1},
-{n:'Dune Sea',cost:600,wx:'dust',dc:'cactus',g:1200,gm:.8,sky:['#ffb36b','#ffe6b3'],far:'#e0a066',near:'#cf8a4f',top:'#f0c56a',dirt:'#b8793c',amp:1.2},
+{n:'Green Hills',bg:'green_lake',cost:0,dc:'tree',g:1200,gm:1,sky:['#2fa8ff','#c8f0ff'],far:'#7fcf9a',near:'#4fb35f',top:'#6fd13a',dirt:'#9a5f2e',amp:1},
+{n:'Dune Sea',bg:'dry',cost:600,wx:'dust',dc:'cactus',g:1200,gm:.8,sky:['#ffb36b','#ffe6b3'],far:'#e0a066',near:'#cf8a4f',top:'#f0c56a',dirt:'#b8793c',amp:1.2},
 {n:'Moon Run',cost:1500,dc:'crater',g:520,gm:.9,sky:['#05060f','#1c2150'],far:'#3a3f6b',near:'#2a2e55',top:'#b9bdd6',dirt:'#5b5f7c',amp:1.3,stars:1,rp:.7,pl:'#8ea0d8'},
-{n:'Mars Canyon',cost:1200,wx:'dust',dc:'rock',g:800,gm:.95,sky:['#5a2a1c','#e8a07a'],far:'#a4533a',near:'#7e3a28',top:'#d9714a',dirt:'#6b2e1f',amp:1.4,rp:1,rt:1,pl:'#e07a52'},
-{n:'Ice Moon',cost:2200,wx:'snow',dc:'ice',g:700,gm:.65,sky:['#0b2a4a','#9fe0ff'],far:'#7fb7d8',near:'#5d9bc2',top:'#eaf9ff',dirt:'#7fb2d4',amp:.9,rp:1.1,stars:1,pl:'#f0d9a0'},
+{n:'Mars Canyon',bg:'canyon',cost:1200,wx:'dust',dc:'rock',g:800,gm:.95,sky:['#5a2a1c','#e8a07a'],far:'#a4533a',near:'#7e3a28',top:'#d9714a',dirt:'#6b2e1f',amp:1.4,rp:1,rt:1,pl:'#e07a52'},
+{n:'Ice Moon',bg:'snow',cost:2200,wx:'snow',dc:'ice',g:700,gm:.65,sky:['#0b2a4a','#9fe0ff'],far:'#7fb7d8',near:'#5d9bc2',top:'#eaf9ff',dirt:'#7fb2d4',amp:.9,rp:1.1,stars:1,pl:'#f0d9a0'},
 {n:'Neon Rings',cost:3500,wx:'neon',dc:'pylon',g:450,gm:.85,sky:['#12002b','#5b1a8f'],far:'#3d1a6e',near:'#2a1050',top:'#ff3df2',dirt:'#1b0a3a',amp:.6,rp:1.6,stars:1,pl:'#ffb347'}];
 let A=1,RP=0,RT=0,RD=0;
 /* stunt kickers: a long climb then a steep lip, so the car launches (every planet but Green Hills) */
@@ -426,6 +426,15 @@ function ridge(col,par,base,amp,fr,ph){
   for(let x=0;x<=W+10;x+=10){const u=(x+cam.x*par)*fr+(ph||0);cx.lineTo(x,base+amp*Math.sin(u)+amp*.5*Math.sin(u*2.3+1)+amp*.25*Math.sin(u*5.1+2))}
   cx.lineTo(W,H);cx.fill();
 }
+/* painted parallax backdrops (art/bg_*.jpg): drawn mirrored so they tile without seams; falls back to the procedural sky until the image has loaded */
+const BGI={};
+function bgImg(k){let i=BGI[k];if(!i){i=BGI[k]=new Image();i.src='/games/ultimate/art/bg_'+k+'.jpg'}return i.complete&&i.naturalWidth>0?i:null}
+function drawPar(Wd){
+  const im=Wd.bg&&bgImg(Wd.bg);if(!im)return false;
+  const h=H*.98,w=h*im.naturalWidth/im.naturalHeight,off=cam.x*.05,y=-Math.max(0,Math.min(40,-cam.y*.02));
+  const k0=Math.floor(off/w);
+  for(let k=k0;k*w-off<W;k++){const x=k*w-off;cx.save();if(k&1){cx.translate(x+w,y);cx.scale(-1,1)}else cx.translate(x,y);cx.drawImage(im,0,0,w+1,h);cx.restore()}
+  return true}
 const WIMG=new Image(),JIMG=new Image();WIMG.src='/games/hillclimb-racing/a/wheel.png';JIMG.src='/games/hillclimb-racing/a/jeep.png';
 const sprOK=im=>im.complete&&im.naturalWidth>0;
 function hueOf(hex){const m=/^#?([0-9a-f]{6})$/i.exec(hex||'');if(!m)return 0;const n=parseInt(m[1],16),r=(n>>16)/255,g=(n>>8&255)/255,b=(n&255)/255,mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;if(d<.08)return 0;return(mx===r?((g-b)/d+6)%6:mx===g?(b-r)/d+2:(r-g)/d+4)*60}
@@ -547,6 +556,8 @@ function draw(){
   const Wd=WORLD[save.world],s=SC,ox=OX(),oy=OY(),now=performance.now()/1000;
   const g=cx.createLinearGradient(0,0,0,H);g.addColorStop(0,Wd.sky[0]);g.addColorStop(1,Wd.sky[1]);
   cx.fillStyle=g;cx.fillRect(0,0,W,H);
+  const pbg=drawPar(Wd);
+  if(!pbg){
   if(Wd.stars){cx.fillStyle='#fff';for(let i=0;i<80;i++){const x=(((i*197)%W-cam.x*.03*(1+i%3))%W+W)%W;cx.globalAlpha=.4+.6*Math.abs(Math.sin(now*1.5+i));cx.fillRect(x,(i*83)%(H*.6),i%7===0?3:2,i%7===0?3:2)}cx.globalAlpha=1}
   else{const sx=W*(Wd.pl?.2:.78),sy=H*.18,rg=cx.createRadialGradient(sx,sy,8,sx,sy,Math.min(W,H)*.42);rg.addColorStop(0,'rgba(255,244,200,.95)');rg.addColorStop(.25,'rgba(255,230,160,.35)');rg.addColorStop(1,'rgba(255,230,160,0)');cx.fillStyle=rg;cx.fillRect(0,0,W,H);cx.fillStyle='#fffbe6';cx.beginPath();cx.arc(sx,sy,Math.min(W,H)*.045,0,7);cx.fill()}
   if(Wd.pl){const px=((W*.8-cam.x*.01)%(W+300)+W+300)%(W+300)-100,pr=Math.min(W,H)*.12;cx.fillStyle=Wd.pl;cx.beginPath();cx.arc(px,H*.2,pr,0,7);cx.fill();cx.fillStyle='rgba(0,0,0,.22)';cx.beginPath();cx.arc(px+pr*.25,H*.2+pr*.1,pr*.95,-1.2,1.9);cx.fill();cx.strokeStyle=Wd.pl;cx.globalAlpha=.6;cx.lineWidth=5;cx.beginPath();cx.ellipse(px,H*.2,Math.min(W,H)*.2,Math.min(W,H)*.04,-.3,0,7);cx.stroke();cx.globalAlpha=1}
@@ -556,6 +567,7 @@ function draw(){
   cx.globalAlpha=.7;ridge(Wd.far,.05,H*.45,46,.004,0);cx.globalAlpha=1;ridge(Wd.far,.12,H*.52,38,.006,2);
   const fg=cx.createLinearGradient(0,H*.42,0,H*.7);fg.addColorStop(0,'rgba(255,255,255,0)');fg.addColorStop(1,Wd.sky[1]+'');cx.globalAlpha=.35;cx.fillStyle=fg;cx.fillRect(0,H*.42,W,H*.3);cx.globalAlpha=1;
   ridge(Wd.near,.25,H*.62,32,.007,0);
+  }
   if(!car)return;
   const wx=sx=>(sx-ox)/s+cam.x,pts=[];
   for(let x=-8;x<=W+16;x+=8)pts.push([x,(ground(wx(x))-cam.y)*s+oy]);
