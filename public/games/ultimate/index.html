@@ -159,7 +159,15 @@ html,body{background:var(--navy)}
 #pad #bBrake,#pad #bGas{font-size:0!important;color:transparent!important;text-shadow:none!important;background:transparent url(art/ui_brake.png) center/contain no-repeat!important;border:0!important;border-radius:0!important;width:min(30vw,138px);height:min(18vh,132px);filter:drop-shadow(0 6px 6px #0008)}
 #pad #bGas{background-image:url(art/ui_gas.png)!important}
 #pad #bBrake.on,#pad #bGas.on{transform:translateY(6px) scale(.96);filter:brightness(1.25) drop-shadow(0 2px 3px #0008);border:0!important}
-</style></head><body>
+</style><style id="nomenu">img,canvas,button{-webkit-touch-callout:none;-webkit-user-drag:none;user-select:none;-webkit-user-select:none}img{pointer-events:auto;-webkit-user-drag:none}</style>
+<script>
+/* no long-press image/context menu while playing; release pedals if the page loses focus */
+addEventListener('contextmenu',function(e){e.preventDefault()},true);
+addEventListener('dragstart',function(e){e.preventDefault()},true);
+document.addEventListener('selectstart',function(e){e.preventDefault()},true);
+(function(){function nd(){document.querySelectorAll('img').forEach(function(i){i.draggable=false})}document.addEventListener('DOMContentLoaded',nd);new MutationObserver(nd).observe(document.documentElement,{childList:true,subtree:true})})();
+</script>
+</head><body>
 <canvas id="c"></canvas>
 <div id="hud" class="hide"><div class="pill big"><b id="dist">0</b><small>m</small></div><div class="pill coinp" id="coinp"><span class="cn"></span><b id="coin">0</b></div><div class="pill stage"><small>STAGE</small><b id="lv">1</b></div><div class="pill plv" title="Player level"><small>LV</small><b id="hplv">1</b></div><div class="meters"><div class="bar"><i id="fuel"></i></div><div class="bar n"><i id="nit"></i></div></div><button id="ab">🧠</button><button id="pb">⏸</button></div><div id="combo" class="hide"><span id="cmb"></span><i id="cmt"></i></div>
 <div id="gear" class="hide"><div class="rpm"><i id="rpm"></i></div><div class="g">⏱ <b id="tmr">0:00</b></div><div class="g">GEAR <b id="gr">1</b> · <b id="spd">0</b> km/h</div></div><div id="toast"></div>

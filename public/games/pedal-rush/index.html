@@ -40,7 +40,15 @@ button.go.alt{background:linear-gradient(180deg,#3fb6c6,#17606b);color:#fff;font
 button.go.buy{background:linear-gradient(180deg,#9bffe0,#25c68e)}
 .nb{color:var(--sun);font-weight:900;margin:6px 0}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
-</style></head><body>
+</style><style id="nomenu">img,canvas,button{-webkit-touch-callout:none;-webkit-user-drag:none;user-select:none;-webkit-user-select:none}img{pointer-events:auto;-webkit-user-drag:none}</style>
+<script>
+/* no long-press image/context menu while playing; release pedals if the page loses focus */
+addEventListener('contextmenu',function(e){e.preventDefault()},true);
+addEventListener('dragstart',function(e){e.preventDefault()},true);
+document.addEventListener('selectstart',function(e){e.preventDefault()},true);
+(function(){function nd(){document.querySelectorAll('img').forEach(function(i){i.draggable=false})}document.addEventListener('DOMContentLoaded',nd);new MutationObserver(nd).observe(document.documentElement,{childList:true,subtree:true})})();
+</script>
+</head><body>
 <canvas id="c"></canvas>
 <div id="hud" class="hide"><div class="pill"><b id="dist">0</b><small>m</small></div><div class="pill"><span class="cn"></span><b id="coin">0</b></div><div class="pill" id="hp">❤❤❤</div><div class="meters"><div class="bar"><i id="sta"></i></div></div></div>
 <div id="toast"></div>
