@@ -205,7 +205,7 @@ canvas{filter:saturate(1.16) contrast(1.05) brightness(1.03)}
 /* v8 arcade UI: big rubber pedals, round nitro, bold HUD */
 #pad button{width:min(27vw,168px)!important;height:min(30vh,142px)!important;border-radius:16px!important;border:4px solid #08080a!important;display:flex!important;align-items:flex-end;justify-content:center;padding-bottom:7px!important;color:#f1f1f1!important;font-size:22px!important;letter-spacing:1px!important;text-shadow:0 2px 0 #000!important;box-shadow:0 6px 0 #000a,inset 0 2px 0 #fff5!important;
 background:radial-gradient(circle,#0e0f12 0 5px,#ffffff88 6px 7px,transparent 8px) 0 9%/33.33% 28% repeat-x,radial-gradient(circle,#0e0f12 0 5px,#ffffff88 6px 7px,transparent 8px) 0 43%/33.33% 28% repeat-x,linear-gradient(180deg,#9da3ae,#4f545f)!important}
-#pad #bBrake{background-color:#555}#pad #bGas{color:#fff!important}
+#pad #bBrake,#pad #bGas{background:radial-gradient(circle,#0e0f12 0 5px,#ffffff88 6px 7px,transparent 8px) 0 9%/33.33% 28% repeat-x,radial-gradient(circle,#0e0f12 0 5px,#ffffff88 6px 7px,transparent 8px) 0 43%/33.33% 28% repeat-x,linear-gradient(180deg,#a3a9b4,#555a65)!important}#pad #bBrake.on,#pad #bGas.on{background:linear-gradient(180deg,#c3c8d2,#6c717c)!important;color:#fff!important}
 #pad button.on{transform:translateY(5px)!important;box-shadow:0 1px 0 #000a!important;filter:brightness(1.18)}
 #pad #bBoost{width:min(23vw,98px)!important;height:min(23vw,98px)!important;border-radius:50%!important;padding:0!important;align-items:center;font-size:15px!important;background:radial-gradient(circle at 35% 28%,#b6f1ff,#2f8cff 52%,#1a3fa0)!important}
 #pad #bBoost.empty{filter:grayscale(.85) brightness(.7)}
@@ -588,9 +588,9 @@ function drawCar(){
   const pl=(f,...p)=>{cx.fillStyle=f;cx.beginPath();cx.moveTo(p[0],p[1]);for(let i=2;i<p.length;i+=2)cx.lineTo(p[i],p[i+1]);cx.closePath();cx.fill();if(typeof f==='string'){cx.strokeStyle='#090a0e';cx.lineWidth=1.5;cx.stroke()}};
   const dark='#1d2030',steel='#aeb6c8',glass='#a8defc';
   const K='#090a0e',skin='#f2b98a',skin2='#dd9c6c';
-  const limb=(w,col,...p)=>{ln(w+2.4,K,...p);ln(w,col,...p)};
-  const shoe=(x,y)=>{cx.fillStyle='#15171c';cx.strokeStyle=K;cx.lineWidth=2;cx.beginPath();cx.ellipse(x+3,y+1,6,3.6,0,0,7);cx.fill();cx.stroke()};
-  const glove=(x,y)=>{cx.fillStyle='#0d0e12';cx.strokeStyle=K;cx.lineWidth=1.5;cx.beginPath();cx.arc(x,y,3.4,0,7);cx.fill();cx.stroke()};
+  const limb=(w,col,...p)=>{ln(w+4.2,K,...p);ln(w,col,...p)};
+  const shoe=(x,y)=>{cx.fillStyle='#f6f6f6';cx.strokeStyle=K;cx.lineWidth=2.4;cx.beginPath();cx.ellipse(x+3,y+1,7,4.2,0,0,7);cx.fill();cx.stroke()};
+  const glove=(x,y)=>{cx.fillStyle='#ffd23f';cx.strokeStyle=K;cx.lineWidth=2;cx.beginPath();cx.arc(x,y,4.2,0,7);cx.fill();cx.stroke()};
   /* realistic rider head: neck, full-face helmet (glossy shell, tinted visor, chin bar, team stripe). It follows the spring physics in car.hd, so it nods, bobs and whips. */
   const head=(x,y)=>{
     const hd=c.hd,dead=c.dead;x+=hd.x;y+=hd.y;
@@ -629,16 +629,16 @@ function drawCar(){
     const bob=Math.sin(performance.now()/130)*Math.min(1,Math.abs(c.vx)/900)*1.2,
       shx=sx+lean+(keys.gas?2.5:keys.brake?-3:0),shy=sy-20+bob;
     const f0=f2||[fx-9,fy-1];
-    limb(7,'#0f1218',sx,sy,(sx+f0[0])/2+9,(sy+f0[1])/2-3,f0[0],f0[1]);shoe(f0[0],f0[1]);
-    limb(5,'#1b1f27',shx,shy+1,(shx+hx)/2-1,(shy+hy)/2+8,hx+1,hy+1);glove(hx+1,hy+1);
-    limb(7,'#171b23',sx,sy,(sx+fx)/2+9,(sy+fy)/2-3,fx,fy);shoe(fx,fy);
-    limb(12,'#262b36',sx,sy-1,shx,shy);ln(3,col,sx+3,sy-5,shx+3,shy+4);ln(2,'#aab2c0',sx-4,sy-3,shx-4,shy+5);
-    limb(5.5,'#262b36',shx,shy+1,(shx+hx)/2-2,(shy+hy)/2+7,hx,hy);glove(hx,hy);
+    limb(7,'#2a5fc4',sx,sy,(sx+f0[0])/2+9,(sy+f0[1])/2-3,f0[0],f0[1]);shoe(f0[0],f0[1]);
+    limb(5,'#d93a22',shx,shy+1,(shx+hx)/2-1,(shy+hy)/2+8,hx+1,hy+1);glove(hx+1,hy+1);
+    limb(7,'#3470e0',sx,sy,(sx+fx)/2+9,(sy+fy)/2-3,fx,fy);shoe(fx,fy);
+    limb(12,'#ff5a36',sx,sy-1,shx,shy);ln(3,col,sx+3,sy-5,shx+3,shy+4);ln(2,'#aab2c0',sx-4,sy-3,shx-4,shy+5);
+    limb(5.5,'#ff5a36',shx,shy+1,(shx+hx)/2-2,(shy+hy)/2+7,hx,hy);glove(hx,hy);
     head(shx+2,shy-13)};
   /* driver in a car: jacket shoulders, arm on the steering wheel, same head */
   const driver=(x,y)=>{
-    limb(11,'#262b36',x-3,y+14,x-1,y+8);
-    limb(5,'#262b36',x+1,y+10,x+9,y+14,x+16,y+11);glove(x+16,y+11);
+    limb(11,'#ff5a36',x-3,y+14,x-1,y+8);
+    limb(5,'#ff5a36',x+1,y+10,x+9,y+14,x+16,y+11);glove(x+16,y+11);
     ln(5,K,x+15,y+5,x+19,y+16);ln(2.6,'#cfd5e2',x+15,y+5,x+19,y+16);
     head(x+1,y-1)};
   const lights=(x,y)=>{cx.fillStyle='#fff2a8';cx.beginPath();cx.arc(x,y,3.5,0,7);cx.fill()};
@@ -756,9 +756,9 @@ function draw(){
   cx.fillStyle=Wd.dirt;cx.fill();cx.fillStyle=dg;cx.fill();
   cx.strokeStyle='rgba(0,0,0,.13)';cx.lineWidth=9*s;cx.lineJoin='round';
   for(let j=1;j<=3;j++){cx.beginPath();pts.forEach((p,i)=>i?cx.lineTo(p[0],p[1]+j*44*s):cx.moveTo(p[0],p[1]+j*44*s));cx.stroke()}
-  {const x0=Math.floor(wx(-10)/60)*60;for(let x=x0;x<wx(W+10);x+=60){const hh=hash((x/60|0)+99),xx=x+hh%50,sx=(xx-cam.x)*s+ox,sy=(ground(xx)-cam.y)*s+oy+(34+hh%110)*s;if(sy>H+20)continue;cx.fillStyle=hh&1?'rgba(0,0,0,.18)':'rgba(255,255,255,.10)';cx.beginPath();cx.ellipse(sx,sy,(4+hh%7)*s,(3+hh%4)*s,0,0,7);cx.fill()}}
+  {const x0=Math.floor(wx(-10)/60)*60;for(let x=x0;x<wx(W+10);x+=60){const hh=hash((x/60|0)+99),xx=x+hh%50,sx=(xx-cam.x)*s+ox,sy=(ground(xx)-cam.y)*s+oy+(34+hh%110)*s;if(sy>H+20)continue;cx.fillStyle=hh&1?'rgba(0,0,0,.18)':'rgba(255,255,255,.10)';cx.beginPath();cx.ellipse(sx,sy,(9+hh%15)*s,(7+hh%10)*s,0,0,7);cx.fill()}}
   const line=(w,c,dy)=>{cx.beginPath();pts.forEach((p,i)=>i?cx.lineTo(p[0],p[1]+dy):cx.moveTo(p[0],p[1]+dy));cx.strokeStyle=c;cx.lineWidth=w;cx.stroke()};
-  line(16*s,'rgba(0,0,0,.2)',10*s);line(10*s,'rgba(0,0,0,.5)',5.5*s);line(8*s,Wd.top,4*s);line(2.5*s,'rgba(255,255,255,.16)',1*s);
+  line(26*s,'#0a0805',12*s);line(20*s,Wd.top,9*s);line(7*s,'rgba(255,255,255,.3)',3.5*s);
   {const x0=Math.floor(wx(-10)/24)*24;cx.strokeStyle=Wd.top;cx.lineWidth=2*s;cx.beginPath();
    for(let x=x0;x<wx(W+10);x+=24){const hh=hash(x|0),xx=x+hh%14,sx=(xx-cam.x)*s+ox,sy=(ground(xx)-cam.y)*s+oy+1*s;cx.moveTo(sx,sy);cx.lineTo(sx+(hh%3-1)*2*s,sy-(3+hh%5)*s)}cx.stroke()}
   {const d0=Math.floor(wx(-40)/110),d1=Math.ceil(wx(W+40)/110);

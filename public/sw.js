@@ -1,5 +1,5 @@
 // Gebeta service worker: offline play (computer + pass-and-play) after the first visit.
-const V = 'gebeta-v28';   // v73: bumped so phones drop the old cache and pick up the new brand, friends and rulebook files
+const V = 'gebeta-v29';   // v73: bumped so phones drop the old cache and pick up the new brand, friends and rulebook files
 const SHELL = ['/', '/manifest.json', '/icon.svg', '/icon-192.png', '/icon-512.png', '/og-image.png'];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(V).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', (e) => {
@@ -11,7 +11,7 @@ self.addEventListener('fetch', (e) => {
   const sameOrigin = u.origin === self.location.origin;
   const font = u.hostname === 'fonts.googleapis.com' || u.hostname === 'fonts.gstatic.com';
   if (!sameOrigin && !font) return; // never touch Firebase/Auth traffic
-  if (r.mode === 'navigate') {
+  if (r.mode === 'navigate' || u.pathname.startsWith('/games/')) {
     e.respondWith(fetch(r).then((res) => { const c = res.clone(); caches.open(V).then((x) => x.put(r, c)); return res; }).catch(() => caches.match(r).then((m) => m || caches.match('/'))));
     return;
   }
