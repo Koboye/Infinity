@@ -567,7 +567,7 @@ function ridge(col,par,base,amp,fr,ph){
   cx.lineTo(W,H);cx.fill();const gg=cx.createLinearGradient(0,base-amp*1.5,0,H);gg.addColorStop(0,'rgba(255,255,255,.14)');gg.addColorStop(1,'rgba(0,0,40,.3)');cx.fillStyle=gg;cx.fill();
 }
 function wheel(x,y,r,a,t){
-  r*=1.1;cx.save();cx.translate(x,y);cx.rotate(a);
+  r*=1.2;cx.save();cx.shadowBlur=0;cx.translate(x,y);cx.rotate(a);
   cx.fillStyle='#17181d';cx.strokeStyle='#050507';cx.lineWidth=3;cx.beginPath();cx.arc(0,0,r,0,7);cx.fill();cx.stroke();
   cx.lineWidth=1.6;cx.fillStyle='#2d313c';
   for(let i=0;i<12;i++){cx.save();cx.rotate(i*Math.PI/6);cx.beginPath();cx.moveTo(r*.76,-r*.17);cx.lineTo(r*.99,-r*.12);cx.lineTo(r*.99,r*.12);cx.lineTo(r*.76,r*.17);cx.closePath();cx.fill();cx.stroke();cx.restore()}
@@ -596,7 +596,7 @@ function drawCar(){
     const hd=c.hd,dead=c.dead;x+=hd.x;y+=hd.y;
     const tilt=dead?.9+Math.max(-.4,Math.min(.4,hd.vx*.002)):Math.max(-.55,Math.min(.55,hd.x*.05+hd.vx*.0016));
     ln(9,K,x-1,y+6,x-2,y+13);ln(5.5,'#e3a574',x-1,y+6,x-2,y+13);
-    cx.save();cx.translate(x,y);cx.rotate(tilt);cx.scale(1.2,1.2);
+    cx.save();cx.translate(x,y);cx.rotate(tilt);{const hs=c.S.bike?1.5:1.2;cx.scale(hs,hs)}
     {const fl=Math.sin(performance.now()/110)*2.2;cx.lineCap='round';cx.strokeStyle=K;cx.lineWidth=6.4;cx.beginPath();cx.moveTo(-5,7);cx.quadraticCurveTo(-15,6+fl,-25,10-fl);cx.stroke();cx.strokeStyle='#ffc727';cx.lineWidth=3.6;cx.stroke();
     cx.fillStyle='#f3b27d';cx.strokeStyle=K;cx.lineWidth=2;cx.beginPath();cx.arc(0,1.5,9,0,7);cx.fill();cx.stroke();
     cx.beginPath();cx.ellipse(9.4,3.2,3.2,2.6,0,0,7);cx.fill();cx.stroke();
@@ -666,7 +666,7 @@ function drawCar(){
     cx.shadowBlur=0;rider(-6,-14,L*.5,-24,6,6,8);
   }
   if(S.bike){wheel(L,wy1,r,c.wr[1],t);cx.restore();return}
-  cx.shadowBlur=0;
+  cx.shadowBlur=0;cx.save();cx.translate(0,h);cx.scale(1.3,1.3);cx.translate(0,-h);
   if(cl==='Sports Car'){
     gp(col,-L-12,-h-2,-L-12,-h*.2,L+14,-h*.2,L+14,-h-6,L*.55,-h-12,L*.3,-h-24,-L*.25,-h-24,-L*.55,-h-14);
     gp(glass,-L*.2,-h-14,-L*.08,-h-22,L*.22,-h-22,L*.4,-h-14);pipe(3,'#fff',-L-8,-h-7,L+10,-h-7);
@@ -690,6 +690,7 @@ function drawCar(){
     pipe(3.4,'#d7dce6',-L*.6,-h-8,-L*.46,-h-36,L*.1,-h-36,L*.3,-h-8);pipe(3.4,'#d7dce6',-L*.14,-h-30,-L*.1,-h-8);
     pipe(4,'#9aa1af',-L-10,-h*.5,-L-20,-h*.5-4);lamp(L+10,-h-3);gp(col,-L-14,-h-12,-L-14,-h-6,-L-2,-h-8,-L-2,-h-14);driver(-L*.2,-h-17);
   }
+  cx.restore();
   cx.shadowBlur=0;
   pipe(5,'#aab2c2',-L,wy0,-L*.85,-h*.2);pipe(5,'#aab2c2',L,wy1,L*.85,-h*.2);
   wheel(L,wy1,r,c.wr[1],t);
