@@ -313,7 +313,7 @@ function over(){
 }
 
 function step(dt){
-  const c=car,S=c.S,Wd=WORLD[save.world],g=Wd.g;
+  const c=car,S=c.S,Wd=WORLD[save.world],g=Wd.g;c.lt=Math.max(0,(c.lt||0)-dt);
   let fx=-c.vx*.03,fy=g-c.vy*.03,tq=0,touch=0;
   const ca=Math.cos(c.a),sa=Math.sin(c.a);let thr=c.fuel>0?keys.gas:0;
   /* SMART ENGINE: wheelie guard (assist) cuts power when the nose points too high on the ground, so the car can't flip backwards under full gas */
@@ -358,6 +358,7 @@ function step(dt){
   }
   if(touch===0){c.air+=dt;c.acc+=c.w*dt}
   else{
+    if(c.air>.25)c.lt=.28;
     if(c.air>.25&&!SIM){shake=Math.max(shake,Math.min(1,Math.abs(c.vy)/1000));run.air=Math.max(run.air,c.air)}
     if(c.air>.4){
       const f=Math.floor(Math.abs(c.acc)/6.283+.3);
@@ -435,7 +436,19 @@ function drawPar(Wd){
   const k0=Math.floor(off/w);
   for(let k=k0;k*w-off<W;k++){const x=k*w-off;cx.save();if(k&1){cx.translate(x+w,y);cx.scale(-1,1)}else cx.translate(x,y);cx.drawImage(im,0,0,w+1,h);cx.restore()}
   return true}
-const WIMG=new Image(),JIMG=new Image();WIMG.src='/games/hillclimb-racing/a/wheel.png';JIMG.src='/games/hillclimb-racing/a/jeep.png';
+const WIMG=new Image();WIMG.src='/games/hillclimb-racing/a/wheel.png';
+/* 4x4 pose sprites (art/veh_*.png). VW = both wheel centres + radius in sprite pixels so the spinning wheel sprite can be laid over the baked-in one */
+const VS={},VW={"idle":{"w":[[60,128],[198,126]],"r":33.0},"moving":{"w":[[78,138],[210,115]],"r":31.0},"airborne":{"w":[[76,126],[191,96]],"r":28.0},"landing":{"w":[[72,120],[179,98]],"r":28.0},"susp_up":{"w":[[66,117],[202,117]],"r":32.0},"susp_down":{"w":[[70,120],[191,110]],"r":30.0},"damaged":{"w":[[56,124],[176,139]],"r":28.0}};
+['idle','moving','airborne','landing','susp_up','susp_down','damaged','flip'].forEach(n=>{const i=new Image();i.src='/games/ultimate/art/veh_'+n+'.png';VS[n]=i});
+function poseOf(c){const S=c.S,a=Math.atan2(Math.sin(c.a),Math.cos(c.a));
+  if(c.dead||state==='dying'||Math.abs(a)>2.3)return'flip';
+  if(c.fuel<=0)return'damaged';
+  if(c.air>.06)return'airborne';
+  if((c.lt||0)>0)return'landing';
+  const cp=(c.ws[0]+c.ws[1])/2/S.r;
+  if(cp>.55)return'susp_down';
+  if(Math.abs(c.vx)<50)return'idle';
+  return cp<.25?'susp_up':'moving'}
 const sprOK=im=>im.complete&&im.naturalWidth>0;
 function hueOf(hex){const m=/^#?([0-9a-f]{6})$/i.exec(hex||'');if(!m)return 0;const n=parseInt(m[1],16),r=(n>>16)/255,g=(n>>8&255)/255,b=(n&255)/255,mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;if(d<.08)return 0;return(mx===r?((g-b)/d+6)%6:mx===g?(b-r)/d+2:(r-g)/d+4)*60}
 function wheel(x,y,r,a,t){
@@ -476,8 +489,8 @@ function drawCar(){
   const lights=(x,y)=>{cx.fillStyle='#fff2a8';cx.beginPath();cx.arc(x,y,3.5,0,7);cx.fill()};
   if(Wd.stars&&state==='play'){const bg=cx.createLinearGradient(L+10,0,L+300,0);bg.addColorStop(0,'rgba(255,240,170,.26)');bg.addColorStop(1,'rgba(255,240,170,0)');pl(bg,L+10,-h-2,L+300,-h-80,L+300,-h+50)}
   if(t>=8){cx.shadowColor=col;cx.shadowBlur=7+t}
-  const sj=cl==='Jeep'&&sprOK(JIMG)&&'filter' in cx,w0=sj?0:c.ws[0],w1=sj?0:c.ws[1];
-  wheel(-L,h-w0,r,c.wr[0],t);
+  const pose=poseOf(c),PI=sprOK(VS[pose])?VS[pose]:VS.idle,sj=cl==='Jeep'&&sprOK(PI)&&'filter' in cx,w0=sj?0:c.ws[0],w1=sj?0:c.ws[1];
+  if(!sj)wheel(-L,h-w0,r,c.wr[0],t);
   if(cl==='Bicycle'){
     const R=[-L,h],BB=[-6,4],SS=[-L*.4,-14],HD=[L*.55,-8],F=[L,h];
     ln(4,col,R[0],R[1],BB[0],BB[1]);ln(4,col,BB[0],BB[1],HD[0],HD[1]);ln(4,col,SS[0],SS[1],HD[0],HD[1]);ln(4,col,SS[0],SS[1],BB[0],BB[1]);ln(4,col,R[0],R[1],SS[0],SS[1]);
@@ -503,7 +516,11 @@ function drawCar(){
     pl('#fff2a8',L+8,-h-5,L+13,-h-4,L+12,-h+1,L+6,-h+1);cx.fillStyle='#ff2d2d';cx.fillRect(-L-12,-h-4,4,6);
     cx.shadowBlur=0;head(L*.05,-h-14);
   }else if(sj){
-    const k=2*L/195;cx.save();cx.filter='hue-rotate('+Math.round(hueOf(col))+'deg)';cx.drawImage(JIMG,-L-88*k,h-158*k,JIMG.naturalWidth*k,JIMG.naturalHeight*k);cx.restore();
+    const vw=VW[pose],hue='hue-rotate('+Math.round(hueOf(col))+'deg)';
+    if(vw){const a=vw.w[0],b=vw.w[1],k=2*L/Math.hypot(b[0]-a[0],b[1]-a[1]),mx=(a[0]+b[0])/2,my=(a[1]+b[1])/2;
+      cx.save();cx.translate(0,h);cx.scale(k,k);cx.filter=hue;cx.drawImage(PI,-mx,-my);cx.restore();
+      if(sprOK(WIMG))for(let i=0;i<2;i++){const q=vw.w[i],d=vw.r*2.1;cx.save();cx.translate((q[0]-mx)*k,h+(q[1]-my)*k);cx.rotate(c.wr[i]);cx.drawImage(WIMG,-d*k/2,-d*k/2,d*k,d*k);cx.restore()}
+    }else{const k=2*L*1.9/PI.naturalWidth;cx.save();cx.translate(0,-h*.3);cx.scale(k,k);cx.filter=hue;cx.drawImage(PI,-PI.naturalWidth/2,-PI.naturalHeight/2);cx.restore()}
   }else if(cl==='Jeep'){
     cx.fillStyle=col;rr(-L-8,-h-8,2*L+16,h+8,6);cx.fill();cx.strokeStyle='#2a1400';cx.lineWidth=2.5;cx.stroke();
     pl(col,-L*.7,-h-8,-L*.7,-h-26,L*.15,-h-26,L*.32,-h-8);pl(glass,-L*.56,-h-11,-L*.56,-h-23,L*.08,-h-23,L*.2,-h-11);
@@ -526,7 +543,7 @@ function drawCar(){
   }
   cx.shadowBlur=0;
   if(!sj){ln(5,'#7d8498',-L,h-w0,-L*.85,-h*.2);ln(5,'#7d8498',L,h-w1,L*.85,-h*.2)}
-  wheel(L,h-w1,r,c.wr[1],t);
+  if(!sj)wheel(L,h-w1,r,c.wr[1],t);
   cx.restore();
 }
 function carShadow(){
