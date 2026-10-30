@@ -88,6 +88,7 @@ h1{margin:0;letter-spacing:3px;font-size:28px;background:linear-gradient(90deg,#
 .g4,.st2{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0}.g4>div,.st2>div{background:#232837;border-radius:12px;padding:8px 2px;text-align:center}.g4 b,.st2 b{display:block;font-size:14px}.g4 small,.st2 small{opacity:.65;font-size:10px}.st2{margin-top:14px}
 .foot{display:flex;gap:8px}.foot .go{flex:1;margin:0;padding:14px}.card .foot .smart{width:56px;font-size:24px;padding:0;background:#5b3fd0}.card .go.buy2{background:linear-gradient(90deg,#2b8a3e,#40c057);color:#fff}
 .hero .st span{text-align:center}
+.dif{display:flex;gap:6px;margin:0 0 8px}.card .df{flex:1;padding:7px 2px;border-radius:12px;background:#1a2b5e;border:2px solid var(--ink);font-size:12px;font-weight:900;line-height:1.15;display:flex;flex-direction:column;align-items:center}.df small{font-size:10px;opacity:.8}.card .df.on{background:linear-gradient(180deg,#ffd23f,var(--orange));color:#fff;text-shadow:0 2px 0 var(--ink)}
 
 /* ===== v4 brand: Sky Crawler. Sunset orange, deep navy, sky cyan, lime, gold. Chunky cartoon outlines. ===== */
 :root{--navy:#0f1b3d;--navy2:#22377a;--orange:#ff6b1a;--gold:#ffc727;--cyan:#35d0ff;--lime:#9be564;--ink:#2a1400}
@@ -184,7 +185,7 @@ addEventListener('resize',rs);addEventListener('orientationchange',()=>setTimeou
 let toastT=0;function toast(t){const e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>e.classList.remove('on'),1600)}
 
 /* ---------- save ---------- */
-let save={assist:1,xp:0,coins:0,best:{},veh:0,world:0,ownV:[1,0,0],ownW:[1,0,0],upg:[[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]],dl:0,streak:0,miss:null,st:{runs:0,flips:0,dist:0,earned:0}};
+let save={diff:0,drv:0,ownD:[1],assist:1,xp:0,coins:0,best:{},veh:0,world:0,ownV:[1,0,0],ownW:[1,0,0],upg:[[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]],dl:0,streak:0,miss:null,st:{runs:0,flips:0,dist:0,earned:0}};
 try{const s=localStorage.getItem('ultimate1');if(s)save=Object.assign(save,JSON.parse(s))}catch(e){}
 save.st=Object.assign({runs:0,flips:0,dist:0,earned:0},save.st);save.xp=save.xp||0;save.ta=save.ta||{};const persist=()=>{try{localStorage.setItem('ultimate1',JSON.stringify(save))}catch(e){}};
 let welcome=0;if(!save.sg){save.sg=1;save.coins+=500;welcome=1;persist()} /* one-time starting gift */
@@ -207,7 +208,7 @@ const WORLD=[
 {n:'Mars Canyon',bg:'canyon',cost:1200,wx:'dust',dc:'rock',g:800,gm:.95,sky:['#5a2a1c','#e8a07a'],far:'#a4533a',near:'#7e3a28',top:'#d9714a',dirt:'#6b2e1f',amp:1.4,rp:1,rt:1,pl:'#e07a52'},
 {n:'Ice Moon',bg:'snow',cost:2200,wx:'snow',dc:'ice',g:700,gm:.65,sky:['#0b2a4a','#9fe0ff'],far:'#7fb7d8',near:'#5d9bc2',top:'#eaf9ff',dirt:'#7fb2d4',amp:.9,rp:1.1,stars:1,pl:'#f0d9a0'},
 {n:'Neon Rings',cost:3500,wx:'neon',dc:'pylon',g:450,gm:.85,sky:['#12002b','#5b1a8f'],far:'#3d1a6e',near:'#2a1050',top:'#ff3df2',dirt:'#1b0a3a',amp:.6,rp:1.6,stars:1,pl:'#ffb347'}];
-let A=1,RP=0,RT=0,RD=0;
+let A=1,RP=0,RT=0,RD=0,KC=1.1,KD=16000,DA=1,DX=0;
 /* stunt kickers: a long climb then a steep lip, so the car launches (every planet but Green Hills) */
 function ramp(k){const H0=(45+hash(k+5)%35)*RP;return{xk:900+k*950+hash(k+77)%260,H0,Lc:Math.max(320,H0*5)}}
 function feat(x){
@@ -218,8 +219,8 @@ function feat(x){
   const u=(t-Lc)/110;return H0*(1-u*u*(3-2*u));
 }
 function ground(x){
-  let r=Math.min(1,Math.max(0,(x-350)/450)),sm=r*r*(3-2*r),k=Math.min(1.1,.2+x/16000)*A;
-  return -Math.max(x,0)*.03-sm*k*(58*Math.sin(x/230)+20*Math.sin(x/95+1.3)+48*Math.sin(x/520+2))-feat(x)-sm*EX(x)-(RT?sm*(3.5*Math.sin(x/29)+2.5*Math.sin(x/67+2)):0)-(x<-100?(-100-x)*3:0);
+  let r=Math.min(1,Math.max(0,(x-350)/450)),sm=r*r*(3-2*r),k=Math.min(KC,.2+x/KD)*A*DA;
+  return -Math.max(x,0)*.03-sm*k*(58*Math.sin(x/230)+20*Math.sin(x/95+1.3)+48*Math.sin(x/520+2))-feat(x)-sm*EX(x)-(RT?sm*(3.5*Math.sin(x/29)+2.5*Math.sin(x/67+2)):0)-(DX?sm*(9*Math.sin(x/41)+6*Math.sin(x/97+1)):0)-(x<-100?(-100-x)*3:0);
 }
 const hash=n=>{let h=Math.imul(n,374761393)+668265263|0;h=Math.imul(h^(h>>>13),1274126177);return(h^(h>>>16))>>>0};
 const RDN=['Rolling hills','Dunes','Rocky road','Stunt ramps','Washboard','Giant waves','Stair steps','Jump park','Whoops','Roller coaster'];
@@ -251,6 +252,19 @@ WORLD.forEach((w,i)=>{if(i>=6&&!w.bg){const L=BGMAP[w.dc];if(L)w.bg=L[hash(i*17+
 {n:'Lava Moon',bg:'lava_moon',cost:5800,wx:'dust',dc:'crater',g:560,gm:.8,sky:['#050208','#e0521a'],far:'#3a1d22',near:'#2a1218',top:'#ff7a1a',dirt:'#1b0b10',amp:1.4,rp:1.2,rt:1,stars:1,pl:'#d67846'},
 {n:'Orbital Ring',bg:'orbit',cost:6400,dc:'dome',g:380,gm:.7,sky:['#02030b','#0b2a5a'],far:'#3a5a9c',near:'#2a4478',top:'#c9d6f0',dirt:'#26324f',amp:.9,rp:1.6,stars:1,pl:'#4fa8ff'}
 ].forEach(w=>WORLD.push(w));
+/* v6 LANDSCAPE DIFFICULTY: Easy is gentle rolling land, Hard is the full classic, Hardest has taller and rougher hills that build up faster. Harder = bigger coin multiplier. */
+const DIFF=[{n:'EASY',e:'🟢',da:.8,kc:.65,kd:22000,rp:.7,dx:0,m:1},{n:'HARD',e:'🟠',da:1,kc:1.1,kd:16000,rp:1,dx:0,m:1.5},{n:'HARDEST',e:'🔴',da:1.14,kc:1.5,kd:9000,rp:1.25,dx:1,m:2.5}];
+/* v6 DRIVERS: pick who drives. Each has a look and a small perk. */
+const DRVS=[
+{n:'Abebe',e:'🧑',cost:0,perk:'Balanced rider',hel:'#35d0ff',shirt:'#e8590c',pants:'#22377a',skin:'#f6c796',scarf:'#ff6b1a'},
+{n:'Sara',e:'👩',cost:400,perk:'+25% stunt points',st:1.25,hel:'#ff2e88',shirt:'#8f2bd8',pants:'#2a1659',skin:'#c68642',scarf:'#ffd23f'},
+{n:'Kebede',e:'👴',cost:700,perk:'-12% fuel use',fb:.88,hel:'#9be564',shirt:'#2f9e44',pants:'#5a3d22',skin:'#8d5524',scarf:'#fff'},
+{n:'Mimi',e:'🧲',cost:1100,perk:'Big coin magnet',mg:34,hel:'#ffd23f',shirt:'#e03131',pants:'#1b2b5e',skin:'#e0ac69',scarf:'#35d0ff'},
+{n:'Cap. Nova',e:'🧑‍🚀',cost:1800,perk:'+30% air control',air:1.3,hel:'#e8ebf2',shirt:'#f2f4fa',pants:'#aeb6c8',skin:'#f6c796',scarf:'#ff5a36'},
+{n:'Speedy',e:'🏁',cost:2600,perk:'+8% top speed',ms:1.08,hel:'#ff3d3d',shirt:'#111',pants:'#111',skin:'#f1c27d',scarf:'#fff'},
+{n:'Robo-X',e:'🤖',cost:3800,perk:'+10% engine power',pw:1.1,hel:'#7ee8ff',shirt:'#4a4f5e',pants:'#2c2e38',skin:'#b8c4d6',scarf:'#3dffb0'}];
+const drvOk=i=>i===0||!!(save.ownD&&save.ownD[i]);
+const DV=()=>DRVS[drvOk(save.drv)?save.drv:0]||DRVS[0];
 const LVD=200; /* a level every 200 m: each one pays a coin gift, refuels and gives a 5 s auto boost */
 /* ---------- player level (XP) ---------- */
 const xpNeed=l=>Math.round(120+l*60+l*l*4); /* XP to climb from level l to l+1 */
@@ -279,8 +293,8 @@ function item(n){
 }
 function stats(){
   const v=VEH[save.veh],u=UP(),k=v.k*(1+.06*u[3]);
-  return Object.assign({},v,{pw:v.pw*1.35*(1+.14*u[0]),gr:v.gr*(1+.08*u[1]),fuel:v.fuel*(1+.2*u[2]),k,c:1.7*Math.sqrt(k),I:v.L*v.L*1.6,
-    burn:1.5*Math.sqrt(v.pw/600)*(1-.08*u[4]),cb:1+.1*u[5],mg:28*u[6]}); /* burn = fuel per second at full throttle: strong engines drink more, Eco Engine cuts it */
+  const D=DV();return Object.assign({},v,{air:v.air*(D.air||1),ms:Math.round(v.ms*(D.ms||1)),st:D.st||1,drv:D,pw:v.pw*1.35*(1+.14*u[0])*(D.pw||1),gr:v.gr*(1+.08*u[1]),fuel:v.fuel*(1+.2*u[2]),k,c:1.7*Math.sqrt(k),I:v.L*v.L*1.6,
+    burn:1.5*Math.sqrt(v.pw/600)*(1-.08*u[4])*(D.fb||1),cb:1+.1*u[5],mg:28*u[6]+(D.mg||0)}); /* burn = fuel per second at full throttle: strong engines drink more, Eco Engine cuts it */
 }
 /* coin arcs: a trail of coins that follows the flight path over every stunt ramp */
 function arcK(k){
@@ -313,7 +327,7 @@ function start(){
   run={dist:0,coins:0,flips:0,combo:0,ct:0,got:new Set(),over:'',cp:0,stunt:0,cpc:0,pk:0,air:0,cc:0,cct:0,sp:0,t:0};
   parts=[];pops=[];fls=[];cam.x=0;cam.y=car.y;state='play';
   menu.classList.add('hide');$('hud').classList.remove('hide');$('pad').classList.remove('hide');$('gear').classList.remove('hide');
-  $('ab').classList.toggle('on',!!save.assist);$('hplv').textContent=plvl(save.xp).l;audio();showPrev();
+  $('ab').classList.toggle('on',!!save.assist);$('hplv').textContent=plvl(save.xp).l;audio();showPrev();toast(DIFF[save.diff||0].e+' '+DIFF[save.diff||0].n+' landscape · driver '+DV().n);
 }
 function sim(vi,mode=1,secs=7){ /* test-drive a vehicle on the current planet (bot: full gas, hands-off in the air); returns metres */
   const sv=[save.veh,car,run,parts,pops,state,keys.gas,keys.brake];keys.boost=0;SIM=mode;SIMDEAD=0;save.veh=vi;const S=stats();let d=0;
@@ -344,8 +358,8 @@ function crash(why){
   setTimeout(over,450);
 }
 function over(){
-  const m=Math.floor(run.dist),avg=run.fin&&run.t?m/run.t:0,tstars=run.fin?(avg>=14?3:avg>=9?2:1):0,taB=run.fin?Math.round(tg*.5*(1+tstars*.5)):0,bonus=Math.floor(m/8)+taB,key=save.veh+'-'+save.world,S=stats();
-  run.bonus=bonus;run.sub=run.coins+run.stunt+run.cpc+bonus;run.pm=pmul(WORLD[save.world]);run.cb=S.cb;run.total=Math.round(run.sub*run.pm*run.cb);
+  const m=Math.floor(run.dist),avg=run.fin&&run.t?m/run.t:0,tstars=run.fin?(avg>=14?3:avg>=9?2:1):0,taB=run.fin?Math.round(tg*.5*(1+tstars*.5)):0,bonus=Math.floor(m/8)+taB,key=save.veh+'-'+save.world+(save.diff?'-d'+save.diff:''),S=stats();run.stunt=Math.round(run.stunt*(S.st||1));
+  run.bonus=bonus;run.sub=run.coins+run.stunt+run.cpc+bonus;run.pm=+(pmul(WORLD[save.world])*DIFF[save.diff||0].m/1.0).toFixed(2);run.cb=S.cb;run.total=Math.round(run.sub*run.pm*run.cb);
   const sd=mstate();run.mdone=[];missions().forEach((q,j)=>{if(!sd.done[j]&&run[q.k]>=q.target){sd.done[j]=1;run.total+=q.rew;run.mdone.push(q)}});
   save.st.runs++;save.st.flips+=run.flips;save.st.dist+=m;save.st.earned+=run.total;$('combo').classList.add('hide');
   save.coins+=run.total;run.newBest=m>(save.best[key]||0);if(run.newBest)save.best[key]=m;
@@ -470,7 +484,7 @@ function frame(dt){
 }
 
 /* ---------- 2D rendering ---------- */
-function applyWorld(){PADC={};const w=WORLD[save.world];A=Math.min(w.amp,1.05)*Math.min(1,Math.pow(900/w.g,.7)); /* heavy-gravity planets get gentler hills so weak engines can still climb */RP=w.rp||0;RT=w.rt||0;RD=w.rd||0}
+function applyWorld(){PADC={};const w=WORLD[save.world];A=Math.min(w.amp,1.05)*Math.min(1,Math.pow(900/w.g,.7)); /* heavy-gravity planets get gentler hills so weak engines can still climb */{const D=DIFF[save.diff]||DIFF[1];RP=(w.rp||0)*D.rp;KC=D.kc;KD=D.kd;DA=D.da;DX=D.dx}RT=w.rt||0;RD=w.rd||0}
 function showPrev(){}
 /* ---------- rendering ---------- */
 function rr(x,y,w,h,r){cx.beginPath();cx.moveTo(x+r,y);cx.arcTo(x+w,y,x+w,y+h,r);cx.arcTo(x+w,y+h,x,y+h,r);cx.arcTo(x,y+h,x,y,r);cx.arcTo(x,y,x+w,y,r);cx.closePath()}
@@ -531,17 +545,17 @@ function drawCar(){
   const pl=(f,...p)=>{cx.fillStyle=f;cx.beginPath();cx.moveTo(p[0],p[1]);for(let i=2;i<p.length;i+=2)cx.lineTo(p[i],p[i+1]);cx.closePath();cx.fill();if(typeof f==='string'){cx.strokeStyle='#2a1400';cx.lineWidth=2.5;cx.stroke()}};
   const dark='#1d2030',steel='#aeb6c8',glass='#a8defc';
   const head=(x,y)=>{const sp=Math.min(1,Math.abs(c.vx)/900),fl=Math.sin(performance.now()/90)*3*sp,K='#2a1400';
-    cx.strokeStyle='#ff6b1a';cx.lineWidth=5;cx.beginPath();cx.moveTo(x-5,y+6);cx.quadraticCurveTo(x-16-14*sp,y+8+fl,x-24-20*sp,y+4-fl*1.5);cx.stroke();
-    cx.strokeStyle=K;cx.lineWidth=2;cx.fillStyle='#f6c796';cx.beginPath();cx.arc(x,y,7.5,0,7);cx.fill();cx.stroke();
-    cx.fillStyle='#35d0ff';cx.beginPath();cx.arc(x,y-1,8.6,Math.PI,0);cx.closePath();cx.fill();cx.stroke();
+    const DR=S.drv||DRVS[0];cx.strokeStyle=DR.scarf;cx.lineWidth=5;cx.beginPath();cx.moveTo(x-5,y+6);cx.quadraticCurveTo(x-16-14*sp,y+8+fl,x-24-20*sp,y+4-fl*1.5);cx.stroke();
+    cx.strokeStyle=K;cx.lineWidth=2;cx.fillStyle=DR.skin;cx.beginPath();cx.arc(x,y,7.5,0,7);cx.fill();cx.stroke();
+    cx.fillStyle=DR.hel;cx.beginPath();cx.arc(x,y-1,8.6,Math.PI,0);cx.closePath();cx.fill();cx.stroke();
     cx.fillStyle='#fff';cx.beginPath();cx.ellipse(x+3.6,y-1,4.6,3.8,0,0,7);cx.fill();cx.stroke();
     cx.fillStyle=car.dead?'#d62828':'#1b2b5e';cx.beginPath();cx.arc(x+4.8,y-1,1.9,0,7);cx.fill();
     cx.strokeStyle=K;cx.lineWidth=1.5;cx.beginPath();cx.arc(x+2,y+3.4,2.6,.1,Math.PI-.3);cx.stroke()};
   const rider=(sx,sy,hx,hy,fx,fy,lean)=>{
     const shx=sx+lean,shy=sy-20;
-    ln(6,'#22377a',sx,sy,(sx+fx)/2+7,(sy+fy)/2-3,fx,fy);
-    ln(9,'#e8590c',sx,sy,shx,shy);
-    ln(5,'#e8590c',shx,shy,(shx+hx)/2,(shy+hy)/2+5,hx,hy);
+    ln(6,(S.drv||DRVS[0]).pants,sx,sy,(sx+fx)/2+7,(sy+fy)/2-3,fx,fy);
+    ln(9,(S.drv||DRVS[0]).shirt,sx,sy,shx,shy);
+    ln(5,(S.drv||DRVS[0]).shirt,shx,shy,(shx+hx)/2,(shy+hy)/2+5,hx,hy);
     ln(4,'#222',hx-2,hy,hx+3,hy);
     head(shx+2,shy-10)};
   const lights=(x,y)=>{cx.fillStyle='#fff2a8';cx.beginPath();cx.arc(x,y,3.5,0,7);cx.fill()};
@@ -772,7 +786,7 @@ function sfx(k,a){if(SIM||!ac)return;
   else if(k==='sprint')tone(200,.5,'sawtooth',.09,4)}
 /* ---------- menu ---------- */
 /* ---------- menu (tabbed, icon-first) ---------- */
-let tab='car',vf='all',lastTab='',splash=1;
+let tab='car',vf='all',lastTab='',splash=1,pd=-1;
 const CI={Bicycle:'🚲',Scooter:'🛴','Dirt Bike':'🏍️',Buggy:'🏎️',Jeep:'🚙',Truck:'🛻',Monster:'🚜','Sports Car':'🏁','Quad Bike':'🛺','Rally Car':'🚘',Tractor:'🌾','Moon Rover':'🛰️','Cyber Bike':'⚡',Chopper:'🛵','Rocket Car':'🚀'};
 const UI=['⚙️','🛞','⛽','🔩','🌿','💰','🧲'];
 function bars(S){return[['⚡',S.pw/2400],['🛞',S.gr/2.6],['⛽',S.fuel/300],['🚀',S.ms/1500]].map(([n,p])=>`<div class=st><span>${n}</span><i><b style="width:${Math.max(4,Math.min(100,Math.round(p*100)))}%"></b></i></div>`).join('')}
@@ -810,6 +824,9 @@ function render(){
     <div class=grid>${VEH.map((x,i)=>vf!=='all'&&x.cls!==vf?'':`<button class="tile ${i===save.veh?'sel':''} ${i<3||save.ownV[i]?'':'lock'}" data-a=pickv data-i=${i}><span class=e>${CI[x.cls]}</span>${VT[x.t]}<small>${i<3?'FREE':save.ownV[i]?'✓':'🔒 '+x.cost}</small></button>`).join('')}</div>`;
   }else if(tab==='world'){
     body=`<div class=grid>${WORLD.map((x,i)=>`<button class="tile ${i===save.world?'sel':''} ${i===0||save.ownW[i]?'':'lock'}" data-a=pickw data-i=${i}><span class=sw style="background:linear-gradient(180deg,${x.sky[0]},${x.sky[1]} 60%,${x.top} 60%)"></span>${x.n}<small>×${pmul(x)} ${i===0||save.ownW[i]?'✓':'🔒 '+x.cost}</small></button>`).join('')}</div>`;
+  }else if(tab==='drv'){
+    const sel=pd>=0?pd:save.drv;
+    body=`<div class=grid>${DRVS.map((x,i)=>`<button class="tile ${i===sel?'sel':''} ${drvOk(i)?'':'lock'}" data-a=pickd data-i=${i}><span class=e>${x.e}</span>${x.n}<small>${drvOk(i)?(i===save.drv?'✓ DRIVING':'OWNED'):'🔒 '+x.cost}</small></button>`).join('')}</div><p class=sub><b>${DRVS[sel].n}</b>: ${DRVS[sel].perk}</p>`;
   }else if(tab==='race'){
     body=[500,1000,2000].map((d,i)=>`<div class=upr><span class=ui>🏁</span><div><b>${d} m sprint</b><div class=pips>${save.ta[d]?'best '+save.ta[d].toFixed(1)+' s':'no time yet'}</div></div><button data-a=race data-i=${i}>GO</button></div>`).join('')+`<p class=sub>Beat the clock to the finish line. Faster means more stars and a bigger coin bonus.</p>`;
   }else if(tab==='up'){
@@ -819,12 +836,13 @@ function render(){
     body=ms.map((q,j)=>`<div class="ms ${sd.done[j]?'d':''}"><span>${sd.done[j]?'✅':'🎯'} ${q.txt}</span><b>🪙${q.rew}</b></div>`).join('')+
       `<div class=st2><div><b>🏁 ${save.st.runs}</b><small>runs</small></div><div><b>🔄 ${save.st.flips}</b><small>flips</small></div><div><b>📏 ${save.st.dist}</b><small>metres</small></div><div><b>🪙 ${save.st.earned}</b><small>earned</small></div></div>`;
   }
-  const foot=!ownV?`<button class="go buy2" data-a=buyv ${save.coins<v.cost?'disabled':''}>🔓 ${CI[v.cls]} 🪙${v.cost}</button>`:!ownW?`<button class="go buy2" data-a=buyw ${save.coins<w.cost?'disabled':''}>🔓 🪙${w.cost}</button>`:`<button class=go data-a=drive>▶ DRIVE</button>`;
+  const foot=tab==='drv'&&pd>=0&&!drvOk(pd)?`<button class="go buy2" data-a=buyd ${save.coins<DRVS[pd].cost?'disabled':''}>🔓 ${DRVS[pd].e} ${DRVS[pd].n} 🪙${DRVS[pd].cost}</button>`:!ownV?`<button class="go buy2" data-a=buyv ${save.coins<v.cost?'disabled':''}>🔓 ${CI[v.cls]} 🪙${v.cost}</button>`:!ownW?`<button class="go buy2" data-a=buyw ${save.coins<w.cost?'disabled':''}>🔓 🪙${w.cost}</button>`:`<button class=go data-a=drive>▶ DRIVE</button>`;
   menu.innerHTML=`<div class="card gar">
   <div class=top><a class=ic href="/">‹</a><div class="pill2 gold"><span class=cn></span><b>${save.coins}</b></div><div class=plb title="Player level"><b>${P.l}</b><i><u style="width:${Math.round(P.cur/P.need*100)}%"></u></i></div><div class=pill2>🔥 ${save.streak||0}</div><span style="flex:1"></span><button class="ic ${dailyOn?'gift':''}" data-a=daily title="Daily bonus">🎁${dailyOn?'<i></i>':''}</button><button class=ic data-a=help>?</button></div>
   ${welcome?'<div class=wb>🎁 Welcome gift! +500 🪙 added</div>':''}<div class=hero><span class=e>${CI[v.cls]}</span><div class=hm><b>${v.n}</b><small>🌍 ${w.n} · ×${pmv} · 🏆 ${bt} m</small></div><div class=hb>${bars(S)}</div></div>
-  <div class=tabs>${[['car','🚗','Vehicles'],['world','🪐','Planets'],['up','🔧','Upgrades'],['mis','🎯','Missions'],['race','🏁','Race']].map(([k,e,n])=>`<button class="tab ${tab===k?'on':''}" data-a=tab data-v=${k}>${e}<small>${n}</small>${k==='mis'&&left?'<i class=dot>'+left+'</i>':''}</button>`).join('')}</div>
+  <div class=tabs>${[['car','🚗','Vehicles'],['world','🪐','Planets'],['up','🔧','Upgrades'],['mis','🎯','Missions'],['drv','🧑','Driver'],['race','🏁','Race']].map(([k,e,n])=>`<button class="tab ${tab===k?'on':''}" data-a=tab data-v=${k}>${e}<small>${n}</small>${k==='mis'&&left?'<i class=dot>'+left+'</i>':''}</button>`).join('')}</div>
   <div class=body>${body}</div>
+  <div class=dif>${DIFF.map((d,i)=>`<button class="df ${save.diff===i?'on':''}" data-a=diff data-i=${i}>${d.e} ${d.n}<small>×${d.m}</small></button>`).join('')}</div>
   <div class=foot>${foot}<button class="smart" data-a=smart title="Smart pick">🧠</button></div></div>`;
   const bd=menu.querySelector&&menu.querySelector('.body');
   if(bd){if(lastTab===tab+vf)bd.scrollTop=keepTop;else{const sel=bd.querySelector('.tile.sel');if(sel&&sel.scrollIntoView)sel.scrollIntoView({block:'center'})}}
@@ -842,12 +860,15 @@ menu.addEventListener('click',e=>{
   else if(a==='buyv'&&save.coins>=VEH[save.veh].cost){save.coins-=VEH[save.veh].cost;save.ownV[save.veh]=1}
   else if(a==='buyw'&&save.coins>=WORLD[save.world].cost){save.coins-=WORLD[save.world].cost;save.ownW[save.world]=1}
   else if(a==='up'){const u=UP(),cost=upCost(i,u[i]);if(u[i]<5&&save.coins>=cost){save.coins-=cost;u[i]++}}
+  else if(a==='diff'){save.diff=i}
+  else if(a==='pickd'){if(drvOk(i)){save.drv=i;pd=-1}else pd=i}
+  else if(a==='buyd'&&pd>=0&&save.coins>=DRVS[pd].cost){save.coins-=DRVS[pd].cost;(save.ownD=save.ownD||[1])[pd]=1;save.drv=pd;pd=-1}
   else if(a==='daily'){claimDaily()}
   else if(a==='splash'){splash=0}
   else if(a==='mute'){save.mute=save.mute?0:1}
   else if(a==='chest'&&!run.chest){run.chest=Math.round((40+Math.random()*160)*(1+run.cp*.15)/5)*5;save.coins+=run.chest;toast('🎁 +'+run.chest+' coins!');sfx('lvl')}
   else if(a==='smart'){smartPick();toast(advMsg.replace(/<[^>]+>/g,''))}
-  else if(a==='tab'){tab=b.dataset.v}else if(a==='vf'){vf=b.dataset.v}else if(a==='pickv'){save.veh=i}else if(a==='pickw'){save.world=i}
+  else if(a==='tab'){tab=b.dataset.v;pd=-1}else if(a==='vf'){vf=b.dataset.v}else if(a==='pickv'){save.veh=i}else if(a==='pickw'){save.world=i}
   else if(a==='help'){toast('RIGHT/D gas · LEFT/A brake · SHIFT = sprint · grab red cans to refuel · let go in the air to auto-level')}
   else if(a==='start'){persist();start();return}
   else if(a==='drive'){gm='endless';persist();start();return}
