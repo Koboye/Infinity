@@ -84,6 +84,8 @@ h1{margin:0;letter-spacing:3px;font-size:28px;background:linear-gradient(90deg,#
 .hd{font-size:12px;letter-spacing:2px;opacity:.6;margin:12px 0 4px;text-align:left;font-weight:800}
 .row small{display:block;opacity:.55;font-size:10px}.row span:first-child{width:120px}
 
+/* phase 1: skin tiles */
+.tile.sk img{width:100%;height:auto;border-radius:8px;display:block;margin-bottom:3px}.tile.sk b{font-size:11px}
 /* v3 garage: tabs + tiles */
 .wb{margin-top:10px;padding:9px;border-radius:12px;text-align:center;font-weight:800;background:linear-gradient(90deg,#ff9f1c,#ffd23f);color:#222;animation:pu 1s infinite alternate}
 #toast{z-index:50}
@@ -272,6 +274,13 @@ const VEH=[];VT.forEach((tn,t)=>VCL.forEach(([cn,b],ci)=>{const v=Object.assign(
 const fr=v=>v.bike&&v.t===0?0:1;
 VEH.sort((a,b)=>fr(a)-fr(b)||a.e-b.e); // the 3 Rookie bike types come first and are FREE; every other vehicle costs coins by its efficiency
 VEH.forEach((v,i)=>v.cost=i<3?0:Math.max(100,Math.round(Math.pow(v.e,5)*150/10)*10));
+/* PHASE 1: more car models (appended so saved vehicle numbers stay valid) */
+const VCL2=[['Rally Car',{L:38,h:14,r:17,pw:600,gr:1.3,fuel:95,air:7,drive:2,k:98,ms:900}],['Pickup',{L:42,h:20,r:21,pw:600,gr:1.4,fuel:110,air:5,drive:2,k:112,ms:700}],['Muscle Car',{L:41,h:13,r:16,pw:680,gr:1.05,fuel:90,air:7,drive:1,k:100,ms:1050}]];
+VCL2.forEach(([cn,b],ci)=>{VCL.push([cn,b]);[1,3,5,7,9].forEach(t=>{const v=Object.assign({},b,{n:VT[t]+' '+cn,cls:cn,t,pw:Math.round(b.pw*(1+.07*t)),gr:+(b.gr*(1+.035*t)).toFixed(2),fuel:Math.round(b.fuel*(1+.05*t)),ms:Math.round(b.ms*(1+.04*t)),col:'hsl('+((ci*47+t*29+200)%360)+',75%,52%)'});v.e=v.pw/600*.35+v.gr/1.3*.3+v.fuel/100*.15+v.ms/800*.2;v.cost=Math.max(100,Math.round(Math.pow(v.e,5)*150/10)*10);VEH.push(v)})});
+/* PHASE 1: paint skins (own once, wear on any car; chosen per car) */
+const SKINS=[{id:'red',n:'Red',cost:0,col:null},{id:'blue',n:'Blue',cost:150,col:'#2f6bff'},{id:'green',n:'Green',cost:150,col:'#3fcf2a'},{id:'yellow',n:'Yellow',cost:200,col:'#ffcf1f'},{id:'black',n:'Black',cost:300,col:'#3a3c44'},{id:'orange',n:'Orange',cost:250,col:'#ff8a1f'},{id:'camo',n:'Camo',cost:400,col:'#5b6b2e'},{id:'white',n:'White',cost:300,col:'#f2f4f8'},{id:'purple',n:'Purple',cost:350,col:'#8a2be2'},{id:'pink',n:'Pink',cost:350,col:'#ff5fb0'}];
+if(!Array.isArray(save.ownSk))save.ownSk=[1];if(!save.vs||typeof save.vs!=='object')save.vs={};
+const skinOf=i=>{const k=save.vs[i]|0;return SKINS[k]&&(k===0||save.ownSk[k])?k:0};
 const WORLD=[
 {n:'Green Hills',cost:0,dc:'tree',rp:.8,g:1200,gm:1,sky:['#2fa8ff','#c8f0ff'],far:'#7fcf9a',near:'#4fb35f',top:'#6fd13a',dirt:'#9a5f2e',amp:1},
 {n:'Dune Sea',cost:600,wx:'dust',dc:'cactus',g:1200,gm:.8,sky:['#ffb36b','#ffe6b3'],far:'#e0a066',near:'#cf8a4f',top:'#f0c56a',dirt:'#b8793c',amp:1.2},
@@ -347,7 +356,7 @@ function item(n){
 function stats(){
   const v=VEH[save.veh],u=UP(),k=v.k*(1+.06*u[3]);
   return Object.assign({},v,{pw:v.pw*1.35*(1+.14*u[0]),gr:v.gr*(1+.08*u[1]),fuel:v.fuel*(1+.2*u[2]),k,c:1.1*Math.sqrt(k),I:v.L*v.L*1.6,
-    burn:1.5*Math.sqrt(v.pw/600)*(1-.08*u[4]),cb:1+.1*u[5],mg:28*u[6]}); /* burn = fuel per second at full throttle: strong engines drink more, Eco Engine cuts it */
+    burn:1.5*Math.sqrt(v.pw/600)*(1-.08*u[4]),cb:1+.1*u[5],mg:28*u[6],col:SKINS[skinOf(save.veh)].col||v.col}); /* burn = fuel per second at full throttle: strong engines drink more, Eco Engine cuts it */
 }
 /* coin arcs: a trail of coins that follows the flight path over every stunt ramp */
 function arcK(k){
@@ -367,7 +376,7 @@ function itemsIn(x0,x1){
 function headLocal(S){const L=S.L,h=S.h;switch(S.cls){
   case'Bicycle':return[-L*.4+8,-50];case'Scooter':return[0,-39];case'Dirt Bike':return[4,-47];
   case'Sports Car':return[L*.05+1,-h-15];case'Jeep':return[-L*.2+1,-h-17];case'Truck':return[L*.25+1,-h-18];
-  case'Monster':return[-L*.02+1,-h-28];default:return[-L*.12+1,-h-16]}}
+  case'Monster':return[-L*.02+1,-h-28];case'Rally Car':return[L*.02+1,-h-16];case'Pickup':return[L*.3+1,-h-18];case'Muscle Car':return[L*.0+1,-h-15];default:return[-L*.12+1,-h-16]}}
 function bodyPts(S){const L=S.L,h=S.h;return S.bike?[[-L*.6,-14],[L*.62,-22],[-4,4]]:[[-L-6,-h-8],[L+6,-h-8],[-L*.1,-h-22]]}
 const HR=9; /* helmet radius */
 
@@ -708,6 +717,19 @@ function drawCar(){
     gp(col,-L-12,-h-14,-L-12,-h*.15,0,-h*.15,0,-h-14);pipe(2.6,'rgba(0,0,0,.45)',-L-8,-h-9,-4,-h-9);
     gp(col,0,-h-12,L*.2,-h-36,L*.66,-h-36,L*.95,-h-12,L+12,-h-10,L+12,-h*.15,0,-h*.15);
     gp(glass,L*.14,-h-14,L*.26,-h-31,L*.56,-h-31,L*.72,-h-14);pipe(5,steel,L+13,-h*.4,L+13,-h*.4+4);lamp(L+8,-h-7);driver(L*.36,-h-20);
+  }else if(cl==='Rally Car'){
+    gp(col,-L-12,-h-2,-L-12,-h*.2,L+14,-h*.2,L+14,-h-5,L*.5,-h-10,L*.28,-h-27,-L*.32,-h-27,-L*.62,-h-12);
+    gp(glass,-L*.2,-h-13,-L*.1,-h-23,L*.14,-h-23,L*.3,-h-13);pipe(3,'#fff',-L-8,-h-7,L+10,-h-7);
+    pipe(3.4,dark,-L-8,-h-12,-L-8,-h-26);gp(dark,-L-16,-h-27,-L-16,-h-24,-L+8,-h-24,-L+8,-h-27);
+    gp('#ffd23f',-L*.1,-h-27,-L*.1,-h-31,L*.1,-h-31,L*.1,-h-27);lamp(L+10,-h-6);cx.fillStyle='#ff2d2d';cx.fillRect(-L-12,-h-3,4,6);driver(L*.02,-h-15);
+  }else if(cl==='Pickup'){
+    gp(col,-L-12,-h-14,-L-12,-h*.15,-L*.05,-h*.15,-L*.05,-h-14);pipe(2.6,'rgba(0,0,0,.45)',-L-8,-h-9,-L*.1,-h-9);
+    gp(col,-L*.05,-h-12,L*.25,-h-33,L*.62,-h-33,L*.85,-h-12,L+12,-h-10,L+12,-h*.15,-L*.05,-h*.15);
+    gp(glass,L*.2,-h-14,L*.3,-h-28,L*.55,-h-28,L*.68,-h-14);pipe(5,steel,L+13,-h*.4,L+13,-h*.4+4);lamp(L+8,-h-7);driver(L*.4,-h-19);
+  }else if(cl==='Muscle Car'){
+    gp(col,-L-12,-h-4,-L-12,-h*.2,L+16,-h*.2,L+16,-h-6,L*.6,-h-10,L*.12,-h-26,-L*.35,-h-26,-L*.62,-h-10);
+    gp(glass,-L*.28,-h-12,-L*.14,-h-23,L*.1,-h-23,L*.2,-h-12);pipe(3.2,'#fff',-L*.3,-h-8,L*.55,-h-8);
+    gp(dark,L*.28,-h-11,L*.28,-h-15,L*.5,-h-14,L*.5,-h-10);pipe(3,steel,-L-8,-h*.45,-L-17,-h*.45-2);lamp(L+12,-h-6);cx.fillStyle='#ff2d2d';cx.fillRect(-L-12,-h-4,4,6);driver(L*.0,-h-15);
   }else if(cl==='Monster'){
     gp(col,-L*.95,-h-22,-L*.95,-h*.5,L*.95,-h*.5,L*.95,-h-20,L*.5,-h-26,L*.35,-h-46,-L*.35,-h-46,-L*.55,-h-26);
     gp(glass,-L*.3,-h-29,-L*.22,-h-42,L*.26,-h-42,L*.4,-h-29);gp('#ffb02e',-L*.9,-h-6,-L*.15,-h-14,-L*.9,-h-18);gp('#ff5a36',-L*.9,-h-1,-L*.05,-h-8,-L*.9,-h-10);
@@ -907,7 +929,7 @@ function sfx(k,a){if(SIM||!ac)return;
 /* ---------- menu ---------- */
 /* ---------- menu (tabbed, icon-first) ---------- */
 let tab='car',vf='all',lastTab='',splash=1;
-const CI={Bicycle:'🚲',Scooter:'🛴','Dirt Bike':'🏍️',Buggy:'🏎️',Jeep:'🚙',Truck:'🛻',Monster:'🚜','Sports Car':'🏁'};
+const CI={Bicycle:'🚲',Scooter:'🛴','Dirt Bike':'🏍️',Buggy:'🏎️',Jeep:'🚙',Truck:'🛻',Monster:'🚜','Sports Car':'🏁','Rally Car':'🏎️',Pickup:'🛻','Muscle Car':'🚘'};
 const UI=['⚙️','🛞','⛽','🔩','🌿','💰','🧲'];
 function bars(S){return[['⚡',S.pw/2400],['🛞',S.gr/2.6],['⛽',S.fuel/300],['🚀',S.ms/1500]].map(([n,p])=>`<div class=st><span>${n}</span><i><b style="width:${Math.max(4,Math.min(100,Math.round(p*100)))}%"></b></i></div>`).join('')}
 function render(){
@@ -937,8 +959,9 @@ function render(){
   if(tab==='car'){
     const cls=['all',...VCL.map(c=>c[0])];
     const mx=k=>Math.max(...VEH.map(q=>q[k]||0))||1,sb=(n,k)=>`<div>${n}<i><u style="width:${Math.round(100*(v[k]||0)/mx(k))}%"></u></i></div>`,stn=Math.min(3,1+Math.floor(save.veh/3));
-    body=`<div class=mk-hero><div style="flex:1"><img src="sprites/jeep_garage.png" alt=""><div class=nm>${v.n}</div><div class=st>${'\u2605'.repeat(stn)+'\u2606'.repeat(3-stn)}</div></div><div class=mk-bars>${sb('Speed','pw')}${sb('Acceleration','pw')}${sb('Grip','gr')}${sb('Fuel','fuel')}</div></div><div class=chips>${cls.map(c=>`<button class="chip2 ${vf===c?'on':''}" data-a=vf data-v="${c}">${c==='all'?'ALL':CI[c]}</button>`).join('')}</div>
-    <div class=grid>${VEH.map((x,i)=>vf!=='all'&&x.cls!==vf?'':`<button class="tile ${i===save.veh?'sel':''} ${i<3||save.ownV[i]?'':'lock'}" data-a=pickv data-i=${i}><span class=e>${CI[x.cls]}</span>${VT[x.t]}<small>${i<3?'FREE':save.ownV[i]?'✓':'🔒 '+x.cost}</small></button>`).join('')}</div>`;
+    body=`<div class=mk-hero><div style="flex:1"><img src="sprites/skins/jeep_${SKINS[skinOf(save.veh)].id}.png" alt=""><div class=nm>${v.n}</div><div class=st>${'\u2605'.repeat(stn)+'\u2606'.repeat(3-stn)}</div></div><div class=mk-bars>${sb('Speed','pw')}${sb('Acceleration','pw')}${sb('Grip','gr')}${sb('Fuel','fuel')}</div></div><div class=chips>${cls.map(c=>`<button class="chip2 ${vf===c?'on':''}" data-a=vf data-v="${c}">${c==='all'?'ALL':CI[c]}</button>`).join('')}</div>
+    <div class=grid>${VEH.map((x,i)=>vf!=='all'&&x.cls!==vf?'':`<button class="tile ${i===save.veh?'sel':''} ${i<3||save.ownV[i]?'':'lock'}" data-a=pickv data-i=${i}><span class=e>${CI[x.cls]}</span>${VT[x.t]}<small>${i<3?'FREE':save.ownV[i]?'✓':'🔒 '+x.cost}</small></button>`).join('')}</div>
+    <div class=hd>🎨 PAINT SKINS · ${v.n}</div><div class=grid>${SKINS.map((k,j)=>`<button class="tile sk ${j===skinOf(save.veh)?'sel':''} ${save.ownSk[j]?'':'lock'}" data-a=skin data-k=${j}><img src="sprites/skins/jeep_${k.id}.png" alt=""><b>${k.n}</b><small>${j===0||save.ownSk[j]?(j===skinOf(save.veh)?'ON':'✓'):'🔒 '+k.cost}</small></button>`).join('')}</div>`;
   }else if(tab==='world'){
     body=`<div class=grid>${WORLD.map((x,i)=>`<button class="tile ${i===save.world?'sel':''} ${i===0||save.ownW[i]?'':'lock'}" data-a=pickw data-i=${i}><span class=sw style="background:linear-gradient(180deg,${x.sky[0]},${x.sky[1]} 60%,${x.top} 60%)"></span>${x.n}<small>×${pmul(x)} ${i===0||save.ownW[i]?'✓':'🔒 '+x.cost}</small></button>`).join('')}</div>`;
   }else if(tab==='up'){
@@ -981,7 +1004,7 @@ menu.addEventListener('click',e=>{
   else if(a==='tinv'){save.tinv=save.tinv?0:1;TL.n0=null}
   else if(a==='chest'&&!run.chest){run.chest=Math.round((40+Math.random()*160)*(1+run.cp*.15)/5)*5;save.coins+=run.chest;toast('🎁 +'+run.chest+' coins!');sfx('lvl')}
   else if(a==='smart'){smartPick();toast(advMsg.replace(/<[^>]+>/g,''))}
-  else if(a==='tab'){tab=b.dataset.v}else if(a==='vf'){vf=b.dataset.v}else if(a==='pickv'){save.veh=i}else if(a==='pickw'){save.world=i}
+  else if(a==='tab'){tab=b.dataset.v}else if(a==='vf'){vf=b.dataset.v}else if(a==='pickv'){save.veh=i}else if(a==='skin'){const k=+b.dataset.k,sk=SKINS[k];if(k===0||save.ownSk[k]){save.vs[save.veh]=k}else if(save.coins>=sk.cost){save.coins-=sk.cost;save.ownSk[k]=1;save.vs[save.veh]=k;toast('🎨 '+sk.n+' skin unlocked!')}else toast('🔒 Need 🪙'+sk.cost+' for the '+sk.n+' skin')}else if(a==='pickw'){save.world=i}
   else if(a==='help'){toast('RIGHT/D gas · LEFT/A brake · coins and red cans refuel you · low fuel = less power · let go in the air to auto-level')}
   else if(a==='start'){persist();start();return}
   else if(a==='resume'){menu.classList.add('hide');$('gear').classList.remove('hide');state='play';tiltCal();return}
