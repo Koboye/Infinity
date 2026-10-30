@@ -155,6 +155,7 @@ html,body{background:var(--navy)}
 .card .tab.on{background:linear-gradient(180deg,#ff6fb0,#ff2e88)}
 .card .go.alt{background:linear-gradient(180deg,#6a52c9,#3b2a8a)}
 .lvup{background:linear-gradient(90deg,#ff2e88,#8f6bff)}
+@media(max-width:480px){#hud{flex-wrap:wrap;gap:6px;padding:8px 8px;box-sizing:border-box;font-size:16px}#hud .pill{padding:4px 9px;border-width:2px}#hud .pill.big{font-size:21px}#hud .meters{order:9;flex:1 1 100%;max-width:none;flex-direction:row;align-items:center;gap:8px;padding-top:2px}#hud .meters .bar{flex:1;min-width:0}#hud button{padding:4px 9px!important}}
 </style></head><body>
 <canvas id="c"></canvas>
 <div id="hud" class="hide"><div class="pill big"><b id="dist">0</b><small>m</small></div><div class="pill coinp" id="coinp"><span class="cn"></span><b id="coin">0</b></div><div class="pill stage"><small>STAGE</small><b id="lv">1</b></div><div class="pill plv" title="Player level"><small>LV</small><b id="hplv">1</b></div><div class="meters"><div class="bar"><i id="fuel"></i></div><div class="bar n"><i id="nit"></i></div></div><button id="ab">🧠</button><button id="pb">⏸</button></div><div id="combo" class="hide"><span id="cmb"></span><i id="cmt"></i></div>
@@ -230,7 +231,7 @@ function missions(){const d=dayN(),h=hash(d*7+1),ks=[0,1,2,3,4].sort((a,b)=>hash
   return ks.map((ki,j)=>{const m=MIS[ki],tier=Math.min(3,j+((h>>>j)&1));return{k:m.k,target:m.v[tier],rew:m.r[tier],txt:m.t(m.v[tier])}})}
 function mstate(){if(!save.miss||save.miss.d!==dayN())save.miss={d:dayN(),done:[0,0,0]};return save.miss}
 const UP=()=>{const u=save.upg[save.veh]||(save.upg[save.veh]=[]);while(u.length<7)u.push(0);return u};
-function EX(x){switch(RD){case 4:return 6*Math.sin(x/34);case 5:return 120*Math.sin(x/900);case 6:return 26*Math.tanh(3*Math.sin(x/300));case 8:return 34*Math.abs(Math.sin(x/190));case 9:return 90*Math.sin(x/340)+40*Math.sin(x/110)}return 0}
+function EX(x){switch(RD){case 4:return 6*Math.sin(x/34);case 5:return 120*Math.sin(x/900);case 6:return 26*Math.tanh(3*Math.sin(x/300));case 8:return 34*Math.abs(Math.sin(x/190));case 9:return 58*Math.sin(x/340)+20*Math.sin(x/120)}return 0}
 function item(n){
   const x=400+n*140,h=hash(n);
   if(n%11===5)return{x,y:ground(x)-40,t:'fuel'};
@@ -326,7 +327,7 @@ function step(dt){
       touch++;
       const sl=(ground(px+1)-ground(px-1))/2,il=1/Math.hypot(1,sl),tx=il,ty=sl*il,nx=sl*il,ny=-il;
       const vx=c.vx-c.w*ry,vy=c.vy+c.w*rx,vn=vx*nx+vy*ny,vt=vx*tx+vy*ty;
-      const Fn=Math.max(0,S.k*Math.min(d,S.r)-S.c*vn),lim=S.gr*Wd.gm*Fn,share=S.drive===2?.5:1;
+      const Fn=Math.max(0,S.k*Math.min(d,S.r)-S.c*vn),lim=S.gr*Math.max(Wd.gm,.72)*Math.min(1.8,Math.sqrt(1200/g))*Fn,share=S.drive===2?.5:1;
       let Ft=-vt*.35;
       if(thr&&(S.drive===2||i===0)){ /* torque curve: strong pull in the low/mid revs, fades toward top speed; 5-speed auto box shows the gear */
         const ms=S.ms*(nb?1.12:1),rp=Math.max(0,Math.min(1.05,vt/ms)),curve=.78+.5*Math.sin(Math.min(1,rp*5%1+.0)*Math.PI*.9+.1)*(1-rp*.35);
@@ -430,11 +431,16 @@ function ridge(col,par,base,amp,fr,ph){
 /* painted parallax backdrops (art/bg_*.jpg): drawn mirrored so they tile without seams; falls back to the procedural sky until the image has loaded */
 const BGI={};
 function bgImg(k){let i=BGI[k];if(!i){i=BGI[k]=new Image();i.src='/games/ultimate/art/bg_'+k+'.jpg'}return i.complete&&i.naturalWidth>0?i:null}
+const SKYC={};
+function skyCol(k,im){if(SKYC[k])return SKYC[k];try{const c=document.createElement('canvas');c.width=im.naturalWidth;c.height=4;const x=c.getContext('2d');x.drawImage(im,0,0);const d=x.getImageData(0,0,c.width,2).data;let r=0,g=0,b=0,n=0;for(let p=0;p<d.length;p+=4){r+=d[p];g+=d[p+1];b+=d[p+2];n++}return SKYC[k]='rgb('+(r/n|0)+','+(g/n|0)+','+(b/n|0)+')'}catch(e){return SKYC[k]='#6fb8f0'}}
 function drawPar(Wd){
   const im=Wd.bg&&bgImg(Wd.bg);if(!im)return false;
-  const h=H*.98,w=h*im.naturalWidth/im.naturalHeight,off=cam.x*.05,y=-Math.max(0,Math.min(40,-cam.y*.02));
+  const h=H*.74,w=h*im.naturalWidth/im.naturalHeight,off=cam.x*.05,y=H*.17-Math.max(0,Math.min(30,-cam.y*.02));
+  const sc=skyCol(Wd.bg,im),gr=cx.createLinearGradient(0,0,0,y+4);gr.addColorStop(0,sc);gr.addColorStop(1,sc);cx.fillStyle=gr;cx.fillRect(0,0,W,y+4);
+  cx.imageSmoothingEnabled=true;cx.imageSmoothingQuality='high';
   const k0=Math.floor(off/w);
   for(let k=k0;k*w-off<W;k++){const x=k*w-off;cx.save();if(k&1){cx.translate(x+w,y);cx.scale(-1,1)}else cx.translate(x,y);cx.drawImage(im,0,0,w+1,h);cx.restore()}
+  {const g2=cx.createLinearGradient(0,y-2,0,y+h*.22);g2.addColorStop(0,sc);g2.addColorStop(1,sc.replace('rgb','rgba').replace(')',',0)'));cx.fillStyle=g2;cx.fillRect(0,y-2,W,h*.22+2)}
   return true}
 const WIMG=new Image();WIMG.src='/games/hillclimb-racing/a/wheel.png';
 /* 4x4 pose sprites (art/veh_*.png). VW = both wheel centres + radius in sprite pixels so the spinning wheel sprite can be laid over the baked-in one */

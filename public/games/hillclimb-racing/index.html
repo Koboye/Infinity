@@ -122,19 +122,19 @@ const sfx={coin:()=>{tone(988,.08,'square',.05);setTimeout(()=>tone(1318,.12,'sq
 let LV=null;
 const sm=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t)};
 function mk(w,l){const WD=WORLDS[w],df=.75+.12*l,fin=GOALS[l]*20;
- const o={w,l,fin,sl:.10+.014*l,a1:110*WD.amp*df,p1:430,a2:30*df,p2:175,a3:8,s:(w*5+l)*1.7+.5,ramps:[]};
+ const o={w,l,fin,sl:.06+.008*l,a1:70*WD.amp*df,p1:480,a2:13*df,p2:210,a3:3,s:(w*5+l)*1.7+.5,ramps:[]};
  for(let x=3000;x<fin-1500;x+=2900+((x/7)%500|0))o.ramps.push(x);
  let seed=w*17+l*31+7;const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647};o.rnd=rnd;return o}
 function Hf(x){if(x<=0)return 0;const L=LV,f=sm(x/900);
  let y=-x*L.sl*(.35+.65*f)+f*(L.a1*(Math.sin(x/L.p1+L.s)-Math.sin(L.s))+L.a2*(Math.sin(x/L.p2+L.s*2)-Math.sin(L.s*2))+L.a3*(Math.sin(x/53+L.s*3)-Math.sin(L.s*3)));
- for(const r of L.ramps){if(x>r-320&&x<r+110){y-=x<r?120*sm((x-(r-320))/320):120*(1-sm((x-r)/110))}}
+ for(const r of L.ramps){if(x>r-360&&x<r+170){y-=x<r?95*sm((x-(r-360))/360):95*(1-sm((x-r)/170))}}
  return y}
 let coins,cans,gems,props,runCoinsTotal;
 function genLevel(){const L=LV,fin=L.fin,rnd=L.rnd;coins=[];cans=[];gems=[];props=[];
  const addC=(x,y)=>coins.push({x,y,t:0});
  for(let x=900;x<fin-600;x+=700+rnd()*500){const n=4+(rnd()*4|0);for(let i=0;i<n;i++){const xx=x+i*88;addC(xx,Hf(xx)-62)}}
  for(const r of L.ramps){for(let i=0;i<9;i++){const t=i/8,xx=r-80+t*760;addC(xx,Hf(r)-150-190*Math.sin(Math.PI*t)-20)}}
- for(let x=2300;x<fin-800;x+=2500+rnd()*600)cans.push({x,y:Hf(x)-48,t:0});
+ for(let x=2000;x<fin-800;x+=2100+rnd()*500)cans.push({x,y:Hf(x)-48,t:0});
  for(let x=4200;x<fin-800;x+=4800+rnd()*1200)gems.push({x,y:Hf(x)-150,t:0});
  for(let x=-400;x<fin+1200;x+=260+rnd()*520){const k=rnd();props.push({x,k:k<.55?'tree':k<.8?'rock':k<.9?'crate':'barrel',s:.75+rnd()*.5,z:rnd()<.5?0:1})}
  runCoinsTotal=coins.length}
@@ -142,7 +142,7 @@ function genLevel(){const L=LV,fin=L.fin,rnd=L.rnd;coins=[];cans=[];gems=[];prop
 const PXM=20,R=28,G=1500;
 const WH=[{x:-60,y:22},{x:61,y:22}],CP=[{x:92,y:8},{x:-80,y:12}],HD=[{x:-15,y:-52},{x:45,y:-60},{x:-70,y:-56}];
 let car,run,cam,parts=[],mode='menu',paused=false,inp={gas:0,brake:0},boost={coin:0,susp:0,tire:0},pop={t:0};
-function stats(){const v=VEH[S.veh],u=S.up;return{pw:450*v.pw*(1+.14*u[0]),K:500*(1+.07*u[1]),Cd:18*(1+.09*u[1]),mu:1.15*v.gr*(1+.1*u[2])*WORLDS[LV.w].grip,fuel:(100+22*u[3])*v.fu,vmax:880*(1+.05*u[0])}}
+function stats(){const v=VEH[S.veh],u=S.up;return{pw:560*v.pw*(1+.14*u[0]),K:500*(1+.07*u[1]),Cd:18*(1+.09*u[1]),mu:1.15*v.gr*(1+.1*u[2])*WORLDS[LV.w].grip,fuel:(100+22*u[3])*v.fu,vmax:880*(1+.05*u[0])}}
 function start(w,l){S.world=w;LV=mk(w,l);genLevel();const st=stats();
  car={x:0,y:Hf(0)-60,a:0,vx:0,vy:0,w:0,sp:[0,0],ws:[0,0],fuel:st.fuel,air:0,rot:0,rotAcc:0,st};
  run={dist:0,coins:0,gems:0,flips:0,stuntC:0,over:'',idle:0,t:0,rpm:.2,w,l,done:0,airT:0,cansGot:0};
@@ -180,7 +180,7 @@ function step(dt){const c=car,st=c.st,th=inp.gas&&c.fuel>0?1:0,br=inp.brake?1:0;
  run.t+=dt;run.dist=Math.max(0,c.x/PXM);
  run.rpm+=((.22+Math.min(1,Math.abs(c.vx)/st.vmax)*.62+th*.14)-run.rpm)*Math.min(1,dt*6);
  for(const k of coins)if(!k.t&&Math.abs(k.x-c.x)<62&&Math.abs(k.y-c.y)<62){k.t=1;const v=boost.coin>0?2:1;run.coins+=v;S.coins+=v;sfx.coin();parts.push({x:k.x,y:k.y,vx:0,vy:-90,l:.5,m:.5,r:14,c:'#ffd33d',ring:1})}
- for(const k of cans)if(!k.t&&Math.abs(k.x-c.x)<70&&Math.abs(k.y-c.y)<80){k.t=1;c.fuel=Math.min(c.st.fuel,c.fuel+38);run.cansGot++;sfx.can();say('FUEL +')}
+ for(const k of cans)if(!k.t&&Math.abs(k.x-c.x)<70&&Math.abs(k.y-c.y)<80){k.t=1;c.fuel=Math.min(c.st.fuel,c.fuel+45);run.cansGot++;sfx.can();say('FUEL +')}
  for(const k of gems)if(!k.t&&Math.abs(k.x-c.x)<70&&Math.abs(k.y-c.y)<80){k.t=1;run.gems++;S.gems++;sfx.coin();say('GEM +1')}
  if(boost.coin>0)boost.coin-=dt;if(boost.susp>0)boost.susp-=dt;if(boost.tire>0)boost.tire-=dt;
  if(c.x>=LV.fin&&!run.over)win();
