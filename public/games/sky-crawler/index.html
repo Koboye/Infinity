@@ -39,6 +39,13 @@ h1{margin:0;letter-spacing:3px;font-size:28px;background:linear-gradient(90deg,#
 .card .buy{width:100%;background:#2b8a3e}
 .stat{font-size:18px;margin:6px 0}
 .hide{display:none!important}
+#hud .bar #fp{white-space:nowrap;font-size:9.5px;line-height:13px;letter-spacing:0;overflow:hidden;max-width:100%}
+/* tilt gauge: shows the phone tilt; tap it to re-centre */
+#tg{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + min(22vh,100px) + 36px);display:flex;align-items:center;gap:8px;font-size:11px;font-weight:900;letter-spacing:1px;text-shadow:0 2px 3px #000a;pointer-events:auto;opacity:.92;z-index:4}
+#tg .tr{position:relative;width:min(34vw,150px);height:12px;border-radius:8px;background:#0009;border:2px solid #fff8}
+#tg .tr:after{content:'';position:absolute;left:50%;top:-3px;width:2px;height:14px;background:#fff9}
+#tg i{position:absolute;top:-2px;left:50%;width:14px;height:14px;margin-left:-7px;border-radius:50%;background:#8be8ff;box-shadow:0 0 8px #8be8ff}
+#tg.act i{background:#ffd23f;box-shadow:0 0 10px #ffd23f}
 /* v6: HUD never overflows on phones */
 #hud{flex-wrap:nowrap;gap:5px}#hud .meters{min-width:0;flex:1 1 30px}
 @media (max-width:520px){#hud{padding:8px 6px;gap:4px}#hud .pill{padding:4px 8px;border-radius:12px}#hud .pill.big{font-size:20px}#hud .pill.big small{font-size:10px}#hud .pill b{font-size:inherit}#hud .coinp b{font-size:18px}#hud .pill.stage,#hud .pill.plv{padding:3px 7px}#hud button{padding:5px 8px!important;font-size:16px!important}}
@@ -161,6 +168,7 @@ html,body{font-family:"Arial Rounded MT Bold","Trebuchet MS","Segoe UI",system-u
 <canvas id="c"></canvas>
 <div id="hud" class="hide"><div class="pill big"><b id="dist">0</b><small>m</small></div><div class="pill coinp" id="coinp"><span class="cn"></span><b id="coin">0</b></div><div class="pill stage"><small>STAGE</small><b id="lv">1</b></div><div class="pill plv" title="Player level"><small>LV</small><b id="hplv">1</b></div><div class="meters"><div class="bar"><i id="fuel"></i><em id="fp">&#9981; 100%</em></div><div class="bar n"><i id="nit"></i></div></div><button id="ab">🧠</button><button id="pb">⏸</button></div><div id="combo" class="hide"><span id="cmb"></span><i id="cmt"></i></div>
 <div id="gear" class="hide"><div class="rpm"><i id="rpm"></i></div><div class="g">⏱ <b id="tmr">0:00</b></div><div class="g">GEAR <b id="gr">1</b> · <b id="spd">0</b> km/h</div><div class="g pw" id="pwl">⚡ POWER <b id="pwr">125</b>%</div></div><div id="toast"></div>
+<div id="tg" class="hide"><span>BACK</span><div class="tr"><i id="tb"></i></div><span>FRONT</span></div>
 <div id="air" class="hide"><b id="airt">AIR</b><span id="airh"></span></div>
 <div id="pad" class="hide"><button id="bBrake">BRAKE</button><button id="bBoost">NITRO<small id="nitp">0%</small></button><button id="bGas">GAS</button></div>
 <div id="menu"></div>
@@ -174,7 +182,7 @@ addEventListener('resize',rs);addEventListener('orientationchange',()=>setTimeou
 let toastT=0;function toast(t){const e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>e.classList.remove('on'),1600)}
 
 /* ---------- save ---------- */
-let save={assist:1,xp:0,coins:0,best:{},veh:0,world:0,ownV:[1,0,0],ownW:[1,0,0],upg:[[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]],dl:0,streak:0,miss:null,st:{runs:0,flips:0,dist:0,earned:0}};
+let save={assist:1,tilt:('ontouchstart' in window||navigator.maxTouchPoints>0)?1:0,tinv:0,tt:0,xp:0,coins:0,best:{},veh:0,world:0,ownV:[1,0,0],ownW:[1,0,0],upg:[[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]],dl:0,streak:0,miss:null,st:{runs:0,flips:0,dist:0,earned:0}};
 try{const s=localStorage.getItem('skycrawler1');if(s)save=Object.assign(save,JSON.parse(s))}catch(e){}
 save.st=Object.assign({runs:0,flips:0,dist:0,earned:0},save.st);save.xp=save.xp||0;const persist=()=>{try{localStorage.setItem('skycrawler1',JSON.stringify(save))}catch(e){}};
 let welcome=0;if(!save.sg){save.sg=1;save.coins+=500;welcome=1;persist()} /* one-time starting gift */
@@ -278,7 +286,7 @@ function itemsIn(x0,x1){
 
 /* ---------- game state ---------- */
 let SIM=0,SIMDEAD=0,car,run,state='menu',mode='garage',cam={x:0,y:0},parts=[],pops=[],fls=[],rings=[];
-const keys={gas:0,brake:0,boost:0};
+const keys={gas:0,brake:0,boost:0,tilt:0};
 let SC=1,SX=0,SY=0,shake=0;const OX=()=>W*.38+SX,OY=()=>H*.58+SY;
 
 function start(){
@@ -289,9 +297,10 @@ function start(){
   parts=[];pops=[];fls=[];rings=[];cam.x=0;cam.y=car.y;state='play';
   menu.classList.add('hide');$('hud').classList.remove('hide');$('pad').classList.remove('hide');$('gear').classList.remove('hide');
   $('ab').classList.toggle('on',!!save.assist);$('hplv').textContent=plvl(save.xp).l;audio();showPrev();
+  if(save.tilt){tiltEnable();tiltCal();if(save.tt++<3){toast('📱 TILT ON: hold the phone level · tilt back = nose UP · forward = nose DOWN');setTimeout(()=>{if(!TL.ok&&state==='play')toast('Tilt sensor not found: use BRAKE / GAS')},1800)}}
 }
 function sim(vi,mode=1,secs=7){ /* test-drive a vehicle on the current planet (bot: full gas, hands-off in the air); returns metres */
-  const sv=[save.veh,car,run,parts,pops,state,keys.gas,keys.brake];keys.boost=0;SIM=mode;SIMDEAD=0;save.veh=vi;const S=stats();let d=0;
+  const sv=[save.veh,car,run,parts,pops,state,keys.gas,keys.brake];keys.boost=0;keys.tilt=0;SIM=mode;SIMDEAD=0;save.veh=vi;const S=stats();let d=0;
   car={S,x:0,y:-S.h-S.r+4,a:0,vx:0,vy:0,w:0,wr:[0,0],cm:[0,0],fuel:S.fuel,air:0,acc:0,idle:0,nit:0,ab:0,rpm:.2,gear:1,tc:0,th:0,sc:0,wasT:1,zo:0,hg:0};run={hmax:0,perf:0,dist:0,coins:0,flips:0,combo:0,ct:0,got:new Set(),over:'',cp:0,stunt:0,cpc:0,pk:0,air:0,cc:0,cct:0,sp:0,t:0};parts=[];pops=[];state='play';
   for(let f=0;f<secs*60&&!SIMDEAD;f++){keys.gas=car.air>0?0:1;keys.brake=0;for(let i=0;i<8;i++)step(1/480);car.fuel=Math.max(0,car.fuel-S.burn*(keys.gas?1:.17)/60);d=Math.max(d,car.x/40)}
   [save.veh,car,run,parts,pops,state,keys.gas,keys.brake]=sv;sim.dead=SIMDEAD;SIM=0;return d}
@@ -326,7 +335,7 @@ function over(){
   const xg=Math.round(m/3+run.flips*25+run.pk*2+run.stunt/8+run.cp*30),p0=plvl(save.xp);save.xp+=xg;const p1=plvl(save.xp);let lvc=0;for(let l=p0.l+1;l<=p1.l;l++)lvc+=lvReward(l);save.coins+=lvc;if(p1.l>p0.l)setTimeout(()=>sfx('lvl'),350);
   Object.assign(run,{xp:xg,pl0:p0,pl1:p1,lvc,stars:m>=1200?3:m>=600?2:m>=200?1:0});
   persist();state='menu';mode='over';
-  $('hud').classList.add('hide');$('pad').classList.add('hide');$('gear').classList.add('hide');$('air').classList.add('hide');render();
+  $('hud').classList.add('hide');$('pad').classList.add('hide');$('gear').classList.add('hide');$('air').classList.add('hide');$('tg').classList.add('hide');render();
 }
 
 function step(dt){
@@ -368,13 +377,17 @@ function step(dt){
     if(nb){fx+=Math.cos(c.a)*S.pw*.42;fy+=Math.sin(c.a)*S.pw*.42} /* air thrust along the nose: tilt up for lift, level for distance */
     if(!SIM)c.nit=Math.min(100,c.nit+(c.air>.15?22:0)*dt);
     c.w+=(keys.brake-thr)*S.air*1.45*dt;
-    if((save.assist||SIM===1)&&!keys.gas&&!keys.brake){ /* 🧠 hands-off: predict the landing and level the car with that slope */
+    if(Math.abs(keys.tilt)>.04)c.w+=((-keys.tilt*7.5)-c.w)*Math.min(1,dt*7); /* tilt = direct flip speed, up to 7.5 rad/s */
+    if((save.assist||SIM===1)&&!keys.gas&&!keys.brake&&Math.abs(keys.tilt)<.12){ /* 🧠 hands-off: predict the landing and level the car with that slope */
       let px=c.x,py=c.y,vx=c.vx,vy=c.vy,tl=-1;
       for(let k=1;k<=24;k++){vy+=g*.05;px+=vx*.05;py+=vy*.05;if(py+S.h+S.r>ground(px)){tl=k*.05;break}}
       if(tl>0&&tl<.9){let er=Math.atan((ground(px+2)-ground(px-2))/4)-c.a;er=Math.atan2(Math.sin(er),Math.cos(er));c.w+=Math.max(-40,Math.min(40,er*26-c.w*5.5))*dt}
     }}
   if(nb)c.nit=Math.max(0,c.nit-34*dt);
   c.wasT=touch>0;
+  if(touch&&Math.abs(keys.tilt)>.05){ /* on the ground tilt sets a target lean (up to ~32 deg off the slope): a smooth balance controller, so wheelies are catchable and it never snaps the bike over */
+    const sl=Math.atan((ground(c.x+S.L)-ground(c.x-S.L))/(2*S.L));let er=sl-keys.tilt*.55-c.a;er=Math.atan2(Math.sin(er),Math.cos(er));
+    c.w+=Math.max(-70,Math.min(70,er*60-c.w*6))*dt}
   c.w+=tq/S.I*dt;c.w*=1-.25*dt;
   c.vx+=fx*dt;c.vy+=fy*dt;c.x+=c.vx*dt;c.y+=c.vy*dt;c.a+=c.w*dt;
   const pts=[[2,-(S.h+20)],[-S.L*.55,-(S.h+4)],[S.L*.55,-(S.h+4)]];
@@ -407,7 +420,9 @@ function frame(dt){
   if(state==='play'){
     for(let i=0;i<n&&state==='play';i++)step(dt/n);
     const c=car,S=c.S;
-    c.fuel=Math.max(0,c.fuel-dt*S.burn*.9); /* constant drain like the classic: gas or not, the tank empties; a sprint burns it faster */
+    /* PROPORTIONAL FUEL: idle burns 20%, full throttle 100%, nitro nearly double. The time left is shown on the gauge. */
+    {const rate=S.burn*(.2+.8*c.th)*(1+.9*(keys.boost&&c.nit>0?1:0));c.rs=(c.rs==null?rate:c.rs+(rate-c.rs)*Math.min(1,dt*1.5));c.fuel=Math.max(0,c.fuel-dt*rate)}
+    tiltTick(dt);
     if(run.ct>0){run.ct-=dt;if(run.ct<=0)run.combo=0}
     if(run.cct>0){run.cct-=dt;if(run.cct<=0)run.cc=0}
     run.dist=Math.max(run.dist,c.x/40);run.t+=dt;
@@ -431,7 +446,8 @@ function frame(dt){
     if(keys.gas&&c.fuel>0&&parts.length<190&&Math.random()<.35)parts.push({x:c.x-S.L*Math.cos(c.a)*1.15,y:c.y-S.L*Math.sin(c.a)*1.15,vx:-c.vx*.15-40,vy:-30-Math.random()*40,l:.5,c:'#9aa0b0',sm:1});
     $('fuel').style.width=(c.fuel/S.fuel*100)+'%';$('lv').textContent=run.cp+1;
     {const T=Math.floor(run.t);$('tmr').textContent=Math.floor(T/60)+':'+String(T%60).padStart(2,'0')}
-    {const ff=c.fuel/S.fuel;$('fp').textContent='⛽ '+Math.round(ff*100)+'%';$('pwr').textContent=Math.round((c.fp||1)*100);$('pwl').classList.toggle('lo',ff<.3);
+    {const ff=c.fuel/S.fuel;{const tl=Math.round(c.fuel/Math.max(.25*S.burn,c.rs||S.burn));$('fp').textContent=Math.round(ff*100)+'% · '+Math.floor(tl/60)+':'+String(tl%60).padStart(2,'0')}
+     {const tg=$('tg');tg.classList.toggle('hide',!(save.tilt&&TL.ok));tg.classList.toggle('act',Math.abs(keys.tilt)>.05);$('tb').style.left=(50-keys.tilt*50)+'%'}$('pwr').textContent=Math.round((c.fp||1)*100);$('pwl').classList.toggle('lo',ff<.3);
      if(ff<.2&&!run.lw&&c.fuel>0){run.lw=1;toast('⛽ LOW FUEL: the engine is losing power! Grab coins and red cans')}else if(ff>.35)run.lw=0}
     $('nit').style.width=c.nit+'%';$('nitp').textContent=Math.round(c.nit)+'%';$('bBoost').classList.toggle('empty',c.nit<=0);
     {const ae=$('air');if(c.air>.4){ae.classList.remove('hide');$('airt').textContent='AIR '+c.air.toFixed(1)+'s';$('airh').textContent='↑ '+Math.max(0,Math.round(c.hg))+' m  ·  best '+run.air.toFixed(1)+'s';ae.classList.toggle('big',c.air>1.6)}else ae.classList.add('hide')}
@@ -722,7 +738,7 @@ function render(){
     <button class=go data-a=start>RETRY ↵</button><button class="go alt" data-a=garage>GARAGE</button></div>`;return;
   }
   if(mode==='pause'){
-    menu.innerHTML=`<div class=card><div class=ttl>PAUSED</div><button class=go data-a=resume>RESUME</button><button class="go alt" data-a=mute>${save.mute?'🔇 SOUND OFF':'🔊 SOUND ON'}</button><button class="go alt" data-a=garage>QUIT TO GARAGE</button></div>`;return;
+    menu.innerHTML=`<div class=card><div class=ttl>PAUSED</div><button class=go data-a=resume>RESUME</button><button class="go alt" data-a=mute>${save.mute?'🔇 SOUND OFF':'🔊 SOUND ON'}</button><button class="go alt" data-a=tilt>📱 TILT CONTROL: ${save.tilt?'ON':'OFF'}</button>${save.tilt?`<button class="go alt" data-a=tinv>↕ INVERT TILT: ${save.tinv?'ON':'OFF'}</button>`:''}<button class="go alt" data-a=garage>QUIT TO GARAGE</button></div>`;return;
   }
   if(splash){menu.innerHTML=`<div class="card spl"><div class=logo><b>SKY</b><b class=b2>CRAWLER</b></div><p class=tag>Climb. Flip. Collect.</p><div class=hero2>${CI[v.cls]}</div>
     <div class=row2><div class="pill2 gold"><span class=cn></span><b>${save.coins}</b></div><div class=plb><b>${P.l}</b><i><u style="width:${Math.round(P.cur/P.need*100)}%"></u></i></div></div>
@@ -768,17 +784,37 @@ menu.addEventListener('click',e=>{
   else if(a==='daily'){claimDaily()}
   else if(a==='splash'){splash=0}
   else if(a==='mute'){save.mute=save.mute?0:1}
+  else if(a==='tilt'){save.tilt=save.tilt?0:1;if(save.tilt){tiltEnable();tiltCal()}}
+  else if(a==='tinv'){save.tinv=save.tinv?0:1;TL.n0=null}
   else if(a==='chest'&&!run.chest){run.chest=Math.round((40+Math.random()*160)*(1+run.cp*.15)/5)*5;save.coins+=run.chest;toast('🎁 +'+run.chest+' coins!');sfx('lvl')}
   else if(a==='smart'){smartPick();toast(advMsg.replace(/<[^>]+>/g,''))}
   else if(a==='tab'){tab=b.dataset.v}else if(a==='vf'){vf=b.dataset.v}else if(a==='pickv'){save.veh=i}else if(a==='pickw'){save.world=i}
   else if(a==='help'){toast('RIGHT/D gas · LEFT/A brake · coins and red cans refuel you · low fuel = less power · let go in the air to auto-level')}
   else if(a==='start'){persist();start();return}
-  else if(a==='resume'){menu.classList.add('hide');$('gear').classList.remove('hide');state='play';return}
+  else if(a==='resume'){menu.classList.add('hide');$('gear').classList.remove('hide');state='play';tiltCal();return}
   else if(a==='garage'){if(mode==='pause'&&car&&run){run.over='RUN ENDED';over();return}state='menu';mode='garage';$('hud').classList.add('hide');$('pad').classList.add('hide');$('gear').classList.add('hide')}
   persist();render();
 });
-function pause(){if(state!=='play')return;state='menu';mode='pause';keys.gas=keys.brake=keys.boost=0;setPad();$('gear').classList.add('hide');render()}
+function pause(){if(state!=='play')return;state='menu';mode='pause';keys.gas=keys.brake=keys.boost=keys.tilt=0;setPad();$('gear').classList.add('hide');$('tg').classList.add('hide');render()}
 $('pb').onclick=pause;
+
+/* ---------- TILT CONTROL (gyro) ----------
+   Hold the phone like a handlebar. Tilt the top toward you = nose UP (back flip), away from you = nose DOWN (front flip).
+   In the air it sets the flip speed directly; on the ground it leans the rider to balance wheelies and drops. */
+const TL={ok:0,raw:0,n0:null,v:0,asked:0};
+function tiltAngle(e){const o=(screen.orientation&&screen.orientation.angle!=null)?screen.orientation.angle:(window.orientation||0);
+  if(o===90)return -e.gamma;if(o===270||o===-90)return e.gamma;if(o===180)return -e.beta;return e.beta}
+addEventListener('deviceorientation',e=>{
+  if(e.beta==null&&e.gamma==null)return;TL.ok=1;TL.raw=tiltAngle(e)*(save.tinv?-1:1);if(TL.n0==null)TL.n0=TL.raw});
+function tiltCal(){if(TL.ok)TL.n0=TL.raw}
+function tiltEnable(){ /* iOS needs a tap to allow motion sensors */
+  if(TL.asked||typeof DeviceOrientationEvent==='undefined'||typeof DeviceOrientationEvent.requestPermission!=='function')return;TL.asked=1;
+  try{DeviceOrientationEvent.requestPermission().then(r=>{if(r!=='granted'){toast('Tilt blocked: allow Motion & Orientation for this site in Settings')}}).catch(()=>{TL.asked=0})}catch(x){TL.asked=0}}
+function tiltTick(dt){
+  if(!(save.tilt&&TL.ok&&state==='play')){keys.tilt=0;TL.v=0;return}
+  let d=TL.raw-(TL.n0==null?TL.raw:TL.n0);d=((d+540)%360)-180;const a=Math.abs(d),t=Math.sign(d)*Math.max(0,Math.min(1,(a-3)/19));
+  TL.v+=(t-TL.v)*Math.min(1,dt*14);keys.tilt=Math.abs(TL.v)<.02?0:TL.v}
+$('tg').addEventListener('pointerdown',()=>{tiltCal();toast('📱 Tilt centred')});
 
 /* ---------- input ---------- */
 const KG=['ArrowRight','ArrowUp','KeyD','KeyW','Space'],KB=['ArrowLeft','ArrowDown','KeyA','KeyS'],KN=['ShiftLeft','ShiftRight','KeyB','KeyN'];
