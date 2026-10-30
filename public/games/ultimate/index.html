@@ -89,6 +89,13 @@ h1{margin:0;letter-spacing:3px;font-size:28px;background:linear-gradient(90deg,#
 .foot{display:flex;gap:8px}.foot .go{flex:1;margin:0;padding:14px}.card .foot .smart{width:56px;font-size:24px;padding:0;background:#5b3fd0}.card .go.buy2{background:linear-gradient(90deg,#2b8a3e,#40c057);color:#fff}
 .hero .st span{text-align:center}
 .pf{width:34px;height:34px;border-radius:50%;border:2px solid var(--gold);display:block;object-fit:cover}
+/* sliding pickers (Vehicles + Driver): swipe sideways, cards snap to centre */
+.grid.slide{display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;gap:10px;padding:8px 22% 12px;scrollbar-width:none}
+.grid.slide::-webkit-scrollbar{display:none}
+.grid.slide .tile{flex:0 0 46%;max-width:170px;min-height:150px;scroll-snap-align:center;justify-content:center;font-size:13px;opacity:.7;transform:scale(.9);transition:transform .15s,opacity .15s}
+.grid.slide .tile.sel{opacity:1;transform:scale(1)}.grid.slide .tile.lock{opacity:.5}.grid.slide .tile.sel.lock{opacity:.85}
+.grid.slide .tile .e{font-size:62px;line-height:1}.grid.slide .tile .pf{width:74px;height:74px}.grid.slide .tile small{font-size:12px}
+.swh{text-align:center;font-size:11px;opacity:.7;margin:0 0 2px;font-weight:700}
 .dif{display:flex;gap:6px;margin:0 0 8px}.card .df{flex:1;padding:7px 2px;border-radius:12px;background:#1a2b5e;border:2px solid var(--ink);font-size:12px;font-weight:900;line-height:1.15;display:flex;flex-direction:column;align-items:center}.df small{font-size:10px;opacity:.8}.card .df.on{background:linear-gradient(180deg,#ffd23f,var(--orange));color:#fff;text-shadow:0 2px 0 var(--ink)}
 
 /* ===== v4 brand: Sky Crawler. Sunset orange, deep navy, sky cyan, lime, gold. Chunky cartoon outlines. ===== */
@@ -796,7 +803,7 @@ const CI={Bicycle:'🚲',Scooter:'🛴','Dirt Bike':'🏍️',Buggy:'🏎️',Je
 const UI=['⚙️','🛞','⛽','🔩','🌿','💰','🧲'];
 function bars(S){return[['⚡',S.pw/2400],['🛞',S.gr/2.6],['⛽',S.fuel/300],['🚀',S.ms/1500]].map(([n,p])=>`<div class=st><span>${n}</span><i><b style="width:${Math.max(4,Math.min(100,Math.round(p*100)))}%"></b></i></div>`).join('')}
 function render(){
-  {const _b=menu.querySelector&&menu.querySelector('.body');keepTop=_b?_b.scrollTop:0}
+  {const _b=menu.querySelector&&menu.querySelector('.body');keepTop=_b?_b.scrollTop:0;const _s=menu.querySelector&&menu.querySelector('.slide');keepLeft=_s?_s.scrollLeft:0}
   const v=VEH[save.veh],w=WORLD[save.world],u=UP(),ownV=save.veh<3||save.ownV[save.veh],ownW=save.ownW[save.world];
   const bt=save.best[save.veh+'-'+save.world]||0;
   menu.classList.remove('hide');applyWorld();showPrev();
@@ -826,12 +833,12 @@ function render(){
   if(tab==='car'){
     const cls=['all',...VCL.map(c=>c[0])];
     body=`<div class=chips>${cls.map(c=>`<button class="chip2 ${vf===c?'on':''}" data-a=vf data-v="${c}">${c==='all'?'ALL':CI[c]}</button>`).join('')}</div>
-    <div class=grid>${VEH.map((x,i)=>vf!=='all'&&x.cls!==vf?'':`<button class="tile ${i===save.veh?'sel':''} ${i<3||save.ownV[i]?'':'lock'}" data-a=pickv data-i=${i}><span class=e>${CI[x.cls]}</span>${VT[x.t]}<small>${i<3?'FREE':save.ownV[i]?'✓':'🔒 '+x.cost}</small></button>`).join('')}</div>`;
+    <p class=swh>◀ swipe to choose ▶</p><div class="grid slide">${VEH.map((x,i)=>vf!=='all'&&x.cls!==vf?'':`<button class="tile ${i===save.veh?'sel':''} ${i<3||save.ownV[i]?'':'lock'}" data-a=pickv data-i=${i}><span class=e>${CI[x.cls]}</span>${VT[x.t]}<small>${i<3?'FREE':save.ownV[i]?'✓':'🔒 '+x.cost}</small></button>`).join('')}</div>`;
   }else if(tab==='world'){
     body=`<div class=grid>${WORLD.map((x,i)=>`<button class="tile ${i===save.world?'sel':''} ${i===0||save.ownW[i]?'':'lock'}" data-a=pickw data-i=${i}><span class=sw style="background:linear-gradient(180deg,${x.sky[0]},${x.sky[1]} 60%,${x.top} 60%)"></span>${x.n}<small>×${pmul(x)} ${i===0||save.ownW[i]?'✓':'🔒 '+x.cost}</small></button>`).join('')}</div>`;
   }else if(tab==='drv'){
     const sel=pd>=0?pd:save.drv;
-    body=`<div class=grid>${DRVS.map((x,i)=>`<button class="tile ${i===sel?'sel':''} ${drvOk(i)?'':'lock'}" data-a=pickd data-i=${i}><span class=e>${x.img?'<img class=pf src="art/drv_gecho.png" alt="">':x.e}</span>${x.n}<small>${drvOk(i)?(i===save.drv?'✓ DRIVING':'OWNED'):'🔒 '+x.cost}</small></button>`).join('')}</div><p class=sub><b>${DRVS[sel].n}</b>: ${DRVS[sel].perk}</p>`;
+    body=`<p class=swh>◀ swipe to choose ▶</p><div class="grid slide">${DRVS.map((x,i)=>`<button class="tile ${i===sel?'sel':''} ${drvOk(i)?'':'lock'}" data-a=pickd data-i=${i}><span class=e>${x.img?'<img class=pf src="art/drv_gecho.png" alt="">':x.e}</span>${x.n}<small>${drvOk(i)?(i===save.drv?'✓ DRIVING':'OWNED'):'🔒 '+x.cost}</small></button>`).join('')}</div><p class=sub><b>${DRVS[sel].n}</b>: ${DRVS[sel].perk}</p>`;
   }else if(tab==='race'){
     body=[500,1000,2000].map((d,i)=>`<div class=upr><span class=ui>🏁</span><div><b>${d} m sprint</b><div class=pips>${save.ta[d]?'best '+save.ta[d].toFixed(1)+' s':'no time yet'}</div></div><button data-a=race data-i=${i}>GO</button></div>`).join('')+`<p class=sub>Beat the clock to the finish line. Faster means more stars and a bigger coin bonus.</p>`;
   }else if(tab==='up'){
@@ -851,9 +858,11 @@ function render(){
   <div class=foot>${foot}<button class="smart" data-a=smart title="Smart pick">🧠</button></div></div>`;
   const bd=menu.querySelector&&menu.querySelector('.body');
   if(bd){if(lastTab===tab+vf)bd.scrollTop=keepTop;else{const sel=bd.querySelector('.tile.sel');if(sel&&sel.scrollIntoView)sel.scrollIntoView({block:'center'})}}
+  const sl=menu.querySelector&&menu.querySelector('.slide');
+  if(sl){if(lastTab===tab+vf)sl.scrollLeft=keepLeft;else{const t=sl.querySelector('.tile.sel');if(t)sl.scrollLeft=t.offsetLeft-(sl.clientWidth-t.offsetWidth)/2}}
   lastTab=tab+vf;
 }
-let keepTop=0;
+let keepTop=0,keepLeft=0;
 menu.addEventListener('change',e=>{const k=e.target.dataset.s;if(!k)return;save[k]=+e.target.value;persist();render()});
 $('ab').onclick=()=>{save.assist=save.assist?0:1;persist();$('ab').classList.toggle('on',!!save.assist);pop(save.assist?'🧠 ASSIST ON':'ASSIST OFF')};
 const cyc=(k,n,d)=>save[k]=(save[k]+d+n)%n;
