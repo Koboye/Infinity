@@ -88,6 +88,7 @@ h1{margin:0;letter-spacing:3px;font-size:28px;background:linear-gradient(90deg,#
 .g4,.st2{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0}.g4>div,.st2>div{background:#232837;border-radius:12px;padding:8px 2px;text-align:center}.g4 b,.st2 b{display:block;font-size:14px}.g4 small,.st2 small{opacity:.65;font-size:10px}.st2{margin-top:14px}
 .foot{display:flex;gap:8px}.foot .go{flex:1;margin:0;padding:14px}.card .foot .smart{width:56px;font-size:24px;padding:0;background:#5b3fd0}.card .go.buy2{background:linear-gradient(90deg,#2b8a3e,#40c057);color:#fff}
 .hero .st span{text-align:center}
+.pf{width:34px;height:34px;border-radius:50%;border:2px solid var(--gold);display:block;object-fit:cover}
 .dif{display:flex;gap:6px;margin:0 0 8px}.card .df{flex:1;padding:7px 2px;border-radius:12px;background:#1a2b5e;border:2px solid var(--ink);font-size:12px;font-weight:900;line-height:1.15;display:flex;flex-direction:column;align-items:center}.df small{font-size:10px;opacity:.8}.card .df.on{background:linear-gradient(180deg,#ffd23f,var(--orange));color:#fff;text-shadow:0 2px 0 var(--ink)}
 
 /* ===== v4 brand: Sky Crawler. Sunset orange, deep navy, sky cyan, lime, gold. Chunky cartoon outlines. ===== */
@@ -185,7 +186,7 @@ addEventListener('resize',rs);addEventListener('orientationchange',()=>setTimeou
 let toastT=0;function toast(t){const e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>e.classList.remove('on'),1600)}
 
 /* ---------- save ---------- */
-let save={diff:0,drv:0,ownD:[1],assist:1,xp:0,coins:0,best:{},veh:0,world:0,ownV:[1,0,0],ownW:[1,0,0],upg:[[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]],dl:0,streak:0,miss:null,st:{runs:0,flips:0,dist:0,earned:0}};
+let save={diff:0,drv:7,ownD:[1],assist:1,xp:0,coins:0,best:{},veh:0,world:0,ownV:[1,0,0],ownW:[1,0,0],upg:[[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]],dl:0,streak:0,miss:null,st:{runs:0,flips:0,dist:0,earned:0}};
 try{const s=localStorage.getItem('ultimate1');if(s)save=Object.assign(save,JSON.parse(s))}catch(e){}
 save.st=Object.assign({runs:0,flips:0,dist:0,earned:0},save.st);save.xp=save.xp||0;save.ta=save.ta||{};const persist=()=>{try{localStorage.setItem('ultimate1',JSON.stringify(save))}catch(e){}};
 let welcome=0;if(!save.sg){save.sg=1;save.coins+=500;welcome=1;persist()} /* one-time starting gift */
@@ -262,8 +263,9 @@ const DRVS=[
 {n:'Mimi',e:'🧲',cost:1100,perk:'Big coin magnet',mg:34,hel:'#ffd23f',shirt:'#e03131',pants:'#1b2b5e',skin:'#e0ac69',scarf:'#35d0ff'},
 {n:'Cap. Nova',e:'🧑‍🚀',cost:1800,perk:'+30% air control',air:1.3,hel:'#e8ebf2',shirt:'#f2f4fa',pants:'#aeb6c8',skin:'#f6c796',scarf:'#ff5a36'},
 {n:'Speedy',e:'🏁',cost:2600,perk:'+8% top speed',ms:1.08,hel:'#ff3d3d',shirt:'#111',pants:'#111',skin:'#f1c27d',scarf:'#fff'},
-{n:'Robo-X',e:'🤖',cost:3800,perk:'+10% engine power',pw:1.1,hel:'#7ee8ff',shirt:'#4a4f5e',pants:'#2c2e38',skin:'#b8c4d6',scarf:'#3dffb0'}];
-const drvOk=i=>i===0||!!(save.ownD&&save.ownD[i]);
+{n:'Robo-X',e:'🤖',cost:3800,perk:'+10% engine power',pw:1.1,hel:'#7ee8ff',shirt:'#4a4f5e',pants:'#2c2e38',skin:'#b8c4d6',scarf:'#3dffb0'},
+{n:'Gecho',e:'⭐',img:1,cost:0,cb:1.1,perk:'Founder: +10% coins, free',hel:'#ffd23f',shirt:'#e8e0ea',pants:'#22377a',skin:'#c68642',scarf:'#ff2e88'}];
+const drvOk=i=>i===0||i===7||!!(save.ownD&&save.ownD[i]);
 const DV=()=>DRVS[drvOk(save.drv)?save.drv:0]||DRVS[0];
 const LVD=200; /* a level every 200 m: each one pays a coin gift, refuels and gives a 5 s auto boost */
 /* ---------- player level (XP) ---------- */
@@ -294,7 +296,7 @@ function item(n){
 function stats(){
   const v=VEH[save.veh],u=UP(),k=v.k*(1+.06*u[3]);
   const D=DV();return Object.assign({},v,{air:v.air*(D.air||1),ms:Math.round(v.ms*(D.ms||1)),st:D.st||1,drv:D,pw:v.pw*1.35*(1+.14*u[0])*(D.pw||1),gr:v.gr*(1+.08*u[1]),fuel:v.fuel*(1+.2*u[2]),k,c:1.7*Math.sqrt(k),I:v.L*v.L*1.6,
-    burn:1.5*Math.sqrt(v.pw/600)*(1-.08*u[4])*(D.fb||1),cb:1+.1*u[5],mg:28*u[6]+(D.mg||0)}); /* burn = fuel per second at full throttle: strong engines drink more, Eco Engine cuts it */
+    burn:1.5*Math.sqrt(v.pw/600)*(1-.08*u[4])*(D.fb||1),cb:(1+.1*u[5])*(D.cb||1),mg:28*u[6]+(D.mg||0)}); /* burn = fuel per second at full throttle: strong engines drink more, Eco Engine cuts it */
 }
 /* coin arcs: a trail of coins that follows the flight path over every stunt ramp */
 function arcK(k){
@@ -522,6 +524,7 @@ function poseOf(c){const S=c.S,a=Math.atan2(Math.sin(c.a),Math.cos(c.a));
   if(Math.abs(c.vx)<50)return'idle';
   return cp<.25?'susp_up':'moving'}
 const sprOK=im=>im.complete&&im.naturalWidth>0;
+const DRI=new Image();DRI.src='/games/ultimate/art/drv_gecho.png';
 function hueOf(hex){const m=/^#?([0-9a-f]{6})$/i.exec(hex||'');if(!m)return 0;const n=parseInt(m[1],16),r=(n>>16)/255,g=(n>>8&255)/255,b=(n&255)/255,mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;if(d<.08)return 0;return(mx===r?((g-b)/d+6)%6:mx===g?(b-r)/d+2:(r-g)/d+4)*60}
 function wheel(x,y,r,a,t){
   if(sprOK(WIMG)){cx.save();cx.translate(x,y);cx.rotate(a);const d=r*2.06;cx.drawImage(WIMG,-d/2,-d/2,d,d);cx.restore();return}
@@ -547,6 +550,8 @@ function drawCar(){
   const head=(x,y)=>{const sp=Math.min(1,Math.abs(c.vx)/900),fl=Math.sin(performance.now()/90)*3*sp,K='#2a1400';
     const DR=S.drv||DRVS[0];cx.strokeStyle=DR.scarf;cx.lineWidth=5;cx.beginPath();cx.moveTo(x-5,y+6);cx.quadraticCurveTo(x-16-14*sp,y+8+fl,x-24-20*sp,y+4-fl*1.5);cx.stroke();
     cx.strokeStyle=K;cx.lineWidth=2;cx.fillStyle=DR.skin;cx.beginPath();cx.arc(x,y,7.5,0,7);cx.fill();cx.stroke();
+    if(DR.img&&sprOK(DRI)){cx.save();cx.beginPath();cx.arc(x,y,9.5,0,7);cx.clip();cx.drawImage(DRI,x-9.5,y-9.5,19,19);cx.restore();cx.strokeStyle=K;cx.lineWidth=2;cx.beginPath();cx.arc(x,y,9.5,0,7);cx.stroke();
+      cx.save();cx.beginPath();cx.rect(x-14,y-16,28,10.5);cx.clip();cx.fillStyle=DR.hel;cx.beginPath();cx.arc(x,y-1,10.6,Math.PI,0);cx.closePath();cx.fill();cx.stroke();cx.restore();if(car.dead){cx.fillStyle='#d62828';cx.beginPath();cx.arc(x+4,y-1,1.6,0,7);cx.fill()}return}
     cx.fillStyle=DR.hel;cx.beginPath();cx.arc(x,y-1,8.6,Math.PI,0);cx.closePath();cx.fill();cx.stroke();
     cx.fillStyle='#fff';cx.beginPath();cx.ellipse(x+3.6,y-1,4.6,3.8,0,0,7);cx.fill();cx.stroke();
     cx.fillStyle=car.dead?'#d62828':'#1b2b5e';cx.beginPath();cx.arc(x+4.8,y-1,1.9,0,7);cx.fill();
@@ -826,7 +831,7 @@ function render(){
     body=`<div class=grid>${WORLD.map((x,i)=>`<button class="tile ${i===save.world?'sel':''} ${i===0||save.ownW[i]?'':'lock'}" data-a=pickw data-i=${i}><span class=sw style="background:linear-gradient(180deg,${x.sky[0]},${x.sky[1]} 60%,${x.top} 60%)"></span>${x.n}<small>×${pmul(x)} ${i===0||save.ownW[i]?'✓':'🔒 '+x.cost}</small></button>`).join('')}</div>`;
   }else if(tab==='drv'){
     const sel=pd>=0?pd:save.drv;
-    body=`<div class=grid>${DRVS.map((x,i)=>`<button class="tile ${i===sel?'sel':''} ${drvOk(i)?'':'lock'}" data-a=pickd data-i=${i}><span class=e>${x.e}</span>${x.n}<small>${drvOk(i)?(i===save.drv?'✓ DRIVING':'OWNED'):'🔒 '+x.cost}</small></button>`).join('')}</div><p class=sub><b>${DRVS[sel].n}</b>: ${DRVS[sel].perk}</p>`;
+    body=`<div class=grid>${DRVS.map((x,i)=>`<button class="tile ${i===sel?'sel':''} ${drvOk(i)?'':'lock'}" data-a=pickd data-i=${i}><span class=e>${x.img?'<img class=pf src="art/drv_gecho.png" alt="">':x.e}</span>${x.n}<small>${drvOk(i)?(i===save.drv?'✓ DRIVING':'OWNED'):'🔒 '+x.cost}</small></button>`).join('')}</div><p class=sub><b>${DRVS[sel].n}</b>: ${DRVS[sel].perk}</p>`;
   }else if(tab==='race'){
     body=[500,1000,2000].map((d,i)=>`<div class=upr><span class=ui>🏁</span><div><b>${d} m sprint</b><div class=pips>${save.ta[d]?'best '+save.ta[d].toFixed(1)+' s':'no time yet'}</div></div><button data-a=race data-i=${i}>GO</button></div>`).join('')+`<p class=sub>Beat the clock to the finish line. Faster means more stars and a bigger coin bonus.</p>`;
   }else if(tab==='up'){
