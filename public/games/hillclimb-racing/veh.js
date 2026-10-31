@@ -199,7 +199,11 @@ function head(x,hx0,hy,dr,helm,hc,r){r=r||7.5;
  if(!helm&&dr.hair&&dr.hair!=='curl'){x.fillStyle=dr.hc;x.beginPath();x.ellipse(hx0-r*.72,hy+r*.38,r*.36,r*.54,.35,0,7);x.fill()}
  if(helm){x.fillStyle=hc;x.beginPath();x.arc(hx0,hy-1,r+2,Math.PI*.92,Math.PI*2.08);x.lineTo(hx0+r+2,hy+3);x.lineTo(hx0+r-2,hy+4);x.lineTo(hx0-r-2,hy+4);x.closePath();x.fill();x.fillStyle='#10131a';rr(x,hx0+1,hy-3,r+2,6,3);x.fill();x.fillStyle=accOn('sun')?'rgba(255,196,70,.95)':'rgba(120,200,255,.55)';rr(x,hx0+2,hy-2,r,2.4,1);x.fill();return}
  const h=dr.hair;x.fillStyle=dr.hc;
- if(h==='curl'){for(let i=0;i<7;i++){const a=Math.PI*(1+i/8.4);x.beginPath();x.arc(hx0+Math.cos(a)*r*.85,hy-1+Math.sin(a)*r*.85,3.6,0,7);x.fill()}}
+ if(h==='curl'){/* natural short curly hair: dense cap hugging the skull, curl bumps on the crown, hairline, sideburn and nape */
+  x.beginPath();x.arc(hx0-r*.04,hy-r*.12,r*1.02,Math.PI*.9,Math.PI*2.02);x.lineTo(hx0+r*.62,hy-r*.52);x.quadraticCurveTo(hx0+r*.1,hy-r*.62,hx0-r*.5,hy-r*.28);x.closePath();x.fill();
+  for(let i=0;i<11;i++){const a=Math.PI*(.95+i*.105),rr2=r*(i%2?1.02:.94);x.beginPath();x.arc(hx0-r*.04+Math.cos(a)*rr2,hy-r*.12+Math.sin(a)*rr2,r*.2+(i%3)*r*.03,0,7);x.fill()}
+  x.beginPath();x.ellipse(hx0-r*.78,hy+r*.2,r*.26,r*.5,.1,0,7);x.fill();x.beginPath();x.ellipse(hx0-r*.66,hy+r*.58,r*.26,r*.22,0,0,7);x.fill();
+  x.fillStyle='rgba(255,255,255,.1)';x.beginPath();x.ellipse(hx0+r*.1,hy-r*.95,r*.45,r*.14,-.15,0,7);x.fill();x.fillStyle=dr.hc}
  else if(h==='short'){x.beginPath();x.arc(hx0,hy-1,r+.6,Math.PI*.95,Math.PI*2.05);x.fill()}
  else if(h==='cap'){x.beginPath();x.arc(hx0,hy-1,r+1,Math.PI,Math.PI*2);x.fill();rr(x,hx0+2,hy-3,r+5,3,1.5);x.fill()}
  else if(h==='cow'){x.beginPath();x.ellipse(hx0,hy-4,r+7,3,0,0,7);x.fill();x.beginPath();x.arc(hx0,hy-5,r-1,Math.PI,Math.PI*2);x.fill()}
@@ -240,9 +244,9 @@ face=function(cx,hx,hy,r,mood,dr){if(mood==='dead')return _face0(cx,hx,hy,r,mood
  cx.fillStyle=dk;cx.beginPath();cx.ellipse(hx-r*.38,hy+r*.12,r*.2,r*.3,.1,0,7);cx.fill();cx.strokeStyle=dd;cx.lineWidth=.8;cx.stroke();
  cx.strokeStyle='rgba(60,28,12,.7)';cx.lineWidth=.8;cx.beginPath();cx.arc(hx-r*.36,hy+r*.12,r*.1,-1.2,1.8);cx.stroke();
  /* nose in profile with bridge shading, tip and nostril */
- cx.fillStyle=sk;cx.beginPath();cx.moveTo(hx+r*.86,hy-r*.12);cx.quadraticCurveTo(hx+r*1.04,hy+r*.12,hx+r*1.34,hy+r*.42);cx.quadraticCurveTo(hx+r*1.3,hy+r*.58,hx+r*1.02,hy+r*.56);cx.lineTo(hx+r*.88,hy+r*.5);cx.closePath();cx.fill();
- cx.strokeStyle=dd;cx.lineWidth=.8;cx.beginPath();cx.moveTo(hx+r*.9,hy-r*.1);cx.quadraticCurveTo(hx+r*1.06,hy+r*.14,hx+r*1.34,hy+r*.42);cx.quadraticCurveTo(hx+r*1.3,hy+r*.58,hx+r*1.02,hy+r*.56);cx.stroke();
- cx.fillStyle='rgba(40,16,8,.65)';cx.beginPath();cx.ellipse(hx+r*1.08,hy+r*.5,r*.07,r*.04,0,0,7);cx.fill();
+ cx.fillStyle=sk;cx.beginPath();cx.moveTo(hx+r*.86,hy-r*.12);cx.quadraticCurveTo(hx+r*1.0,hy+r*.12,hx+r*1.17,hy+r*.42);cx.quadraticCurveTo(hx+r*1.14,hy+r*.56,hx+r*1.02,hy+r*.56);cx.lineTo(hx+r*.88,hy+r*.5);cx.closePath();cx.fill();
+ cx.strokeStyle=dd;cx.lineWidth=.8;cx.beginPath();cx.moveTo(hx+r*.9,hy-r*.1);cx.quadraticCurveTo(hx+r*1.0,hy+r*.14,hx+r*1.17,hy+r*.42);cx.quadraticCurveTo(hx+r*1.14,hy+r*.56,hx+r*1.02,hy+r*.56);cx.stroke();
+ cx.fillStyle='rgba(40,16,8,.65)';cx.beginPath();cx.ellipse(hx+r*1.0,hy+r*.5,r*.07,r*.04,0,0,7);cx.fill();
  cx.fillStyle='rgba(60,30,14,.16)';cx.beginPath();cx.ellipse(hx+r*.88,hy+r*.2,r*.1,r*.3,.1,0,7);cx.fill();
  /* eye: almond shape, sclera, iris, pupil, catch-light, upper lid line, lower shadow */
  const ex=hx+r*.5,ey=hy-r*.1,ew=r*.3,eh=wow?r*.2:ouch?r*.05:r*.13;
@@ -269,13 +273,13 @@ function drawDriver(cx,v,t,q){q=q||{};const dr=DRV[S.drv]||DRV[0],o=OUT[S.outfit
  /* neck snap: head whips over in ~0.15s then hangs limp and sways */
  const snap=dead<0?0:(1-Math.exp(-dead/55)),sway=dead<0?0:Math.sin(dead/140)*.09*Math.exp(-dead/900);
  const XE=(r,hx,hy)=>{cx.strokeStyle='#14090a';cx.lineWidth=1.3;cx.lineCap='round';const ex=hx+r*.45,ey=hy+.5;cx.beginPath();cx.moveTo(ex-1.8,ey-1.8);cx.lineTo(ex+1.8,ey+1.8);cx.moveTo(ex+1.8,ey-1.8);cx.lineTo(ex-1.8,ey+1.8);cx.stroke()};
- if(v.cls==='car'){const w=v.win,hp=v.hp,by=w.y+w.h,hel=accOn('hel'),hcol=accOn('hel')?'#d8232a':o.hel,R=7.6;
+ if(v.cls==='car'){const w=v.win,hp=v.hp,by=w.y+w.h,hel=accOn('hel'),hcol=accOn('hel')?'#d8232a':o.hel,R=6.3;
   const mood=dead>=0?'dead':q.air?'wow':q.hard?'ouch':'smile',ha=dead>=0?snap*1.35+sway:(q.ha!=null?q.ha:Math.sin(t*2.2)*.05);
   cx.save();cx.beginPath();cx.rect(w.x-44,w.y-150,w.w+88,150+w.h+2);cx.clip();cx.translate(hp.x,by);cx.scale(1.62,1.62);cx.translate(-hp.x,-by);
   /* bucket seat behind the driver (visible now the roof is gone) */
   {const sx0=hp.x-23+ox*.15;cx.fillStyle=lg(cx,by-30,by+6,[[0,'#3b414d'],[1,'#14161c']]);rr(cx,sx0,by-13,13,21,5);cx.fill();cx.strokeStyle='#0b0c10';cx.lineWidth=1;cx.stroke();rr(cx,sx0+1.5,by-20,10,9,4.5);cx.fill();cx.stroke();cx.strokeStyle='rgba(255,255,255,.14)';cx.beginPath();cx.moveTo(sx0+3,by-9);cx.lineTo(sx0+3,by+3);cx.stroke()}
   /* shoulder / neck base follows the body bob; slumps forward when the neck is broken */
-  const nx=hp.x+ox*.6+snap*4,ny=hp.y+10+oy*.6+snap*6,tl=dead>=0?snap*.35:ox*.025;
+  const nx=hp.x+ox*.6+snap*4,ny=hp.y+8+oy*.6+snap*6,tl=dead>=0?snap*.35:ox*.025;
   if(accOn('bag')){cx.fillStyle='#1c1f27';rr(cx,nx-19,ny-2,14,26,4);cx.fill();cx.fillStyle='#d8232a';rr(cx,nx-19,ny+7,14,3,1);cx.fill()}
   /* torso */
   cx.save();cx.translate(nx,by+10);cx.rotate(tl);cx.fillStyle=lg(cx,-(by+10-ny),12,[[0,sh(o.top,.12)],[1,sh(o.top,-.18)]]);rr(cx,-12,-(by+10-ny)-2,24,(by+10-ny)+14,8);cx.fill();cx.strokeStyle=sh(o.top,-.5);cx.lineWidth=1;cx.stroke();
@@ -283,8 +287,8 @@ function drawDriver(cx,v,t,q){q=q||{};const dr=DRV[S.drv]||DRV[0],o=OUT[S.outfit
   outfitDetail(cx,o,-(by+10-ny));
   cx.fillStyle=sh(o.top,.35);cx.beginPath();cx.moveTo(-5,-(by+10-ny)-1);cx.lineTo(0,-(by+10-ny)+5);cx.lineTo(5,-(by+10-ny)-1);cx.closePath();cx.fill();cx.restore();
   /* neck + head swinging on the neck (spring: lags behind the body, overshoots, settles) */
-  const hx=nx+Math.sin(ha)*8.5,hy=ny-Math.cos(ha)*8.5-1;
-  cx.strokeStyle=sh(dr.skin,-.1);cx.lineWidth=4.4;cx.beginPath();cx.moveTo(nx,ny+1);cx.lineTo(hx,hy+3);cx.stroke();
+  const hx=nx+Math.sin(ha)*9.4,hy=ny-Math.cos(ha)*9.4-1.5;
+  cx.strokeStyle=sh(dr.skin,-.1);cx.lineWidth=5.4;cx.beginPath();cx.moveTo(nx,ny+1);cx.lineTo(hx,hy+3);cx.stroke();
   /* arm to the steering wheel (hangs limp when dead) */
   const sx=nx+3,sy=ny+3,wx=hp.x+24+ox*.2,wy=by-5+oy*.2,hxd=dead>=0?sx+9:wx,hyd=dead>=0?sy+17:wy,ex=(sx+hxd)/2+(dead>=0?7:-1),ey=(sy+hyd)/2+(dead>=0?2:7);
   cx.strokeStyle=sh(o.top,-.25);cx.lineWidth=5.2;cx.beginPath();cx.moveTo(sx,sy);cx.lineTo(ex,ey);cx.lineTo(hxd,hyd);cx.stroke();
@@ -305,8 +309,8 @@ function drawDriver(cx,v,t,q){q=q||{};const dr=DRV[S.drv]||DRV[0],o=OUT[S.outfit
  ln(cx,[shx,shy+1],[(shx+r.hx)/2+2,(shy+r.hy)/2+7],6,sh(o.top,-.22));ln(cx,[(shx+r.hx)/2+2,(shy+r.hy)/2+7],[r.hx,r.hy],5,sh(o.top,-.22));cx.fillStyle=accOn('glv')?'#16161a':dr.skin;cx.beginPath();cx.arc(r.hx,r.hy,3.4,0,7);cx.fill();if(accOn('glv')){cx.fillStyle='#e8222a';cx.fillRect(r.hx-4.6,r.hy-1,2,2.4)}
  if(accOn('wat')){const ex=(shx+r.hx)/2+2,ey=(shy+r.hy)/2+7,wx=ex+(r.hx-ex)*.72,wy=ey+(r.hy-ey)*.72;cx.fillStyle='#d5dbe6';cx.beginPath();cx.arc(wx,wy,2.9,0,7);cx.fill();cx.fillStyle='#14161c';cx.beginPath();cx.arc(wx,wy,1.7,0,7);cx.fill()}
  if(accOn('nek')){cx.fillStyle='#35c6ff';cx.beginPath();cx.arc(shx+Math.sin(L)*3+3,shy+4,2,0,7);cx.fill()}
- if(dead>=0){cx.save();cx.translate(hdx+snap*4,hdy+snap*6);cx.rotate(snap*1.3+sway);headFull(cx,0,0,dr,true,accOn('hel')?'#d8232a':o.hel,8,'dead');cx.restore();if(dead>600){cx.globalAlpha=Math.max(0,1-(dead-600)/2600);cx.fillStyle='#ffe14a';for(let i=0;i<3;i++){const a=dead/260+i*2.094;star5(cx,hdx+4+Math.cos(a)*12,hdy-12+Math.sin(a)*3.5,2.6)}cx.globalAlpha=1}}
- else{cx.save();cx.translate(hdx,hdy);cx.rotate(q.ha!=null?q.ha*.8:0);headFull(cx,0,0,dr,true,accOn('hel')?'#d8232a':o.hel,8,q.air?'wow':'smile');cx.restore()}}
+ if(dead>=0){cx.save();cx.translate(hdx+snap*4,hdy+snap*6);cx.rotate(snap*1.3+sway);headFull(cx,0,0,dr,true,accOn('hel')?'#d8232a':o.hel,6.8,'dead');cx.restore();if(dead>600){cx.globalAlpha=Math.max(0,1-(dead-600)/2600);cx.fillStyle='#ffe14a';for(let i=0;i<3;i++){const a=dead/260+i*2.094;star5(cx,hdx+4+Math.cos(a)*12,hdy-12+Math.sin(a)*3.5,2.6)}cx.globalAlpha=1}}
+ else{cx.save();cx.translate(hdx,hdy);cx.rotate(q.ha!=null?q.ha*.8:0);headFull(cx,0,0,dr,true,accOn('hel')?'#d8232a':o.hel,6.8,q.air?'wow':'smile');cx.restore()}}
 /* ---------- generic vehicle draw ---------- */
 /* ---------- Phase 3 graphics upgrade: driver character detail (art only) ---------- */
 const _headFull0=headFull;
