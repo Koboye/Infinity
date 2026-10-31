@@ -40,11 +40,6 @@ function houseArt(x,w,h,mode){shadow(x,w,h);const lit=mode==='n',sn=mode==='s';
 PA.house=pcv(170,140,(x,w,h)=>houseArt(x,w,h,'d'));
 PA.houseS=pcv(170,140,(x,w,h)=>houseArt(x,w,h,'s'));
 PA.houseN=pcv(170,140,(x,w,h)=>houseArt(x,w,h,'n'));
-PA.bridge=pcv(340,150,(x,w,h)=>{rr(x,10,62,320,88,4);x.fillStyle=lg(x,62,150,[[0,'#a39a8c'],[1,'#6f675c']]);x.fill();
- x.strokeStyle='rgba(60,52,44,.55)';x.lineWidth=1.2;for(let r=0;r<6;r++){const y=70+r*14;x.beginPath();x.moveTo(10,y);x.lineTo(330,y);x.stroke();for(let c=0;c<16;c++){const xx=10+c*21+(r%2?10:0);x.beginPath();x.moveTo(xx,y);x.lineTo(xx,y+14);x.stroke()}}
- x.fillStyle='#8d8478';rr(x,0,40,340,24,4);x.fill();x.strokeStyle='#54483c';x.lineWidth=1.6;x.stroke();
- x.fillStyle='#b4ab9c';for(let i=0;i<9;i++)rr(x,6+i*39,26,26,18,3),x.fill();
- x.globalCompositeOperation='destination-out';[70,170,270].forEach(cx=>{x.beginPath();x.moveTo(cx-34,150);x.lineTo(cx-34,118);x.arc(cx,118,34,Math.PI,0);x.lineTo(cx+34,150);x.closePath();x.fill()});x.globalCompositeOperation='source-over'});
 
 /* ---------- roadside obstacles / decor ---------- */
 PA.cone=pcv(34,44,(x,w,h)=>{shadow(x,w,h);x.fillStyle='#2a2a30';rr(x,2,h-8,30,7,2);x.fill();x.beginPath();x.moveTo(17,2);x.lineTo(28,h-8);x.lineTo(6,h-8);x.closePath();x.fillStyle=lg(x,2,h,[[0,'#ff9a3a'],[1,'#e2531a']]);x.fill();
