@@ -183,7 +183,7 @@ P.future=(x,c,v)=>{const o={fx:36,fy:-30,px:-10,py:4,ex:-6,ey:-8};const r=v.wh[0
 /* ---------- wheels ---------- */
 function mkc(w,h){const c=document.createElement('canvas');c.width=Math.ceil(w);c.height=Math.ceil(h);return c}
 const BCACHE={},WCACHE={};
-function bodyOf(vi,sk){const k=vi+'_'+sk;if(BCACHE[k])return BCACHE[k];const v=VEH[vi],K=4,ox=140,oy=130,c=mkc(280*K,200*K),x=c.getContext('2d');x.scale(K,K);x.translate(ox,oy);P[v.kind](x,SKINS[sk].c,v);if(SKINS[sk].pat)decor(c,SKINS[sk].pat);return BCACHE[k]={c,ox,oy,k:K}}
+function bodyOf(vi,sk){const k=vi+'_'+sk;if(BCACHE[k])return BCACHE[k];const v=VEH[vi],K=4,ox=140,oy=130,c=mkc(280*K,200*K),x=c.getContext('2d');x.scale(K,K);x.translate(ox,oy);P[v.kind](x,SKINS[sk].c,v);if(SKINS[sk].pat)decor(c,SKINS[sk].pat);{x.save();x.globalCompositeOperation='source-atop';x.setTransform(1,0,0,1,0,0);let gg=x.createLinearGradient(0,0,0,c.height);gg.addColorStop(.25,'rgba(255,255,255,.18)');gg.addColorStop(.5,'rgba(255,255,255,.03)');gg.addColorStop(.72,'rgba(0,0,0,0)');gg.addColorStop(.88,'rgba(14,8,2,.3)');x.fillStyle=gg;x.fillRect(0,0,c.width,c.height);x.restore()}return BCACHE[k]={c,ox,oy,k:K}}
 function wheelCv(v,col){const k=(v.wk+v.R+col);if(WCACHE[k])return WCACHE[k];const K=5,R=v.R,s=(R*2+8),c=mkc(s*K,s*K),x=c.getContext('2d');x.scale(K,K);x.translate(s/2,s/2);
  const tire=(w,col2)=>{x.beginPath();x.arc(0,0,R,0,7);x.arc(0,0,R-w,0,7,true);x.fillStyle=col2;x.fill('evenodd')};
  if(v.wk==='rim'){tire(8,'#15161a');x.fillStyle=lg(x,-R,R,[[0,'#eef2f8'],[1,'#8e98aa']]);x.beginPath();x.arc(0,0,R-8,0,7);x.fill();x.fillStyle='#262a34';for(let i=0;i<5;i++){const a=i*1.2566;x.beginPath();x.arc(Math.cos(a)*(R-15),Math.sin(a)*(R-15),4,0,7);x.fill()}ln(x,[0,0],[0,0],1,'#000');x.fillStyle='#5a6274';x.beginPath();x.arc(0,0,5,0,7);x.fill()}
@@ -375,6 +375,6 @@ function drawVeh(cx,vi,o){const v=VEH[vi],sk=o.sk!=null?o.sk:skinOf(vi),t=o.t||0
  else{const b=bodyOf(vi,sk);cx.drawImage(b.c,-b.ox,-b.oy,b.c.width/b.k,b.c.height/b.k)}
  windshield(cx,v);
  if(v.kind==='police'){const on=Math.floor(t*7)%2;cx.fillStyle=on?'#ff2a2a':'#ff9a9a';cx.shadowColor='#f22';cx.shadowBlur=on?14:2;cx.fillRect(-29,-67,27,5);cx.fillStyle=on?'#9ad0ff':'#2a6aff';cx.shadowColor='#36f';cx.shadowBlur=on?2:14;cx.fillRect(0,-67,25,5);cx.shadowBlur=0}
- for(let i=0;i<2;i++){cx.save();cx.translate(v.wh[i].x,v.wh[i].y+(o.ws?o.ws[i]:0));cx.rotate(o.sp?o.sp[i]:0);
+ for(let i=0;i<2;i++){cx.save();cx.translate(v.wh[i].x,v.wh[i].y+(o.ws?o.ws[i]:0));cx.rotate(o.sp?o.sp[i]:0);if(o.bl>.28){const ba=Math.min(.34,o.bl*.22),bw=o.bl*.5;cx.globalAlpha=ba;for(const kk of[-1,1]){cx.save();cx.rotate(kk*bw);if(v.wk==='img'){const d=v.R*2.06;cx.drawImage(IM.wheel,-d/2,-d/2,d,d)}else{const w=wheelCv(v,SKINS[sk].c),s=w.s;cx.drawImage(w.c,-s/2,-s/2,s,s)}cx.restore()}cx.globalAlpha=1}
   if(v.wk==='img'){const d=v.R*2.06;cx.drawImage(IM.wheel,-d/2,-d/2,d,d)}else{const w=wheelCv(v,SKINS[sk].c),s=w.s;cx.drawImage(w.c,-s/2,-s/2,s,s)}cx.restore()}
   if(v.cls!=='car')drawDriver(cx,v,t,o)}

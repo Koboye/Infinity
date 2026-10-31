@@ -131,7 +131,8 @@ const vcache={};
 const JCUT=[[36,0],[337,0],[337,84],[318,80],[300,74],[262,68],[238,68],[228,74],[205,77],[140,79],[138,84],[36,86]];
 function openTop(c){const x=c.getContext('2d');x.save();x.globalCompositeOperation='destination-out';x.beginPath();JCUT.forEach((q,i)=>i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1]));x.closePath();x.fill();x.restore();return c}
 function vsprite(vi){return vsprite2(vi,skinOf(vi))}
-function vsprite2(vi,sk){const k='s'+vi+'_'+sk;if(!vcache[k]){const o=SKINS[sk];const c=recolor(IM.jeep,o.h,o.s,o.l);if(o.pat)decor(c,o.pat);vcache[k]=openTop(c)}return vcache[k]}
+function gloss(c){const x=c.getContext('2d'),w=c.width,h=c.height;x.save();x.globalCompositeOperation='source-atop';let g=x.createLinearGradient(0,0,0,h);g.addColorStop(0,'rgba(255,255,255,.22)');g.addColorStop(.34,'rgba(255,255,255,.05)');g.addColorStop(.6,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(14,8,2,.38)');x.fillStyle=g;x.fillRect(0,0,w,h);g=x.createLinearGradient(0,0,w,0);g.addColorStop(0,'rgba(0,0,0,.14)');g.addColorStop(.2,'rgba(0,0,0,0)');g.addColorStop(.8,'rgba(255,255,255,0)');g.addColorStop(1,'rgba(255,240,200,.12)');x.fillStyle=g;x.fillRect(0,0,w,h);x.restore();return c}
+function vsprite2(vi,sk){const k='s'+vi+'_'+sk;if(!vcache[k]){const o=SKINS[sk];const c=recolor(IM.jeep,o.h,o.s,o.l);if(o.pat)decor(c,o.pat);vcache[k]=gloss(openTop(c))}return vcache[k]}
 /* ---------- audio ---------- */
 let AC=null;function tone(f,d,t='sine',v=.08,f2){if(!S.snd)return;try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),gn=AC.createGain();o.type=t;o.frequency.value=f;if(f2)o.frequency.exponentialRampToValueAtTime(f2,AC.currentTime+d);gn.gain.value=v;gn.gain.exponentialRampToValueAtTime(.0001,AC.currentTime+d);o.connect(gn);gn.connect(AC.destination);o.start();o.stop(AC.currentTime+d)}catch(e){}}
 const sfx={coin:()=>{tone(988,.08,'square',.05);setTimeout(()=>tone(1318,.12,'square',.05),70)},can:()=>tone(300,.3,'triangle',.1,600),win:()=>[523,659,784,1046].forEach((f,i)=>setTimeout(()=>tone(f,.25,'triangle',.1),i*130)),bad:()=>tone(200,.5,'sawtooth',.1,60),flip:()=>tone(400,.2,'triangle',.08,800)};
@@ -205,7 +206,7 @@ const PXM=20,R=28,G=1500;
 const WH=[{x:-60,y:22},{x:61,y:22}],CP=[{x:92,y:8},{x:-80,y:12}],HD=[{x:-15,y:-52},{x:45,y:-60},{x:-70,y:-56}];
 let car,run,cam,parts=[],mode='menu',paused=false,inp={gas:0,brake:0},boost={coin:0,susp:0,tire:0},pop={t:0};
 function stats(){const v=VEH[S.veh],u=S.up,d=DRV[S.drv]||DRV[0];return{pw:560*v.pw*(d.pw||1)*(1+.14*u[0]),K:500*v.ks*(1+.07*u[1]),Cd:18*v.ks*(1+.09*u[1]),mu:1.15*v.gr*(d.mu||1)*(1+.1*u[2])*WORLDS[LV.w].grip,fuel:(100+22*u[3])*v.fu,vmax:880*(v.vm||1)*(d.vm||1)*(1+.05*u[0]),air:v.air*(d.air||1),cm:d.cm||1,stm:d.st||1,shield:d.shield||0,fm:d.fm||1}}
-function start(w,l){try{const de=document.documentElement;if(!document.fullscreenElement&&de.requestFullscreen)de.requestFullscreen({navigationUI:'hide'}).then(()=>screen.orientation&&screen.orientation.lock&&screen.orientation.lock('landscape').catch(()=>{})).catch(()=>{})}catch(e){}S.world=w;S.lp=S.lp||{};S.lp[w]=Math.floor(l/10);setBG(w);LV=mk(w,l);genLevel();const st=stats();
+function start(w,l){if(!(wOpen(w)&&lOpen(w,l))){toast('Pass ALL previous levels first');showScr('map');return}try{const de=document.documentElement;if(!document.fullscreenElement&&de.requestFullscreen)de.requestFullscreen({navigationUI:'hide'}).then(()=>screen.orientation&&screen.orientation.lock&&screen.orientation.lock('landscape').catch(()=>{})).catch(()=>{})}catch(e){}S.world=w;S.lp=S.lp||{};S.lp[w]=Math.floor(l/10);setBG(w);LV=mk(w,l);genLevel();const st=stats();
  car={v:VEH[S.veh],x:0,y:Hf(0)-(VEH[S.veh].wh[0].y+VEH[S.veh].R+12),a:0,vx:0,vy:0,w:0,sp:[0,0],ws:[0,0],fuel:st.fuel,air:0,rot:0,fl:0,rotAcc:0,st,inw:[0,0]};
  run={sh:0,cf:0,dist:0,coins:0,gems:0,flips:0,stuntC:0,over:'',neckT:0,bonusC:0,trophies:0,chests:0,bags:0,idle:0,t:0,rpm:.2,w,l,done:0,airT:0,cansGot:0,smash:0};
  cam={x:car.x,y:car.y};parts=[];boost={coin:0,susp:0,tire:0};inp={gas:0,brake:0};paused=false;mode='play';
@@ -262,6 +263,11 @@ function step(dt){const c=car,V=c.v,st=c.st,th=inp.gas&&c.fuel>0?1:0,br=inp.brak
  if(wet){const f=wet/2;c.vx*=Math.max(0,1-1.0*f*dt);c.vy*=Math.max(0,1-.7*f*dt);c.w*=Math.max(0,1-1.0*f*dt)}
  for(const o of V.cp){const rx=o.x*ca-o.y*sa,ry=o.x*sa+o.y*ca,px=c.x+rx,py=c.y+ry,h=Hf(px),pen=py+4-h;
   if(pen>0){const sl=(Hf(px+2)-Hf(px-2))/4,il=1/Math.sqrt(1+sl*sl),nx=sl*il,ny=-il,vx=c.vx-c.w*ry,vy=c.vy+c.w*rx,vn=vx*nx+vy*ny;let Fn=300*pen-14*vn;if(Fn<0)Fn=0;const Fx=Fn*nx,Fy=Fn*ny;ax+=Fx;ay+=Fy;aw+=(rx*Fy-ry*Fx)/I}}
+ /* exhaust: idle puffs, thick smoke under throttle, backfire flash when lifting off at high revs */
+ {const vv=VEH[S.veh];if(vv&&vv.wh&&mode==='play'){const ca=Math.cos(c.a),sa=Math.sin(c.a),ex=vv.wh[0].x-30,ey=vv.wh[0].y-12,px=c.x+ex*ca-ey*sa,py=c.y+ex*sa+ey*ca;
+  if(Math.random()<dt*(th?26:6))parts.push({x:px,y:py,vx:c.vx*.3-70-Math.random()*40,vy:-16-Math.random()*30-(th?20:0),l:th?.9:.5,m:th?.9:.5,r:th?4+Math.random()*4:2.5,c:th?'#9aa1aa':'#c4c9d0'});
+  if(c._th&&!th&&run.rpm>.55)for(let i=0;i<5;i++)parts.push({x:px,y:py,vx:-160-Math.random()*220,vy:-30+(Math.random()-.5)*80,l:.18,m:.18,r:4+Math.random()*4,c:i%2?'#ffb02e':'#fff2a0'});
+  c._th=th}}
  if(!gr){
   /* AIR CONTROL - hold RIGHT / GAS = front flip (nose down), LEFT / BRAKE = back flip (nose up).
      Torque ramps the spin up smoothly toward a top rotation speed, reversing is stronger so it stays responsive,
@@ -453,7 +459,19 @@ function drawCar(cx,c){const now=performance.now(),dt=Math.max(.004,Math.min(.05
  const tgt=cl(-lx*.0007+Math.sin(performance.now()/90)*Math.min(.12,Math.abs(ly)*.00007)-c.w*.05,.55);d.hw=(d.hw||0)+((tgt-(d.ha||0))*240-(d.hw||0)*6.5)*dt;d.ha=cl((d.ha||0)+d.hw*dt,.75);
  if(Math.abs(ly)>1700)d.hard=now;
  if(run.over==='HEAD CRASH'&&!run.neckT)run.neckT=now;
- cx.save();cx.translate(c.x,c.y);cx.rotate(c.a);drawVeh(cx,S.veh,{sp:c.sp,ws:c.ws,t:run.t,dx:d.x,dy:d.y,ha:d.ha,air:c.air>.12,hard:now-(d.hard||0)<450,dead:run.neckT?now-run.neckT:-1});cx.restore()}
+ /* soft contact shadow that follows the slope and fades / widens with height */
+ {const gy=Hf(c.x),h=gy-c.y,a=Math.max(0,1-h/360);if(a>.02&&run.over!=='HEAD CRASH'){const sl=Math.atan2(Hf(c.x+45)-Hf(c.x-45),90);cx.save();cx.translate(c.x,gy+2);cx.rotate(sl);cx.scale(1+h/650,.17);const sg=cx.createRadialGradient(0,0,6,0,0,96);sg.addColorStop(0,'rgba(0,0,0,'+.5*a+')');sg.addColorStop(.6,'rgba(0,0,0,'+.22*a+')');sg.addColorStop(1,'rgba(0,0,0,0)');cx.fillStyle=sg;cx.beginPath();cx.arc(0,0,96,0,7);cx.fill();cx.restore()}}
+ /* body squat under throttle, dive under braking, engine shudder, wheel-spin blur */
+ const sq=cl(-lx*.000022*k,.04);d.pt=(d.pt||0)+(sq-(d.pt||0))*Math.min(1,dt*9);
+ const sp=c.sp||[0,0],dsp=Math.max(Math.abs(sp[0]-(d.s0||0)),Math.abs(sp[1]-(d.s1||0)));d.s0=sp[0];d.s1=sp[1];d.bl=(d.bl||0)+(Math.min(1.4,dsp)-(d.bl||0))*Math.min(1,dt*12);
+ const vib=c.air>.12||run.over==='HEAD CRASH'?0:Math.sin(now/21)*(.22+.55*(run.rpm||0))*(inp.gas?1:.5);
+ cx.save();cx.translate(c.x,c.y+vib);cx.rotate(c.a+d.pt);drawVeh(cx,S.veh,{sp:c.sp,ws:c.ws,t:run.t,dx:d.x,dy:d.y,ha:d.ha,bl:d.bl,air:c.air>.12,hard:now-(d.hard||0)<450,dead:run.neckT?now-run.neckT:-1});
+ /* head / tail lights (additive): beam, lamp glow, brake lights brighten when braking */
+ if(run.over!=='HEAD CRASH'){const v=VEH[S.veh];if(v&&v.wh){const fx=v.wh[1].x+30,fy=v.wh[1].y-34,rx=v.wh[0].x-34,ry=v.wh[0].y-26;cx.save();cx.globalCompositeOperation='lighter';
+  const bg=cx.createLinearGradient(fx,0,fx+300,0);bg.addColorStop(0,'rgba(255,238,185,.26)');bg.addColorStop(1,'rgba(255,238,185,0)');cx.fillStyle=bg;cx.beginPath();cx.moveTo(fx,fy-3);cx.lineTo(fx+300,fy-34);cx.lineTo(fx+300,fy+44);cx.lineTo(fx,fy+3);cx.closePath();cx.fill();
+  let g2=cx.createRadialGradient(fx,fy,0,fx,fy,24);g2.addColorStop(0,'rgba(255,248,214,.85)');g2.addColorStop(1,'rgba(255,230,160,0)');cx.fillStyle=g2;cx.beginPath();cx.arc(fx,fy,24,0,7);cx.fill();
+  const bk=inp.brake?.8:.22;g2=cx.createRadialGradient(rx,ry,0,rx,ry,16);g2.addColorStop(0,'rgba(255,50,40,'+bk+')');g2.addColorStop(1,'rgba(255,40,30,0)');cx.fillStyle=g2;cx.beginPath();cx.arc(rx,ry,16,0,7);cx.fill();cx.restore()}}
+ cx.restore()}
 function drawDash(){const d=dx,c=car;d.clearRect(0,0,396,174);
  const arc=(cxx,cy,r,f,col,lw)=>{d.strokeStyle=col;d.lineWidth=lw;d.beginPath();d.arc(cxx,cy,r,Math.PI*.78,Math.PI*.78+Math.PI*1.44*f);d.stroke()};
  /* big RPM gauge */
@@ -482,8 +500,9 @@ function showScr(n){if(n==='title')BGI=null;const u=$('#ui');u.querySelectorAll(
 /* ---------- world / level progress helpers ---------- */
 const wDone=w=>{let n=0;for(let l=0;l<LEVELS;l++)if(S.stars[w+'-'+l]>0)n++;return n};
 const wStars=w=>{let n=0;for(let l=0;l<LEVELS;l++)n+=S.stars[w+'-'+l]||0;return n};
-const wOpen=w=>w===0||wDone(w-1)>=OPEN_NEED;
-const lOpen=(w,l)=>l===0||S.stars[w+'-'+(l-1)]>0;
+const wOpen=w=>w===0||wDone(w-1)>=LEVELS;/* a world opens only when ALL levels of the previous world are passed */
+const lOpen=(w,l)=>{for(let i=0;i<l;i++)if(!(S.stars[w+'-'+i]>0))return false;return true};/* a level opens only when EVERY earlier level in its world is passed */
+function toast(t){let e=document.getElementById('toast');if(!e){e=document.createElement('div');e.id='toast';e.style.cssText='position:fixed;left:50%;bottom:12%;transform:translateX(-50%);z-index:60;background:#0a1426f2;border:2px solid #f5c542;color:#fff;padding:12px 22px;border-radius:14px;font:800 clamp(14px,2.4vw,24px) Arial,sans-serif;pointer-events:none;transition:opacity .25s;opacity:0;text-align:center';document.body.appendChild(e)}e.textContent=t;e.style.opacity=1;clearTimeout(e._t);e._t=setTimeout(()=>{e.style.opacity=0},2000)}
 const topLv=w=>{let l=0;while(l<LEVELS-1&&S.stars[w+'-'+l]>0)l++;return l};
 const wList=()=>S.wt==='earth'||S.wt==='planet'?WORLDS.filter(x=>x.cat===S.wt):WORLDS;
 const SCR={
@@ -504,7 +523,7 @@ map:()=>{const w=S.world,WD=WORLDS[w],open=wOpen(w);S.lp=S.lp||{};let pg=S.lp[w]
  <div style="position:absolute;left:50%;top:calc(130*var(--u));transform:translateX(-50%);padding:calc(6*var(--u)) calc(30*var(--u));border-radius:calc(30*var(--u));background:#0a1530dd;border:calc(3*var(--u)) solid ${tr.c};font-size:calc(28*var(--u));font-weight:800;letter-spacing:3px;color:${tr.c};white-space:nowrap">${tr.n} \u00b7 LEVELS ${pg*10+1}-${pg*10+10}</div>
  <div class="back glass" data-w="-1" style="position:absolute;left:calc(26*var(--u));top:45%;width:calc(80*var(--u));height:calc(110*var(--u))"><svg viewBox="0 0 24 24"><path d="M15.400 7.400L14 6l-6 6 6 6 1.400-1.400L10.800 12z"/></svg></div><div class="back glass" data-w="1" style="position:absolute;right:calc(26*var(--u));top:45%;width:calc(80*var(--u));height:calc(110*var(--u))"><svg viewBox="0 0 24 24"><path d="M8.600 16.600L10 18l6-6-6-6-1.400 1.400L13.200 12z"/></svg></div>
  <svg viewBox="0 0 1536 1024" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"><polyline points="${pts}" fill="none" stroke="#000a" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/><polyline points="${pts}" fill="none" stroke="#f5c542" stroke-width="7" stroke-dasharray="4 18" stroke-linecap="round" stroke-linejoin="round"/></svg>
- ${open?nodes:nodes+`<div class="glass" style="position:absolute;left:50%;top:30%;transform:translateX(-50%);padding:calc(14*var(--u)) calc(34*var(--u));font-size:calc(30*var(--u));font-weight:800;text-align:center;white-space:nowrap">\u{1F512} LOCKED<div style="font-size:calc(24*var(--u));font-weight:600;color:#bcd0f0;margin-top:calc(4*var(--u))">Finish ${OPEN_NEED} levels in ${w>0?WORLDS[w-1].n:''}</div></div>`}
+ ${open?nodes:nodes+`<div class="glass" style="position:absolute;left:50%;top:30%;transform:translateX(-50%);padding:calc(14*var(--u)) calc(34*var(--u));font-size:calc(30*var(--u));font-weight:800;text-align:center;white-space:nowrap">\u{1F512} LOCKED<div style="font-size:calc(24*var(--u));font-weight:600;color:#bcd0f0;margin-top:calc(4*var(--u))">Pass ALL ${LEVELS} levels in ${w>0?WORLDS[w-1].n:''}</div></div>`}
  <div style="position:absolute;left:0;right:0;bottom:calc(98*var(--u));display:flex;justify-content:center;gap:calc(8*var(--u))">${pages}</div>
  <div style="position:absolute;left:0;right:0;bottom:0;height:calc(96*var(--u));display:flex;align-items:center;padding:0 calc(40*var(--u));font-size:calc(40*var(--u));font-weight:800;background:linear-gradient(0deg,#0a1530,#0a153000)"><span class="gold" style="font-size:calc(52*var(--u))">\u2605</span>&nbsp;${wStars(w)}/${LEVELS*3}<span style="font-size:calc(26*var(--u));color:#bcd0f0;font-weight:600">&nbsp;&nbsp;this world \u00b7 ${wDone(w)}/${LEVELS} levels</span><div class="sp"></div><span style="font-size:calc(26*var(--u));color:#bcd0f0">${tot().toLocaleString()} total \u2605 \u00b7 finish a level to unlock the next</span></div>`},
 worlds:()=>{const L=wList(),n=Math.max(1,Math.ceil(L.length/12));S.wp=Math.max(0,Math.min(n-1,S.wp|0));const pgi=S.wp,tabs=[['all','ALL '+WORLDS.length],['earth','EARTH '+WORLDS.filter(x=>x.cat==='earth').length],['planet','PLANETS '+WORLDS.filter(x=>x.cat==='planet').length]];
@@ -513,7 +532,7 @@ worlds:()=>{const L=wList(),n=Math.max(1,Math.ceil(L.length/12));S.wp=Math.max(0
   ${WD.tint?`<div style="position:absolute;inset:0;background:${WD.tint}"></div>`:''}<div style="position:absolute;left:0;right:0;bottom:0;padding:calc(8*var(--u)) calc(12*var(--u));background:linear-gradient(0deg,#050b18f2,#050b18b0 70%,#0000)"><div style="font-size:calc(25*var(--u));font-weight:800;line-height:1.12;text-shadow:0 2px 3px #000;min-height:calc(56*var(--u));display:flex;align-items:flex-end">${WD.n}</div><div style="display:flex;align-items:center;font-size:calc(22*var(--u));color:#bcd0f0"><span class="gold">\u2605</span>&nbsp;${st}/${LEVELS*3}<div class="sp"></div>${dn}/${LEVELS}</div></div>
   <div style="position:absolute;left:calc(10*var(--u));top:calc(8*var(--u));padding:0 calc(10*var(--u));border-radius:calc(12*var(--u));background:#050b18cc;font-size:calc(20*var(--u));font-weight:800;color:${WD.cat==='planet'?'#c9a6ff':'#7be08a'}">${WD.cat==='planet'?'PLANET':'#'+(i+1)}</div>
   ${WD.gv!==1?`<div style="position:absolute;right:calc(10*var(--u));top:calc(8*var(--u));padding:0 calc(10*var(--u));border-radius:calc(12*var(--u));background:#050b18cc;font-size:calc(20*var(--u));font-weight:800;color:#35c6ff">G ${WD.gv.toFixed(2)}</div>`:''}
-  ${open?'':`<div style="position:absolute;inset:0;background:#050b18c8;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:calc(22*var(--u));font-weight:700;color:#bcd0f0;text-align:center;padding:0 calc(14*var(--u))"><div style="font-size:calc(58*var(--u))">\u{1F512}</div>Finish ${OPEN_NEED} levels in<br>${WORLDS[i-1].n}</div>`}</div>`});
+  ${open?'':`<div style="position:absolute;inset:0;background:#050b18c8;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:calc(22*var(--u));font-weight:700;color:#bcd0f0;text-align:center;padding:0 calc(14*var(--u))"><div style="font-size:calc(58*var(--u))">\u{1F512}</div>Pass ALL ${LEVELS} levels in<br>${WORLDS[i-1].n}</div>`}</div>`});
  return `<div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 30%,#14315e,#070d1c 75%)"></div>
  <div class="hdr"><div class="back glass" data-go="map">${svg.back}</div><h1>SELECT WORLD</h1><div class="sp"></div></div>${pills()}
  <div style="position:absolute;left:calc(72*var(--u));top:calc(124*var(--u));display:flex;gap:calc(14*var(--u))">${tabs.map(t=>`<div class="bt ${S.wt===t[0]?'y':''}" data-wt="${t[0]}" style="width:calc(250*var(--u));height:calc(66*var(--u));font-size:calc(28*var(--u))">${t[1]}</div>`).join('')}</div>
@@ -587,12 +606,12 @@ $('#pause').addEventListener('pointerdown',togglePause);
 document.addEventListener('pointerdown',ev=>{const t=ev.target.closest('[data-go],[data-act],[data-lv],[data-v],[data-up],[data-sk],[data-w],[data-wt],[data-wp],[data-pw],[data-pg],[data-tab],[data-sel],[data-nav],[data-ds],[data-out],[data-acc]');if(!t)return;
  const go=t.dataset.go,act=t.dataset.act;
  if(go){const pm=$('#pm');if(pm)pm.remove();paused=false;if(mode==='play'||mode==='over'){mode='menu'}save();showScr(go);return}
- if(t.dataset.lv!=null){const l=+t.dataset.lv,w=S.world;if(wOpen(w)&&lOpen(w,l))start(w,l);return}
+ if(t.dataset.lv!=null){const l=+t.dataset.lv,w=S.world;if(wOpen(w)&&lOpen(w,l))start(w,l);else toast(wOpen(w)?'Pass ALL previous levels first':'Pass ALL '+LEVELS+' levels of the previous world first');return}
  if(t.dataset.w){S.world=(S.world+WORLD_COUNT+ +t.dataset.w)%WORLD_COUNT;save();showScr('map');return}
  if(t.dataset.pg!=null){S.lp[S.world]=+t.dataset.pg;save();showScr('map');return}
  if(t.dataset.wt){S.wt=t.dataset.wt;S.wp=0;showScr('worlds');return}
  if(t.dataset.wp){const n=Math.ceil(wList().length/12);S.wp=(S.wp+n+ +t.dataset.wp)%n;showScr('worlds');return}
- if(t.dataset.pw!=null){const i=+t.dataset.pw;if(wOpen(i)){S.world=i;save();showScr('map')}return}
+ if(t.dataset.pw!=null){const i=+t.dataset.pw;if(wOpen(i)){S.world=i;save();showScr('map')}else toast('Pass ALL '+LEVELS+' levels of the previous world first');return}
  if(t.dataset.tab){S.tab=t.dataset.tab;save();showScr('garage');return}
  if(t.dataset.sel!=null){S.pv=+t.dataset.sel;showScr('garage');return}
  if(t.dataset.nav){const l=vList(S.tab),p=l.indexOf(S.pv);S.pv=l[(p+ +t.dataset.nav+l.length)%l.length];showScr('garage');return}
