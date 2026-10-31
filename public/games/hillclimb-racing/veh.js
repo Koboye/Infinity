@@ -268,6 +268,22 @@ function drawDriver(cx,v,t,q){q=q||{};const dr=DRV[S.drv]||DRV[0],o=OUT[S.outfit
  if(dead>=0){cx.save();cx.translate(hdx+snap*4,hdy+snap*6);cx.rotate(snap*1.3+sway);headFull(cx,0,0,dr,true,accOn('hel')?'#d8232a':o.hel,8,'dead');cx.restore();if(dead>600){cx.globalAlpha=Math.max(0,1-(dead-600)/2600);cx.fillStyle='#ffe14a';for(let i=0;i<3;i++){const a=dead/260+i*2.094;star5(cx,hdx+4+Math.cos(a)*12,hdy-12+Math.sin(a)*3.5,2.6)}cx.globalAlpha=1}}
  else{cx.save();cx.translate(hdx,hdy);cx.rotate(q.ha!=null?q.ha*.8:0);headFull(cx,0,0,dr,true,accOn('hel')?'#d8232a':o.hel,8,q.air?'wow':'smile');cx.restore()}}
 /* ---------- generic vehicle draw ---------- */
+/* ---------- Phase 3 graphics upgrade: driver character detail (art only) ---------- */
+const _headFull0=headFull;
+const DRVX={
+ 'Gecho':(c,x,y,r)=>{c.fillStyle='rgba(255,255,255,.14)';c.beginPath();c.ellipse(x-r*.1,y-r*.95,r*.55,r*.18,-.2,0,7);c.fill();c.strokeStyle='#d8b24a';c.lineWidth=1.1;c.beginPath();c.arc(x-r*.78,y+r*.55,1.5,0,7);c.stroke()},
+ 'Racer':(c,x,y,r)=>{c.fillStyle='rgba(255,140,120,.25)';c.beginPath();c.ellipse(x+r*.5,y+r*.45,r*.28,r*.17,0,0,7);c.fill();c.strokeStyle='rgba(38,24,14,.6)';c.lineWidth=.9;c.beginPath();c.moveTo(x+r*.55,y+r*.15);c.lineTo(x+r*.78,y+r*.22);c.stroke()},
+ 'Rally Girl':(c,x,y,r)=>{c.fillStyle='rgba(255,120,150,.3)';c.beginPath();c.ellipse(x+r*.5,y+r*.45,r*.28,r*.17,0,0,7);c.fill();c.fillStyle='#ffd24a';c.beginPath();c.arc(x-r*.78,y+r*.5,1.4,0,7);c.fill();c.strokeStyle='rgba(122,59,30,.9)';c.lineWidth=1.6;c.beginPath();c.moveTo(x-r*.9,y+r*.1);c.quadraticCurveTo(x-r*1.4,y+r*1.2,x-r*1.0,y+r*1.9);c.stroke()},
+ 'Explorer':(c,x,y,r)=>{c.fillStyle='rgba(60,40,22,.85)';c.beginPath();c.moveTo(x+r*.2,y+r*.75);c.quadraticCurveTo(x+r*.45,y+r*1.2,x+r*.8,y+r*.8);c.quadraticCurveTo(x+r*.5,y+r*.95,x+r*.2,y+r*.75);c.fill();c.fillStyle='#c04a2a';c.fillRect(x-r*.95,y-r*.55,r*1.9,1.4)},
+ 'Stunt Driver':(c,x,y,r)=>{c.strokeStyle='#e8f1ff';c.lineWidth=1.3;c.beginPath();c.moveTo(x+r*.1,y-r*.55);c.lineTo(x+r*.6,y-r*.2);c.stroke();c.fillStyle='rgba(255,255,255,.18)';c.beginPath();c.ellipse(x-r*.1,y-r*.9,r*.5,r*.16,-.2,0,7);c.fill()},
+ 'Pro Driver':(c,x,y,r)=>{c.fillStyle='#d8232a';c.fillRect(x-r*.95,y-r*.95,r*1.9,1.6);c.fillStyle='rgba(255,255,255,.9)';c.font='bold 4px Arial';c.textAlign='center';c.fillText('PRO',x,y-r*.62)},
+ 'Veteran':(c,x,y,r)=>{c.fillStyle='rgba(235,235,235,.6)';for(let i=0;i<5;i++){c.beginPath();c.arc(x-r*.6+i*r*.3,y+r*.7+((i%2)?1.2:0),r*.06,0,7);c.fill()}c.strokeStyle='rgba(60,40,20,.7)';c.lineWidth=.9;c.beginPath();c.moveTo(x+r*.3,y-r*.3);c.lineTo(x+r*.85,y-r*.38);c.stroke()}
+};
+headFull=function(cx,hx,hy,dr,helm,hc,r,mood){_headFull0(cx,hx,hy,dr,helm,hc,r,mood);if(mood==='dead')return;
+ try{cx.save();cx.lineCap='round';
+  if(helm){cx.fillStyle='rgba(255,255,255,.35)';cx.beginPath();cx.ellipse(hx-r*.25,hy-r*.85,r*.55,r*.16,-.25,0,7);cx.fill();cx.strokeStyle='rgba(255,255,255,.85)';cx.lineWidth=1.2;cx.beginPath();cx.moveTo(hx-r*.9,hy-r*.2);cx.quadraticCurveTo(hx,hy-r*1.4,hx+r*.9,hy-r*.2);cx.stroke();cx.fillStyle='rgba(255,255,255,.4)';cx.beginPath();cx.ellipse(hx+r*.55,hy-.8,r*.28,r*.07,-.3,0,7);cx.fill()}
+  else{const f=DRVX[dr.n];if(f)f(cx,hx,hy,r)}
+  cx.restore()}catch(e){}};
 const skinOf=vi=>(S.skin[vi]>=0?S.skin[vi]:VEH[vi].sk);
 /* windshield frames (open-top cars): [baseX,baseY,topX,topY] - thin raked frame like the reference */
 const WSH={jeep:[32,-31,17,-60],sports:[48,-22,32,-42],pickup:[46,-30,31,-52],police:[52,-27,36,-49],monster:[36,-70,22,-100]};
