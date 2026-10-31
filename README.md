@@ -355,3 +355,8 @@ The v34 "walk one stone straight across" opening is replaced. Rule (`src/lib/geb
 - **Phone Back button no longer closes the app.** One screen up (setup/rules/online → modes → home); inside a game or an online room it asks "Leave this game?"; at the home screen the first press shows "Press back again to exit" and a second press within 2 s leaves. It also closes an open sheet first. Done with a spare history entry kept under the app (`GebetaApp.jsx`, `popstate` handler), so it works in the browser, the installed PWA and the Play Store (TWA) build.
 - **Install.** The browser's one-time `beforeinstallprompt` is now kept for the whole app (`RegisterSW.jsx`), so the Settings "Install app" button works whenever it is opened, and a new **Install app** pill (`InstallPill.jsx`) appears on the home screen where the browser can install (hidden once installed or dismissed).
 - For an Android store/APK build see `PLAYSTORE.md` (Trusted Web Activity); it needs the deployed domain and a signing key.
+
+## Hill Climb Racing garage upgrade (cars, bikes, drivers)
+- **Skins:** 12 paint options on every car and bike, including pattern skins Camo, Flame, Gold and Neon (painted over the body at runtime, so they work on every vehicle).
+- **Stats:** cars show Speed / Acceleration / Grip / Durability / Fuel; bikes show Speed / Acceleration / Handling / Stability / Fuel.
+- **Driver accessories:** Helmet, Sunglasses, Backpack, Gloves, Watch and Necklace. Bought with coins, toggled on/off in Garage > Drivers, drawn on the rider in the garage and in the race. Cosmetic only (no gameplay effect).
