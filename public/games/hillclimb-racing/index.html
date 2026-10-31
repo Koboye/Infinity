@@ -216,7 +216,7 @@ function step(dt){const c=car,V=c.v,st=c.st,th=inp.gas&&c.fuel>0?1:0,br=inp.brak
  if(boost.coin>0)boost.coin-=dt;if(boost.susp>0)boost.susp-=dt;if(boost.tire>0)boost.tire-=dt;
  if(c.x>=LV.fin&&!run.over)win();
 }
-function fail(why){try{navigator.vibrate&&navigator.vibrate([60,40,90])}catch(e){}run.over=why;sfx.bad();mode='over';setTimeout(()=>showResult(false),900)}
+function fail(why){try{navigator.vibrate&&navigator.vibrate([60,40,90])}catch(e){}run.over=why;sfx.bad();mode='over';setTimeout(()=>showResult(false),why==='HEAD CRASH'?1900:900)}
 function win(){run.over='win';sfx.win();mode='over';const k=run.w+'-'+run.l;let s=1;if(run.coins>=runCoinsTotal*.35)s=2;if(s>=2&&(run.flips>=1||run.coins>=runCoinsTotal*.7))s=3;run.stars=s;
  run.prevBest=S.stars[k]||0;run.rec=s>run.prevBest;if(run.rec)S.stars[k]=s;
  const bonus=200+run.l*80+s*100;S.coins+=bonus;run.bonus=bonus;save();setTimeout(()=>showResult(true),700)}
@@ -268,9 +268,12 @@ function drawCar(cx,c){const now=performance.now(),dt=Math.max(.004,Math.min(.05
  /* world accel -> car frame: throttle pushes head back, braking/landing pushes it forward/down, bumps bob it, free-fall floats it */
  const ax=cl((c.vx-d.pvx)/dt,1800),ay=cl((c.vy-d.pvy)/dt,2400);d.pvx=c.vx;d.pvy=c.vy;
  const ca=Math.cos(c.a),sa=Math.sin(c.a),lx=ax*ca+ay*sa,ly=-ax*sa+ay*ca,k=run.over==='HEAD CRASH'?0:1;
- d.vx+=((-lx*.0034*k-d.x)*220-d.vx*15)*dt;d.vy+=((-ly*.0030*k-d.y)*220-d.vy*15)*dt;d.x=cl(d.x+d.vx*dt,5.5);d.y=cl(d.y+d.vy*dt,5);
+ d.vx+=((-lx*.0046*k-d.x)*220-d.vx*15)*dt;d.vy+=((-ly*.0040*k-d.y)*220-d.vy*15)*dt;d.x=cl(d.x+d.vx*dt,7);d.y=cl(d.y+d.vy*dt,6);
+ /* head on a floppy neck: its own underdamped spring so it lags, overshoots and wobbles like a bobblehead */
+ const tgt=cl(-lx*.0007+Math.sin(performance.now()/90)*Math.min(.12,Math.abs(ly)*.00007)-c.w*.05,.55);d.hw=(d.hw||0)+((tgt-(d.ha||0))*240-(d.hw||0)*6.5)*dt;d.ha=cl((d.ha||0)+d.hw*dt,.75);
+ if(Math.abs(ly)>1700)d.hard=now;
  if(run.over==='HEAD CRASH'&&!run.neckT)run.neckT=now;
- cx.save();cx.translate(c.x,c.y);cx.rotate(c.a);drawVeh(cx,S.veh,{sp:c.sp,ws:c.ws,t:run.t,dx:d.x,dy:d.y,dead:run.neckT?now-run.neckT:-1});cx.restore()}
+ cx.save();cx.translate(c.x,c.y);cx.rotate(c.a);drawVeh(cx,S.veh,{sp:c.sp,ws:c.ws,t:run.t,dx:d.x,dy:d.y,ha:d.ha,air:c.air>.12,hard:now-(d.hard||0)<450,dead:run.neckT?now-run.neckT:-1});cx.restore()}
 function drawDash(){const d=dx,c=car;d.clearRect(0,0,396,174);
  const arc=(cxx,cy,r,f,col,lw)=>{d.strokeStyle=col;d.lineWidth=lw;d.beginPath();d.arc(cxx,cy,r,Math.PI*.78,Math.PI*.78+Math.PI*1.44*f);d.stroke()};
  /* big RPM gauge */
