@@ -46,33 +46,6 @@ export function GameIcon({ game, size = 44 }) {
       </svg>
     );
   }
-  if (game === 'ultimate') {
-    return (
-      <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden="true">
-        <rect x="3" y="3" width="42" height="42" rx="9" fill="#2A1659" />
-        <circle cx="35" cy="14" r="6" fill="#D7FF2F" />
-        <path d="M3 37 Q14 20 25 30 T45 24 V45 H3Z" fill="#8F6BFF" />
-        <g transform="rotate(-16 24 27)">
-          <rect x="13" y="21" width="22" height="7" rx="2.5" fill="#FF2E88" stroke="#0B0418" strokeWidth="1.5" />
-          <rect x="19" y="16" width="11" height="6" rx="2" fill="#F6ECD2" stroke="#0B0418" strokeWidth="1.5" />
-          <circle cx="18" cy="30" r="4.2" fill="#0B0418" /><circle cx="31" cy="30" r="4.2" fill="#0B0418" />
-        </g>
-      </svg>
-    );
-  }
-  if (game === 'pedalrush') {
-    return (
-      <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden="true">
-        <rect x="3" y="3" width="42" height="42" rx="9" fill="#17606B" />
-        <path d="M20 22 L4 45 H44 L28 22Z" fill="#454A56" />
-        <path d="M24 24 V45" stroke="#fff" strokeWidth="1.6" strokeDasharray="4 3" />
-        <ellipse cx="24" cy="38" rx="2.6" ry="7" fill="#14161F" />
-        <rect x="19" y="22" width="10" height="13" rx="4" fill="#fff" stroke="#06191D" strokeWidth="1.4" />
-        <circle cx="24" cy="18" r="4.6" fill="#35D0FF" stroke="#06191D" strokeWidth="1.4" />
-        <circle cx="38" cy="12" r="4" fill="#FFC83D" />
-      </svg>
-    );
-  }
   if (game === 'dominoes') {
     const pip = (x, y) => <circle key={`${x}-${y}`} cx={x} cy={y} r="2.1" fill="#1b1209" />;
     return (
