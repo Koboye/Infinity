@@ -154,6 +154,32 @@ P.future=(x,c,v)=>{const o={fx:36,fy:-30,px:-10,py:4,ex:-6,ey:-8};const r=v.wh[0
  x.strokeStyle=c;x.lineWidth=2.2;x.beginPath();x.moveTo(-58,-24);x.lineTo(-6,-32);x.lineTo(40,-44);x.stroke();x.beginPath();x.moveTo(-30,-12);x.lineTo(20,-10);x.stroke();
  x.fillStyle='rgba(120,220,255,.85)';x.beginPath();x.moveTo(26,-54);x.lineTo(30,-64);x.lineTo(40,-58);x.lineTo(36,-50);x.fill();
  x.fillStyle='#ffffff';x.beginPath();x.moveTo(52,-30);x.lineTo(58,-26);x.lineTo(52,-22);x.fill();x.fillStyle=c;rr(x,-68,-28,8,4,2);x.fill()};
+/* ---------- Phase 2 graphics upgrade: bike detail overlays (drawn on top of each bike body; art only) ---------- */
+(function(){
+ const chain=(x,v)=>{const r=v.wh[0];x.strokeStyle='rgba(20,22,28,.9)';x.lineWidth=2;x.setLineDash([2.5,2]);x.beginPath();x.moveTo(r.x+2,r.y+9);x.lineTo(-4,6);x.stroke();x.setLineDash([]);
+  x.strokeStyle='rgba(230,236,246,.55)';x.lineWidth=.8;x.beginPath();x.moveTo(r.x+2,r.y+7.6);x.lineTo(-4,4.6);x.stroke()};
+ const disc=(x,w)=>{x.fillStyle='rgba(205,214,228,.9)';x.beginPath();x.arc(w.x,w.y,9,0,7);x.fill();x.strokeStyle='#4a5262';x.lineWidth=1.2;x.stroke();x.fillStyle='#2a2e38';x.beginPath();x.arc(w.x,w.y,3,0,7);x.fill()};
+ const glow=(x,px,py,col)=>{const g2=x.createRadialGradient(px,py,1,px,py,34);g2.addColorStop(0,col);g2.addColorStop(1,'rgba(255,255,200,0)');x.fillStyle=g2;x.beginPath();x.arc(px,py,34,0,7);x.fill()};
+ const gloss=(x,pts,a)=>{x.save();x.strokeStyle='rgba(255,255,255,'+(a||.55)+')';x.lineWidth=2.2;x.lineCap='round';x.beginPath();pts.forEach((q,i)=>i?x.quadraticCurveTo(q[2],q[3],q[0],q[1]):x.moveTo(q[0],q[1]));x.stroke();x.restore()};
+ const pipe=(x,y0,len,col)=>{x.lineCap='round';x.strokeStyle='#3b414d';x.lineWidth=7;x.beginPath();x.moveTo(-6,y0);x.lineTo(-6-len,y0+4);x.stroke();x.strokeStyle=col||'#d5dce8';x.lineWidth=4.2;x.stroke();x.strokeStyle='rgba(255,255,255,.8)';x.lineWidth=1.2;x.beginPath();x.moveTo(-8,y0-1);x.lineTo(-6-len,y0+2);x.stroke();x.fillStyle='#14161c';x.beginPath();x.ellipse(-6-len,y0+4,2.2,3.4,0,0,7);x.fill()};
+ const extra={
+  sport:(x,c,v)=>{chain(x,v);disc(x,v.wh[1]);pipe(x,2,44,'#e6ebf5');gloss(x,[[-52,-36,0,0],[-20,-44,-36,-43],[18,-52,0,-52]],.6);
+   x.fillStyle='rgba(255,255,255,.92)';x.font='bold 13px Arial';x.textAlign='center';x.fillText('46',-24,-28);glow(x,56,-33,'rgba(255,250,200,.35)')},
+  dirt:(x,c,v)=>{chain(x,v);disc(x,v.wh[1]);pipe(x,-8,40,'#c7ced9');gloss(x,[[-52,-40,0,0],[-22,-41,-38,-41]],.5);
+   x.fillStyle='rgba(92,62,32,.55)';[[-40,-8],[-30,-2],[-18,2],[4,6],[16,-12]].forEach(m=>{x.beginPath();x.ellipse(m[0],m[1],4.5,2.4,.3,0,7);x.fill()});
+   x.strokeStyle='#1a1c22';x.lineWidth=2.4;x.beginPath();x.moveTo(40,-52);x.lineTo(48,-46);x.stroke()},
+  adv:(x,c,v)=>{chain(x,v);disc(x,v.wh[1]);gloss(x,[[-30,-46,0,0],[0,-52,-14,-52],[26,-46,14,-56]],.5);
+   x.fillStyle='#2d323c';rr(x,-92,-48,16,40,4);x.fill();x.strokeStyle='#0e1014';x.lineWidth=1.4;x.stroke();x.fillStyle='#e8b21f';x.fillRect(-90,-34,12,3);
+   x.fillStyle='#fffbd8';[[44,-30],[44,-42]].forEach(q=>{x.beginPath();x.arc(q[0],q[1],3,0,7);x.fill()});glow(x,52,-36,'rgba(255,250,200,.4)')},
+  chopper:(x,c,v)=>{chain(x,v);disc(x,v.wh[1]);pipe(x,0,48,'#f1f4fa');pipe(x,-8,40,'#e6ebf5');
+   gloss(x,[[-14,-44,0,0],[16,-47,0,-52]],.7);x.strokeStyle='#d8c070';x.lineWidth=2;x.beginPath();x.moveTo(-56,-26);x.lineTo(-84,-20);x.stroke();
+   const f=v.wh[1];glow(x,f.x-8,f.y-56,'rgba(255,250,200,.45)')},
+  future:(x,c,v)=>{const r=v.wh[0],f=v.wh[1];x.save();x.globalCompositeOperation='lighter';[r,f].forEach(w=>{x.strokeStyle=c;x.globalAlpha=.55;x.lineWidth=6;x.beginPath();x.arc(w.x,w.y,v.R+5,0,7);x.stroke()});x.restore();
+   const g2=x.createLinearGradient(-60,10,50,10);g2.addColorStop(0,'rgba(0,0,0,0)');g2.addColorStop(.5,c);g2.addColorStop(1,'rgba(0,0,0,0)');x.globalAlpha=.7;x.fillStyle=g2;x.fillRect(-60,6,110,3);x.globalAlpha=1;
+   x.strokeStyle='rgba(255,255,255,.75)';x.lineWidth=1.6;x.beginPath();x.moveTo(-40,-37);x.lineTo(-4,-42);x.stroke();glow(x,58,-26,'rgba(160,230,255,.5)')}
+ };
+ Object.keys(extra).forEach(k=>{const base=P[k];if(!base)return;P[k]=function(x,c,v){base(x,c,v);try{x.save();extra[k](x,c,v);x.restore()}catch(e){}}});
+})();
 /* ---------- wheels ---------- */
 function mkc(w,h){const c=document.createElement('canvas');c.width=Math.ceil(w);c.height=Math.ceil(h);return c}
 const BCACHE={},WCACHE={};
