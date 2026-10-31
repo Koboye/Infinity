@@ -133,7 +133,9 @@ DRV.push(
 
 /* ---------- REAL-CAR DETAILS: wing mirror + door handle (head/tail lights, exhaust and squat/dive are drawn in index.html) ---------- */
 const _drawVeh0=drawVeh;
-drawVeh=function(cx,vi,o){_drawVeh0(cx,vi,o);const v=VEH[vi];if(v.cls!=='car'||!v.win||(o.dead!=null&&o.dead>=0))return;
+drawVeh=function(cx,vi,o){_drawVeh0(cx,vi,o);const v=VEH[vi];if(o.dead!=null&&o.dead>=0)return;
+ if(v.cls==='bike'&&v.rd){const bx=v.rd.hx+4,by=v.rd.hy-6;cx.save();cx.strokeStyle='#14161c';cx.lineWidth=1.5;cx.lineCap='round';cx.beginPath();cx.moveTo(bx,by);cx.lineTo(bx-3,by-11);cx.stroke();cx.fillStyle='#1c1f27';cx.beginPath();cx.ellipse(bx-3,by-13,4.2,2.8,-.4,0,7);cx.fill();cx.fillStyle='rgba(190,225,255,.75)';cx.beginPath();cx.ellipse(bx-3.4,by-13.2,2.4,1.4,-.4,0,7);cx.fill();cx.restore();return}
+ if(v.cls!=='car'||!v.win)return;
  if(v.kind==='buggy'||v.kind==='lunar'||v.kind==='monster')return;
  const mx=v.win.x+v.win.w+3,my=v.win.y+v.win.h-2;cx.save();cx.strokeStyle='#14161c';cx.lineWidth=1.6;cx.beginPath();cx.moveTo(mx-3,my+2);cx.lineTo(mx+1,my-1);cx.stroke();cx.fillStyle='#1c1f27';cx.beginPath();cx.roundRect(mx-1,my-5,7,5,2);cx.fill();cx.fillStyle='rgba(190,225,255,.7)';cx.fillRect(mx+1,my-4,3.5,2.6);
  cx.fillStyle='#d5dbe6';cx.beginPath();cx.roundRect(v.hp.x+12,v.win.y+v.win.h+9,8,2.4,1.2);cx.fill();cx.restore()};

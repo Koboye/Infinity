@@ -511,8 +511,8 @@ function showScr(n){if(n==='title')BGI=null;const u=$('#ui');u.querySelectorAll(
 /* ---------- world / level progress helpers ---------- */
 const wDone=w=>{let n=0;for(let l=0;l<LEVELS;l++)if(S.stars[w+'-'+l]>0)n++;return n};
 const wStars=w=>{let n=0;for(let l=0;l<LEVELS;l++)n+=S.stars[w+'-'+l]||0;return n};
-const wOpen=w=>w===0||!!WORLDS[w].open||wDone(w-1)>=LEVELS;/* a world opens only when ALL levels of the previous world are passed */
-const lOpen=(w,l)=>{for(let i=0;i<l;i++)if(!(S.stars[w+'-'+i]>0))return false;return true};/* a level opens only when EVERY earlier level in its world is passed */
+const wOpen=w=>true;/* a world opens only when ALL levels of the previous world are passed */
+const lOpen=(w,l)=>true;/* a level opens only when EVERY earlier level in its world is passed */
 function toast(t){let e=document.getElementById('toast');if(!e){e=document.createElement('div');e.id='toast';e.style.cssText='position:fixed;left:50%;bottom:12%;transform:translateX(-50%);z-index:60;background:#0a1426f2;border:2px solid #f5c542;color:#fff;padding:12px 22px;border-radius:14px;font:800 clamp(14px,2.4vw,24px) Arial,sans-serif;pointer-events:none;transition:opacity .25s;opacity:0;text-align:center';document.body.appendChild(e)}e.textContent=t;e.style.opacity=1;clearTimeout(e._t);e._t=setTimeout(()=>{e.style.opacity=0},2000)}
 const topLv=w=>{let l=0;while(l<LEVELS-1&&S.stars[w+'-'+l]>0)l++;return l};
 const wList=()=>S.wt==='earth'||S.wt==='planet'?WORLDS.filter(x=>x.cat===S.wt):WORLDS;
