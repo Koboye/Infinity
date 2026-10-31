@@ -357,4 +357,4 @@ The v34 "walk one stone straight across" opening is replaced. Rule (`src/lib/geb
 - For an Android store/APK build see `PLAYSTORE.md` (Trusted Web Activity); it needs the deployed domain and a signing key.
 
 ## Hill Climb Racer
-The only racing game in the app is `public/games/hill-climb-racer/` (linked from the Home screen). The earlier duplicate versions (`hillclimb-racing`, `sky-crawler`, `summit-surge`) were removed to avoid confusion; they remain in git history (see commits `fcfc1f2` and `2b2772a`).
+The only racing game in the app is `public/games/hillclimb-racing/` (the art-based version with real backdrops, linked from the Home screen). `hill-climb-racer`, `sky-crawler` and `summit-surge` are tiny redirect pages to it so old links keep working. The earlier flat-vector build is in git history (commit `ecaa4aa^`).

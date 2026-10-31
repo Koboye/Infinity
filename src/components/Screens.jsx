@@ -52,8 +52,8 @@ export function GameGrid({ t, onPick }) {
           </button>
         );
       })}
-      {/* Hill Climb Racer: the full game (worlds, vehicles, drivers, difficulty) is a stand-alone arcade page (/games/hill-climb-racer/), so it is a link card and not part of GAME_LIST (no ratings, no online matches). */}
-      <a role="listitem" className="gg-card" href="/games/hill-climb-racer/" style={{ '--accent': '#FF7A2F', '--i': order.length, textDecoration: 'none' }}>
+      {/* Hill Climb Racer: the full game (worlds, vehicles, drivers, difficulty) is a stand-alone arcade page (/games/hillclimb-racing/), so it is a link card and not part of GAME_LIST (no ratings, no online matches). */}
+      <a role="listitem" className="gg-card" href="/games/hillclimb-racing/" style={{ '--accent': '#FF7A2F', '--i': order.length, textDecoration: 'none' }}>
         <span className="gg-art"><GameIcon game="skycrawler" size={52} /></span>
         <b className="gg-name">Hill Climb Racer</b>
         <small className="gg-tag">Hill-climb racing</small>
