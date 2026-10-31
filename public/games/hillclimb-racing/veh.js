@@ -291,6 +291,7 @@ function drawDriver(cx,v,t,q){q=q||{};const dr=DRV[S.drv]||DRV[0],o=OUT[S.outfit
   cx.fillStyle=accOn('glv')?'#16161a':dr.skin;cx.beginPath();cx.arc(hxd,hyd,3.3,0,7);cx.fill();
   if(accOn('wat')){cx.fillStyle='#d5dbe6';cx.beginPath();cx.arc((ex+hxd)/2,(ey+hyd)/2,2.3,0,7);cx.fill()}
   if(dead<0){cx.strokeStyle='#15171c';cx.lineWidth=2.2;cx.beginPath();cx.ellipse(wx+1,wy-2,2.6,9,.18,0,7);cx.stroke()}
+  bodyDetail(cx,dr,o,{nx,ny,hx,hy,sx,sy,ex,ey,hxd,hyd,dead,R,t});
   headFull(cx,hx,hy,dr,hel,hcol,R,mood);
   if(accOn('nek')){cx.strokeStyle='#cfd6e0';cx.lineWidth=.9;cx.beginPath();cx.moveTo(nx-4,ny+2);cx.lineTo(nx+2,ny+9);cx.lineTo(nx+8,ny+2);cx.stroke();cx.fillStyle='#35c6ff';cx.beginPath();cx.arc(nx+2,ny+9.5,1.8,0,7);cx.fill()}
   /* dazed stars circling the head after the neck snap */
@@ -324,6 +325,28 @@ headFull=function(cx,hx,hy,dr,helm,hc,r,mood){_headFull0(cx,hx,hy,dr,helm,hc,r,m
   else{const f=DRVX[dr.n];if(f)f(cx,hx,hy,r)}
   cx.restore()}catch(e){}};
 /* ---------- Phase 3b: outfit designs drawn on the torso (torso-local space, T = top of torso) ---------- */
+/* ---------- Phase 3d: driver body realism - neck shading, shoulder/sleeve folds, cuff, gripping fingers, knuckles, collar ---------- */
+function bodyDetail(c,dr,o,k){try{c.save();c.lineCap='round';c.lineJoin='round';const sk=dr.skin,dk=sh(sk,-.28),top=o.top,live=k.dead<0;
+ /* neck: shadow under the chin + tendon line + collar band */
+ c.strokeStyle='rgba(50,24,10,.35)';c.lineWidth=4.8;c.beginPath();c.moveTo(k.nx+1,k.ny+3);c.lineTo(k.hx+1,k.hy+5);c.stroke();
+ c.strokeStyle=dk;c.lineWidth=.8;c.beginPath();c.moveTo(k.nx+2.4,k.ny+2);c.lineTo(k.hx+3,k.hy+5.5);c.stroke();
+ c.strokeStyle=sh(top,.4);c.lineWidth=2.6;c.beginPath();c.moveTo(k.nx-5,k.ny+3);c.quadraticCurveTo(k.nx+1,k.ny+6.5,k.nx+7,k.ny+2);c.stroke();
+ c.strokeStyle=sh(top,-.45);c.lineWidth=.8;c.beginPath();c.moveTo(k.nx-5,k.ny+4.4);c.quadraticCurveTo(k.nx+1,k.ny+8,k.nx+7,k.ny+3.4);c.stroke();
+ /* shoulder highlight + upper-arm sleeve fold shading */
+ c.fillStyle='rgba(255,255,255,.2)';c.beginPath();c.ellipse(k.sx-1,k.sy-1,5,2.6,-.5,0,7);c.fill();
+ c.strokeStyle=sh(top,-.5);c.lineWidth=.9;[.3,.55,.75].forEach(f=>{const px=k.sx+(k.ex-k.sx)*f,py=k.sy+(k.ey-k.sy)*f;c.beginPath();c.moveTo(px-1.6,py-1.4);c.lineTo(px+1.4,py+1.8);c.stroke()});
+ /* elbow joint shading */
+ c.fillStyle='rgba(0,0,0,.18)';c.beginPath();c.arc(k.ex,k.ey,2.8,0,7);c.fill();
+ /* forearm sleeve + cuff, then hand */
+ const dx=k.hxd-k.ex,dy=k.hyd-k.ey,L=Math.hypot(dx,dy)||1,ux=dx/L,uy=dy/L,cx0=k.hxd-ux*4.4,cy0=k.hyd-uy*4.4;
+ c.strokeStyle=sh(top,.28);c.lineWidth=5.9;c.beginPath();c.moveTo(cx0-ux*1.6,cy0-uy*1.6);c.lineTo(cx0,cy0);c.stroke();
+ c.strokeStyle=sh(top,-.45);c.lineWidth=.8;c.beginPath();c.moveTo(cx0-uy*3,cy0+ux*3);c.lineTo(cx0+uy*3,cy0-ux*3);c.stroke();
+ if(live){c.fillStyle=accOn('glv')?'#16161a':sk;c.beginPath();c.ellipse(k.hxd+ux*1.2,k.hyd+uy*1.2,3.6,3.2,Math.atan2(uy,ux),0,7);c.fill();
+  c.strokeStyle=accOn('glv')?'#3a3d46':dk;c.lineWidth=.8;
+  for(let i=0;i<4;i++){const oy=-2.2+i*1.5;c.beginPath();c.moveTo(k.hxd+1.4+ux*.5,k.hyd+oy+uy*.5);c.lineTo(k.hxd+3.7,k.hyd+oy+.7);c.stroke()}
+  c.fillStyle='rgba(255,255,255,.28)';c.beginPath();c.ellipse(k.hxd-.6,k.hyd-1.6,1.6,.8,0,0,7);c.fill();
+  c.strokeStyle=accOn('glv')?'#6a6e7a':sh(sk,.18);c.lineWidth=.9;c.beginPath();c.moveTo(k.hxd+.4,k.hyd-2.9);c.lineTo(k.hxd+2.8,k.hyd-2.6);c.stroke()}
+ c.restore()}catch(e){try{c.restore()}catch(_){}}}
 function outfitDetail(c,o,T){try{c.save();c.beginPath();c.rect(-12,T-2,24,(12-T)+2);c.clip();c.lineCap='butt';const H=12-T;
  const band=(y,h,col)=>{c.fillStyle=col;c.fillRect(-12,y,24,h)};
  switch(o.n){
