@@ -183,14 +183,18 @@ function head(x,hx0,hy,dr,helm,hc,r){r=r||7.5;
  else if(h==='avi'){x.beginPath();x.arc(hx0,hy-1,r+1.5,Math.PI*.9,Math.PI*2.1);x.fill();x.fillStyle='#222';rr(x,hx0-1,hy-3,r+3,4.5,2);x.fill();x.fillStyle='rgba(150,210,255,.8)';rr(x,hx0,hy-2.4,r+1.4,2.4,1);x.fill()}
  if(accOn('sun')){x.fillStyle='#0b0e16';rr(x,hx0+1,hy-2.6,r+3,4.6,2.2);x.fill();x.fillStyle='rgba(80,180,255,.75)';rr(x,hx0+2.5,hy-1.8,r-.5,1.6,.8);x.fill();return}
  x.fillStyle='#1a1008';x.beginPath();x.arc(hx0+r*.45,hy+.5,1,0,7);x.fill()}
-function drawDriver(cx,v,t){const dr=DRV[S.drv]||DRV[0],o=OUT[S.outfit]||OUT[0];
- if(v.cls==='car'){const w=v.win,p=v.hp;cx.save();cx.beginPath();cx.rect(w.x,w.y,w.w,w.h);cx.clip();
+function drawDriver(cx,v,t,q){q=q||{};const dr=DRV[S.drv]||DRV[0],o=OUT[S.outfit]||OUT[0],ox=q.dx||0,oy=q.dy||0,dead=q.dead>=0?q.dead:-1;
+ /* neck snap: head whips over in ~0.15s then hangs limp and sways */
+ const snap=dead<0?0:(1-Math.exp(-dead/55)),sway=dead<0?0:Math.sin(dead/140)*.09*Math.exp(-dead/900);
+ const XE=(r,hx,hy)=>{cx.strokeStyle='#14090a';cx.lineWidth=1.3;cx.lineCap='round';const ex=hx+r*.45,ey=hy+.5;cx.beginPath();cx.moveTo(ex-1.8,ey-1.8);cx.lineTo(ex+1.8,ey+1.8);cx.moveTo(ex+1.8,ey-1.8);cx.lineTo(ex-1.8,ey+1.8);cx.stroke()};
+ if(v.cls==='car'){const w=v.win,p={x:v.hp.x+ox*(1-snap*.5)+snap*5,y:v.hp.y+oy*(1-snap*.5)+snap*5};cx.save();cx.beginPath();cx.rect(w.x,w.y,w.w,w.h);cx.clip();
   if(v.kind==='jeep'){cx.fillStyle='#2a2f38';cx.fillRect(w.x,w.y,w.w,w.h)}
   cx.fillStyle=o.top;cx.beginPath();cx.moveTo(p.x-12,w.y+w.h+2);cx.quadraticCurveTo(p.x-11,p.y+8,p.x,p.y+8);cx.quadraticCurveTo(p.x+11,p.y+8,p.x+12,w.y+w.h+2);cx.fill();
-  head(cx,p.x+1,p.y,dr,v.kind==='sports'||v.kind==='monster'||accOn('hel'),accOn('hel')?'#d8232a':o.hel,6.6);
+  if(dead>=0){cx.strokeStyle=dr.skin;cx.lineWidth=4.2;cx.lineCap='round';cx.beginPath();cx.moveTo(v.hp.x,w.y+w.h);cx.lineTo(p.x+1,p.y+3);cx.stroke();cx.save();cx.translate(p.x+1,p.y);cx.rotate(snap*1.35+sway);head(cx,0,0,dr,v.kind==='sports'||v.kind==='monster'||accOn('hel'),accOn('hel')?'#d8232a':o.hel,6.6);XE(6.6,0,0);cx.restore()}
+  else head(cx,p.x+1,p.y,dr,v.kind==='sports'||v.kind==='monster'||accOn('hel'),accOn('hel')?'#d8232a':o.hel,6.6);
   if(accOn('nek')){cx.strokeStyle='#cfd6e0';cx.lineWidth=.9;cx.beginPath();cx.moveTo(p.x-4,p.y+8);cx.lineTo(p.x+2,p.y+14);cx.lineTo(p.x+8,p.y+8);cx.stroke();cx.fillStyle='#35c6ff';cx.beginPath();cx.arc(p.x+2,p.y+14.5,1.8,0,7);cx.fill()}
   cx.restore();return}
- const r=v.rd,b=Math.sin(t*5)*.6,sx=r.sx,sy=r.sy+b,L=r.lean,sl=30,shx=sx+Math.sin(L)*sl,shy=sy-Math.cos(L)*sl,hdx=shx+Math.sin(L)*10,hdy=shy-Math.cos(L)*10-2;
+ const r=v.rd,b=Math.sin(t*5)*.6,sx=r.sx,sy=r.sy+b+oy*.5,L=r.lean+ox*.03,sl=30,shx=sx+Math.sin(L)*sl,shy=sy-Math.cos(L)*sl,hdx=shx+Math.sin(L)*10,hdy=shy-Math.cos(L)*10-2;
  const kn=[sx+26,sy-4];
  ln(cx,[sx,sy],kn,8,o.bot);ln(cx,kn,[r.px+4,r.py+10],7,o.bot);ln(cx,[r.px+4,r.py+10],[r.px+13,r.py+10],6,o.shoe);
  if(accOn('bag')){cx.save();cx.translate(shx-7,shy+10);cx.rotate(L*.9);cx.fillStyle='#1c1f27';rr(cx,-12,-12,15,25,4);cx.fill();cx.fillStyle='#d8232a';rr(cx,-12,-3,15,3,1);cx.fill();cx.restore()}
@@ -198,7 +202,8 @@ function drawDriver(cx,v,t){const dr=DRV[S.drv]||DRV[0],o=OUT[S.outfit]||OUT[0];
  ln(cx,[shx,shy+1],[(shx+r.hx)/2+2,(shy+r.hy)/2+7],6,sh(o.top,-.22));ln(cx,[(shx+r.hx)/2+2,(shy+r.hy)/2+7],[r.hx,r.hy],5,sh(o.top,-.22));cx.fillStyle=accOn('glv')?'#16161a':dr.skin;cx.beginPath();cx.arc(r.hx,r.hy,3.4,0,7);cx.fill();if(accOn('glv')){cx.fillStyle='#e8222a';cx.fillRect(r.hx-4.6,r.hy-1,2,2.4)}
  if(accOn('wat')){const ex=(shx+r.hx)/2+2,ey=(shy+r.hy)/2+7,wx=ex+(r.hx-ex)*.72,wy=ey+(r.hy-ey)*.72;cx.fillStyle='#d5dbe6';cx.beginPath();cx.arc(wx,wy,2.9,0,7);cx.fill();cx.fillStyle='#14161c';cx.beginPath();cx.arc(wx,wy,1.7,0,7);cx.fill()}
  if(accOn('nek')){cx.fillStyle='#35c6ff';cx.beginPath();cx.arc(shx+Math.sin(L)*3+3,shy+4,2,0,7);cx.fill()}
- head(cx,hdx,hdy,dr,true,accOn('hel')?'#d8232a':o.hel,8)}
+ if(dead>=0){cx.save();cx.translate(hdx+snap*4,hdy+snap*6);cx.rotate(snap*1.3+sway);head(cx,0,0,dr,true,accOn('hel')?'#d8232a':o.hel,8);XE(8,0,0);cx.restore()}
+ else head(cx,hdx,hdy,dr,true,accOn('hel')?'#d8232a':o.hel,8)}
 /* ---------- generic vehicle draw ---------- */
 const skinOf=vi=>(S.skin[vi]>=0?S.skin[vi]:VEH[vi].sk);
 function drawVeh(cx,vi,o){const v=VEH[vi],sk=o.sk!=null?o.sk:skinOf(vi),t=o.t||0;
@@ -207,4 +212,4 @@ function drawVeh(cx,vi,o){const v=VEH[vi],sk=o.sk!=null?o.sk:skinOf(vi),t=o.t||0
  if(v.kind==='police'){const on=Math.floor(t*7)%2;cx.fillStyle=on?'#ff2a2a':'#ff9a9a';cx.shadowColor='#f22';cx.shadowBlur=on?14:2;cx.fillRect(-22,-64,22,5);cx.fillStyle=on?'#9ad0ff':'#2a6aff';cx.shadowColor='#36f';cx.shadowBlur=on?2:14;cx.fillRect(2,-64,22,5);cx.shadowBlur=0}
  for(let i=0;i<2;i++){cx.save();cx.translate(v.wh[i].x,v.wh[i].y+(o.ws?o.ws[i]:0));cx.rotate(o.sp?o.sp[i]:0);
   if(v.wk==='img'){const d=v.R*2.06;cx.drawImage(IM.wheel,-d/2,-d/2,d,d)}else{const w=wheelCv(v,SKINS[sk].c),s=w.s;cx.drawImage(w.c,-s/2,-s/2,s,s)}cx.restore()}
- if(v.cls==='bike'){drawDriver(cx,v,t)}else drawDriver(cx,v,t)}
+ drawDriver(cx,v,t,o)}

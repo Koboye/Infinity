@@ -157,7 +157,7 @@ let car,run,cam,parts=[],mode='menu',paused=false,inp={gas:0,brake:0},boost={coi
 function stats(){const v=VEH[S.veh],u=S.up,d=DRV[S.drv]||DRV[0];return{pw:560*v.pw*(d.pw||1)*(1+.14*u[0]),K:500*v.ks*(1+.07*u[1]),Cd:18*v.ks*(1+.09*u[1]),mu:1.15*v.gr*(d.mu||1)*(1+.1*u[2])*WORLDS[LV.w].grip,fuel:(100+22*u[3])*v.fu,vmax:880*(v.vm||1)*(d.vm||1)*(1+.05*u[0]),air:v.air*(d.air||1),cm:d.cm||1,stm:d.st||1,shield:d.shield||0,fm:d.fm||1}}
 function start(w,l){try{const de=document.documentElement;if(!document.fullscreenElement&&de.requestFullscreen)de.requestFullscreen({navigationUI:'hide'}).then(()=>screen.orientation&&screen.orientation.lock&&screen.orientation.lock('landscape').catch(()=>{})).catch(()=>{})}catch(e){}S.world=w;LV=mk(w,l);genLevel();const st=stats();
  car={v:VEH[S.veh],x:0,y:Hf(0)-(VEH[S.veh].wh[0].y+VEH[S.veh].R+12),a:0,vx:0,vy:0,w:0,sp:[0,0],ws:[0,0],fuel:st.fuel,air:0,rot:0,rotAcc:0,st};
- run={sh:0,cf:0,dist:0,coins:0,gems:0,flips:0,stuntC:0,over:'',idle:0,t:0,rpm:.2,w,l,done:0,airT:0,cansGot:0};
+ run={sh:0,cf:0,dist:0,coins:0,gems:0,flips:0,stuntC:0,over:'',neckT:0,idle:0,t:0,rpm:.2,w,l,done:0,airT:0,cansGot:0};
  cam={x:car.x,y:car.y};parts=[];boost={coin:0,susp:0,tire:0};inp={gas:0,brake:0};paused=false;mode='play';
  document.querySelectorAll('.pu').forEach(e=>e.classList.remove('used'));
  $('#hud').classList.remove('hide');showScr(null);}
@@ -242,7 +242,14 @@ function drawScene(){const z=H/620,c=car;
  if(WD.tint){g.fillStyle=WD.tint;g.fillRect(0,0,W,H)}
  /* vignette */
  const vg=g.createRadialGradient(W/2,H/2,H*.5,W/2,H/2,H*1.1);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,.28)');g.fillStyle=vg;g.fillRect(0,0,W,H)}
-function drawCar(cx,c){cx.save();cx.translate(c.x,c.y);cx.rotate(c.a);drawVeh(cx,S.veh,{sp:c.sp,ws:c.ws,t:run.t});cx.restore()}
+function drawCar(cx,c){const now=performance.now(),dt=Math.max(.004,Math.min(.05,(now-(c._pt||now))/1000||.016));c._pt=now;
+ const d=c.dh||(c.dh={x:0,y:0,vx:0,vy:0,pvx:c.vx,pvy:c.vy}),cl=(a,m)=>Math.max(-m,Math.min(m,a));
+ /* world accel -> car frame: throttle pushes head back, braking/landing pushes it forward/down, bumps bob it, free-fall floats it */
+ const ax=cl((c.vx-d.pvx)/dt,1800),ay=cl((c.vy-d.pvy)/dt,2400);d.pvx=c.vx;d.pvy=c.vy;
+ const ca=Math.cos(c.a),sa=Math.sin(c.a),lx=ax*ca+ay*sa,ly=-ax*sa+ay*ca,k=run.over==='HEAD CRASH'?0:1;
+ d.vx+=((-lx*.0034*k-d.x)*220-d.vx*15)*dt;d.vy+=((-ly*.0030*k-d.y)*220-d.vy*15)*dt;d.x=cl(d.x+d.vx*dt,5.5);d.y=cl(d.y+d.vy*dt,5);
+ if(run.over==='HEAD CRASH'&&!run.neckT)run.neckT=now;
+ cx.save();cx.translate(c.x,c.y);cx.rotate(c.a);drawVeh(cx,S.veh,{sp:c.sp,ws:c.ws,t:run.t,dx:d.x,dy:d.y,dead:run.neckT?now-run.neckT:-1});cx.restore()}
 function drawDash(){const d=dx,c=car;d.clearRect(0,0,396,174);
  const arc=(cxx,cy,r,f,col,lw)=>{d.strokeStyle=col;d.lineWidth=lw;d.beginPath();d.arc(cxx,cy,r,Math.PI*.78,Math.PI*.78+Math.PI*1.44*f);d.stroke()};
  /* big RPM gauge */
