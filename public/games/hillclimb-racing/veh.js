@@ -161,8 +161,8 @@ P.future=(x,c,v)=>{const o={fx:36,fy:-30,px:-10,py:4,ex:-6,ey:-8};const r=v.wh[0
 /* ---------- wheels ---------- */
 function mkc(w,h){const c=document.createElement('canvas');c.width=Math.ceil(w);c.height=Math.ceil(h);return c}
 const BCACHE={},WCACHE={};
-function bodyOf(vi,sk){const k=vi+'_'+sk;if(BCACHE[k])return BCACHE[k];const v=VEH[vi],K=2.5,ox=140,oy=130,c=mkc(280*K,200*K),x=c.getContext('2d');x.scale(K,K);x.translate(ox,oy);P[v.kind](x,SKINS[sk].c,v);if(SKINS[sk].pat)decor(c,SKINS[sk].pat);return BCACHE[k]={c,ox,oy,k:K}}
-function wheelCv(v,col){const k=(v.wk+v.R+col);if(WCACHE[k])return WCACHE[k];const K=3,R=v.R,s=(R*2+8),c=mkc(s*K,s*K),x=c.getContext('2d');x.scale(K,K);x.translate(s/2,s/2);
+function bodyOf(vi,sk){const k=vi+'_'+sk;if(BCACHE[k])return BCACHE[k];const v=VEH[vi],K=4,ox=140,oy=130,c=mkc(280*K,200*K),x=c.getContext('2d');x.scale(K,K);x.translate(ox,oy);P[v.kind](x,SKINS[sk].c,v);if(SKINS[sk].pat)decor(c,SKINS[sk].pat);return BCACHE[k]={c,ox,oy,k:K}}
+function wheelCv(v,col){const k=(v.wk+v.R+col);if(WCACHE[k])return WCACHE[k];const K=5,R=v.R,s=(R*2+8),c=mkc(s*K,s*K),x=c.getContext('2d');x.scale(K,K);x.translate(s/2,s/2);
  const tire=(w,col2)=>{x.beginPath();x.arc(0,0,R,0,7);x.arc(0,0,R-w,0,7,true);x.fillStyle=col2;x.fill('evenodd')};
  if(v.wk==='rim'){tire(8,'#15161a');x.fillStyle=lg(x,-R,R,[[0,'#eef2f8'],[1,'#8e98aa']]);x.beginPath();x.arc(0,0,R-8,0,7);x.fill();x.fillStyle='#262a34';for(let i=0;i<5;i++){const a=i*1.2566;x.beginPath();x.arc(Math.cos(a)*(R-15),Math.sin(a)*(R-15),4,0,7);x.fill()}ln(x,[0,0],[0,0],1,'#000');x.fillStyle='#5a6274';x.beginPath();x.arc(0,0,5,0,7);x.fill()}
  else if(v.wk==='knob'){for(let i=0;i<26;i++){const a=i*Math.PI*2/26;x.fillStyle='#14151a';x.save();x.rotate(a);x.fillRect(-2.2,-R-1,4.4,8);x.restore()}tire(7,'#1a1b20');x.strokeStyle='#d7dde8';x.lineWidth=1;for(let i=0;i<16;i++){const a=i*Math.PI/8;ln(x,[0,0],[Math.cos(a)*(R-7),Math.sin(a)*(R-7)],.9,'#c8d0dc','butt')}x.strokeStyle='#e8b21f';x.lineWidth=2.4;x.beginPath();x.arc(0,0,R-8,0,7);x.stroke();x.fillStyle='#8a93a5';x.beginPath();x.arc(0,0,4,0,7);x.fill()}
