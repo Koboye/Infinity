@@ -94,6 +94,7 @@ document.addEventListener('selectstart',function(e){e.preventDefault()},true);
 </div>
 <script src="veh.js"></script>
 <script src="veh2.js"></script>
+<script src="real.js"></script>
 <script src="props.js"></script>
 <script src="worlds.js"></script>
 <script src="scenery.js"></script>
@@ -121,9 +122,8 @@ function recolor(img,hs,sat,lit){const c=document.createElement('canvas');c.widt
 const UPN=[['ENGINE','i_engine',300],['SUSPENSION','i_susp',220],['TIRES','i_tire',260],['FUEL TANK','i_fuel',180]];
 const MAXU=8,upCost=(i,l)=>Math.round(UPN[i][2]*Math.pow(1.5,l)/10)*10;
 /* ---------- save ---------- */
-let S={coins:1245,gems:12,up:[0,0,0,0],veh:0,own:[1,0,0,0],skin:[0,-1,-1,-1],stars:{},rate:{},snd:1,world:0,lp:{},wt:'all',wp:0,tab:'car',pv:0,drv:0,pd:0,drvOwn:[1],outfit:0,outOwn:[1],accOwn:[],accOn:[]};
+let S={coins:1245,gems:12,up:[0,0,0,0],veh:0,own:[1,0,0,0],skin:[0,-1,-1,-1],stars:{},snd:1,world:0,lp:{},wt:'all',wp:0,tab:'car',pv:0,drv:0,pd:0,drvOwn:[1],outfit:0,outOwn:[1],accOwn:[],accOn:[]};
 try{const t=JSON.parse(localStorage.getItem('hcr_v1')||'null');if(t)S=Object.assign(S,t)}catch(e){}
-S.rate=S.rate||{};for(const k in S.stars)if(S.stars[k]>0&&S.rate[k]==null)S.rate[k]=75;/* levels passed before the 75% rule stay passed */
 let bgOff=0;
 if(!Array.isArray(S.accOwn))S.accOwn=[];if(!Array.isArray(S.accOn))S.accOn=[];ACC.forEach((_,i)=>{S.accOwn[i]=S.accOwn[i]|0;S.accOn[i]=S.accOn[i]|0});
 S.own[0]=1;S.drvOwn[0]=1;S.outOwn[0]=1;if(!VEH[S.veh]||!S.own[S.veh])S.veh=0;if(!DRV[S.drv]||!S.drvOwn[S.drv])S.drv=0;if(!OUT[S.outfit]||!S.outOwn[S.outfit])S.outfit=0;
@@ -142,9 +142,9 @@ const sfx={coin:()=>{tone(988,.08,'square',.05);setTimeout(()=>tone(1318,.12,'sq
 /* ---------- terrain / level ---------- */
 let LV=null;
 const sm=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t)};
-function mk(w,l){const WD=WORLDS[w],t=l/(LEVELS-1),df=(.78+1.4*t)*WD.dm,goal=goalOf(w,l),fin=goal*20;
- const o={w,l,t,goal,gv:WD.gv,fin,sl:.06+.06*t,a1:70*WD.amp*df,p1:480,a2:13*df*(1+.8*t),p2:210,a3:3+6*t,s:(w*100+l)*1.7+.5,ramps:[],gorges:[],bumps:[]};
- for(let x=2400;x<fin-1500;x+=2300-900*t+((x/7)%400|0))o.ramps.push(x);
+function mk(w,l){const WD=WORLDS[w],t=l/(LEVELS-1),df=(.75+.8*t)*WD.dm,goal=goalOf(w,l),fin=goal*20;
+ const o={w,l,t,goal,gv:WD.gv,fin,sl:.06+.035*t,a1:70*WD.amp*df,p1:480,a2:13*df,p2:210,a3:3,s:(w*100+l)*1.7+.5,ramps:[],gorges:[],bumps:[]};
+ for(let x=2400;x<fin-1500;x+=2300-400*t+((x/7)%400|0))o.ramps.push(x);
  let seed=w*131+l*31+7;const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647};o.rnd=rnd;return o}
 /* raw terrain: rolling hills + jump ramps */
 function Hr(x){if(x<=0)return 0;const L=LV,f=sm(x/900);
@@ -185,14 +185,14 @@ function genLevel(){const L=LV,fin=L.fin,rnd=L.rnd;coins=[];cans=[];gems=[];prop
  {let lastX=-1e9;const mix=OMIX[WORLDS[L.w].om]||OMIX.std;
   const pick=()=>{let a=0,r=rnd();for(const q of mix){a+=q[1];if(r<a)return q[0]}return mix[0][0]};
   const addO=(x,k,s)=>{const z=osize(k,s),d=OBSK[k];const o={x,k,s,w:z.w,h:z.h,dead:0,solid:!!d.solid};obs.push(o);if(d.solid)L.bumps.push({x,w:z.w*d.bw,h:z.h*d.bh});return o};
-  for(let x=800;x<fin-900;x+=(640-430*L.t)+rnd()*(300-130*L.t)){const k=pick(),s=.85+rnd()*.35;
+  for(let x=800;x<fin-900;x+=(640-380*L.t)+rnd()*(300-100*L.t)){const k=pick(),s=.85+rnd()*.35;
    if(riverAt(x,170)||nearRamp(x)||x-lastX<260)continue;lastX=x;const o=addO(x,k,s);
    if(k==='crate'&&rnd()<.45&&!riverAt(x+60,170)){addO(x+o.w*.95,'crate',s);lastX=x+o.w}}}
  /* ---- scenery props (obstacle kinds are handled above, nothing sits inside a river) ---- */
  const addC=(x,y)=>coins.push({x,y,t:0});
  for(let x=900;x<fin-600;x+=700+rnd()*500){const n=4+(rnd()*4|0);for(let i=0;i<n;i++){const xx=x+i*88;addC(xx,Hf(xx)-62)}}
  for(const r of L.ramps){for(let i=0;i<9;i++){const t=i/8,xx=r-80+t*760;addC(xx,Hf(r)-150-190*Math.sin(Math.PI*t)-20)}}
- for(let x=2000;x<fin-800;x+=2100+rnd()*500+900*L.t)cans.push({x,y:Hf(x)-48,t:0});
+ for(let x=2000;x<fin-800;x+=2100+rnd()*500+400*L.t)cans.push({x,y:Hf(x)-48,t:0});
  for(let x=4200;x<fin-800;x+=4800+rnd()*1200)gems.push({x,y:Hf(x)-150,t:0});
  for(let x=-400;x<fin+1200;x+=260+rnd()*520){const k=pickProp(L.w,rnd()),s=.75+rnd()*.5,zr=rnd()<.5?0:1;if(OBSK[k]||riverAt(x,90))continue;props.push({x,k,s,z:PZ[k]!==undefined?PZ[k]:zr})}
  /* bonus rewards: trophies (rare, big), treasure chests above ramps, money bags along the road */
@@ -209,7 +209,7 @@ const PXM=20,R=28,G=1500;
 const WH=[{x:-60,y:22},{x:61,y:22}],CP=[{x:92,y:8},{x:-80,y:12}],HD=[{x:-15,y:-52},{x:45,y:-60},{x:-70,y:-56}];
 let car,run,cam,parts=[],mode='menu',paused=false,inp={gas:0,brake:0},boost={coin:0,susp:0,tire:0},pop={t:0};
 function stats(){const v=VEH[S.veh],u=S.up,d=DRV[S.drv]||DRV[0];return{pw:760*v.pw*(d.pw||1)*(1+.14*u[0]),K:500*v.ks*(1+.07*u[1]),Cd:18*v.ks*(1+.09*u[1]),mu:1.15*v.gr*(d.mu||1)*(1+.1*u[2])*WORLDS[LV.w].grip,fuel:(100+22*u[3])*v.fu,vmax:1300*(v.vm||1)*(d.vm||1)*(1+.05*u[0]),air:v.air*(d.air||1),cm:d.cm||1,stm:d.st||1,shield:d.shield||0,fm:d.fm||1}}
-function start(w,l){if(!(wOpen(w)&&lOpen(w,l))){toast('Pass ALL previous levels with 75%+ rating first');showScr('map');return}try{const de=document.documentElement;if(!document.fullscreenElement&&de.requestFullscreen)de.requestFullscreen({navigationUI:'hide'}).then(()=>screen.orientation&&screen.orientation.lock&&screen.orientation.lock('landscape').catch(()=>{})).catch(()=>{})}catch(e){}S.world=w;S.lp=S.lp||{};S.lp[w]=Math.floor(l/10);setBG(w);LV=mk(w,l);genLevel();const st=stats();
+function start(w,l){try{const de=document.documentElement;if(!document.fullscreenElement&&de.requestFullscreen)de.requestFullscreen({navigationUI:'hide'}).then(()=>screen.orientation&&screen.orientation.lock&&screen.orientation.lock('landscape').catch(()=>{})).catch(()=>{})}catch(e){}S.world=w;S.lp=S.lp||{};S.lp[w]=Math.floor(l/10);setBG(w);LV=mk(w,l);genLevel();const st=stats();
  car={v:VEH[S.veh],x:0,y:Hf(0)-(VEH[S.veh].wh[0].y+VEH[S.veh].R+12),a:0,vx:0,vy:0,w:0,sp:[0,0],ws:[0,0],fuel:st.fuel,air:0,rot:0,fl:0,rotAcc:0,st,inw:[0,0]};
  run={sh:0,cf:0,dist:0,coins:0,gems:0,flips:0,stuntC:0,over:'',neckT:0,bonusC:0,trophies:0,chests:0,bags:0,idle:0,t:0,rpm:.2,w,l,done:0,airT:0,cansGot:0,smash:0};
  cam={x:car.x,y:car.y};bgOff=0;run.c0=0;run.f0=0;run.cleared=0;parts=[];boost={coin:0,susp:0,tire:0};inp={gas:0,brake:0};paused=false;mode='play';
@@ -316,19 +316,13 @@ function step(dt){const c=car,V=c.v,st=c.st,th=inp.gas&&c.fuel>0?1:0,br=inp.brak
  if(c.x>=LV.fin&&!run.over)levelClear();
 }
 function fail(why){try{navigator.vibrate&&navigator.vibrate([60,40,90])}catch(e){}run.over=why;sfx.bad();mode='over';setTimeout(()=>showResult(false),why==='HEAD CRASH'?1900:900)}
-function levelRate(){const cp=runCoinsTotal?Math.min(1,(run.coins-run.c0)/runCoinsTotal/.9):1,fu=Math.max(0,Math.min(1,car.fuel/car.st.fuel)),fl=Math.min(2,run.flips-run.f0)/2;return Math.round(60*cp+20*fu+20*fl)}/* rating % = coins collected (60) + fuel left (20) + flips (20); 75% passes */
-function lvBanner(h,sub){let e=document.getElementById('lvban');if(!e){e=document.createElement('div');e.id='lvban';e.style.cssText='position:fixed;left:50%;top:30%;transform:translate(-50%,-50%) scale(.6);z-index:40;pointer-events:none;text-align:center;font:900 clamp(30px,6vw,72px) Arial,sans-serif;font-style:italic;color:#ffd33d;text-shadow:0 4px 0 #7a4a00,0 0 26px #ffb02e;opacity:0;transition:opacity .25s,transform .35s cubic-bezier(.2,1.6,.4,1);white-space:nowrap';document.body.appendChild(e)}
- e.innerHTML=h+'<div style="font-size:.36em;color:#fff;text-shadow:0 2px 6px #000;margin-top:.2em;font-style:normal">'+sub+'</div>';e.style.opacity=1;e.style.transform='translate(-50%,-50%) scale(1)';clearTimeout(lvBanner.t);lvBanner.t=setTimeout(()=>{e.style.opacity=0;e.style.transform='translate(-50%,-50%) scale(.8)'},2800)}
-function levelClear(){const k=run.w+'-'+run.l,rate=levelRate(),cl=run.coins-run.c0,fl=run.flips-run.f0;let s=1;if(cl>=runCoinsTotal*.35)s=2;if(s>=2&&(fl>=1||cl>=runCoinsTotal*.7))s=3;run.stars=s;run.rate=rate;run.passed=rate>=RATE_PASS;
- run.prevBest=S.stars[k]||0;run.rec=s>run.prevBest;if(run.rec)S.stars[k]=s;if(rate>(S.rate[k]||0))S.rate[k]=rate;
+function levelClear(){const k=run.w+'-'+run.l,cl=run.coins-run.c0,fl=run.flips-run.f0;let s=1;if(cl>=runCoinsTotal*.35)s=2;if(s>=2&&(fl>=1||cl>=runCoinsTotal*.7))s=3;run.stars=s;
+ run.prevBest=S.stars[k]||0;run.rec=s>run.prevBest;if(run.rec)S.stars[k]=s;
  const bonus=200+run.l*45+s*100;S.coins+=bonus;run.bonus=bonus;run.cleared=(run.cleared||0)+1;save();
  let nw=run.w,nl=run.l+1;if(nl>=LEVELS){nw++;nl=0}
- const hasNext=run.passed&&nw<WORLD_COUNT&&wOpen(nw);
- if(hasNext){sfx.win();try{navigator.vibrate&&navigator.vibrate([40,30,40,30,80])}catch(e){}
-  for(let n=0;n<4;n++)setTimeout(()=>{if(mode!=='play')return;for(let i=0;i<14;i++)parts.push({x:car.x+(Math.random()-.5)*600,y:car.y-120-Math.random()*260,vx:(Math.random()-.5)*380,vy:-Math.random()*340,l:1,m:1,r:5,c:['#ffd33d','#ff5a4f','#35c6ff','#5be37d','#fff'][i%5]})},n*260);
-  lvBanner('LEVEL '+(run.l+1)+' COMPLETE!  '+'\u2605'.repeat(s),'RATING '+rate+'%   +'+bonus+' coins   \u2022   NEXT: LEVEL '+(nl+1));rollLevel(nw,nl);return}
+ if(nw<WORLD_COUNT){rollLevel(nw,nl);return}/* completing a level flows straight into the next one - the car keeps driving */
  run.over='win';sfx.win();mode='over';setTimeout(()=>showResult(true),700)}
-/* seamless hand-over: the car keeps driving, the road ahead becomes the next (harder) level */
+/* seamless hand-over: the car keeps driving, the road ahead becomes the next level */
 function rollLevel(nw,nl){const oldH=Hf(car.x),nx=240,dx=car.x-nx;if(nw!==run.w){S.world=nw;setBG(nw)}
  LV=mk(nw,nl);genLevel();const dy=Hf(nx)-oldH;car.x=nx;car.y+=dy;cam.x-=dx;cam.y+=dy;bgOff+=dx;
  car.st.mu=stats().mu;car.fuel=Math.min(car.st.fuel,car.fuel+car.st.fuel*.3);
@@ -526,11 +520,11 @@ const hdr=(t,b)=>`<div class="hdr"><div class="back glass" data-go="${b}">${svg.
 function showScr(n){if(n==='title')BGI=null;const u=$('#ui');u.querySelectorAll('.scr').forEach(e=>e.remove());if(!n){mode=mode==='menu'?'play':mode;return}
  mode='menu';$('#hud').classList.add('hide');const d=document.createElement('div');d.className='scr on';d.id='s_'+n;d.innerHTML=SCR[n]();u.appendChild(d);if(AFTER[n])AFTER[n](d)}
 /* ---------- world / level progress helpers ---------- */
-const RATE_PASS=75,passed=(w,l)=>(S.rate[w+'-'+l]||0)>=RATE_PASS;
+const passed=(w,l)=>(S.stars[w+'-'+l]||0)>0;
 const wDone=w=>{let n=0;for(let l=0;l<LEVELS;l++)if(passed(w,l))n++;return n};
 const wStars=w=>{let n=0;for(let l=0;l<LEVELS;l++)n+=S.stars[w+'-'+l]||0;return n};
-const wOpen=w=>w===0||!!WORLDS[w].open||wDone(w-1)>=LEVELS;/* a world opens when ALL levels of the previous world are passed with 75%+ *//* a world opens only when ALL levels of the previous world are passed */
-const lOpen=(w,l)=>{for(let i=0;i<l;i++)if(!passed(w,i))return false;return true};/* a level opens when EVERY earlier level is passed with a rating of 75%+ *//* a level opens only when EVERY earlier level in its world is passed */
+const wOpen=w=>true;/* all worlds and levels are open - no rating gate */
+const lOpen=(w,l)=>true;
 function toast(t){let e=document.getElementById('toast');if(!e){e=document.createElement('div');e.id='toast';e.style.cssText='position:fixed;left:50%;bottom:12%;transform:translateX(-50%);z-index:60;background:#0a1426f2;border:2px solid #f5c542;color:#fff;padding:12px 22px;border-radius:14px;font:800 clamp(14px,2.4vw,24px) Arial,sans-serif;pointer-events:none;transition:opacity .25s;opacity:0;text-align:center';document.body.appendChild(e)}e.textContent=t;e.style.opacity=1;clearTimeout(e._t);e._t=setTimeout(()=>{e.style.opacity=0},2000)}
 const topLv=w=>{let l=0;while(l<LEVELS-1&&passed(w,l))l++;return l};
 const wList=()=>S.wt==='earth'||S.wt==='planet'?WORLDS.filter(x=>x.cat===S.wt):WORLDS;
@@ -613,13 +607,13 @@ const AFTER={garage:()=>{GV=S.tab==='drv'?null:{vi:S.pv,sk:skinOf(S.pv)}},skins:
 /* result */
 function showResult(ok){mode='menu';$('#hud').classList.add('hide');const u=$('#ui');u.querySelectorAll('.scr').forEach(e=>e.remove());const d=document.createElement('div');d.className='scr on';d.id='s_res';
  const coins=run.coins+run.stuntC+run.bonusC;let cf='';for(let i=0;i<46;i++)cf+=`<div class="conf" style="left:${Math.random()*100}%;background:${['#ffd33d','#ff5a4f','#35c6ff','#5be37d','#fff'][i%5]};animation-duration:${3+Math.random()*3}s;animation-delay:${-Math.random()*5}s"></div>`;
- const stars=ok?run.stars:0,hasNext=ok&&run.passed!==false&&(run.l<LEVELS-1||(run.w<WORLD_COUNT-1&&wOpen(run.w+1)));
+ const stars=ok?run.stars:0,hasNext=ok&&(run.l<LEVELS-1||(run.w<WORLD_COUNT-1&&wOpen(run.w+1)));
  d.innerHTML=`<div style="position:absolute;inset:0;background:rgba(5,10,24,.78)"></div><div class="glass" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:calc(900*var(--u));padding:calc(36*var(--u)) calc(50*var(--u));overflow:hidden;background:linear-gradient(180deg,#0f1c38,#070d1c)">${ok?cf:''}
  <div style="text-align:center;font-size:calc(100*var(--u));letter-spacing:calc(10*var(--u));position:relative">${[1,2,3].map(n=>`<span style="color:${n<=stars?'#ffcc2e':'#33405a'};text-shadow:0 4px 10px #000;font-size:${n===2?'1.25em':'1em'}">\u2605</span>`).join('')}</div>
- <div style="text-align:center;font-size:calc(84*var(--u));font-weight:900;font-style:italic;color:${ok?'#f5d13a':'#ff6a5a'};text-shadow:0 4px 10px #000;position:relative">${ok?(run.passed===false?'RATING '+run.rate+'%':'LEVEL COMPLETE!'):run.over}</div>
+ <div style="text-align:center;font-size:calc(84*var(--u));font-weight:900;font-style:italic;color:${ok?'#f5d13a':'#ff6a5a'};text-shadow:0 4px 10px #000;position:relative">${ok?'LEVEL COMPLETE!':run.over}</div>
  <div style="position:relative;margin:calc(20*var(--u)) calc(30*var(--u));font-size:calc(40*var(--u))">${[['Distance',Math.floor(run.dist).toLocaleString()+' m'],['Coins Collected',coins.toLocaleString()],['Stunts',run.flips]].concat((run.airBest||0)>=.8?[['Best Air Time',run.airBest.toFixed(1)+' s']]:[]).concat(run.smash>0?[['Obstacles Smashed',run.smash]]:[]).concat(run.trophies+run.chests+run.bags>0?[['Bonus Rewards',run.trophies+' \u{1F3C6}  '+run.chests+' \u{1F381}  '+run.bags+' \u{1F4B0}']]:[]).map(r=>`<div style="display:flex;align-items:center;gap:calc(20*var(--u));padding:calc(10*var(--u)) 0"><span class="gold">\u2605</span>${r[0]}<div class="sp"></div><b>${r[1]}</b></div>`).join('')}</div>
  ${ok&&run.rec?'<div style="position:relative;text-align:right;margin-right:calc(60*var(--u))"><span style="display:inline-block;background:#f5c542;color:#2a1a00;font-weight:900;font-size:calc(26*var(--u));padding:calc(4*var(--u)) calc(16*var(--u));transform:rotate(-4deg)">NEW RECORD!</span></div>':''}
- ${ok?`<div style="position:relative;text-align:center;font-size:calc(30*var(--u));color:${run.passed===false?'#ff9a8a':'#bcd0f0'};margin-top:calc(8*var(--u))">${run.passed===false?'Need '+RATE_PASS+'% (coins + fuel left + flips) to unlock the next level - retry!':'Rating '+run.rate+'%  \u2022  Level bonus +'+run.bonus}</div>`:''}
+ ${ok?`<div style="position:relative;text-align:center;font-size:calc(30*var(--u));color:#bcd0f0;margin-top:calc(8*var(--u))">Level bonus +${run.bonus}</div>`:''}
  <div style="position:relative;display:flex;gap:calc(20*var(--u));margin-top:calc(26*var(--u))"><div class="bt" style="flex:1" data-go="map">${svg.home}HOME</div><div class="bt" style="flex:1" data-act="retry">${svg.retry}RETRY</div>${hasNext?`<div class="bt g" style="flex:1" data-act="next">${svg.play}NEXT</div>`:''}</div></div>`;
  u.appendChild(d)}
 /* ---------- input / events ---------- */
