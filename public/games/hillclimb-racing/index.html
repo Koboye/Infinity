@@ -324,9 +324,15 @@ function drawOrb(WD){const o=ORBS[WD.orb];if(!o)return;const ox=W*o.x-((cam.x*.0
  const ring=(a,b,al)=>{g.save();g.strokeStyle='rgba(255,235,200,'+al+')';g.lineWidth=r*.09;g.beginPath();g.ellipse(ox,oy,r*1.7,r*.45,-.35,a,b);g.stroke();g.restore()};
  if(o.ring)ring(Math.PI,Math.PI*2,.5);body(ox,oy,r,o.c);if(o.ring)ring(0,Math.PI,.8);
  if(o.two)body(ox+W*o.two.dx,oy+H*o.two.dy,H*o.two.r,o.two.c)}
-function drawBG(camx,camy,z){const im=BGI||IM.bgmid;if(!im)return;const hh=H*1.06,s=hh/im.height,tw=im.width*s,base=camx*.06*z,i0=Math.floor(base/tw),oy=-(camy*.015*z)-H*.0;
+const BGL=new WeakMap();
+/* near layer of a background: same picture, transparent sky/far hills, solid lower part (soft edge) so it can slide faster than the far layer */
+function nearLayer(im){let c=BGL.get(im);if(c)return c;c=document.createElement('canvas');c.width=im.width;c.height=im.height;const x=c.getContext('2d');x.drawImage(im,0,0);x.globalCompositeOperation='destination-in';const gr=x.createLinearGradient(0,0,0,im.height);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(.36,'rgba(0,0,0,0)');gr.addColorStop(.58,'rgba(0,0,0,1)');gr.addColorStop(1,'rgba(0,0,0,1)');x.fillStyle=gr;x.fillRect(0,0,c.width,c.height);BGL.set(im,c);return c}
+function bgTiles(im,tw,hh,base,oy){const i0=Math.floor(base/tw);for(let i=i0;i*tw-base<W+tw;i++){const x=i*tw-base;g.save();if(i&1){g.translate(x+tw,oy);g.scale(-1,1);g.drawImage(im,0,0,tw+1,hh)}else{g.translate(x,oy);g.drawImage(im,0,0,tw+1,hh)}g.restore()}}
+/* real-world parallax: far sky/mountains crawl, the nearer lower layer moves ~2.4x faster and a little lower, so the view shears as the car drives */
+function drawBG(camx,camy,z){const im=BGI||IM.bgmid;if(!im)return;const hh=H*1.06,s=hh/im.height,tw=im.width*s;
  g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';
- for(let i=i0;i*tw-base<W+tw;i++){const x=i*tw-base;g.save();if(i&1){g.translate(x+tw,oy);g.scale(-1,1);g.drawImage(im,0,0,tw+1,hh)}else{g.translate(x,oy);g.drawImage(im,0,0,tw+1,hh)}g.restore()}}
+ bgTiles(im,tw,hh,camx*.05*z,-(camy*.012*z));
+ if(im.complete!==false&&im.width){try{const nl=nearLayer(im);bgTiles(nl,tw,hh,camx*.12*z,-(camy*.03*z)+H*.012)}catch(e){}}}
 let dpat=null;
 function dirtPattern(){if(dpat)return dpat;
  /* procedural, seamless soil: colour blotches, wavy strata, speckle, embedded stones, gravel, cracks (no mirrored tiling) */
