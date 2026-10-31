@@ -78,6 +78,7 @@ document.addEventListener('selectstart',function(e){e.preventDefault()},true);
  <img class="a" src="a/profile.png" style="--w:348;left:calc(28*var(--u));top:calc(15*var(--u))">
  <div class="pill" style="position:absolute;left:calc(28*var(--u));top:calc(138*var(--u))"><img src="a/coinpill.png"><div class="num" id="hc" style="--fs:30;left:27%;top:19%;width:38%;height:62%"></div></div>
  <div class="pill" style="position:absolute;left:calc(28*var(--u));top:calc(198*var(--u))"><img src="a/gempill.png"><div class="num" id="hg" style="--fs:30;left:28%;top:19%;width:31%;height:62%"></div></div>
+ <div id="hb" style="position:absolute;left:calc(28*var(--u));top:calc(258*var(--u));min-width:calc(150*var(--u));height:calc(46*var(--u));padding:0 calc(16*var(--u));display:flex;align-items:center;justify-content:center;gap:calc(14*var(--u));border-radius:calc(23*var(--u));background:linear-gradient(180deg,#14305c,#0a1936);border:calc(2*var(--u)) solid #35c6ff;color:#fff;font-weight:800;font-size:calc(26*var(--u));text-shadow:0 2px 3px #000a"></div>
  <div style="position:absolute;left:calc(500*var(--u));top:calc(8*var(--u));width:calc(285*var(--u))"><img src="a/fuelbar.png" style="width:100%;display:block"><div id="fuelfill"></div></div>
  <div id="prog"><img class="fg" src="a/flag.png"><div class="tr"><div class="fl" id="pf"></div><div class="hd" id="ph" style="left:0"></div></div><img class="cr" id="pcar" src="a/jeep.png"><div class="txt" id="pt"></div></div>
  <img class="a btn pd" id="pause" src="a/pause.png" style="--w:92;right:calc(22*var(--u));top:calc(22*var(--u))">
@@ -92,6 +93,7 @@ document.addEventListener('selectstart',function(e){e.preventDefault()},true);
 <div id="ui"></div>
 </div>
 <script src="veh.js"></script>
+<script src="props.js"></script>
 <script>
 'use strict';
 const $=s=>document.querySelector(s),cv=$('#c'),g=cv.getContext('2d'),dx=$('#dash').getContext('2d');
@@ -141,15 +143,31 @@ function Hf(x){if(x<=0)return 0;const L=LV,f=sm(x/900);
  let y=-x*L.sl*(.35+.65*f)+f*(L.a1*(Math.sin(x/L.p1+L.s)-Math.sin(L.s))+L.a2*(Math.sin(x/L.p2+L.s*2)-Math.sin(L.s*2))+L.a3*(Math.sin(x/53+L.s*3)-Math.sin(L.s*3)));
  for(const r of L.ramps){if(x>r-360&&x<r+170){y-=x<r?95*sm((x-(r-360))/360):95*(1-sm((x-r)/170))}}
  return y}
-let coins,cans,gems,props,runCoinsTotal;
+let coins,cans,gems,props,bonus,runCoinsTotal;
+/* world-themed prop mix [kind,weight]; z: 0 = behind terrain, 1 = in front, undefined = random */
+const PMIX=[[['tree',.20],['bush',.12],['rock',.10],['hut',.08],['house',.05],['fence',.09],['sign',.05],['cone',.04],['log',.05],['crate',.06],['barrel',.06],['boulder',.04],['acacia',.06]],
+ [['cactus',.26],['acacia',.12],['boulder',.16],['rock',.10],['bush',.06],['hut',.08],['sign',.06],['cone',.04],['log',.02],['crate',.05],['barrel',.05]],
+ [['pineS',.30],['pine',.10],['rock',.10],['boulder',.06],['houseS',.10],['fence',.10],['sign',.06],['cone',.04],['log',.06],['crate',.04],['barrel',.04]],
+ [['tree',.16],['pine',.12],['houseN',.12],['hut',.06],['bush',.08],['rock',.08],['boulder',.06],['fence',.08],['sign',.06],['cone',.06],['log',.04],['crate',.04],['barrel',.04]]];
+const PZ={crate:1,barrel:1,bush:1,boulder:1,fence:1,sign:1,cone:1,log:1,pine:0,pineS:0,acacia:0,hut:0,house:0,houseS:0,houseN:0,bridge:0};
+function pickProp(w,r){const m=PMIX[w]||PMIX[0];let a=0;for(const q of m){a+=q[1];if(r<a)return q[0]}return m[m.length-1][0]}
 function genLevel(){const L=LV,fin=L.fin,rnd=L.rnd;coins=[];cans=[];gems=[];props=[];
  const addC=(x,y)=>coins.push({x,y,t:0});
  for(let x=900;x<fin-600;x+=700+rnd()*500){const n=4+(rnd()*4|0);for(let i=0;i<n;i++){const xx=x+i*88;addC(xx,Hf(xx)-62)}}
  for(const r of L.ramps){for(let i=0;i<9;i++){const t=i/8,xx=r-80+t*760;addC(xx,Hf(r)-150-190*Math.sin(Math.PI*t)-20)}}
  for(let x=2000;x<fin-800;x+=2100+rnd()*500)cans.push({x,y:Hf(x)-48,t:0});
  for(let x=4200;x<fin-800;x+=4800+rnd()*1200)gems.push({x,y:Hf(x)-150,t:0});
- for(let x=-400;x<fin+1200;x+=260+rnd()*520){const k=rnd();props.push({x,k:k<.55?'tree':k<.8?'rock':k<.9?'crate':'barrel',s:.75+rnd()*.5,z:rnd()<.5?0:1})}
+ for(let x=-400;x<fin+1200;x+=260+rnd()*520){const k=pickProp(L.w,rnd()),s=.75+rnd()*.5,zr=rnd()<.5?0:1;props.push({x,k,s,z:PZ[k]!==undefined?PZ[k]:zr})}
+ if(L.w!==1&&L.w!==2)for(let x=2300;x<fin-1200;x+=3800+rnd()*1500)props.push({x,k:'bridge',s:1,z:0});
+ /* bonus rewards: trophies (rare, big), treasure chests above ramps, money bags along the road */
+ bonus=[];const nT=1+(L.l>>1);for(let i=1;i<=nT;i++){const x=fin*i/(nT+1);bonus.push({k:'trophy',x,y:Hf(x)-130,t:0})}
+ L.ramps.forEach((r,i)=>{if(i%2===0)bonus.push({k:'chest',x:r+300,y:Hf(r)-390,t:0})});
+ for(let x=2600;x<fin-900;x+=3300+rnd()*900)bonus.push({k:'bag',x,y:Hf(x)-70,t:0});
  runCoinsTotal=coins.length}
+function bonusGet(k,c){const cm=c.st.cm||1,P=(x,y,col)=>{parts.push({x,y,vx:0,vy:-90,l:.6,m:.6,r:16,c:col,ring:1});for(let i=0;i<10;i++)parts.push({x:x,y:y,vx:(Math.random()-.5)*420,vy:-Math.random()*380,l:.8,m:.8,r:5,c:i%2?'#ffe27a':'#fff'})};
+ if(k.k==='trophy'){const v=Math.round(500*cm);run.bonusC+=v;S.coins+=v;run.trophies++;say('TROPHY!  +'+v);sfx.win();P(k.x,k.y,'#ffd33d')}
+ else if(k.k==='chest'){const v=Math.round(300*cm);run.bonusC+=v;S.coins+=v;S.gems+=2;run.gems+=2;run.chests++;say('CHEST!  +'+v+'  +2 GEMS');sfx.win();P(k.x,k.y,'#35c6ff')}
+ else{const v=Math.round(150*cm);run.bonusC+=v;S.coins+=v;run.bags++;say('MONEY BAG  +'+v);sfx.coin();P(k.x,k.y,'#7be08a')}}
 /* ---------- run state ---------- */
 const PXM=20,R=28,G=1500;
 const WH=[{x:-60,y:22},{x:61,y:22}],CP=[{x:92,y:8},{x:-80,y:12}],HD=[{x:-15,y:-52},{x:45,y:-60},{x:-70,y:-56}];
@@ -157,7 +175,7 @@ let car,run,cam,parts=[],mode='menu',paused=false,inp={gas:0,brake:0},boost={coi
 function stats(){const v=VEH[S.veh],u=S.up,d=DRV[S.drv]||DRV[0];return{pw:560*v.pw*(d.pw||1)*(1+.14*u[0]),K:500*v.ks*(1+.07*u[1]),Cd:18*v.ks*(1+.09*u[1]),mu:1.15*v.gr*(d.mu||1)*(1+.1*u[2])*WORLDS[LV.w].grip,fuel:(100+22*u[3])*v.fu,vmax:880*(v.vm||1)*(d.vm||1)*(1+.05*u[0]),air:v.air*(d.air||1),cm:d.cm||1,stm:d.st||1,shield:d.shield||0,fm:d.fm||1}}
 function start(w,l){try{const de=document.documentElement;if(!document.fullscreenElement&&de.requestFullscreen)de.requestFullscreen({navigationUI:'hide'}).then(()=>screen.orientation&&screen.orientation.lock&&screen.orientation.lock('landscape').catch(()=>{})).catch(()=>{})}catch(e){}S.world=w;LV=mk(w,l);genLevel();const st=stats();
  car={v:VEH[S.veh],x:0,y:Hf(0)-(VEH[S.veh].wh[0].y+VEH[S.veh].R+12),a:0,vx:0,vy:0,w:0,sp:[0,0],ws:[0,0],fuel:st.fuel,air:0,rot:0,rotAcc:0,st};
- run={sh:0,cf:0,dist:0,coins:0,gems:0,flips:0,stuntC:0,over:'',neckT:0,idle:0,t:0,rpm:.2,w,l,done:0,airT:0,cansGot:0};
+ run={sh:0,cf:0,dist:0,coins:0,gems:0,flips:0,stuntC:0,over:'',neckT:0,bonusC:0,trophies:0,chests:0,bags:0,idle:0,t:0,rpm:.2,w,l,done:0,airT:0,cansGot:0};
  cam={x:car.x,y:car.y};parts=[];boost={coin:0,susp:0,tire:0};inp={gas:0,brake:0};paused=false;mode='play';
  document.querySelectorAll('.pu').forEach(e=>e.classList.remove('used'));
  $('#hud').classList.remove('hide');showScr(null);}
@@ -194,6 +212,7 @@ function step(dt){const c=car,V=c.v,st=c.st,th=inp.gas&&c.fuel>0?1:0,br=inp.brak
  for(const k of coins)if(!k.t&&Math.abs(k.x-c.x)<62&&Math.abs(k.y-c.y)<62){k.t=1;run.cf+=(boost.coin>0?2:1)*st.cm;const v=Math.floor(run.cf);run.cf-=v;run.coins+=v;S.coins+=v;sfx.coin();parts.push({x:k.x,y:k.y,vx:0,vy:-90,l:.5,m:.5,r:14,c:'#ffd33d',ring:1})}
  for(const k of cans)if(!k.t&&Math.abs(k.x-c.x)<70&&Math.abs(k.y-c.y)<80){k.t=1;c.fuel=Math.min(c.st.fuel,c.fuel+45);run.cansGot++;sfx.can();say('FUEL +')}
  for(const k of gems)if(!k.t&&Math.abs(k.x-c.x)<70&&Math.abs(k.y-c.y)<80){k.t=1;run.gems++;S.gems++;sfx.coin();say('GEM +1')}
+ for(const k of bonus)if(!k.t&&Math.abs(k.x-c.x)<76&&Math.abs(k.y-c.y)<86){k.t=1;bonusGet(k,c)}
  if(boost.coin>0)boost.coin-=dt;if(boost.susp>0)boost.susp-=dt;if(boost.tire>0)boost.tire-=dt;
  if(c.x>=LV.fin&&!run.over)win();
 }
@@ -217,7 +236,7 @@ function drawScene(){const z=H/620,c=car;
  if(WD.stars){g.fillStyle='#fff';for(let i=0;i<60;i++){const x=((i*977+cam.x*.02*z)%W+W)%W,y=(i*313%(H*.5));g.globalAlpha=.4+.6*((i*7)%5)/5;g.fillRect(x,y,2,2)}g.globalAlpha=1}
  g.save();g.translate(ox,oy);g.scale(z,z);
  const x0=cam.x-W*.36/z-80,x1=cam.x+W*.64/z+80;
- for(const p of props){if(!p.z&&p.x>x0&&p.x<x1){const im=IM[p.k];if(im){const w=im.width*1.25*p.s,h=im.height*1.25*p.s;sp(im,p.x,Hf(p.x)+6,w,h)}}}
+ for(const p of props){if(!p.z&&p.x>x0&&p.x<x1){const im=IM[p.k];if(im){const w=im.width*1.25*p.s,h=im.height*1.25*p.s;sp(im,p.x,Hf(p.x)+6,w,h)}else{const a=PA[p.k];if(a)sp(a,p.x,Hf(p.x)+(p.k==='bridge'?36:8),a.lw*p.s*1.15,a.lh*p.s*1.15)}}}
  /* terrain */
  g.beginPath();g.moveTo(x0,Hf(x0));for(let x=x0;x<=x1;x+=14)g.lineTo(x,Hf(x));g.lineTo(x1,cam.y+H/z+400);g.lineTo(x0,cam.y+H/z+400);g.closePath();
  g.fillStyle=dirtPattern();g.fill();
@@ -227,7 +246,7 @@ function drawScene(){const z=H/620,c=car;
  g.lineWidth=2;g.strokeStyle='rgba(20,60,10,.6)';
  /* tufts */
  g.fillStyle=WD.gr[1];for(let x=Math.floor(x0/46)*46;x<x1;x+=46){const y=Hf(x)-14,h=6+((x*7)%9);g.beginPath();g.moveTo(x-4,y);g.lineTo(x,y-h);g.lineTo(x+4,y);g.fill()}
- for(const p of props){if(p.z&&p.x>x0&&p.x<x1){const im=IM[p.k];if(im){const w=im.width*.9*p.s,h=im.height*.9*p.s;sp(im,p.x,Hf(p.x)+14,w,h)}}}
+ for(const p of props){if(p.z&&p.x>x0&&p.x<x1){const im=IM[p.k];if(im){const w=im.width*.9*p.s,h=im.height*.9*p.s;sp(im,p.x,Hf(p.x)+14,w,h)}else{const a=PA[p.k];if(a)sp(a,p.x,Hf(p.x)+14,a.lw*p.s*.95,a.lh*p.s*.95)}}}
  /* finish */
  {const fx=LV.fin,im=IM.flag;if(fx>x0&&fx<x1&&im)sp(im,fx,Hf(fx)+8,im.width*2.2,im.height*2.2)}
  /* pickups */
@@ -235,6 +254,8 @@ function drawScene(){const z=H/620,c=car;
  for(const k of coins)if(!k.t&&k.x>x0&&k.x<x1){const sx=Math.abs(Math.cos(tt*3+k.x*.01))*.9+.1;g.save();g.translate(k.x,k.y);g.scale(sx,1);g.drawImage(IM.coin,-21,-21,42,42);g.restore()}
  for(const k of cans)if(!k.t&&k.x>x0&&k.x<x1){const im=IM.can;g.drawImage(im,k.x-22,k.y-4+Math.sin(tt*3)*3,44,im.height*44/im.width)}
  for(const k of gems)if(!k.t&&k.x>x0&&k.x<x1){const im=IM.gem;g.drawImage(im,k.x-24,k.y+Math.sin(tt*3)*4,48,im.height*48/im.width)}
+ for(const k of bonus)if(!k.t&&k.x>x0&&k.x<x1){const a=PA[k.k],bob=Math.sin(tt*2.6+k.x*.01)*4,sc=k.k==='trophy'?1.35:1.2;g.save();g.shadowColor=k.k==='bag'?'#7be08a':k.k==='chest'?'#35c6ff':'#ffd33d';g.shadowBlur=18+6*Math.sin(tt*4);g.drawImage(a,k.x-a.lw*sc/2,k.y-a.lh*sc/2+bob,a.lw*sc,a.lh*sc);g.restore();
+  g.fillStyle='#fff';for(let i=0;i<3;i++){const ph=(tt*1.3+i*.33+k.x*.001)%1;g.globalAlpha=1-ph;g.fillRect(k.x+Math.cos(i*2.1+tt)*26-1.5,k.y-ph*40+bob-4,3,3)}g.globalAlpha=1}
  /* car */
  drawCar(g,c);
  for(const p of parts){g.globalAlpha=Math.max(0,p.l/p.m);if(p.ring){g.strokeStyle=p.c;g.lineWidth=4;g.beginPath();g.arc(p.x,p.y,p.r*(2-p.l/p.m*1.2),0,7);g.stroke()}else{g.fillStyle=p.c;g.beginPath();g.arc(p.x,p.y,p.r*(1.6-p.l/p.m*.6),0,7);g.fill()}}g.globalAlpha=1;
@@ -265,7 +286,7 @@ function drawDash(){const d=dx,c=car;d.clearRect(0,0,396,174);
  /* tilt */
  const tx2=331,ty2=81,deg=Math.round(-c.a*180/Math.PI);d.fillStyle='#35c6ff';d.font='bold 16px Arial';d.fillText((deg>0?'+':'')+deg+'\u00b0',tx2,ty2+34);
  d.save();d.translate(tx2,ty2-6);d.rotate(c.a);d.fillStyle='#e8f2ff';d.fillRect(-18,-4,36,10);d.fillRect(-10,-12,20,9);d.fillStyle='#0b1426';d.beginPath();d.arc(-10,8,5,0,7);d.arc(10,8,5,0,7);d.fill();d.restore()}
-function hudUpd(){const c=car;$('#hc').textContent=S.coins.toLocaleString();$('#hg').textContent=S.gems;
+function hudUpd(){const c=car;$('#hc').textContent=S.coins.toLocaleString();$('#hg').textContent=S.gems;$('#hb').textContent='\u{1F3C6} '+run.trophies+'   \u{1F381} '+run.chests+'   \u{1F4B0} '+run.bags;
  $('#fuelfill').style.width=(70.3*Math.max(0,c.fuel/c.st.fuel))+'%';
  const f=Math.min(1,run.dist/GOALS[LV.l]);$('#pf').style.width=(f*100)+'%';$('#ph').style.left=(f*100)+'%';$('#pt').textContent=Math.floor(run.dist)+' m / '+GOALS[LV.l]+' m';drawDash();
  if(pop.t>0){pop.t-=1/60;if(pop.t<.3)$('#pop').style.opacity=Math.max(0,pop.t/.3)}}
@@ -331,12 +352,12 @@ function drawPreview(t){const c=document.getElementById('gv');if(!c||!GV)return;
 const AFTER={garage:()=>{GV=S.tab==='drv'?null:{vi:S.pv,sk:skinOf(S.pv)}},skins:()=>{skPrev=skinOf(S.veh);GV={vi:S.veh,sk:skPrev}}};
 /* result */
 function showResult(ok){mode='menu';$('#hud').classList.add('hide');const u=$('#ui');u.querySelectorAll('.scr').forEach(e=>e.remove());const d=document.createElement('div');d.className='scr on';d.id='s_res';
- const coins=run.coins+run.stuntC;let cf='';for(let i=0;i<46;i++)cf+=`<div class="conf" style="left:${Math.random()*100}%;background:${['#ffd33d','#ff5a4f','#35c6ff','#5be37d','#fff'][i%5]};animation-duration:${3+Math.random()*3}s;animation-delay:${-Math.random()*5}s"></div>`;
+ const coins=run.coins+run.stuntC+run.bonusC;let cf='';for(let i=0;i<46;i++)cf+=`<div class="conf" style="left:${Math.random()*100}%;background:${['#ffd33d','#ff5a4f','#35c6ff','#5be37d','#fff'][i%5]};animation-duration:${3+Math.random()*3}s;animation-delay:${-Math.random()*5}s"></div>`;
  const stars=ok?run.stars:0,hasNext=ok&&run.l<4;
  d.innerHTML=`<div style="position:absolute;inset:0;background:rgba(5,10,24,.78)"></div><div class="glass" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:calc(900*var(--u));padding:calc(36*var(--u)) calc(50*var(--u));overflow:hidden;background:linear-gradient(180deg,#0f1c38,#070d1c)">${ok?cf:''}
  <div style="text-align:center;font-size:calc(100*var(--u));letter-spacing:calc(10*var(--u));position:relative">${[1,2,3].map(n=>`<span style="color:${n<=stars?'#ffcc2e':'#33405a'};text-shadow:0 4px 10px #000;font-size:${n===2?'1.25em':'1em'}">\u2605</span>`).join('')}</div>
  <div style="text-align:center;font-size:calc(84*var(--u));font-weight:900;font-style:italic;color:${ok?'#f5d13a':'#ff6a5a'};text-shadow:0 4px 10px #000;position:relative">${ok?'LEVEL COMPLETE!':run.over}</div>
- <div style="position:relative;margin:calc(20*var(--u)) calc(30*var(--u));font-size:calc(40*var(--u))">${[['Distance',Math.floor(run.dist).toLocaleString()+' m'],['Coins Collected',coins.toLocaleString()],['Stunts',run.flips]].map(r=>`<div style="display:flex;align-items:center;gap:calc(20*var(--u));padding:calc(10*var(--u)) 0"><span class="gold">\u2605</span>${r[0]}<div class="sp"></div><b>${r[1]}</b></div>`).join('')}</div>
+ <div style="position:relative;margin:calc(20*var(--u)) calc(30*var(--u));font-size:calc(40*var(--u))">${[['Distance',Math.floor(run.dist).toLocaleString()+' m'],['Coins Collected',coins.toLocaleString()],['Stunts',run.flips]].concat(run.trophies+run.chests+run.bags>0?[['Bonus Rewards',run.trophies+' \u{1F3C6}  '+run.chests+' \u{1F381}  '+run.bags+' \u{1F4B0}']]:[]).map(r=>`<div style="display:flex;align-items:center;gap:calc(20*var(--u));padding:calc(10*var(--u)) 0"><span class="gold">\u2605</span>${r[0]}<div class="sp"></div><b>${r[1]}</b></div>`).join('')}</div>
  ${ok&&run.rec?'<div style="position:relative;text-align:right;margin-right:calc(60*var(--u))"><span style="display:inline-block;background:#f5c542;color:#2a1a00;font-weight:900;font-size:calc(26*var(--u));padding:calc(4*var(--u)) calc(16*var(--u));transform:rotate(-4deg)">NEW RECORD!</span></div>':''}
  ${ok?`<div style="position:relative;text-align:center;font-size:calc(30*var(--u));color:#bcd0f0;margin-top:calc(8*var(--u))">Level bonus +${run.bonus}</div>`:''}
  <div style="position:relative;display:flex;gap:calc(20*var(--u));margin-top:calc(26*var(--u))"><div class="bt" style="flex:1" data-go="map">${svg.home}HOME</div><div class="bt" style="flex:1" data-act="retry">${svg.retry}RETRY</div>${hasNext?`<div class="bt g" style="flex:1" data-act="next">${svg.play}NEXT</div>`:''}</div></div>`;
