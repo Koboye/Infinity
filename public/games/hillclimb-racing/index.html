@@ -219,6 +219,8 @@ function start(w,l){try{const de=document.documentElement;if(!document.fullscree
  cam={x:car.x,y:car.y};parts=[];boost={coin:0,susp:0,tire:0};inp={gas:0,brake:0};paused=false;mode='play';
  document.querySelectorAll('.pu').forEach(e=>e.classList.remove('used'));
  $('#hud').classList.remove('hide');showScr(null);}
+function airHud(t){let e=document.getElementById('airhud');if(!e){e=document.createElement('div');e.id='airhud';e.style.cssText='position:fixed;left:50%;top:24%;transform:translateX(-50%);z-index:30;pointer-events:none;font:900 clamp(22px,4.2vw,44px) Arial,sans-serif;color:#fff;text-shadow:0 3px 0 #1a3a8a,0 0 18px #35c6ff;letter-spacing:2px;opacity:0;transition:opacity .15s;white-space:nowrap';document.body.appendChild(e)}
+ if(t>0){e.textContent='AIR TIME  '+t.toFixed(1)+'s'+(t>=.8?'  +'+Math.round((t-.5)*60):'');e.style.color=t>=.8?'#ffd33d':'#fff';e.style.opacity=1}else e.style.opacity=0}
 function say(t){const p=$('#pop');p.textContent=t;p.style.opacity=1;pop.t=1.3}
 /* water splash: ring + droplets. k scales the size (entering = 1, leaving = .5) */
 let _sp=0;
@@ -260,8 +262,11 @@ function step(dt){const c=car,V=c.v,st=c.st,th=inp.gas&&c.fuel>0?1:0,br=inp.brak
  if(wet){const f=wet/2;c.vx*=Math.max(0,1-1.0*f*dt);c.vy*=Math.max(0,1-.7*f*dt);c.w*=Math.max(0,1-1.0*f*dt)}
  for(const o of V.cp){const rx=o.x*ca-o.y*sa,ry=o.x*sa+o.y*ca,px=c.x+rx,py=c.y+ry,h=Hf(px),pen=py+4-h;
   if(pen>0){const sl=(Hf(px+2)-Hf(px-2))/4,il=1/Math.sqrt(1+sl*sl),nx=sl*il,ny=-il,vx=c.vx-c.w*ry,vy=c.vy+c.w*rx,vn=vx*nx+vy*ny;let Fn=300*pen-14*vn;if(Fn<0)Fn=0;const Fx=Fn*nx,Fy=Fn*ny;ax+=Fx;ay+=Fy;aw+=(rx*Fy-ry*Fx)/I}}
- if(!gr){aw+=(th-br)*-9*st.air;aw-=c.w*.25;c.air+=dt;c.rot+=c.w*dt}
- else{if(c.air>.25&&Math.abs(c.rot)>5.2){const f=Math.floor(Math.abs(c.rot)/5.9+.5);if(f>0){run.flips+=f;const b=Math.round(f*100*(boost.coin>0?2:1)*st.stm);run.stuntC+=b;S.coins+=b;say((c.rot<0?'BACK':'FRONT')+' FLIP'+(f>1?' x'+f:'')+'  +'+b);sfx.flip()}}c.air=0;c.rot=0;aw-=c.w*1.2}
+ if(!gr){aw+=(th-br)*-9*st.air;aw-=c.w*.25;c.air+=dt;c.rot+=c.w*dt;if(c.air>.6)airHud(c.air)}
+ else{let fm='';if(c.air>.25&&Math.abs(c.rot)>5.2){const f=Math.floor(Math.abs(c.rot)/5.9+.5);if(f>0){run.flips+=f;const b=Math.round(f*100*(boost.coin>0?2:1)*st.stm);run.stuntC+=b;S.coins+=b;fm=(c.rot<0?'BACK':'FRONT')+' FLIP'+(f>1?' x'+f:'')+'  +'+b;sfx.flip()}}
+  /* AIR TIME ability: long jumps pay coins (60 per second past 0.8s, x2 with coin boost, scaled by the driver's stunt bonus) */
+  {const at=c.air;airHud(0);if(at>=.8){const ab=Math.round((at-.5)*60*(boost.coin>0?2:1)*st.stm);run.stuntC+=ab;S.coins+=ab;run.airBest=Math.max(run.airBest||0,at);const am='AIR TIME '+at.toFixed(1)+'s  +'+ab;say(fm?fm+'   '+am:am);if(!fm)sfx.flip()}else if(fm)say(fm)}
+  c.air=0;c.rot=0;aw-=c.w*1.2}
  c.vx+=ax*dt;c.vy+=ay*dt;c.w+=aw*dt;c.x+=c.vx*dt;c.y+=c.vy*dt;c.a+=c.w*dt;
  if(c.x<-300){c.x=-300;c.vx=Math.max(0,c.vx)}
  c.vx*=1-.04*dt;
@@ -475,7 +480,7 @@ function showResult(ok){mode='menu';$('#hud').classList.add('hide');const u=$('#
  d.innerHTML=`<div style="position:absolute;inset:0;background:rgba(5,10,24,.78)"></div><div class="glass" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:calc(900*var(--u));padding:calc(36*var(--u)) calc(50*var(--u));overflow:hidden;background:linear-gradient(180deg,#0f1c38,#070d1c)">${ok?cf:''}
  <div style="text-align:center;font-size:calc(100*var(--u));letter-spacing:calc(10*var(--u));position:relative">${[1,2,3].map(n=>`<span style="color:${n<=stars?'#ffcc2e':'#33405a'};text-shadow:0 4px 10px #000;font-size:${n===2?'1.25em':'1em'}">\u2605</span>`).join('')}</div>
  <div style="text-align:center;font-size:calc(84*var(--u));font-weight:900;font-style:italic;color:${ok?'#f5d13a':'#ff6a5a'};text-shadow:0 4px 10px #000;position:relative">${ok?'LEVEL COMPLETE!':run.over}</div>
- <div style="position:relative;margin:calc(20*var(--u)) calc(30*var(--u));font-size:calc(40*var(--u))">${[['Distance',Math.floor(run.dist).toLocaleString()+' m'],['Coins Collected',coins.toLocaleString()],['Stunts',run.flips]].concat(run.smash>0?[['Obstacles Smashed',run.smash]]:[]).concat(run.trophies+run.chests+run.bags>0?[['Bonus Rewards',run.trophies+' \u{1F3C6}  '+run.chests+' \u{1F381}  '+run.bags+' \u{1F4B0}']]:[]).map(r=>`<div style="display:flex;align-items:center;gap:calc(20*var(--u));padding:calc(10*var(--u)) 0"><span class="gold">\u2605</span>${r[0]}<div class="sp"></div><b>${r[1]}</b></div>`).join('')}</div>
+ <div style="position:relative;margin:calc(20*var(--u)) calc(30*var(--u));font-size:calc(40*var(--u))">${[['Distance',Math.floor(run.dist).toLocaleString()+' m'],['Coins Collected',coins.toLocaleString()],['Stunts',run.flips]].concat((run.airBest||0)>=.8?[['Best Air Time',run.airBest.toFixed(1)+' s']]:[]).concat(run.smash>0?[['Obstacles Smashed',run.smash]]:[]).concat(run.trophies+run.chests+run.bags>0?[['Bonus Rewards',run.trophies+' \u{1F3C6}  '+run.chests+' \u{1F381}  '+run.bags+' \u{1F4B0}']]:[]).map(r=>`<div style="display:flex;align-items:center;gap:calc(20*var(--u));padding:calc(10*var(--u)) 0"><span class="gold">\u2605</span>${r[0]}<div class="sp"></div><b>${r[1]}</b></div>`).join('')}</div>
  ${ok&&run.rec?'<div style="position:relative;text-align:right;margin-right:calc(60*var(--u))"><span style="display:inline-block;background:#f5c542;color:#2a1a00;font-weight:900;font-size:calc(26*var(--u));padding:calc(4*var(--u)) calc(16*var(--u));transform:rotate(-4deg)">NEW RECORD!</span></div>':''}
  ${ok?`<div style="position:relative;text-align:center;font-size:calc(30*var(--u));color:#bcd0f0;margin-top:calc(8*var(--u))">Level bonus +${run.bonus}</div>`:''}
  <div style="position:relative;display:flex;gap:calc(20*var(--u));margin-top:calc(26*var(--u))"><div class="bt" style="flex:1" data-go="map">${svg.home}HOME</div><div class="bt" style="flex:1" data-act="retry">${svg.retry}RETRY</div>${hasNext?`<div class="bt g" style="flex:1" data-act="next">${svg.play}NEXT</div>`:''}</div></div>`;
