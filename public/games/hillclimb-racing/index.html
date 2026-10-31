@@ -205,13 +205,21 @@ const WH=[{x:-60,y:22},{x:61,y:22}],CP=[{x:92,y:8},{x:-80,y:12}],HD=[{x:-15,y:-5
 let car,run,cam,parts=[],mode='menu',paused=false,inp={gas:0,brake:0},boost={coin:0,susp:0,tire:0},pop={t:0};
 function stats(){const v=VEH[S.veh],u=S.up,d=DRV[S.drv]||DRV[0];return{pw:560*v.pw*(d.pw||1)*(1+.14*u[0]),K:500*v.ks*(1+.07*u[1]),Cd:18*v.ks*(1+.09*u[1]),mu:1.15*v.gr*(d.mu||1)*(1+.1*u[2])*WORLDS[LV.w].grip,fuel:(100+22*u[3])*v.fu,vmax:880*(v.vm||1)*(d.vm||1)*(1+.05*u[0]),air:v.air*(d.air||1),cm:d.cm||1,stm:d.st||1,shield:d.shield||0,fm:d.fm||1}}
 function start(w,l){try{const de=document.documentElement;if(!document.fullscreenElement&&de.requestFullscreen)de.requestFullscreen({navigationUI:'hide'}).then(()=>screen.orientation&&screen.orientation.lock&&screen.orientation.lock('landscape').catch(()=>{})).catch(()=>{})}catch(e){}S.world=w;S.lp=S.lp||{};S.lp[w]=Math.floor(l/10);setBG(w);LV=mk(w,l);genLevel();const st=stats();
- car={v:VEH[S.veh],x:0,y:Hf(0)-(VEH[S.veh].wh[0].y+VEH[S.veh].R+12),a:0,vx:0,vy:0,w:0,sp:[0,0],ws:[0,0],fuel:st.fuel,air:0,rot:0,rotAcc:0,st,inw:[0,0]};
+ car={v:VEH[S.veh],x:0,y:Hf(0)-(VEH[S.veh].wh[0].y+VEH[S.veh].R+12),a:0,vx:0,vy:0,w:0,sp:[0,0],ws:[0,0],fuel:st.fuel,air:0,rot:0,fl:0,rotAcc:0,st,inw:[0,0]};
  run={sh:0,cf:0,dist:0,coins:0,gems:0,flips:0,stuntC:0,over:'',neckT:0,bonusC:0,trophies:0,chests:0,bags:0,idle:0,t:0,rpm:.2,w,l,done:0,airT:0,cansGot:0,smash:0};
  cam={x:car.x,y:car.y};parts=[];boost={coin:0,susp:0,tire:0};inp={gas:0,brake:0};paused=false;mode='play';
  document.querySelectorAll('.pu').forEach(e=>e.classList.remove('used'));
  $('#hud').classList.remove('hide');showScr(null);}
-function airHud(t){let e=document.getElementById('airhud');if(!e){e=document.createElement('div');e.id='airhud';e.style.cssText='position:fixed;left:50%;top:24%;transform:translateX(-50%);z-index:30;pointer-events:none;font:900 clamp(22px,4.2vw,44px) Arial,sans-serif;color:#fff;text-shadow:0 3px 0 #1a3a8a,0 0 18px #35c6ff;letter-spacing:2px;opacity:0;transition:opacity .15s;white-space:nowrap';document.body.appendChild(e)}
- if(t>0){e.textContent='AIR TIME  '+t.toFixed(1)+'s'+(t>=.8?'  +'+Math.round((t-.5)*60):'');e.style.color=t>=.8?'#ffd33d':'#fff';e.style.opacity=1}else e.style.opacity=0}
+function airHud(t,fl){let e=document.getElementById('airhud');if(!e){e=document.createElement('div');e.id='airhud';e.style.cssText='position:fixed;left:50%;top:24%;transform:translateX(-50%);z-index:30;pointer-events:none;font:900 clamp(22px,4.2vw,44px) Arial,sans-serif;color:#fff;text-shadow:0 3px 0 #1a3a8a,0 0 18px #35c6ff;letter-spacing:2px;opacity:0;transition:opacity .15s;white-space:nowrap;text-align:center';document.body.appendChild(e)}
+ const n=Math.abs(fl||0);
+ if(t>0&&(t>.6||n)){const ft=n?(fl<0?'BACK FLIP':'FRONT FLIP')+(n>1?'  x'+n:''):'',at=t>.6?'AIR TIME  '+t.toFixed(1)+'s'+(t>=.8?'  +'+Math.round((t-.5)*60):''):'';
+  e.textContent=ft&&at?ft+'   '+at:ft||at;e.style.color=n?'#ffe14a':t>=.8?'#ffd33d':'#fff';e.style.opacity=1;
+  if(n!==e._n){e._n=n;if(n&&e.animate)e.animate([{transform:'translateX(-50%) scale(1.45)'},{transform:'translateX(-50%) scale(1)'}],{duration:280,easing:'cubic-bezier(.2,1.6,.4,1)'})}}
+ else{e.style.opacity=0;e._n=0}}
+/* flips completed so far: a flip counts once ~330 degrees are done; sign < 0 = back flip, > 0 = front flip */
+function flipsOf(r){const n=Math.floor((Math.abs(r)+.55)/6.2832);return r<0?-n:n}
+/* head / roof hit - Pro Driver durability shield saves it once, otherwise the crash animation plays */
+function headHit(c,st){if(st.shield&&!run.sh){run.sh=1;c.a=0;c.rot=0;c.fl=0;c.w=0;c.vy=-430;c.vx*=.6;c.y-=40;say('SAVED! DURABILITY');sfx.can();return}fail('HEAD CRASH')}
 function say(t){const p=$('#pop');p.textContent=t;p.style.opacity=1;pop.t=1.3}
 /* water splash: ring + droplets. k scales the size (entering = 1, leaving = .5) */
 let _sp=0;
@@ -253,15 +261,36 @@ function step(dt){const c=car,V=c.v,st=c.st,th=inp.gas&&c.fuel>0?1:0,br=inp.brak
  if(wet){const f=wet/2;c.vx*=Math.max(0,1-1.0*f*dt);c.vy*=Math.max(0,1-.7*f*dt);c.w*=Math.max(0,1-1.0*f*dt)}
  for(const o of V.cp){const rx=o.x*ca-o.y*sa,ry=o.x*sa+o.y*ca,px=c.x+rx,py=c.y+ry,h=Hf(px),pen=py+4-h;
   if(pen>0){const sl=(Hf(px+2)-Hf(px-2))/4,il=1/Math.sqrt(1+sl*sl),nx=sl*il,ny=-il,vx=c.vx-c.w*ry,vy=c.vy+c.w*rx,vn=vx*nx+vy*ny;let Fn=300*pen-14*vn;if(Fn<0)Fn=0;const Fx=Fn*nx,Fy=Fn*ny;ax+=Fx;ay+=Fy;aw+=(rx*Fy-ry*Fx)/I}}
- if(!gr){aw+=(th-br)*-9*st.air;aw-=c.w*.25;c.air+=dt;c.rot+=c.w*dt;if(c.air>.6)airHud(c.air)}
- else{let fm='';if(c.air>.25&&Math.abs(c.rot)>5.2){const f=Math.floor(Math.abs(c.rot)/5.9+.5);if(f>0){run.flips+=f;const b=Math.round(f*100*(boost.coin>0?2:1)*st.stm);run.stuntC+=b;S.coins+=b;fm=(c.rot<0?'BACK':'FRONT')+' FLIP'+(f>1?' x'+f:'')+'  +'+b;sfx.flip()}}
-  /* AIR TIME ability: long jumps pay coins (60 per second past 0.8s, x2 with coin boost, scaled by the driver's stunt bonus) */
-  {const at=c.air;airHud(0);if(at>=.8){const ab=Math.round((at-.5)*60*(boost.coin>0?2:1)*st.stm);run.stuntC+=ab;S.coins+=ab;run.airBest=Math.max(run.airBest||0,at);const am='AIR TIME '+at.toFixed(1)+'s  +'+ab;say(fm?fm+'   '+am:am);if(!fm)sfx.flip()}else if(fm)say(fm)}
-  c.air=0;c.rot=0;aw-=c.w*1.2}
+ if(!gr){
+  /* AIR CONTROL - hold RIGHT / GAS = front flip (nose down), LEFT / BRAKE = back flip (nose up).
+     Torque ramps the spin up smoothly toward a top rotation speed, reversing is stronger so it stays responsive,
+     and a light drag keeps the momentum so you can chain 2, 3, 4+ rotations in one long jump. */
+  const dir=(inp.gas?1:0)-(inp.brake?1:0),WM=9.2*Math.min(1.3,.78+.22*st.air);
+  if(dir){const sw=c.w*dir,ramp=sw<0?1.7:Math.max(0,1-Math.pow(sw/WM,2));aw+=dir*14*st.air*ramp}
+  aw-=c.w*(dir?.08:.16);
+  if(c.w>WM*1.5)c.w=WM*1.5;else if(c.w<-WM*1.5)c.w=-WM*1.5;
+  c.air+=dt;c.rot+=c.w*dt;
+  const nf=flipsOf(c.rot);if(nf!==c.fl){if(Math.abs(nf)>Math.abs(c.fl||0)){sfx.flip();try{navigator.vibrate&&navigator.vibrate(12)}catch(e){}}c.fl=nf}
+  if(c.air>.6||c.fl)airHud(c.air,c.fl)}
+ else{
+  /* LANDING - orientation relative to the slope decides: wheels down = safe, upside down = crash */
+  const at=c.air,nf=Math.abs(flipsOf(c.rot)),sl=Math.atan2(Hf(c.x+30)-Hf(c.x-30),60);let rel=c.a-sl;rel=Math.atan2(Math.sin(rel),Math.cos(rel));
+  airHud(0);
+  if(at>.25&&Math.abs(rel)>1.9&&!run.over)headHit(c,st);
+  else if(at>.25){
+   const mul=(boost.coin>0?2:1)*st.stm,msg=[];let fl=0;
+   if(nf>0){fl=Math.round((100*nf+25*nf*(nf-1))*mul);run.flips+=nf;run.stuntC+=fl;S.coins+=fl;run.flipBest=Math.max(run.flipBest||0,nf);msg.push((c.rot<0?'BACK':'FRONT')+' FLIP'+(nf>1?' x'+nf:'')+'  +'+fl)}
+   if(at>=.5&&(nf>0||at>=1)){const ar=Math.abs(rel);
+    if(ar<.3){const lb=Math.round((30+20*nf)*mul);run.stuntC+=lb;S.coins+=lb;msg.push('PERFECT LANDING  +'+lb);sfx.coin()}
+    else if(ar<.75){const lb=Math.round((15+10*nf)*mul);run.stuntC+=lb;S.coins+=lb;msg.push('SAFE LANDING  +'+lb)}
+    else if(nf>0)msg.push('ROUGH LANDING')}
+   if(at>=.8){const ab=Math.round((at-.5)*60*mul);run.stuntC+=ab;S.coins+=ab;run.airBest=Math.max(run.airBest||0,at);msg.push('AIR TIME '+at.toFixed(1)+'s  +'+ab)}
+   if(msg.length){say(msg.join('   '));if(nf>0)sfx.flip();else if(at>=.8)sfx.flip()}}
+  c.air=0;c.rot=0;c.fl=0;aw-=c.w*1.2}
  c.vx+=ax*dt;c.vy+=ay*dt;c.w+=aw*dt;c.x+=c.vx*dt;c.y+=c.vy*dt;c.a+=c.w*dt;
  if(c.x<-300){c.x=-300;c.vx=Math.max(0,c.vx)}
  c.vx*=1-.04*dt;
- for(const o of V.hd){const ca2=Math.cos(c.a),sa2=Math.sin(c.a),px=c.x+o.x*ca2-o.y*sa2,py=c.y+o.x*sa2+o.y*ca2;if(py>Hf(px)+2&&!run.over){if(st.shield&&!run.sh){run.sh=1;c.a=0;c.w=0;c.vy=-430;c.vx*=.6;c.y-=40;say('SAVED! DURABILITY');sfx.can()}else fail('HEAD CRASH');break}}
+ for(const o of V.hd){const ca2=Math.cos(c.a),sa2=Math.sin(c.a),px=c.x+o.x*ca2-o.y*sa2,py=c.y+o.x*sa2+o.y*ca2;if(py>Hf(px)+2&&!run.over){if(st.shield&&!run.sh){run.sh=1;c.a=0;c.rot=0;c.fl=0;c.w=0;c.vy=-430;c.vx*=.6;c.y-=40;say('SAVED! DURABILITY');sfx.can()}else fail('HEAD CRASH');break}}
  if(th)c.fuel-=(.8+1.7)*dt*(1-.05*S.up[0]*.3)*st.fm;else c.fuel-=.8*dt*st.fm;
  if(c.fuel<=0){c.fuel=0;if(Math.abs(c.vx)<12)run.idle+=dt;else run.idle=0;if(run.idle>1.6&&!run.over)fail('OUT OF FUEL')}
  smashCheck(c,V,ca,sa);
