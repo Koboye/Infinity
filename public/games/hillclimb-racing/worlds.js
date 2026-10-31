@@ -1,5 +1,5 @@
 'use strict';
-/* Hillclimb Racing - 120 worlds (94 Earth landscapes + 26 planets), every world has 100 levels, easiest -> hardest.
+/* Hillclimb Racing - 124 worlds (98 Earth landscapes + 26 planets), every world has 100 levels, easiest -> hardest.
    Pure data + difficulty curve. Loaded before the main game script.
    World fields used by the game:
      n name | cat 'earth'|'planet' | img background (relative to this folder) | gr [edge,top] ground colours | soil overlay on the dirt
@@ -112,7 +112,12 @@ const PLANETS=[
  ['Ocean Planet',A+'w_tropical_beach.jpg','coast','rgba(0,170,200,.30)',.90,'ringed',0],['Gas Giant Rings',A+'bg_orbit.jpg','moon','rgba(255,140,40,.30)',.45,'gas',1]
 ];
 
-/* ---- build the 120 worlds ---- */
+/* ---- Panorama worlds: [name, img, biome, living scenery] ---- */
+const PANO=[
+ ['Eagle Falls Lodge',A+'w_pano_eagle_falls.jpg','highland','eagle'],['Wild Jungle Falls',A+'w_pano_wild_jungle.jpg','jungle','parrot'],
+ ['Lake Geese Valley',A+'w_pano_lake_geese.jpg','grass','geese'],['Cabin Meadow Falls',A+'w_pano_cabin_meadow.jpg','highland','geese']
+];
+/* ---- build the 124 worlds ---- */
 const WORLDS=[];
 (function(){
  const mk=(o)=>{const b=BIOMES[o.biome];WORLDS.push(Object.assign({id:WORLDS.length,gr:b.gr,dust:b.dust,grip:b.grip,amp:b.amp,dm:b.dm,pm:b.pm,om:b.om,riv:b.riv,soil:b.soil||null,gv:1,tint:null,stars:0,orb:null,mood:''},o))};
@@ -127,6 +132,8 @@ const WORLDS=[];
  [0,8,16,24,32,40].forEach(i=>{const e=EARTH[i],m=mood(e,i,1,used[i]);used[i].push(m.n);mk({n:e[1]+' \u00b7 '+m.n,cat:'earth',img:e[2],biome:e[3],tint:m.tint,stars:m.stars||0,orb:m.orb||null,mood:m.n})});
  /* planets */
  PLANETS.forEach(p=>mk({n:p[0],cat:'planet',img:p[1],biome:p[2],tint:p[3],gv:p[4],orb:p[5],stars:p[6],mood:'Planet'}));
+ /* pass 4: hand-painted panorama worlds (always open, appended last so saved progress keeps its world numbers) */
+ PANO.forEach(e=>mk({n:e[0],cat:'earth',img:e[1],biome:e[2],mood:'Panorama',pano:1,open:1,fauna:e[3]}));
 })();
 const WORLD_COUNT=WORLDS.length;
 /* a world opens after 3 levels of the previous world are finished (stars table key 'w-l') */

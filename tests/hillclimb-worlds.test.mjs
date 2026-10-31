@@ -2,7 +2,7 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 const dir = 'public/games/hillclimb-racing/';
-const code = fs.readFileSync(dir + 'worlds.js', 'utf8') + ';({WORLDS,LEVELS,TIERS,tierOf,goalOf,PMIX,OMIX,RIVC,ORBS,BIOMES,WORLD_COUNT,OPEN_NEED})';
+const code = fs.readFileSync(dir + 'worlds.js', 'utf8') + ';({WORLDS,PANO,LEVELS,TIERS,tierOf,goalOf,PMIX,OMIX,RIVC,ORBS,BIOMES,WORLD_COUNT,OPEN_NEED})';
 const W = (0, eval)(code);
 assert.equal(W.LEVELS, 100);
 assert.ok(W.WORLD_COUNT >= 100, 'at least 100 worlds');
@@ -22,4 +22,11 @@ for (let w = 0; w < W.WORLD_COUNT; w++) {
   for (let l = 1; l < 100; l++) assert.ok(W.goalOf(w, l) >= W.goalOf(w, l - 1), 'monotonic ' + w + ':' + l);
 }
 let prev = -1; for (let l = 0; l < 100; l++) { const i = W.TIERS.indexOf(W.tierOf(l)); assert.ok(i >= prev); prev = i }
+// panorama worlds are always open, use the fauna scenery and are appended after the planets (saved progress keeps its world numbers)
+assert.equal(W.PANO.length, 4);
+W.PANO.forEach((p, i) => { const w = W.WORLDS[W.WORLD_COUNT - W.PANO.length + i]; assert.equal(w.n, p[0]); assert.ok(w.open && w.pano && w.fauna, 'pano flags ' + p[0]) });
+assert.equal(W.WORLDS[119].cat, 'planet', 'planets keep ids 94..119');
+const sc = fs.readFileSync(dir + 'scenery.js', 'utf8'), html = fs.readFileSync(dir + 'index.html', 'utf8');
+assert.ok(html.includes('<script src="scenery.js">') && html.includes('Scenery.back(') && html.includes('Scenery.front('), 'scenery wired into the game loop');
+for (const f of ['eagle', 'parrot', 'geese']) assert.ok(sc.includes("'" + f + "'"), 'fauna ' + f);
 console.log('hillclimb worlds: ' + W.WORLD_COUNT + ' worlds x ' + W.LEVELS + ' levels = ' + (W.WORLD_COUNT * W.LEVELS) + ' levels OK');

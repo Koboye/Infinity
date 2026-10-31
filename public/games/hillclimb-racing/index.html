@@ -96,6 +96,7 @@ document.addEventListener('selectstart',function(e){e.preventDefault()},true);
 <script src="veh2.js"></script>
 <script src="props.js"></script>
 <script src="worlds.js"></script>
+<script src="scenery.js"></script>
 <script>
 'use strict';
 const $=s=>document.querySelector(s),cv=$('#c'),g=cv.getContext('2d'),dx=$('#dash').getContext('2d');
@@ -412,6 +413,7 @@ function drawScene(){const z=H/620,c=car;
  g.setTransform(DPR,0,0,DPR,0,0);drawBG(cam.x,cam.y,z);
  const WD=WORLDS[LV.w];drawOrb(WD);
  if(WD.stars){g.fillStyle='#fff';for(let i=0;i<60;i++){const x=((i*977+cam.x*.02*z)%W+W)%W,y=(i*313%(H*.5));g.globalAlpha=.4+.6*((i*7)%5)/5;g.fillRect(x,y,2,2)}g.globalAlpha=1}
+ const ttS=performance.now()/1000;try{Scenery.back(g,W,H,cam,z,WD,ttS,Math.abs(c.vx))}catch(e){}
  g.save();g.translate(ox,oy);g.scale(z,z);
  const x0=cam.x-W*.36/z-80,x1=cam.x+W*.64/z+80;
  for(const p of props){if(!p.z&&p.x>x0&&p.x<x1){const im=IM[p.k];if(im){const w=im.width*1.25*p.s,h=im.height*1.25*p.s;sp(im,p.x,Hf(p.x)+6,w,h)}else{const a=PA[p.k];if(a)sp(a,p.x,Hf(p.x)+(p.k==='bridge'?36:8),a.lw*p.s*1.15,a.lh*p.s*1.15)}}}
@@ -446,6 +448,7 @@ function drawScene(){const z=H/620,c=car;
  for(const gr of LV.gorges){if(gr.type==='ford'&&gr.b>x0&&gr.a<x1)drawWater(gr,1,ttw,x0,x1)}
  for(const p of parts){g.globalAlpha=Math.max(0,Math.min(1,p.l/p.m*1.6));if(p.rect){g.save();g.translate(p.x,p.y);g.rotate(p.rot);g.fillStyle=p.c;g.fillRect(-p.pw/2,-p.ph/2,p.pw,p.ph);g.strokeStyle='#3a2210';g.lineWidth=1;g.strokeRect(-p.pw/2,-p.ph/2,p.pw,p.ph);g.restore()}else if(p.spr){const im=IM[p.spr]||PA[p.spr];if(im){g.save();g.translate(p.x,p.y);g.rotate(p.rot);g.drawImage(im,-p.pw/2,-p.ph/2,p.pw,p.ph);g.restore()}}else if(p.ring){g.strokeStyle=p.c;g.lineWidth=4;g.beginPath();g.arc(p.x,p.y,p.r*(2-p.l/p.m*1.2),0,7);g.stroke()}else{g.fillStyle=p.c;g.beginPath();g.arc(p.x,p.y,p.r*(1.6-p.l/p.m*.6),0,7);g.fill()}}g.globalAlpha=1;
  g.restore();
+ try{Scenery.front(g,W,H,cam,z,WD,ttS,Math.abs(c.vx))}catch(e){}
  if(WD.tint){g.fillStyle=WD.tint;g.fillRect(0,0,W,H)}
  /* vignette */
  const vg=g.createRadialGradient(W/2,H/2,H*.5,W/2,H/2,H*1.1);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,.28)');g.fillStyle=vg;g.fillRect(0,0,W,H)}
@@ -500,7 +503,7 @@ function showScr(n){if(n==='title')BGI=null;const u=$('#ui');u.querySelectorAll(
 /* ---------- world / level progress helpers ---------- */
 const wDone=w=>{let n=0;for(let l=0;l<LEVELS;l++)if(S.stars[w+'-'+l]>0)n++;return n};
 const wStars=w=>{let n=0;for(let l=0;l<LEVELS;l++)n+=S.stars[w+'-'+l]||0;return n};
-const wOpen=w=>w===0||wDone(w-1)>=LEVELS;/* a world opens only when ALL levels of the previous world are passed */
+const wOpen=w=>w===0||!!WORLDS[w].open||wDone(w-1)>=LEVELS;/* a world opens only when ALL levels of the previous world are passed */
 const lOpen=(w,l)=>{for(let i=0;i<l;i++)if(!(S.stars[w+'-'+i]>0))return false;return true};/* a level opens only when EVERY earlier level in its world is passed */
 function toast(t){let e=document.getElementById('toast');if(!e){e=document.createElement('div');e.id='toast';e.style.cssText='position:fixed;left:50%;bottom:12%;transform:translateX(-50%);z-index:60;background:#0a1426f2;border:2px solid #f5c542;color:#fff;padding:12px 22px;border-radius:14px;font:800 clamp(14px,2.4vw,24px) Arial,sans-serif;pointer-events:none;transition:opacity .25s;opacity:0;text-align:center';document.body.appendChild(e)}e.textContent=t;e.style.opacity=1;clearTimeout(e._t);e._t=setTimeout(()=>{e.style.opacity=0},2000)}
 const topLv=w=>{let l=0;while(l<LEVELS-1&&S.stars[w+'-'+l]>0)l++;return l};
@@ -646,7 +649,7 @@ function frame(t){requestAnimationFrame(frame);const dt=Math.min(.05,(t-last)/10
  else{drawMenuBG(dt)}}
 function drawMenuBG(dt){tm+=dt;drawPreview(tm);g.setTransform(DPR,0,0,DPR,0,0);const z=H/620;
  if(!LV){LV=mk(0,0)}
- drawBG(tm*160,0,z);
+ drawBG(tm*160,0,z);try{const WDm=WORLDS[S.world]||WORLDS[0];Scenery.back(g,W,H,{x:tm*160,y:0},z,WDm,tm,0)}catch(e){}
  const sc=document.getElementById('s_title')?1:0;
  if(sc){/* title scene: big jeep on a rock ledge */
   const gy=H*.93,vv=VEH[S.veh],sc2=W*.46/vv.len,go=vv.wh[0].y+vv.R;g.save();g.translate(W*.30,gy-go*sc2+6);g.scale(sc2,sc2);drawVeh(g,S.veh,{sp:[tm*2,tm*2],ws:[0,0],t:tm});g.restore();
