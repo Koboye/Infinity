@@ -130,3 +130,10 @@ DRV.push(
  {n:'Desert Nomad',role:'Fuel Saver',cost:6000,img:'sel/drv_nomad.jpg',av:'sel/drv_nomad_av.jpg',skin:'#b97c52',hair:'turban',hc:'#c2562a',d:'Reads the dunes - burns 20% less fuel and collects 10% more coins.',ab:'Fuel Saver',fm:.8,cm:1.1},
  {n:'Frost',role:'Ice Grip',cost:4500,img:'sel/drv_frost.jpg',av:'sel/drv_frost_av.jpg',skin:'#f0c4a4',hair:'beanie',hc:'#2f7fe0',lh:'#ffffff',d:'Never slips - grip +18%, a little extra top speed.',ab:'Ice Grip',mu:1.18,vm:1.03}
 );
+
+/* ---------- REAL-CAR DETAILS: wing mirror + door handle (head/tail lights, exhaust and squat/dive are drawn in index.html) ---------- */
+const _drawVeh0=drawVeh;
+drawVeh=function(cx,vi,o){_drawVeh0(cx,vi,o);const v=VEH[vi];if(v.cls!=='car'||!v.win||(o.dead!=null&&o.dead>=0))return;
+ if(v.kind==='buggy'||v.kind==='lunar'||v.kind==='monster')return;
+ const mx=v.win.x+v.win.w+3,my=v.win.y+v.win.h-2;cx.save();cx.strokeStyle='#14161c';cx.lineWidth=1.6;cx.beginPath();cx.moveTo(mx-3,my+2);cx.lineTo(mx+1,my-1);cx.stroke();cx.fillStyle='#1c1f27';cx.beginPath();cx.roundRect(mx-1,my-5,7,5,2);cx.fill();cx.fillStyle='rgba(190,225,255,.7)';cx.fillRect(mx+1,my-4,3.5,2.6);
+ cx.fillStyle='#d5dbe6';cx.beginPath();cx.roundRect(v.hp.x+12,v.win.y+v.win.h+9,8,2.4,1.2);cx.fill();cx.restore()};
