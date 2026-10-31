@@ -66,3 +66,38 @@ PA.chest=pcv(58,48,(x,w,h)=>{shadow(x,w,h);rr(x,4,22,50,24,4);x.fillStyle=lg(x,2
 PA.bag=pcv(46,52,(x,w,h)=>{shadow(x,w,h);x.beginPath();x.moveTo(15,10);x.quadraticCurveTo(2,26,4,40);x.quadraticCurveTo(6,50,23,50);x.quadraticCurveTo(40,50,42,40);x.quadraticCurveTo(44,26,31,10);x.closePath();x.fillStyle=lg(x,10,50,[[0,'#c9a56a'],[1,'#8a6a34']]);x.fill();x.strokeStyle='#4e3814';x.lineWidth=1.8;x.stroke();
  x.fillStyle='#d8434a';rr(x,14,6,18,7,3);x.fill();x.strokeStyle='#6a1418';x.lineWidth=1.2;x.stroke();
  x.fillStyle='#2f5a1f';x.font='bold 22px sans-serif';x.textAlign='center';x.fillText('$',23,38)});
+
+/* ================= Phase 1 graphics upgrade: new roadside obstacles / decor ================= */
+/* stacked tyres */
+PA.tires=pcv(70,62,(x,w,h)=>{shadow(x,w,h);
+ const tire=(cx,cy,rx,ry)=>{ell(x,cx,cy,rx,ry,lg(x,cy-ry,cy+ry,[[0,'#4a4a52'],[1,'#17171b']]));x.strokeStyle='#0b0b0e';x.lineWidth=1.6;x.beginPath();x.ellipse(cx,cy,rx,ry,0,0,7);x.stroke();
+  ell(x,cx,cy,rx*.55,ry*.5,'#0e0e12');x.strokeStyle='rgba(255,255,255,.18)';x.lineWidth=1.2;x.beginPath();x.ellipse(cx,cy-ry*.1,rx*.82,ry*.7,0,Math.PI*1.1,Math.PI*1.9);x.stroke()};
+ tire(20,48,18,10);tire(50,48,18,10);tire(35,34,18,10);tire(35,20,18,10)});
+/* round hay bale */
+PA.hay=pcv(70,56,(x,w,h)=>{shadow(x,w,h);ell(x,35,32,28,22,lg(x,10,54,[[0,'#f0cf6a'],[1,'#b8892c']]));x.strokeStyle='#7a5512';x.lineWidth=1.8;x.beginPath();x.ellipse(35,32,28,22,0,0,7);x.stroke();
+ x.strokeStyle='rgba(122,85,18,.55)';x.lineWidth=1.2;[18,12,6].forEach(r=>{x.beginPath();x.ellipse(35,32,r*1.25,r,0,0,7);x.stroke()});
+ x.strokeStyle='rgba(255,246,190,.55)';x.beginPath();x.ellipse(35,32,24,18,0,Math.PI*1.05,Math.PI*1.6);x.stroke()});
+/* striped road barrier */
+PA.barrier=pcv(120,52,(x,w,h)=>{shadow(x,w,h);x.fillStyle='#55555c';[[14,24],[96,24]].forEach(p=>{x.fillRect(p[0],p[1],8,h-26)});
+ rr(x,4,8,112,22,4);x.fillStyle='#f4f4f4';x.fill();x.save();x.clip();x.fillStyle='#e8481e';for(let i=-2;i<9;i++){x.beginPath();x.moveTo(i*16,8);x.lineTo(i*16+10,8);x.lineTo(i*16-6,30);x.lineTo(i*16-16,30);x.closePath();x.fill()}x.restore();
+ rr(x,4,8,112,22,4);x.strokeStyle='#2c2c32';x.lineWidth=2;x.stroke();x.fillStyle='rgba(255,255,255,.45)';x.fillRect(8,10,104,3)});
+/* roadside lantern post */
+PA.lamp=pcv(40,120,(x,w,h)=>{shadow(x,w,h);x.fillStyle=lg(x,30,h,[[0,'#4a4a52'],[1,'#26262c']]);x.fillRect(17,26,6,h-30);rr(x,12,h-12,16,8,2);x.fill();
+ rr(x,9,6,22,22,4);x.fillStyle='#ffe69a';x.shadowColor='#ffd060';x.shadowBlur=14;x.fill();x.shadowBlur=0;x.strokeStyle='#26262c';x.lineWidth=2;x.stroke();
+ x.beginPath();x.moveTo(6,8);x.lineTo(20,0);x.lineTo(34,8);x.closePath();x.fillStyle='#26262c';x.fill()});
+/* wooden warning board (zig-zag arrow) */
+PA.warn=pcv(70,86,(x,w,h)=>{shadow(x,w,h);x.fillStyle='#6a4426';x.fillRect(31,40,8,h-42);
+ x.beginPath();x.moveTo(35,4);x.lineTo(66,56);x.lineTo(4,56);x.closePath();x.fillStyle='#ffcf2e';x.fill();x.strokeStyle='#3a2a08';x.lineWidth=3;x.stroke();
+ x.fillStyle='#2a2a2a';x.font='bold 30px sans-serif';x.textAlign='center';x.fillText('!',35,50)});
+
+/* richer boulder + cone (override the originals with more shading) */
+PA.boulder=pcv(120,64,(x,w,h)=>{shadow(x,w,h);[[[4,60],[18,30],[48,14],[70,32],[76,60]],[[52,60],[62,36],[88,22],[112,38],[116,60]],[[30,60],[40,40],[66,34],[84,60]]].forEach((p,i)=>{
+ x.beginPath();p.forEach((q,j)=>j?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1]));x.closePath();x.fillStyle=lg(x,14,60,[[0,i===2?'#cfcfcf':'#b6b6b6'],[.55,'#8a8a90'],[1,'#56565c']]);x.fill();x.strokeStyle='#33333a';x.lineWidth=1.8;x.stroke();
+ x.strokeStyle='rgba(255,255,255,.35)';x.lineWidth=1.4;x.beginPath();x.moveTo(p[1][0]+2,p[1][1]+3);x.lineTo(p[2][0]-2,p[2][1]+2);x.stroke();
+ x.strokeStyle='rgba(30,30,36,.5)';x.lineWidth=1.1;x.beginPath();x.moveTo(p[2][0],p[2][1]+6);x.lineTo(p[2][0]+4,p[2][1]+22);x.lineTo(p[2][0]-3,p[2][1]+30);x.stroke()});
+ x.fillStyle='#4f9a3a';[[18,56],[96,56]].forEach(m=>{x.beginPath();x.ellipse(m[0],m[1],9,3.4,0,0,7);x.fill()})});
+PA.cone=pcv(34,44,(x,w,h)=>{shadow(x,w,h);x.fillStyle='#2a2a30';rr(x,2,h-8,30,7,2);x.fill();
+ x.beginPath();x.moveTo(17,2);x.lineTo(28,h-8);x.lineTo(6,h-8);x.closePath();x.fillStyle=lg(x,2,h,[[0,'#ffa94a'],[1,'#e2531a']]);x.fill();x.strokeStyle='#8a2a0a';x.lineWidth=1.4;x.stroke();
+ x.fillStyle='#fff';x.beginPath();x.moveTo(13.5,14);x.lineTo(20.5,14);x.lineTo(22.6,22);x.lineTo(11.4,22);x.closePath();x.fill();
+ x.beginPath();x.moveTo(10.4,26);x.lineTo(23.6,26);x.lineTo(25,32);x.lineTo(9,32);x.closePath();x.fill();
+ x.fillStyle='rgba(255,255,255,.4)';x.beginPath();x.ellipse(13,16,1.6,8,.15,0,7);x.fill()});

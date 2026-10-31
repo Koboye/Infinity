@@ -162,9 +162,9 @@ function Gv(x){const G=LV.gorges;if(G&&x>0)for(let i=0;i<G.length;i++){const g=G
 function riverAt(x,m){const G=LV.gorges;if(G)for(let i=0;i<G.length;i++){const g=G[i];if(x>g.a-(m||0)&&x<g.b+(m||0))return g}return null}
 let coins,cans,gems,props,bonus,obs,runCoinsTotal;
 /* world-themed prop mix [kind,weight]; z: 0 = behind terrain, 1 = in front, undefined = random */
-const PMIX=[[['tree',.20],['bush',.12],['rock',.10],['hut',.08],['house',.05],['fence',.09],['sign',.05],['cone',.04],['log',.05],['crate',.06],['barrel',.06],['boulder',.04],['acacia',.06]],
- [['cactus',.26],['acacia',.12],['boulder',.16],['rock',.10],['bush',.06],['hut',.08],['sign',.06],['cone',.04],['log',.02],['crate',.05],['barrel',.05]],
- [['pineS',.30],['pine',.10],['rock',.10],['boulder',.06],['houseS',.10],['fence',.10],['sign',.06],['cone',.04],['log',.06],['crate',.04],['barrel',.04]],
+const PMIX=[[['tree',.20],['bush',.12],['rock',.10],['hut',.08],['house',.05],['fence',.09],['sign',.05],['cone',.04],['log',.05],['crate',.06],['barrel',.06],['boulder',.04],['acacia',.06],['hay',.04],['tires',.03],['lamp',.03],['warn',.03],['barrier',.03]],
+ [['cactus',.26],['acacia',.12],['boulder',.16],['rock',.10],['bush',.06],['hut',.08],['sign',.06],['cone',.04],['log',.02],['crate',.05],['barrel',.05],['tires',.03],['warn',.03],['barrier',.03]],
+ [['pineS',.30],['pine',.10],['rock',.10],['boulder',.06],['houseS',.10],['fence',.10],['sign',.06],['cone',.04],['log',.06],['crate',.04],['barrel',.04],['lamp',.04],['barrier',.03]],
  [['tree',.16],['pine',.12],['houseN',.12],['hut',.06],['bush',.08],['rock',.08],['boulder',.06],['fence',.08],['sign',.06],['cone',.06],['log',.04],['crate',.04],['barrel',.04]]];
 const PZ={bush:1,pine:0,pineS:0,acacia:0,hut:0,house:0,houseS:0,houseN:0};
 function pickProp(w,r){const m=PMIX[w]||PMIX[0];let a=0;for(const q of m){a+=q[1];if(r<a)return q[0]}return m[m.length-1][0]}
@@ -292,10 +292,17 @@ function dirtPattern(){if(dpat)return dpat;const d=IM.dirt,c=document.createElem
 function sp(im,x,y,w,h){g.drawImage(im,x-w/2,y-h,w,h)}
 /* ---------- rivers + stone arch bridge ---------- */
 let stonePat=null;
-function stonePattern(){if(stonePat)return stonePat;const c=document.createElement('canvas');c.width=96;c.height=64;const x=c.getContext('2d');x.fillStyle='#a49b8c';x.fillRect(0,0,96,64);
- x.strokeStyle='rgba(58,50,42,.6)';x.lineWidth=1.6;for(let r=0;r<4;r++){const y=r*16;x.beginPath();x.moveTo(0,y);x.lineTo(96,y);x.stroke();for(let q=0;q<3;q++){const xx=q*32+(r%2?16:0);x.beginPath();x.moveTo(xx,y);x.lineTo(xx,y+16);x.stroke()}}
- x.fillStyle='rgba(255,255,255,.1)';for(let r=0;r<4;r++)for(let q=0;q<3;q++)x.fillRect(q*32+(r%2?16:0)+2,r*16+2,12+((q*7+r*3)%10),4);
- x.fillStyle='rgba(30,24,18,.12)';for(let i=0;i<22;i++)x.fillRect((i*37)%92,(i*19)%60,3,2);
+function stonePattern(){if(stonePat)return stonePat;const c=document.createElement('canvas');c.width=192;c.height=128;const x=c.getContext('2d');
+ const tones=['#a99f8e','#9c9383','#b4ab9a','#8f8677','#a39a89'];let seed=7;const rn=()=>(seed=(seed*16807)%2147483647)/2147483647;
+ x.fillStyle='#8a8172';x.fillRect(0,0,192,128);
+ for(let r=0;r<4;r++){const y=r*32;let xx=r%2?-24:0;while(xx<192){const w=40+rn()*30,t=tones[(rn()*tones.length)|0];
+  x.fillStyle=t;x.fillRect(xx+1.5,y+1.5,w-3,29);
+  x.fillStyle='rgba(255,255,255,.16)';x.fillRect(xx+3,y+3,w-8,5);
+  x.fillStyle='rgba(30,24,18,.22)';x.fillRect(xx+3,y+25,w-6,4);
+  x.fillStyle='rgba(30,24,18,.10)';for(let i=0;i<5;i++)x.fillRect(xx+4+rn()*(w-10),y+8+rn()*16,2+rn()*3,1.6);
+  if(rn()<.22){x.fillStyle='rgba(88,140,62,.38)';x.beginPath();x.ellipse(xx+rn()*w,y+28,8+rn()*8,3,0,0,7);x.fill()}
+  xx+=w}}
+ x.strokeStyle='rgba(50,42,34,.65)';x.lineWidth=1.8;for(let r=0;r<=4;r++){x.beginPath();x.moveTo(0,r*32);x.lineTo(192,r*32);x.stroke()}
  stonePat=g.createPattern(c,'repeat');return stonePat}
 function drawWater(gr,pass,tt,x0,x1){const wy=gr.wy,xl=Math.max(gr.wl,x0),xr=Math.min(gr.wr,x1);if(xr<=xl)return;const col=RIVC[LV.w]||RIVC[0];
  g.save();g.beginPath();g.moveTo(xl,wy);for(let x=xl;x<=xr;x+=10)g.lineTo(x,wy+Math.sin(x*.05+tt*2.3)*1.8+Math.sin(x*.021-tt*1.4)*1.4);g.lineTo(xr,wy);for(let x=xr;x>=xl;x-=10)g.lineTo(x,Gv(x)+2);g.closePath();
@@ -324,6 +331,11 @@ function drawBridge(gr,tt,x0,x1){const a=gr.a,b=gr.b,U=26,wy=gr.wy;
  const wh=38;g.beginPath();g.moveTo(a+6,Hf(a+6)-6);for(let x=a+6;x<=b-6;x+=16)g.lineTo(x,Hf(x)-6);g.lineTo(b-6,Hf(b-6)-6);for(let x=b-6;x>=a+6;x-=16)g.lineTo(x,Hf(x)-6-wh);g.closePath();g.fillStyle=stonePattern();g.fill();g.fillStyle='rgba(0,0,0,.22)';g.fill();g.lineWidth=2;g.strokeStyle='#463c30';g.stroke();
  g.lineWidth=7;g.strokeStyle='#cdc4b0';g.beginPath();for(let x=a+6;x<=b-6;x+=16){const y=Hf(x)-6-wh;x===a+6?g.moveTo(x,y):g.lineTo(x,y)}g.stroke();g.lineWidth=2;g.strokeStyle='#5a4f42';g.stroke();
  for(let x=a+6;x<=b-6;x+=96){const y=Hf(x)-6;g.fillStyle='#bdb4a0';g.fillRect(x-9,y-wh-18,18,wh+18);g.strokeStyle='#463c30';g.lineWidth=2;g.strokeRect(x-9,y-wh-18,18,wh+18);g.fillStyle='#d9d0bb';g.fillRect(x-11,y-wh-24,22,8);g.strokeRect(x-11,y-wh-24,22,8)}
+ g.restore();
+ /* keystones above each arch + moss at the waterline + lantern posts on the parapet */
+ g.save();for(const q of arches){const kx=q[0],ky=q[2]-q[1]-6;g.fillStyle='#d9d0bb';g.beginPath();g.moveTo(kx-9,ky-8);g.lineTo(kx+9,ky-8);g.lineTo(kx+6,ky+9);g.lineTo(kx-6,ky+9);g.closePath();g.fill();g.strokeStyle='#463c30';g.lineWidth=1.8;g.stroke()}
+ g.fillStyle='rgba(76,134,58,.55)';for(let i=0;i<=n;i++){const px=a+i*(aw+pw)+pw/2;if(px>gr.wl&&px<gr.wr){g.beginPath();g.ellipse(px,wy-3,pw*.5,7,0,Math.PI,0);g.fill()}}
+ for(let x=a+6+48;x<=b-6-48;x+=192){const y=Hf(x)-6-wh-24;g.fillStyle='#3a342c';g.fillRect(x-2,y-14,4,16);g.shadowColor='#ffd060';g.shadowBlur=14;g.fillStyle='#ffe69a';g.beginPath();g.arc(x,y-20,6,0,7);g.fill();g.shadowBlur=0;g.strokeStyle='#3a342c';g.lineWidth=2;g.stroke()}
  g.restore();
  /* foam at the piers where they meet the water */
  g.save();g.fillStyle='rgba(255,255,255,.6)';for(let i=0;i<=n;i++){const px=a+i*(aw+pw)+pw/2;if(px>gr.wl&&px<gr.wr){g.beginPath();g.ellipse(px,wy+1,pw*.75+Math.sin(tt*3+i)*2,3.2,0,0,7);g.fill()}}g.restore()}
