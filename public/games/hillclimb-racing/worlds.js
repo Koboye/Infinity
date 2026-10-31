@@ -75,7 +75,7 @@ const EARTH=[
  ['green_lake','Green Hills & Lake',A+'bg_green_lake.jpg','grass'],['eth_village','Ethiopian Village',A+'w_eth_village.jpg','grass'],
  ['simien','Simien Mountains',A+'w_simien.jpg','highland'],['lalibela','Lalibela Rock Churches',A+'w_lalibela.jpg','canyon'],['lake_tana','Lake Tana',A+'w_lake_tana.jpg','grass'],
  ['gondar','Gondar Castle',A+'w_gondar.jpg','savanna'],['bale','Bale Mountains',A+'w_bale.jpg','savanna'],['addis','Addis Ababa',A+'w_addis.jpg','city'],
- ['tigray','Tigray Cliffs',A+'w_tigray.jpg','canyon'],['ras_dashen','Ras Dashen Road',A+'w_ras_dashen.jpg','highland'],['blue_nile','Blue Nile Falls',A+'w_blue_nile.jpg','grass'],
+ ['tigray','Axum Obelisks',A+'w_tigray.jpg','canyon'],['ras_dashen','Ras Dashen Road',A+'w_ras_dashen.jpg','highland'],['blue_nile','Blue Nile Falls',A+'w_blue_nile.jpg','grass'],
  ['danakil','Danakil Depression',A+'w_danakil.jpg','desert'],['snowy_peaks','Snowy Peaks',A+'w_snowy_peaks.jpg','snow'],['forest_river','Forest River',A+'w_forest_river.jpg','jungle'],
  ['desert_highway','Desert Highway',A+'w_desert_highway.jpg','desert'],['tropical_beach','Tropical Beach',A+'w_tropical_beach.jpg','coast'],['modern_city','Modern City',A+'w_modern_city.jpg','city'],
  ['volcanic','Volcano Fields',A+'w_volcanic.jpg','volcanic'],['jungle_falls','Jungle Falls',A+'w_jungle_falls.jpg','jungle'],['snow_village','Alpine Village',A+'w_snow_village.jpg','snow'],
