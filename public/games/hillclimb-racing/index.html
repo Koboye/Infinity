@@ -350,8 +350,8 @@ function bgTiles(im,tw,hh,base,oy){const i0=Math.floor(base/tw);for(let i=i0;i*t
 /* real-world parallax: far sky/mountains crawl, the nearer lower layer moves ~2.4x faster and a little lower, so the view shears as the car drives */
 function drawBG(camx,camy,z){const im=BGI||IM.bgmid;if(!im)return;const hh=H*1.06,s=hh/im.height,tw=im.width*s;
  g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';
- bgTiles(im,tw,hh,camx*.05*z,-(camy*.012*z));
- if(im.complete!==false&&im.width){try{const nl=nearLayer(im);bgTiles(nl,tw,hh,camx*.12*z,-(camy*.03*z)+H*.012)}catch(e){}}}
+ bgTiles(im,tw,hh,camx*.11*z,-(camy*.02*z));
+ if(im.complete!==false&&im.width){try{const nl=nearLayer(im);bgTiles(nl,tw,hh,camx*.28*z,-(camy*.05*z)+H*.012)}catch(e){}}}
 let dpat=null;
 function dirtPattern(){if(dpat)return dpat;
  /* procedural, seamless soil: colour blotches, wavy strata, speckle, embedded stones, gravel, cracks (no mirrored tiling) */
