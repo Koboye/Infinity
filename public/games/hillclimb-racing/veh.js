@@ -242,6 +242,7 @@ function drawDriver(cx,v,t,q){q=q||{};const dr=DRV[S.drv]||DRV[0],o=OUT[S.outfit
   /* torso */
   cx.save();cx.translate(nx,by+10);cx.rotate(tl);cx.fillStyle=lg(cx,-(by+10-ny),12,[[0,sh(o.top,.12)],[1,sh(o.top,-.18)]]);rr(cx,-12,-(by+10-ny)-2,24,(by+10-ny)+14,8);cx.fill();cx.strokeStyle=sh(o.top,-.5);cx.lineWidth=1;cx.stroke();
   cx.strokeStyle='#17181d';cx.lineWidth=2.4;cx.lineCap='butt';cx.beginPath();cx.moveTo(-7,-(by+10-ny)+1);cx.lineTo(8,8);cx.stroke();cx.fillStyle='#c9ced8';cx.fillRect(5.6,6,4,3.6);
+  outfitDetail(cx,o,-(by+10-ny));
   cx.fillStyle=sh(o.top,.35);cx.beginPath();cx.moveTo(-5,-(by+10-ny)-1);cx.lineTo(0,-(by+10-ny)+5);cx.lineTo(5,-(by+10-ny)-1);cx.closePath();cx.fill();cx.restore();
   /* neck + head swinging on the neck (spring: lags behind the body, overshoots, settles) */
   const hx=nx+Math.sin(ha)*8.5,hy=ny-Math.cos(ha)*8.5-1;
@@ -284,6 +285,20 @@ headFull=function(cx,hx,hy,dr,helm,hc,r,mood){_headFull0(cx,hx,hy,dr,helm,hc,r,m
   if(helm){cx.fillStyle='rgba(255,255,255,.35)';cx.beginPath();cx.ellipse(hx-r*.25,hy-r*.85,r*.55,r*.16,-.25,0,7);cx.fill();cx.strokeStyle='rgba(255,255,255,.85)';cx.lineWidth=1.2;cx.beginPath();cx.moveTo(hx-r*.9,hy-r*.2);cx.quadraticCurveTo(hx,hy-r*1.4,hx+r*.9,hy-r*.2);cx.stroke();cx.fillStyle='rgba(255,255,255,.4)';cx.beginPath();cx.ellipse(hx+r*.55,hy-.8,r*.28,r*.07,-.3,0,7);cx.fill()}
   else{const f=DRVX[dr.n];if(f)f(cx,hx,hy,r)}
   cx.restore()}catch(e){}};
+/* ---------- Phase 3b: outfit designs drawn on the torso (torso-local space, T = top of torso) ---------- */
+function outfitDetail(c,o,T){try{c.save();c.beginPath();c.rect(-12,T-2,24,(12-T)+2);c.clip();c.lineCap='butt';const H=12-T;
+ const band=(y,h,col)=>{c.fillStyle=col;c.fillRect(-12,y,24,h)};
+ switch(o.n){
+  case 'Racing Suit':band(T+H*.45,2.4,'#fff');band(T+H*.45+4,1.2,'#fff');c.fillStyle='#fff';c.fillRect(-12,T,3,H);c.fillRect(9,T,3,H);c.fillStyle='#14161c';c.font='bold 5px Arial';c.textAlign='center';c.fillText('RC',0,T+H*.3);break;
+  case 'Adventure':c.fillStyle='#4e5a2a';c.fillRect(-10,T+H*.5,8,6);c.fillRect(2,T+H*.5,8,6);c.strokeStyle='#2c3418';c.lineWidth=.8;c.strokeRect(-10,T+H*.5,8,6);c.strokeRect(2,T+H*.5,8,6);c.fillStyle='#c9a24a';c.fillRect(-9,T+H*.5+1,2,1.4);c.fillRect(3,T+H*.5+1,2,1.4);break;
+  case 'Urban':band(T+H*.28,3,'#14161c');c.fillStyle='#fff';c.font='bold 4px Arial';c.textAlign='center';c.fillText('URBAN',0,T+H*.28+2.6);c.strokeStyle='#14161c';c.lineWidth=1.2;c.beginPath();c.moveTo(0,T);c.lineTo(0,12);c.stroke();break;
+  case 'Military':c.fillStyle='#3a4524';[[-9,.25],[1,.2],[-4,.6],[5,.55],[-10,.7]].forEach(m=>{c.beginPath();c.ellipse(m[0],T+H*m[1],4,2.6,.4,0,7);c.fill()});c.fillStyle='#2a3018';[[6,.3],[-2,.42]].forEach(m=>{c.beginPath();c.ellipse(m[0],T+H*m[1],3,2,-.3,0,7);c.fill()});c.fillStyle='#d8c24a';c.fillRect(-10,T+H*.12,5,2);break;
+  case 'Winter':band(T+H*.5,1.4,'rgba(10,20,50,.55)');band(T+H*.75,1.4,'rgba(10,20,50,.55)');c.fillStyle='#f4f8ff';c.fillRect(-12,T,24,3);c.fillStyle='rgba(255,255,255,.25)';c.fillRect(-12,T+H*.5-3,24,1.2);break;
+  case 'Beach':c.fillStyle='#ffd24a';[[-8,.3],[0,.55],[7,.3],[-3,.8],[8,.78]].forEach(m=>{c.beginPath();c.arc(m[0],T+H*m[1],2.1,0,7);c.fill()});c.fillStyle='#ff6f8a';[[-4,.28],[4,.62],[-9,.62]].forEach(m=>{c.beginPath();c.arc(m[0],T+H*m[1],1.6,0,7);c.fill()});c.fillStyle='#2f9a5a';[[3,.18],[-7,.5],[7,.5]].forEach(m=>{c.fillRect(m[0]-1.4,T+H*m[1],2.8,1.4)});break;
+  case 'Special':c.shadowColor='#35c6ff';c.shadowBlur=6;c.strokeStyle='#35c6ff';c.lineWidth=1.3;c.beginPath();c.moveTo(-12,T+H*.35);c.lineTo(-4,T+H*.35);c.lineTo(0,T+H*.6);c.lineTo(8,T+H*.6);c.lineTo(12,T+H*.45);c.stroke();c.beginPath();c.moveTo(-9,T);c.lineTo(-9,T+H*.8);c.moveTo(9,T);c.lineTo(9,T+H*.8);c.stroke();break;
+  default:c.fillStyle='rgba(20,22,28,.35)';c.fillRect(-4,T+H*.45,8,5);c.fillStyle='rgba(255,255,255,.35)';c.fillRect(-4,T+H*.45,8,1)}
+ c.fillStyle='rgba(255,255,255,.14)';c.fillRect(-12,T,4,H);
+ c.restore()}catch(e){try{c.restore()}catch(_){}}}
 const skinOf=vi=>(S.skin[vi]>=0?S.skin[vi]:VEH[vi].sk);
 /* windshield frames (open-top cars): [baseX,baseY,topX,topY] - thin raked frame like the reference */
 const WSH={jeep:[32,-31,17,-60],sports:[48,-22,32,-42],pickup:[46,-30,31,-52],police:[52,-27,36,-49],monster:[36,-70,22,-100]};
