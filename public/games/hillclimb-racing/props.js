@@ -101,3 +101,43 @@ PA.cone=pcv(34,44,(x,w,h)=>{shadow(x,w,h);x.fillStyle='#2a2a30';rr(x,2,h-8,30,7,
  x.fillStyle='#fff';x.beginPath();x.moveTo(13.5,14);x.lineTo(20.5,14);x.lineTo(22.6,22);x.lineTo(11.4,22);x.closePath();x.fill();
  x.beginPath();x.moveTo(10.4,26);x.lineTo(23.6,26);x.lineTo(25,32);x.lineTo(9,32);x.closePath();x.fill();
  x.fillStyle='rgba(255,255,255,.4)';x.beginPath();x.ellipse(13,16,1.6,8,.15,0,7);x.fill()});
+
+/* ================= Phase 2 graphics: planet + jungle props (palm, crystals, ice, spore mushroom, lava rock) ================= */
+/* coconut palm */
+PA.palm=pcv(130,190,(x,w,h)=>{shadow(x,w,h);
+ x.strokeStyle='#7a5430';x.lineWidth=11;x.beginPath();x.moveTo(62,h-4);x.quadraticCurveTo(76,110,70,34);x.stroke();
+ x.strokeStyle='#a87a48';x.lineWidth=5;x.beginPath();x.moveTo(60,h-6);x.quadraticCurveTo(73,112,67,36);x.stroke();
+ x.strokeStyle='rgba(60,36,14,.55)';x.lineWidth=1.6;for(let i=0;i<9;i++){const yy=h-14-i*17;x.beginPath();x.moveTo(60+i*.6,yy);x.lineTo(78+i*.2,yy-3);x.stroke()}
+ const leaf=(a,L,c1,c2)=>{x.save();x.translate(70,34);x.rotate(a);x.beginPath();x.moveTo(0,0);x.quadraticCurveTo(L*.5,-30,L,6);x.quadraticCurveTo(L*.5,-8,0,0);x.closePath();x.fillStyle=lg(x,-30,10,[[0,c1],[1,c2]]);x.fill();x.strokeStyle='#1d5a24';x.lineWidth=1.2;x.stroke();
+  x.strokeStyle='rgba(20,80,30,.7)';x.lineWidth=1;x.beginPath();x.moveTo(0,0);x.quadraticCurveTo(L*.5,-17,L,6);x.stroke();x.restore()};
+ [[-2.9,58],[-2.4,66],[-1.9,56],[-.25,58],[.25,66],[.75,54],[-1.2,40],[-.7,48]].forEach((l,i)=>leaf(l[0],l[1],i%2?'#58c24a':'#3fa83a','#1f7a2c'));
+ ell(x,64,38,5.5,5.5,'#6b4420');ell(x,76,40,5.5,5.5,'#7a5028');x.fillStyle='rgba(255,255,255,.4)';x.beginPath();x.arc(62,36,1.6,0,7);x.arc(74,38,1.6,0,7);x.fill()});
+/* glowing crystal cluster (alien) */
+PA.crystal=pcv(110,120,(x,w,h)=>{shadow(x,w,h);
+ const sh=(cx,base,wd,ht,lean,c1,c2)=>{x.beginPath();x.moveTo(cx-wd/2,base);x.lineTo(cx-wd/2+lean*.4,base-ht*.72);x.lineTo(cx+lean,base-ht);x.lineTo(cx+wd/2+lean*.4,base-ht*.72);x.lineTo(cx+wd/2,base);x.closePath();
+  x.fillStyle=lg(x,base-ht,base,[[0,c1],[1,c2]]);x.shadowColor=c1;x.shadowBlur=12;x.fill();x.shadowBlur=0;x.strokeStyle='rgba(255,255,255,.55)';x.lineWidth=1.4;x.stroke();
+  x.fillStyle='rgba(255,255,255,.35)';x.beginPath();x.moveTo(cx-wd*.1,base-2);x.lineTo(cx+lean*.7,base-ht*.9);x.lineTo(cx+wd*.05,base-ht*.7);x.closePath();x.fill()};
+ sh(30,h-6,24,70,-6,'#8ff0ff','#2a7ad6');sh(76,h-6,26,84,5,'#ff9ae8','#8a2ad6');sh(54,h-6,32,112,0,'#c7a6ff','#5a2ab8');sh(92,h-6,18,48,8,'#9affc8','#1f9a78')});
+/* ice spike cluster */
+PA.ice=pcv(100,120,(x,w,h)=>{shadow(x,w,h);
+ const sh=(cx,base,wd,ht,lean)=>{x.beginPath();x.moveTo(cx-wd/2,base);x.lineTo(cx-wd*.3+lean*.3,base-ht*.7);x.lineTo(cx+lean,base-ht);x.lineTo(cx+wd*.35+lean*.3,base-ht*.65);x.lineTo(cx+wd/2,base);x.closePath();
+  x.fillStyle=lg(x,base-ht,base,[[0,'#f2fcff'],[.5,'#a8dcf5'],[1,'#4f9ed0']]);x.globalAlpha=.94;x.fill();x.globalAlpha=1;x.strokeStyle='#2f78a8';x.lineWidth=1.5;x.stroke();
+  x.fillStyle='rgba(255,255,255,.7)';x.beginPath();x.moveTo(cx-wd*.2,base-4);x.lineTo(cx-wd*.05+lean*.6,base-ht*.8);x.lineTo(cx+wd*.04,base-ht*.5);x.closePath();x.fill()};
+ sh(28,h-6,24,62,-5);sh(72,h-6,26,78,6);sh(50,h-6,34,108,0);
+ x.fillStyle='rgba(255,255,255,.85)';[[20,28],[60,18],[80,40],[44,58]].forEach(p=>{x.beginPath();x.arc(p[0],p[1],1.6,0,7);x.fill()})});
+/* spore mushroom (alien flora) */
+PA.shroom=pcv(96,110,(x,w,h)=>{shadow(x,w,h);
+ const mush=(cx,base,cw,ch,sw,c1,c2,dot)=>{rr(x,cx-sw/2,base-ch*.62,sw,ch*.62,sw/2);x.fillStyle=lg(x,base-ch,base,[[0,'#f6ecff'],[1,'#b8a0d0']]);x.fill();x.strokeStyle='#6a4a8a';x.lineWidth=1.4;x.stroke();
+  x.beginPath();x.moveTo(cx-cw,base-ch*.55);x.quadraticCurveTo(cx-cw*.9,base-ch*1.15,cx,base-ch*1.12);x.quadraticCurveTo(cx+cw*.9,base-ch*1.15,cx+cw,base-ch*.55);x.quadraticCurveTo(cx,base-ch*.42,cx-cw,base-ch*.55);x.closePath();
+  x.fillStyle=lg(x,base-ch*1.15,base-ch*.4,[[0,c1],[1,c2]]);x.shadowColor=c1;x.shadowBlur=10;x.fill();x.shadowBlur=0;x.strokeStyle='rgba(40,10,70,.7)';x.lineWidth=1.5;x.stroke();
+  x.fillStyle=dot;[[-.45,-.78],[.1,-.92],[.5,-.74],[-.1,-.66]].forEach(d=>{x.beginPath();x.ellipse(cx+cw*d[0],base+ch*d[1],cw*.13,cw*.09,0,0,7);x.fill()});
+  x.fillStyle='rgba(255,255,255,.45)';x.beginPath();x.ellipse(cx-cw*.35,base-ch*.98,cw*.22,ch*.07,-.4,0,7);x.fill()};
+ mush(30,h-5,24,54,10,'#ff7ad9','#a02a9a','#ffe6fa');mush(66,h-5,34,92,14,'#7affd2','#1a8a7a','#e6fff6')});
+/* glowing lava rock */
+PA.lava=pcv(110,64,(x,w,h)=>{shadow(x,w,h);
+ [[[6,60],[16,30],[44,12],[70,26],[78,60]],[[48,60],[60,34],[86,20],[106,40],[108,60]]].forEach((p,i)=>{x.beginPath();p.forEach((q,j)=>j?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1]));x.closePath();
+  x.fillStyle=lg(x,12,60,[[0,'#5a4a48'],[.6,'#2e2523'],[1,'#17110f']]);x.fill();x.strokeStyle='#0c0807';x.lineWidth=1.8;x.stroke();
+  x.save();x.shadowColor='#ff8a1e';x.shadowBlur=9;x.strokeStyle='#ffb02e';x.lineWidth=2.2;x.beginPath();x.moveTo(p[1][0]+4,p[1][1]+8);x.lineTo(p[2][0]-2,p[2][1]+14);x.lineTo(p[2][0]+6,p[2][1]+26);x.lineTo(p[3][0]-8,p[3][1]+20);x.stroke();
+  x.strokeStyle='#ff4a12';x.lineWidth=1.3;x.beginPath();x.moveTo(p[2][0]+6,p[2][1]+26);x.lineTo(p[2][0]+2,p[2][1]+36);x.stroke();x.restore();
+  x.strokeStyle='rgba(255,255,255,.18)';x.lineWidth=1.3;x.beginPath();x.moveTo(p[1][0]+2,p[1][1]+3);x.lineTo(p[2][0]-2,p[2][1]+2);x.stroke()});
+ x.fillStyle='rgba(255,140,30,.55)';x.beginPath();x.ellipse(55,h-3,40,3,0,0,7);x.fill()});

@@ -94,6 +94,7 @@ document.addEventListener('selectstart',function(e){e.preventDefault()},true);
 </div>
 <script src="veh.js"></script>
 <script src="props.js"></script>
+<script src="worlds.js"></script>
 <script>
 'use strict';
 const $=s=>document.querySelector(s),cv=$('#c'),g=cv.getContext('2d'),dx=$('#dash').getContext('2d');
@@ -115,12 +116,10 @@ function recolor(img,hs,sat,lit){const c=document.createElement('canvas');c.widt
   if(hp<1)[rr,g2,bb]=[c2,xx,0];else if(hp<2)[rr,g2,bb]=[xx,c2,0];else if(hp<3)[rr,g2,bb]=[0,c2,xx];else if(hp<4)[rr,g2,bb]=[0,xx,c2];else if(hp<5)[rr,g2,bb]=[xx,0,c2];else[rr,g2,bb]=[c2,0,xx];
   const m=nl-c2/2;p[i]=(rr+m)*255;p[i+1]=(g2+m)*255;p[i+2]=(bb+m)*255}
  x.putImageData(d,0,0);return c}
-const WORLDS=[{n:'Green Hills',grip:1,amp:1,tint:null,gr:['#3f9a28','#86d94a'],dust:'#b58a52'},{n:'Desert',grip:.95,amp:.85,tint:'rgba(255,140,30,.30)',gr:['#b88a3a','#e7c277'],dust:'#d9b06a'},{n:'Snow',grip:.7,amp:1,tint:'rgba(185,225,255,.32)',gr:['#bcd9ec','#ffffff'],dust:'#eef7ff'},{n:'Night',grip:1,amp:1.15,tint:'rgba(8,12,70,.55)',gr:['#1b5236','#3b9a63'],dust:'#8a7a6a',stars:1}];
-const GOALS=[500,700,900,1200,1500];
 const UPN=[['ENGINE','i_engine',300],['SUSPENSION','i_susp',220],['TIRES','i_tire',260],['FUEL TANK','i_fuel',180]];
 const MAXU=8,upCost=(i,l)=>Math.round(UPN[i][2]*Math.pow(1.5,l)/10)*10;
 /* ---------- save ---------- */
-let S={coins:1245,gems:12,up:[0,0,0,0],veh:0,own:[1,0,0,0],skin:[0,-1,-1,-1],stars:{},snd:1,world:0,tab:'car',pv:0,drv:0,pd:0,drvOwn:[1],outfit:0,outOwn:[1],accOwn:[],accOn:[]};
+let S={coins:1245,gems:12,up:[0,0,0,0],veh:0,own:[1,0,0,0],skin:[0,-1,-1,-1],stars:{},snd:1,world:0,lp:{},wt:'all',wp:0,tab:'car',pv:0,drv:0,pd:0,drvOwn:[1],outfit:0,outOwn:[1],accOwn:[],accOn:[]};
 try{const t=JSON.parse(localStorage.getItem('hcr_v1')||'null');if(t)S=Object.assign(S,t)}catch(e){}
 if(!Array.isArray(S.accOwn))S.accOwn=[];if(!Array.isArray(S.accOn))S.accOn=[];ACC.forEach((_,i)=>{S.accOwn[i]=S.accOwn[i]|0;S.accOn[i]=S.accOn[i]|0});
 S.own[0]=1;S.drvOwn[0]=1;S.outOwn[0]=1;if(!VEH[S.veh]||!S.own[S.veh])S.veh=0;if(!DRV[S.drv]||!S.drvOwn[S.drv])S.drv=0;if(!OUT[S.outfit]||!S.outOwn[S.outfit])S.outfit=0;
@@ -138,10 +137,10 @@ const sfx={coin:()=>{tone(988,.08,'square',.05);setTimeout(()=>tone(1318,.12,'sq
 /* ---------- terrain / level ---------- */
 let LV=null;
 const sm=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t)};
-function mk(w,l){const WD=WORLDS[w],df=.75+.12*l,fin=GOALS[l]*20;
- const o={w,l,fin,sl:.06+.008*l,a1:70*WD.amp*df,p1:480,a2:13*df,p2:210,a3:3,s:(w*5+l)*1.7+.5,ramps:[],gorges:[],bumps:[]};
- for(let x=3000;x<fin-1500;x+=2900+((x/7)%500|0))o.ramps.push(x);
- let seed=w*17+l*31+7;const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647};o.rnd=rnd;return o}
+function mk(w,l){const WD=WORLDS[w],t=l/(LEVELS-1),df=(.75+.8*t)*WD.dm,goal=goalOf(w,l),fin=goal*20;
+ const o={w,l,t,goal,gv:WD.gv,fin,sl:.06+.035*t,a1:70*WD.amp*df,p1:480,a2:13*df,p2:210,a3:3,s:(w*100+l)*1.7+.5,ramps:[],gorges:[],bumps:[]};
+ for(let x=3000;x<fin-1500;x+=2900-500*t+((x/7)%500|0))o.ramps.push(x);
+ let seed=w*131+l*31+7;const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647};o.rnd=rnd;return o}
 /* raw terrain: rolling hills + jump ramps */
 function Hr(x){if(x<=0)return 0;const L=LV,f=sm(x/900);
  let y=-x*L.sl*(.35+.65*f)+f*(L.a1*(Math.sin(x/L.p1+L.s)-Math.sin(L.s))+L.a2*(Math.sin(x/L.p2+L.s*2)-Math.sin(L.s*2))+L.a3*(Math.sin(x/53+L.s*3)-Math.sin(L.s*3)));
@@ -162,20 +161,12 @@ function Gv(x){const G=LV.gorges;if(G&&x>0)for(let i=0;i<G.length;i++){const g=G
 function riverAt(x,m){const G=LV.gorges;if(G)for(let i=0;i<G.length;i++){const g=G[i];if(x>g.a-(m||0)&&x<g.b+(m||0))return g}return null}
 let coins,cans,gems,props,bonus,obs,runCoinsTotal;
 /* world-themed prop mix [kind,weight]; z: 0 = behind terrain, 1 = in front, undefined = random */
-const PMIX=[[['tree',.20],['bush',.12],['rock',.10],['hut',.08],['house',.05],['fence',.09],['sign',.05],['cone',.04],['log',.05],['crate',.06],['barrel',.06],['boulder',.04],['acacia',.06],['hay',.04],['tires',.03],['lamp',.03],['warn',.03],['barrier',.03]],
- [['cactus',.26],['acacia',.12],['boulder',.16],['rock',.10],['bush',.06],['hut',.08],['sign',.06],['cone',.04],['log',.02],['crate',.05],['barrel',.05],['tires',.03],['warn',.03],['barrier',.03]],
- [['pineS',.30],['pine',.10],['rock',.10],['boulder',.06],['houseS',.10],['fence',.10],['sign',.06],['cone',.04],['log',.06],['crate',.04],['barrel',.04],['lamp',.04],['barrier',.03]],
- [['tree',.16],['pine',.12],['houseN',.12],['hut',.06],['bush',.08],['rock',.08],['boulder',.06],['fence',.08],['sign',.06],['cone',.06],['log',.04],['crate',.04],['barrel',.04]]];
 const PZ={bush:1,pine:0,pineS:0,acacia:0,hut:0,house:0,houseS:0,houseN:0};
-function pickProp(w,r){const m=PMIX[w]||PMIX[0];let a=0;for(const q of m){a+=q[1];if(r<a)return q[0]}return m[m.length-1][0]}
+function pickProp(w,r){const m=PMIX[WORLDS[w].pm]||PMIX.green;let a=0;for(const q of m){a+=q[1];if(r<a)return q[0]}return m[m.length-1][0]}
 /* real obstacles on the road. smash: breaks when hit (slows the car); solid: a terrain bump the wheels must climb over */
-const OBSK={crate:{fw:.8,slow:.9},barrel:{fw:.8,slow:.86},cone:{fw:.8,slow:.97},fence:{fw:.95,slow:.93},sign:{fw:.3,slow:.95},log:{solid:1,bw:.5,bh:.62},boulder:{solid:1,bw:.55,bh:.55}};
-const OMIX=[[['crate',.2],['barrel',.17],['cone',.17],['fence',.14],['sign',.05],['log',.13],['boulder',.14]],
- [['crate',.14],['barrel',.14],['cone',.1],['fence',.07],['sign',.05],['log',.07],['boulder',.43]],
- [['crate',.18],['barrel',.16],['cone',.14],['fence',.14],['sign',.06],['log',.16],['boulder',.16]],
- [['crate',.2],['barrel',.18],['cone',.16],['fence',.12],['sign',.06],['log',.14],['boulder',.14]]];
+const OBSK={crate:{fw:.8,slow:.9},barrel:{fw:.8,slow:.86},cone:{fw:.8,slow:.97},fence:{fw:.95,slow:.93},sign:{fw:.3,slow:.95},log:{solid:1,bw:.5,bh:.62},boulder:{solid:1,bw:.55,bh:.55},crystalO:{solid:1,bw:.45,bh:.7},iceO:{solid:1,bw:.4,bh:.7},lavaO:{solid:1,bw:.55,bh:.55},shroomO:{fw:.8,slow:.92}};
+PA.crystalO=PA.crystal;PA.iceO=PA.ice;PA.lavaO=PA.lava;PA.shroomO=PA.shroom;
 function osize(k,s){const im=IM[k];if(im)return{w:im.width*.9*s,h:im.height*.9*s};const a=PA[k];return{w:a.lw*s*.95,h:a.lh*s*.95}}
-const RIVC=[['#4ab4ee','#12589a'],['#46c4d0','#10707e'],['#a8e4ff','#4a96c8'],['#2a5cc0','#0a1e5c']];
 function genLevel(){const L=LV,fin=L.fin,rnd=L.rnd;coins=[];cans=[];gems=[];props=[];obs=[];L.gorges=[];L.bumps=[];
  /* ---- rivers: one per gap between jump ramps, alternating deep gorge + stone bridge / shallow ford ---- */
  {const rs=L.ramps,gaps=[[1450,rs.length?rs[0]-740:fin-1500]];rs.forEach((r,i)=>gaps.push([r+560,rs[i+1]!==undefined?rs[i+1]-740:fin-1500]));
@@ -186,21 +177,21 @@ function genLevel(){const L=LV,fin=L.fin,rnd=L.rnd;coins=[];cans=[];gems=[];prop
    g.wl=a;g.wr=b;let f=0;for(let x=a;x<=b;x+=3){if(gLine(g,x)+gDip(g,x)>g.wy+2){if(!f){g.wl=x;f=1}g.wr=x}}})}
  const nearRamp=x=>L.ramps.some(r=>x>r-430&&x<r+250);
  /* ---- obstacles ---- */
- {let lastX=-1e9;const mix=OMIX[L.w]||OMIX[0];
+ {let lastX=-1e9;const mix=OMIX[WORLDS[L.w].om]||OMIX.std;
   const pick=()=>{let a=0,r=rnd();for(const q of mix){a+=q[1];if(r<a)return q[0]}return mix[0][0]};
   const addO=(x,k,s)=>{const z=osize(k,s),d=OBSK[k];const o={x,k,s,w:z.w,h:z.h,dead:0,solid:!!d.solid};obs.push(o);if(d.solid)L.bumps.push({x,w:z.w*d.bw,h:z.h*d.bh});return o};
-  for(let x=800;x<fin-900;x+=330+rnd()*300-L.l*25){const k=pick(),s=.85+rnd()*.35;
+  for(let x=800;x<fin-900;x+=(640-380*L.t)+rnd()*(300-100*L.t)){const k=pick(),s=.85+rnd()*.35;
    if(riverAt(x,170)||nearRamp(x)||x-lastX<260)continue;lastX=x;const o=addO(x,k,s);
    if(k==='crate'&&rnd()<.45&&!riverAt(x+60,170)){addO(x+o.w*.95,'crate',s);lastX=x+o.w}}}
  /* ---- scenery props (obstacle kinds are handled above, nothing sits inside a river) ---- */
  const addC=(x,y)=>coins.push({x,y,t:0});
  for(let x=900;x<fin-600;x+=700+rnd()*500){const n=4+(rnd()*4|0);for(let i=0;i<n;i++){const xx=x+i*88;addC(xx,Hf(xx)-62)}}
  for(const r of L.ramps){for(let i=0;i<9;i++){const t=i/8,xx=r-80+t*760;addC(xx,Hf(r)-150-190*Math.sin(Math.PI*t)-20)}}
- for(let x=2000;x<fin-800;x+=2100+rnd()*500)cans.push({x,y:Hf(x)-48,t:0});
+ for(let x=2000;x<fin-800;x+=2100+rnd()*500+400*L.t)cans.push({x,y:Hf(x)-48,t:0});
  for(let x=4200;x<fin-800;x+=4800+rnd()*1200)gems.push({x,y:Hf(x)-150,t:0});
  for(let x=-400;x<fin+1200;x+=260+rnd()*520){const k=pickProp(L.w,rnd()),s=.75+rnd()*.5,zr=rnd()<.5?0:1;if(OBSK[k]||riverAt(x,90))continue;props.push({x,k,s,z:PZ[k]!==undefined?PZ[k]:zr})}
  /* bonus rewards: trophies (rare, big), treasure chests above ramps, money bags along the road */
- bonus=[];const nT=1+(L.l>>1);for(let i=1;i<=nT;i++){const x=fin*i/(nT+1);bonus.push({k:'trophy',x,y:Hf(x)-130,t:0})}
+ bonus=[];const nT=1+Math.round(L.t*5);for(let i=1;i<=nT;i++){const x=fin*i/(nT+1);bonus.push({k:'trophy',x,y:Hf(x)-130,t:0})}
  L.ramps.forEach((r,i)=>{if(i%2===0)bonus.push({k:'chest',x:r+300,y:Hf(r)-390,t:0})});
  for(let x=2600;x<fin-900;x+=3300+rnd()*900)bonus.push({k:'bag',x,y:Hf(x)-70,t:0});
  runCoinsTotal=coins.length}
@@ -213,7 +204,7 @@ const PXM=20,R=28,G=1500;
 const WH=[{x:-60,y:22},{x:61,y:22}],CP=[{x:92,y:8},{x:-80,y:12}],HD=[{x:-15,y:-52},{x:45,y:-60},{x:-70,y:-56}];
 let car,run,cam,parts=[],mode='menu',paused=false,inp={gas:0,brake:0},boost={coin:0,susp:0,tire:0},pop={t:0};
 function stats(){const v=VEH[S.veh],u=S.up,d=DRV[S.drv]||DRV[0];return{pw:560*v.pw*(d.pw||1)*(1+.14*u[0]),K:500*v.ks*(1+.07*u[1]),Cd:18*v.ks*(1+.09*u[1]),mu:1.15*v.gr*(d.mu||1)*(1+.1*u[2])*WORLDS[LV.w].grip,fuel:(100+22*u[3])*v.fu,vmax:880*(v.vm||1)*(d.vm||1)*(1+.05*u[0]),air:v.air*(d.air||1),cm:d.cm||1,stm:d.st||1,shield:d.shield||0,fm:d.fm||1}}
-function start(w,l){try{const de=document.documentElement;if(!document.fullscreenElement&&de.requestFullscreen)de.requestFullscreen({navigationUI:'hide'}).then(()=>screen.orientation&&screen.orientation.lock&&screen.orientation.lock('landscape').catch(()=>{})).catch(()=>{})}catch(e){}S.world=w;LV=mk(w,l);genLevel();const st=stats();
+function start(w,l){try{const de=document.documentElement;if(!document.fullscreenElement&&de.requestFullscreen)de.requestFullscreen({navigationUI:'hide'}).then(()=>screen.orientation&&screen.orientation.lock&&screen.orientation.lock('landscape').catch(()=>{})).catch(()=>{})}catch(e){}S.world=w;S.lp=S.lp||{};S.lp[w]=Math.floor(l/10);setBG(w);LV=mk(w,l);genLevel();const st=stats();
  car={v:VEH[S.veh],x:0,y:Hf(0)-(VEH[S.veh].wh[0].y+VEH[S.veh].R+12),a:0,vx:0,vy:0,w:0,sp:[0,0],ws:[0,0],fuel:st.fuel,air:0,rot:0,rotAcc:0,st,inw:[0,0]};
  run={sh:0,cf:0,dist:0,coins:0,gems:0,flips:0,stuntC:0,over:'',neckT:0,bonusC:0,trophies:0,chests:0,bags:0,idle:0,t:0,rpm:.2,w,l,done:0,airT:0,cansGot:0,smash:0};
  cam={x:car.x,y:car.y};parts=[];boost={coin:0,susp:0,tire:0};inp={gas:0,brake:0};paused=false;mode='play';
@@ -241,7 +232,7 @@ function smash(o,c){o.dead=1;run.smash++;const gy=Hr(o.x)+14,dir=c.vx>=0?1:-1,d=
  for(let i=0;i<7;i++)parts.push({x:o.x+(rn()-.5)*o.w,y:gy-6,vx:(rn()-.5)*220+c.vx*.2,vy:-30-rn()*110,l:.6,m:.6,r:6+rn()*8,c:'#cdb892'});
  c.vx*=d.slow;c.vy-=50;tone(150,.13,'square',.09,60);try{navigator.vibrate&&navigator.vibrate(18)}catch(e){}}
 function step(dt){const c=car,V=c.v,st=c.st,th=inp.gas&&c.fuel>0?1:0,br=inp.brake?1:0;
- const ca=Math.cos(c.a),sa=Math.sin(c.a);let ax=0,ay=G,aw=0,gr=0,I=V.I;
+ const ca=Math.cos(c.a),sa=Math.sin(c.a);let ax=0,ay=G*(LV.gv||1),aw=0,gr=0,I=V.I;
  const K=st.K,Cd=st.Cd*(boost.susp>0?1.3:1),mu=st.mu*(boost.tire>0?1.3:1),RV=riverAt(c.x,120);let wet=0;
  for(let i=0;i<2;i++){const o=V.wh[i],rx=o.x*ca-o.y*sa,ry=o.x*sa+o.y*ca,px=c.x+rx,py=c.y+ry,h=Hf(px),pen=py+V.R-h;
   const inW=!!(RV&&px>RV.wl&&px<RV.wr&&py+V.R*.4>RV.wy);if(inW){wet++;if(!c.inw[i]){splash(px,RV.wy,c.vx,c.vy,1)}}else if(c.inw[i]&&RV&&px>RV.wl-30&&px<RV.wr+30)splash(px,RV.wy,c.vx,c.vy,.5);c.inw[i]=inW;
@@ -286,10 +277,17 @@ function step(dt){const c=car,V=c.v,st=c.st,th=inp.gas&&c.fuel>0?1:0,br=inp.brak
 function fail(why){try{navigator.vibrate&&navigator.vibrate([60,40,90])}catch(e){}run.over=why;sfx.bad();mode='over';setTimeout(()=>showResult(false),why==='HEAD CRASH'?1900:900)}
 function win(){run.over='win';sfx.win();mode='over';const k=run.w+'-'+run.l;let s=1;if(run.coins>=runCoinsTotal*.35)s=2;if(s>=2&&(run.flips>=1||run.coins>=runCoinsTotal*.7))s=3;run.stars=s;
  run.prevBest=S.stars[k]||0;run.rec=s>run.prevBest;if(run.rec)S.stars[k]=s;
- const bonus=200+run.l*80+s*100;S.coins+=bonus;run.bonus=bonus;save();setTimeout(()=>showResult(true),700)}
+ const bonus=200+run.l*45+s*100;S.coins+=bonus;run.bonus=bonus;save();setTimeout(()=>showResult(true),700)}
 /* ---------- rendering ---------- */
 let bgImg=null;
-function drawBG(camx,camy,z){const im=IM.bgmid;if(!im)return;const hh=H*1.06,s=hh/im.height,tw=im.width*s,base=camx*.06*z,i0=Math.floor(base/tw),oy=-(camy*.015*z)-H*.0;
+let BGI=null;const bgc={};
+function setBG(w){const src=WORLDS[w].img;if(bgc[src]){if(bgc[src].complete&&bgc[src].naturalWidth)BGI=bgc[src];return}const i=new Image();bgc[src]=i;i.onload=()=>{if(WORLDS[S.world]&&WORLDS[S.world].img===src)BGI=i};i.src=src}
+function drawOrb(WD){const o=ORBS[WD.orb];if(!o)return;const ox=W*o.x-((cam.x*.003)%60),oy=H*o.y,r=H*o.r;
+ const body=(x,y,rr,c)=>{g.save();g.shadowColor=c[1];g.shadowBlur=rr*.6;const gr=g.createRadialGradient(x-rr*.3,y-rr*.3,rr*.1,x,y,rr);gr.addColorStop(0,c[0]);gr.addColorStop(1,c[1]);g.fillStyle=gr;g.beginPath();g.arc(x,y,rr,0,7);g.fill();g.restore()};
+ const ring=(a,b,al)=>{g.save();g.strokeStyle='rgba(255,235,200,'+al+')';g.lineWidth=r*.09;g.beginPath();g.ellipse(ox,oy,r*1.7,r*.45,-.35,a,b);g.stroke();g.restore()};
+ if(o.ring)ring(Math.PI,Math.PI*2,.5);body(ox,oy,r,o.c);if(o.ring)ring(0,Math.PI,.8);
+ if(o.two)body(ox+W*o.two.dx,oy+H*o.two.dy,H*o.two.r,o.two.c)}
+function drawBG(camx,camy,z){const im=BGI||IM.bgmid;if(!im)return;const hh=H*1.06,s=hh/im.height,tw=im.width*s,base=camx*.06*z,i0=Math.floor(base/tw),oy=-(camy*.015*z)-H*.0;
  g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';
  for(let i=i0;i*tw-base<W+tw;i++){const x=i*tw-base;g.save();if(i&1){g.translate(x+tw,oy);g.scale(-1,1);g.drawImage(im,0,0,tw+1,hh)}else{g.translate(x,oy);g.drawImage(im,0,0,tw+1,hh)}g.restore()}}
 let dpat=null;
@@ -309,7 +307,7 @@ function stonePattern(){if(stonePat)return stonePat;const c=document.createEleme
   xx+=w}}
  x.strokeStyle='rgba(50,42,34,.65)';x.lineWidth=1.8;for(let r=0;r<=4;r++){x.beginPath();x.moveTo(0,r*32);x.lineTo(192,r*32);x.stroke()}
  stonePat=g.createPattern(c,'repeat');return stonePat}
-function drawWater(gr,pass,tt,x0,x1){const wy=gr.wy,xl=Math.max(gr.wl,x0),xr=Math.min(gr.wr,x1);if(xr<=xl)return;const col=RIVC[LV.w]||RIVC[0];
+function drawWater(gr,pass,tt,x0,x1){const wy=gr.wy,xl=Math.max(gr.wl,x0),xr=Math.min(gr.wr,x1);if(xr<=xl)return;const col=RIVC[WORLDS[LV.w].riv]||RIVC[0];
  g.save();g.beginPath();g.moveTo(xl,wy);for(let x=xl;x<=xr;x+=10)g.lineTo(x,wy+Math.sin(x*.05+tt*2.3)*1.8+Math.sin(x*.021-tt*1.4)*1.4);g.lineTo(xr,wy);for(let x=xr;x>=xl;x-=10)g.lineTo(x,Gv(x)+2);g.closePath();
  if(pass===0){g.fillStyle=lg(g,wy,wy+210,[[0,col[0]+'f0'],[1,col[1]+'fa']]);g.fill()}else{g.fillStyle=col[0]+'60';g.fill()}
  g.clip();g.strokeStyle='rgba(255,255,255,.55)';g.lineWidth=3;g.beginPath();for(let x=xl;x<=xr;x+=10){const y=wy+Math.sin(x*.05+tt*2.3)*1.8+Math.sin(x*.021-tt*1.4)*1.4;x===xl?g.moveTo(x,y):g.lineTo(x,y)}g.stroke();
@@ -348,14 +346,14 @@ function drawScene(){const z=H/620,c=car;
  const tx=c.x+Math.max(-80,Math.min(220,c.vx*.28)),ty=c.y;cam.x+=(tx-cam.x)*.12;cam.y+=(ty-cam.y)*.10;
  const ox=W*.36-cam.x*z,oy=H*.58-cam.y*z;
  g.setTransform(DPR,0,0,DPR,0,0);drawBG(cam.x,cam.y,z);
- const WD=WORLDS[LV.w];
+ const WD=WORLDS[LV.w];drawOrb(WD);
  if(WD.stars){g.fillStyle='#fff';for(let i=0;i<60;i++){const x=((i*977+cam.x*.02*z)%W+W)%W,y=(i*313%(H*.5));g.globalAlpha=.4+.6*((i*7)%5)/5;g.fillRect(x,y,2,2)}g.globalAlpha=1}
  g.save();g.translate(ox,oy);g.scale(z,z);
  const x0=cam.x-W*.36/z-80,x1=cam.x+W*.64/z+80;
  for(const p of props){if(!p.z&&p.x>x0&&p.x<x1){const im=IM[p.k];if(im){const w=im.width*1.25*p.s,h=im.height*1.25*p.s;sp(im,p.x,Hf(p.x)+6,w,h)}else{const a=PA[p.k];if(a)sp(a,p.x,Hf(p.x)+(p.k==='bridge'?36:8),a.lw*p.s*1.15,a.lh*p.s*1.15)}}}
  /* terrain */
  g.beginPath();g.moveTo(x0,Gv(x0));for(let x=x0;x<=x1;x+=14)g.lineTo(x,Gv(x));g.lineTo(x1,cam.y+H/z+400);g.lineTo(x0,cam.y+H/z+400);g.closePath();
- g.fillStyle=dirtPattern();g.fill();
+ g.fillStyle=dirtPattern();g.fill();if(WD.soil){g.fillStyle=WD.soil;g.fill()}
  const gd=g.createLinearGradient(0,cam.y-100,0,cam.y+700);gd.addColorStop(0,'rgba(60,30,10,0)');gd.addColorStop(1,'rgba(30,14,6,.75)');g.fillStyle=gd;g.fill();
  g.lineJoin='round';g.beginPath();g.moveTo(x0,Gv(x0));for(let x=x0;x<=x1;x+=14)g.lineTo(x,Gv(x));
  g.lineWidth=34;g.strokeStyle=WD.gr[0];g.stroke();g.translate(0,-5);g.lineWidth=20;g.strokeStyle=WD.gr[1];g.stroke();g.translate(0,5);
@@ -411,26 +409,54 @@ function drawDash(){const d=dx,c=car;d.clearRect(0,0,396,174);
  d.save();d.translate(tx2,ty2-6);d.rotate(c.a);d.fillStyle='#e8f2ff';d.fillRect(-18,-4,36,10);d.fillRect(-10,-12,20,9);d.fillStyle='#0b1426';d.beginPath();d.arc(-10,8,5,0,7);d.arc(10,8,5,0,7);d.fill();d.restore()}
 function hudUpd(){const c=car;$('#hc').textContent=S.coins.toLocaleString();$('#hg').textContent=S.gems;$('#hb').textContent='\u{1F3C6} '+run.trophies+'   \u{1F381} '+run.chests+'   \u{1F4B0} '+run.bags;
  $('#fuelfill').style.width=(70.3*Math.max(0,c.fuel/c.st.fuel))+'%';
- const f=Math.min(1,run.dist/GOALS[LV.l]);$('#pf').style.width=(f*100)+'%';$('#ph').style.left=(f*100)+'%';$('#pt').textContent=Math.floor(run.dist)+' m / '+GOALS[LV.l]+' m';drawDash();
+ const f=Math.min(1,run.dist/LV.goal);$('#pf').style.width=(f*100)+'%';$('#ph').style.left=(f*100)+'%';$('#pt').textContent=Math.floor(run.dist)+' m / '+LV.goal+' m';drawDash();
  if(pop.t>0){pop.t-=1/60;if(pop.t<.3)$('#pop').style.opacity=Math.max(0,pop.t/.3)}}
 /* ---------- menus ---------- */
 const svg={play:'<svg viewBox="0 0 24 24"><path d="M6 4l14 8-14 8z"/></svg>',car:'<svg viewBox="0 0 24 24"><path d="M5 11l1.6-4.2C7 5.7 7.8 5 9 5h6c1.2 0 2 .7 2.4 1.8L19 11c1.2.3 2 1.3 2 2.6V17h-2.2a2.5 2.5 0 01-4.6 0H9.8a2.5 2.5 0 01-4.6 0H3v-3.4c0-1.3.8-2.300 2-2.600zM8.200 7L7.200 10h9.600l-1-3z"/></svg>',tool:'<svg viewBox="0 0 24 24"><path d="M22 6.300l-4 4-2.300-.7-.7-2.300 4-4C17.200 2.600 14.600 3.600 13.700 5.700c-.5 1.200-.5 2.400 0 3.500L3 20l1.500 1.500 10.800-10.800c1.100.5 2.300.5 3.500 0 2.100-.9 3.100-3.500 3.200-4.400z"/></svg>',gear:'<svg viewBox="0 0 24 24"><path d="M19.400 13a7.800 7.800 0 000-2l2.100-1.600-2-3.500-2.500 1a7.600 7.600 0 00-1.700-1L15 3.200h-4l-.4 2.700c-.6.300-1.200.6-1.700 1l-2.500-1-2 3.500L6.600 11a7.800 7.800 0 000 2l-2.100 1.600 2 3.500 2.500-1c.5.400 1.100.7 1.700 1l.4 2.700h4l.4-2.700c.6-.3 1.200-.6 1.700-1l2.500 1 2-3.500zM12 15.500a3.500 3.500 0 110-7 3.500 3.500 0 010 7z"/></svg>',back:'<svg viewBox="0 0 24 24"><path d="M20 11H7.800l5.600-5.600L12 4l-8 8 8 8 1.400-1.400L7.800 13H20z"/></svg>',home:'<svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-4v-6h-4v6H6v-9H3z"/></svg>',retry:'<svg viewBox="0 0 24 24"><path d="M17.700 6.300A8 8 0 104 12h2a6 6 0 116 6 6 6 0 01-4.200-1.800L11 13H4v7l2.400-2.400A8 8 0 1017.700 6.300z"/></svg>'};
 const pills=()=>`<div style="position:absolute;right:calc(26*var(--u));top:calc(14*var(--u));display:flex;gap:calc(14*var(--u))"><div class="pill" style="width:calc(236*var(--u))"><img src="a/coinpill.png"><div class="num" style="--fs:29;left:27%;top:19%;width:38%;height:62%">${S.coins.toLocaleString()}</div></div><div class="pill" style="width:calc(236*var(--u))"><img src="a/gempill.png"><div class="num" style="--fs:29;left:28%;top:19%;width:31%;height:62%">${S.gems}</div></div></div>`;
 const hdr=(t,b)=>`<div class="hdr"><div class="back glass" data-go="${b}">${svg.back}</div><h1>${t}</h1><div class="sp"></div></div>${pills()}`;
-function showScr(n){const u=$('#ui');u.querySelectorAll('.scr').forEach(e=>e.remove());if(!n){mode=mode==='menu'?'play':mode;return}
+function showScr(n){if(n==='title')BGI=null;const u=$('#ui');u.querySelectorAll('.scr').forEach(e=>e.remove());if(!n){mode=mode==='menu'?'play':mode;return}
  mode='menu';$('#hud').classList.add('hide');const d=document.createElement('div');d.className='scr on';d.id='s_'+n;d.innerHTML=SCR[n]();u.appendChild(d);if(AFTER[n])AFTER[n](d)}
+/* ---------- world / level progress helpers ---------- */
+const wDone=w=>{let n=0;for(let l=0;l<LEVELS;l++)if(S.stars[w+'-'+l]>0)n++;return n};
+const wStars=w=>{let n=0;for(let l=0;l<LEVELS;l++)n+=S.stars[w+'-'+l]||0;return n};
+const wOpen=w=>w===0||wDone(w-1)>=OPEN_NEED;
+const lOpen=(w,l)=>l===0||S.stars[w+'-'+(l-1)]>0;
+const topLv=w=>{let l=0;while(l<LEVELS-1&&S.stars[w+'-'+l]>0)l++;return l};
+const wList=()=>S.wt==='earth'||S.wt==='planet'?WORLDS.filter(x=>x.cat===S.wt):WORLDS;
 const SCR={
 title:()=>`<img src="a/logo.png" style="position:absolute;left:calc(36*var(--u));top:calc(22*var(--u));height:calc(500*var(--u))">${pills()}
  <div style="position:absolute;right:calc(70*var(--u));top:calc(300*var(--u));width:calc(330*var(--u));display:flex;flex-direction:column;gap:calc(20*var(--u))">
  <div class="bt y" data-go="map" style="height:calc(110*var(--u));font-size:calc(52*var(--u))">${svg.play}PLAY</div>
  <div class="bt" data-go="garage">${svg.car}GARAGE</div><div class="bt" data-go="upg">${svg.tool}UPGRADES</div><div class="bt" data-go="set">${svg.gear}SETTINGS</div></div>
  <div style="position:absolute;left:calc(60*var(--u));bottom:calc(46*var(--u));font-size:calc(64*var(--u));font-weight:900;font-style:italic;transform:rotate(-6deg);color:#fff;text-shadow:0 4px 10px #000,0 0 3px #000">Conquer<br>Every Hill!</div>`,
-map:()=>{const w=S.world,WD=WORLDS[w],P=[[150,630],[390,500],[640,590],[870,430],[1090,540]];let nodes='';
- for(let i=0;i<5;i++){const s=S.stars[w+'-'+i]||0,open=i===0||S.stars[w+'-'+(i-1)]>0;nodes+=`<div class="node ${open?'':'lock'}" data-lv="${i}" style="left:${P[i][0]/1536*100}%;top:${P[i][1]/1024*100}%">${open?i+1:'<svg viewBox="0 0 24 24" style="width:46%;fill:#e8edf6"><path d="M18 8h-1V6a5 5 0 00-10 0v2H6a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V10a2 2 0 00-2-2zm-6 9a2 2 0 110-4 2 2 0 010 4zm3-9H9V6a3 3 0 016 0z"/></svg>'}<div class="st">${'\u2605'.repeat(s)}<b>${'\u2605'.repeat(3-s)}</b></div></div>`}
- return `<div style="position:absolute;inset:0;background:url(a/map.jpg) center/cover"></div><div style="position:absolute;inset:0;background:linear-gradient(180deg,#0a1530aa,#0000 25%,#0000 78%,#0a1530e8)"></div>
- <div class="hdr"><div class="back glass" data-go="title">${svg.back}</div><div class="glass" style="padding:calc(10*var(--u)) calc(36*var(--u));min-width:calc(380*var(--u))"><div style="font-size:calc(44*var(--u));font-weight:800">World ${w+1}</div><div style="font-size:calc(28*var(--u));color:#bcd0f0">${WD.n}</div></div><div class="sp"></div></div>${pills()}
+map:()=>{const w=S.world,WD=WORLDS[w],open=wOpen(w);S.lp=S.lp||{};let pg=S.lp[w];if(pg==null)pg=Math.floor(topLv(w)/10);pg=Math.max(0,Math.min(9,pg));S.lp[w]=pg;
+ const P=[];for(let i=0;i<10;i++)P.push([160+i*135.1,545+95*Math.sin(i*1.25+.6)]);
+ const tr=tierOf(pg*10),cur=topLv(w);let nodes='',pts='';
+ for(let i=0;i<10;i++){const l=pg*10+i,s=S.stars[w+'-'+l]||0,ok=open&&lOpen(w,l),t=tierOf(l);pts+=P[i][0]+','+P[i][1]+' ';
+  const fs=l>=99?34:44,mark=l===LEVELS-1?'\u{1F3C1}':(l%10===9?'\u{1F381}':'');
+  nodes+=`<div class="node ${ok?'':'lock'}" data-lv="${l}" style="left:${P[i][0]/1536*100}%;top:${P[i][1]/1024*100}%;${ok?'border-color:'+t.c+';':''}${ok&&l===cur?'box-shadow:0 0 calc(34*var(--u)) '+t.c+';':''}font-size:calc(${fs}*var(--u))">${mark?`<div style="position:absolute;top:calc(-62*var(--u));font-size:calc(40*var(--u))">${mark}</div>`:''}${ok?l+1:'<svg viewBox="0 0 24 24" style="width:46%;fill:#e8edf6"><path d="M18 8h-1V6a5 5 0 00-10 0v2H6a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V10a2 2 0 00-2-2zm-6 9a2 2 0 110-4 2 2 0 010 4zm3-9H9V6a3 3 0 016 0z"/></svg>'}<div class="st">${'\u2605'.repeat(s)}<b>${'\u2605'.repeat(3-s)}</b></div></div>`}
+ let pages='';for(let i=0;i<10;i++)pages+=`<div class="bt ${i===pg?'y':''}" data-pg="${i}" style="width:calc(112*var(--u));height:calc(62*var(--u));font-size:calc(23*var(--u));letter-spacing:0">${i*10+1}-${i*10+10}</div>`;
+ return `<div style="position:absolute;inset:0;background:url(${WD.img}) center/cover"></div>${WD.tint?`<div style="position:absolute;inset:0;background:${WD.tint}"></div>`:''}<div style="position:absolute;inset:0;background:linear-gradient(180deg,#0a1530cc,#0a153040 25%,#0a153033 70%,#0a1530ee)"></div>
+ <div class="hdr"><div class="back glass" data-go="title">${svg.back}</div><div class="glass" style="padding:calc(8*var(--u)) calc(34*var(--u));min-width:calc(560*var(--u));text-align:center"><div style="font-size:calc(26*var(--u));color:#bcd0f0;letter-spacing:2px">${WD.cat==='planet'?'PLANET':'LANDSCAPE'} ${w+1} / ${WORLD_COUNT}</div><div style="font-size:calc(40*var(--u));font-weight:800;line-height:1.1">${WD.n}</div></div><div class="bt" data-act="worlds" style="width:calc(250*var(--u));height:calc(72*var(--u));font-size:calc(28*var(--u))">\u{1F30D} WORLDS</div><div class="sp"></div></div>${pills()}
+ <div style="position:absolute;left:50%;top:calc(130*var(--u));transform:translateX(-50%);padding:calc(6*var(--u)) calc(30*var(--u));border-radius:calc(30*var(--u));background:#0a1530dd;border:calc(3*var(--u)) solid ${tr.c};font-size:calc(28*var(--u));font-weight:800;letter-spacing:3px;color:${tr.c};white-space:nowrap">${tr.n} \u00b7 LEVELS ${pg*10+1}-${pg*10+10}</div>
  <div class="back glass" data-w="-1" style="position:absolute;left:calc(26*var(--u));top:45%;width:calc(80*var(--u));height:calc(110*var(--u))"><svg viewBox="0 0 24 24"><path d="M15.400 7.400L14 6l-6 6 6 6 1.400-1.400L10.800 12z"/></svg></div><div class="back glass" data-w="1" style="position:absolute;right:calc(26*var(--u));top:45%;width:calc(80*var(--u));height:calc(110*var(--u))"><svg viewBox="0 0 24 24"><path d="M8.600 16.600L10 18l6-6-6-6-1.400 1.400L13.200 12z"/></svg></div>
- ${nodes}<div style="position:absolute;left:0;right:0;bottom:0;height:calc(96*var(--u));display:flex;align-items:center;padding:0 calc(40*var(--u));font-size:calc(42*var(--u));font-weight:800"><span class="gold" style="font-size:calc(56*var(--u))">\u2605</span>&nbsp;${tot()}/${4*15}<div class="sp"></div><span style="font-size:calc(26*var(--u));color:#bcd0f0">Finish a level to unlock the next one</span></div>`},
+ <svg viewBox="0 0 1536 1024" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"><polyline points="${pts}" fill="none" stroke="#000a" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/><polyline points="${pts}" fill="none" stroke="#f5c542" stroke-width="7" stroke-dasharray="4 18" stroke-linecap="round" stroke-linejoin="round"/></svg>
+ ${open?nodes:nodes+`<div class="glass" style="position:absolute;left:50%;top:30%;transform:translateX(-50%);padding:calc(14*var(--u)) calc(34*var(--u));font-size:calc(30*var(--u));font-weight:800;text-align:center;white-space:nowrap">\u{1F512} LOCKED<div style="font-size:calc(24*var(--u));font-weight:600;color:#bcd0f0;margin-top:calc(4*var(--u))">Finish ${OPEN_NEED} levels in ${w>0?WORLDS[w-1].n:''}</div></div>`}
+ <div style="position:absolute;left:0;right:0;bottom:calc(98*var(--u));display:flex;justify-content:center;gap:calc(8*var(--u))">${pages}</div>
+ <div style="position:absolute;left:0;right:0;bottom:0;height:calc(96*var(--u));display:flex;align-items:center;padding:0 calc(40*var(--u));font-size:calc(40*var(--u));font-weight:800;background:linear-gradient(0deg,#0a1530,#0a153000)"><span class="gold" style="font-size:calc(52*var(--u))">\u2605</span>&nbsp;${wStars(w)}/${LEVELS*3}<span style="font-size:calc(26*var(--u));color:#bcd0f0;font-weight:600">&nbsp;&nbsp;this world \u00b7 ${wDone(w)}/${LEVELS} levels</span><div class="sp"></div><span style="font-size:calc(26*var(--u));color:#bcd0f0">${tot().toLocaleString()} total \u2605 \u00b7 finish a level to unlock the next</span></div>`},
+worlds:()=>{const L=wList(),n=Math.max(1,Math.ceil(L.length/12));S.wp=Math.max(0,Math.min(n-1,S.wp|0));const pgi=S.wp,tabs=[['all','ALL '+WORLDS.length],['earth','EARTH '+WORLDS.filter(x=>x.cat==='earth').length],['planet','PLANETS '+WORLDS.filter(x=>x.cat==='planet').length]];
+ let cards='';L.slice(pgi*12,pgi*12+12).forEach((WD,k)=>{const i=WD.id,open=wOpen(i),st=wStars(i),dn=wDone(i),cur=i===S.world,x=72+(k%4)*354,y=222+Math.floor(k/4)*238;
+  cards+=`<div data-pw="${i}" style="position:absolute;left:calc(${x}*var(--u));top:calc(${y}*var(--u));width:calc(330*var(--u));height:calc(214*var(--u));border-radius:calc(18*var(--u));overflow:hidden;border:calc(${cur?6:3}*var(--u)) solid ${cur?'#f5c542':'#243a63'};background:#0a1426 url(${WD.img}) center/cover;box-shadow:0 calc(8*var(--u)) calc(22*var(--u)) #000a;cursor:pointer">
+  ${WD.tint?`<div style="position:absolute;inset:0;background:${WD.tint}"></div>`:''}<div style="position:absolute;left:0;right:0;bottom:0;padding:calc(8*var(--u)) calc(12*var(--u));background:linear-gradient(0deg,#050b18f2,#050b18b0 70%,#0000)"><div style="font-size:calc(25*var(--u));font-weight:800;line-height:1.12;text-shadow:0 2px 3px #000;min-height:calc(56*var(--u));display:flex;align-items:flex-end">${WD.n}</div><div style="display:flex;align-items:center;font-size:calc(22*var(--u));color:#bcd0f0"><span class="gold">\u2605</span>&nbsp;${st}/${LEVELS*3}<div class="sp"></div>${dn}/${LEVELS}</div></div>
+  <div style="position:absolute;left:calc(10*var(--u));top:calc(8*var(--u));padding:0 calc(10*var(--u));border-radius:calc(12*var(--u));background:#050b18cc;font-size:calc(20*var(--u));font-weight:800;color:${WD.cat==='planet'?'#c9a6ff':'#7be08a'}">${WD.cat==='planet'?'PLANET':'#'+(i+1)}</div>
+  ${WD.gv!==1?`<div style="position:absolute;right:calc(10*var(--u));top:calc(8*var(--u));padding:0 calc(10*var(--u));border-radius:calc(12*var(--u));background:#050b18cc;font-size:calc(20*var(--u));font-weight:800;color:#35c6ff">G ${WD.gv.toFixed(2)}</div>`:''}
+  ${open?'':`<div style="position:absolute;inset:0;background:#050b18c8;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:calc(22*var(--u));font-weight:700;color:#bcd0f0;text-align:center;padding:0 calc(14*var(--u))"><div style="font-size:calc(58*var(--u))">\u{1F512}</div>Finish ${OPEN_NEED} levels in<br>${WORLDS[i-1].n}</div>`}</div>`});
+ return `<div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 30%,#14315e,#070d1c 75%)"></div>
+ <div class="hdr"><div class="back glass" data-go="map">${svg.back}</div><h1>SELECT WORLD</h1><div class="sp"></div></div>${pills()}
+ <div style="position:absolute;left:calc(72*var(--u));top:calc(124*var(--u));display:flex;gap:calc(14*var(--u))">${tabs.map(t=>`<div class="bt ${S.wt===t[0]?'y':''}" data-wt="${t[0]}" style="width:calc(250*var(--u));height:calc(66*var(--u));font-size:calc(28*var(--u))">${t[1]}</div>`).join('')}</div>
+ ${cards}
+ <div style="position:absolute;left:0;right:0;bottom:calc(18*var(--u));display:flex;justify-content:center;align-items:center;gap:calc(30*var(--u))"><div class="bt" data-wp="-1" style="width:calc(150*var(--u));height:calc(66*var(--u))">\u25C0</div><div style="font-size:calc(32*var(--u));font-weight:800;min-width:calc(260*var(--u));text-align:center">PAGE ${pgi+1} / ${n}</div><div class="bt" data-wp="1" style="width:calc(150*var(--u));height:calc(66*var(--u))">\u25B6</div></div>`},
 garage:()=>GARAGE(),
 upg:()=>{let c='';UPN.forEach(([n,ic],i)=>{const l=S.up[i],cost=upCost(i,l);c+=`<div class="card" style="left:calc(${60+i*360}*var(--u));top:calc(190*var(--u));width:calc(330*var(--u));height:calc(560*var(--u))"><div style="font-size:calc(34*var(--u));font-weight:800;letter-spacing:2px">${n}</div><img src="a/${ic}.png" style="width:78%;margin-top:calc(14*var(--u))"><div style="font-size:calc(30*var(--u));color:#bcd0f0">Lv. ${l}</div><div class="seg">${Array.from({length:MAXU},(_,k)=>`<s class="${k<l?'f':''}"></s>`).join('')}</div><div class="bt y" style="height:calc(80*var(--u));margin-top:calc(14*var(--u));font-size:calc(34*var(--u))" data-up="${i}" ${l>=MAXU||S.coins<cost?'disabled':''}>${l>=MAXU?'MAX':'<img src="a/coin.png" style="height:70%">'+cost}</div></div>`});
  return `<div style="position:absolute;inset:0;background:linear-gradient(180deg,#0f2142,#080f1f)"></div>${hdr('UPGRADES','title')}${c}<div class="glass" style="position:absolute;left:50%;transform:translateX(-50%);bottom:calc(60*var(--u));padding:calc(20*var(--u)) calc(56*var(--u));font-size:calc(38*var(--u));font-weight:700;display:flex;gap:calc(18*var(--u));align-items:center">${svg.tool.replace('<svg','<svg style="width:calc(50*var(--u));fill:#f5c542"')}Upgrade your vehicle and go further!</div>`},
@@ -476,7 +502,7 @@ const AFTER={garage:()=>{GV=S.tab==='drv'?null:{vi:S.pv,sk:skinOf(S.pv)}},skins:
 /* result */
 function showResult(ok){mode='menu';$('#hud').classList.add('hide');const u=$('#ui');u.querySelectorAll('.scr').forEach(e=>e.remove());const d=document.createElement('div');d.className='scr on';d.id='s_res';
  const coins=run.coins+run.stuntC+run.bonusC;let cf='';for(let i=0;i<46;i++)cf+=`<div class="conf" style="left:${Math.random()*100}%;background:${['#ffd33d','#ff5a4f','#35c6ff','#5be37d','#fff'][i%5]};animation-duration:${3+Math.random()*3}s;animation-delay:${-Math.random()*5}s"></div>`;
- const stars=ok?run.stars:0,hasNext=ok&&run.l<4;
+ const stars=ok?run.stars:0,hasNext=ok&&(run.l<LEVELS-1||(run.w<WORLD_COUNT-1&&wOpen(run.w+1)));
  d.innerHTML=`<div style="position:absolute;inset:0;background:rgba(5,10,24,.78)"></div><div class="glass" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:calc(900*var(--u));padding:calc(36*var(--u)) calc(50*var(--u));overflow:hidden;background:linear-gradient(180deg,#0f1c38,#070d1c)">${ok?cf:''}
  <div style="text-align:center;font-size:calc(100*var(--u));letter-spacing:calc(10*var(--u));position:relative">${[1,2,3].map(n=>`<span style="color:${n<=stars?'#ffcc2e':'#33405a'};text-shadow:0 4px 10px #000;font-size:${n===2?'1.25em':'1em'}">\u2605</span>`).join('')}</div>
  <div style="text-align:center;font-size:calc(84*var(--u));font-weight:900;font-style:italic;color:${ok?'#f5d13a':'#ff6a5a'};text-shadow:0 4px 10px #000;position:relative">${ok?'LEVEL COMPLETE!':run.over}</div>
@@ -495,11 +521,15 @@ addEventListener('keyup',e=>{const k=e.key;if(k==='ArrowRight'||k==='d'||k==='Ar
 document.querySelectorAll('.pu').forEach(e=>e.addEventListener('pointerdown',()=>{if(e.classList.contains('used')||mode!=='play')return;e.classList.add('used');const p=+e.dataset.p;if(p===0){boost.coin=25;say('COIN BOOST x2')}if(p===1){boost.susp=25;say('BETTER SUSPENSION')}if(p===2){boost.tire=25;say('ALL-TERRAIN TIRES')}if(p===3){car.fuel=Math.min(car.st.fuel,car.fuel+45);say('EXTRA FUEL')}}));
 function togglePause(){if(mode==='play'){paused=!paused;let m=$('#pm');if(paused){m=document.createElement('div');m.id='pm';m.className='mod on';m.innerHTML=`<div class="glass" style="padding:calc(40*var(--u));width:calc(560*var(--u));display:flex;flex-direction:column;gap:calc(18*var(--u))"><div style="text-align:center;font-size:calc(60*var(--u));font-weight:900;letter-spacing:4px">PAUSED</div><div class="bt y" data-act="resume">${svg.play}RESUME</div><div class="bt" data-act="retry">${svg.retry}RESTART</div><div class="bt" data-act="snd">SOUND: ${S.snd?'ON':'OFF'}</div><div class="bt" data-go="map">${svg.home}QUIT</div></div>`;$('#ui').appendChild(m)}else if(m)m.remove()}}
 $('#pause').addEventListener('pointerdown',togglePause);
-document.addEventListener('pointerdown',ev=>{const t=ev.target.closest('[data-go],[data-act],[data-lv],[data-v],[data-up],[data-sk],[data-w],[data-tab],[data-sel],[data-nav],[data-ds],[data-out],[data-acc]');if(!t)return;
+document.addEventListener('pointerdown',ev=>{const t=ev.target.closest('[data-go],[data-act],[data-lv],[data-v],[data-up],[data-sk],[data-w],[data-wt],[data-wp],[data-pw],[data-pg],[data-tab],[data-sel],[data-nav],[data-ds],[data-out],[data-acc]');if(!t)return;
  const go=t.dataset.go,act=t.dataset.act;
  if(go){const pm=$('#pm');if(pm)pm.remove();paused=false;if(mode==='play'||mode==='over'){mode='menu'}save();showScr(go);return}
- if(t.dataset.lv!=null){const l=+t.dataset.lv,w=S.world;if(l===0||S.stars[w+'-'+(l-1)]>0)start(w,l);return}
- if(t.dataset.w){S.world=(S.world+4+ +t.dataset.w)%4;showScr('map');return}
+ if(t.dataset.lv!=null){const l=+t.dataset.lv,w=S.world;if(wOpen(w)&&lOpen(w,l))start(w,l);return}
+ if(t.dataset.w){S.world=(S.world+WORLD_COUNT+ +t.dataset.w)%WORLD_COUNT;save();showScr('map');return}
+ if(t.dataset.pg!=null){S.lp[S.world]=+t.dataset.pg;save();showScr('map');return}
+ if(t.dataset.wt){S.wt=t.dataset.wt;S.wp=0;showScr('worlds');return}
+ if(t.dataset.wp){const n=Math.ceil(wList().length/12);S.wp=(S.wp+n+ +t.dataset.wp)%n;showScr('worlds');return}
+ if(t.dataset.pw!=null){const i=+t.dataset.pw;if(wOpen(i)){S.world=i;save();showScr('map')}return}
  if(t.dataset.tab){S.tab=t.dataset.tab;save();showScr('garage');return}
  if(t.dataset.sel!=null){S.pv=+t.dataset.sel;showScr('garage');return}
  if(t.dataset.nav){const l=vList(S.tab),p=l.indexOf(S.pv);S.pv=l[(p+ +t.dataset.nav+l.length)%l.length];showScr('garage');return}
@@ -520,7 +550,8 @@ document.addEventListener('pointerdown',ev=>{const t=ev.target.closest('[data-go
  else if(act==='reset'){if(confirm('Reset all progress?')){localStorage.removeItem('hcr_v1');location.reload()}}
  else if(act==='resume')togglePause();
  else if(act==='retry'){const pm=$('#pm');if(pm)pm.remove();start(run.w,run.l)}
- else if(act==='next'){start(run.w,run.l+1)}
+ else if(act==='next'){const w0=run.w,l0=run.l;if(l0<LEVELS-1)start(w0,l0+1);else if(w0<WORLD_COUNT-1&&wOpen(w0+1))start(w0+1,0);else showScr('map')}
+ else if(act==='worlds'){const L=wList(),i=L.indexOf(S.world);S.wp=i<0?0:Math.floor(i/12);showScr('worlds')}
 });
 /* ---------- main loop ---------- */
 function updParts(dt){for(const p of parts){p.l-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=(p.g||60)*dt;if(p.vr)p.rot+=p.vr*dt}parts=parts.filter(p=>p.l>0)}
