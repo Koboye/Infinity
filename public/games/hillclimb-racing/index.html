@@ -94,6 +94,8 @@ document.addEventListener('selectstart',function(e){e.preventDefault()},true);
 </div>
 <script src="veh.js"></script>
 <script src="props.js"></script>
+<script src="cars.js"></script>
+<script src="bridges.js"></script>
 <script>
 'use strict';
 const $=s=>document.querySelector(s),cv=$('#c'),g=cv.getContext('2d'),dx=$('#dash').getContext('2d');
@@ -169,11 +171,12 @@ const PMIX=[[['tree',.20],['bush',.12],['rock',.10],['hut',.08],['house',.05],['
 const PZ={bush:1,pine:0,pineS:0,acacia:0,hut:0,house:0,houseS:0,houseN:0};
 function pickProp(w,r){const m=PMIX[w]||PMIX[0];let a=0;for(const q of m){a+=q[1];if(r<a)return q[0]}return m[m.length-1][0]}
 /* real obstacles on the road. smash: breaks when hit (slows the car); solid: a terrain bump the wheels must climb over */
-const OBSK={crate:{fw:.8,slow:.9},barrel:{fw:.8,slow:.86},cone:{fw:.8,slow:.97},fence:{fw:.95,slow:.93},sign:{fw:.3,slow:.95},log:{solid:1,bw:.5,bh:.62},boulder:{solid:1,bw:.55,bh:.55}};
-const OMIX=[[['crate',.2],['barrel',.17],['cone',.17],['fence',.14],['sign',.05],['log',.13],['boulder',.14]],
- [['crate',.14],['barrel',.14],['cone',.1],['fence',.07],['sign',.05],['log',.07],['boulder',.43]],
- [['crate',.18],['barrel',.16],['cone',.14],['fence',.14],['sign',.06],['log',.16],['boulder',.16]],
- [['crate',.2],['barrel',.18],['cone',.16],['fence',.12],['sign',.06],['log',.14],['boulder',.14]]];
+const OBSK={crate:{fw:.8,slow:.9},barrel:{fw:.8,slow:.86},cone:{fw:.8,slow:.97},fence:{fw:.95,slow:.93},sign:{fw:.3,slow:.95},log:{solid:1,bw:.5,bh:.62},boulder:{solid:1,bw:.55,bh:.55},
+ tires:{solid:1,bw:.55,bh:.6},rockpile:{solid:1,bw:.5,bh:.5},barrier:{solid:1,bw:.7,bh:.5},barricade:{fw:.9,slow:.9},hay:{fw:.8,slow:.88},sandbags:{fw:.9,slow:.9}};
+const OMIX=[[['crate',.13],['barrel',.11],['cone',.11],['fence',.09],['sign',.04],['log',.09],['boulder',.07],['tires',.08],['barricade',.08],['hay',.10],['sandbags',.04],['barrier',.04],['rockpile',.02]],
+ [['crate',.10],['barrel',.10],['cone',.06],['fence',.05],['sign',.04],['log',.05],['boulder',.22],['rockpile',.12],['sandbags',.12],['hay',.06],['tires',.06],['barricade',.02]],
+ [['crate',.12],['barrel',.12],['cone',.10],['fence',.10],['sign',.05],['log',.12],['boulder',.10],['tires',.08],['barricade',.08],['barrier',.08],['sandbags',.05]],
+ [['crate',.13],['barrel',.12],['cone',.12],['fence',.08],['sign',.04],['log',.09],['boulder',.08],['tires',.08],['barricade',.10],['barrier',.10],['sandbags',.04],['hay',.02]]];
 function osize(k,s){const im=IM[k];if(im)return{w:im.width*.9*s,h:im.height*.9*s};const a=PA[k];return{w:a.lw*s*.95,h:a.lh*s*.95}}
 const RIVC=[['#4ab4ee','#12589a'],['#46c4d0','#10707e'],['#a8e4ff','#4a96c8'],['#2a5cc0','#0a1e5c']];
 function genLevel(){const L=LV,fin=L.fin,rnd=L.rnd;coins=[];cans=[];gems=[];props=[];obs=[];L.gorges=[];L.bumps=[];
@@ -234,7 +237,8 @@ function smashCheck(c,V,ca,sa){if(!obs)return;
   if(hit)smash(o,c)}}
 function smash(o,c){o.dead=1;run.smash++;const gy=Hr(o.x)+14,dir=c.vx>=0?1:-1,d=OBSK[o.k],rn=Math.random;
  const plank=(w,h,col)=>parts.push({x:o.x+(rn()-.5)*o.w*.7,y:gy-o.h*(.15+rn()*.75),vx:c.vx*.5+(rn()-.35)*380,vy:-160-rn()*440,l:1.2,m:1.2,rect:1,pw:w,ph:h,c:col,rot:rn()*6,vr:(rn()-.5)*18,g:900});
- if(o.k==='crate'||o.k==='fence'||o.k==='sign'){const n=o.k==='fence'?6:8;for(let i=0;i<n;i++)plank(o.k==='fence'?30:20+rn()*8,6+rn()*3,i%2?'#b07a44':'#7c4f26')}
+ if(o.k==='crate'||o.k==='fence'||o.k==='sign'||o.k==='barricade'){const n=o.k==='fence'?6:8,pc=o.k==='barricade'?['#f4f4f4','#e23a22']:['#b07a44','#7c4f26'];for(let i=0;i<n;i++)plank(o.k==='fence'?30:20+rn()*8,6+rn()*3,i%2?pc[0]:pc[1])}
+ else if(o.k==='hay'){for(let i=0;i<14;i++)plank(10+rn()*10,2+rn()*2,i%2?'#f2d26a':'#c9983a')}
  else parts.push({x:o.x,y:gy-o.h/2,vx:c.vx*.9+dir*150,vy:-340-rn()*180,l:1.4,m:1.4,spr:o.k,pw:o.w,ph:o.h,rot:0,vr:dir*(6+rn()*6),g:900});
  for(let i=0;i<7;i++)parts.push({x:o.x+(rn()-.5)*o.w,y:gy-6,vx:(rn()-.5)*220+c.vx*.2,vy:-30-rn()*110,l:.6,m:.6,r:6+rn()*8,c:'#cdb892'});
  c.vx*=d.slow;c.vy-=50;tone(150,.13,'square',.09,60);try{navigator.vibrate&&navigator.vibrate(18)}catch(e){}}
@@ -346,7 +350,7 @@ function drawScene(){const z=H/620,c=car;
  /* tufts */
  g.fillStyle=WD.gr[1];for(let x=Math.floor(x0/46)*46;x<x1;x+=46){const y=Gv(x)-14,h=6+((x*7)%9);g.beginPath();g.moveTo(x-4,y);g.lineTo(x,y-h);g.lineTo(x+4,y);g.fill()}
  const ttw=performance.now()/1000;
- for(const gr of LV.gorges){if(gr.b<x0||gr.a>x1)continue;drawWater(gr,0,ttw,x0,x1);if(gr.type==='gorge')drawBridge(gr,ttw,x0,x1)}
+ for(const gr of LV.gorges){if(gr.b<x0||gr.a>x1)continue;drawWater(gr,0,ttw,x0,x1);if(gr.type==='gorge')drawBridgeFor(gr,ttw,x0,x1)}
  for(const o of obs){if(o.dead||o.x<x0||o.x>x1)continue;const im=IM[o.k]||PA[o.k];if(im)g.drawImage(im,o.x-o.w/2,Hr(o.x)+14-o.h,o.w,o.h)}
  for(const p of props){if(p.z&&p.x>x0&&p.x<x1){const im=IM[p.k];if(im){const w=im.width*.9*p.s,h=im.height*.9*p.s;sp(im,p.x,Hf(p.x)+14,w,h)}else{const a=PA[p.k];if(a)sp(a,p.x,Hf(p.x)+14,a.lw*p.s*.95,a.lh*p.s*.95)}}}
  /* finish */
