@@ -126,6 +126,8 @@ let S={coins:1245,gems:12,up:[0,0,0,0],veh:0,own:[1,0,0,0],skin:[0,-1,-1,-1],sta
 try{const t=JSON.parse(localStorage.getItem('hcr_v1')||'null');if(t)S=Object.assign(S,t)}catch(e){}
 let bgOff=0;
 if(!Array.isArray(S.accOwn))S.accOwn=[];if(!Array.isArray(S.accOn))S.accOn=[];ACC.forEach((_,i)=>{S.accOwn[i]=S.accOwn[i]|0;S.accOn[i]=S.accOn[i]|0});
+/* one-time migration to the curated vehicle roster: refund old purchases (their old prices), keep coins/stars/upgrades */
+if(S.vset!==2){let rf=0;try{(S.own||[]).forEach((o,i)=>{if(o&&i>0)rf+=OLD_COST[i]||0})}catch(e){}S.coins=(S.coins|0)+rf;S.own=[1];S.veh=0;S.pv=0;S.skin=[0];S.tab='car';S.vset=2;try{localStorage.setItem('hcr_v1',JSON.stringify(S))}catch(e){}}
 S.own[0]=1;S.drvOwn[0]=1;S.outOwn[0]=1;if(!VEH[S.veh]||!S.own[S.veh])S.veh=0;if(!DRV[S.drv]||!S.drvOwn[S.drv])S.drv=0;if(!OUT[S.outfit]||!S.outOwn[S.outfit])S.outfit=0;
 const save=()=>{try{localStorage.setItem('hcr_v1',JSON.stringify(S))}catch(e){}};
 const tot=()=>Object.values(S.stars).reduce((a,b)=>a+b,0);
