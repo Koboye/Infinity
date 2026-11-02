@@ -301,7 +301,7 @@ function step(dt){const c=car,V=c.v,st=c.st,th=inp.gas&&c.fuel>0?1:0,br=inp.brak
    c.sp[i]+=vt/V.R*dt;c.ws[i]+=((-pen*.6)-c.ws[i])*Math.min(1,dt*30);
    if(pen>V.R+10){c.y-=(pen-V.R-10)*.5;if(vn<0){c.vx-=0;c.vy-=vn*ny*.4}}
    if(inW){if(Math.abs(vt)>90&&Math.random()<dt*50)parts.push({x:px+(Math.random()-.5)*30,y:RV.wy,vx:-vt*.1+(Math.random()-.5)*90,vy:-90-Math.random()*Math.min(340,Math.abs(vt)*.5),l:.7,m:.7,r:2.5+Math.random()*3.5,c:'#e4f6ff',g:760})}
-   else if(Math.abs(vt)>110&&Math.random()<dt*28)parts.push({x:px,y:h,vx:-vt*.12+(Math.random()-.5)*40,vy:-40-Math.random()*70,l:.6,m:.6,r:6+Math.random()*7,c:WORLDS[LV.w].dust})
+   /* wheel dust removed */
   }else{c.ws[i]+=(6-c.ws[i])*Math.min(1,dt*6);c.sp[i]+=(th*14-br*8)*dt}
  }
  if(wet){const f=wet/2;c.vx*=Math.max(0,1-1.0*f*dt);c.vy*=Math.max(0,1-.7*f*dt);c.w*=Math.max(0,1-1.0*f*dt)}
