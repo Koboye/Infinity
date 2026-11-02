@@ -13,7 +13,7 @@ const REAL_BY={};
  VEH.length=0;
  REAL_DATA.forEach(d=>{
   const s=d.s,gx=x=>(x-d.mx)*s,R=d.R,car=d.cls==='car';
-  const v=VEH[d.vi]=Object.assign({},car?CAR:BKX,{cost:d.cost,pw:d.pw,gr:d.gr,fu:d.fu,sk:0,st:d.st,vm:d.vm,I:car?4300:3000,air:1.4,ks:1});
+  const v=VEH[d.vi]=Object.assign({},car?CAR:BKX,{cost:d.cost,pw:d.pw,gr:d.gr,fu:d.fu,sk:0,st:d.st,vm:d.vm,I:car?5600:3000,air:1.4,ks:1});
   const wr={x:+gx(d.wr[0]).toFixed(1),y:R},wf={x:+gx(d.wf[0]).toFixed(1),y:R};
   v.n=d.n;v.kind='real';v.cls=d.cls;v.R=R;v.wh=[wr,wf];v.len=Math.round(d.W*s);v.art='r'+d.vi;
   v.hd=[{x:d.head[0],y:d.head[1]},{x:+(d.head[0]-6).toFixed(1),y:+(d.head[1]+16).toFixed(1)}];
