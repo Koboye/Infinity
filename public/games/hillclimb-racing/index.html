@@ -138,6 +138,7 @@ let bgOff=0;
 if(!Array.isArray(S.accOwn))S.accOwn=[];if(!Array.isArray(S.accOn))S.accOn=[];ACC.forEach((_,i)=>{S.accOwn[i]=S.accOwn[i]|0;S.accOn[i]=S.accOn[i]|0});
 /* one-time migration to the curated vehicle roster: refund old purchases (their old prices), keep coins/stars/upgrades */
 if(S.vset!==2){let rf=0;try{(S.own||[]).forEach((o,i)=>{if(o&&i>0)rf+=OLD_COST[i]||0})}catch(e){}S.coins=(S.coins|0)+rf;S.own=[1];S.veh=0;S.pv=0;S.skin=[0];S.tab='car';S.vset=2;try{localStorage.setItem('hcr_v1',JSON.stringify(S))}catch(e){}}
+if(S.vset!==3){let rf=0;const OC={1:2500,2:5500,3:9000,4:14000,5:19000,6:26000,10:30000};try{(S.own||[]).forEach((o,i)=>{if(o&&OC[i])rf+=OC[i]})}catch(e){}S.coins=(S.coins|0)+rf;[1,2,3,4,5,6,10].forEach(i=>{S.own[i]=0});S.veh=VEH[S.veh]&&S.own[S.veh]?S.veh:0;S.pv=S.veh;S.vset=3;try{localStorage.setItem('hcr_v1',JSON.stringify(S))}catch(e){}}
 if(!S.parts||typeof S.parts!=='object')S.parts={};
 S.own[0]=1;S.drvOwn[0]=1;S.outOwn[0]=1;if(!VEH[S.veh]||!S.own[S.veh])S.veh=0;if(!DRV[S.drv]||!S.drvOwn[S.drv])S.drv=0;if(!OUT[S.outfit]||!S.outOwn[S.outfit])S.outfit=0;
 const save=()=>{try{localStorage.setItem('hcr_v1',JSON.stringify(S))}catch(e){}};
