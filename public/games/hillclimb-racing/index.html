@@ -304,6 +304,7 @@ function step(dt){const c=car,V=c.v,st=c.st,th=inp.gas&&c.fuel>0?1:0,br=inp.brak
    /* wheel dust removed */
   }else{c.ws[i]+=(6-c.ws[i])*Math.min(1,dt*6);c.sp[i]+=(th*14-br*8)*dt}
  }
+ if(!gr&&V.cls==='car')ay+=G*(LV.gv||1)*.6;   /* heavy Jeep: falls faster than it rises, so crests/bumps give short hops, not long flights */
  if(wet){const f=wet/2;c.vx*=Math.max(0,1-1.0*f*dt);c.vy*=Math.max(0,1-.7*f*dt);c.w*=Math.max(0,1-1.0*f*dt)}
  for(const o of V.cp){const rx=o.x*ca-o.y*sa,ry=o.x*sa+o.y*ca,px=c.x+rx,py=c.y+ry,h=Hf(px),sl=(Hf(px+2)-Hf(px-2))/4,il=1/Math.sqrt(1+sl*sl),pen=4-(h-py)*il;
   if(pen>0){const nx=sl*il,ny=-il,vx=c.vx-c.w*ry,vy=c.vy+c.w*rx,vn=vx*nx+vy*ny;let Fn=300*pen-14*vn;if(Fn<0)Fn=0;const Fx=Fn*nx,Fy=Fn*ny;ax+=Fx;ay+=Fy;aw+=(rx*Fy-ry*Fx)/I}}
