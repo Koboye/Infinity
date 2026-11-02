@@ -54,8 +54,8 @@ export function GameGrid({ t, onPick }) {
       })}
       {/* Hill Climb Racer: the full game (worlds, vehicles, drivers, difficulty) is a stand-alone arcade page (/games/hillclimb-racing/), so it is a link card and not part of GAME_LIST (no ratings, no online matches). */}
       <a role="listitem" className="gg-card" href="/games/hillclimb-racing/" style={{ '--accent': '#FF7A2F', '--i': order.length, textDecoration: 'none' }}>
-        <span className="gg-art"><GameIcon game="skycrawler" size={52} /></span>
-        <b className="gg-name">Hill Climb Racer</b>
+        <span className="gg-art"><img src="/games/hillclimb-racing/a/tile.png" alt="" width={64} height={38} style={{ objectFit: 'contain', display: 'block' }} /></span>
+        <b className="gg-name">Infinity Climb</b>
         <small className="gg-tag">Hill-climb racing</small>
         <span className="gg-foot"><span className="gg-mode">{t.badgeOffline}</span></span>
       </a>
