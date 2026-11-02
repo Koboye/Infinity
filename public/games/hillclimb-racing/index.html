@@ -238,6 +238,12 @@ function bonusGet(k,c){const cm=c.st.cm||1,P=(x,y,col)=>{parts.push({x,y,vx:0,vy
  else{const v=Math.round(150*cm);run.bonusC+=v;S.coins+=v;run.bags++;say('MONEY BAG  +'+v);sfx.coin();P(k.x,k.y,'#7be08a')}}
 /* ---------- run state ---------- */
 const PXM=20,R=28,G=1500;
+/* AIR_ASSIST: 0 = physically honest flight (gravity is G everywhere and a spinning car keeps its angular momentum until the player counter-steers).
+   >0 re-enables the old arcade auto-levelling torque (the nose is pulled toward the flight path); it is NOT physical, so it stays off by default. */
+const AIR_ASSIST=0;
+/* With one gravity everywhere a jump hangs ~19% shorter than in the old build (which cut gravity to 66% in the air). AIRT = sqrt(.66) rescales the air-time
+   thresholds and pay to that, and AIR_TQ lifts the air-control torque by 1/AIRT^2 so the same ramp still gives about one full flip. */
+const AIRT=Math.sqrt(.66),AIR_TQ=14/(AIRT*AIRT);
 const WH=[{x:-60,y:22},{x:61,y:22}],CP=[{x:92,y:8},{x:-80,y:12}],HD=[{x:-15,y:-52},{x:45,y:-60},{x:-70,y:-56}];
 let car,run,cam,parts=[],mode='menu',paused=false,inp={gas:0,brake:0},boost={coin:0,susp:0,tire:0},pop={t:0};
 function stats(){const v=VEH[S.veh],u=S.up,d=DRV[S.drv]||DRV[0],p=pl(S.veh);return{pw:760*v.pw*(d.pw||1)*(1+.14*u[0])*(1+.16*p[0]),K:500*v.ks*(1+.07*u[1])*(1+.09*p[2]),Cd:18*v.ks*(1+.09*u[1])*(1+.12*p[2]),mu:1.15*v.gr*(d.mu||1)*(1+.1*u[2])*(1+.08*p[1])*WORLDS[LV.w].grip,mud:.5+.11*p[1],fuel:(100+22*u[3])*v.fu,vmax:1300*(v.vm||1)*(d.vm||1)*(1+.05*u[0])*(1+.06*p[3]),air:v.air*(d.air||1),cm:d.cm||1,stm:d.st||1,shield:Math.max(d.shield||0,PSH[p[4]]),fm:d.fm||1}}
@@ -249,7 +255,7 @@ function start(w,l){try{const de=document.documentElement;if(!document.fullscree
  $('#hud').classList.remove('hide');showScr(null);}
 function airHud(t,fl){let e=document.getElementById('airhud');if(!e){e=document.createElement('div');e.id='airhud';e.style.cssText='position:fixed;left:50%;top:24%;transform:translateX(-50%);z-index:30;pointer-events:none;font:900 clamp(22px,4.2vw,44px) Arial,sans-serif;color:#fff;text-shadow:0 3px 0 #1a3a8a,0 0 18px #35c6ff;letter-spacing:2px;opacity:0;transition:opacity .15s;white-space:nowrap;text-align:center';document.body.appendChild(e)}
  const n=Math.abs(fl||0);
- if(t>0&&(t>.6||n)){const ft=n?(fl<0?'BACK FLIP':'FRONT FLIP')+(n>1?'  x'+n:''):'',at=t>.6?'AIR TIME  '+t.toFixed(1)+'s'+(t>=.8?'  +'+Math.round((t-.5)*60):''):'';
+ if(t>0&&(t>.6*AIRT||n)){const ft=n?(fl<0?'BACK FLIP':'FRONT FLIP')+(n>1?'  x'+n:''):'',at=t>.6*AIRT?'AIR TIME  '+t.toFixed(1)+'s'+(t>=.8*AIRT?'  +'+Math.round((t/AIRT-.5)*60):''):'';
   e.textContent=ft&&at?ft+'   '+at:ft||at;e.style.color=n?'#ffe14a':t>=.8?'#ffd33d':'#fff';e.style.opacity=1;
   if(n!==e._n){e._n=n;if(n&&e.animate)e.animate([{transform:'translateX(-50%) scale(1.45)'},{transform:'translateX(-50%) scale(1)'}],{duration:280,easing:'cubic-bezier(.2,1.6,.4,1)'})}}
  else{e.style.opacity=0;e._n=0}}
@@ -279,9 +285,9 @@ function smash(o,c){o.dead=1;run.smash++;const gy=Hr(o.x)+14,dir=c.vx>=0?1:-1,d=
 function step(dt){const c=car,V=c.v,st=c.st,th=inp.gas&&c.fuel>0?1:0,br=inp.brake?1:0;
  const ca=Math.cos(c.a),sa=Math.sin(c.a);let ax=0,ay=G*(LV.gv||1),aw=0,gr=0,I=V.I;
  const K=st.K,Cd=st.Cd*(boost.susp>0?1.3:1),mu=st.mu*(boost.tire>0?1.3:1),RV=riverAt(c.x,120);let wet=0;
- for(let i=0;i<2;i++){const o=V.wh[i],rx=o.x*ca-o.y*sa,ry=o.x*sa+o.y*ca,px=c.x+rx,py=c.y+ry,h=Hf(px),pen=py+V.R-h;
+ for(let i=0;i<2;i++){const o=V.wh[i],rx=o.x*ca-o.y*sa,ry=o.x*sa+o.y*ca,px=c.x+rx,py=c.y+ry,h=Hf(px),sl=(Hf(px+2)-Hf(px-2))/4,il=1/Math.sqrt(1+sl*sl),pen=V.R-(h-py)*il;
   const inW=!!(RV&&px>RV.wl&&px<RV.wr&&py+V.R*.4>RV.wy);if(inW){wet++;if(!c.inw[i]){splash(px,RV.wy,c.vx,c.vy,1)}}else if(c.inw[i]&&RV&&px>RV.wl-30&&px<RV.wr+30)splash(px,RV.wy,c.vx,c.vy,.5);c.inw[i]=inW;
-  if(pen>0){const sl=(Hf(px+2)-Hf(px-2))/4,il=1/Math.sqrt(1+sl*sl),tx=il,ty=sl*il,nx=sl*il,ny=-il;
+  if(pen>0){const tx=il,ty=sl*il,nx=sl*il,ny=-il;
    const vx=c.vx-c.w*ry,vy=c.vy+c.w*rx,vn=vx*nx+vy*ny,vt=vx*tx+vy*ty;
    let Fn=K*pen-Cd*vn;if(Fn<0)Fn=0;
    let Ft=-.12*vt;
@@ -297,44 +303,44 @@ function step(dt){const c=car,V=c.v,st=c.st,th=inp.gas&&c.fuel>0?1:0,br=inp.brak
   }else{c.ws[i]+=(6-c.ws[i])*Math.min(1,dt*6);c.sp[i]+=(th*14-br*8)*dt}
  }
  if(wet){const f=wet/2;c.vx*=Math.max(0,1-1.0*f*dt);c.vy*=Math.max(0,1-.7*f*dt);c.w*=Math.max(0,1-1.0*f*dt)}
- for(const o of V.cp){const rx=o.x*ca-o.y*sa,ry=o.x*sa+o.y*ca,px=c.x+rx,py=c.y+ry,h=Hf(px),pen=py+4-h;
-  if(pen>0){const sl=(Hf(px+2)-Hf(px-2))/4,il=1/Math.sqrt(1+sl*sl),nx=sl*il,ny=-il,vx=c.vx-c.w*ry,vy=c.vy+c.w*rx,vn=vx*nx+vy*ny;let Fn=300*pen-14*vn;if(Fn<0)Fn=0;const Fx=Fn*nx,Fy=Fn*ny;ax+=Fx;ay+=Fy;aw+=(rx*Fy-ry*Fx)/I}}
+ for(const o of V.cp){const rx=o.x*ca-o.y*sa,ry=o.x*sa+o.y*ca,px=c.x+rx,py=c.y+ry,h=Hf(px),sl=(Hf(px+2)-Hf(px-2))/4,il=1/Math.sqrt(1+sl*sl),pen=4-(h-py)*il;
+  if(pen>0){const nx=sl*il,ny=-il,vx=c.vx-c.w*ry,vy=c.vy+c.w*rx,vn=vx*nx+vy*ny;let Fn=300*pen-14*vn;if(Fn<0)Fn=0;const Fx=Fn*nx,Fy=Fn*ny;ax+=Fx;ay+=Fy;aw+=(rx*Fy-ry*Fx)/I}}
  /* exhaust: idle puffs, thick smoke under throttle, backfire flash when lifting off at high revs */
  {const vv=VEH[S.veh];if(vv&&vv.wh&&mode==='play'){const ca=Math.cos(c.a),sa=Math.sin(c.a),ex=vv.wh[0].x-30,ey=vv.wh[0].y-12,px=c.x+ex*ca-ey*sa,py=c.y+ex*sa+ey*ca;
   if(Math.random()<dt*(th?26:6))parts.push({x:px,y:py,vx:c.vx*.3-70-Math.random()*40,vy:-16-Math.random()*30-(th?20:0),l:th?.9:.5,m:th?.9:.5,r:th?4+Math.random()*4:2.5,c:th?'#9aa1aa':'#c4c9d0'});
   if(c._th&&!th&&run.rpm>.55)for(let i=0;i<5;i++)parts.push({x:px,y:py,vx:-160-Math.random()*220,vy:-30+(Math.random()-.5)*80,l:.18,m:.18,r:4+Math.random()*4,c:i%2?'#ffb02e':'#fff2a0'});
   c._th=th}}
- if(!gr){ay-=G*(LV.gv||1)*.34;
+ if(!gr){
   /* AIR CONTROL (as in the Play Store Hill Climb Racing) - hold GAS / RIGHT = back flip (nose up), BRAKE / LEFT = front flip (nose down).
-     Torque ramps the spin up smoothly toward a top rotation speed, reversing is stronger so it stays responsive,
-     and a light drag keeps the momentum so you can chain 2, 3, 4+ rotations in one long jump. */
+     Torque ramps the spin up smoothly toward a top rotation speed and reversing is stronger so it stays responsive.
+     There is no angular drag in flight: let go of the stick and the car keeps spinning (angular momentum is conserved), so you can chain 2, 3, 4+ rotations
+     in one long jump and you have to counter-steer to stop. */
   const dir=(inp.brake?1:0)-(inp.gas?1:0),WM=9.2*Math.min(1.3,.78+.22*st.air);
-  if(dir){const sw=c.w*dir,ramp=sw<0?1.7:Math.max(0,1-Math.pow(sw/WM,2));aw+=dir*14*st.air*ramp}
-  aw-=c.w*(dir?.08:.16);
-  /* hands off: the nose gently follows the flight path, like a real kicker jump (any steering input overrides it) */
-  if(!dir&&c.air>.12&&!run.over){let d=Math.atan2(c.vy,Math.max(60,c.vx))-c.a;d=Math.atan2(Math.sin(d),Math.cos(d));aw+=Math.max(-16,Math.min(16,d*14-c.w*5.5))}
+  if(dir){const sw=c.w*dir,ramp=sw<0?1.7:Math.max(0,1-Math.pow(sw/WM,2));aw+=dir*AIR_TQ*st.air*ramp}
+  /* optional arcade assist (off by default, see AIR_ASSIST): the nose follows the flight path when no steering input is held */
+  if(AIR_ASSIST&&!dir&&c.air>.12&&!run.over){let d=Math.atan2(c.vy,Math.max(60,c.vx))-c.a;d=Math.atan2(Math.sin(d),Math.cos(d));aw+=AIR_ASSIST*Math.max(-16,Math.min(16,d*14-c.w*5.5))}
   if(c.w>WM*1.5)c.w=WM*1.5;else if(c.w<-WM*1.5)c.w=-WM*1.5;
   c.air+=dt;c.rot+=c.w*dt;
   const nf=flipsOf(c.rot);if(nf!==c.fl){if(Math.abs(nf)>Math.abs(c.fl||0)){sfx.flip();try{navigator.vibrate&&navigator.vibrate(12)}catch(e){}}c.fl=nf}
-  if(c.air>.6||c.fl)airHud(c.air,c.fl)}
+  if(c.air>.6*AIRT||c.fl)airHud(c.air,c.fl)}
  else{
   /* LANDING - orientation relative to the slope decides: wheels down = safe, upside down = crash */
   const at=c.air,nf=Math.abs(flipsOf(c.rot)),sl=Math.atan2(Hf(c.x+30)-Hf(c.x-30),60);let rel=c.a-sl;rel=Math.atan2(Math.sin(rel),Math.cos(rel));
   airHud(0);
-  if(at>.25&&Math.abs(rel)>1.9&&!run.over)headHit(c,st);
-  else if(at>.25){
+  if(at>.25*AIRT&&Math.abs(rel)>1.9&&!run.over)headHit(c,st);
+  else if(at>.25*AIRT){
    const mul=(boost.coin>0?2:1)*st.stm,msg=[];let fl=0;
    if(nf>0){fl=Math.round((100*nf+25*nf*(nf-1))*mul);run.flips+=nf;run.stuntC+=fl;S.coins+=fl;run.flipBest=Math.max(run.flipBest||0,nf);msg.push((c.rot<0?'BACK':'FRONT')+' FLIP'+(nf>1?' x'+nf:'')+'  +'+fl)}
-   if(at>=.5&&(nf>0||at>=1)){const ar=Math.abs(rel);
+   if(at>=.5*AIRT&&(nf>0||at>=AIRT)){const ar=Math.abs(rel);
     if(ar<.3){const lb=Math.round((30+20*nf)*mul);run.stuntC+=lb;S.coins+=lb;msg.push('PERFECT LANDING  +'+lb);sfx.coin()}
     else if(ar<.75){const lb=Math.round((15+10*nf)*mul);run.stuntC+=lb;S.coins+=lb;msg.push('SAFE LANDING  +'+lb)}
     else if(nf>0)msg.push('ROUGH LANDING')}
-   if(at>=.8){const ab=Math.round((at-.5)*60*mul);run.stuntC+=ab;S.coins+=ab;run.airBest=Math.max(run.airBest||0,at);msg.push('AIR TIME '+at.toFixed(1)+'s  +'+ab)}
-   if(msg.length){say(msg.join('   '));if(nf>0)sfx.flip();else if(at>=.8)sfx.flip()}}
+   if(at>=.8*AIRT){const ab=Math.round((at/AIRT-.5)*60*mul);run.stuntC+=ab;S.coins+=ab;run.airBest=Math.max(run.airBest||0,at);msg.push('AIR TIME '+at.toFixed(1)+'s  +'+ab)}
+   if(msg.length){say(msg.join('   '));if(nf>0)sfx.flip();else if(at>=.8*AIRT)sfx.flip()}}
   c.air=0;c.rot=0;c.fl=0;aw-=c.w*1.2}
  c.vx+=ax*dt;c.vy+=ay*dt;c.w+=aw*dt;c.x+=c.vx*dt;c.y+=c.vy*dt;c.a+=c.w*dt;
  if(c.x<-300){c.x=-300;c.vx=Math.max(0,c.vx)}
- c.vx*=1-.02*dt;
+ {const kd=1-.02*dt;c.vx*=kd;c.vy*=kd}
  for(const o of V.hd){const ca2=Math.cos(c.a),sa2=Math.sin(c.a),px=c.x+o.x*ca2-o.y*sa2,py=c.y+o.x*sa2+o.y*ca2;if(py>Hf(px)+2&&!run.over){if(st.shield>(run.sh|0)){run.sh=(run.sh|0)+1;c.a=0;c.rot=0;c.fl=0;c.w=0;c.vy=-430;c.vx*=.6;c.y-=40;say('SAVED! DURABILITY');sfx.can()}else fail('HEAD CRASH');break}}
  if(th)c.fuel-=(.8+1.7)*dt*(1-.05*S.up[0]*.3)*st.fm;else c.fuel-=.8*dt*st.fm;
  if(c.fuel<=0){c.fuel=0;if(Math.abs(c.vx)<12)run.idle+=dt;else run.idle=0;if(run.idle>1.6&&!run.over)fail('OUT OF FUEL')}
@@ -651,7 +657,7 @@ function showResult(ok){mode='menu';$('#hud').classList.add('hide');const u=$('#
  d.innerHTML=`<div style="position:absolute;inset:0;background:rgba(5,10,24,.78)"></div><div class="glass" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:calc(900*var(--u));padding:calc(36*var(--u)) calc(50*var(--u));overflow:hidden;background:linear-gradient(180deg,#0f1c38,#070d1c)">${ok?cf:''}
  <div style="text-align:center;font-size:calc(100*var(--u));letter-spacing:calc(10*var(--u));position:relative">${[1,2,3].map(n=>`<span style="color:${n<=stars?'#ffcc2e':'#33405a'};text-shadow:0 4px 10px #000;font-size:${n===2?'1.25em':'1em'}">\u2605</span>`).join('')}</div>
  <div style="text-align:center;font-size:calc(84*var(--u));font-weight:900;font-style:italic;color:${ok?'#f5d13a':'#ff6a5a'};text-shadow:0 4px 10px #000;position:relative">${ok?'LEVEL COMPLETE!':run.over}</div>
- <div style="position:relative;margin:calc(20*var(--u)) calc(30*var(--u));font-size:calc(40*var(--u))">${[['Distance',Math.floor(run.dist).toLocaleString()+' m'],['Coins Collected',coins.toLocaleString()],['Stunts',run.flips]].concat((run.airBest||0)>=.8?[['Best Air Time',run.airBest.toFixed(1)+' s']]:[]).concat(run.smash>0?[['Obstacles Smashed',run.smash]]:[]).concat(run.trophies+run.chests+run.bags>0?[['Bonus Rewards',run.trophies+' \u{1F3C6}  '+run.chests+' \u{1F381}  '+run.bags+' \u{1F4B0}']]:[]).map(r=>`<div style="display:flex;align-items:center;gap:calc(20*var(--u));padding:calc(10*var(--u)) 0"><span class="gold">\u2605</span>${r[0]}<div class="sp"></div><b>${r[1]}</b></div>`).join('')}</div>
+ <div style="position:relative;margin:calc(20*var(--u)) calc(30*var(--u));font-size:calc(40*var(--u))">${[['Distance',Math.floor(run.dist).toLocaleString()+' m'],['Coins Collected',coins.toLocaleString()],['Stunts',run.flips]].concat((run.airBest||0)>=.8*AIRT?[['Best Air Time',run.airBest.toFixed(1)+' s']]:[]).concat(run.smash>0?[['Obstacles Smashed',run.smash]]:[]).concat(run.trophies+run.chests+run.bags>0?[['Bonus Rewards',run.trophies+' \u{1F3C6}  '+run.chests+' \u{1F381}  '+run.bags+' \u{1F4B0}']]:[]).map(r=>`<div style="display:flex;align-items:center;gap:calc(20*var(--u));padding:calc(10*var(--u)) 0"><span class="gold">\u2605</span>${r[0]}<div class="sp"></div><b>${r[1]}</b></div>`).join('')}</div>
  ${ok&&run.rec?'<div style="position:relative;text-align:right;margin-right:calc(60*var(--u))"><span style="display:inline-block;background:#f5c542;color:#2a1a00;font-weight:900;font-size:calc(26*var(--u));padding:calc(4*var(--u)) calc(16*var(--u));transform:rotate(-4deg)">NEW RECORD!</span></div>':''}
  ${ok?`<div style="position:relative;text-align:center;font-size:calc(30*var(--u));color:#bcd0f0;margin-top:calc(8*var(--u))">Level bonus +${run.bonus}</div>`:''}
  <div style="position:relative;display:flex;gap:calc(20*var(--u));margin-top:calc(26*var(--u))"><div class="bt" style="flex:1" data-go="map">${svg.home}HOME</div><div class="bt" style="flex:1" data-act="retry">${svg.retry}RETRY</div>${hasNext?`<div class="bt g" style="flex:1" data-act="next">${svg.play}NEXT</div>`:''}</div></div>`;
