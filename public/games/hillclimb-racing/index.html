@@ -131,23 +131,23 @@ function mk(w,l){const WD=WORLDS[w],gi=w*5+l,df=.75+.045*gi,goal=Math.round(GOAL
 function Hf(x){let L=LV;while(L.prev&&x<L.off)L=L.prev;return L.y0+Hl(L,x-L.off)}
 function Hl(L,x){if(x<=0)return 0;const f=sm(x/900);
  let y=-x*L.sl*(.35+.65*f)+f*(L.a1*(Math.sin(x/L.p1+L.s)-Math.sin(L.s))+L.a2*(Math.sin(x/L.p2+L.s*2)-Math.sin(L.s*2))+L.a3*(Math.sin(x/53+L.s*3)-Math.sin(L.s*3)));
- for(const r of L.ramps){if(x>r-320&&x<r+110){y-=x<r?120*sm((x-(r-320))/320):120*(1-sm((x-r)/110))}}
+ for(const r of L.ramps){if(x>r-440&&x<r+110){y-=x<r?100*sm((x-(r-440))/440):100*(1-sm((x-r)/110))}}
  return y}
 let coins,cans,gems,props,runCoinsTotal;
 function genLevel(){const L=LV,fin=L.fin,rnd=L.rnd,o=L.off,gi=L.gi,Y=x=>Hf(x+o);
  coins=coins.filter(k=>k.x>o-2500);cans=cans.filter(k=>k.x>o-2500);gems=gems.filter(k=>k.x>o-2500);props=props.filter(k=>k.x>o-2500);
  const n0=coins.length,addC=(x,y)=>coins.push({x:x+o,y,t:0});
  for(let x=900;x<fin-600;x+=700+rnd()*500){const n=4+(rnd()*4|0);for(let i=0;i<n;i++){const xx=x+i*88;addC(xx,Y(xx)-62)}}
- for(const r of L.ramps){for(let i=0;i<9;i++){const t=i/8,xx=r-80+t*760;addC(xx,Y(r)-150-190*Math.sin(Math.PI*t)-20)}}
+ for(const r of L.ramps){for(let i=0;i<9;i++){const t=i/8,xx=r-80+t*760;addC(xx,Y(r)-130-150*Math.sin(Math.PI*t)-20)}}
  for(let x=2300;x<fin-800;x+=2500+gi*45+rnd()*600)cans.push({x:x+o,y:Y(x)-48,t:0});
  for(let x=4200;x<fin-800;x+=4800+rnd()*1200)gems.push({x:x+o,y:Y(x)-150,t:0});
  for(let x=-400;x<fin+1200;x+=260+rnd()*520){const k=rnd();props.push({x:x+o,k:k<.55?'tree':k<.8?'rock':k<.9?'crate':'barrel',s:.75+rnd()*.5,z:rnd()<.5?0:1})}
  L.ctot=coins.length-n0}
 /* ---------- run state ---------- */
-const PXM=20,R=28,G=1500;
+const PXM=20,R=28,G=1900;
 const WH=[{x:-60,y:22},{x:61,y:22}],CP=[{x:92,y:8},{x:-80,y:12}],HD=[{x:-15,y:-52},{x:45,y:-60},{x:-70,y:-56}];
 let car,run,cam,parts=[],mode='menu',paused=false,inp={gas:0,brake:0},boost={coin:0,susp:0,tire:0},pop={t:0};
-function stats(){const v=VEH[S.veh],u=S.up;return{pw:450*v.pw*(1+.14*u[0]),K:500*(1+.07*u[1]),Cd:18*(1+.09*u[1]),mu:1.15*v.gr*(1+.1*u[2])*WORLDS[LV.w].grip,fuel:(100+22*u[3])*v.fu,vmax:880*(1+.05*u[0])}}
+function stats(){const v=VEH[S.veh],u=S.up;return{pw:600*v.pw*(1+.14*u[0]),K:640*(1+.07*u[1]),Cd:24*(1+.09*u[1]),mu:1.15*v.gr*(1+.1*u[2])*WORLDS[LV.w].grip,fuel:(100+22*u[3])*v.fu,vmax:880*(1+.05*u[0])}}
 function start(w,l){S.world=w;LV=mk(w,l);coins=[];cans=[];gems=[];props=[];genLevel();const st=stats();
  car={x:0,y:Hf(0)-60,a:0,vx:0,vy:0,w:0,sp:[0,0],ws:[0,0],fuel:st.fuel,air:0,rot:0,rotAcc:0,st};
  run={dist:0,coins:0,gems:0,flips:0,stuntC:0,over:'',idle:0,t:0,rpm:.2,w,l,done:0,airT:0,cansGot:0,cp:0,sc:0,sfl:0,cl:0,bonus:0,pf:null};
@@ -174,10 +174,12 @@ function step(dt){const c=car,st=c.st,th=inp.gas&&c.fuel>0?1:0,br=inp.brake?1:0;
  }
  for(const o of CP){const rx=o.x*ca-o.y*sa,ry=o.x*sa+o.y*ca,px=c.x+rx,py=c.y+ry,h=Hf(px),pen=py+4-h;
   if(pen>0){const sl=(Hf(px+2)-Hf(px-2))/4,il=1/Math.sqrt(1+sl*sl),nx=sl*il,ny=-il,vx=c.vx-c.w*ry,vy=c.vy+c.w*rx,vn=vx*nx+vy*ny;let Fn=300*pen-14*vn;if(Fn<0)Fn=0;const Fx=Fn*nx,Fy=Fn*ny;ax+=Fx;ay+=Fy;aw+=(rx*Fy-ry*Fx)/I}}
+ if(gr){ay+=G*.1*Math.min(1,Math.abs(c.vx)/900);const ta=Math.atan2(Hf(c.x+60)-Hf(c.x-60),120),rel=c.a-ta;if(rel<-.4)aw+=60*(-.4-rel);aw-=c.w*1.2}
  if(!gr){aw+=(th-br)*-9;aw-=c.w*.25;c.air+=dt;c.rot+=c.w*dt}
  else{if(c.air>.25){let m='',b=0;if(Math.abs(c.rot)>5.2){const f=Math.floor(Math.abs(c.rot)/5.9+.5);if(f>0){run.flips+=f;b+=f*100;m=(c.rot<0?'BACK':'FRONT')+' FLIP'+(f>1?' x'+f:'')}}
   if(c.air>.7){const ab=Math.round(c.air*40);b+=ab;m+=(m?'  ':'')+'AIR '+c.air.toFixed(1)+'s'}
   if(b){b*=boost.coin>0?2:1;run.stuntC+=b;S.coins+=b;say(m+'  +'+b);sfx.flip()}}c.air=0;c.rot=0;aw-=c.w*1.2}
+ if(!gr&&c.pg&&c.vy<-330)c.vy=-330;c.pg=gr>0;
  c.vx+=ax*dt;c.vy+=ay*dt;c.w+=aw*dt;c.x+=c.vx*dt;c.y+=c.vy*dt;c.a+=c.w*dt;
  if(c.x<-300){c.x=-300;c.vx=Math.max(0,c.vx)}
  c.vx*=1-.04*dt;
