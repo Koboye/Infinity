@@ -113,6 +113,7 @@ try{const t=JSON.parse(localStorage.getItem('hcr_v1')||'null');if(t)S=Object.ass
 if(!S.rate)S.rate={};for(const k in S.stars)if(S.rate[k]==null)S.rate[k]=[0,40,60,80][S.stars[k]]||0;
 const save=()=>{try{localStorage.setItem('hcr_v1',JSON.stringify(S))}catch(e){}};
 const tot=()=>Object.values(S.stars).reduce((a,b)=>a+b,0);
+const buzz=ms=>{try{S.snd&&navigator.vibrate&&navigator.vibrate(ms)}catch(e){}};
 const starsOf=r=>r>=75?3:r>=55?2:r>0?1:0;
 const unlocked=gi=>{for(let i=0;i<gi;i++)if((S.rate[(i/5|0)+'-'+i%5]||0)<75)return false;return true};
 const vcache={};
@@ -150,7 +151,7 @@ let car,run,cam,parts=[],mode='menu',paused=false,inp={gas:0,brake:0},boost={coi
 function stats(){const v=VEH[S.veh],u=S.up;return{pw:600*v.pw*(1+.14*u[0]),K:640*(1+.07*u[1]),Cd:24*(1+.09*u[1]),mu:1.15*v.gr*(1+.1*u[2])*WORLDS[LV.w].grip,fuel:(100+22*u[3])*v.fu,vmax:880*(1+.05*u[0])}}
 function start(w,l){S.world=w;LV=mk(w,l);coins=[];cans=[];gems=[];props=[];genLevel();const st=stats();
  car={x:0,y:Hf(0)-60,a:0,vx:0,vy:0,w:0,sp:[0,0],ws:[0,0],fuel:st.fuel,air:0,rot:0,rotAcc:0,st};
- run={dist:0,coins:0,gems:0,flips:0,stuntC:0,over:'',idle:0,t:0,rpm:.2,w,l,done:0,airT:0,cansGot:0,cp:0,sc:0,sfl:0,cl:0,bonus:0,pf:null};
+ run={dist:0,coins:0,gems:0,flips:0,stuntC:0,over:'',idle:0,t:0,rpm:.2,w,l,done:0,airT:0,cansGot:0,cp:0,sc:0,sfl:0,cl:0,bonus:0,pf:null,combo:0,comboT:0,base:0,lowF:0};
  cam={x:car.x,y:car.y,z:1};parts=[];boost={coin:0,susp:0,tire:0};inp={gas:0,brake:0};paused=false;mode='play';
  document.querySelectorAll('.pu').forEach(e=>e.classList.remove('used'));
  $('#hud').classList.remove('hide');showScr(null);}
@@ -178,30 +179,32 @@ function step(dt){const c=car,st=c.st,th=inp.gas&&c.fuel>0?1:0,br=inp.brake?1:0;
  if(!gr){aw+=(th-br)*-9;aw-=c.w*.25;c.air+=dt;c.rot+=c.w*dt}
  else{if(c.air>.25){let m='',b=0;if(Math.abs(c.rot)>5.2){const f=Math.floor(Math.abs(c.rot)/5.9+.5);if(f>0){run.flips+=f;b+=f*100;m=(c.rot<0?'BACK':'FRONT')+' FLIP'+(f>1?' x'+f:'')}}
   if(c.air>.7){const ab=Math.round(c.air*40);b+=ab;m+=(m?'  ':'')+'AIR '+c.air.toFixed(1)+'s'}
-  if(b){b*=boost.coin>0?2:1;run.stuntC+=b;S.coins+=b;say(m+'  +'+b);sfx.flip()}}c.air=0;c.rot=0;aw-=c.w*1.2}
+  if(b){run.combo=run.comboT>0?Math.min(5,run.combo+1):1;run.comboT=8;b*=(boost.coin>0?2:1)*run.combo;run.stuntC+=b;S.coins+=b;say(m+(run.combo>1?'  COMBO x'+run.combo:'')+'  +'+b);sfx.flip();buzz(45)}}c.air=0;c.rot=0;aw-=c.w*1.2}
  if(!gr&&c.pg&&c.vy<-330)c.vy=-330;c.pg=gr>0;
  c.vx+=ax*dt;c.vy+=ay*dt;c.w+=aw*dt;c.x+=c.vx*dt;c.y+=c.vy*dt;c.a+=c.w*dt;
  if(c.x<-300){c.x=-300;c.vx=Math.max(0,c.vx)}
  c.vx*=1-.04*dt;
  for(const o of HD){const ca2=Math.cos(c.a),sa2=Math.sin(c.a),px=c.x+o.x*ca2-o.y*sa2,py=c.y+o.x*sa2+o.y*ca2;if(py>Hf(px)+2&&!run.over){fail('HEAD CRASH');break}}
- if(th)c.fuel-=(.8+1.7)*dt*(1-.05*S.up[0]*.3);else c.fuel-=.8*dt;
+ run.comboT-=dt;if(th)c.fuel-=(.8+1.7)*dt*(1-.05*S.up[0]*.3);else c.fuel-=.8*dt;
+ if(c.fuel>0&&c.fuel<c.st.fuel*.2&&!run.lowF){run.lowF=1;say('LOW FUEL!',1.6);tone(220,.25,'square',.06);buzz([60,50,60])}if(c.fuel>c.st.fuel*.3)run.lowF=0;
  if(c.fuel<=0){c.fuel=0;if(Math.abs(c.vx)<12)run.idle+=dt;else run.idle=0;if(run.idle>1.6&&!run.over)fail('OUT OF FUEL')}
  run.t+=dt;run.dist=Math.max(0,(c.x-LV.off)/PXM);
  run.rpm+=((.22+Math.min(1,Math.abs(c.vx)/st.vmax)*.62+th*.14)-run.rpm)*Math.min(1,dt*6);
+ for(const k of coins)if(!k.t){const dx=c.x-k.x,dy=c.y-k.y,d=Math.hypot(dx,dy);if(d<210&&d>1){const m=Math.min(d,560*dt)/d;k.x+=dx*m;k.y+=dy*m}}
  for(const k of coins)if(!k.t&&Math.abs(k.x-c.x)<62&&Math.abs(k.y-c.y)<62){k.t=1;run.cp++;const v=boost.coin>0?2:1;run.coins+=v;S.coins+=v;sfx.coin();parts.push({x:k.x,y:k.y,vx:0,vy:-90,l:.5,m:.5,r:14,c:'#ffd33d',ring:1})}
  for(const k of cans)if(!k.t&&Math.abs(k.x-c.x)<70&&Math.abs(k.y-c.y)<80){k.t=1;c.fuel=Math.min(c.st.fuel,c.fuel+38);run.cansGot++;sfx.can();say('FUEL +')}
  for(const k of gems)if(!k.t&&Math.abs(k.x-c.x)<70&&Math.abs(k.y-c.y)<80){k.t=1;run.gems++;S.gems++;sfx.coin();say('GEM +1')}
  if(boost.coin>0)boost.coin-=dt;if(boost.susp>0)boost.susp-=dt;if(boost.tire>0)boost.tire-=dt;
  if(c.x>=LV.fx&&!run.over)levelDone();
 }
-function fail(why){run.over=why;sfx.bad();mode='over';save();setTimeout(()=>showResult(false),900)}
+function fail(why){run.over=why;sfx.bad();buzz(220);mode='over';S.bestD=Math.max(S.bestD||0,Math.floor(run.base+run.dist));save();setTimeout(()=>showResult(false),900)}
 function advance(g){g=Math.min(19,g);const w=g/5|0,l=g%5,nl=mk(w,l);nl.off=LV.fx;nl.fx=nl.off+nl.fin;nl.y0=Hf(LV.fx);nl.prev=LV;LV.prev=null;LV=nl;
  genLevel();car.st=stats();run.w=w;run.l=l;S.world=w;run.sc=run.cp;run.sfl=run.flips;run.pf=nl.off}
 /* finishing a level never stops the run: celebrate, then the road flows straight into the next level */
 function levelDone(){const L=LV,k=L.w+'-'+L.l,cf=Math.min(1,(run.cp-run.sc)/Math.max(1,L.ctot)),fl=run.flips-run.sfl,fu=car.fuel/car.st.fuel;
  const rate=Math.min(100,Math.round(40+30*cf+15*Math.min(1,fl/2)+15*fu)),st=starsOf(rate);
  if(rate>(S.rate[k]||0)){S.rate[k]=rate;S.stars[k]=st}
- const bonus=200+L.gi*40+st*100;S.coins+=bonus;run.bonus+=bonus;run.cl++;
+ const bonus=200+L.gi*40+st*100;S.coins+=bonus;run.bonus+=bonus;run.cl++;run.base+=L.goal;buzz(120);
  car.fuel=Math.min(car.st.fuel,car.fuel+car.st.fuel*.5);sfx.win();
  for(let i=0;i<14;i++)parts.push({x:car.x+i*14-90,y:car.y-30,vx:(i-7)*40,vy:-160-Math.random()*120,l:.9,m:.9,r:14,c:['#ffd33d','#ff5a4f','#35c6ff','#5be37d'][i%4],ring:1});
  const stx='\u2605'.repeat(st),n=L.gi+1;
@@ -316,7 +319,7 @@ function showResult(ok){mode='menu';$('#hud').classList.add('hide');const u=$('#
  d.innerHTML=`<div style="position:absolute;inset:0;background:rgba(5,10,24,.78)"></div><div class="glass" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:calc(900*var(--u));padding:calc(36*var(--u)) calc(50*var(--u));overflow:hidden;background:linear-gradient(180deg,#0f1c38,#070d1c)">${ok?cf:''}
  <div style="text-align:center;font-size:calc(100*var(--u));letter-spacing:calc(10*var(--u));position:relative">${[1,2,3].map(n=>`<span style="color:${n<=stars?'#ffcc2e':'#33405a'};text-shadow:0 4px 10px #000;font-size:${n===2?'1.25em':'1em'}">\u2605</span>`).join('')}</div>
  <div style="text-align:center;font-size:calc(84*var(--u));font-weight:900;font-style:italic;color:${ok?'#f5d13a':'#ff6a5a'};text-shadow:0 4px 10px #000;position:relative">${ok?'LEVEL COMPLETE!':run.over}</div>
- <div style="position:relative;margin:calc(20*var(--u)) calc(30*var(--u));font-size:calc(40*var(--u))">${[['Distance',Math.floor(run.dist).toLocaleString()+' m'],['Coins Collected',coins.toLocaleString()],['Stunts',run.flips],['Levels Cleared',run.cl]].map(r=>`<div style="display:flex;align-items:center;gap:calc(20*var(--u));padding:calc(10*var(--u)) 0"><span class="gold">\u2605</span>${r[0]}<div class="sp"></div><b>${r[1]}</b></div>`).join('')}</div>
+ <div style="position:relative;margin:calc(20*var(--u)) calc(30*var(--u));font-size:calc(40*var(--u))">${[['Distance',Math.floor(run.base+run.dist).toLocaleString()+' m'],['Best Distance',(S.bestD||0).toLocaleString()+' m'],['Coins Collected',coins.toLocaleString()],['Stunts',run.flips],['Levels Cleared',run.cl]].map(r=>`<div style="display:flex;align-items:center;gap:calc(20*var(--u));padding:calc(10*var(--u)) 0"><span class="gold">\u2605</span>${r[0]}<div class="sp"></div><b>${r[1]}</b></div>`).join('')}</div>
  ${ok&&run.rec?'<div style="position:relative;text-align:right;margin-right:calc(60*var(--u))"><span style="display:inline-block;background:#f5c542;color:#2a1a00;font-weight:900;font-size:calc(26*var(--u));padding:calc(4*var(--u)) calc(16*var(--u));transform:rotate(-4deg)">NEW RECORD!</span></div>':''}
  ${ok?`<div style="position:relative;text-align:center;font-size:calc(30*var(--u));color:#bcd0f0;margin-top:calc(8*var(--u))">Level bonus +${run.bonus}</div>`:''}
  <div style="position:relative;display:flex;gap:calc(20*var(--u));margin-top:calc(26*var(--u))"><div class="bt" style="flex:1" data-go="map">${svg.home}HOME</div><div class="bt" style="flex:1" data-act="retry">${svg.retry}RETRY</div>${hasNext?`<div class="bt g" style="flex:1" data-act="next">${svg.play}NEXT</div>`:''}</div></div>`;
