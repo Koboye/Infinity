@@ -132,7 +132,7 @@ function mk(w,l){const WD=WORLDS[w],gi=w*5+l,df=.75+.045*gi,goal=Math.round(GOAL
 function Hf(x){let L=LV;while(L.prev&&x<L.off)L=L.prev;return L.y0+Hl(L,x-L.off)}
 function Hl(L,x){if(x<=0)return 0;const f=sm(x/900);
  let y=-x*L.sl*(.35+.65*f)+f*(L.a1*(Math.sin(x/L.p1+L.s)-Math.sin(L.s))+L.a2*(Math.sin(x/L.p2+L.s*2)-Math.sin(L.s*2))+L.a3*(Math.sin(x/53+L.s*3)-Math.sin(L.s*3)));
- for(const r of L.ramps){if(x>r-440&&x<r+110){y-=x<r?100*sm((x-(r-440))/440):100*(1-sm((x-r)/110))}}
+ for(const r of L.ramps){if(x>r-480&&x<r+110){y-=x<r?105*sm((x-(r-480))/480):105*(1-sm((x-r)/110))}}
  return y}
 let coins,cans,gems,props,runCoinsTotal;
 function genLevel(){const L=LV,fin=L.fin,rnd=L.rnd,o=L.off,gi=L.gi,Y=x=>Hf(x+o);
@@ -159,28 +159,36 @@ function say(t,d){const p=$('#pop');p.textContent=t;p.style.opacity=1;pop.t=d||1
 function step(dt){const c=car,st=c.st,th=inp.gas&&c.fuel>0?1:0,br=inp.brake?1:0;
  const ca=Math.cos(c.a),sa=Math.sin(c.a);let ax=0,ay=G,aw=0,gr=0,I=5200;
  const K=st.K,Cd=st.Cd*(boost.susp>0?1.3:1),mu=st.mu*(boost.tire>0?1.3:1);
- for(let i=0;i<2;i++){const o=WH[i],rx=o.x*ca-o.y*sa,ry=o.x*sa+o.y*ca,px=c.x+rx,py=c.y+ry,h=Hf(px),pen=py+R-h;
-  if(pen>0){const sl=(Hf(px+2)-Hf(px-2))/4,il=1/Math.sqrt(1+sl*sl),tx=il,ty=sl*il,nx=sl*il,ny=-il;
-   const vx=c.vx-c.w*ry,vy=c.vy+c.w*rx,vn=vx*nx+vy*ny,vt=vx*tx+vy*ty;
-   let Fn=K*pen-Cd*vn;if(Fn<0)Fn=0;
+ const Ks=K*.15,Cc=Cd*.35,Cr=Cd*.7,E=10,T=34;
+ for(let i=0;i<2;i++){const o=WH[i],oy=o.y+E,fx0=c.x+o.x*ca-oy*sa,fy0=c.y+o.x*sa+oy*ca;
+  let best=0,bnx=0,bny=-1;
+  /* round wheel vs terrain: test 5 rim points, keep the deepest contact */
+  for(let j=-2;j<=2;j++){const dx=j*R*.4,hh=Hf(fx0+dx),ey=fy0-hh;let p,nx,ny;
+   if(ey>=0){const sl=(Hf(fx0+dx+2)-Hf(fx0+dx-2))/4,il=1/Math.sqrt(1+sl*sl);nx=sl*il;ny=-il;p=R+ey*il}
+   else{const d=Math.hypot(dx,ey);if(d>=R)continue;nx=-dx/d;ny=ey/d;p=R-d}
+   if(p>best){best=p;bnx=nx;bny=ny}}
+  if(best>0){const cs=Math.max(.35,sa*bnx-ca*bny),x=Math.min(T+20,best/cs),xe=Math.min(x,T),
+   rx=o.x*ca-(oy-x)*sa,ry=o.x*sa+(oy-x)*ca,vx=c.vx-c.w*ry,vy=c.vy+c.w*rx,vn=vx*bnx+vy*bny,tx=-bny,ty=bnx,vt=vx*tx+vy*ty;
+   /* suspension: spring + separate compression / rebound damping + bump stop */
+   let Fn=Ks*xe-(vn<0?Cc:Cr)*vn+(x>T?2500*(x-T):0);Fn=Math.max(0,Math.min(Fn,G*7));
    let Ft=-.3*vt;
    if(th)Ft+=st.pw*(1-Math.max(0,Math.min(1,vt/st.vmax)));
    if(br){Ft+=vt>25?-st.pw*1.3:-st.pw*.55*(1-Math.max(0,Math.min(1,-vt/320)))}
    const lim=mu*Fn;Ft=Math.max(-lim,Math.min(lim,Ft));
-   const Fx=Fn*nx+Ft*tx,Fy=Fn*ny+Ft*ty;ax+=Fx;ay+=Fy;aw+=(rx*Fy-ry*Fx)/I;gr++;
-   c.sp[i]+=vt/R*dt;c.ws[i]+=((-pen*.6)-c.ws[i])*Math.min(1,dt*30);
-   if(pen>38){c.y-=(pen-38)*.5;if(vn<0){c.vx-=0;c.vy-=vn*ny*.4}}
-   if(Math.abs(vt)>110&&Math.random()<dt*28)parts.push({x:px,y:h,vx:-vt*.12+(Math.random()-.5)*40,vy:-40-Math.random()*70,l:.6,m:.6,r:6+Math.random()*7,c:WORLDS[LV.w].dust})
+   const Fx=Fn*bnx+Ft*tx,Fy=Fn*bny+Ft*ty;ax+=Fx;ay+=Fy;aw+=(rx*Fy-ry*Fx)/I;gr++;
+   c.sp[i]+=vt/R*dt*(Math.abs(Ft)>=lim*.98?1.5:1);c.ws[i]+=(((E-x)*.6)-c.ws[i])*Math.min(1,dt*30);
+   if(x>T+8)c.y-=(x-T-8)*.5;
+   if(Math.abs(vt)>110&&Math.random()<dt*28){const gx=c.x+rx;parts.push({x:gx,y:Hf(gx),vx:-vt*.12+(Math.random()-.5)*40,vy:-40-Math.random()*70,l:.6,m:.6,r:6+Math.random()*7,c:WORLDS[LV.w].dust})}
   }else{c.ws[i]+=(6-c.ws[i])*Math.min(1,dt*6);c.sp[i]+=(th*14-br*8)*dt}
  }
  for(const o of CP){const rx=o.x*ca-o.y*sa,ry=o.x*sa+o.y*ca,px=c.x+rx,py=c.y+ry,h=Hf(px),pen=py+4-h;
   if(pen>0){const sl=(Hf(px+2)-Hf(px-2))/4,il=1/Math.sqrt(1+sl*sl),nx=sl*il,ny=-il,vx=c.vx-c.w*ry,vy=c.vy+c.w*rx,vn=vx*nx+vy*ny;let Fn=300*pen-14*vn;if(Fn<0)Fn=0;const Fx=Fn*nx,Fy=Fn*ny;ax+=Fx;ay+=Fy;aw+=(rx*Fy-ry*Fx)/I}}
- if(gr){ay+=G*.1*Math.min(1,Math.abs(c.vx)/900);const ta=Math.atan2(Hf(c.x+60)-Hf(c.x-60),120),rel=c.a-ta;if(rel<-.4)aw+=60*(-.4-rel);aw-=c.w*1.2}
+ if(gr){ay+=G*.03*Math.min(1,Math.abs(c.vx)/900);const ta=Math.atan2(Hf(c.x+60)-Hf(c.x-60),120),rel=c.a-ta;if(rel<-.4)aw+=60*(-.4-rel);aw-=c.w*1.2}
  if(!gr){aw+=(th-br)*-9;aw-=c.w*.25;c.air+=dt;c.rot+=c.w*dt}
  else{if(c.air>.25){let m='',b=0;if(Math.abs(c.rot)>5.2){const f=Math.floor(Math.abs(c.rot)/5.9+.5);if(f>0){run.flips+=f;b+=f*100;m=(c.rot<0?'BACK':'FRONT')+' FLIP'+(f>1?' x'+f:'')}}
   if(c.air>.7){const ab=Math.round(c.air*40);b+=ab;m+=(m?'  ':'')+'AIR '+c.air.toFixed(1)+'s'}
   if(b){run.combo=run.comboT>0?Math.min(5,run.combo+1):1;run.comboT=8;b*=(boost.coin>0?2:1)*run.combo;run.stuntC+=b;S.coins+=b;say(m+(run.combo>1?'  COMBO x'+run.combo:'')+'  +'+b);sfx.flip();buzz(45)}}c.air=0;c.rot=0;aw-=c.w*1.2}
- if(!gr&&c.pg&&c.vy<-330)c.vy=-330;c.pg=gr>0;
+ if(!gr&&c.pg&&c.vy<-520)c.vy=-520;c.pg=gr>0;
  c.vx+=ax*dt;c.vy+=ay*dt;c.w+=aw*dt;c.x+=c.vx*dt;c.y+=c.vy*dt;c.a+=c.w*dt;
  if(c.x<-300){c.x=-300;c.vx=Math.max(0,c.vx)}
  c.vx*=1-.04*dt;
