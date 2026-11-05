@@ -115,7 +115,15 @@ const PLANETS=[
 /* ---- Panorama worlds: [name, img, biome, living scenery] ---- */
 const PANO=[
  ['Eagle Falls Lodge',A+'w_pano_eagle_falls.jpg','highland','eagle'],['Wild Jungle Falls',A+'w_pano_wild_jungle.jpg','jungle','parrot'],
- ['Lake Geese Valley',A+'w_pano_lake_geese.jpg','grass','geese'],['Cabin Meadow Falls',A+'w_pano_cabin_meadow.jpg','highland','geese']
+ ['Lake Geese Valley',A+'w_pano_lake_geese.jpg','grass','geese'],['Cabin Meadow Falls',A+'w_pano_cabin_meadow.jpg','highland','geese'],
+ /* scenes: world wonders, cities and deep space */
+ ['Blue Nile Falls',A+'w_pano_blue_nile.jpg','highland','eagle'],['Giza Pyramids',A+'w_pano_giza.jpg','desert',null],
+ ['Hanging Gardens of Babylon',A+'w_pano_babylon.jpg','desert','parrot'],['Temple of Artemis',A+'w_pano_artemis.jpg','highland','geese'],
+ ['Statue of Zeus, Olympia',A+'w_pano_zeus.jpg','highland','eagle'],['Dubai Dusk',A+'w_pano_dubai_dusk.jpg','city',null],
+ ['Dubai Downtown Twilight',A+'w_pano_dubai_twilight.jpg','city',null],['Sydney Harbour',A+'w_pano_sydney.jpg','coast','geese'],
+ ['Paris Golden Hour',A+'w_pano_paris.jpg','city','geese'],['London Thames',A+'w_pano_london.jpg','city','geese'],
+ ['New York Harbor',A+'w_pano_newyork.jpg','city','geese'],['Times Square',A+'w_pano_times_square.jpg','city',null],
+ ['Galactic Panorama',A+'w_pano_galaxy.jpg','moon',null,'planet',.55],['Andromeda Galaxy',A+'w_pano_andromeda.jpg','alien',null,'planet',.5]
 ];
 /* ---- build the 124 worlds ---- */
 const WORLDS=[];
@@ -133,7 +141,7 @@ const WORLDS=[];
  /* planets */
  PLANETS.forEach(p=>mk({n:p[0],cat:'planet',img:p[1],biome:p[2],tint:p[3],gv:p[4],orb:p[5],stars:p[6],mood:'Planet'}));
  /* pass 4: hand-painted panorama worlds (always open, appended last so saved progress keeps its world numbers) */
- PANO.forEach(e=>mk({n:e[0],cat:'earth',img:e[1],biome:e[2],mood:'Panorama',pano:1,open:1,fauna:e[3]}));
+ PANO.forEach(e=>mk({n:e[0],cat:e[4]||'earth',img:e[1],biome:e[2],mood:e[4]?'Planet':'Panorama',pano:1,open:1,fauna:e[3],gv:e[5]||1,stars:e[4]?1:0}));
 })();
 const WORLD_COUNT=WORLDS.length;
 /* a world opens after 3 levels of the previous world are finished (stars table key 'w-l') */
