@@ -264,6 +264,9 @@ function airHud(t,fl){let e=document.getElementById('airhud');if(!e){e=document.
 function flipsOf(r){const n=Math.floor((Math.abs(r)+.55)/6.2832);return r<0?-n:n}
 /* head / roof hit - Pro Driver durability shield saves it once, otherwise the crash animation plays */
 function headHit(c,st){if(st.shield>(run.sh|0)){run.sh=(run.sh|0)+1;c.a=0;c.rot=0;c.fl=0;c.w=0;c.vy=-430;c.vx*=.6;c.y-=40;say('SAVED! DURABILITY');sfx.can();return}fail('HEAD CRASH')}
+/* UPSIDE DOWN = the roof points below the slope under the car (more than ~92 degrees from it). The ONLY way a run is lost is: upside down AND the head breaks. */
+const INV_ANG=1.6;
+function isInverted(c){const sl=Math.atan2(Hf(c.x+30)-Hf(c.x-30),60);let r=c.a-sl;r=Math.atan2(Math.sin(r),Math.cos(r));return Math.abs(r)>INV_ANG}
 function say(t){const p=$('#pop');p.textContent=t;p.style.opacity=1;pop.t=1.3}
 /* water splash: ring + droplets. k scales the size (entering = 1, leaving = .5) */
 let _sp=0;
@@ -283,16 +286,16 @@ function smash(o,c){o.dead=1;run.smash++;const gy=Hr(o.x)+14,dir=c.vx>=0?1:-1,d=
  else parts.push({x:o.x,y:gy-o.h/2,vx:c.vx*.9+dir*150,vy:-340-rn()*180,l:1.4,m:1.4,spr:o.k,pw:o.w,ph:o.h,rot:0,vr:dir*(6+rn()*6),g:900});
  for(let i=0;i<7;i++)parts.push({x:o.x+(rn()-.5)*o.w,y:gy-6,vx:(rn()-.5)*220+c.vx*.2,vy:-30-rn()*110,l:.6,m:.6,r:6+rn()*8,c:'#cdb892'});
  {const kk=Math.min(1,Math.abs(c.vx)/600);c.vx*=1-(1-d.slow)*(.6+.8*kk);c.vy-=30+60*kk;c.w+=-dir*(.3+1.1*kk)}tone(150,.13,'square',.09,60);try{navigator.vibrate&&navigator.vibrate(18)}catch(e){}}
-function step(dt){const c=car,V=c.v,st=c.st,th=inp.gas&&c.fuel>0?1:0,br=inp.brake?1:0;
+function step(dt){const c=car,V=c.v,st=c.st,th=inp.gas?1:0,br=inp.brake?1:0;   /* empty tank = limp mode (40% power, see lp), never a game over */
  const ca=Math.cos(c.a),sa=Math.sin(c.a);let ax=0,ay=G*(LV.gv||1),aw=0,gr=0,I=V.I;
- const K=st.K,Cd=st.Cd*(boost.susp>0?1.3:1),mu=st.mu*(boost.tire>0?1.3:1),RV=riverAt(c.x,120);let wet=0;
+ const K=st.K,lp=c.fuel>0?1:.4,Cd=st.Cd*(boost.susp>0?1.3:1),mu=st.mu*(boost.tire>0?1.3:1),RV=riverAt(c.x,120);let wet=0;
  for(let i=0;i<2;i++){const o=V.wh[i],rx=o.x*ca-o.y*sa,ry=o.x*sa+o.y*ca,px=c.x+rx,py=c.y+ry,h=Hf(px),sl=(Hf(px+2)-Hf(px-2))/4,il=1/Math.sqrt(1+sl*sl),pen=V.R-(h-py)*il;
   const inW=!!(RV&&px>RV.wl&&px<RV.wr&&py+V.R*.4>RV.wy);if(inW){wet++;if(!c.inw[i]){splash(px,RV.wy,c.vx,c.vy,1)}}else if(c.inw[i]&&RV&&px>RV.wl-30&&px<RV.wr+30)splash(px,RV.wy,c.vx,c.vy,.5);c.inw[i]=inW;
   if(pen>0){const tx=il,ty=sl*il,nx=sl*il,ny=-il;
    const vx=c.vx-c.w*ry,vy=c.vy+c.w*rx,vn=vx*nx+vy*ny,vt=vx*tx+vy*ty;
    let Fn=K*pen+(pen>9?K*2.2*(pen-9):0)-(vn<0?Cd*.8:Cd*1.25)*vn;if(Fn<0)Fn=0;
    let Ft=-.12*vt;
-   if(th)Ft+=st.pw*(1-Math.pow(Math.max(0,Math.min(1,vt/st.vmax)),1.6));
+   if(th)Ft+=st.pw*lp*(1-Math.pow(Math.max(0,Math.min(1,vt/st.vmax)),1.6));
    {Ft+=-.0003*vt*Math.abs(vt);if(!th&&!br)Ft+=-.42*vt}   /* engine braking + air drag: a real car slows when you lift off */
    if(br){Ft+=vt>25?-st.bp*1.3:-st.bp*.55*(1-Math.max(0,Math.min(1,-vt/230)))}
    const mz=mudAt(px);if(mz){Ft+=-.5*vt*(1.45-st.mud);if(Math.abs(vt)>50&&Math.random()<dt*34)parts.push({x:px,y:h,vx:-vt*.25+(Math.random()-.5)*80,vy:-90-Math.random()*190,l:.7,m:.7,r:3+Math.random()*5,c:MUDP[0],g:900});if(c._mz!==mz){c._mz=mz;say('MUD!  USE GOOD WHEELS')}}
@@ -306,8 +309,9 @@ function step(dt){const c=car,V=c.v,st=c.st,th=inp.gas&&c.fuel>0?1:0,br=inp.brak
  }
  if(!gr)ay+=G*(LV.gv||1)*.6;   /* heavy Jeep: falls faster than it rises, so crests/bumps give short hops, not long flights */
  if(wet){const f=wet/2;c.vx*=Math.max(0,1-1.0*f*dt);c.vy*=Math.max(0,1-.7*f*dt);c.w*=Math.max(0,1-1.0*f*dt)}
+ let cpC=0;
  for(const o of V.cp){const rx=o.x*ca-o.y*sa,ry=o.x*sa+o.y*ca,px=c.x+rx,py=c.y+ry,h=Hf(px),sl=(Hf(px+2)-Hf(px-2))/4,il=1/Math.sqrt(1+sl*sl),pen=4-(h-py)*il;
-  if(pen>0){const nx=sl*il,ny=-il,vx=c.vx-c.w*ry,vy=c.vy+c.w*rx,vn=vx*nx+vy*ny;let Fn=300*pen-14*vn;if(Fn<0)Fn=0;const Fx=Fn*nx,Fy=Fn*ny;ax+=Fx;ay+=Fy;aw+=(rx*Fy-ry*Fx)/I}}
+  if(pen>0){cpC=1;const nx=sl*il,ny=-il,vx=c.vx-c.w*ry,vy=c.vy+c.w*rx,vn=vx*nx+vy*ny;let Fn=300*pen-14*vn;if(Fn<0)Fn=0;const Fx=Fn*nx,Fy=Fn*ny;ax+=Fx;ay+=Fy;aw+=(rx*Fy-ry*Fx)/I}}
  /* exhaust: idle puffs, thick smoke under throttle, backfire flash when lifting off at high revs */
  {const vv=VEH[S.veh];if(vv&&vv.wh&&mode==='play'){const ca=Math.cos(c.a),sa=Math.sin(c.a),ex=vv.wh[0].x-30,ey=vv.wh[0].y-12,px=c.x+ex*ca-ey*sa,py=c.y+ex*sa+ey*ca;
   if(Math.random()<dt*(th?26:6))parts.push({x:px,y:py,vx:c.vx*.3-70-Math.random()*40,vy:-16-Math.random()*30-(th?20:0),l:th?.9:.5,m:th?.9:.5,r:th?4+Math.random()*4:2.5,c:th?'#9aa1aa':'#c4c9d0'});
@@ -327,10 +331,10 @@ function step(dt){const c=car,V=c.v,st=c.st,th=inp.gas&&c.fuel>0?1:0,br=inp.brak
   const nf=flipsOf(c.rot);if(nf!==c.fl){if(Math.abs(nf)>Math.abs(c.fl||0)){sfx.flip();try{navigator.vibrate&&navigator.vibrate(12)}catch(e){}}c.fl=nf}
   if(c.air>.6*AIRT||c.fl)airHud(c.air,c.fl)}
  else{
-  /* LANDING - orientation relative to the slope decides: wheels down = safe, upside down = crash */
+  /* LANDING - orientation relative to the slope decides: wheels down = safe + stunt rewards; upside down = no reward, and the head hitting the ground (below) ends the run */
   const at=c.air,nf=Math.abs(flipsOf(c.rot)),sl=Math.atan2(Hf(c.x+30)-Hf(c.x-30),60);let rel=c.a-sl;rel=Math.atan2(Math.sin(rel),Math.cos(rel));
   airHud(0);
-  if(at>.25*AIRT&&Math.abs(rel)>1.9&&!run.over)headHit(c,st);
+  if(at>.25*AIRT&&Math.abs(rel)>INV_ANG){/* touched down upside down: no stunt reward and no instant game over - the head hitting the ground below is what ends the run */}
   else if(at>.25*AIRT){
    const mul=(boost.coin>0?2:1)*st.stm,msg=[];let fl=0;
    if(nf>0){fl=Math.round((100*nf+25*nf*(nf-1))*mul);run.flips+=nf;run.stuntC+=fl;S.coins+=fl;run.flipBest=Math.max(run.flipBest||0,nf);msg.push((c.rot<0?'BACK':'FRONT')+' FLIP'+(nf>1?' x'+nf:'')+'  +'+fl)}
@@ -344,9 +348,14 @@ function step(dt){const c=car,V=c.v,st=c.st,th=inp.gas&&c.fuel>0?1:0,br=inp.brak
  c.vx+=ax*dt;c.vy+=ay*dt;c.w+=aw*dt;c.x+=c.vx*dt;c.y+=c.vy*dt;c.a+=c.w*dt;
  if(c.x<-300){c.x=-300;c.vx=Math.max(0,c.vx)}
  {const kd=1-.02*dt;c.vx*=kd;c.vy*=kd}
- for(const o of V.hd){const ca2=Math.cos(c.a),sa2=Math.sin(c.a),px=c.x+o.x*ca2-o.y*sa2,py=c.y+o.x*sa2+o.y*ca2;if(py>Hf(px)+2&&!run.over){if(st.shield>(run.sh|0)){run.sh=(run.sh|0)+1;c.a=0;c.rot=0;c.fl=0;c.w=0;c.vy=-430;c.vx*=.6;c.y-=40;say('SAVED! DURABILITY');sfx.can()}else fail('HEAD CRASH');break}}
+ /* HEAD: breaks only when the car is UPSIDE DOWN and the head reaches the ground. Right side up (even nose-down or on a steep wall) the head just scrapes and is pushed clear. */
+ {const inv=isInverted(c);
+  for(const o of V.hd){const ca2=Math.cos(c.a),sa2=Math.sin(c.a),px=c.x+o.x*ca2-o.y*sa2,py=c.y+o.x*sa2+o.y*ca2,pd=py-Hf(px);if(pd>2&&!run.over){if(inv)headHit(c,st);else{c.y-=Math.min(8,pd)*.5;if(c.vy>0)c.vy*=.6}break}}
+  /* safety net: stuck on its roof against the ground for 1.2 s counts as the head being crushed, so a run can never dead-end upside down */
+  if(!run.over&&inv&&(gr>0||cpC))c.inv=(c.inv||0)+dt;else c.inv=Math.max(0,(c.inv||0)-dt*2);
+  if(!run.over&&c.inv>1.2){c.inv=0;headHit(c,st)}}
  if(th)c.fuel-=(.8+1.7)*dt*(1-.05*S.up[0]*.3)*st.fm;else c.fuel-=.8*dt*st.fm;
- if(c.fuel<=0){c.fuel=0;if(Math.abs(c.vx)<12)run.idle+=dt;else run.idle=0;if(run.idle>1.6&&!run.over)fail('OUT OF FUEL')}
+ if(c.fuel<=0){c.fuel=0;if(!c._dry){c._dry=1;say('TANK EMPTY - LIMP MODE, FIND FUEL')}}else c._dry=0;   /* no OUT OF FUEL game over any more */
  smashCheck(c,V,ca,sa);
  run.t+=dt;run.dist=Math.max(0,c.x/PXM);
  run.rpm+=((.22+Math.min(1,Math.abs(c.vx)/st.vmax)*.62+th*.14)-run.rpm)*Math.min(1,dt*6);
@@ -357,7 +366,12 @@ function step(dt){const c=car,V=c.v,st=c.st,th=inp.gas&&c.fuel>0?1:0,br=inp.brak
  if(boost.coin>0)boost.coin-=dt;if(boost.susp>0)boost.susp-=dt;if(boost.tire>0)boost.tire-=dt;
  if(c.x>=LV.fin&&!run.over)levelClear();
 }
-function fail(why){try{navigator.vibrate&&navigator.vibrate([60,40,90])}catch(e){}run.over=why;sfx.bad();mode='over';setTimeout(()=>showResult(false),why==='HEAD CRASH'?1900:900)}
+function fail(why){try{navigator.vibrate&&navigator.vibrate([60,40,90])}catch(e){}run.over=why;
+ if(why==='HEAD CRASH'&&car&&car.v&&car.v.hd&&car.v.hd[0]){/* head-break impact burst: dust + sparks at the head */
+  const h=car.v.hd[0],ca=Math.cos(car.a),sa=Math.sin(car.a),hx=car.x+h.x*ca-h.y*sa,hy=car.y+h.x*sa+h.y*ca,rn=Math.random;
+  for(let i=0;i<16;i++)parts.push({x:hx,y:hy,vx:(rn()-.5)*520,vy:-80-rn()*380,l:.7,m:.7,r:3+rn()*6,c:i%3?'#cdb892':'#ffd33d',g:900});
+  parts.push({x:hx,y:hy,vx:0,vy:0,l:.45,m:.45,r:30,c:'#fff2a0',ring:1})}
+sfx.bad();mode='over';setTimeout(()=>showResult(false),why==='HEAD CRASH'?1900:900)}
 function levelClear(){const k=run.w+'-'+run.l,cl=run.coins-run.c0,fl=run.flips-run.f0;let s=1;if(cl>=runCoinsTotal*.35)s=2;if(s>=2&&(fl>=1||cl>=runCoinsTotal*.7))s=3;run.stars=s;
  run.prevBest=S.stars[k]||0;run.rec=s>run.prevBest;if(run.rec)S.stars[k]=s;
  const bonus=200+run.l*45+s*100;S.coins+=bonus;run.bonus=bonus;run.cleared=(run.cleared||0)+1;save();
