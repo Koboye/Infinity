@@ -150,7 +150,7 @@ const WH=[{x:-60,y:22},{x:61,y:22}],CP=[{x:92,y:8},{x:-80,y:12}],HD=[{x:-15,y:-5
 let car,run,cam,parts=[],mode='menu',paused=false,inp={gas:0,brake:0},boost={coin:0,susp:0,tire:0},pop={t:0};
 function stats(){const v=VEH[S.veh],u=S.up;return{pw:600*v.pw*(1+.14*u[0]),K:640*(1+.07*u[1]),Cd:24*(1+.09*u[1]),mu:1.15*v.gr*(1+.1*u[2])*WORLDS[LV.w].grip,fuel:(100+22*u[3])*v.fu,vmax:880*(1+.05*u[0])}}
 function start(w,l){S.world=w;LV=mk(w,l);coins=[];cans=[];gems=[];props=[];genLevel();sceneImg(SCENES[LV.gi][0]);sceneImg(SCENES[Math.min(19,LV.gi+1)][0]);const st=stats();
- car={x:0,y:Hf(0)-60,a:0,vx:0,vy:0,w:0,sp:[0,0],ws:[0,0],fuel:st.fuel,air:0,rot:0,rotAcc:0,st};
+ car={x:0,y:Hf(0)-60,a:0,vx:0,vy:0,w:0,sp:[0,0],ws:[0,0],fuel:st.fuel,air:0,rot:0,rotAcc:0,hd:{x:0,y:0,vx:0,vy:0},st};
  run={dist:0,coins:0,gems:0,flips:0,stuntC:0,over:'',idle:0,t:0,rpm:.2,w,l,done:0,airT:0,cansGot:0,cp:0,sc:0,sfl:0,cl:0,bonus:0,pf:null,combo:0,comboT:0,base:0,lowF:0,bf:0,bgPrev:null};
  cam={x:car.x,y:car.y,z:1};parts=[];boost={coin:0,susp:0,tire:0};inp={gas:0,brake:0};paused=false;mode='play';
  document.querySelectorAll('.pu').forEach(e=>e.classList.remove('used'));
@@ -189,9 +189,10 @@ function step(dt){const c=car,st=c.st,th=inp.gas&&c.fuel>0?1:0,br=inp.brake?1:0;
   if(c.air>.7){const ab=Math.round(c.air*40);b+=ab;m+=(m?'  ':'')+'AIR '+c.air.toFixed(1)+'s'}
   if(b){run.combo=run.comboT>0?Math.min(5,run.combo+1):1;run.comboT=8;b*=(boost.coin>0?2:1)*run.combo;run.stuntC+=b;S.coins+=b;say(m+(run.combo>1?'  COMBO x'+run.combo:'')+'  +'+b);sfx.flip();buzz(45)}}c.air=0;c.rot=0;aw-=c.w*1.2}
  if(!gr&&c.pg&&c.vy<-520)c.vy=-520;c.pg=gr>0;
+ {const h=c.hd,L=Math.max(-4000,Math.min(4000,ax*ca+ay*sa)),M=Math.max(-4000,Math.min(4000,-ax*sa+ay*ca));h.vx+=(-120*h.x-7*h.vx-L)*dt;h.vy+=(-120*h.y-7*h.vy-M)*dt;h.x+=h.vx*dt;h.y+=h.vy*dt;const m=Math.hypot(h.x,h.y);if(m>18){h.x*=18/m;h.y*=18/m;h.vx*=.5;h.vy*=.5}}
  c.vx+=ax*dt;c.vy+=ay*dt;c.w+=aw*dt;c.x+=c.vx*dt;c.y+=c.vy*dt;c.a+=c.w*dt;
  if(c.x<-300){c.x=-300;c.vx=Math.max(0,c.vx)}
- c.vx*=1-.04*dt;
+ {const sp=Math.hypot(c.vx,c.vy),dr=1-(.02+.00012*sp)*dt;c.vx*=dr;c.vy*=dr}
  for(const o of HD){const ca2=Math.cos(c.a),sa2=Math.sin(c.a),px=c.x+o.x*ca2-o.y*sa2,py=c.y+o.x*sa2+o.y*ca2;if(py>Hf(px)+2&&!run.over){fail('HEAD CRASH');break}}
  run.comboT-=dt;if(run.bf>0)run.bf-=dt/1.6;if(th)c.fuel-=(.8+1.7)*dt*(1-.05*S.up[0]*.3);else c.fuel-=.8*dt;
  if(c.fuel>0&&c.fuel<c.st.fuel*.2&&!run.lowF){run.lowF=1;say('LOW FUEL!',1.6);tone(220,.25,'square',.06);buzz([60,50,60])}if(c.fuel>c.st.fuel*.3)run.lowF=0;
@@ -273,9 +274,32 @@ function drawScene(){cam.z+=((1-Math.min(.14,Math.abs(car.vx)/6000)-(car.air>.4?
  if(WD.tint){g.globalAlpha=SCENES[LV.gi][1];g.fillStyle=WD.tint;g.fillRect(0,0,W,H);g.globalAlpha=1}
  /* vignette */
  const vg=g.createRadialGradient(W/2,H/2,H*.5,W/2,H/2,H*1.1);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,.28)');g.fillStyle=vg;g.fillRect(0,0,W,H)}
+function drawDriver(cx,c){const h=c.hd,hx=-14+h.x*.9,hy=-72+h.y*.9,tl=-h.x*.022,open=c.air>.3||!!run.over;
+ const ol='#1b1b1b',sk='#b9764a',sk2='#9d5f38';cx.lineJoin='round';cx.lineCap='round';cx.lineWidth=2.2;cx.strokeStyle=ol;
+ /* torso + arm to the wheel */
+ cx.fillStyle='#6f7f3c';{const x=-28,y=-47+h.y*.25,w=31,hh=25,r=7;cx.beginPath();cx.moveTo(x+r,y);cx.arcTo(x+w,y,x+w,y+hh,r);cx.arcTo(x+w,y+hh,x,y+hh,r);cx.arcTo(x,y+hh,x,y,r);cx.arcTo(x,y,x+w,y,r);cx.closePath()}cx.fill();cx.stroke();
+ cx.strokeStyle='#5a6830';cx.lineWidth=8;cx.beginPath();cx.moveTo(-8,-38);cx.lineTo(20,-31);cx.stroke();cx.strokeStyle=ol;cx.lineWidth=2.2;
+ cx.fillStyle=sk;cx.beginPath();cx.arc(22,-30,4.5,0,7);cx.fill();cx.stroke();
+ /* neck */
+ cx.fillStyle=sk2;cx.fillRect(-18,-52+h.y*.3,9,10);
+ /* head (tilts and bobs with the spring) */
+ cx.save();cx.translate(hx,hy);cx.rotate(tl);
+ cx.fillStyle=sk;cx.beginPath();cx.arc(0,0,24,0,7);cx.fill();cx.stroke();
+ cx.fillStyle=sk2;cx.beginPath();cx.arc(-19,4,5.5,0,7);cx.fill();cx.stroke();
+ cx.fillStyle='#fff';cx.beginPath();cx.ellipse(10,1,6.8,7.8,0,0,7);cx.fill();cx.stroke();
+ cx.fillStyle=ol;cx.beginPath();cx.arc(12.4+(open?0:.6),run.over?3:2.2,3.3,0,7);cx.fill();
+ cx.beginPath();cx.moveTo(3,-9);cx.lineTo(17,run.over?-4:-8);cx.stroke();
+ cx.fillStyle=sk;cx.beginPath();cx.arc(23,8,6.2,0,7);cx.fill();cx.stroke();
+ cx.fillStyle='#5b2b16';cx.beginPath();if(open)cx.ellipse(11,16,6,5.2,0,0,7);else cx.arc(10,12.5,7,.15*Math.PI,.8*Math.PI);open?cx.fill():cx.stroke();cx.stroke();
+ /* cap */
+ cx.fillStyle='#2b343c';cx.beginPath();cx.arc(0,-4,25.5,Math.PI*1.04,Math.PI*1.97);cx.closePath();cx.fill();cx.stroke();
+ cx.beginPath();cx.ellipse(21,-6,14,4.2,-.08,0,7);cx.fill();cx.stroke();
+ cx.fillStyle='#d8322a';cx.beginPath();cx.arc(0,-27,3.2,0,7);cx.fill();
+ cx.restore()}
 function drawCar(cx,c,spr){const S0=.62,bw=IM.jeep.width*S0,bh=IM.jeep.height*S0;
  cx.save();cx.translate(c.x,c.y);cx.rotate(c.a);
  cx.drawImage(spr,-bw/2-10,-bh/2-15,bw,bh);
+ drawDriver(cx,c);
  for(let i=0;i<2;i++){cx.save();cx.translate(WH[i].x,WH[i].y+c.ws[i]*-.0);cx.translate(0,c.ws[i]*.0);cx.translate(0,Math.min(0,c.ws[i]));if(c.ws[i]>0)cx.translate(0,c.ws[i]);cx.rotate(c.sp[i]);const d=R*2.06;cx.drawImage(IM.wheel,-d/2,-d/2,d,d);cx.restore()}
  cx.restore()}
 function drawDash(){const d=dx,c=car;d.clearRect(0,0,396,174);
