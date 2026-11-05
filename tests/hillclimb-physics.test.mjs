@@ -185,19 +185,19 @@ for (const w of [-5.2, -3.1, 3.1, 5.2]) for (const vi of [CAR4, BIKE]) {
   for (let i = 0; i < 240 * 6 && !over(); i++) run('step(1/240)');
   if (over()) { assert.equal(over(), 'HEAD CRASH'); assert.ok(relAng() > 1.5, `vehicle ${vi}, spin ${w}: HEAD CRASH while upright (${relAng().toFixed(2)} rad from the slope)`) }
 }
-// 7f. empty tank: no OUT OF FUEL game over, the car keeps going in limp mode (slower than with fuel)
-//     (real game stats for a jeep: engine power 760*.55*pw, top speed 1300*.48*vm - see stats() in index.html)
-const realCar = () => run('car.st.pw=760*.55*car.v.pw;car.st.vmax=1300*.48*(car.v.vm||1)');
-ground(); spawn(CAR4, 500, 2 * get('VEH[' + CAR4 + '].R') + 3); realCar(); run('car.fuel=0'); steps(240 * 12, 'inp.gas=1;inp.brake=0;');
-assert.equal(over(), '', 'an empty tank must not end the run (got "' + over() + '")');
-const vDry = get('car.vx');
-ground(); spawn(CAR4, 500, 2 * get('VEH[' + CAR4 + '].R') + 3); realCar(); steps(240 * 12, 'inp.gas=1;inp.brake=0;'); const vFull = get('car.vx');
-assert.equal(over(), '', 'a fuelled car driving on flat ground must not crash (got "' + over() + '")');
-assert.ok(vDry > 20, 'limp mode still drives the car (vx=' + vDry.toFixed(0) + ')');
-assert.ok(vDry < vFull * 0.95, `limp mode is slower than a fuelled engine (${vDry.toFixed(0)} vs ${vFull.toFixed(0)})`);
-// a long idle stop with an empty tank (the old rule ended the run after 1.6 s standing still) stays alive too
-ground(); spawn(CAR4, 500, 2 * get('VEH[' + CAR4 + '].R') + 3); realCar(); run('car.fuel=0'); steps(240 * 10, 'inp.gas=0;inp.brake=0;');
-assert.equal(over(), '', 'standing still with an empty tank for 10 s must not end the run (got "' + over() + '")');
+// 7f. FUEL (real Hill Climb Racing rule): tank drains, engine dies at empty, the run ends once the car has stopped, a fuel can saves it
+const R0 = () => 2 * get('VEH[' + CAR4 + '].R') + 3;
+ground(); spawn(CAR4, 500, R0()); run('car.fuel=5;car.st.pw=150'); steps(240 * 3, 'inp.gas=1;inp.brake=0;');
+assert.ok(get('car.fuel') < 5, 'fuel drains while driving');
+ground(); spawn(CAR4, 500, R0()); run('car.fuel=0'); const xs = get('car.x'); steps(240 * 6, 'inp.gas=1;inp.brake=0;');
+assert.equal(over(), 'OUT OF FUEL', 'empty tank, car stopped -> OUT OF FUEL (got "' + over() + '")');
+assert.ok(get('car.x') - xs < 20, 'engine is dead with an empty tank (no thrust)');
+// still rolling fast with an empty tank: not over yet
+ground(); spawn(CAR4, 500, R0(), { vx: 300 }); run('car.fuel=0'); steps(60, 'inp.gas=0;inp.brake=0;');
+assert.equal(over(), '', 'rolling car with an empty tank is still alive');
+// picking up fuel before the idle timer expires keeps the run going
+ground(); spawn(CAR4, 500, R0()); run('car.fuel=0'); steps(240, ''); run('car.fuel=40'); steps(240 * 4, 'inp.gas=0;inp.brake=0;');
+assert.equal(over(), '', 'a refuel in time keeps the run alive (got "' + over() + '")');
 // 7g. safety net: stuck on its roof on the ground (even if no head point digs in) still ends the run within ~1.5 s
 ground(); spawn(CAR4, 500, 40, { a: Math.PI }); run('car.v=Object.assign({},car.v,{hd:[]})'); steps(240 * 4);
 assert.equal(over(), 'HEAD CRASH', 'stuck upside down on the ground must end the run (got "' + over() + '")');
