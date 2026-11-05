@@ -275,7 +275,7 @@ function drawDriver(cx,v,t,q){q=q||{};const dr=DRV[S.drv]||DRV[0],o=OUT[S.outfit
  const XE=(r,hx,hy)=>{cx.strokeStyle='#14090a';cx.lineWidth=1.3;cx.lineCap='round';const ex=hx+r*.45,ey=hy+.5;cx.beginPath();cx.moveTo(ex-1.8,ey-1.8);cx.lineTo(ex+1.8,ey+1.8);cx.moveTo(ex+1.8,ey-1.8);cx.lineTo(ex-1.8,ey+1.8);cx.stroke()};
  if(v.cls==='car'){const w=v.win,hp=v.hp,by=w.y+w.h,hel=accOn('hel'),hcol=accOn('hel')?'#d8232a':o.hel,R=6.3;
   const mood=dead>=0?'dead':q.air?'wow':q.hard?'ouch':'smile',ha=dead>=0?snap*1.35+sway:(q.ha!=null?q.ha:Math.sin(t*2.2)*.05);
-  cx.save();cx.beginPath();cx.rect(w.x-44,w.y-150,w.w+88,150+w.h+2);cx.clip();cx.translate(hp.x,by);cx.scale(1.62,1.62);cx.translate(-hp.x,-by);
+  cx.save();cx.beginPath();cx.rect(w.x-70,w.y-230,w.w+140,230+w.h+2);cx.clip();cx.translate(hp.x,by);cx.scale(1.62*DRV_K,1.62*DRV_K);cx.translate(-hp.x,-by);
   /* bucket seat behind the driver (visible now the roof is gone) */
   {const sx0=hp.x-23+ox*.15;cx.fillStyle=lg(cx,by-30,by+6,[[0,'#3b414d'],[1,'#14161c']]);rr(cx,sx0,by-13,13,21,5);cx.fill();cx.strokeStyle='#0b0c10';cx.lineWidth=1;cx.stroke();rr(cx,sx0+1.5,by-20,10,9,4.5);cx.fill();cx.stroke();cx.strokeStyle='rgba(255,255,255,.14)';cx.beginPath();cx.moveTo(sx0+3,by-9);cx.lineTo(sx0+3,by+3);cx.stroke()}
   /* shoulder / neck base follows the body bob; slumps forward when the neck is broken */
