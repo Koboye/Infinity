@@ -102,7 +102,12 @@ document.addEventListener('selectstart',function(e){e.preventDefault()},true);
 'use strict';
 const $=s=>document.querySelector(s),cv=$('#c'),g=cv.getContext('2d'),dx=$('#dash').getContext('2d');
 let W=0,H=0,DPR=1,U=1;
-let QCAP=1.5,_qs=0,_qn=0;function adaptQ(dt){if(QCAP<=1)return;_qs+=dt;if(++_qn>=90){const avg=_qs/_qn;_qs=0;_qn=0;if(avg>.026){QCAP=Math.max(1,QCAP-.25);rs()}}}
+/* render resolution: starts at 1.5x, steps DOWN when frames are slow and back UP (to 2x, a sharper background) after ~4 s of smooth frames; once a level proved too heavy it is never tried again */
+let QCAP=1.5,QMAX=2,_qs=0,_qn=0,_qg=0;
+function adaptQ(dt){_qs+=dt;if(++_qn>=90){const avg=_qs/_qn;_qs=0;_qn=0;
+ if(avg>.026&&QCAP>1){QMAX=Math.max(1,QCAP-.25);QCAP=QMAX;_qg=0;rs()}
+ else if(avg<.0185&&QCAP<QMAX){if(++_qg>=3){_qg=0;QCAP=Math.min(QMAX,QCAP+.25);rs()}}
+ else _qg=0}}
 function rs(){DPR=Math.min(QCAP,devicePixelRatio||1);const iw=innerWidth,ih=innerHeight,por=ih>iw,st=$('#stage');W=por?ih:iw;H=por?iw:ih;st.style.width=W+'px';st.style.height=H+'px';st.style.transform=por?'translateX('+iw+'px) rotate(90deg)':'none';cv.width=W*DPR;cv.height=H*DPR;cv.style.width=W+'px';cv.style.height=H+'px';U=H/1024;document.documentElement.style.setProperty('--u',U+'px')}
 addEventListener('resize',rs);rs();
 /* ---------- assets ---------- */
@@ -354,6 +359,7 @@ function step(dt){const c=car,V=c.v,st=c.st,th=inp.gas&&c.fuel>0?1:0,br=inp.brak
   /* safety net: stuck on its roof against the ground for 1.2 s counts as the head being crushed, so a run can never dead-end upside down */
   if(!run.over&&inv&&(gr>0||cpC))c.inv=(c.inv||0)+dt;else c.inv=Math.max(0,(c.inv||0)-dt*2);
   if(!run.over&&c.inv>1.2){c.inv=0;headHit(c,st)}}
+ if(c.fuel<c.st.fuel*.2){if(!c._low){c._low=1;say('LOW FUEL!  FIND A FUEL CAN')}}else if(c.fuel>c.st.fuel*.3)c._low=0;
  if(th)c.fuel-=(.8+1.7)*dt*(1-.05*S.up[0]*.3)*st.fm;else c.fuel-=.8*dt*st.fm;
  if(c.fuel<=0){c.fuel=0;if(!c._dry){c._dry=1;say('OUT OF FUEL!  REACH A FUEL CAN')}if(Math.abs(c.vx)<12)run.idle+=dt;else run.idle=0;if(run.idle>1.6&&!run.over)fail('OUT OF FUEL')}else{c._dry=0;run.idle=0}   /* real HCR rule: empty tank = engine dies, run ends once the car stops, unless a can is reached */
  smashCheck(c,V,ca,sa);
@@ -483,9 +489,13 @@ function drawBridge(gr,tt,x0,x1){const a=gr.a,b=gr.b,U=26,wy=gr.wy;
  /* foam at the piers where they meet the water */
  g.save();g.fillStyle='rgba(255,255,255,.6)';for(let i=0;i<=n;i++){const px=a+i*(aw+pw)+pw/2;if(px>gr.wl&&px<gr.wr){g.beginPath();g.ellipse(px,wy+1,pw*.75+Math.sin(tt*3+i)*2,3.2,0,0,7);g.fill()}}g.restore()}
 function drawScene(){const z=H/620,c=car;
- const tx=c.x+Math.max(-80,Math.min(220,c.vx*.28)),ty=c.y;cam.x+=(tx-cam.x)*.12;cam.y+=(ty-cam.y)*.10;
+ /* camera: exponential smoothing in real time (same feel at 30/60/120 Hz), looks ahead of the car and down when falling so the landing is visible */
+ const _n=performance.now(),fdt=Math.min(.05,Math.max(.001,(_n-(drawScene._t||_n))/1000||.016));drawScene._t=_n;
+ const tx=c.x+Math.max(-90,Math.min(260,c.vx*.32)),ty=c.y+(c.air>.12?Math.max(-50,Math.min(110,c.vy*.1)):0);
+ cam.x+=(tx-cam.x)*(1-Math.exp(-fdt*7.7));cam.y+=(ty-cam.y)*(1-Math.exp(-fdt*6.3));
  const ox=W*.36-cam.x*z,oy=H*.58-cam.y*z;
  g.setTransform(DPR,0,0,DPR,0,0);drawBG(cam.x+bgOff,cam.y,z);
+ {const hz=g.createLinearGradient(0,0,0,H);hz.addColorStop(0,'rgba(255,255,255,0)');hz.addColorStop(.5,'rgba(255,246,232,.11)');hz.addColorStop(.8,'rgba(20,28,48,.10)');hz.addColorStop(1,'rgba(14,20,36,.18)');g.fillStyle=hz;g.fillRect(0,0,W,H)}
  const WD=WORLDS[LV.w];drawOrb(WD);
  if(WD.stars){g.fillStyle='#fff';for(let i=0;i<60;i++){const x=((i*977+(cam.x+bgOff)*.02*z)%W+W)%W,y=(i*313%(H*.5));g.globalAlpha=.4+.6*((i*7)%5)/5;g.fillRect(x,y,2,2)}g.globalAlpha=1}
  const ttS=performance.now()/1000;try{Scenery.back(g,W,H,cam,z,WD,ttS,Math.abs(c.vx))}catch(e){}
@@ -517,7 +527,9 @@ function drawScene(){const z=H/620,c=car;
  /* pickups */
  const tt=performance.now()/1000;
  for(const k of coins)if(!k.t&&k.x>x0&&k.x<x1){const sx=Math.abs(Math.cos(tt*3+k.x*.01))*.9+.1;g.save();g.translate(k.x,k.y);g.scale(sx,1);g.drawImage(IM.coin,-21,-21,42,42);g.restore()}
- for(const k of cans)if(!k.t&&k.x>x0&&k.x<x1){const im=IM.can;g.drawImage(im,k.x-22,k.y-4+Math.sin(tt*3)*3,44,im.height*44/im.width)}
+ for(const k of cans)if(!k.t&&k.x>x0&&k.x<x1){const im=IM.can,by=k.y-4+Math.sin(tt*3)*3,gx=k.x,gy=by+im.height*44/im.width/2;
+  g.save();g.globalAlpha=.5+.25*Math.sin(tt*5);const rg=g.createRadialGradient(gx,gy,4,gx,gy,56);rg.addColorStop(0,'rgba(255,190,60,.9)');rg.addColorStop(1,'rgba(255,190,60,0)');g.fillStyle=rg;g.beginPath();g.arc(gx,gy,56,0,7);g.fill();g.restore();
+  g.drawImage(im,k.x-22,by,44,im.height*44/im.width)}
  for(const k of gems)if(!k.t&&k.x>x0&&k.x<x1){const im=IM.gem;g.drawImage(im,k.x-24,k.y+Math.sin(tt*3)*4,48,im.height*48/im.width)}
  for(const k of bonus)if(!k.t&&k.x>x0&&k.x<x1){const a=PA[k.k],bob=Math.sin(tt*2.6+k.x*.01)*4,sc=k.k==='trophy'?1.35:1.2;g.save();g.shadowColor=k.k==='bag'?'#7be08a':k.k==='chest'?'#35c6ff':'#ffd33d';g.shadowBlur=18+6*Math.sin(tt*4);g.drawImage(a,k.x-a.lw*sc/2,k.y-a.lh*sc/2+bob,a.lw*sc,a.lh*sc);g.restore();
   g.fillStyle='#fff';for(let i=0;i<3;i++){const ph=(tt*1.3+i*.33+k.x*.001)%1;g.globalAlpha=1-ph;g.fillRect(k.x+Math.cos(i*2.1+tt)*26-1.5,k.y-ph*40+bob-4,3,3)}g.globalAlpha=1}
@@ -528,6 +540,12 @@ function drawScene(){const z=H/620,c=car;
  g.restore();
  try{Scenery.front(g,W,H,cam,z,WD,ttS,Math.abs(c.vx))}catch(e){}
  if(WD.tint){g.fillStyle=WD.tint;g.fillRect(0,0,W,H)}
+ /* low fuel: pointer to the nearest fuel can ahead (blinks), because an empty tank ends the run */
+ if(c.fuel<c.st.fuel*.35&&mode==='play'){let nk=null;for(const k of cans)if(!k.t&&k.x>c.x-60&&(!nk||k.x<nk.x))nk=k;
+  if(nk&&(nk.x>x1-60||nk.x<x0+60)){const m=Math.max(0,Math.round((nk.x-c.x)/PXM)),bl=Math.floor(performance.now()/300)%2,left=nk.x<c.x,px=left?60:W-60,py=H*.3,u=H/620;
+   g.save();g.globalAlpha=bl?1:.55;g.fillStyle='rgba(10,20,40,.7)';g.beginPath();g.arc(px,py,30*u,0,7);g.fill();g.strokeStyle='#ffb02e';g.lineWidth=3*u;g.stroke();
+   g.fillStyle='#ffb02e';g.beginPath();g.moveTo(px+(left?-14:14)*u,py);g.lineTo(px+(left?2:-2)*u,py-12*u);g.lineTo(px+(left?2:-2)*u,py+12*u);g.closePath();g.fill();
+   g.fillStyle='#fff';g.font='bold '+(15*u)+'px Arial';g.textAlign='center';g.fillText('FUEL',px,py+(-36*u));g.fillText(m+' m',px,py+50*u);g.restore()}}
  /* vignette */
  const vg=g.createRadialGradient(W/2,H/2,H*.5,W/2,H/2,H*1.1);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,.28)');g.fillStyle=vg;g.fillRect(0,0,W,H)}
 function drawCar(cx,c){const now=performance.now(),dt=Math.max(.004,Math.min(.05,(now-(c._pt||now))/1000||.016));c._pt=now;
@@ -562,16 +580,16 @@ function drawDash(){const d=dx,c=car;d.clearRect(0,0,396,174);
  const na=Math.PI*.78+Math.PI*1.44*rp;d.strokeStyle='#ff3b2f';d.lineWidth=3;d.lineCap='round';d.beginPath();d.moveTo(bx+Math.cos(na)*8,by+Math.sin(na)*8);d.lineTo(bx+Math.cos(na)*40,by+Math.sin(na)*40);d.stroke();d.fillStyle='#223';d.beginPath();d.arc(bx,by,6,0,7);d.fill();d.strokeStyle='#8fa7c9';d.lineWidth=1.5;d.stroke();
  const kmh=Math.round(Math.abs(c.vx)/PXM*3.6*.5);d.fillStyle='#fff';d.font='bold 30px Arial Narrow,Arial';d.fillText(kmh,bx,by+30);d.fillStyle='#cfe3ff';d.font='bold 10px Arial';d.fillText('KM/H',bx,by+44);
  /* fuel */
- const fx=65,fy=81,ff=c.fuel/c.st.fuel;arc(fx,fy,38,1,'#1a2b46',4);arc(fx,fy,38,ff,ff<.2?'#ff3b2f':'#f2c230',4);
+ const fx=65,fy=81,ff=c.fuel/c.st.fuel;arc(fx,fy,38,1,'#1a2b46',4);arc(fx,fy,38,ff,ff<.2?(Math.floor(performance.now()/250)%2?'#ffffff':'#ff3b2f'):'#f2c230',4);
  const fa=Math.PI*.78+Math.PI*1.44*ff;d.strokeStyle='#ff6a3a';d.lineWidth=2.5;d.beginPath();d.moveTo(fx,fy);d.lineTo(fx+Math.cos(fa)*30,fy+Math.sin(fa)*30);d.stroke();d.fillStyle='#cfe3ff';d.font='bold 9px Arial';d.fillText('E',fx-30,fy+30);d.fillText('F',fx+30,fy+30);
  d.fillStyle='#e8f2ff';d.fillRect(fx-6,fy+14,12,12);d.fillStyle='#173';d.fillRect(fx-3,fy+17,6,4);
  /* tilt */
  const tx2=331,ty2=81,deg=Math.round(-c.a*180/Math.PI);d.fillStyle='#35c6ff';d.font='bold 16px Arial';d.fillText((deg>0?'+':'')+deg+'\u00b0',tx2,ty2+34);
  d.save();d.translate(tx2,ty2-6);d.rotate(c.a);d.fillStyle='#e8f2ff';d.fillRect(-18,-4,36,10);d.fillRect(-10,-12,20,9);d.fillStyle='#0b1426';d.beginPath();d.arc(-10,8,5,0,7);d.arc(10,8,5,0,7);d.fill();d.restore()}
-function hudUpd(){const c=car;$('#hc').textContent=S.coins.toLocaleString();$('#hg').textContent=S.gems;$('#hb').textContent='\u{1F3C6} '+run.trophies+'   \u{1F381} '+run.chests+'   \u{1F4B0} '+run.bags;
+function hudUpd(dt){const c=car;$('#hc').textContent=S.coins.toLocaleString();$('#hg').textContent=S.gems;$('#hb').textContent='\u{1F3C6} '+run.trophies+'   \u{1F381} '+run.chests+'   \u{1F4B0} '+run.bags;
  $('#fuelfill').style.width=(70.3*Math.max(0,c.fuel/c.st.fuel))+'%';
  const f=Math.min(1,run.dist/LV.goal);$('#pf').style.width=(f*100)+'%';$('#ph').style.left=(f*100)+'%';$('#pt').textContent=Math.floor(run.dist)+' m / '+LV.goal+' m';drawDash();
- if(pop.t>0){pop.t-=1/60;if(pop.t<.3)$('#pop').style.opacity=Math.max(0,pop.t/.3)}}
+ if(pop.t>0){pop.t-=Math.min(.05,dt||1/60);if(pop.t<.3)$('#pop').style.opacity=Math.max(0,pop.t/.3)}}
 /* ---------- menus ---------- */
 const svg={play:'<svg viewBox="0 0 24 24"><path d="M6 4l14 8-14 8z"/></svg>',car:'<svg viewBox="0 0 24 24"><path d="M5 11l1.6-4.2C7 5.7 7.8 5 9 5h6c1.2 0 2 .7 2.4 1.8L19 11c1.2.3 2 1.3 2 2.6V17h-2.2a2.5 2.5 0 01-4.6 0H9.8a2.5 2.5 0 01-4.6 0H3v-3.4c0-1.3.8-2.300 2-2.600zM8.200 7L7.200 10h9.600l-1-3z"/></svg>',tool:'<svg viewBox="0 0 24 24"><path d="M22 6.300l-4 4-2.300-.7-.7-2.300 4-4C17.200 2.600 14.600 3.600 13.700 5.700c-.5 1.200-.5 2.400 0 3.500L3 20l1.500 1.500 10.800-10.800c1.100.5 2.300.5 3.500 0 2.100-.9 3.100-3.500 3.200-4.400z"/></svg>',gear:'<svg viewBox="0 0 24 24"><path d="M19.400 13a7.800 7.800 0 000-2l2.100-1.600-2-3.500-2.500 1a7.600 7.600 0 00-1.700-1L15 3.200h-4l-.4 2.700c-.6.300-1.200.6-1.700 1l-2.500-1-2 3.500L6.600 11a7.800 7.800 0 000 2l-2.100 1.600 2 3.500 2.500-1c.5.400 1.100.7 1.700 1l.4 2.700h4l.4-2.700c.6-.3 1.200-.6 1.700-1l2.500 1 2-3.500zM12 15.500a3.500 3.500 0 110-7 3.500 3.500 0 010 7z"/></svg>',back:'<svg viewBox="0 0 24 24"><path d="M20 11H7.800l5.600-5.600L12 4l-8 8 8 8 1.400-1.400L7.800 13H20z"/></svg>',home:'<svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-4v-6h-4v6H6v-9H3z"/></svg>',retry:'<svg viewBox="0 0 24 24"><path d="M17.700 6.300A8 8 0 104 12h2a6 6 0 116 6 6 6 0 01-4.200-1.800L11 13H4v7l2.400-2.400A8 8 0 1017.700 6.300z"/></svg>'};
 const pills=()=>`<div style="position:absolute;right:calc(26*var(--u));top:calc(14*var(--u));display:flex;gap:calc(14*var(--u))"><div class="pill" style="width:calc(236*var(--u))"><img src="a/coinpill.png"><div class="num" style="--fs:29;left:27%;top:19%;width:38%;height:62%">${S.coins.toLocaleString()}</div></div><div class="pill" style="width:calc(236*var(--u))"><img src="a/gempill.png"><div class="num" style="--fs:29;left:28%;top:19%;width:31%;height:62%">${S.gems}</div></div></div>`;
@@ -738,7 +756,7 @@ function updParts(dt){for(const p of parts){p.l-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.
 let last=0,acc=0,tm=0;
 function frame(t){requestAnimationFrame(frame);const dt=Math.min(.05,(t-last)/1000||0);last=t;
  if(mode==='play'&&!paused){adaptQ(dt);acc+=dt;while(acc>1/240){step(1/240);acc-=1/240}
-  updParts(dt);drawScene();hudUpd()}
+  updParts(dt);drawScene();hudUpd(dt)}
  else if(mode==='over'){updParts(dt);drawScene()}
  else if(mode==='play'&&paused){}
  else{drawMenuBG(dt)}}
