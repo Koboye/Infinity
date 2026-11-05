@@ -149,9 +149,9 @@ const PXM=20,R=28,G=1900;
 const WH=[{x:-60,y:22},{x:61,y:22}],CP=[{x:92,y:8},{x:-80,y:12}],HD=[{x:-15,y:-52},{x:45,y:-60},{x:-70,y:-56}];
 let car,run,cam,parts=[],mode='menu',paused=false,inp={gas:0,brake:0},boost={coin:0,susp:0,tire:0},pop={t:0};
 function stats(){const v=VEH[S.veh],u=S.up;return{pw:600*v.pw*(1+.14*u[0]),K:640*(1+.07*u[1]),Cd:24*(1+.09*u[1]),mu:1.15*v.gr*(1+.1*u[2])*WORLDS[LV.w].grip,fuel:(100+22*u[3])*v.fu,vmax:880*(1+.05*u[0])}}
-function start(w,l){S.world=w;LV=mk(w,l);coins=[];cans=[];gems=[];props=[];genLevel();const st=stats();
+function start(w,l){S.world=w;LV=mk(w,l);coins=[];cans=[];gems=[];props=[];genLevel();sceneImg(SCENES[LV.gi][0]);sceneImg(SCENES[Math.min(19,LV.gi+1)][0]);const st=stats();
  car={x:0,y:Hf(0)-60,a:0,vx:0,vy:0,w:0,sp:[0,0],ws:[0,0],fuel:st.fuel,air:0,rot:0,rotAcc:0,st};
- run={dist:0,coins:0,gems:0,flips:0,stuntC:0,over:'',idle:0,t:0,rpm:.2,w,l,done:0,airT:0,cansGot:0,cp:0,sc:0,sfl:0,cl:0,bonus:0,pf:null,combo:0,comboT:0,base:0,lowF:0};
+ run={dist:0,coins:0,gems:0,flips:0,stuntC:0,over:'',idle:0,t:0,rpm:.2,w,l,done:0,airT:0,cansGot:0,cp:0,sc:0,sfl:0,cl:0,bonus:0,pf:null,combo:0,comboT:0,base:0,lowF:0,bf:0,bgPrev:null};
  cam={x:car.x,y:car.y,z:1};parts=[];boost={coin:0,susp:0,tire:0};inp={gas:0,brake:0};paused=false;mode='play';
  document.querySelectorAll('.pu').forEach(e=>e.classList.remove('used'));
  $('#hud').classList.remove('hide');showScr(null);}
@@ -193,7 +193,7 @@ function step(dt){const c=car,st=c.st,th=inp.gas&&c.fuel>0?1:0,br=inp.brake?1:0;
  if(c.x<-300){c.x=-300;c.vx=Math.max(0,c.vx)}
  c.vx*=1-.04*dt;
  for(const o of HD){const ca2=Math.cos(c.a),sa2=Math.sin(c.a),px=c.x+o.x*ca2-o.y*sa2,py=c.y+o.x*sa2+o.y*ca2;if(py>Hf(px)+2&&!run.over){fail('HEAD CRASH');break}}
- run.comboT-=dt;if(th)c.fuel-=(.8+1.7)*dt*(1-.05*S.up[0]*.3);else c.fuel-=.8*dt;
+ run.comboT-=dt;if(run.bf>0)run.bf-=dt/1.6;if(th)c.fuel-=(.8+1.7)*dt*(1-.05*S.up[0]*.3);else c.fuel-=.8*dt;
  if(c.fuel>0&&c.fuel<c.st.fuel*.2&&!run.lowF){run.lowF=1;say('LOW FUEL!',1.6);tone(220,.25,'square',.06);buzz([60,50,60])}if(c.fuel>c.st.fuel*.3)run.lowF=0;
  if(c.fuel<=0){c.fuel=0;if(Math.abs(c.vx)<12)run.idle+=dt;else run.idle=0;if(run.idle>1.6&&!run.over)fail('OUT OF FUEL')}
  run.t+=dt;run.dist=Math.max(0,(c.x-LV.off)/PXM);
@@ -206,8 +206,8 @@ function step(dt){const c=car,st=c.st,th=inp.gas&&c.fuel>0?1:0,br=inp.brake?1:0;
  if(c.x>=LV.fx&&!run.over)levelDone();
 }
 function fail(why){run.over=why;sfx.bad();buzz(220);mode='over';S.bestD=Math.max(S.bestD||0,Math.floor(run.base+run.dist));save();setTimeout(()=>showResult(false),900)}
-function advance(g){g=Math.min(19,g);const w=g/5|0,l=g%5,nl=mk(w,l);nl.off=LV.fx;nl.fx=nl.off+nl.fin;nl.y0=Hf(LV.fx);nl.prev=LV;LV.prev=null;LV=nl;
- genLevel();car.st=stats();run.w=w;run.l=l;S.world=w;run.sc=run.cp;run.sfl=run.flips;run.pf=nl.off}
+function advance(g){run.bgPrev=SCENES[LV.gi];run.bf=1;g=Math.min(19,g);const w=g/5|0,l=g%5,nl=mk(w,l);nl.off=LV.fx;nl.fx=nl.off+nl.fin;nl.y0=Hf(LV.fx);nl.prev=LV;LV.prev=null;LV=nl;
+ genLevel();sceneImg(SCENES[Math.min(19,LV.gi+1)][0]);car.st=stats();run.w=w;run.l=l;S.world=w;run.sc=run.cp;run.sfl=run.flips;run.pf=nl.off}
 /* finishing a level never stops the run: celebrate, then the road flows straight into the next level */
 function levelDone(){const L=LV,k=L.w+'-'+L.l,cf=Math.min(1,(run.cp-run.sc)/Math.max(1,L.ctot)),fl=run.flips-run.sfl,fu=car.fuel/car.st.fuel;
  const rate=Math.min(100,Math.round(40+30*cf+15*Math.min(1,fl/2)+15*fu)),st=starsOf(rate);
@@ -221,9 +221,22 @@ function levelDone(){const L=LV,k=L.w+'-'+L.l,cf=Math.min(1,(run.cp-run.sc)/Math
  save()}
 /* ---------- rendering ---------- */
 let bgImg=null;
-function drawBG(camx,camy,z){const im=IM.bgmid;if(!im)return;const hh=H*1.06,s=hh/im.height,tw=im.width*s,base=camx*.06*z,i0=Math.floor(base/tw),oy=-(camy*.015*z)-H*.0;
- g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';
+/* ---------- scenes: one real-world / space panorama per level, panning across the level ---------- */
+const SCENES=[['bg_bluenile',.5],['bg_giza',.3],['bg_babylon',.4],['bg_artemis',.4],['bg_zeus',.4],
+ ['bg_dubai_street',.2],['bg_dubai_twilight',.15],['bg_sydney',.15],['bg_paris',.2],[null,1],
+ ['bg_london',.55],['bg_nyharbor',.55],['bg_timessq',.5],['bg_moscow',.55],[null,1],
+ ['bg_galaxy',0],['bg_andromeda',0],['bg_galaxy',0,1],['bg_andromeda',0,1],['bg_galaxy',0,1]];
+const SCI={};
+function sceneImg(f){if(!f)return IM.bgmid;let r=SCI[f];if(!r){r=SCI[f]={im:new Image(),ok:0};r.im.onload=()=>{r.ok=1};r.im.src='a/'+f+'.jpg'}return r.ok?r.im:null}
+function drawPan(im,p,flip,alpha,camy,z){const hh=Math.max(H*1.06,W*1.12*im.height/im.width),s=hh/im.height,tw=im.width*s,x0=-(tw-W)*p,oy=-(hh-H)*.3-camy*.015*z;
+ g.globalAlpha=alpha;if(flip){g.save();g.translate(x0+tw,oy);g.scale(-1,1);g.drawImage(im,0,0,tw,hh);g.restore()}else g.drawImage(im,x0,oy,tw,hh);g.globalAlpha=1}
+function bgLegacy(camx,camy,z){const im=IM.bgmid;if(!im)return;const hh=H*1.06,s=hh/im.height,tw=im.width*s,base=camx*.06*z,i0=Math.floor(base/tw),oy=-(camy*.015*z);
  for(let i=i0;i*tw-base<W+tw;i++){const x=i*tw-base;g.save();if(i&1){g.translate(x+tw,oy);g.scale(-1,1);g.drawImage(im,0,0,tw+1,hh)}else{g.translate(x,oy);g.drawImage(im,0,0,tw+1,hh)}g.restore()}}
+function drawBG(camx,camy,z,menu){g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';
+ const L=LV;if(!L)return;let sc=SCENES[menu?S.world*5:L.gi],p=menu?.5+.5*Math.sin(tm*.07):Math.max(0,Math.min(1,(camx-L.off)/L.fin)),im=sceneImg(sc[0]);
+ if(im&&sc[0])drawPan(im,p,sc[2],1,camy,z);else bgLegacy(camx,camy,z);
+ if(!menu&&run&&run.bf>0&&run.bgPrev){const pv=run.bgPrev,pi=pv[0]&&sceneImg(pv[0]);if(pi)drawPan(pi,1,pv[2],Math.min(1,run.bf),camy,z)}
+ const gd=g.createLinearGradient(0,0,0,H*.24);gd.addColorStop(0,'rgba(0,0,0,.30)');gd.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=gd;g.fillRect(0,0,W,H*.24)}
 let dpat=null;
 function dirtPattern(){if(dpat)return dpat;const d=IM.dirt,c=document.createElement('canvas');c.width=d.width*2;c.height=d.height*2;const x=c.getContext('2d');x.drawImage(d,0,0);x.save();x.translate(d.width*2,0);x.scale(-1,1);x.drawImage(d,0,0);x.restore();x.save();x.translate(0,d.height*2);x.scale(1,-1);x.drawImage(d,0,0);x.restore();x.save();x.translate(d.width*2,d.height*2);x.scale(-1,-1);x.drawImage(d,0,0);x.restore();dpat=g.createPattern(c,'repeat');return dpat}
 function sp(im,x,y,w,h){g.drawImage(im,x-w/2,y-h,w,h)}
@@ -232,7 +245,7 @@ function drawScene(){cam.z+=((1-Math.min(.14,Math.abs(car.vx)/6000)-(car.air>.4?
  const ox=W*.36-cam.x*z,oy=H*.58-cam.y*z;
  g.setTransform(DPR,0,0,DPR,0,0);drawBG(cam.x,cam.y,z);
  const WD=WORLDS[LV.w];
- if(WD.stars){g.fillStyle='#fff';for(let i=0;i<60;i++){const x=((i*977+cam.x*.02*z)%W+W)%W,y=(i*313%(H*.5));g.globalAlpha=.4+.6*((i*7)%5)/5;g.fillRect(x,y,2,2)}g.globalAlpha=1}
+ if(WD.stars&&!SCENES[LV.gi][0]){g.fillStyle='#fff';for(let i=0;i<60;i++){const x=((i*977+cam.x*.02*z)%W+W)%W,y=(i*313%(H*.5));g.globalAlpha=.4+.6*((i*7)%5)/5;g.fillRect(x,y,2,2)}g.globalAlpha=1}
  g.save();g.translate(ox,oy);g.scale(z,z);
  const x0=cam.x-W*.36/z-80,x1=cam.x+W*.64/z+80;
  for(const p of props){if(!p.z&&p.x>x0&&p.x<x1){const im=IM[p.k];if(im){const w=im.width*1.25*p.s,h=im.height*1.25*p.s;sp(im,p.x,Hf(p.x)+6,w,h)}}}
@@ -257,7 +270,7 @@ function drawScene(){cam.z+=((1-Math.min(.14,Math.abs(car.vx)/6000)-(car.air>.4?
  drawCar(g,c,vsprite(S.veh));
  for(const p of parts){g.globalAlpha=Math.max(0,p.l/p.m);if(p.ring){g.strokeStyle=p.c;g.lineWidth=4;g.beginPath();g.arc(p.x,p.y,p.r*(2-p.l/p.m*1.2),0,7);g.stroke()}else{g.fillStyle=p.c;g.beginPath();g.arc(p.x,p.y,p.r*(1.6-p.l/p.m*.6),0,7);g.fill()}}g.globalAlpha=1;
  g.restore();
- if(WD.tint){g.fillStyle=WD.tint;g.fillRect(0,0,W,H)}
+ if(WD.tint){g.globalAlpha=SCENES[LV.gi][1];g.fillStyle=WD.tint;g.fillRect(0,0,W,H);g.globalAlpha=1}
  /* vignette */
  const vg=g.createRadialGradient(W/2,H/2,H*.5,W/2,H/2,H*1.1);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,.28)');g.fillStyle=vg;g.fillRect(0,0,W,H)}
 function drawCar(cx,c,spr){const S0=.62,bw=IM.jeep.width*S0,bh=IM.jeep.height*S0;
@@ -368,7 +381,7 @@ function frame(t){requestAnimationFrame(frame);const dt=Math.min(.05,(t-last)/10
  else{drawMenuBG(dt)}}
 function drawMenuBG(dt){tm+=dt;g.setTransform(DPR,0,0,DPR,0,0);const z=H/620;
  if(!LV){LV=mk(0,0)}
- drawBG(tm*160,0,z);
+ drawBG(tm*160,0,z,1);
  const sc=document.getElementById('s_title')?1:0;
  if(sc){/* title scene: big jeep on a rock ledge */
   const gy=H*.93,bw=W*.46,bh=bw*IM.jeep.height/IM.jeep.width;g.save();g.translate(W*.05,gy-bh*.99);g.drawImage(vsprite(S.veh),0,0,bw,bh);
