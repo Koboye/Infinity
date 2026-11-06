@@ -3,6 +3,7 @@
 import * as THREE from './three.module.min.js';
 import { Frame, Z, buildGrid, gridHeight, buildTerrainGeometry, buildBuildings, buildRoads, pointInPoly, decodeTerrarium, ROAD_STYLE } from './geo.js';
 import { createCar, stepCar, createPerson, stepFoot } from './phys.js';
+import { fetchRoute, serializeRoute, deserializeRoute, pointAlong, nearestAlong } from './route.js';
 
 const $ = id => document.getElementById(id);
 const TOUCH = matchMedia('(pointer:coarse)').matches;
@@ -118,8 +119,9 @@ async function loadTile(tx, ty, gen) {
   t.canvas = reliefCanvas(raw); t.ctx = t.canvas.getContext('2d');
   t.tex = new THREE.CanvasTexture(t.canvas); t.tex.colorSpace = THREE.SRGBColorSpace; t.tex.anisotropy = 4;
   t.mat = new THREE.MeshLambertMaterial({ map: t.tex, emissive: 0xffffff, emissiveMap: t.tex, emissiveIntensity: 0.5, side: THREE.DoubleSide });
-  t.mesh = new THREE.Mesh(buildTerrainGeometry(t.g, rect.w), t.mat);
-  t.mesh.position.set(rect.x, 0, rect.z); t.mesh.receiveShadow = SHADOWS; t.mesh.frustumCulled = false;
+  t.rect = frame.tileRect(tx, ty);
+  t.mesh = new THREE.Mesh(buildTerrainGeometry(t.g, t.rect.w), t.mat);
+  t.mesh.position.set(t.rect.x - t.group.position.x, 0, t.rect.z - t.group.position.z); t.mesh.receiveShadow = SHADOWS; t.mesh.frustumCulled = false;
   t.group.add(t.mesh); scene.add(t.group);
   loadImagery(t); loadOSM(t);
 }
@@ -189,11 +191,11 @@ function buildOSM(t, els) {
     }
   }
   if (ways.length) {
-    const m = new THREE.Mesh(buildRoads(ways, heightAt), roadMat); m.frustumCulled = false; m.receiveShadow = SHADOWS; t.group.add(m); t.roadMesh = m;
+    const m = new THREE.Mesh(buildRoads(ways, heightAt), roadMat); m.frustumCulled = false; m.receiveShadow = SHADOWS; m.position.set(-t.group.position.x, 0, -t.group.position.z); t.group.add(m); t.roadMesh = m;
     t.lines = ways.map(w => { const f = new Float32Array(w.pts.length * 2); let a = 1e9, b = -1e9, c = 1e9, d = -1e9; w.pts.forEach((p, i) => { f[i * 2] = p[0]; f[i * 2 + 1] = p[1]; a = Math.min(a, p[0]); b = Math.max(b, p[0]); c = Math.min(c, p[1]); d = Math.max(d, p[1]); }); return { f, minx: a, maxx: b, minz: c, maxz: d, major: w.w >= 7 }; });
   }
   if (blds.length) {
-    const r = buildBuildings(blds, heightAt); const m = new THREE.Mesh(r.geometry, bldMat); m.frustumCulled = false; m.castShadow = SHADOWS; m.receiveShadow = SHADOWS;
+    const r = buildBuildings(blds, heightAt); const m = new THREE.Mesh(r.geometry, bldMat); m.frustumCulled = false; m.castShadow = SHADOWS; m.receiveShadow = SHADOWS; m.position.set(-t.group.position.x, 0, -t.group.position.z);
     t.group.add(m); t.bldMesh = m; t.solids = r.solids; rebuildHash();
   }
 }
@@ -217,7 +219,7 @@ function maybeTrees(t) {
     m.compose(new THREE.Vector3(s[0], y + 3.4 * sc, s[1]), q, new THREE.Vector3(3 * sc, 1.9 * sc, 3 * sc)); can.setMatrixAt(i, m);
     can.setColorAt(i, c.setHSL(0.24 + s[2] * 0.08, 0.5, 0.2 + s[2] * 0.12));
   });
-  can.frustumCulled = false; trk.frustumCulled = false; can.castShadow = SHADOWS;
+  can.frustumCulled = false; trk.frustumCulled = false; can.castShadow = SHADOWS; can.position.set(-t.group.position.x, 0, -t.group.position.z); trk.position.copy(can.position);
   t.group.add(can, trk); t.trees = [can, trk];
 }
 function disposeTile(t) {
@@ -294,7 +296,7 @@ addEventListener('keydown', e => {
   if (!playing) return;
   if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
   if (e.code === 'KeyE') toggleCar(); else if (e.code === 'KeyC') { paintIdx = (paintIdx + 1) % PAINTS.length; applyPaint(); }
-  else if (e.code === 'KeyM') toggleMute(); else if (e.code === 'KeyT') cycleTime(); else if (e.code === 'KeyR') recover();
+  else if (e.code === 'KeyM') toggleMute(); else if (e.code === 'KeyT') cycleTime(); else if (e.code === 'KeyR') recover(); else if (e.code === 'KeyP') toggleAuto(); else if (e.code === 'KeyK') skipAhead();
   else if (e.code === 'Escape' || e.code === 'KeyH') openMenu();
 });
 addEventListener('keyup', e => { keys[e.code] = false; });
@@ -313,7 +315,7 @@ const joyEnd = e => { if (e.pointerId === joy.id) { joy.id = null; joy.x = joy.y
 joyEl.addEventListener('pointerup', joyEnd); joyEl.addEventListener('pointercancel', joyEnd);
 function hold(el, k) { el.addEventListener('pointerdown', e => { btn[k] = true; el.classList.add('on'); el.setPointerCapture(e.pointerId); e.preventDefault(); }); const up = () => { btn[k] = false; el.classList.remove('on'); }; el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); }
 hold($('bA'), 'hand'); hold($('bB'), 'boost'); $('bC').addEventListener('pointerdown', e => { toggleCar(); e.preventDefault(); });
-$('bMenu').onclick = openMenu; $('bPaint').onclick = () => { paintIdx = (paintIdx + 1) % PAINTS.length; applyPaint(); }; $('bMute').onclick = toggleMute; $('bTime').onclick = cycleTime;
+$('bAuto').onclick = toggleAuto; $('bSkip').onclick = () => skipAhead(); $('bMenu').onclick = openMenu; $('bPaint').onclick = () => { paintIdx = (paintIdx + 1) % PAINTS.length; applyPaint(); }; $('bMute').onclick = toggleMute; $('bTime').onclick = cycleTime;
 let camYaw = 0, camPitch = 0.28, camOff = 0, camIdle = 0, drag = null;
 canvas.addEventListener('pointerdown', e => { if (!playing) return; drag = { id: e.pointerId, x: e.clientX, y: e.clientY }; canvas.setPointerCapture(e.pointerId); });
 canvas.addEventListener('pointermove', e => { if (!drag || e.pointerId !== drag.id) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY; camYaw -= dx * 0.006; camPitch = clamp(camPitch + dy * 0.004, -0.1, 1.2); camIdle = 0; });
@@ -398,9 +400,11 @@ function toggleCar() {
   }
   document.querySelector('#bA').innerHTML = mode === 'car' ? 'BRAKE<br>HAND' : 'JUMP'; $('bB').innerHTML = mode === 'car' ? 'NITRO' : 'RUN';
 }
-function recover() { const x = mode === 'car' ? car.x : person.x, z = mode === 'car' ? car.z : person.z, r = nearestRoad(x, z, 800); if (r) { placeCarAt(r); if (mode === 'foot') { person.x = r.x + 3; person.z = r.z; person.y = heightAt(person.x, person.z); } toast('Recovered to the nearest road'); } else { car.vx = car.vz = car.vy = 0; car.speed = 0; car.y = heightAt(car.x, car.z); toast('No road nearby · levelled the SUV'); } }
+function recover() {
+  if (journey && !journey.done) { const [la, lo] = frame.toLatLon(mode === 'car' ? car.x : person.x, mode === 'car' ? car.z : person.z), g = nearestAlong(journey.route, la, lo); if (g.dist > 600) { relocateAlong(g.along, 'Back to the route…'); } else { placeOnRoute(g.along); toast('Back on the route'); } return; }
+  const x = mode === 'car' ? car.x : person.x, z = mode === 'car' ? car.z : person.z, r = nearestRoad(x, z, 800); if (r) { placeCarAt(r); if (mode === 'foot') { person.x = r.x + 3; person.z = r.z; person.y = heightAt(person.x, person.z); } toast('Recovered to the nearest road'); } else { car.vx = car.vz = car.vy = 0; car.speed = 0; car.y = heightAt(car.x, car.z); toast('No road nearby · levelled the SUV'); } }
 function pickupCheck() {
-  if (!wp) return;
+  if (!wp || journey) return;
   const x = mode === 'car' ? car.x : person.x, z = mode === 'car' ? car.z : person.z;
   if (Math.hypot(wp.x - x, wp.z - z) < 28) { const gain = 50 + Math.round(Math.hypot(wp.x - x, wp.z - z) * 0 + 40); coins += gain; LS.set('au_coins', coins); toast('📍 Waypoint reached! +' + gain + ' coins'); newWaypoint(); }
 }
@@ -414,23 +418,121 @@ async function reverseGeocode() {
 }
 function solarHour(lon) { const d = new Date(); return (d.getUTCHours() + d.getUTCMinutes() / 60 + lon / 15 + 24) % 24; }
 
-async function startAt(lat, lon, asMode, label) {
-  initAudio(); $('menu').hidden = true; $('loading').hidden = false; $('ltxt').textContent = 'Loading real terrain…'; $('lsub').textContent = label || (lat.toFixed(4) + ', ' + lon.toFixed(4));
-  playing = false; resetWorld(lat, lon); LS.set('au_last', { lat, lon, label: label || '' });
-  gameHour = solarHour(lon); car.nitro = 1;
-  spawnMode = asMode; mode = asMode; person.x = person.z = 0; person.vx = person.vz = 0; car.x = 4; car.z = 0; car.vx = car.vz = car.speed = 0; car.yaw = 0;
-  ensureTiles(0, 0);
+/* Long journeys: keep coordinates small by moving the local origin (floating origin). Nothing is reloaded. */
+function rebase() {
+  const f0 = mode === 'car' ? car : person, [lat, lon] = frame.toLatLon(f0.x, f0.z), nf = new Frame(lat, lon);
+  const conv = o => { const [la, lo] = frame.toLatLon(o.x, o.z), [x, z] = nf.toWorld(la, lo); o.x = x; o.z = z; };
+  conv(car); conv(person); if (wp) conv(wp);
+  for (const t of tiles.values()) {
+    const nr = nf.tileRect(t.tx, t.ty), ox = nr.x - t.rect.x, oz = nr.z - t.rect.z;
+    t.group.position.x += ox; t.group.position.z += oz;
+    for (const sd of t.solids || []) { for (let i = 0; i < sd.pts.length; i += 2) { sd.pts[i] += ox; sd.pts[i + 1] += oz; } sd.minx += ox; sd.maxx += ox; sd.minz += oz; sd.maxz += oz; }
+    for (const ln of t.lines) { for (let i = 0; i < ln.f.length; i += 2) { ln.f[i] += ox; ln.f[i + 1] += oz; } ln.minx += ox; ln.maxx += ox; ln.minz += oz; ln.maxz += oz; }
+    t.rect = nr;
+  }
+  frame = nf; rebuildHash(); camReset = true; routeTick = 99;
+  if (beacon.visible && wp && !journey) { const y = heightAt(wp.x, wp.z); beacon.position.set(wp.x, y + 300, wp.z); ring.position.set(wp.x, y + 1, wp.z); }
+}
+async function enterRegion(lat, lon, label) {
+  initAudio(); playing = false; $('menu').hidden = true; $('loading').hidden = false; $('ltxt').textContent = 'Loading real terrain…'; $('lsub').textContent = label || (lat.toFixed(4) + ', ' + lon.toFixed(4));
+  resetWorld(lat, lon); ensureTiles(0, 0);
   const t0 = performance.now(); let tile;
   while (performance.now() - t0 < 30000) { tile = tiles.get(centerKey); $('lsub').textContent = `${[...tiles.values()].filter(t => t.g).length}/9 terrain tiles`; if (tile && tile.g) break; await sleep(150); }
-  const h = heightAt(0, 0); lastH = h; person.y = h; car.y = h;
+  lastH = heightAt(0, 0);
   $('ltxt').textContent = 'Finding roads and buildings…';
   const t1 = performance.now(); while (tile && !tile.osmDone && performance.now() - t1 < 9000) await sleep(150);
-  pendingSnap = false; trySnap();
-  document.querySelector('#bA').innerHTML = mode === 'car' ? 'BRAKE<br>HAND' : 'JUMP'; $('bB').innerHTML = mode === 'car' ? 'NITRO' : 'RUN';
-  camYaw = mode === 'car' ? car.yaw : 0; camPitch = 0.28; camReset = true; newWaypoint();
-  $('loading').hidden = true; $('hud').hidden = false; $('touch').hidden = !TOUCH; playing = true; placeTimer = 0; lastGeo = { x: 1e9, z: 1e9 };
-  $('pn').textContent = label || 'Exploring…'; $('bResume').hidden = false;
+  return tile;
+}
+function setButtons() { document.querySelector('#bA').innerHTML = mode === 'car' ? 'BRAKE<br>HAND' : 'JUMP'; $('bB').innerHTML = mode === 'car' ? 'NITRO' : 'RUN'; }
+function goLive() { $('loading').hidden = true; $('hud').hidden = false; $('touch').hidden = !TOUCH; playing = true; placeTimer = 0; lastGeo = { x: 1e9, z: 1e9 }; $('bResume').hidden = false; camReset = true; setButtons(); }
+async function startAt(lat, lon, asMode, label) {
+  journey = null; clearRoute(); LS.set('au_last', { lat, lon, label: label || '' });
+  gameHour = solarHour(lon); car.nitro = 1; mode = asMode; person.x = person.z = 0; person.vx = person.vz = 0; car.x = 4; car.z = 0; car.vx = car.vz = car.speed = 0; car.yaw = 0;
+  await enterRegion(lat, lon, label);
+  const h = heightAt(0, 0); person.y = h; car.y = h; pendingSnap = false; trySnap();
+  camYaw = mode === 'car' ? car.yaw : 0; camPitch = 0.28; newWaypoint(); goLive();
+  $('pn').textContent = label || 'Exploring…';
   toast(mode === 'foot' ? 'You are on foot at your real location · press E near your SUV' : 'Welcome to ' + (label || 'the real world') + ' · follow the yellow beacon');
+}
+
+/* ---------------- road trip: real road routes ---------------- */
+let journey = null, routeMesh = null, routeTick = 0, saveT = 0, skipping = false;
+const routeMat = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.6, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -6, polygonOffsetUnits: -6 });
+const rw = i => [(journey.route.mx[i] - frame.mx0) * frame.k, -(journey.route.my[i] - frame.my0) * frame.k];
+function routeAt(along) {
+  const r = journey.route, c = r.cum; along = clamp(along, 0, r.total); let lo = 0, hi = r.n - 1;
+  while (hi - lo > 1) { const m = (lo + hi) >> 1; if (c[m] <= along) lo = m; else hi = m; }
+  const a = rw(lo), b = rw(hi), seg = c[hi] - c[lo] || 1, u = clamp((along - c[lo]) / seg, 0, 1), dx = b[0] - a[0], dz = b[1] - a[1], l = Math.hypot(dx, dz) || 1;
+  return { x: a[0] + dx * u, z: a[1] + dz * u, dx: dx / l, dz: dz / l, i: lo };
+}
+function clearRoute() { if (routeMesh) { scene.remove(routeMesh); routeMesh.geometry.dispose(); routeMesh = null; } ['bAuto', 'bSkip'].forEach(i => $(i).hidden = true); $('pb').hidden = true; }
+function placeOnRoute(along) {
+  const J = journey, p = routeAt(along);
+  car.x = p.x; car.z = p.z; car.yaw = Math.atan2(-p.dx, -p.dz); car.vx = car.vz = car.vy = car.speed = 0; car.steer = 0; car.y = heightAt(p.x, p.z); car.grounded = true;
+  person.x = p.x + 3; person.z = p.z; person.y = car.y; J.ri = p.i; J.along = along; routeTick = 99; mode = 'car'; setButtons();
+}
+function updateRoute(dt) {
+  const J = journey; if (!J) return; const r = J.route, px = mode === 'car' ? car.x : person.x, pz = mode === 'car' ? car.z : person.z;
+  let best = 1e18, bi = J.ri, bu = 0; const lo = Math.max(0, J.ri - 25), hi = Math.min(r.n - 2, J.ri + 300); let a = rw(lo);
+  for (let i = lo; i <= hi; i++) {
+    const b = rw(i + 1), dx = b[0] - a[0], dz = b[1] - a[1], l2 = dx * dx + dz * dz || 1, u = clamp(((px - a[0]) * dx + (pz - a[1]) * dz) / l2, 0, 1), qx = a[0] + dx * u - px, qz = a[1] + dz * u - pz, d = qx * qx + qz * qz;
+    if (d < best) { best = d; bi = i; bu = u; } a = b;
+  }
+  J.ri = bi; J.off = Math.sqrt(best); J.along = r.cum[bi] + (r.cum[bi + 1] - r.cum[bi]) * bu; J.remaining = r.total - J.along;
+  if (J.off < 80) J.progress = Math.max(J.progress, J.along);
+  const p = routeAt(J.along + 90); wp = { x: p.x, z: p.z };
+  if (J.remaining < 3000) { const e = routeAt(r.total), y = heightAt(e.x, e.z); beacon.position.set(e.x, y + 300, e.z); ring.position.set(e.x, y + 1, e.z); beacon.visible = ring.visible = true; } else beacon.visible = ring.visible = false;
+  if (J.remaining < 70 && !J.done) {
+    J.done = true; J.auto = false; const gain = 500 + Math.round(J.driven / 1000 * 8); coins += gain; LS.set('au_coins', coins); LS.set('au_prog', null);
+    toast(`🏁 Arrived in ${J.to.n}! You drove ${(J.driven / 1000).toFixed(0)} km · +${gain} coins`, 6000);
+  }
+}
+function buildRouteRibbon() {
+  const J = journey; if (!J) return; const pts = [];
+  for (let a = Math.max(0, J.along - 15); a <= Math.min(J.route.total, J.along + 3200); a += 14) {
+    const p = routeAt(a), [tx, ty] = frame.tileAt(p.x, p.z), t = tiles.get(tx + ',' + ty); if (!t || !t.g) break; pts.push([p.x, p.z]);
+  }
+  if (routeMesh) { scene.remove(routeMesh); routeMesh.geometry.dispose(); routeMesh = null; }
+  if (pts.length < 2) return;
+  routeMesh = new THREE.Mesh(buildRoads([{ pts, w: 3.4, c: [0.15, 0.9, 1] }], heightAt), routeMat); routeMesh.position.y = 0.3; routeMesh.frustumCulled = false; scene.add(routeMesh);
+}
+function autoInput() {
+  const J = journey, L = 14 + Math.abs(car.speed) * 0.9, t1 = routeAt(J.along + L), t2 = routeAt(J.along + L * 3);
+  const fx = -Math.sin(car.yaw), fz = -Math.cos(car.yaw), rx = Math.cos(car.yaw), rz = -Math.sin(car.yaw);
+  const ang = Math.atan2((t1.x - car.x) * rx + (t1.z - car.z) * rz, (t1.x - car.x) * fx + (t1.z - car.z) * fz);
+  const a2 = Math.atan2((t2.x - car.x) * rx + (t2.z - car.z) * rz, (t2.x - car.x) * fx + (t2.z - car.z) * fz);
+  let target = 23 * (1 - clamp(Math.abs(a2) / 1.2, 0, 0.7)) * (1 - clamp(Math.abs(ang) / 1.0, 0, 0.6)); target = Math.max(6, target);
+  return { mx: clamp(ang * 1.6, -1, 1), my: clamp((target - car.speed) * 0.35, -1, 1), hand: false, jump: false, boost: false };
+}
+function toggleAuto() {
+  const J = journey; if (!J || J.done) return; if (mode !== 'car') { toast('Get in your SUV first (E)'); return; }
+  J.auto = !J.auto; $('bAuto').style.outline = J.auto ? '2px solid #FCDD09' : ''; toast(J.auto ? '🤖 Autopilot on · touch any control to take over' : 'Manual control');
+}
+async function relocateAlong(along, label) {
+  const J = journey, ll = pointAlong(J.route, along); J.auto = false; $('bAuto').style.outline = '';
+  await enterRegion(ll.lat, ll.lon, label); placeOnRoute(along); gameHour = solarHour(ll.lon); camYaw = car.yaw; camPitch = 0.26; goLive();
+}
+async function skipAhead(m = 25000) {
+  const J = journey; if (!J || J.done || skipping) return; skipping = true;
+  const target = Math.min(J.route.total - 400, J.along + m);
+  if (target < J.along + 800) { toast('Almost there!'); skipping = false; return; }
+  await relocateAlong(target, 'Driving ahead on the road…'); J.progress = Math.max(J.progress, target); toast('⏭ Skipped ahead · ' + (J.remaining / 1000).toFixed(0) + ' km to go'); skipping = false;
+}
+async function startJourney(route, from, to, progress = 0, driven = 0) {
+  journey = { route, from, to, ri: 0, along: progress, progress, remaining: route.total - progress, driven, done: false, auto: false, off: 0 };
+  beacon.visible = ring.visible = false; wp = null;
+  const ll = pointAlong(route, progress); LS.set('au_last', { lat: ll.lat, lon: ll.lon, label: from.n });
+  await enterRegion(ll.lat, ll.lon, `${from.n} → ${to.n}`);
+  placeOnRoute(progress); gameHour = solarHour(ll.lon); car.nitro = 1; camYaw = car.yaw; camPitch = 0.26; goLive();
+  ['bAuto', 'bSkip'].forEach(i => $(i).hidden = false); $('bAuto').style.outline = ''; $('pb').hidden = false; $('pn').textContent = from.n;
+  const hrs = route.time / 3600; toast(`🛣 ${from.n} → ${to.n} · ${(route.total / 1000).toFixed(0)} km by road${hrs ? ' · about ' + Math.floor(hrs) + ' h ' + Math.round((hrs % 1) * 60) + ' min' : ''}. Follow the cyan line · P autopilot · K skip`, 6500);
+}
+async function planAndStart(a, b) {
+  $('menu').hidden = true; $('loading').hidden = false; $('ltxt').textContent = 'Finding the real road…'; $('lsub').textContent = `${a.n} → ${b.n}`; playing = false;
+  const r = await fetchRoute(a, b);
+  if (!r) { $('loading').hidden = true; $('menu').hidden = false; $('planInfo').textContent = 'Could not find a road route between those places. Try places that are connected by road.'; return; }
+  LS.set('au_route', serializeRoute(r)); LS.set('au_trip', { a, b }); LS.set('au_prog', { along: 0, driven: 0 });
+  await startJourney(r, a, b, 0, 0);
 }
 
 /* ---------------- menu ---------------- */
@@ -454,6 +556,37 @@ async function search() {
     j.forEach(x => { const b = document.createElement('button'); b.textContent = '📌 ' + x.display_name; b.onclick = () => startAt(+x.lat, +x.lon, 'car', x.display_name.split(',').slice(0, 2).join(',')); box.appendChild(b); });
   } catch (e) { box.innerHTML = '<div class="hint">Search needs an internet connection.</div>'; }
 }
+const TRIPS = [
+  { main: true, a: { n: 'Addis Ababa', lat: 9.0107, lon: 38.7612 }, b: { n: 'Lalibela', lat: 12.0317, lon: 39.0473 } },
+  { a: { n: 'Addis Ababa', lat: 9.0107, lon: 38.7612 }, b: { n: 'Bahir Dar', lat: 11.5936, lon: 37.3910 } },
+  { a: { n: 'Bahir Dar', lat: 11.5936, lon: 37.3910 }, b: { n: 'Gondar', lat: 12.6070, lon: 37.4690 } },
+  { a: { n: 'Lalibela', lat: 12.0317, lon: 39.0473 }, b: { n: 'Axum', lat: 14.1306, lon: 38.7185 } }
+];
+TRIPS.forEach(t => { const b = document.createElement('button'); b.innerHTML = `${t.a.n} → ${t.b.n}<small>real road trip</small>`; if (t.main) { b.style.gridColumn = '1 / -1'; b.style.background = 'linear-gradient(90deg,#078930,#0aa43a)'; b.style.fontWeight = '700'; } b.onclick = () => planAndStart(t.a, t.b); $('trips').appendChild(b); });
+const sel = { from: null, to: null };
+const geocode = async q => (await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=6&accept-language=en&q=' + encodeURIComponent(q))).json();
+function placeFinder(inp, box, key) {
+  return async () => {
+    const q = inp.value.trim(); if (!q) return; box.innerHTML = '<div class="hint">Searching…</div>';
+    try {
+      const j = await geocode(q); box.innerHTML = ''; if (!j.length) { box.innerHTML = '<div class="hint">Nothing found.</div>'; return; }
+      j.forEach(x => { const b = document.createElement('button'); b.textContent = '📌 ' + x.display_name; b.onclick = () => { sel[key] = { n: x.display_name.split(',')[0], lat: +x.lat, lon: +x.lon }; inp.value = sel[key].n; box.innerHTML = ''; }; box.appendChild(b); });
+    } catch (e) { box.innerHTML = '<div class="hint">Search needs an internet connection.</div>'; }
+  };
+}
+$('bFrom').onclick = placeFinder($('qFrom'), $('rFrom'), 'from'); $('bTo').onclick = placeFinder($('qTo'), $('rTo'), 'to');
+$('qFrom').addEventListener('keydown', e => { if (e.key === 'Enter') $('bFrom').onclick(); }); $('qTo').addEventListener('keydown', e => { if (e.key === 'Enter') $('bTo').onclick(); });
+$('bFromGps').onclick = () => { if (!navigator.geolocation) return; navigator.geolocation.getCurrentPosition(p => { sel.from = { n: 'My location', lat: p.coords.latitude, lon: p.coords.longitude }; $('qFrom').value = 'My location'; }, () => { $('planInfo').textContent = 'Location permission denied.'; }, { enableHighAccuracy: true, timeout: 15000 }); };
+async function resolvePlace(inp, key) {
+  const q = inp.value.trim(); if (!q) return null; if (sel[key] && sel[key].n === q) return sel[key];
+  try { const j = await geocode(q); if (j[0]) return (sel[key] = { n: j[0].display_name.split(',')[0], lat: +j[0].lat, lon: +j[0].lon }); } catch (e) {} return null;
+}
+$('bPlan').onclick = async () => {
+  $('planInfo').textContent = 'Looking up places…'; const a = await resolvePlace($('qFrom'), 'from'), b = await resolvePlace($('qTo'), 'to');
+  if (!a || !b) { $('planInfo').textContent = 'Enter both a start and a destination.'; return; } $('planInfo').textContent = ''; planAndStart(a, b);
+};
+{ const trip = LS.get('au_trip', null), rt = LS.get('au_route', null), pg = LS.get('au_prog', null);
+  if (trip && rt && pg) { $('bJResume').hidden = false; $('bJResume').textContent = `↩ Resume: ${trip.a.n} → ${trip.b.n}`; $('bJResume').onclick = () => startJourney(deserializeRoute(rt), trip.a, trip.b, pg.along, pg.driven); } }
 $('bSearch').onclick = search; $('q').addEventListener('keydown', e => { if (e.key === 'Enter') search(); });
 
 /* ---------------- HUD / minimap ---------------- */
@@ -469,7 +602,8 @@ function drawMini() {
     if (ln.maxx < px - 460 || ln.minx > px + 460 || ln.maxz < pz - 460 || ln.minz > pz + 460) continue;
     mctx.lineWidth = ln.major ? 5 : 3; mctx.beginPath(); for (let i = 0; i < ln.f.length; i += 2) { const [x, y] = P(ln.f[i], ln.f[i + 1]); i ? mctx.lineTo(x, y) : mctx.moveTo(x, y); } mctx.stroke();
   }
-  if (wp) { const [x, y] = P(wp.x, wp.z), dx = x - h, dy = y - h, m = Math.hypot(dx, dy), k = m > h - 14 ? (h - 14) / m : 1; mctx.fillStyle = '#ffd23c'; mctx.beginPath(); mctx.arc(h + dx * k, h + dy * k, 9, 0, 6.283); mctx.fill(); }
+  if (journey) { const J = journey; mctx.strokeStyle = '#2ee6ff'; mctx.lineWidth = 7; mctx.beginPath(); for (let i = Math.max(0, J.ri - 60), e = Math.min(J.route.n - 1, J.ri + 500); i <= e; i++) { const q = rw(i), [x, y] = P(q[0], q[1]); i === Math.max(0, J.ri - 60) ? mctx.moveTo(x, y) : mctx.lineTo(x, y); } mctx.stroke(); }
+  if (wp && !journey) { const [x, y] = P(wp.x, wp.z), dx = x - h, dy = y - h, m = Math.hypot(dx, dy), k = m > h - 14 ? (h - 14) / m : 1; mctx.fillStyle = '#ffd23c'; mctx.beginPath(); mctx.arc(h + dx * k, h + dy * k, 9, 0, 6.283); mctx.fill(); }
   if (mode === 'foot') { const [x, y] = P(car.x, car.z); mctx.fillStyle = '#20e0ff'; mctx.fillRect(x - 6, y - 6, 12, 12); }
   mctx.restore(); mctx.save(); mctx.translate(h, h); mctx.rotate((mode === 'car' ? car.yaw : person.yaw) - camYaw); mctx.fillStyle = '#fff'; mctx.strokeStyle = '#078930'; mctx.lineWidth = 3;
   mctx.beginPath(); mctx.moveTo(0, -14); mctx.lineTo(10, 11); mctx.lineTo(0, 6); mctx.lineTo(-10, 11); mctx.closePath(); mctx.fill(); mctx.stroke(); mctx.restore();
@@ -484,7 +618,8 @@ function updateHUD(dt) {
     const dx = wp.x - x, dz = wp.z - z, f = [-Math.sin(camYaw), -Math.cos(camYaw)], r = [Math.cos(camYaw), -Math.sin(camYaw)];
     $('arrow').style.transform = `rotate(${Math.atan2(dx * r[0] + dz * r[1], dx * f[0] + dz * f[1])}rad)`; const d = Math.hypot(dx, dz); wpText = d > 1000 ? (d / 1000).toFixed(1) + ' km' : Math.round(d) + ' m';
   } else wpText = 'No waypoint';
-  $('dist').textContent = wpText + (mode === 'foot' ? ' · SUV ' + Math.round(Math.hypot(person.x - car.x, person.z - car.z)) + ' m' : '');
+  if (journey) { const J = journey; $('dist').textContent = J.done ? '🏁 Arrived in ' + J.to.n : (J.remaining / 1000).toFixed(1) + ' km to ' + J.to.n + (J.off > 150 ? ' · off route (R)' : ''); $('pb').firstChild.style.width = (100 * clamp(J.progress / J.route.total, 0, 1)) + '%'; }
+  else $('dist').textContent = wpText + (mode === 'foot' ? ' · SUV ' + Math.round(Math.hypot(person.x - car.x, person.z - car.z)) + ' m' : '');
   miniT += dt; if (miniT > 0.16) { miniT = 0; drawMini(); }
 }
 
@@ -497,13 +632,21 @@ function loop(now) {
   requestAnimationFrame(loop);
   const dt = Math.min(0.05, (now - prev) / 1000); prev = now; frameN++;
   if (playing) {
-    const inp = getInput(); acc += dt;
+    let inp = getInput(); acc += dt;
+    if (journey && journey.auto && mode === 'car') { if (Math.abs(inp.mx) > 0.25 || inp.my !== 0 || inp.hand) { journey.auto = false; $('bAuto').style.outline = ''; toast('Manual control'); } else inp = autoInput(); }
     while (acc >= 1 / 60) {
       acc -= 1 / 60;
       if (mode === 'car') { stepCar(car, inp, 1 / 60, env); if (car.hit > 0.2) shake = Math.max(shake, car.hit); }
       else { stepFoot(person, inp, 1 / 60, env, camYaw); stepCar(car, { mx: 0, my: 0, hand: true }, 1 / 60, env); }
     }
     lastH = mode === 'car' ? car.y : person.y;
+    if (journey) {
+      if (mode === 'car') journey.driven += Math.abs(car.speed) * dt;
+      if (frameN % 5 === 0) updateRoute(dt);
+      routeTick += dt; if (routeTick > 1.5 && !skipping) { routeTick = 0; buildRouteRibbon(); }
+      saveT += dt; if (saveT > 8 && !journey.done) { saveT = 0; LS.set('au_prog', { along: journey.progress, driven: journey.driven }); }
+    }
+    if (frameN % 30 === 0 && Math.hypot(mode === 'car' ? car.x : person.x, mode === 'car' ? car.z : person.z) > 7000) rebase();
     if (frameN % 20 === 0) ensureTiles(mode === 'car' ? car.x : person.x, mode === 'car' ? car.z : person.z);
     if (frameN % 6 === 0) pickupCheck();
     gameHour = (gameHour + dt * TIMES[timeIdx] / 3600) % 24;
@@ -535,4 +678,4 @@ function loop(now) {
   renderer.render(scene, camera);
 }
 requestAnimationFrame(loop);
-window.__au = { startAt, car, person, tiles };
+window.__au = { startAt, car, person, tiles, heightAt, rebase, planAndStart, skipAhead, toggleAuto, relocateAlong, get frame() { return frame; }, get journey() { return journey; } };

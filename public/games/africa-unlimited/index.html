@@ -17,6 +17,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b1220;color:#fff;fon
 #tr{right:10px;top:calc(8px + var(--sa));padding:6px 10px;text-align:right;font-weight:600}
 #mini{right:10px;top:calc(58px + var(--sa));width:132px;height:132px;border-radius:50%;border:2px solid rgba(255,255,255,.35);background:rgba(10,16,30,.55)}
 #obj{left:50%;top:calc(8px + var(--sa));transform:translateX(-50%);padding:6px 12px;display:flex;gap:8px;align-items:center;font-weight:600}
+#obj{flex-wrap:wrap;justify-content:center;max-width:78vw}#pb{width:100%;height:5px;background:rgba(255,255,255,.2);border-radius:3px;overflow:hidden}#pb i{display:block;height:100%;width:0;background:linear-gradient(90deg,#078930,#FCDD09,#DA121A)}
 #arrow{display:inline-block;color:var(--y);font-size:20px;transition:transform .1s}
 #speed{left:50%;bottom:calc(10px + var(--sb));transform:translateX(-50%);padding:4px 16px;text-align:center}
 #speed b{font-size:28px;font-variant-numeric:tabular-nums}
@@ -59,7 +60,7 @@ h3{margin:12px 0 6px;font-size:12px;letter-spacing:1.5px;text-transform:uppercas
   <div id="place" class="panel"><b id="pn">…</b><small id="coord"></small></div>
   <div id="tr" class="panel">💰 <span id="coins">0</span> · <span id="clock">--:--</span></div>
   <canvas id="mini" width="264" height="264"></canvas>
-  <div id="obj" class="panel"><span id="arrow">▲</span><span id="dist">…</span></div>
+  <div id="obj" class="panel"><span id="arrow">▲</span><span id="dist">…</span><div id="pb" hidden><i></i></div></div>
   <div id="speed" class="panel"><b id="kmh">0</b> km/h<i id="nit"></i></div>
   <div id="toast" class="panel"></div>
   <div id="tools">
@@ -67,6 +68,8 @@ h3{margin:12px 0 6px;font-size:12px;letter-spacing:1.5px;text-transform:uppercas
     <div class="tb panel" id="bPaint" title="Paint">🎨</div>
     <div class="tb panel" id="bTime" title="Time speed">🕒</div>
     <div class="tb panel" id="bMute" title="Sound">🔊</div>
+    <div class="tb panel" id="bAuto" title="Autopilot (P)" hidden>🤖</div>
+    <div class="tb panel" id="bSkip" title="Skip 25 km ahead (K)" hidden>⏭</div>
   </div>
   <div id="touch" hidden>
     <div id="joy"><div id="knob"></div></div>
@@ -87,9 +90,16 @@ h3{margin:12px 0 6px;font-size:12px;letter-spacing:1.5px;text-transform:uppercas
     <button class="main" id="bCont" hidden style="background:rgba(255,255,255,.14)">↩ Continue last place</button>
     <div class="row"><input id="q" placeholder="Search any place: Lalibela, Nairobi, Cairo…" autocomplete="off"><button id="bSearch">Search</button></div>
     <div id="results"></div>
-    <h3>Ethiopia</h3>
+    <h3>🛣 Road trip · real roads</h3>
+    <div class="grid" id="trips"></div>
+    <div class="row"><input id="qFrom" placeholder="From: any place"><button id="bFromGps" title="Use my GPS">📍</button><button id="bFrom">Find</button></div><div id="rFrom"></div>
+    <div class="row"><input id="qTo" placeholder="To: any place"><button id="bTo">Find</button></div><div id="rTo"></div>
+    <button class="main" id="bPlan">🛣 Find the real road &amp; start driving</button>
+    <button class="main" id="bJResume" hidden style="background:rgba(255,255,255,.14)">↩ Resume road trip</button>
+    <div id="planInfo" class="hint"></div>
+    <h3>Ethiopia · free roam</h3>
     <div class="grid" id="presets"></div>
-    <div class="hint"><b>Drive:</b> W/S gas &amp; brake · A/D steer · Space handbrake · Shift nitro<br><b>Walk:</b> WASD · Shift run · Space jump · <b>E</b> enter/exit car<br><b>Other:</b> drag to look · C paint · T time · M sound · R recover · Esc menu<br>On a phone use the joystick and the three buttons.</div>
+    <div class="hint"><b>Drive:</b> W/S gas &amp; brake · A/D steer · Space handbrake · Shift nitro<br><b>Walk:</b> WASD · Shift run · Space jump · <b>E</b> enter/exit car<br><b>Road trip:</b> P autopilot · K skip 25 km ahead · R back to the route<br><b>Other:</b> drag to look · C paint · T time · M sound · Esc menu<br>On a phone use the joystick and the three buttons.</div>
   </div>
 </div>
 <div id="loading" hidden><div class="spin"></div><div id="ltxt">Loading real terrain…</div><small id="lsub" style="opacity:.7;font-weight:400"></small></div>
