@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.2.1 — Polish
+- `/api/gebeta` refuses request bodies over 128 KB (413).
+- Ad-admin lockout map now forgets old addresses (no unbounded growth).
+- Footer shows the real app version instead of a hardcoded label.
+- Store/search description lists all current games.
+- Added `docs/OPERATIONS.md` runbook and `ci/dependabot.yml` template.
+
 ## 3.2.0 — Release-level upgrade
 
 ### Phase 1 — Foundation & CI (v3.1.1)

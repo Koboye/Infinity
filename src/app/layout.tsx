@@ -62,7 +62,7 @@ import '@fontsource/fraunces/900.css';
 
 export const metadata: Metadata = {
   title: 'ገበጣ · ዳማ',
-  description: 'Play ገበጣ (Gebeta), ዳማ (Dama) online with friends or against the computer.',
+  description: 'Play ገበጣ (Gebeta), ዳማ (Dama), Ludo, Dominoes, Bingo and Hill Climb online with friends or offline against the computer.',
   manifest: '/manifest.json',
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://infinity.vercel.app'),
   openGraph: { title: 'ገበጣ · ዳማ · ሉዶ', description: 'Gebeta, Dama, Ludo, Dominoes and Bingo — play online or offline.', images: ['/og-image.png'], type: 'website' },
@@ -90,7 +90,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ViewportFit />
         {/* tiny build label: shows which version of the app is really running on a phone */}
         <div aria-hidden="true" style={{ position: 'fixed', right: 6, bottom: 2, fontSize: 9, opacity: 0.35, pointerEvents: 'none', zIndex: 1, color: '#fff' }}>
-          {'v97  ' + (process.env.VERCEL_GIT_COMMIT_SHA || 'dev').slice(0, 7)}
+          {'v' + (process.env.NEXT_PUBLIC_APP_VERSION || '') + '  ' + (process.env.VERCEL_GIT_COMMIT_SHA || 'dev').slice(0, 7)}
         </div>
       </body>
     </html>

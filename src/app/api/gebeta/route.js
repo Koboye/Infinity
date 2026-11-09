@@ -53,6 +53,7 @@ function rateLimit(uid, windowMs = 10_000) {
   if (arr.length > max) fail(429, 'Too many requests, slow down');
 }
 
+const MAX_BODY_BYTES = 128 * 1024;
 const ok = (o) => NextResponse.json({ ...o, serverNow: Date.now() }); // every reply carries the server clock so timers never drift
 const rooms = (db) => db.collection('gebetaRooms');
 const privRef = (db, code, id) => rooms(db).doc(code).collection('private').doc(id);
@@ -272,6 +273,7 @@ export async function POST(req) {
     try { decoded = await adminAuth().verifyIdToken(token); } catch { fail(401, 'Session expired, sign in again'); }
     const uid = decoded.uid;
     if (!(await globalRateLimit(uid))) rateLimit(uid);
+    if (Number(req.headers.get('content-length') || 0) > MAX_BODY_BYTES) fail(413, 'Request too large');   // no game action is anywhere near this size
     const body = await req.json().catch(() => ({}));
     const db = adminDb();
     const game = normalizeGame(body.game);

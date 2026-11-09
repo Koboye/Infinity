@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import { register } from 'node:module';
+process.env.GEBETA_RATE_MAX = '1000000';
+register('./fakes/loader.mjs', import.meta.url);
+const game = await import('../src/app/api/gebeta/route.js');
+const call = (len) => game.POST({ headers: { get: (k) => (k === 'authorization' ? 'Bearer tok:u1' : k === 'content-length' ? String(len) : null) }, json: async () => ({ action: 'noop' }) });
+let n = 0; const t = async (name, fn) => { await fn(); n++; console.log('ok', name); };
+await t('oversized request body is refused with 413', async () => assert.equal((await call(500_000)).status, 413));
+await t('normal-size request is not refused for size', async () => assert.notEqual((await call(2_000)).status, 413));
+console.log(n, 'tests passed');
