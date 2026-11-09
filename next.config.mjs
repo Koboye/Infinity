@@ -4,6 +4,7 @@ const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  poweredByHeader: false,
   env: { NEXT_PUBLIC_APP_NAME: 'Gebeta', NEXT_PUBLIC_APP_VERSION: pkg.version },
   async headers() {
     const dev = process.env.NODE_ENV !== 'production';
@@ -12,6 +13,10 @@ const nextConfig = {
       headers: [
         { key: 'X-Content-Type-Options', value: 'nosniff' },
         { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+        { key: 'X-Frame-Options', value: 'DENY' },
+        { key: 'Permissions-Policy', value: 'camera=(), microphone=(self), geolocation=(self), payment=(), usb=(), interest-cohort=()' },
+        { key: 'Cross-Origin-Opener-Policy', value: 'same-origin-allow-popups' }, // Google sign-in popup keeps working
+        ...(dev ? [] : [{ key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains' }]),
         { key: 'Content-Security-Policy', value: [
           "default-src 'self'",
           `script-src 'self' 'unsafe-inline' ${dev ? "'unsafe-eval' " : ''}https://apis.google.com https://www.gstatic.com`,
@@ -21,6 +26,8 @@ const nextConfig = {
           "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com wss://*.firebaseio.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com",
           "frame-src 'self' https://*.firebaseapp.com https://accounts.google.com",
           "object-src 'none'",
+          "base-uri 'self'",
+          "form-action 'self'",
           "frame-ancestors 'none'",
         ].join('; ') },
       ],

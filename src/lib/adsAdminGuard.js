@@ -4,7 +4,7 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 
 const sha = (v) => createHash('sha256').update(String(v)).digest();
 const bad = new Map();
-const ipOf = (req) => String(req.headers.get('x-forwarded-for') || 'local').split(',')[0].trim();
+import { clientIp as ipOf } from '@/lib/clientIp.js';
 const tooMany = (ip) => { const now = Date.now(); const a = (bad.get(ip) || []).filter((t) => now - t < 600_000); bad.set(ip, a); return a.length >= 10; };
 
 export function guard(req) {

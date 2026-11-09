@@ -27,7 +27,7 @@ jobs:
   audit:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    continue-on-error: true   # advisory until Phase 2 clears the transitive firebase advisories
+    # blocks on HIGH+; remaining moderate uuid advisories are transitive in Google SDKs (buffer-arg only)
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

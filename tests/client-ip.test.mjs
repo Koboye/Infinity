@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import { clientIp } from '../src/lib/clientIp.js';
+const req = (h) => ({ headers: { get: (k) => h[k] ?? null } });
+let n = 0; const t = (name, fn) => { fn(); n++; console.log('ok', name); };
+t('single entry', () => assert.equal(clientIp(req({ 'x-forwarded-for': '1.2.3.4' }), {}), '1.2.3.4'));
+t('spoofed left entries are ignored (rightmost is ours)', () => assert.equal(clientIp(req({ 'x-forwarded-for': '6.6.6.6, 1.2.3.4' }), {}), '1.2.3.4'));
+t('two trusted hops', () => assert.equal(clientIp(req({ 'x-forwarded-for': '6.6.6.6, 1.2.3.4, 10.0.0.1' }), { TRUST_PROXY_HOPS: '2' }), '1.2.3.4'));
+t('vercel header wins', () => assert.equal(clientIp(req({ 'x-vercel-forwarded-for': '8.8.8.8', 'x-forwarded-for': '6.6.6.6' }), {}), '8.8.8.8'));
+t('no header', () => assert.equal(clientIp(req({}), {}), 'local'));
+t('hops larger than chain', () => assert.equal(clientIp(req({ 'x-forwarded-for': '1.2.3.4' }), { TRUST_PROXY_HOPS: '5' }), '1.2.3.4'));
+console.log(n, 'tests passed');

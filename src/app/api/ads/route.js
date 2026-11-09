@@ -18,7 +18,7 @@ function limited(ip, max = 60, windowMs = 60_000) {
   if (hits.size > 5000) for (const [k, v] of hits) if (!v.length || now - v[v.length - 1] > windowMs) hits.delete(k);
   return arr.length > max;
 }
-const ipOf = (req) => String(req.headers.get('x-forwarded-for') || 'local').split(',')[0].trim();
+import { clientIp as ipOf } from '@/lib/clientIp.js';
 
 export async function GET(req) {
   let fresh = false; try { fresh = new URL(req.url, 'http://x').searchParams.has('fresh'); } catch { /* called without a request */ }   // owner test mode: never cached
