@@ -219,11 +219,11 @@ t('random playouts: conserve 48 seeds and the mover always has a move', () => {
   }
 });
 t('AI owns more seeds than a random player after the same number of moves', () => {
-  let better = 0; const N = 10;
+  let better = 0; const N = 8;
   const owned = (g, seat) => g.pits[seat === 0 ? 6 : 13] + (seat === 0 ? [0,1,2,3,4,5] : [7,8,9,10,11,12]).reduce((a, i) => a + g.pits[i], 0);
   for (let k = 0; k < N; k++) {
     let g = newGame('gebeta'); const ai = k % 2; let turns = 0;
-    while (!g.over && turns++ < 600) { const mv = g.turn === ai ? chooseMove(g, 'gebeta', 'medium') : (() => { const m = legalMoves(g); return m[Math.floor(Math.random() * m.length)]; })(); g = playMove(g, mv, 'gebeta').state; }
+    while (!g.over && turns++ < 600) { const mv = g.turn === ai ? chooseMove(g, 'gebeta', 'medium', Math.random, { maxMs: 10 }) : (() => { const m = legalMoves(g); return m[Math.floor(Math.random() * m.length)]; })(); g = playMove(g, mv, 'gebeta').state; }
     if (g.over ? g.winner === ai : owned(g, ai) > owned(g, 1 - ai)) better++;
   }
   console.log('  AI ahead', better, '/', N); assert.ok(better >= 7);

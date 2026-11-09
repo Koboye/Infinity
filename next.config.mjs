@@ -1,7 +1,10 @@
+import { readFileSync } from 'node:fs';
+const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'));
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  env: { NEXT_PUBLIC_APP_NAME: 'Gebeta', NEXT_PUBLIC_APP_VERSION: '2.0.0' },
+  env: { NEXT_PUBLIC_APP_NAME: 'Gebeta', NEXT_PUBLIC_APP_VERSION: pkg.version },
   async headers() {
     const dev = process.env.NODE_ENV !== 'production';
     return [{

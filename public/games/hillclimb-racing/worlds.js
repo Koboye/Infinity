@@ -117,7 +117,7 @@ const PANO=[
  ['Eagle Falls Lodge',A+'w_pano_eagle_falls.jpg','highland','eagle'],['Wild Jungle Falls',A+'w_pano_wild_jungle.jpg','jungle','parrot'],
  ['Lake Geese Valley',A+'w_pano_lake_geese.jpg','grass','geese'],['Cabin Meadow Falls',A+'w_pano_cabin_meadow.jpg','highland','geese'],
  /* scenes: world wonders, cities and deep space */
- ['Blue Nile Falls',A+'w_pano_blue_nile.jpg','highland','eagle'],['Giza Pyramids',A+'w_pano_giza.jpg','desert',null],
+ ['Blue Nile Gorge',A+'w_pano_blue_nile.jpg','highland','eagle'],['Giza Pyramids',A+'w_pano_giza.jpg','desert',null],
  ['Hanging Gardens of Babylon',A+'w_pano_babylon.jpg','desert','parrot'],['Temple of Artemis',A+'w_pano_artemis.jpg','highland','geese'],
  ['Statue of Zeus, Olympia',A+'w_pano_zeus.jpg','highland','eagle'],['Dubai Dusk',A+'w_pano_dubai_dusk.jpg','city',null],
  ['Dubai Downtown Twilight',A+'w_pano_dubai_twilight.jpg','city',null],['Sydney Harbour',A+'w_pano_sydney.jpg','coast','geese'],
