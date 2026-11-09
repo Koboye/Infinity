@@ -27,6 +27,8 @@ export default function ModesScreen({ t, lang, game, go, onlineOn }) {
             {m.live && <span className="mode-tag live" aria-hidden="true" />}
             <span className="mode-ico" aria-hidden="true">{m.icon}</span>
             <b className="mode-title">{m.title}</b>
+            {m.sub && <small className="mode-sub">{m.sub}</small>}
+            {m.tag && <em className="mode-chip">{m.tag}</em>}
           </button>
         ))}
       </div>

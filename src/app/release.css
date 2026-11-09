@@ -1,0 +1,219 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   RELEASE DESIGN SYSTEM · "Infinity Royal" v2 — loaded LAST.
+   Phase 1: foundation (tokens, background, top bar, shared buttons/chips/panels),
+            home hub, game-mode screen, floating bottom navigation.
+   Later phases add their own sections below (one per game).
+   Principles: deep indigo canvas, glass surfaces, ONE accent colour per game,
+   gold reserved for primary actions and rewards, real typography, calm motion.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --r-bg-0: #050818; --r-bg-1: #0A1038; --r-bg-2: #101C5C;
+  --r-surface: rgba(255, 255, 255, .06); --r-surface-2: rgba(255, 255, 255, .10);
+  --r-line: rgba(255, 255, 255, .13); --r-line-2: rgba(255, 255, 255, .22);
+  --r-text: #F7F3E8; --r-text-2: rgba(247, 243, 232, .72); --r-text-3: rgba(247, 243, 232, .50);
+  --r-gold: #FFC52E; --r-gold-hi: #FFE28A; --r-gold-lo: #F0A20C; --r-gold-ink: #2A1500;
+  --r-ok: #5BE3A0; --r-radius: 22px; --r-radius-sm: 14px;
+  --r-shadow: 0 14px 34px rgba(0, 0, 0, .42);
+  --r-ease: cubic-bezier(.2, .8, .2, 1);
+  --nav-h: 64px; --col-w: 600px;
+  --font-display: "Fraunces", "Noto Serif Ethiopic", Georgia, serif;
+}
+
+/* ── canvas ─────────────────────────────────────────────────────────────── */
+html body {
+  color: var(--r-text);
+  background:
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, .022) 0 1px, transparent 1px 24px),
+    radial-gradient(70% 38% at 12% -6%, rgba(255, 197, 46, .17), transparent 62%),
+    radial-gradient(60% 40% at 104% 18%, rgba(66, 128, 255, .30), transparent 62%),
+    radial-gradient(90% 46% at 50% 112%, rgba(22, 190, 168, .16), transparent 62%),
+    linear-gradient(180deg, var(--r-bg-2) 0%, var(--r-bg-1) 38%, var(--r-bg-0) 100%) fixed;
+}
+html body::before { background: none !important; opacity: 0; }
+html body .tibeb { height: 6px; opacity: .95; }
+html body .screen { padding: 2px 14px calc(var(--nav-h) + 30px); }
+
+/* ── top bar: transparent, quiet controls ───────────────────────────────── */
+html body .topbar { background: transparent; border: 0; box-shadow: none; backdrop-filter: none; margin: 6px 10px 0; }
+html body .topbar-title { font: 800 1.05rem var(--font-display); color: var(--r-text); letter-spacing: .01em; }
+html body .icon-btn {
+  background: var(--r-surface); border: 1px solid var(--r-line); box-shadow: none; color: var(--r-text);
+  border-radius: 13px; transition: transform .15s var(--r-ease), background .15s;
+}
+html body .icon-btn:hover { background: var(--r-surface-2); }
+html body .icon-btn:active { transform: scale(.92); }
+html body .lang-chip {
+  background: linear-gradient(180deg, var(--r-gold-hi), var(--r-gold-lo)); color: var(--r-gold-ink); border: 0;
+  box-shadow: 0 4px 12px rgba(240, 162, 12, .35), inset 0 1px 0 rgba(255, 255, 255, .6); font-weight: 800;
+}
+html body .lang-switch { background: var(--r-surface); border: 1px solid var(--r-line); box-shadow: none; }
+html body .coin-chip, html body .wallet-bal, html body .ad-earn {
+  background: var(--r-surface); border: 1px solid rgba(255, 197, 46, .45); box-shadow: none; color: var(--r-text);
+}
+
+/* ── shared controls ────────────────────────────────────────────────────── */
+html body .btn { border-radius: 14px; font-weight: 700; letter-spacing: .01em; transition: transform .15s var(--r-ease), filter .15s; }
+html body .btn.primary, html body .start-cta {
+  background: linear-gradient(180deg, var(--r-gold-hi), var(--r-gold-lo)); color: var(--r-gold-ink); border: 0;
+  box-shadow: 0 8px 22px rgba(240, 162, 12, .38), inset 0 1px 0 rgba(255, 255, 255, .65), inset 0 -2px 0 rgba(160, 90, 0, .25);
+}
+html body .btn.primary:active, html body .start-cta:active { transform: translateY(1px) scale(.985); filter: brightness(.96); }
+html body .btn.ghost { background: var(--r-surface); border: 1px solid var(--r-line-2); box-shadow: none; color: var(--r-text); }
+html body .chip { background: var(--r-surface); border: 1px solid var(--r-line); box-shadow: none; color: var(--r-text); }
+html body .panel, html body .wallet-card, html body .wallet-sheet {
+  background: linear-gradient(165deg, rgba(255, 255, 255, .09), rgba(255, 255, 255, .03));
+  border: 1px solid var(--r-line); box-shadow: var(--r-shadow), inset 0 1px 0 rgba(255, 255, 255, .10);
+}
+
+/* ── home: brand ─────────────────────────────────────────────────────────── */
+html body .home { gap: 14px; }
+html body .home .brand { margin: 4px 0 0; }
+html body .brand-am { font-size: clamp(2.6rem, 12.5vw, 3.5rem); text-shadow: 0 6px 0 rgba(0, 0, 0, .28), 0 0 34px rgba(255, 197, 46, .40); }
+html body .brand-en {
+  display: block; margin: 4px 0 0; font: 700 .68rem/1.2 "Figtree", system-ui, sans-serif; letter-spacing: .24em;
+  text-transform: uppercase; color: var(--r-text-2); opacity: 1;
+}
+
+/* ── home: daily challenge ──────────────────────────────────────────────── */
+html body .daily {
+  min-height: 66px; padding: 10px 40px 10px 14px; border-radius: 20px; gap: 12px; text-align: left;
+  background: linear-gradient(120deg, rgba(255, 197, 46, .20), rgba(255, 197, 46, .05) 55%, rgba(255, 255, 255, .04));
+  border: 1px solid rgba(255, 197, 46, .50); color: var(--r-text);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .14);
+  transition: transform .15s var(--r-ease);
+}
+html body .daily:not(.done) { animation: none; }
+html body .daily:active { transform: scale(.985); }
+html body .daily > span { display: grid; gap: 1px; }
+html body .daily > span > b { font-size: .98rem; font-weight: 800; letter-spacing: .01em; }
+html body .daily > span > span { display: block; font-size: .76rem; font-weight: 600; color: var(--r-text-2); }
+html body .daily.done { filter: none; border-color: rgba(91, 227, 160, .5); background: linear-gradient(120deg, rgba(91, 227, 160, .18), rgba(255, 255, 255, .04)); }
+
+/* ── home: game cards ───────────────────────────────────────────────────── */
+@keyframes r-rise { from { opacity: 0; transform: translateY(12px) scale(.98); } to { opacity: 1; transform: none; } }
+html body .app .game-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: auto; gap: 12px; }
+html body .app .game-grid .gg-card {
+  --c: var(--accent, var(--r-gold));
+  position: relative; display: grid; grid-template-rows: 1fr auto auto auto; justify-items: center; align-items: center; text-align: center;
+  height: auto; min-height: 160px; padding: 14px 10px 12px; gap: 3px; overflow: hidden; color: var(--r-text);
+  border: 1px solid color-mix(in srgb, var(--c) 42%, rgba(255, 255, 255, .12)); border-radius: var(--r-radius);
+  background:
+    radial-gradient(95% 72% at 50% -4%, color-mix(in srgb, var(--c) 42%, transparent) 0%, transparent 72%),
+    linear-gradient(180deg, rgba(255, 255, 255, .08), rgba(255, 255, 255, .02)),
+    #0B1342;
+  box-shadow: var(--r-shadow), inset 0 1px 0 rgba(255, 255, 255, .18);
+  transition: transform .2s var(--r-ease), box-shadow .2s var(--r-ease), border-color .2s;
+  animation: r-rise .5s var(--r-ease) both; animation-delay: calc(var(--i, 0) * 55ms);
+  -webkit-tap-highlight-color: transparent; text-decoration: none; cursor: pointer;
+}
+html body .app .game-grid .gg-card::before { content: ''; display: block; position: absolute; inset: auto -20% -38% -20%; height: 60%; background: radial-gradient(closest-side, color-mix(in srgb, var(--c) 30%, transparent), transparent); opacity: .7; pointer-events: none; }
+html body .app .game-grid .gg-card::after { display: none; }
+html body .app .game-grid .gg-card:hover:not(:disabled) { transform: translateY(-3px); border-color: color-mix(in srgb, var(--c) 75%, #fff 10%); }
+html body .app .game-grid .gg-card:active:not(:disabled) { transform: scale(.965); box-shadow: 0 6px 16px rgba(0, 0, 0, .4), inset 0 1px 0 rgba(255, 255, 255, .12); }
+html body .app .game-grid .gg-card:focus-visible { outline: 3px solid var(--c); outline-offset: 2px; }
+html body .app .game-grid .gg-art { position: relative; z-index: 1; display: grid; place-items: center; width: 74px; height: 74px; flex: none; transform: none; filter: drop-shadow(0 10px 12px rgba(0, 0, 0, .5)); transition: transform .25s var(--r-ease); }
+html body .app .game-grid .gg-card:hover .gg-art { transform: translateY(-2px) scale(1.06); }
+html body .app .game-grid .gg-art svg, html body .app .game-grid .gg-art img { width: 100%; height: 100%; object-fit: contain; }
+html body .app .game-grid .gg-name {
+  position: relative; z-index: 1; margin: 6px 0 0; padding: 0; background: none; border: 0; color: #fff; text-shadow: 0 2px 8px rgba(0, 0, 0, .45);
+  font: 800 1.2rem/1.12 var(--font-display); letter-spacing: .01em;
+}
+html body .app .game-grid .gg-tag { position: relative; z-index: 1; display: block; font-size: .66rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--r-text-2); }
+html body .app .game-grid .gg-foot { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 5px 0 0; }
+html body .app .game-grid .gg-mode {
+  display: inline-flex; align-items: center; gap: 5px; min-height: 0; padding: 3px 10px; border-radius: 999px; font-size: .62rem; font-weight: 800; letter-spacing: .04em;
+  background: rgba(0, 0, 0, .34); border: 1px solid var(--r-line); color: var(--r-text-2);
+}
+html body .app .game-grid .gg-mode::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--r-text-3); }
+html body .app .game-grid .gg-mode.on { color: #BDF5D6; border-color: rgba(91, 227, 160, .38); }
+html body .app .game-grid .gg-mode.on::before { background: var(--r-ok); box-shadow: 0 0 8px var(--r-ok); }
+html body .app .game-grid .gg-rec { display: none; }
+html body .app .game-grid .gg-last {
+  position: absolute; z-index: 2; top: 9px; left: 9px; display: block; padding: 2px 8px; border-radius: 999px; font: 800 .58rem/1.4 "Figtree", sans-serif;
+  letter-spacing: .06em; text-transform: uppercase; font-style: normal; color: var(--r-gold-ink); background: linear-gradient(180deg, var(--r-gold-hi), var(--r-gold-lo));
+}
+html body .app .game-grid .gg-card.recent { border-color: color-mix(in srgb, var(--c) 85%, #fff 10%); box-shadow: var(--r-shadow), 0 0 0 1px color-mix(in srgb, var(--c) 60%, transparent), 0 0 28px color-mix(in srgb, var(--c) 28%, transparent); }
+html body .app .game-grid .gg-card.soon { filter: grayscale(.55) brightness(.82); opacity: .85; cursor: default; }
+html body .app .game-grid .gg-card.soon .gg-tag { color: var(--r-gold); }
+
+/* ── home: progress strip ───────────────────────────────────────────────── */
+html body .stat-strip { gap: 10px; margin-top: 2px; }
+html body .stat-strip > * {
+  display: grid; align-content: center; justify-items: center; gap: 1px; min-height: 56px; border-radius: 16px;
+  background: var(--r-surface); border: 1px solid var(--r-line); box-shadow: none; font-weight: 800; color: var(--r-text);
+}
+html body .stat-strip > * > b { font-size: 1.02rem; }
+html body .stat-strip > * > span { display: block; font-size: .6rem; font-weight: 700; letter-spacing: .04em; color: var(--r-text-3); }
+
+/* ── game mode screen ───────────────────────────────────────────────────── */
+html body .modes { gap: 14px; }
+html body .modes-hero {
+  --c: var(--accent, var(--r-gold)); position: relative; overflow: hidden; padding: 14px 16px; gap: 14px; border-radius: 24px;
+  border: 1px solid color-mix(in srgb, var(--c) 45%, rgba(255, 255, 255, .12));
+  background: radial-gradient(80% 140% at 0% 0%, color-mix(in srgb, var(--c) 36%, transparent), transparent 70%), linear-gradient(180deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, .02)), #0B1342;
+  box-shadow: var(--r-shadow), inset 0 1px 0 rgba(255, 255, 255, .16);
+}
+html body .modes-badge { width: 64px; height: 64px; border-radius: 20px; background: rgba(0, 0, 0, .28); border: 1px solid var(--r-line); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14); }
+html body .modes-hero h1 { margin: 0; font: 800 clamp(1.6rem, 7.6vw, 2.1rem)/1.1 var(--font-display); color: #fff; text-shadow: 0 2px 10px rgba(0, 0, 0, .4); }
+html body .modes-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+html body .modes-grid .mode-tile, html body .modes-grid .mode-tile.small {
+  --c: var(--c, var(--r-gold)); position: relative; display: grid; grid-template-rows: auto auto auto; justify-items: center; align-content: center; gap: 4px;
+  grid-column: auto; min-height: 138px; padding: 16px 12px 14px; overflow: hidden; text-align: center; color: var(--r-text);
+  border: 1px solid color-mix(in srgb, var(--c) 40%, rgba(255, 255, 255, .12)); border-radius: var(--r-radius);
+  background: radial-gradient(90% 70% at 50% 0%, color-mix(in srgb, var(--c) 34%, transparent), transparent 72%), linear-gradient(180deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, .02)), #0B1342;
+  box-shadow: var(--r-shadow), inset 0 1px 0 rgba(255, 255, 255, .16); transition: transform .2s var(--r-ease), border-color .2s;
+  animation: r-rise .45s var(--r-ease) both; animation-delay: calc(var(--i, 0) * 60ms);
+}
+html body .modes-grid .mode-tile::after { display: none; }
+html body .modes-grid .mode-tile:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--c) 75%, #fff 10%); }
+html body .modes-grid .mode-tile:active { transform: scale(.965); }
+html body .modes-grid .mode-tile[data-id="leaders"] { grid-column: 1 / -1; min-height: 72px; grid-template-columns: auto 1fr; grid-template-rows: auto; justify-items: start; text-align: left; column-gap: 14px; padding: 12px 16px; }
+html body .modes-grid .mode-tile[data-id="leaders"] .mode-ico { width: 46px; height: 46px; font-size: 1.4rem; }
+html body .modes-grid .mode-tile[data-id="leaders"] .mode-title { margin: 0; align-self: center; }
+html body .modes-grid .mode-ico {
+  display: grid; place-items: center; flex: none; width: 54px; height: 54px; border-radius: 18px; font-size: 1.7rem; transform: none; filter: none;
+  background: color-mix(in srgb, var(--c) 22%, rgba(0, 0, 0, .3)); border: 1px solid color-mix(in srgb, var(--c) 45%, transparent); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2), 0 8px 18px rgba(0, 0, 0, .3);
+}
+html body .modes-grid .mode-title { display: block; margin: 4px 0 0; padding: 0; background: none; border: 0; color: #fff; text-shadow: none; font: 800 1.02rem/1.2 "Figtree", system-ui, sans-serif; letter-spacing: .01em; }
+html body .modes-grid .mode-sub { display: block; font-size: .72rem; font-weight: 600; line-height: 1.3; color: var(--r-text-2); }
+html body .modes-grid .mode-chip {
+  margin-top: 4px; padding: 2px 9px; border-radius: 999px; font: 800 .58rem/1.5 "Figtree", sans-serif; letter-spacing: .08em; text-transform: uppercase; font-style: normal;
+  color: var(--r-text-2); background: rgba(0, 0, 0, .32); border: 1px solid var(--r-line);
+}
+html body .modes-grid .mode-tile[data-id="online"] {
+  grid-column: 1 / -1; min-height: 104px; grid-template-columns: auto 1fr; grid-template-rows: auto auto auto; justify-items: start; text-align: left; column-gap: 16px; padding: 16px 18px;
+  border-color: color-mix(in srgb, var(--c) 65%, rgba(255, 255, 255, .15));
+}
+html body .modes-grid .mode-tile[data-id="online"] .mode-ico { grid-row: 1 / 4; width: 62px; height: 62px; font-size: 2rem; align-self: center; }
+html body .modes-grid .mode-tile[data-id="online"] .mode-title { margin: 0; display: block; font-size: 1.2rem; border: 0; place-items: initial; }
+html body .modes-grid .mode-tile[data-id="online"] .mode-chip { justify-self: start; }
+html body .mode-tag.live { position: absolute; top: 12px; right: 12px; width: 10px; height: 10px; padding: 0; border: 0; border-radius: 50%; background: var(--r-ok); box-shadow: 0 0 0 4px rgba(91, 227, 160, .22), 0 0 14px var(--r-ok); animation: r-pulse 1.8s ease-in-out infinite; }
+@keyframes r-pulse { 50% { box-shadow: 0 0 0 7px rgba(91, 227, 160, .05), 0 0 14px var(--r-ok); } }
+
+/* ── floating bottom navigation ─────────────────────────────────────────── */
+html body .bottom-nav {
+  position: fixed; left: 50%; right: auto; transform: translateX(-50%); width: min(calc(100% - 20px), var(--col-w)); bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 2px; align-items: stretch; min-height: var(--nav-h); padding: 6px; border: 1px solid var(--r-line-2); border-radius: 26px;
+  background: rgba(9, 14, 50, .78); -webkit-backdrop-filter: blur(18px) saturate(150%); backdrop-filter: blur(18px) saturate(150%);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .12);
+}
+html body .bn-tab {
+  position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 50px; padding: 4px 0; border: 0; border-radius: 20px;
+  background: transparent; box-shadow: none; transform: none; color: var(--r-text-3); transition: color .2s, background .25s var(--r-ease), transform .15s var(--r-ease);
+}
+html body .bn-tab:active { transform: scale(.92); }
+html body .bn-tab .bn-ico { display: grid; place-items: center; font-size: 0; filter: none; }
+html body .bn-tab svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; transition: transform .25s var(--r-ease); }
+html body .bn-tab .bn-lbl { display: block; font: 700 .6rem/1 "Figtree", system-ui, sans-serif; letter-spacing: .02em; color: inherit; }
+html body .bn-tab.on {
+  color: var(--r-gold-ink); border: 0; transform: none;
+  background: linear-gradient(180deg, var(--r-gold-hi), var(--r-gold-lo)); box-shadow: 0 6px 18px rgba(240, 162, 12, .42), inset 0 1px 0 rgba(255, 255, 255, .65);
+}
+html body .bn-tab.on svg { transform: translateY(-1px) scale(1.06); fill: rgba(42, 21, 0, .14); }
+html body .bn-tab.on .bn-lbl { color: var(--r-gold-ink); }
+html body .bn-tab .badge { position: absolute; top: -5px; right: -9px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px; font: 800 .6rem/16px "Figtree", sans-serif; text-align: center; color: #fff; background: #FF4D6D; border: 2px solid var(--r-bg-1); font-style: normal; }
+html body .bn-tab .bn-ico { position: relative; }
+@media (min-width: 700px) { html body .app .game-grid .gg-card { min-height: 190px; } html body .app .game-grid .gg-art { width: 84px; height: 84px; } }
+@media (max-width: 360px) { html body .app .game-grid .gg-card { min-height: 150px; } html body .app .game-grid .gg-art { width: 60px; height: 60px; } html body .app .game-grid .gg-name { font-size: 1.1rem; } }
+@media (prefers-reduced-motion: reduce) { html body .app .game-grid .gg-card, html body .modes-grid .mode-tile { animation: none; } html body .mode-tag.live { animation: none; } }
