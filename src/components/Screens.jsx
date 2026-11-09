@@ -59,13 +59,6 @@ export function GameGrid({ t, onPick }) {
         <small className="gg-tag">Hill-climb racing</small>
         <span className="gg-foot"><span className="gg-mode">{t.badgeOffline}</span></span>
       </a>
-      {/* Africa Unlimited: stand-alone real-world 3D open-world page (/games/africa-unlimited/), link card like Infinity Climb. */}
-      <a role="listitem" className="gg-card" href="/games/africa-unlimited/index.html" style={{ '--accent': '#078930', '--i': order.length + 1, textDecoration: 'none' }}>
-        <span className="gg-art" style={{ fontSize: 34, lineHeight: '38px' }} aria-hidden="true">🌍</span>
-        <b className="gg-name">Africa Unlimited</b>
-        <small className="gg-tag">3D open world · real map</small>
-        <span className="gg-foot"><span className="gg-mode">{t.badgeOffline}</span></span>
-      </a>
     </div>
   );
 }
