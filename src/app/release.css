@@ -370,3 +370,78 @@ html body .start-cta { font: 800 1rem/1.2 "Figtree", system-ui, sans-serif; lett
 html body .rules-help { border-radius: 14px; }
 html body .swipe .swipe-card.on .sc-pips i.f { background: linear-gradient(180deg, var(--r-gold-hi), var(--r-gold-lo)); }
 html body .panel .btn.primary.start-cta { font: 800 1rem/1.2 "Figtree", system-ui, sans-serif; letter-spacing: .06em; text-transform: uppercase; min-height: 56px; border-radius: 18px; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PHASE 4 · Ludo + Bingo brought onto the release design system, wide-screen match layout
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Ludo: glass player panels (player colour stays as a quiet accent) ── */
+html body .ludo-panel {
+  color: var(--r-text); border: 1px solid color-mix(in srgb, var(--pc) 50%, rgba(255, 255, 255, .14)); border-radius: 20px;
+  background: radial-gradient(90% 140% at 0% 0%, color-mix(in srgb, var(--pc) 26%, transparent), transparent 70%), linear-gradient(180deg, rgba(255, 255, 255, .08), rgba(255, 255, 255, .02)), rgba(8, 14, 52, .72);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, .32), inset 0 1px 0 rgba(255, 255, 255, .12);
+}
+html body .ludo-panel .nm { font-family: "Figtree", system-ui, sans-serif; font-weight: 800; letter-spacing: .01em; }
+html body .ludo-panel.on {
+  border-color: var(--pc); transform: none;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--pc) 70%, transparent), 0 0 26px color-mix(in srgb, var(--pc) 45%, transparent), 0 10px 26px rgba(0, 0, 0, .4), inset 0 1px 0 rgba(255, 255, 255, .2);
+}
+html body .ludo-panel .bar { background: rgba(0, 0, 0, .42); }
+html body .ludo-panel em, html body .ludo-panel .sixes { font-family: "Figtree", sans-serif; letter-spacing: .02em; }
+
+/* ── Ludo: the dock is a calm glass bar, not a gold slab; gold only marks "your move" ── */
+html body .ludo-dock {
+  border: 1px solid var(--r-line-2); border-radius: 22px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .09), rgba(255, 255, 255, .03)), rgba(8, 14, 52, .78);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, .42), inset 0 1px 0 rgba(255, 255, 255, .12);
+}
+html body .ludo-dock.ready {
+  border-color: rgba(255, 197, 46, .75);
+  box-shadow: 0 0 0 1px rgba(255, 197, 46, .22), 0 0 30px rgba(255, 197, 46, .22), 0 12px 30px rgba(0, 0, 0, .42), inset 0 1px 0 rgba(255, 255, 255, .18);
+}
+html body .ludo-say { color: var(--r-text); }
+html body .ludo-say b { font: 800 1.02rem/1.25 "Figtree", "Noto Sans Ethiopic", system-ui, sans-serif; letter-spacing: .01em; }
+html body .ludo-say small { color: var(--r-text-2); opacity: 1; }
+html body .ludo-tools .tool {
+  min-height: 38px; padding: 6px 12px; border-radius: 13px; color: var(--r-text); background: var(--r-surface); border: 1px solid var(--r-line-2);
+  box-shadow: none; transition: background .2s, transform .15s var(--r-ease), border-color .2s;
+}
+html body .ludo-tools .tool:hover:not(:disabled) { background: var(--r-surface-2); }
+html body .ludo-tools .tool:active:not(:disabled) { transform: scale(.94); }
+html body .ludo-tools .tool.on {
+  color: var(--r-gold-ink); border-color: transparent; background: linear-gradient(180deg, var(--r-gold-hi), var(--r-gold-lo));
+  box-shadow: 0 5px 14px rgba(240, 162, 12, .35), inset 0 1px 0 rgba(255, 255, 255, .6);
+}
+
+/* ── Bingo: one glass sheet, quiet card frame, gold primary BINGO button ── */
+html body .bingo {
+  padding: 10px; border-radius: 24px; border: 1px solid var(--r-line-2);
+  background: linear-gradient(180deg, rgba(255, 255, 255, .08), rgba(255, 255, 255, .02)), rgba(8, 14, 52, .62);
+  box-shadow: var(--r-shadow), inset 0 1px 0 rgba(255, 255, 255, .12);
+}
+html body .bcard { border-radius: 18px; background: rgba(0, 0, 0, .22); box-shadow: inset 0 0 0 1px var(--r-line); }
+html body .bcount { font: 700 .74rem "Figtree", system-ui, sans-serif; letter-spacing: .02em; color: var(--r-text-2); }
+html body .bingo-btn {
+  font: 900 1.25rem/1.2 "Figtree", system-ui, sans-serif; letter-spacing: .16em; border-radius: 18px; min-height: 54px;
+}
+html body .bingo-btn:not(:disabled) {
+  color: var(--r-gold-ink); background: linear-gradient(180deg, var(--r-gold-hi), var(--r-gold-lo));
+  box-shadow: 0 10px 26px rgba(240, 162, 12, .42), inset 0 1px 0 rgba(255, 255, 255, .65), inset 0 -2px 0 rgba(160, 90, 0, .25);
+}
+html body .bingo-btn:disabled { filter: none; color: var(--r-text-3); background: var(--r-surface); border: 1px solid var(--r-line); box-shadow: none; }
+
+/* Bingo action row: all buttons equal glass; a toggle that is ON gets a mint dot instead of a different colour */
+html body .match:has(.bingo) .match-actions .btn,
+html body .match:has(.bingo) .match-actions .btn:nth-child(2):not(.ghost):not(:disabled) {
+  color: var(--r-text); background: var(--r-surface); border: 1px solid var(--r-line-2); box-shadow: none;
+}
+html body .match:has(.bingo) .match-actions .btn.on { border-color: rgba(91, 227, 160, .5); background: rgba(91, 227, 160, .12); color: #CFF8E3; }
+html body .match:has(.bingo) .match-actions .btn.ghost { color: var(--r-text-2); border-color: var(--r-line); }
+
+/* ── wide screens: keep the board and its players together instead of stranding them at the screen edges ── */
+@media (orientation: landscape) and (min-width: 900px) and (min-height: 700px) {
+  html.in-game body .match { justify-content: center; align-content: center; gap: 16px; }
+  html.in-game body .match:has(> .board-wrap > .board) > .board-wrap { flex: 0 0 auto; width: 100%; height: auto; aspect-ratio: 3.3 / 1; max-height: 56vh; }
+}
+@media (min-width: 900px) { html body .match .pcard, html body .match-actions { max-width: min(980px, 184vh); width: 100%; margin-inline: auto; } }
