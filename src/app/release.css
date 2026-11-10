@@ -315,3 +315,58 @@ html body .overlay.result-overlay .result {
 html body .overlay.result-overlay.win .result { background: radial-gradient(120% 60% at 50% 0%, rgba(255, 197, 46, .24), transparent 62%), linear-gradient(170deg, rgba(255, 255, 255, .10), rgba(255, 255, 255, .03)), #0C1448; }
 html body .overlay.result-overlay.lose .result { background: radial-gradient(120% 60% at 50% 0%, rgba(140, 160, 255, .16), transparent 62%), linear-gradient(170deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, .02)), #0E1236; }
 html body .overlay.result-overlay.win { background: radial-gradient(120% 90% at 50% 100%, rgba(20, 80, 60, .55) 0%, rgba(6, 10, 38, .9) 55%, rgba(4, 6, 22, .95) 100%); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PHASE 3 · Checkers (ዳማ) board + the shared "setup" screen (level / game type / start)
+   ═══════════════════════════════════════════════════════════════════════════ */
+html body .match .board-wrap .ckboard {
+  outline: 0; border-radius: 20px; overflow: visible;
+  box-shadow: 0 0 0 3px #4b2711, 0 0 0 5px #160803, 0 0 0 6px rgba(255, 197, 46, .6), 0 10px 0 6px #160803, 0 26px 44px rgba(0, 0, 0, .6);
+}
+html body .ckboard .sq { transition: background .2s, box-shadow .2s; }
+html body .ckboard .sq:first-child { border-top-left-radius: 17px; }
+html body .ckboard .sq.light { background: linear-gradient(135deg, #F4E4C0, #E4CA94); box-shadow: inset 0 0 0 1px rgba(120, 80, 30, .1); }
+html body .ckboard .sq.dark { background: linear-gradient(135deg, #8B3229, #671F19); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .2), inset 0 10px 16px rgba(0, 0, 0, .16); }
+html body .ckboard .sq.dark.last { background: linear-gradient(135deg, #B65C31, #924526); }
+html body .ckboard .sq.sel { box-shadow: inset 0 0 0 3px #FFE28A, inset 0 0 18px 2px rgba(255, 226, 138, .55); }
+html body .ckboard .sq.target::after { inset: 33%; background: radial-gradient(circle at 40% 35%, #FFF3B8, #FFC52E 70%); box-shadow: 0 0 0 4px rgba(255, 197, 46, .28), 0 0 16px 3px rgba(255, 197, 46, .6); }
+html body .ckboard .sq.hint { box-shadow: inset 0 0 0 3px #7CE0A8, inset 0 0 16px 3px rgba(124, 224, 168, .65); }
+html body .ckboard .ck-face { box-shadow: 0 3px 0 rgba(0, 0, 0, .5), 0 7px 11px rgba(0, 0, 0, .45), inset 0 2px 2px rgba(255, 255, 255, .38), inset 0 -3px 5px rgba(0, 0, 0, .22); }
+html body .ckboard .ck-piece.s1 .ck-face { background: radial-gradient(circle at 36% 28%, #FFFCEC 0%, #F1DFB2 52%, #CDAE72 100%); }
+html body .ckboard .ck-piece.s0 .ck-face { background: radial-gradient(circle at 36% 28%, #92603B 0%, #4B2A16 55%, #230F07 100%); }
+html body .ckboard .ck-piece.s0 .ck-face::before { border-color: rgba(255, 197, 46, .55); box-shadow: 0 1px 0 rgba(0, 0, 0, .35); }
+html body .ckboard .ck-piece.s1 .ck-face::before { border-color: rgba(125, 85, 35, .38); }
+@keyframes r-piece { 50% { box-shadow: 0 0 0 4px #FFE28A, 0 0 22px 7px rgba(255, 226, 138, .38), 0 3px 0 rgba(0, 0, 0, .5), 0 7px 11px rgba(0, 0, 0, .45); } }
+html body .ckboard .ck-piece.can .ck-face { outline: 0; animation: r-piece 1.7s ease-in-out infinite; box-shadow: 0 0 0 3px #FFE28A, 0 0 16px 3px rgba(255, 226, 138, .55), 0 3px 0 rgba(0, 0, 0, .5), 0 7px 11px rgba(0, 0, 0, .45); }
+html body .ckboard .ck-piece.sel .ck-face { outline: 0; animation: none; box-shadow: 0 0 0 3px #fff, 0 0 20px 6px rgba(255, 246, 214, .6), 0 10px 14px rgba(0, 0, 0, .5); }
+html body .ckboard .ck-piece.pick .ck-face { outline: 0; box-shadow: 0 0 0 3px #FF6B5E, 0 0 18px 5px rgba(255, 90, 77, .6), 0 3px 0 rgba(0, 0, 0, .5); }
+html body .match .side-dot { box-shadow: 0 2px 4px rgba(0, 0, 0, .45), inset 0 1px 1px rgba(255, 255, 255, .45); border: 0; }
+
+/* ── setup screen: calm glass option cards instead of chunky toy buttons ── */
+html body .swipe-head { padding: 0 2px 8px; }
+html body .swipe-label { font: 800 .7rem/1 "Figtree", system-ui, sans-serif; letter-spacing: .18em; text-transform: uppercase; color: var(--r-text-2); }
+html body .swipe-count { font: 800 .68rem/1 "Figtree", sans-serif; padding: 3px 9px; border-radius: 999px; background: rgba(0, 0, 0, .3); border: 1px solid var(--r-line); color: var(--r-text-3); }
+html body .swipe-arrow { background: var(--r-surface); border: 1px solid var(--r-line-2); color: var(--r-text); box-shadow: none; }
+html body .swipe .swipe-card {
+  border-radius: 18px; color: var(--r-text); text-shadow: none; transform: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .08), rgba(255, 255, 255, .02)), rgba(8, 14, 52, .55);
+  border: 1px solid var(--r-line-2); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .1); transition: border-color .2s, box-shadow .2s, background .2s;
+}
+html body .swipe .swipe-card .sc-title { font: 800 1.02rem/1.2 "Figtree", "Noto Serif Ethiopic", system-ui, sans-serif; color: var(--r-text); text-shadow: none; }
+html body .swipe .swipe-card .sc-sub { display: none; font: 600 .74rem/1.35 "Figtree", sans-serif; color: var(--r-text-2); text-shadow: none; }
+html body .swipe .swipe-card.on {
+  border: 2px solid var(--r-gold); transform: none;
+  background: radial-gradient(100% 90% at 50% 0%, rgba(255, 197, 46, .26), transparent 70%), linear-gradient(180deg, rgba(255, 255, 255, .10), rgba(255, 255, 255, .03)), rgba(12, 20, 70, .85);
+  box-shadow: 0 0 0 3px rgba(255, 197, 46, .16), 0 10px 26px rgba(0, 0, 0, .4), inset 0 1px 0 rgba(255, 255, 255, .2);
+}
+html body .swipe .swipe-card.on .sc-title { color: var(--r-gold-hi); text-shadow: none; }
+html body .swipe .swipe-card.on .sc-sub { display: block; color: var(--r-text-2); }
+html body .swipe .sc-pips i { background: rgba(255, 255, 255, .16); box-shadow: none; }
+html body .swipe .sc-pips i.f { background: linear-gradient(180deg, var(--r-gold-hi), var(--r-gold-lo)); }
+html body .swipe .swipe-card.on .sc-pips i:not(.f) { background: rgba(255, 255, 255, .2); }
+html body .swipe-dots i { background: rgba(255, 255, 255, .22); }
+html body .swipe-dots i.on { background: var(--r-gold); box-shadow: 0 0 10px rgba(255, 197, 46, .6); }
+html body .start-cta { font: 800 1rem/1.2 "Figtree", system-ui, sans-serif; letter-spacing: .06em; text-transform: uppercase; min-height: 56px; border-radius: 18px; }
+html body .rules-help { border-radius: 14px; }
+html body .swipe .swipe-card.on .sc-pips i.f { background: linear-gradient(180deg, var(--r-gold-hi), var(--r-gold-lo)); }
+html body .panel .btn.primary.start-cta { font: 800 1rem/1.2 "Figtree", system-ui, sans-serif; letter-spacing: .06em; text-transform: uppercase; min-height: 56px; border-radius: 18px; }
