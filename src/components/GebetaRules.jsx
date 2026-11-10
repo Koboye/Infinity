@@ -24,7 +24,7 @@ export default function GebetaRules({ t, lang, type: startType = 'gebeta', onPla
   const pick = (id) => { setType(id); setI(0); setAsked(null); setQ(''); setNote(''); };
   const ask = (text) => { const v = (text ?? q).trim(); if (!v) return; setQ(v); setAsked({ text: v, ...askRules(v, type, L) }); };
   const askFriend = async () => {
-    const how = await shareText('Infinity', `${asked.text}\n\n(${book.name[L]} · ${t.rulesTitle})`);
+    const how = await shareText('Afro Zone', `${asked.text}\n\n(${book.name[L]} · ${t.rulesTitle})`);
     if (how === 'copied') { setNote(t.copied); setTimeout(() => setNote(''), 1600); }
   };
   const sendRules = async () => {

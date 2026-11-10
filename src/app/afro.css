@@ -1,0 +1,6 @@
+/* Afro Zone brand — loaded last. Portrait logo above the wordmark on the home screen. */
+html body .home .brand { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+html body .home .brand .afro-logo { width: 92px; height: 92px; border-radius: 26px; display: block;
+  box-shadow: 0 6px 0 rgba(0,0,0,.30), 0 0 30px rgba(255,197,46,.40); }
+html body .home .brand .crest { display: none; }
+html body .brand-am { font-size: clamp(1.9rem, 9.5vw, 2.7rem); letter-spacing: .08em; white-space: nowrap; }

@@ -55,7 +55,7 @@ export function GameGrid({ t, onPick }) {
       {/* Hill Climb Racer: the full game (worlds, vehicles, drivers, difficulty) is a stand-alone arcade page (/games/hillclimb-racing/), so it is a link card and not part of GAME_LIST (no ratings, no online matches). */}
       <a role="listitem" className="gg-card" href="/games/hillclimb-racing/index.html" style={{ '--accent': '#FF7A2F', '--i': order.length, textDecoration: 'none' }}>
         <span className="gg-art"><img src="/games/hillclimb-racing/a/tile.png" alt="" width={64} height={38} style={{ objectFit: 'contain', display: 'block' }} /></span>
-        <b className="gg-name">Infinity Climb</b>
+        <b className="gg-name">Afro Climb</b>
         <small className="gg-tag">Hill-climb racing</small>
         <span className="gg-foot"><span className="gg-mode">{t.badgeOffline}</span></span>
       </a>
@@ -94,8 +94,8 @@ export function Home({ t, onPickGame }) {
   return (
     <div className="home">
       <div className="brand">
-        <svg className="crest" viewBox="0 0 74 38" aria-hidden="true"><defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#FFF0B8" /><stop offset=".55" stopColor="#E9B64A" /><stop offset="1" stopColor="#A9741A" /></linearGradient></defs><path d="M6 32 L10 12 L24 22 L37 5 L50 22 L64 12 L68 32 Z" fill="url(#cg)" stroke="#6d4a0c" strokeWidth="1.2" strokeLinejoin="round" /><rect x="6" y="32" width="62" height="5" rx="2" fill="url(#cg)" stroke="#6d4a0c" strokeWidth="1.2" /><circle cx="10" cy="11" r="3" fill="#d6193f" stroke="#6d4a0c" /><circle cx="37" cy="4.5" r="3.2" fill="#2559d6" stroke="#6d4a0c" /><circle cx="64" cy="11" r="3" fill="#d6193f" stroke="#6d4a0c" /></svg>
-        <h1 className="brand-am">ገበጣ</h1>
+        <img className="afro-logo" src="/afro-logo.svg" alt="" width={92} height={92} />
+        <h1 className="brand-am">{t.appName}</h1>
         <p className="brand-en">{t.subtitle}</p>
       </div>
       <DailyCard t={t} onPick={onPickGame} />

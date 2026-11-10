@@ -2,7 +2,7 @@
 // Keep English and Amharic in step — tests/i18n-offline.test.mjs checks both directions.
 export const SOCIAL_EN = {
   friends: 'Friends', myFriendCode: 'My friend code', friendCodeHint: 'Share this code. Your friend types it under “Add a friend”.',
-  shareMyCode: 'Share my code', addMeText: (c) => `Add me on Infinity! My friend code is ${c}`, codeCopied: 'Code copied',
+  shareMyCode: 'Share my code', addMeText: (c) => `Add me on Afro Zone! My friend code is ${c}`, codeCopied: 'Code copied',
   addFriend: 'Add a friend', enterFriendCode: '6-letter friend code', sendRequest: 'Send request',
   frSent: (n) => `Request sent to ${n}`, frNow: (n) => `You and ${n} are now friends`, frAlready: 'Already your friend', frPending: 'Request already sent',
   frRequests: 'Requests', frNoRequests: 'No requests right now', frAccept: 'Accept', frDecline: 'Decline', frCancel: 'Cancel request', frWaitingFor: 'Waiting for an answer',
@@ -29,7 +29,7 @@ export const SOCIAL_EN = {
 
 export const SOCIAL_AM = {
   friends: 'ጓደኞች', myFriendCode: 'የእኔ የጓደኛ ኮድ', friendCodeHint: 'ይህን ኮድ ላክ። ጓደኛህ “ጓደኛ ጨምር” ስር ያስገባዋል።',
-  shareMyCode: 'ኮዴን አጋራ', addMeText: (c) => `በInfinity ላይ ጨምረኝ! የጓደኛ ኮዴ ${c} ነው`, codeCopied: 'ኮዱ ተቀድቷል',
+  shareMyCode: 'ኮዴን አጋራ', addMeText: (c) => `በAfro Zone ላይ ጨምረኝ! የጓደኛ ኮዴ ${c} ነው`, codeCopied: 'ኮዱ ተቀድቷል',
   addFriend: 'ጓደኛ ጨምር', enterFriendCode: 'ባለ6 ፊደል የጓደኛ ኮድ', sendRequest: 'ጥያቄ ላክ',
   frSent: (n) => `ለ${n} ጥያቄ ተልኳል`, frNow: (n) => `አንተና ${n} አሁን ጓደኛሞች ናችሁ`, frAlready: 'ቀድሞውኑ ጓደኛህ ነው', frPending: 'ጥያቄ አስቀድሞ ተልኳል',
   frRequests: 'ጥያቄዎች', frNoRequests: 'አሁን ምንም ጥያቄ የለም', frAccept: 'ተቀበል', frDecline: 'አትቀበል', frCancel: 'ጥያቄውን ሰርዝ', frWaitingFor: 'መልስ በመጠበቅ ላይ',

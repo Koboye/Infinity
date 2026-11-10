@@ -48,6 +48,7 @@ import './v96.css';
 import './v97.css';
 import './release.css';
 import './tg.css';
+import './afro.css';
 import RegisterSW from '@/components/RegisterSW';
 import ViewportFit from '@/components/ViewportFit';
 import '@fontsource/noto-sans-ethiopic/400.css';
@@ -63,14 +64,14 @@ import '@fontsource/fraunces/700.css';
 import '@fontsource/fraunces/900.css';
 
 export const metadata: Metadata = {
-  title: 'ገበጣ · ዳማ',
-  description: 'Play ገበጣ (Gebeta), ዳማ (Dama), Ludo, Dominoes, Bingo and Hill Climb online with friends or offline against the computer.',
+  title: { default: 'Afro Zone', template: '%s · Afro Zone' },
+  description: 'Afro Zone: play ገበጣ (Gebeta), ዳማ (Dama), Ludo, Dominoes, Bingo and Hill Climb online with friends or offline against the computer.',
   manifest: '/manifest.json',
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://infinity.vercel.app'),
-  openGraph: { title: 'ገበጣ · ዳማ · ሉዶ', description: 'Gebeta, Dama, Ludo, Dominoes and Bingo — play online or offline.', images: ['/og-image.png'], type: 'website' },
-  twitter: { card: 'summary_large_image', title: 'ገበጣ · ዳማ · ሉዶ', images: ['/og-image.png'] },
+  openGraph: { title: 'Afro Zone', siteName: 'Afro Zone', description: 'Gebeta, Dama, Ludo, Dominoes and Bingo — play online or offline.', images: ['/og-image.png'], type: 'website' },
+  twitter: { card: 'summary_large_image', title: 'Afro Zone', images: ['/og-image.png'] },
   icons: { icon: '/icon.svg', apple: '/icon-192.png' },
-  appleWebApp: { capable: true, title: 'ገበጣ', statusBarStyle: 'black-translucent' },
+  appleWebApp: { capable: true, title: 'Afro Zone', statusBarStyle: 'black-translucent' },
 };
 
 export const viewport: Viewport = {

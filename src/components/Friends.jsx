@@ -8,7 +8,7 @@ import { GameIcon } from './GameIcons';
 
 const ONLINE_GAMES = Object.values(GAMES).filter((g) => !g.offlineOnly && !g.comingSoon);
 const shareOrCopy = async (text, url) => {
-  try { if (navigator.share) { await navigator.share({ title: 'Infinity', text, url }); return 'shared'; } } catch (e) { if (e?.name === 'AbortError') return 'cancelled'; }
+  try { if (navigator.share) { await navigator.share({ title: 'Afro Zone', text, url }); return 'shared'; } } catch (e) { if (e?.name === 'AbortError') return 'cancelled'; }
   try { await navigator.clipboard.writeText(url ? `${text} ${url}` : text); return 'copied'; } catch { return 'failed'; }
 };
 const siteUrl = (params = {}) => { try { const u = new URL(window.location.href); u.search = ''; u.hash = ''; for (const [k, v] of Object.entries(params)) u.searchParams.set(k, v); return u.toString(); } catch { return ''; } };

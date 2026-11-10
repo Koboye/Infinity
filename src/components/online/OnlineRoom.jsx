@@ -80,7 +80,7 @@ export default function OnlineRoom({ t, lang, uid, friends, code, onExit, onSwit
   const copy = async (text, what) => { try { await navigator.clipboard.writeText(text); setCopied(what); setTimeout(() => setCopied(''), 1600); } catch { /* clipboard blocked */ } };
   const share = async () => {
     const game = room?.game || 'gebeta', url = inviteUrl(code), text = t.inviteText(t[`${game}Name`] || game, code);
-    try { if (navigator.share) { await navigator.share({ title: 'Infinity', text, url }); return; } } catch (e) { if (e?.name === 'AbortError') return; }
+    try { if (navigator.share) { await navigator.share({ title: 'Afro Zone', text, url }); return; } } catch (e) { if (e?.name === 'AbortError') return; }
     copy(`${text} ${url}`, 'link');
   };
 
