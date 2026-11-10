@@ -15,7 +15,7 @@ await t('friend codes are 6 characters without look-alike letters, and are norma
 });
 await t('text is cleaned: control characters and runs of spaces go, length is capped, empty is refused', () => {
   assert.equal(S.cleanText('  hello \n\n  world\u0007 '), 'hello world');
-  assert.equal(S.cleanText('x'.repeat(500)).length, S.MAX_TEXT);
+  assert.equal(S.cleanText('x'.repeat(S.MAX_TEXT + 200)).length, S.MAX_TEXT);
   assert.equal(S.cleanText('   \n '), '');
   assert.ok(S.pushChat(null, 'a', 'b', '   ').error);
 });
@@ -50,10 +50,10 @@ await t('lists and request boxes are capped', () => {
   const flooded = { incoming: Object.fromEntries(Array.from({ length: S.MAX_REQUESTS }, (_, i) => [`u${i}`, { name: 'x', avatar: 'lion', at: 1 }])) };
   assert.equal(S.requestFriend(null, flooded, A, B).result, 'full');
 });
-await t('chat keeps the newest 50 lines, counts unread for the other person and clears it when read', () => {
+await t('chat keeps the newest 200 lines, counts unread for the other person and clears it when read', () => {
   let chat = null;
-  for (let i = 0; i < 60; i++) chat = S.pushChat(chat, 'a', 'b', `m${i}`, i).chat;
-  assert.equal(chat.msgs.length, S.MAX_MSGS); assert.equal(chat.msgs.at(-1).text, 'm59'); assert.equal(chat.unread.b, 60); assert.equal(chat.unread.a, 0);
+  for (let i = 0; i < 260; i++) chat = S.pushChat(chat, 'a', 'b', `m${i}`, i).chat;
+  assert.equal(chat.msgs.length, S.MAX_MSGS); assert.equal(chat.msgs.at(-1).text, 'm259'); assert.equal(chat.unread.b, 260); assert.equal(chat.unread.a, 0);
   assert.deepEqual(chat.users, ['a', 'b']); assert.equal(S.markRead(chat, 'b').unread.b, 0);
   assert.equal(S.pairId('b', 'a'), S.pairId('a', 'b'));
 });
@@ -159,6 +159,54 @@ await t('API: unfriending removes the link both ways and closes the chat and inv
   await bad('alice', { action: 'friendInvite', to: 'bob', game: 'gebeta', ruleset: 'gebeta', fee: 0 }, 403);
 });
 await t('API: presence is recorded', async () => { await ok('alice', { action: 'presence' }); assert.ok(__store.get('presence/alice').at > 0); });
+await t('Telegram-style chat: replies, edit, delete-for-everyone, reactions, read receipts, typing', async () => {
+  await ok('alice', { action: 'friendRequest', to: 'bob' }); await ok('bob', { action: 'friendRequest', to: 'alice' });   // (re)make the friendship
+  await ok('alice', { action: 'chatSend', to: 'bob', text: 'first' });
+  let chat = __store.get('chats/alice_bob'); const first = chat.msgs.at(-1);
+  assert.ok(first.id);
+  await ok('bob', { action: 'chatSend', to: 'alice', text: 'answering', replyTo: first.id });
+  chat = __store.get('chats/alice_bob'); const rep = chat.msgs.at(-1);
+  assert.equal(rep.reply.id, first.id); assert.equal(rep.reply.text, 'first'); assert.equal(rep.reply.from, 'alice');
+  await ok('alice', { action: 'chatEdit', to: 'bob', id: first.id, text: 'first (fixed)' });
+  assert.equal(__store.get('chats/alice_bob').msgs.find((m) => m.id === first.id).edited, true);
+  await bad('bob', { action: 'chatEdit', to: 'alice', id: first.id, text: 'hacked' }, 400);       // not your line
+  await ok('bob', { action: 'chatReact', to: 'alice', id: first.id, emoji: '❤️' });
+  assert.deepEqual(__store.get('chats/alice_bob').msgs.find((m) => m.id === first.id).reactions, { '❤️': ['bob'] });
+  await ok('bob', { action: 'chatReact', to: 'alice', id: first.id, emoji: '🔥' });              // one reaction per person
+  assert.deepEqual(Object.keys(__store.get('chats/alice_bob').msgs.find((m) => m.id === first.id).reactions), ['🔥']);
+  await bad('bob', { action: 'chatReact', to: 'alice', id: first.id, emoji: '💩' }, 400);
+  await ok('alice', { action: 'chatRead', to: 'bob' });
+  assert.ok(__store.get('chats/alice_bob').readAt.alice > 0);
+  await ok('alice', { action: 'chatTyping', to: 'bob' });
+  assert.ok(S.isTyping(__store.get('chats/alice_bob'), 'alice'));
+  await ok('alice', { action: 'chatDelete', to: 'bob', id: first.id });
+  const gone = __store.get('chats/alice_bob').msgs.find((m) => m.id === first.id);
+  assert.equal(gone.deleted, true); assert.equal(gone.text, '');
+});
+await t('pins and name search', async () => {
+  const r = await ok('alice', { action: 'friendPin', to: 'bob' }); assert.deepEqual(r.pins, ['bob']);
+  assert.deepEqual((await ok('alice', { action: 'friendPin', to: 'bob' })).pins, []);
+  assert.deepEqual((await ok('alice', { action: 'friendPin', to: 'carl' })).pins, []);            // only friends can be pinned
+  await bad('alice', { action: 'friendSearch', q: 'a' }, 400);
+});
+await t('SYNC: both people send a request, and both can then see each other, chat and read it with no Firestore listeners', async () => {
+  for (const u of ['dina', 'eli']) __store.set(`users/${u}`, { displayName: u[0].toUpperCase() + u.slice(1), avatar: 'lion', rating: 1000, wins: 0, losses: 0, draws: 0 });
+  assert.equal((await ok('dina', { action: 'friendRequest', to: 'eli' })).result, 'sent');
+  const mid = await ok('eli', { action: 'socialSync' });
+  assert.ok(mid.friends.incoming.dina);                                                           // eli sees the request through the API alone
+  assert.equal((await ok('eli', { action: 'friendRequest', to: 'dina' })).result, 'accepted');    // crossing requests
+  const a = await ok('dina', { action: 'socialSync' }), b = await ok('eli', { action: 'socialSync' });
+  assert.ok(a.friends.list.eli && b.friends.list.dina);
+  await ok('dina', { action: 'chatSend', to: 'eli', text: 'can you see this?' });
+  const b2 = await ok('eli', { action: 'socialSync' });
+  assert.equal(b2.chats.length, 1); assert.equal(b2.chats[0].msgs[0].text, 'can you see this?'); assert.equal(b2.chats[0].unread.eli, 1);
+  assert.ok(b2.seen.dina > 0);                                                                    // presence of friends comes with the sync
+  const found = await ok('dina', { action: 'friendSearch', q: 'El' }); assert.equal(found.players[0].uid, 'eli'); assert.equal(found.players[0].status, 'friend');
+});
+await t('last-seen wording parts', () => {
+  assert.deepEqual(S.lastSeenParts(1000, 2000), ['now']); assert.deepEqual(S.lastSeenParts(0, 5 * 60000), ['min', 5]);
+  assert.deepEqual(S.lastSeenParts(0, 3 * 3600000), ['hour', 3]); assert.deepEqual(S.lastSeenParts(0, 2 * 86400000), ['day', 2]); assert.deepEqual(S.lastSeenParts(NaN), ['long']);
+});
 await t('Firestore rules: clients can read their own friends/invites/chats and write none of them', async () => {
   const fs = await import('node:fs');
   const rules = fs.readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8');

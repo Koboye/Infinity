@@ -19,6 +19,12 @@ export const SOCIAL_EN = {
   rulesPickType: 'Choose a Gebeta type', rulesStep: (i, n) => `Rule ${i} of ${n}`, rulesPrev: 'Back', rulesNext: 'Next rule', rulesAll: 'Show all rules', rulesOne: 'One by one',
   rulesSend: 'Send these rules', rulesCopied: 'Rules copied', rulesPlay: 'Play this type', rulesDone: 'That is every rule. Ready to play?',
   rulesHelp: 'How this type works',
+  // Telegram-style chat (v74)
+  chats: 'Chats', searchChats: 'Search chats or find players', findPlayers: 'Find players', noMatches: 'No matches', typing: 'typing…',
+  seenMin: (n) => `last seen ${n} min ago`, seenHour: (n) => `last seen ${n} h ago`, seenDay: (n) => `last seen ${n} d ago`, seenLong: 'last seen a while ago',
+  replyTo: 'Reply', editMsg: 'Edit', deleteMsg: 'Delete for everyone', copyMsg: 'Copy', edited: 'edited', deletedMsg: 'This message was deleted', editing: 'Editing message',
+  pinChat: 'Pin', unpinChat: 'Unpin', youPrefix: 'You: ', today: 'Today', moreActions: 'More', statusSent: 'Request sent', statusIncoming: 'Wants to be your friend',
+  addByNameHint: 'Tip: type a name in the search box on the Chats tab to find players.',
 };
 
 export const SOCIAL_AM = {
@@ -39,5 +45,10 @@ export const SOCIAL_AM = {
   askNone: 'ለዚህ እስካሁን መልስ የለኝም። ጓደኛህን እንዲያስረዳህ ጠይቅ፦', askFriend: 'ጓደኛን ጠይቅ', askTry: 'የተለመዱ ጥያቄዎች',
   rulesPickType: 'የገበጣ አይነት ምረጥ', rulesStep: (i, n) => `ሕግ ${i} ከ${n}`, rulesPrev: 'ተመለስ', rulesNext: 'ቀጣዩ ሕግ', rulesAll: 'ሁሉንም ሕጎች አሳይ', rulesOne: 'አንድ በአንድ',
   rulesSend: 'እነዚህን ሕጎች ላክ', rulesCopied: 'ሕጎቹ ተቀድተዋል', rulesPlay: 'ይህን አይነት ተጫወት', rulesDone: 'ሕጎቹ እነዚህ ብቻ ናቸው። ለመጫወት ዝግጁ ነህ?',
-  rulesHelp: 'ይህ አይነት እንዴት እንደሚሠራ',
+  rulesHelp: 'ይህ አይነት እንዴት እንደሚሠራ',  // Telegram-style chat (v74)
+  chats: 'ውይይቶች', searchChats: 'ውይይት ፈልግ ወይም ተጫዋች አግኝ', findPlayers: 'ተጫዋቾችን አግኝ', noMatches: 'ምንም አልተገኘም', typing: 'እየጻፈ ነው…',
+  seenMin: (n) => `ከ${n} ደቂቃ በፊት ታይቷል`, seenHour: (n) => `ከ${n} ሰዓት በፊት ታይቷል`, seenDay: (n) => `ከ${n} ቀን በፊት ታይቷል`, seenLong: 'ከረጅም ጊዜ በፊት ታይቷል',
+  replyTo: 'መልስ', editMsg: 'አስተካክል', deleteMsg: 'ለሁሉም ሰርዝ', copyMsg: 'ቅዳ', edited: 'ተስተካክሏል', deletedMsg: 'ይህ መልእክት ተሰርዟል', editing: 'መልእክት እያስተካከሉ ነው',
+  pinChat: 'ሰካ', unpinChat: 'አስወግድ', youPrefix: 'አንተ: ', today: 'ዛሬ', moreActions: 'ተጨማሪ', statusSent: 'ጥያቄ ተልኳል', statusIncoming: 'ጓደኛህ መሆን ይፈልጋል',
+  addByNameHint: 'ጠቃሚ ምክር፦ ተጫዋቾችን ለማግኘት በ"ውይይቶች" ትር ውስጥ ስም ይጻፉ።',
 };

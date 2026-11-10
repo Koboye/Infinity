@@ -8,8 +8,8 @@
 
 export const MAX_FRIENDS = 100;
 export const MAX_REQUESTS = 50;
-export const MAX_MSGS = 50;
-export const MAX_TEXT = 300;
+export const MAX_MSGS = 200;
+export const MAX_TEXT = 1000;
 export const MAX_ROOM_MSGS = 30;
 export const MAX_INVITES = 10;
 export const INVITE_TTL_MS = 10 * 60 * 1000;     // an invite is only good while the host is still waiting in the room
@@ -69,20 +69,76 @@ export function severFriend(mineIn, theirsIn, meUid, themUid) {
 
 export const areFriends = (friendsDoc, uid) => !!friendsDoc?.list?.[uid];
 
-/** Append a message to a pair's chat (newest last, capped) and count it as unread for the other person. */
-export function pushChat(chatIn, from, to, text, now = Date.now()) {
+export const REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🔥'];
+export const TYPING_MS = 5000;                   // "typing…" shows for this long after the last keystroke ping
+const newId = (now) => `${now.toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+const snippet = (m) => (m?.deleted ? '' : String(m?.text || '').slice(0, 80));
+
+/** Append a message to a pair's chat (newest last, capped) and count it as unread for the other person. `replyTo` = id of the line answered. */
+export function pushChat(chatIn, from, to, text, now = Date.now(), replyTo = null) {
   const t = cleanText(text);
   if (!t) return { chat: chatIn, error: 'Write a message first' };
-  const chat = { users: [from, to].sort(), msgs: [...(chatIn?.msgs || [])], unread: { ...(chatIn?.unread || {}) }, updatedAt: now };
-  chat.msgs.push({ from, text: t, at: now });
+  const chat = { ...(chatIn || {}), users: [from, to].sort(), msgs: [...(chatIn?.msgs || [])], unread: { ...(chatIn?.unread || {}) }, updatedAt: now };
+  const msg = { id: newId(now), from, text: t, at: now };
+  const target = replyTo ? chat.msgs.find((m) => m.id === replyTo && !m.deleted) : null;
+  if (target) msg.reply = { id: target.id, from: target.from, text: snippet(target) };
+  chat.msgs.push(msg);
   if (chat.msgs.length > MAX_MSGS) chat.msgs = chat.msgs.slice(-MAX_MSGS);
   chat.unread[to] = (chat.unread[to] || 0) + 1;
   chat.unread[from] = 0;
+  chat.typing = { ...(chat.typing || {}), [from]: 0 };
   return { chat };
 }
-export function markRead(chatIn, uid) {
+/** `uid` has opened the chat: their unread count is cleared and the time is kept so the sender sees the double tick. */
+export function markRead(chatIn, uid, now = Date.now()) {
   if (!chatIn) return chatIn;
-  return { ...chatIn, unread: { ...(chatIn.unread || {}), [uid]: 0 } };
+  return { ...chatIn, unread: { ...(chatIn.unread || {}), [uid]: 0 }, readAt: { ...(chatIn.readAt || {}), [uid]: now } };
+}
+/** One of my own lines, with new text (marked edited). */
+export function editMsg(chatIn, uid, id, text) {
+  const t = cleanText(text);
+  if (!t) return { chat: chatIn, error: 'Write a message first' };
+  const i = (chatIn?.msgs || []).findIndex((m) => m.id === id);
+  if (i < 0 || chatIn.msgs[i].from !== uid || chatIn.msgs[i].deleted) return { chat: chatIn, error: 'You can only edit your own messages' };
+  const msgs = chatIn.msgs.slice(); msgs[i] = { ...msgs[i], text: t, edited: true };
+  return { chat: { ...chatIn, msgs } };
+}
+/** Delete my own line for both people (it stays as a grey "deleted" bubble, like Telegram's "delete for everyone"). */
+export function deleteMsg(chatIn, uid, id) {
+  const i = (chatIn?.msgs || []).findIndex((m) => m.id === id);
+  if (i < 0 || chatIn.msgs[i].from !== uid) return { chat: chatIn, error: 'You can only delete your own messages' };
+  const msgs = chatIn.msgs.slice(); msgs[i] = { id, from: uid, at: msgs[i].at, deleted: true, text: '' };
+  return { chat: { ...chatIn, msgs } };
+}
+/** Add or take away my reaction on any line; one reaction per person per line (a new one replaces the old). */
+export function reactMsg(chatIn, uid, id, emoji) {
+  if (!REACTIONS.includes(emoji)) return { chat: chatIn, error: 'Unknown reaction' };
+  const i = (chatIn?.msgs || []).findIndex((m) => m.id === id);
+  if (i < 0 || chatIn.msgs[i].deleted) return { chat: chatIn, error: 'That message is gone' };
+  const reactions = {};
+  for (const [e, ids] of Object.entries(chatIn.msgs[i].reactions || {})) { const keep = ids.filter((u) => u !== uid); if (keep.length) reactions[e] = keep; }
+  const had = (chatIn.msgs[i].reactions?.[emoji] || []).includes(uid);
+  if (!had) reactions[emoji] = [...(reactions[emoji] || []), uid];
+  const msgs = chatIn.msgs.slice(); msgs[i] = { ...msgs[i], reactions };
+  return { chat: { ...chatIn, msgs } };
+}
+export const setTyping = (chatIn, uid, now = Date.now()) => (chatIn ? { ...chatIn, typing: { ...(chatIn.typing || {}), [uid]: now } } : chatIn);
+export const isTyping = (chat, uid, now = Date.now()) => Number.isFinite(chat?.typing?.[uid]) && now - chat.typing[uid] < TYPING_MS;
+/** Pin or unpin a friend at the top of my chat list (kept on my own friends document). */
+export function togglePin(friendsIn, uid, max = 5) {
+  const f = norm(friendsIn); const pins = (friendsIn?.pins || []).filter((x) => f.list[x]);
+  const next = pins.includes(uid) ? pins.filter((x) => x !== uid) : f.list[uid] ? [uid, ...pins].slice(0, max) : pins;
+  return { ...f, pins: next };
+}
+/** "Last seen" wording as a key plus a number, so the screen can translate it: ['now'] | ['min', n] | ['hour', n] | ['day', n] | ['long']. */
+export function lastSeenParts(at, now = Date.now()) {
+  if (!Number.isFinite(at)) return ['long'];
+  const s = Math.max(0, (now - at) / 1000);
+  if (s < ONLINE_MS / 1000) return ['now'];
+  if (s < 3600) return ['min', Math.max(1, Math.round(s / 60))];
+  if (s < 86400) return ['hour', Math.round(s / 3600)];
+  if (s < 86400 * 7) return ['day', Math.round(s / 86400)];
+  return ['long'];
 }
 
 /** Add an invite to a friend's inbox: newest first, expired ones dropped, one per host (a new one replaces the old). */

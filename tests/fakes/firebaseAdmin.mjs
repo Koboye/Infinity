@@ -45,7 +45,7 @@ const collection = (name) => ({
   get() { return query(name, { f: [], ord: null, lim: 9999 }).get(); },
 });
 const val = (d, f) => { const x = d[f]; return x && x.__ms !== undefined ? x.__ms : x; };
-const cmp = { '==': (a, b) => a === b, '>=': (a, b) => a >= b, '>': (a, b) => a > b, '<=': (a, b) => a <= b, '<': (a, b) => a < b };
+const cmp = { '==': (a, b) => a === b, '>=': (a, b) => a >= b, '>': (a, b) => a > b, '<=': (a, b) => a <= b, '<': (a, b) => a < b, 'array-contains': (a, b) => Array.isArray(a) && a.includes(b) };
 const query = (name, q) => ({
   where(f, op, v) { q.f.push([f, op, v]); return this; },
   orderBy(f) { q.ord = f; return this; },

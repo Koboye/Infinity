@@ -356,7 +356,21 @@ export async function POST(req) {
       case 'friendRemove':
         return ok(await Social.remove(db, uid, body.to));
       case 'chatSend':
-        return ok(await Social.chatSend(db, uid, body.to, body.text));
+        return ok(await Social.chatSend(db, uid, body.to, body.text, body.replyTo));
+      case 'chatEdit':
+        return ok(await Social.chatChange(db, uid, body.to, 'edit', body.id, body.text));
+      case 'chatDelete':
+        return ok(await Social.chatChange(db, uid, body.to, 'delete', body.id));
+      case 'chatReact':
+        return ok(await Social.chatChange(db, uid, body.to, 'react', body.id, body.emoji));
+      case 'chatTyping':
+        return ok(await Social.chatTyping(db, uid, body.to));
+      case 'friendPin':
+        return ok(await Social.friendPin(db, uid, body.to));
+      case 'friendSearch':
+        return ok(await Social.friendSearch(db, uid, body.q));
+      case 'socialSync':
+        return ok(await Social.socialSync(db, uid));
       case 'chatRead':
         return ok(await Social.chatRead(db, uid, body.to));
       case 'friendInvite':

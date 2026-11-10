@@ -4,6 +4,7 @@ import { fail } from './httpError.js';
 import {
   emptyFriends, makeFriendCode, normalizeFriendCode, requestFriend, acceptFriend, severFriend, areFriends,
   pairId, pushChat, markRead, pushInvite, dropInvite, cleanText,
+  editMsg, deleteMsg, reactMsg, setTyping, togglePin,
 } from '../social.js';
 
 const friendsRef = (db, uid) => db.collection('friends').doc(uid);
@@ -96,17 +97,17 @@ export async function remove(db, uid, other) {
 }
 
 /** Direct message to a friend (friends only). */
-export async function chatSend(db, uid, to, text) {
+export async function chatSend(db, uid, to, text, replyTo = null) {
   to = String(to || '');
   if (!cleanText(text)) fail(400, 'Write a message first');
   return db.runTransaction(async (tx) => {
     const mine = await tx.get(friendsRef(db, uid));
     if (!areFriends(mine.exists ? mine.data() : null, to)) fail(403, 'You can only chat with friends');
     const cur = await tx.get(chatRef(db, uid, to));
-    const out = pushChat(cur.exists ? cur.data() : null, uid, to, text);
+    const out = pushChat(cur.exists ? cur.data() : null, uid, to, text, Date.now(), replyTo ? String(replyTo) : null);
     if (out.error) fail(400, out.error);
     tx.set(chatRef(db, uid, to), out.chat);
-    return { ok: true };
+    return { ok: true, id: out.chat.msgs.at(-1).id };
   });
 }
 
@@ -158,4 +159,71 @@ export async function inviteDismiss(db, uid, id) {
 export async function presence(db, uid) {
   await db.collection('presence').doc(uid).set({ at: Date.now() });
   return { ok: true };
+}
+
+/** Edit, delete or react to one line of a chat (`kind` = 'edit' | 'delete' | 'react'). Only the two people in the chat can touch it. */
+export async function chatChange(db, uid, other, kind, id, value) {
+  other = String(other || ''); id = String(id || '');
+  return db.runTransaction(async (tx) => {
+    const mine = await tx.get(friendsRef(db, uid));
+    if (!areFriends(mine.exists ? mine.data() : null, other)) fail(403, 'You can only chat with friends');
+    const cur = await tx.get(chatRef(db, uid, other));
+    if (!cur.exists) fail(404, 'That chat is empty');
+    const out = kind === 'edit' ? editMsg(cur.data(), uid, id, value) : kind === 'delete' ? deleteMsg(cur.data(), uid, id) : reactMsg(cur.data(), uid, id, String(value || ''));
+    if (out.error) fail(400, out.error);
+    tx.set(chatRef(db, uid, other), out.chat);
+    return { ok: true };
+  });
+}
+
+/** "I am typing": one small write, and only when the chat already exists (the phone sends it at most every 3 s). */
+export async function chatTyping(db, uid, other) {
+  other = String(other || '');
+  const ref = chatRef(db, uid, other);
+  const s = await ref.get();
+  if (s.exists && (s.data().users || []).includes(uid)) await ref.set(setTyping(s.data(), uid));
+  return { ok: true };
+}
+
+/** Pin or unpin a friend at the top of my list. */
+export async function friendPin(db, uid, other) {
+  return db.runTransaction(async (tx) => {
+    const s = await tx.get(friendsRef(db, uid));
+    const next = togglePin(s.exists ? s.data() : null, String(other || ''));
+    tx.set(friendsRef(db, uid), next);
+    return { ok: true, pins: next.pins };
+  });
+}
+
+/** Find players by name (starts-with, case-sensitive on the stored name) so a friend can be added without a code. */
+export async function friendSearch(db, uid, q) {
+  const term = cleanText(q, 20);
+  if (term.length < 2) fail(400, 'Type at least 2 letters');
+  const snap = await db.collection('users').where('displayName', '>=', term).where('displayName', '<', term + '\uf8ff').limit(10).get();
+  const mine = await friendsRef(db, uid).get(); const f = mine.exists ? mine.data() : {};
+  return {
+    players: snap.docs.filter((d) => d.id !== uid).map((d) => ({
+      uid: d.id, name: d.data().displayName || 'Player', avatar: d.data().avatar || 'lion',
+      status: f.list?.[d.id] ? 'friend' : f.outgoing?.[d.id] ? 'sent' : f.incoming?.[d.id] ? 'incoming' : 'none',
+    })),
+  };
+}
+
+/**
+ * Everything social in one answer: friends + requests, all my chats, my invites and my friends' last-seen times.
+ * The phone calls this when the live Firestore listeners are not available (rules or indexes not deployed, bad network),
+ * and keeps calling it while a chat is open so two friends always reach each other.
+ */
+export async function socialSync(db, uid) {
+  await friendCode(db, uid);
+  const [fs, inv, cs] = await Promise.all([
+    friendsRef(db, uid).get(), inviteRef(db, uid).get(),
+    db.collection('chats').where('users', 'array-contains', uid).get(),
+  ]);
+  const friends = fs.exists ? fs.data() : emptyFriends();
+  const ids = Object.keys(friends.list || {}).slice(0, 100);
+  const seen = {};
+  await Promise.all(ids.map(async (id) => { const p = await db.collection('presence').doc(id).get(); if (p.exists) seen[id] = p.data().at; }));
+  await db.collection('presence').doc(uid).set({ at: Date.now() });
+  return { friends, invites: inv.exists ? inv.data() : null, chats: cs.docs.map((d) => ({ id: d.id, ...d.data() })), seen, now: Date.now() };
 }
