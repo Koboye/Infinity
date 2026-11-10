@@ -4,13 +4,16 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { apiCall, serverNow } from '@/lib/firebase';
 import { EMOTES, heroById } from '@/lib/i18n';
-import { REACTIONS, MAX_TEXT, isSeen, isTyping, EDIT_MS } from '@/lib/social';
+import { REACTIONS, MAX_TEXT, isSeen, isTyping, isJumbo, smartReplies, EDIT_MS } from '@/lib/social';
+import { GAMES } from '@/lib/games.js';
+import { GameIcon } from './GameIcons';
 
 export function Avatar({ id, size = 44 }) {
   const h = heroById(id);
   return <span className="hero fx-hero" style={{ background: h.color, width: size, height: size, fontSize: size * 0.55 }} aria-hidden="true">{h.glyph}</span>;
 }
 
+const buzz = (ms = 12) => { try { navigator.vibrate?.(ms); } catch { /* no haptics */ } };
 const locale = (lang) => (lang === 'am' ? 'am-ET' : undefined);
 export const clock = (at, lang) => new Date(at).toLocaleTimeString(locale(lang), { hour: '2-digit', minute: '2-digit' });
 const dayKey = (at) => { const d = new Date(at); return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`; };
@@ -77,7 +80,7 @@ export default function FriendChat({ t, lang, uid, friend, name, chat, view, pin
       return;
     }
     const r = await run({ action: 'chatSend', to: friend.id, text: v, replyTo: reply?.id });
-    if (r) { if (value === undefined) setText(''); setReply(null); }
+    if (r) { buzz(10); if (value === undefined) setText(''); setReply(null); }
   };
   const onType = (v) => {
     setText(v.slice(0, MAX_TEXT));
@@ -87,7 +90,12 @@ export default function FriendChat({ t, lang, uid, friend, name, chat, view, pin
 
   const days = useMemo(() => {
     const out = []; let last = '';
-    msgs.forEach((m, i) => { const k = dayKey(m.at); if (k !== last) { out.push({ sep: dayLabel(t, lang, m.at, now), key: `d${k}` }); last = k; } out.push({ m, key: m.id || `${m.at}-${i}` }); });
+    const near = (a, b) => a && b && a.from === b.from && dayKey(a.at) === dayKey(b.at) && Math.abs(b.at - a.at) < 5 * 60e3;
+    msgs.forEach((m, i) => {
+      const k = dayKey(m.at); if (k !== last) { out.push({ sep: dayLabel(t, lang, m.at, now), key: `d${k}` }); last = k; }
+      const first = !near(msgs[i - 1], m), tail = !near(m, msgs[i + 1]);       // a run of messages from one person shares one tail
+      out.push({ m, key: m.id || `${m.at}-${i}`, pos: first && tail ? 'solo' : first ? 'first' : tail ? 'last' : 'mid', jumbo: isJumbo(m.text) });
+    });
     return out;
   }, [msgs, lang, t]);   // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -98,15 +106,28 @@ export default function FriendChat({ t, lang, uid, friend, name, chat, view, pin
     copy: async () => { try { await navigator.clipboard.writeText(pick.text); flash(t.fxCopied); } catch { /* clipboard unavailable */ } setPick(null); },
     edit: () => { setEditing(pick); setReply(null); setText(pick.text); setPick(null); input.current?.focus(); },
     del: async () => { const id = pick.id; setPick(null); await run({ action: 'chatDelete', to: friend.id, id }); },
-    react: async (emoji) => { const id = pick.id; setPick(null); await run({ action: 'chatReact', to: friend.id, id, emoji }); },
+    react: async (emoji) => { const id = pick.id; setPick(null); buzz(14); await run({ action: 'chatReact', to: friend.id, id, emoji }); },
   };
+  // swipe a message to the right to reply (touch): the row follows the finger, a ↩ appears, past 56 px it answers
+  const swipe = (m) => ({
+    onTouchStart: (e) => { e.currentTarget._x = e.touches[0].clientX; e.currentTarget._y = e.touches[0].clientY; e.currentTarget._go = false; },
+    onTouchMove: (e) => {
+      const el = e.currentTarget; const dx = e.touches[0].clientX - el._x, dy = Math.abs(e.touches[0].clientY - el._y);
+      if (dy > 24 && !el._go) return;
+      if (dx > 8) { el._go = true; const d = Math.min(dx, 72); el.style.setProperty('--sw', `${d}px`); el.classList.toggle('armed', d > 56); }
+    },
+    onTouchEnd: (e) => { const el = e.currentTarget; const armed = el.classList.contains('armed'); el.style.removeProperty('--sw'); el.classList.remove('armed'); if (armed && m.id) { buzz(18); setReply(m); setEditing(null); input.current?.focus(); } },
+  });
+  const lastIn = [...msgs].reverse().find((m) => m.from !== uid);
+  const lastMsg = msgs[msgs.length - 1];
+  const smart = lastMsg && lastMsg.from !== uid && !text && !reply && !editing ? smartReplies(lastIn?.text).map((k) => t[k]).filter(Boolean) : [];
   const setFlag = async (body) => { setMenu(false); await run({ action: 'friendSet', to: friend.id, ...body }); };
 
   return (
     <div className="panel fx-chat">
       <header className="fx-chat-head">
         <button className="icon-btn" onClick={onBack} aria-label={t.backHome}>‹</button>
-        <span className="fx-av"><Avatar id={friend.avatar} size={40} /><i className={`dot${online ? ' on' : ''}`} /></span>
+        <span className={`fx-av${online ? ' live' : ''}`}><Avatar id={friend.avatar} size={40} /><i className={`dot${online ? ' on' : ''}`} /></span>
         <span className="fx-who">
           <b>{name}</b>
           <small className={typing ? 'typing' : online ? 'on' : ''}>{typing ? t.fxTyping : seenText(t, lang, view)}</small>
@@ -115,13 +136,23 @@ export default function FriendChat({ t, lang, uid, friend, name, chat, view, pin
         <button className="icon-btn" onClick={() => setMenu(true)} aria-label={t.fxMore} aria-haspopup="menu">⋮</button>
       </header>
 
-      <div className="fx-msgs" role="log" aria-live="polite">
-        {msgs.length === 0 && <p className="muted center-text">{t.chatEmpty}</p>}
+      <div className="fx-msgs" role="log" aria-live="polite" aria-label={t.fxSwipeHint}>
+        {msgs.length === 0 && (
+          <div className="fx-hello">
+            <Avatar id={friend.avatar} size={84} />
+            <b>{t.chatEmpty}</b>
+            <button className="fx-challenge" onClick={onInvite}>
+              <span className="fx-gicons">{Object.values(GAMES).filter((g) => !g.offlineOnly && !g.comingSoon).slice(0, 4).map((g) => <GameIcon key={g.id} game={g.id} size={30} />)}</span>
+              <span><b>{t.fxChallenge}</b><small>{t.fxChallengeHint}</small></span>
+            </button>
+          </div>
+        )}
         {days.map((row) => row.sep
           ? <div key={row.key} className="fx-day"><span>{row.sep}</span></div>
           : (
-            <div key={row.key} className={`fx-row${row.m.from === uid ? ' me' : ''}`}>
-              <button className="fx-bubble" onClick={() => row.m.id && setPick(row.m)} aria-label={row.m.text}>
+            <div key={row.key} className={`fx-row ${row.pos}${row.m.from === uid ? ' me' : ''}`} {...swipe(row.m)}>
+              <span className="fx-swipe-ico" aria-hidden="true">↩</span>
+              <button className={`fx-bubble${row.jumbo ? ' jumbo' : ''}`} onClick={() => row.m.id && setPick(row.m)} aria-label={row.m.text}>
                 {row.m.re && <span className="fx-quote"><b>{row.m.re.from === uid ? t.fxYou : name}</b>{row.m.re.text}</span>}
                 <span className="fx-text">{row.m.text}</span>
                 <span className="fx-meta">
@@ -138,7 +169,9 @@ export default function FriendChat({ t, lang, uid, friend, name, chat, view, pin
       </div>
 
       {toast && <p className="fx-toast" role="status">{toast}</p>}
-      <div className="emote-row fx-quick">{EMOTES.map((e) => <button key={e.id} className="chip" onClick={() => send(e[lang] || e.en)}>{e[lang] || e.en}</button>)}</div>
+      {smart.length > 0
+        ? <div className="fx-smart" aria-label="Smart replies">{smart.map((r) => <button key={r} className="fx-chip" onClick={() => send(r)}>{r}</button>)}</div>
+        : <div className="emote-row fx-quick">{EMOTES.map((e) => <button key={e.id} className="chip" onClick={() => send(e[lang] || e.en)}>{e[lang] || e.en}</button>)}</div>}
 
       {(reply || editing) && (
         <div className="fx-compose-bar">

@@ -266,3 +266,28 @@ export function badgeCount({ friends, chats = [], invites }, uid, now = Date.now
   const unread = chats.reduce((n, c) => n + (muted(c) ? 0 : (c.unread?.[uid] || 0)), 0);
   return req + unread + liveInvites(invites, now).length;
 }
+
+/** A message that is only 1–3 emoji is drawn big, without a bubble (like Telegram's jumbo emoji). */
+export function isJumbo(text) {
+  const t = String(text || '').trim();
+  if (!t || t.length > 24) return false;
+  if (!/^[\p{Extended_Pictographic}\uFE0F\u200D\s]+$/u.test(t)) return false;
+  return (t.match(/\p{Extended_Pictographic}/gu) || []).length <= 3;
+}
+
+/**
+ * Smart replies: up to three one-tap answers to the last thing the friend said. Pure keyword rules (English + Amharic), no network.
+ * Returns text keys (the screen translates them), so the same rules serve both languages.
+ */
+export function smartReplies(lastText) {
+  const t = String(lastText || '').toLowerCase();
+  if (!t.trim()) return [];
+  const has = (re) => re.test(t);
+  if (has(/thank|thx|አመሰግናለሁ|አመሰግናለው|እናመሰግናለን/)) return ['srThanks', 'srNice'];
+  if (has(/good game|\bgg\b|well played|nice|great|ጥሩ ጨዋታ|በጣም ጥሩ/)) return ['srNice', 'srRematch', 'srThanks'];
+  if (has(/rematch|play|game|match|tuz|ludo|bingo|dominoes|checkers|gebeta|ተጫወት|ጨዋታ|እንጫወት|ገበጣ/)) return ['srPlay', 'srReady', 'srLater'];
+  if (has(/how are|how r u|what's up|whats up|እንዴት ነህ|እንዴት ነሽ|እንዴት ናችሁ|እንዴት/)) return ['srFine', 'srHi'];
+  if (has(/^(hi|hello|hey|yo)\b|ሰላም|ታዲያስ|ሀሎ/)) return ['srHi', 'srFine'];
+  if (has(/[?፧？]\s*$/)) return ['srYes', 'srNo', 'srLater'];
+  return ['srOk', 'srNice'];
+}

@@ -31,6 +31,8 @@ export const SOCIAL_EN = {
   fxReply: 'Reply', fxCopy: 'Copy', fxCopied: 'Copied', fxEdit: 'Edit', fxDelete: 'Delete', fxDeleteBoth: 'Delete for both of you', fxEditing: 'Editing message', fxEdited: 'edited', fxTyping: 'typing…', fxYou: 'You', fxToday: 'Today', fxYesterday: 'Yesterday',
   fxSeenJust: 'last seen just now', fxSeenMin: (n) => `last seen ${n} min ago`, fxSeenToday: (h) => `last seen today at ${h}`, fxSeenYesterday: (h) => `last seen yesterday at ${h}`, fxSeenDays: (n) => `last seen ${n} days ago`,
   fxSeenRecent: 'last seen recently', fxSeenWeek: 'last seen within a week', fxSeenMonth: 'last seen within a month', fxSeenLong: 'last seen a long time ago',
+  fxLoading: 'Loading your friends…', fxChallenge: 'Challenge a game', fxChallengeHint: 'Break the ice with a friendly match', fxSwipeHint: 'Swipe a message to reply',
+  srYes: 'Yes! 👍', srNo: 'Not now', srLater: 'Maybe later', srPlay: "Let's play 🎮", srReady: "I'm ready", srHi: 'Hi! 👋', srFine: 'All good, you?', srThanks: 'Anytime 🙌', srNice: 'Nice one 🔥', srOk: 'OK 👍', srRematch: 'Rematch?',
   fxPrivacy: 'Privacy', fxLastSeenWho: 'Who can see my last seen', fxEveryone: 'Everyone', fxFriendsOnly: 'My friends', fxNobody: 'Nobody', fxLastSeenHint: 'With “Nobody”, friends only see “recently”, “within a week” and so on.',
 };
 
@@ -65,5 +67,7 @@ export const SOCIAL_AM = {
   fxReply: 'መልስ', fxCopy: 'ቅዳ', fxCopied: 'ተቀድቷል', fxEdit: 'አርም', fxDelete: 'ሰርዝ', fxDeleteBoth: 'ለሁለታችሁም ሰርዝ', fxEditing: 'መልእክት በማረም ላይ', fxEdited: 'ተስተካክሏል', fxTyping: 'እየጻፈ ነው…', fxYou: 'አንተ', fxToday: 'ዛሬ', fxYesterday: 'ትናንት',
   fxSeenJust: 'አሁን ታይቷል', fxSeenMin: (n) => `ከ${n} ደቂቃ በፊት ታይቷል`, fxSeenToday: (h) => `ዛሬ በ${h} ታይቷል`, fxSeenYesterday: (h) => `ትናንት በ${h} ታይቷል`, fxSeenDays: (n) => `ከ${n} ቀን በፊት ታይቷል`,
   fxSeenRecent: 'በቅርቡ ታይቷል', fxSeenWeek: 'በሳምንት ውስጥ ታይቷል', fxSeenMonth: 'በወር ውስጥ ታይቷል', fxSeenLong: 'ከረጅም ጊዜ በፊት ታይቷል',
+  fxLoading: 'ጓደኞችህን በመጫን ላይ…', fxChallenge: 'ጨዋታ ተፈታተን', fxChallengeHint: 'በወዳጅነት ጨዋታ ውይይቱን ጀምር', fxSwipeHint: 'መልእክትን ወደ ጎን ጎትተህ መልስ',
+  srYes: 'አዎ! 👍', srNo: 'አሁን አይሆንም', srLater: 'ቆይቶ ይሻላል', srPlay: 'እንጫወት 🎮', srReady: 'ዝግጁ ነኝ', srHi: 'ሰላም! 👋', srFine: 'ደህና ነኝ፣ አንተስ?', srThanks: 'ምንም አይደል 🙌', srNice: 'በጣም ጥሩ 🔥', srOk: 'እሺ 👍', srRematch: 'ድጋሚ እንጫወት?',
   fxPrivacy: 'ግላዊነት', fxLastSeenWho: 'መጨረሻ የታየሁበትን ማን ያያል', fxEveryone: 'ሁሉም', fxFriendsOnly: 'ጓደኞቼ', fxNobody: 'ማንም', fxLastSeenHint: '“ማንም” ሲመረጥ ጓደኞች “በቅርቡ”፣ “በሳምንት ውስጥ” የሚሉትን ብቻ ያያሉ።',
 };

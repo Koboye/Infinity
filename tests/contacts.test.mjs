@@ -5,6 +5,7 @@ import { register } from 'node:module';
 process.env.GEBETA_RATE_MAX = '1000000';
 register('./fakes/loader.mjs', import.meta.url);
 const S = await import('../src/lib/social.js');
+const { STRINGS: STR } = await import('../src/lib/i18n.js');
 const { POST } = await import('../src/app/api/gebeta/route.js');
 const { __store } = await import('./fakes/firebaseAdmin.mjs');
 let n = 0; const t = async (name, fn) => { await fn(); n++; console.log('ok', name); };
@@ -126,6 +127,23 @@ await t('last-seen buckets read like Telegram, and a hidden time only ever shows
   const hid = (age) => S.presenceView({ lastSeen: 'nobody' }, now - age, now);
   assert.deepEqual(hid(10e3), { kind: 'recent' }); assert.deepEqual(hid(5 * 864e5), { kind: 'week' }); assert.deepEqual(hid(20 * 864e5), { kind: 'month' }); assert.deepEqual(hid(90 * 864e5), { kind: 'long' });
   assert.equal(S.presenceView({ lastSeen: 'friends' }, now - 10e3, now).kind, 'online');
+});
+
+// ── smart replies and jumbo emoji ──
+await t('smart replies: keyword rules in English and Amharic return up to three text keys; nothing for empty text', () => {
+  assert.deepEqual(S.smartReplies('Rematch tonight?'), ['srPlay', 'srReady', 'srLater']);
+  assert.deepEqual(S.smartReplies('Are you free?'), ['srYes', 'srNo', 'srLater']);
+  assert.deepEqual(S.smartReplies('thanks a lot'), ['srThanks', 'srNice']);
+  assert.deepEqual(S.smartReplies('Good game!'), ['srNice', 'srRematch', 'srThanks']);
+  assert.deepEqual(S.smartReplies('ሰላም'), ['srHi', 'srFine']);
+  assert.deepEqual(S.smartReplies('እንጫወት'), ['srPlay', 'srReady', 'srLater']);
+  assert.deepEqual(S.smartReplies('see you at six'), ['srOk', 'srNice']);
+  assert.deepEqual(S.smartReplies('   '), []);
+  for (const k of S.smartReplies('Rematch?')) assert.ok(typeof STR.en[k] === 'string' && typeof STR.am[k] === 'string', k);
+});
+await t('jumbo emoji: only 1–3 emoji (with spaces) count; words or longer runs do not', () => {
+  assert.equal(S.isJumbo('🔥'), true); assert.equal(S.isJumbo('🔥 🔥 🔥'), true); assert.equal(S.isJumbo('❤️'), true);
+  assert.equal(S.isJumbo('🔥🔥🔥🔥'), false); assert.equal(S.isJumbo('hi 🔥'), false); assert.equal(S.isJumbo(''), false);
 });
 
 // ── suggestions and badge ──

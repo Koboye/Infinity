@@ -141,7 +141,8 @@ export default function FriendsScreen({ t, lang, uid, social, myAvatar, onEnterR
         {q && <button type="button" className="fx-clear" onClick={() => setQ('')} aria-label={t.cancel}>✕</button>}
       </label>
 
-      <div className="fx-tabs" role="tablist">
+      <div className="fx-tabs" role="tablist" style={{ '--i': Math.max(0, tabs.findIndex(([id]) => id === tab)) }}>
+        <i className="fx-ind" aria-hidden="true" />
         {tabs.map(([id, label, n]) => (
           <button key={id} role="tab" aria-selected={tab === id} className={tab === id ? 'on' : ''} onClick={() => { setTab(id); setErr(''); }}>{label}{n > 0 && <em className="badge">{n}</em>}</button>
         ))}
@@ -160,8 +161,10 @@ export default function FriendsScreen({ t, lang, uid, social, myAvatar, onEnterR
         </section>
       )}
 
+      {friends === null && <div className="fx-skel" aria-busy="true" aria-label={t.fxLoading}>{[0, 1, 2].map((i) => <span key={i} className="fx-row"><i className="sk-av" /><span className="sk-lines"><i /><i /></span></span>)}</div>}
+
       {/* ── chats ── */}
-      {tab === 'chats' && (convos.length === 0
+      {friends !== null && tab === 'chats' && (convos.length === 0
         ? (handle.length >= 3 && searchingNow ? null : <div className="fx-empty"><p className="muted">{searchingNow ? t.fxNoPlayers : t.fxNoChats}</p>{!searchingNow && <button className="btn primary" onClick={shareMe} disabled={!me.code}>🔗 {t.fxInviteFriends}</button>}</div>)
         : <ul className="fx-list">
           {convos.map(({ f, chat }) => {
@@ -169,7 +172,7 @@ export default function FriendsScreen({ t, lang, uid, social, myAvatar, onEnterR
             const typingNow = Date.now() - (chat.typing?.[f.id] || 0) < 6000;
             return (
               <li key={f.id}><button className="fx-row fx-chatrow" onClick={() => onOpenChat(f.id)}>
-                <span className="fx-av"><Avatar id={f.avatar} size={48} /><i className={`dot${mySeen(f.id)?.kind === 'online' ? ' on' : ''}`} /></span>
+                <span className={`fx-av${mySeen(f.id)?.kind === 'online' ? ' live' : ''}`}><Avatar id={f.avatar} size={48} /><i className={`dot${mySeen(f.id)?.kind === 'online' ? ' on' : ''}`} /></span>
                 <span className="fx-name">
                   <b>{friends?.pinned?.[f.id] && <span className="fx-pin" aria-hidden="true">📌</span>}{f.label}{muted && <span aria-hidden="true"> 🔕</span>}</b>
                   <small className={typingNow ? 'typing' : ''}>{typingNow ? t.fxTyping : preview(t, uid, last)}</small>
@@ -181,7 +184,7 @@ export default function FriendsScreen({ t, lang, uid, social, myAvatar, onEnterR
         </ul>)}
 
       {/* ── contacts ── */}
-      {tab === 'contacts' && (
+      {friends !== null && tab === 'contacts' && (
         <>
           <div className="fx-sort" role="group" aria-label={t.fxContacts}>
             <span>{list.length} {t.friends.toLowerCase()}</span>
@@ -195,7 +198,7 @@ export default function FriendsScreen({ t, lang, uid, social, myAvatar, onEnterR
                 return (
                   <li key={f.id} className="fx-row">
                     <button className="fx-rowmain" onClick={() => onOpenChat(f.id)}>
-                      <span className="fx-av"><Avatar id={f.avatar} size={46} /><i className={`dot${v?.kind === 'online' ? ' on' : ''}`} /></span>
+                      <span className={`fx-av${v?.kind === 'online' ? ' live' : ''}`}><Avatar id={f.avatar} size={46} /><i className={`dot${v?.kind === 'online' ? ' on' : ''}`} /></span>
                       <span className="fx-name"><b>{friends?.pinned?.[f.id] && <span className="fx-pin" aria-hidden="true">📌</span>}{f.label}</b><small className={v?.kind === 'online' ? 'on' : ''}>{seenText(t, lang, v)}</small></span>
                       {n > 0 && <em className="badge">{n > 9 ? '9+' : n}</em>}
                     </button>

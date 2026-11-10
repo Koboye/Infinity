@@ -6,6 +6,8 @@
 - **Last seen like Telegram** (online, 12 min ago, today at…, yesterday at…) with a privacy choice: everyone / friends / nobody (rough "recently" only). Presence documents are now readable only by their owner; friends get last-seen through the API.
 - **Block / unblock**, pin and mute chats, private nicknames for contacts, a short note with a friend request, a bio, and "people you may know" (friends of friends).
 - **Richer chat**: reply, edit (48 h), delete for both, six reactions, read ticks (✓ / ✓✓), "typing…", day separators; muted chats stay out of the badge.
+- **Smart graphics**: live rotating ring + pulse on online friends, animated aurora backdrop, Ethiopian tilet-diamond chat wallpaper, sliding tab indicator, grouped glossy bubbles (one tail per run), jumbo emoji, pop-in reactions, swipe-to-reply cue with haptics, loading skeletons, unread glow, and a first-message "challenge a game" card.
+- **Smart replies**: one-tap answers under a friend's last message (English + Amharic keyword rules, no network).
 - New look in `friends.css` (aurora cyan→violet on the indigo glass canvas), English + Amharic texts, `tests/contacts.test.mjs` (24 checks).
 
 ## 3.2.1 — Polish
