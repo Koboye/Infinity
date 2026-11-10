@@ -217,3 +217,101 @@ html body .bn-tab .bn-ico { position: relative; }
 @media (min-width: 700px) { html body .app .game-grid .gg-card { min-height: 190px; } html body .app .game-grid .gg-art { width: 84px; height: 84px; } }
 @media (max-width: 360px) { html body .app .game-grid .gg-card { min-height: 150px; } html body .app .game-grid .gg-art { width: 60px; height: 60px; } html body .app .game-grid .gg-name { font-size: 1.1rem; } }
 @media (prefers-reduced-motion: reduce) { html body .app .game-grid .gg-card, html body .modes-grid .mode-tile { animation: none; } html body .mode-tag.live { animation: none; } }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PHASE 2 · shared match chrome (player cards, status, actions, result overlay) + Gebeta board
+   ═══════════════════════════════════════════════════════════════════════════ */
+html body .match { gap: 12px; }
+html body .match .pcard {
+  display: flex; align-items: center; gap: 10px; padding: 8px 12px 8px 8px; border-radius: 20px; position: relative;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .09), rgba(255, 255, 255, .03)); border: 1px solid var(--r-line);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, .32), inset 0 1px 0 rgba(255, 255, 255, .12); transition: border-color .25s, box-shadow .25s, background .25s;
+}
+html body .match .pcard.on {
+  border-color: rgba(255, 197, 46, .75); background: linear-gradient(180deg, rgba(255, 197, 46, .22), rgba(255, 197, 46, .05));
+  box-shadow: 0 0 0 1px rgba(255, 197, 46, .22), 0 10px 30px rgba(255, 197, 46, .2), inset 0 1px 0 rgba(255, 255, 255, .22);
+}
+html body .match .pcard .hero {
+  flex: none; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; font-size: 1.3rem;
+  background: rgba(0, 0, 0, .3); border: 1.5px solid var(--r-line-2); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12);
+}
+html body .match .pcard .pname { flex: 1 1 auto; min-width: 0; font: 800 .98rem/1.2 "Figtree", system-ui, sans-serif; letter-spacing: .01em; color: var(--r-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+html body .match .pcard .pscore {
+  min-width: 38px; height: 34px; padding: 0 10px; display: grid; place-items: center; border-radius: 12px; background: rgba(0, 0, 0, .36);
+  border: 1px solid var(--r-line); font: 800 1.15rem/1 var(--font-display); color: var(--r-gold-hi); font-variant-numeric: tabular-nums;
+}
+html body .match .pcard .timer { flex: none; border: 0; box-shadow: 0 0 0 1px rgba(255, 255, 255, .18), 0 4px 12px rgba(0, 0, 0, .35); }
+html body .match .status {
+  align-self: center; display: inline-flex; align-items: center; gap: 8px; min-height: 0; padding: 7px 18px; border-radius: 999px;
+  background: var(--r-surface); border: 1px solid var(--r-line); font: 700 .9rem/1.2 "Figtree", system-ui, sans-serif; letter-spacing: .02em; color: var(--r-text);
+}
+html body .match-actions { gap: 10px; flex-wrap: nowrap; }
+html body .match-actions .btn {
+  flex: 1 1 0; min-width: 0; min-height: 48px; padding: 8px 10px; border-radius: 16px; font-weight: 700; font-size: .92rem; color: var(--r-text);
+  background: var(--r-surface); border: 1px solid var(--r-line-2); box-shadow: none;
+}
+html body .match-actions .btn:disabled { opacity: .38; }
+html body .match-actions .btn:nth-child(2):not(.ghost):not(:disabled) {
+  color: var(--r-gold-ink); border: 0; background: linear-gradient(180deg, var(--r-gold-hi), var(--r-gold-lo));
+  box-shadow: 0 8px 20px rgba(240, 162, 12, .36), inset 0 1px 0 rgba(255, 255, 255, .6);
+}
+html body .match-actions .btn.ghost { color: var(--r-text-2); border-color: var(--r-line); }
+
+/* ── Gebeta board: walnut, brass inlay, deep carved pits, velvet stores ── */
+html body .match .board-wrap > .board {
+  outline: 0; border: 3px solid #180a04; border-radius: 28px;
+  background:
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, .10) 0 1px, transparent 1px 6px),
+    repeating-linear-gradient(90deg, rgba(255, 214, 150, .05) 0 2px, transparent 2px 15px),
+    radial-gradient(120% 60% at 50% 0%, rgba(255, 214, 150, .16), transparent 70%),
+    linear-gradient(165deg, #8c5329 0%, #63361b 44%, #42200d 100%);
+  box-shadow: inset 0 0 0 2px rgba(255, 197, 46, .5), inset 0 3px 0 rgba(255, 228, 175, .32), inset 0 -16px 30px rgba(0, 0, 0, .42), 0 6px 0 #130802, 0 24px 44px rgba(0, 0, 0, .6);
+}
+html body .match .board-wrap > .board::before { inset: 10px; border-radius: 20px; padding: 1.5px; background: linear-gradient(180deg, rgba(255, 226, 138, .7), rgba(240, 162, 12, .35)); }
+html body .board .pit {
+  background: radial-gradient(circle at 50% 28%, #090402 0%, #26120a 50%, #4d2d17 100%);
+  box-shadow: inset 0 9px 15px rgba(0, 0, 0, .86), inset 0 -3px 4px rgba(255, 214, 150, .2), 0 0 0 1.5px rgba(255, 197, 46, .5), 0 2px 0 3px rgba(0, 0, 0, .42);
+}
+html body .board .pit.store {
+  background: radial-gradient(ellipse at 50% 26%, #17030a 0%, #4b0f1e 55%, #6d1b2d 100%);
+  box-shadow: inset 0 11px 20px rgba(0, 0, 0, .92), inset 0 0 0 2px rgba(255, 130, 130, .06), 0 0 0 1.5px rgba(255, 197, 46, .62), 0 2px 0 3px rgba(0, 0, 0, .42);
+}
+@keyframes r-glow { 50% { box-shadow: inset 0 9px 15px rgba(0, 0, 0, .86), 0 0 0 2.5px #FFE28A, 0 0 30px 9px rgba(255, 226, 138, .26); } }
+html body .board .pit.legal {
+  box-shadow: inset 0 9px 15px rgba(0, 0, 0, .86), 0 0 0 2.5px #FFE28A, 0 0 22px 4px rgba(255, 226, 138, .55); animation: r-glow 1.9s ease-in-out infinite;
+}
+html body .board .pit.legal:hover { animation: none; }
+html body .board .pit.hint { box-shadow: inset 0 9px 15px rgba(0, 0, 0, .86), 0 0 0 3px #7CE0A8, 0 0 24px 6px rgba(124, 224, 168, .75); }
+html body .board .count { background: linear-gradient(180deg, #FFE28A, #F0A20C); color: #2A1500; border: 0; box-shadow: 0 2px 6px rgba(0, 0, 0, .5), inset 0 1px 0 rgba(255, 255, 255, .6); }
+html body .board .rname {
+  padding: clamp(5px, 1.4vw, 9px) clamp(16px, 5vw, 34px); border: 1px solid rgba(255, 226, 138, .75); color: var(--r-gold-hi);
+  background: linear-gradient(180deg, rgba(10, 18, 56, .92), rgba(8, 14, 44, .86)); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, .5), inset 0 1px 0 rgba(255, 255, 255, .16); text-shadow: 0 2px 6px rgba(0, 0, 0, .5);
+}
+html body .board .rb { background: rgba(8, 14, 44, .55); border: 1px solid rgba(255, 226, 138, .22); color: rgba(255, 244, 214, .6); }
+html body .board .rb.on { color: var(--r-gold-ink); border-color: #FFF1B0; background: linear-gradient(180deg, #FFE28A, #F0A20C); box-shadow: 0 6px 18px rgba(240, 162, 12, .4), inset 0 1px 0 rgba(255, 255, 255, .6); }
+
+/* ── result overlay (all games) ── */
+html body .overlay { background: rgba(4, 7, 26, .78); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+html body .result-overlay .result, html body .overlay .dialog {
+  max-width: 380px; border-radius: 28px; border: 1px solid var(--r-line-2);
+  background: linear-gradient(170deg, rgba(255, 255, 255, .13), rgba(255, 255, 255, .04)), #0C1448;
+  box-shadow: 0 30px 70px rgba(0, 0, 0, .65), inset 0 1px 0 rgba(255, 255, 255, .2);
+}
+html body .result-overlay.win .result { border-color: rgba(255, 197, 46, .6); box-shadow: 0 30px 70px rgba(0, 0, 0, .65), 0 0 60px rgba(255, 197, 46, .18), inset 0 1px 0 rgba(255, 255, 255, .22); }
+html body .result-title { font: 800 2rem/1.15 var(--font-display); color: var(--r-gold-hi); text-shadow: 0 3px 14px rgba(0, 0, 0, .45); letter-spacing: .01em; }
+html body .result.lose .result-title { color: #C9D6FF; }
+html body .result.draw .result-title { color: var(--r-text); }
+html body .result-score { display: inline-flex; align-self: center; justify-content: center; align-items: center; gap: 10px; min-width: 60%; padding: 4px 22px; border-radius: 18px; background: rgba(0, 0, 0, .3); border: 1px solid var(--r-line); font: 800 2.4rem/1.2 var(--font-display); color: var(--r-text); }
+html body .result-score span { color: var(--r-text-3); }
+html body .result-coins { display: inline-flex; align-self: center; justify-content: center; align-items: center; gap: 6px; min-width: 40%; padding: 5px 16px; border-radius: 999px; background: rgba(0, 0, 0, .3); border: 1px solid rgba(255, 197, 46, .4); font-weight: 800; }
+html body .result-sub { color: var(--r-text-2); }
+html body .result-actions .btn { min-height: 50px; border-radius: 16px; font-weight: 800; }
+html body .result-actions .btn:not(.primary) { background: var(--r-surface); border: 1px solid var(--r-line-2); color: var(--r-text); box-shadow: none; }
+
+html body .overlay.result-overlay .result {
+  background: radial-gradient(120% 60% at 50% 0%, rgba(255, 255, 255, .10), transparent 60%), linear-gradient(170deg, rgba(255, 255, 255, .08), rgba(255, 255, 255, .02)), #0C1448; color: var(--r-text);
+}
+html body .overlay.result-overlay.win .result { background: radial-gradient(120% 60% at 50% 0%, rgba(255, 197, 46, .24), transparent 62%), linear-gradient(170deg, rgba(255, 255, 255, .10), rgba(255, 255, 255, .03)), #0C1448; }
+html body .overlay.result-overlay.lose .result { background: radial-gradient(120% 60% at 50% 0%, rgba(140, 160, 255, .16), transparent 62%), linear-gradient(170deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, .02)), #0E1236; }
+html body .overlay.result-overlay.win { background: radial-gradient(120% 90% at 50% 100%, rgba(20, 80, 60, .55) 0%, rgba(6, 10, 38, .9) 55%, rgba(4, 6, 22, .95) 100%); }
