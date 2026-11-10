@@ -1,6 +1,6 @@
-# Gebeta · ገበጣ — Gebeta & Checkers (Dominoes coming soon)
+# Afro Zone · አፍሮ ዞን
 
-Multiplayer Ethiopian games hub. Next.js + Firebase. Three games share one profile, one rating system, one room/matchmaking server and one look.
+Afro Zone is a multiplayer games hub (Gebeta ገበጣ, Dama ዳማ, Ludo, Dominoes, Tuz, Bingo, Hill Climb) with friends and chat. Next.js + Firebase. Three games share one profile, one rating system, one room/matchmaking server and one look.
 
 ## Games
 | Game | Offline | Online | Rule sets |

@@ -1,8 +1,8 @@
 # Store listing
 
-**App name (30):** ገበጣ · ዳማ
-**Short description (80), EN:** Play Ethiopia's classic games: ገበጣ and ዳማ — online or offline.
-**Short description, AM:** የኢትዮጵያ ክላሲክ ጨዋታዎች፦ ገበጣ እና ዳማ — በኢንተርኔት ወይም ያለ ኢንተርኔት።
+**App name (30):** Afro Zone
+**Short description (80), EN:** Afro Zone: Gebeta, Dama, Ludo, Dominoes & Bingo with friends — online or offline.
+**Short description, AM:** አፍሮ ዞን፦ ገበጣ፣ ዳማ፣ ሉዶ፣ ዶሚኖ እና ቢንጎ ከጓደኛ ጋር — በኢንተርኔት ወይም ያለ ኢንተርኔት።
 
 **Full description (EN):**
 Play beloved board games in one beautiful app, in English or አማርኛ.

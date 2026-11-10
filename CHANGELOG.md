@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.3.0 — Afro Zone
+- Brand: app name is **Afro Zone** everywhere (README, store listing, manifest, TWA); Afro portrait icon, maskable icon and share image.
+- Service-worker cache bumped so installed apps refresh the new icons.
+
 ## 3.2.1 — Polish
 - `/api/gebeta` refuses request bodies over 128 KB (413).
 - Ad-admin lockout map now forgets old addresses (no unbounded growth).
