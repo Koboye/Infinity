@@ -19,6 +19,19 @@ export const SOCIAL_EN = {
   rulesPickType: 'Choose a Gebeta type', rulesStep: (i, n) => `Rule ${i} of ${n}`, rulesPrev: 'Back', rulesNext: 'Next rule', rulesAll: 'Show all rules', rulesOne: 'One by one',
   rulesSend: 'Send these rules', rulesCopied: 'Rules copied', rulesPlay: 'Play this type', rulesDone: 'That is every rule. Ready to play?',
   rulesHelp: 'How this type works',
+  // v98: Telegram-style contacts, @usernames, blocking, richer chat
+  fxChats: 'Chats', fxContacts: 'Contacts', fxSearch: 'Search name, @username or code', fxSettings: 'Settings', fxClose: 'Close', fxSave: 'Save', fxMore: 'More',
+  fxUsername: 'Username', fxSetUsername: 'Choose a @username', fxUsernameHint: '5–20 letters, numbers or _. Friends can find you by it.', fxUsernameSaved: 'Username saved',
+  fxBio: 'About me', fxBioHint: 'A short line your friends see', fxShareLink: 'Share my link', fxLinkCopied: 'Link copied',
+  fxPlayers: 'Players', fxSearching: 'Searching…', fxNoPlayers: 'No player found', fxAddByCode: (c) => `Add by code ${c}`, fxMutual: (n) => `${n} mutual ${n === 1 ? 'friend' : 'friends'}`,
+  fxAdd: 'Add', fxIsFriend: 'Friends', fxRequested: 'Requested', fxRespond: 'Answer', fxNote: 'Add a note (optional)', fxNoteHint: 'Say who you are…', fxWantsFriend: 'wants to be your friend',
+  fxSortSeen: 'Last seen', fxSortName: 'A–Z', fxNoChats: 'No conversations yet. Open a contact and say hello.', fxInviteFriends: 'Invite friends to Infinity', fxMayKnow: 'People you may know',
+  fxBlock: 'Block', fxUnblock: 'Unblock', fxBlockedList: 'Blocked players', fxNoBlocked: 'You have not blocked anyone.', fxBlockConfirm: (n) => `Block ${n}? Your friendship ends and they can no longer send you requests.`, fxBlockedNote: 'You blocked this player.',
+  fxPin: 'Pin chat', fxUnpin: 'Unpin chat', fxMute: 'Mute', fxUnmute: 'Unmute', fxRename: 'Rename contact', fxRenameHint: 'Only you see this name',
+  fxReply: 'Reply', fxCopy: 'Copy', fxCopied: 'Copied', fxEdit: 'Edit', fxDelete: 'Delete', fxDeleteBoth: 'Delete for both of you', fxEditing: 'Editing message', fxEdited: 'edited', fxTyping: 'typing…', fxYou: 'You', fxToday: 'Today', fxYesterday: 'Yesterday',
+  fxSeenJust: 'last seen just now', fxSeenMin: (n) => `last seen ${n} min ago`, fxSeenToday: (h) => `last seen today at ${h}`, fxSeenYesterday: (h) => `last seen yesterday at ${h}`, fxSeenDays: (n) => `last seen ${n} days ago`,
+  fxSeenRecent: 'last seen recently', fxSeenWeek: 'last seen within a week', fxSeenMonth: 'last seen within a month', fxSeenLong: 'last seen a long time ago',
+  fxPrivacy: 'Privacy', fxLastSeenWho: 'Who can see my last seen', fxEveryone: 'Everyone', fxFriendsOnly: 'My friends', fxNobody: 'Nobody', fxLastSeenHint: 'With “Nobody”, friends only see “recently”, “within a week” and so on.',
 };
 
 export const SOCIAL_AM = {
@@ -40,4 +53,17 @@ export const SOCIAL_AM = {
   rulesPickType: 'የገበጣ አይነት ምረጥ', rulesStep: (i, n) => `ሕግ ${i} ከ${n}`, rulesPrev: 'ተመለስ', rulesNext: 'ቀጣዩ ሕግ', rulesAll: 'ሁሉንም ሕጎች አሳይ', rulesOne: 'አንድ በአንድ',
   rulesSend: 'እነዚህን ሕጎች ላክ', rulesCopied: 'ሕጎቹ ተቀድተዋል', rulesPlay: 'ይህን አይነት ተጫወት', rulesDone: 'ሕጎቹ እነዚህ ብቻ ናቸው። ለመጫወት ዝግጁ ነህ?',
   rulesHelp: 'ይህ አይነት እንዴት እንደሚሠራ',
+  // v98: Telegram-style contacts, @usernames, blocking, richer chat
+  fxChats: 'ውይይቶች', fxContacts: 'ዕውቂያዎች', fxSearch: 'ስም፣ @የተጠቃሚ ስም ወይም ኮድ ፈልግ', fxSettings: 'ቅንብሮች', fxClose: 'ዝጋ', fxSave: 'አስቀምጥ', fxMore: 'ተጨማሪ',
+  fxUsername: 'የተጠቃሚ ስም', fxSetUsername: '@የተጠቃሚ ስም ምረጥ', fxUsernameHint: 'ከ5 እስከ 20 ፊደል፣ ቁጥር ወይም _። ጓደኞችህ በዚህ ሊያገኙህ ይችላሉ።', fxUsernameSaved: 'የተጠቃሚ ስም ተቀምጧል',
+  fxBio: 'ስለ እኔ', fxBioHint: 'ጓደኞችህ የሚያዩት አጭር መስመር', fxShareLink: 'አገናኝን አጋራ', fxLinkCopied: 'አገናኙ ተቀድቷል',
+  fxPlayers: 'ተጫዋቾች', fxSearching: 'በመፈለግ ላይ…', fxNoPlayers: 'ተጫዋች አልተገኘም', fxAddByCode: (c) => `በኮድ ${c} ጨምር`, fxMutual: (n) => `${n} የጋራ ጓደኛ`,
+  fxAdd: 'ጨምር', fxIsFriend: 'ጓደኛሞች', fxRequested: 'ጥያቄ ተልኳል', fxRespond: 'መልስ ስጥ', fxNote: 'ማስታወሻ ጨምር (አማራጭ)', fxNoteHint: 'ማን እንደሆንክ ንገረው…', fxWantsFriend: 'ጓደኛህ መሆን ይፈልጋል',
+  fxSortSeen: 'መጨረሻ የታየበት', fxSortName: 'ከ አ እስከ ፐ', fxNoChats: 'እስካሁን ውይይት የለም። ዕውቂያ ከፍተህ ሰላም በል።', fxInviteFriends: 'ጓደኞችን ወደ Infinity ጋብዝ', fxMayKnow: 'ልታውቃቸው የምትችላቸው ሰዎች',
+  fxBlock: 'አግድ', fxUnblock: 'እገዳ አንሳ', fxBlockedList: 'የታገዱ ተጫዋቾች', fxNoBlocked: 'ማንንም አላገድክም።', fxBlockConfirm: (n) => `${n}ን ልታግድ ትፈልጋለህ? ጓደኝነታችሁ ያበቃል፣ ጥያቄም ሊልክልህ አይችልም።`, fxBlockedNote: 'ይህን ተጫዋች አግደሃል።',
+  fxPin: 'ውይይቱን ሰካ', fxUnpin: 'መስቀሉን አንሳ', fxMute: 'ድምጽ አጥፋ', fxUnmute: 'ድምጽ መልስ', fxRename: 'ዕውቂያውን ስም ቀይር', fxRenameHint: 'ይህን ስም አንተ ብቻ ታየዋለህ',
+  fxReply: 'መልስ', fxCopy: 'ቅዳ', fxCopied: 'ተቀድቷል', fxEdit: 'አርም', fxDelete: 'ሰርዝ', fxDeleteBoth: 'ለሁለታችሁም ሰርዝ', fxEditing: 'መልእክት በማረም ላይ', fxEdited: 'ተስተካክሏል', fxTyping: 'እየጻፈ ነው…', fxYou: 'አንተ', fxToday: 'ዛሬ', fxYesterday: 'ትናንት',
+  fxSeenJust: 'አሁን ታይቷል', fxSeenMin: (n) => `ከ${n} ደቂቃ በፊት ታይቷል`, fxSeenToday: (h) => `ዛሬ በ${h} ታይቷል`, fxSeenYesterday: (h) => `ትናንት በ${h} ታይቷል`, fxSeenDays: (n) => `ከ${n} ቀን በፊት ታይቷል`,
+  fxSeenRecent: 'በቅርቡ ታይቷል', fxSeenWeek: 'በሳምንት ውስጥ ታይቷል', fxSeenMonth: 'በወር ውስጥ ታይቷል', fxSeenLong: 'ከረጅም ጊዜ በፊት ታይቷል',
+  fxPrivacy: 'ግላዊነት', fxLastSeenWho: 'መጨረሻ የታየሁበትን ማን ያያል', fxEveryone: 'ሁሉም', fxFriendsOnly: 'ጓደኞቼ', fxNobody: 'ማንም', fxLastSeenHint: '“ማንም” ሲመረጥ ጓደኞች “በቅርቡ”፣ “በሳምንት ውስጥ” የሚሉትን ብቻ ያያሉ።',
 };

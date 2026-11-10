@@ -348,7 +348,7 @@ export async function POST(req) {
       case 'friendCode':
         return ok({ code: await Social.friendCode(db, uid) });
       case 'friendRequest':
-        return ok(await Social.sendRequest(db, uid, { code: body.friendCode, to: body.to }));
+        return ok(await Social.sendRequest(db, uid, { code: body.friendCode, to: body.to, username: body.username, note: body.note }));
       case 'friendAccept':
         return ok(await Social.respond(db, uid, body.to, true));
       case 'friendDecline':
@@ -356,7 +356,31 @@ export async function POST(req) {
       case 'friendRemove':
         return ok(await Social.remove(db, uid, body.to));
       case 'chatSend':
-        return ok(await Social.chatSend(db, uid, body.to, body.text));
+        return ok(await Social.chatSend(db, uid, body.to, body.text, body.replyTo));
+      case 'chatEdit':
+        return ok(await Social.chatEdit(db, uid, body.to, body.id, body.text));
+      case 'chatDelete':
+        return ok(await Social.chatDelete(db, uid, body.to, body.id));
+      case 'chatReact':
+        return ok(await Social.chatReact(db, uid, body.to, body.id, body.emoji));
+      case 'chatTyping':
+        return ok(await Social.chatTyping(db, uid, body.to));
+      case 'friendUsername':
+        return ok(await Social.setUsername(db, uid, body.username));
+      case 'friendFind':
+        return ok(await Social.findPlayers(db, uid, body.q));
+      case 'friendSuggest':
+        return ok(await Social.suggestions(db, uid));
+      case 'friendSet':
+        return ok(await Social.contactSet(db, uid, body.to, { pin: body.pin, mute: body.mute, nick: body.nick }));
+      case 'friendBlock':
+        return ok(await Social.block(db, uid, body.to, true));
+      case 'friendUnblock':
+        return ok(await Social.block(db, uid, body.to, false));
+      case 'friendPresence':
+        return ok(await Social.friendPresence(db, uid));
+      case 'profileSet':
+        return ok(await Social.profileSet(db, uid, { bio: body.bio, lastSeen: body.lastSeen }));
       case 'chatRead':
         return ok(await Social.chatRead(db, uid, body.to));
       case 'friendInvite':

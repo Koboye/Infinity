@@ -1,12 +1,14 @@
 'use client';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { doc, getDoc } from 'firebase/firestore';
-import { db, apiCall, serverNow } from '@/lib/firebase';
-import { EMOTES, heroById } from '@/lib/i18n';
+// Friends hub, Telegram style (v98): Chats · Contacts · Requests, a global search (@username, name or 6-letter code),
+// my profile (@username, bio, last-seen privacy), blocked players, people you may know, game invites.
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { apiCall, serverNow } from '@/lib/firebase';
 import { GAMES } from '@/lib/games.js';
-import { isOnline, normalizeFriendCode, pairId } from '@/lib/social';
+import { normalizeFriendCode, normalizeUsername, checkUsername, pairId, displayName } from '@/lib/social';
 import { GameIcon } from './GameIcons';
+import FriendChat, { Avatar, clock, seenText } from './FriendChat';
 
+export { Avatar, FriendChat };
 const ONLINE_GAMES = Object.values(GAMES).filter((g) => !g.offlineOnly && !g.comingSoon);
 const shareOrCopy = async (text, url) => {
   try { if (navigator.share) { await navigator.share({ title: 'Infinity', text, url }); return 'shared'; } } catch (e) { if (e?.name === 'AbortError') return 'cancelled'; }
@@ -14,131 +16,316 @@ const shareOrCopy = async (text, url) => {
 };
 const siteUrl = (params = {}) => { try { const u = new URL(window.location.href); u.search = ''; u.hash = ''; for (const [k, v] of Object.entries(params)) u.searchParams.set(k, v); return u.toString(); } catch { return ''; } };
 export const friendLink = (code) => siteUrl({ friend: code });
+export const usernameLink = (name) => siteUrl({ u: name });
 
-function Avatar({ id, size = 44 }) {
-  const h = heroById(id);
-  return <span className="hero" style={{ background: h.color, width: size, height: size, fontSize: size * 0.55 }} aria-hidden="true">{h.glyph}</span>;
-}
+const preview = (t, uid, m) => (m ? `${m.from === uid ? `${t.fxYou}: ` : ''}${m.text}` : '');
 
-/** Friends hub: my code, friend list with online dots, requests, add by code, chat and invites. */
-export default function FriendsScreen({ t, lang, uid, social, onEnterRoom, openChat, onOpenChat }) {
+/** Friends hub. */
+export default function FriendsScreen({ t, lang, uid, social, myAvatar, onEnterRoom, openChat, onOpenChat }) {
   const { friends, chats } = social;
-  const [tab, setTab] = useState('friends');
-  const [myCode, setMyCode] = useState(null);
-  const [code, setCode] = useState('');
+  const [tab, setTab] = useState('chats');
+  const [q, setQ] = useState('');
+  const [sort, setSort] = useState('seen');
+  const [me, setMe] = useState({ code: null });
+  const myName = friends?.username || null;             // live from friends/{uid}
+  const [seen, setSeen] = useState({});                // uid -> presence view
+  const [found, setFound] = useState(null);            // null = not searching, [] = nothing found
+  const [searching, setSearching] = useState(false);
+  const [people, setPeople] = useState([]);            // people you may know
   const [note, setNote] = useState(''); const [err, setErr] = useState(''); const [busy, setBusy] = useState(false);
-  const [seen, setSeen] = useState({});            // uid -> last-seen ms (presence)
-  const [inviting, setInviting] = useState(null);  // friend uid while the "which game" sheet is open
-  const list = useMemo(() => Object.entries(friends?.list || {}).map(([id, c]) => ({ id, ...c })), [friends]);
+  const [inviting, setInviting] = useState(null);
+  const [settings, setSettings] = useState(false);
+  const [composeFor, setComposeFor] = useState(null);  // player a request (with a note) is being written for
+
+  const list = useMemo(() => Object.entries(friends?.list || {}).map(([id, c]) => ({ id, ...c, label: displayName(friends, id, c) })), [friends]);
   const incoming = useMemo(() => Object.entries(friends?.incoming || {}).map(([id, c]) => ({ id, ...c })), [friends]);
   const outgoing = useMemo(() => Object.entries(friends?.outgoing || {}).map(([id, c]) => ({ id, ...c })), [friends]);
-  const unread = (fid) => chats.find((c) => c.id === pairId(uid, fid))?.unread?.[uid] || 0;
+  const chatOf = (fid) => chats.find((c) => c.id === pairId(uid, fid));
 
   const call = useCallback(async (body, ok) => {
     setBusy(true); setErr(''); setNote('');
     try { const r = await apiCall(body); ok?.(r); return r; } catch (e) { setErr(e.message); return null; } finally { setBusy(false); }
   }, []);
+  const toast = (m) => { setNote(m); setTimeout(() => setNote(''), 2200); };
 
-  useEffect(() => { let live = true; apiCall({ action: 'friendCode' }).then((r) => live && setMyCode(r.code)).catch(() => {}); return () => { live = false; }; }, []);
+  useEffect(() => { let live = true; apiCall({ action: 'friendCode' }).then((r) => live && setMe((m) => ({ ...m, code: r.code }))).catch(() => {}); return () => { live = false; }; }, []);
 
-  // presence of every friend, refreshed every 30 s while this screen is open
-  const ids = list.map((f) => f.id).join(',');
+  // last seen of every friend (worded by their privacy choice on the server), refreshed every 30 s while this screen is open
+  const hasFriends = list.length > 0;
   useEffect(() => {
-    if (!ids) return undefined;
+    if (!hasFriends) return undefined;
     let live = true;
-    const load = async () => {
-      const out = {};
-      await Promise.all(ids.split(',').slice(0, 50).map(async (id) => { try { const s = await getDoc(doc(db, 'presence', id)); if (s.exists()) out[id] = s.data().at; } catch { /* no presence yet */ } }));
-      if (live) setSeen(out);
-    };
+    const load = () => apiCall({ action: 'friendPresence' }, { retries: 0 }).then((r) => live && setSeen(r.seen || {})).catch(() => {});
     load(); const id = setInterval(load, 30000);
     return () => { live = false; clearInterval(id); };
-  }, [ids]);
+  }, [hasFriends]);
 
-  const addByCode = async (e) => {
-    e?.preventDefault();
-    const c = normalizeFriendCode(code); if (c.length !== 6) return;
-    const r = await call({ action: 'friendRequest', friendCode: c });
+  useEffect(() => { if (tab === 'requests') apiCall({ action: 'friendSuggest' }, { retries: 0 }).then((r) => setPeople(r.people || [])).catch(() => {}); }, [tab, list.length]);
+
+  // global search: 350 ms after the last key. "@name" or 3+ letters → players by username; 6 characters also offers "add by code".
+  const query = q.trim();
+  const handle = normalizeUsername(query);
+  useEffect(() => {
+    if (handle.length < 3) { setFound(null); setSearching(false); return undefined; }
+    setSearching(true);
+    let live = true;
+    const id = setTimeout(() => apiCall({ action: 'friendFind', q: handle }, { retries: 0 }).then((r) => { if (live) { setFound(r.results || []); setSearching(false); } }).catch(() => { if (live) { setFound([]); setSearching(false); } }), 350);
+    return () => { live = false; clearTimeout(id); };
+  }, [handle]);
+
+  const sendRequest = async (player, text) => {
+    const r = await call({ action: 'friendRequest', to: player.id, note: text || undefined });
     if (!r) return;
-    setCode('');
-    setNote(r.result === 'accepted' ? t.frNow(r.name) : r.result === 'already' ? t.frAlready : r.result === 'pending' ? t.frPending : t.frSent(r.name));
+    setComposeFor(null);
+    toast(r.result === 'accepted' ? t.frNow(r.name) : r.result === 'already' ? t.frAlready : r.result === 'pending' ? t.frPending : t.frSent(r.name));
+    setFound((f) => f && f.map((x) => (x.id === player.id ? { ...x, status: r.result === 'accepted' ? 'friend' : 'outgoing' } : x)));
+    setPeople((p) => p.filter((x) => x.id !== player.id));
   };
-  const shareCode = async () => {
-    const how = await shareOrCopy(t.addMeText(myCode), friendLink(myCode));
-    if (how === 'copied') { setNote(t.codeCopied); setTimeout(() => setNote(''), 1800); }
+  const addByCode = async () => {
+    const r = await call({ action: 'friendRequest', friendCode: normalizeFriendCode(query) });
+    if (r) { setQ(''); toast(r.result === 'accepted' ? t.frNow(r.name) : r.result === 'already' ? t.frAlready : r.result === 'pending' ? t.frPending : t.frSent(r.name)); }
+  };
+  const shareMe = async () => {
+    const link = myName ? usernameLink(myName) : friendLink(me.code);
+    const how = await shareOrCopy(t.addMeText(myName ? `@${myName}` : me.code), link);
+    if (how === 'copied') toast(t.fxLinkCopied);
   };
   const invite = async (friend, game, ruleset) => {
     const r = await call({ action: 'friendInvite', to: friend.id, game, ruleset, fee: 0 });
     if (r?.code) { setInviting(null); onEnterRoom(r.code); }
   };
 
+  const mySeen = (id) => seen[id];
+  const filteredList = useMemo(() => {
+    const needle = query.toLowerCase().replace(/^@/, '');
+    let rows = list.filter((f) => !needle || f.label.toLowerCase().includes(needle) || f.name.toLowerCase().includes(needle) || (f.username || '').includes(needle));
+    const weight = (id) => { const v = seen[id]; return v?.kind === 'online' ? Infinity : (v?.at || 0); };
+    rows = rows.sort((a, b) => (friends?.pinned?.[b.id] ? 1 : 0) - (friends?.pinned?.[a.id] ? 1 : 0)
+      || (sort === 'seen' ? weight(b.id) - weight(a.id) : 0) || a.label.localeCompare(b.label));
+    return rows;
+  }, [list, query, sort, seen, friends]);   // eslint-disable-line react-hooks/exhaustive-deps
+
+  const convos = useMemo(() => {
+    const needle = query.toLowerCase().replace(/^@/, '');
+    return list.map((f) => ({ f, chat: chatOf(f.id) })).filter(({ chat }) => chat?.msgs?.length)
+      .filter(({ f }) => !needle || f.label.toLowerCase().includes(needle))
+      .sort((a, b) => (friends?.pinned?.[b.f.id] ? 1 : 0) - (friends?.pinned?.[a.f.id] ? 1 : 0) || (b.chat.updatedAt || 0) - (a.chat.updatedAt || 0));
+  }, [list, chats, query, friends]);   // eslint-disable-line react-hooks/exhaustive-deps
+
   const chatFriend = openChat ? list.find((f) => f.id === openChat) : null;
-  if (chatFriend) return <FriendChat t={t} lang={lang} uid={uid} friend={chatFriend} chat={chats.find((c) => c.id === pairId(uid, chatFriend.id))} online={isOnline(seen[chatFriend.id], serverNow())}
-    onBack={() => onOpenChat(null)} onInvite={() => setInviting(chatFriend.id)} sheet={inviting === chatFriend.id ? <InviteSheet t={t} friend={chatFriend} busy={busy} onClose={() => setInviting(null)} onPick={(g, rs) => invite(chatFriend, g, rs)} /> : null} />;
+  if (chatFriend) {
+    return <FriendChat t={t} lang={lang} uid={uid} friend={chatFriend} name={chatFriend.label} chat={chatOf(chatFriend.id)} view={mySeen(chatFriend.id)}
+      pinned={!!friends?.pinned?.[chatFriend.id]} muted={!!friends?.muted?.[chatFriend.id]} onBack={() => onOpenChat(null)} onInvite={() => setInviting(chatFriend.id)}
+      onChanged={() => setSeen({})} />;
+  }
+
+  const unreadOf = (fid) => chatOf(fid)?.unread?.[uid] || 0;
+  const tabs = [['chats', t.fxChats, 0], ['contacts', `${t.fxContacts}`, 0], ['requests', t.frRequests, incoming.length]];
+  const searchingNow = query.length > 0 && tab !== 'requests';
 
   return (
-    <div className="panel fr-screen">
-      <div className="fr-mine">
-        <span className="fr-label">{t.myFriendCode}</span>
-        <div className="code fr-code" aria-label={t.myFriendCode}>{myCode || '······'}</div>
-        <p className="muted small">{t.friendCodeHint}</p>
-        <button className="btn primary wide" onClick={shareCode} disabled={!myCode}>📨 {t.shareMyCode}</button>
-      </div>
+    <div className="panel fx-screen">
+      <section className="fx-me" aria-label={t.profile}>
+        <Avatar id={myAvatar || 'lion'} size={52} />
+        <span className="fx-me-txt">
+          <button className="fx-me-name" onClick={() => setSettings(true)}>{myName ? `@${myName}` : t.fxSetUsername}</button>
+          <small>{friends?.bio || `${t.myFriendCode}: ${me.code || '······'}`}</small>
+        </span>
+        <button className="icon-btn" onClick={shareMe} aria-label={t.fxShareLink} disabled={!me.code}>🔗</button>
+        <button className="icon-btn" onClick={() => setSettings(true)} aria-label={t.fxSettings}>⚙</button>
+      </section>
 
-      <div className="seg fr-tabs" role="tablist">
-        {[['friends', `${t.friends} · ${list.length}`], ['requests', `${t.frRequests}${incoming.length ? ` · ${incoming.length}` : ''}`], ['add', t.addFriend]].map(([id, label]) => (
-          <button key={id} role="tab" aria-selected={tab === id} className={tab === id ? 'on' : ''} onClick={() => { setTab(id); setErr(''); setNote(''); }}>{label}</button>
+      <label className="fx-search">
+        <span aria-hidden="true">⌕</span>
+        <input value={q} onChange={(e) => setQ(e.target.value.slice(0, 40))} placeholder={t.fxSearch} aria-label={t.fxSearch} autoComplete="off" autoCapitalize="none" />
+        {q && <button type="button" className="fx-clear" onClick={() => setQ('')} aria-label={t.cancel}>✕</button>}
+      </label>
+
+      <div className="fx-tabs" role="tablist">
+        {tabs.map(([id, label, n]) => (
+          <button key={id} role="tab" aria-selected={tab === id} className={tab === id ? 'on' : ''} onClick={() => { setTab(id); setErr(''); }}>{label}{n > 0 && <em className="badge">{n}</em>}</button>
         ))}
       </div>
 
-      {tab === 'friends' && (list.length === 0
-        ? <p className="muted center-text">{t.frNone}</p>
-        : <ul className="fr-list">
-          {list.map((f) => {
-            const on = isOnline(seen[f.id], serverNow()); const n = unread(f.id);
+      {/* ── global search results ── */}
+      {query.length > 0 && handle.length >= 3 && tab !== 'requests' && (
+        <section className="fx-block" aria-label={t.fxPlayers}>
+          <h4>{t.fxPlayers}</h4>
+          {searching && <p className="muted small">{t.fxSearching}</p>}
+          {normalizeFriendCode(query).length === 6 && /^[A-Za-z0-9]{6}$/.test(query.replace(/\s/g, '')) && (
+            <div className="fx-row"><span className="fx-ico">#</span><span className="fx-name"><b>{t.fxAddByCode(normalizeFriendCode(query))}</b></span><button className="btn primary sm" disabled={busy} onClick={addByCode}>{t.fxAdd}</button></div>
+          )}
+          {found && found.length === 0 && !searching && <p className="muted small">{t.fxNoPlayers}</p>}
+          {(found || []).map((p) => <PlayerRow key={p.id} t={t} p={p} busy={busy} onAdd={() => setComposeFor(p)} onOpen={() => { setQ(''); onOpenChat(p.id); }} />)}
+        </section>
+      )}
+
+      {/* ── chats ── */}
+      {tab === 'chats' && (convos.length === 0
+        ? (handle.length >= 3 && searchingNow ? null : <div className="fx-empty"><p className="muted">{searchingNow ? t.fxNoPlayers : t.fxNoChats}</p>{!searchingNow && <button className="btn primary" onClick={shareMe} disabled={!me.code}>🔗 {t.fxInviteFriends}</button>}</div>)
+        : <ul className="fx-list">
+          {convos.map(({ f, chat }) => {
+            const last = chat.msgs[chat.msgs.length - 1]; const n = unreadOf(f.id); const muted = !!friends?.muted?.[f.id];
+            const typingNow = Date.now() - (chat.typing?.[f.id] || 0) < 6000;
             return (
-              <li key={f.id} className="fr-row">
-                <span className="fr-av"><Avatar id={f.avatar} /><i className={`dot${on ? ' on' : ''}`} title={on ? t.frOnline : t.frOffline} /></span>
-                <span className="fr-name"><b>{f.name}</b><small>{on ? t.frOnline : t.frOffline}</small></span>
-                <button className="icon-btn fr-act" aria-label={`${t.chat}: ${f.name}`} onClick={() => onOpenChat(f.id)}>💬{n > 0 && <em className="badge">{n > 9 ? '9+' : n}</em>}</button>
-                <button className="icon-btn fr-act gold" aria-label={`${t.inviteToPlay}: ${f.name}`} onClick={() => setInviting(f.id)}>🎮</button>
-              </li>
+              <li key={f.id}><button className="fx-row fx-chatrow" onClick={() => onOpenChat(f.id)}>
+                <span className="fx-av"><Avatar id={f.avatar} size={48} /><i className={`dot${mySeen(f.id)?.kind === 'online' ? ' on' : ''}`} /></span>
+                <span className="fx-name">
+                  <b>{friends?.pinned?.[f.id] && <span className="fx-pin" aria-hidden="true">📌</span>}{f.label}{muted && <span aria-hidden="true"> 🔕</span>}</b>
+                  <small className={typingNow ? 'typing' : ''}>{typingNow ? t.fxTyping : preview(t, uid, last)}</small>
+                </span>
+                <span className="fx-end"><time>{clock(last.at, lang)}</time>{n > 0 && <em className={`badge${muted ? ' mute' : ''}`}>{n > 99 ? '99+' : n}</em>}</span>
+              </button></li>
             );
           })}
         </ul>)}
 
+      {/* ── contacts ── */}
+      {tab === 'contacts' && (
+        <>
+          <div className="fx-sort" role="group" aria-label={t.fxContacts}>
+            <span>{list.length} {t.friends.toLowerCase()}</span>
+            <span>{[['seen', t.fxSortSeen], ['name', t.fxSortName]].map(([id, label]) => <button key={id} aria-pressed={sort === id} className={sort === id ? 'on' : ''} onClick={() => setSort(id)}>{label}</button>)}</span>
+          </div>
+          {filteredList.length === 0
+            ? <div className="fx-empty"><p className="muted">{list.length === 0 ? t.frNone : t.fxNoPlayers}</p></div>
+            : <ul className="fx-list">
+              {filteredList.map((f) => {
+                const v = mySeen(f.id); const n = unreadOf(f.id);
+                return (
+                  <li key={f.id} className="fx-row">
+                    <button className="fx-rowmain" onClick={() => onOpenChat(f.id)}>
+                      <span className="fx-av"><Avatar id={f.avatar} size={46} /><i className={`dot${v?.kind === 'online' ? ' on' : ''}`} /></span>
+                      <span className="fx-name"><b>{friends?.pinned?.[f.id] && <span className="fx-pin" aria-hidden="true">📌</span>}{f.label}</b><small className={v?.kind === 'online' ? 'on' : ''}>{seenText(t, lang, v)}</small></span>
+                      {n > 0 && <em className="badge">{n > 9 ? '9+' : n}</em>}
+                    </button>
+                    <button className="icon-btn fx-play" aria-label={`${t.inviteToPlay}: ${f.label}`} onClick={() => setInviting(f.id)}>🎮</button>
+                  </li>
+                );
+              })}
+            </ul>}
+        </>
+      )}
+
+      {/* ── requests ── */}
       {tab === 'requests' && (
-        <div className="fr-reqs">
+        <div className="fx-reqs">
           {incoming.length === 0 && outgoing.length === 0 && <p className="muted center-text">{t.frNoRequests}</p>}
           {incoming.map((r) => (
-            <div key={r.id} className="fr-row">
-              <span className="fr-av"><Avatar id={r.avatar} /></span>
-              <span className="fr-name"><b>{r.name}</b></span>
-              <button className="btn primary sm" disabled={busy} onClick={() => call({ action: 'friendAccept', to: r.id })}>{t.frAccept}</button>
-              <button className="btn ghost sm" disabled={busy} onClick={() => call({ action: 'friendDecline', to: r.id })}>{t.frDecline}</button>
+            <div key={r.id} className="fx-req">
+              <div className="fx-row">
+                <span className="fx-av"><Avatar id={r.avatar} size={46} /></span>
+                <span className="fx-name"><b>{r.name}{r.username && <small> @{r.username}</small>}</b><small>{t.fxWantsFriend}</small></span>
+              </div>
+              {r.note && <p className="fx-notebox">“{r.note}”</p>}
+              <div className="fx-req-act">
+                <button className="btn primary sm" disabled={busy} onClick={() => call({ action: 'friendAccept', to: r.id })}>{t.frAccept}</button>
+                <button className="btn ghost sm" disabled={busy} onClick={() => call({ action: 'friendDecline', to: r.id })}>{t.frDecline}</button>
+                <button className="btn ghost sm" disabled={busy} onClick={() => call({ action: 'friendBlock', to: r.id })}>{t.fxBlock}</button>
+              </div>
             </div>
           ))}
           {outgoing.map((r) => (
-            <div key={r.id} className="fr-row">
-              <span className="fr-av"><Avatar id={r.avatar} /></span>
-              <span className="fr-name"><b>{r.name}</b><small>{t.frWaitingFor}</small></span>
+            <div key={r.id} className="fx-row">
+              <span className="fx-av"><Avatar id={r.avatar} size={46} /></span>
+              <span className="fx-name"><b>{r.name}</b><small>{t.frWaitingFor}</small></span>
               <button className="btn ghost sm" disabled={busy} onClick={() => call({ action: 'friendRemove', to: r.id })}>{t.frCancel}</button>
             </div>
           ))}
+          {people.length > 0 && (
+            <section className="fx-block"><h4>{t.fxMayKnow}</h4>
+              {people.map((p) => <PlayerRow key={p.id} t={t} p={{ ...p, status: 'none' }} busy={busy} onAdd={() => setComposeFor(p)} />)}
+            </section>
+          )}
         </div>
       )}
 
-      {tab === 'add' && (
-        <form className="joinrow" onSubmit={addByCode}>
-          <input value={code} onChange={(e) => setCode(normalizeFriendCode(e.target.value))} placeholder={t.enterFriendCode} aria-label={t.enterFriendCode} autoCapitalize="characters" autoComplete="off" />
-          <button className="btn primary" disabled={busy || code.length !== 6}>{t.sendRequest}</button>
-        </form>
-      )}
-
-      {note && <p className="fr-note" role="status">{note}</p>}
+      {note && <p className="fx-note" role="status">{note}</p>}
       {err && <p className="err" role="alert">{err}</p>}
 
+      {composeFor && <RequestSheet t={t} player={composeFor} busy={busy} onClose={() => setComposeFor(null)} onSend={(text) => sendRequest(composeFor, text)} />}
+      {settings && <SettingsSheet t={t} friends={friends} call={call} onClose={() => setSettings(false)} />}
       {inviting && list.find((f) => f.id === inviting) && <InviteSheet t={t} friend={list.find((f) => f.id === inviting)} busy={busy} onClose={() => setInviting(null)} onPick={(g, rs) => invite(list.find((f) => f.id === inviting), g, rs)} />}
+    </div>
+  );
+}
+
+function PlayerRow({ t, p, busy, onAdd, onOpen }) {
+  return (
+    <div className="fx-row">
+      <span className="fx-av"><Avatar id={p.avatar} size={44} /></span>
+      <span className="fx-name"><b>{p.name}</b><small>{p.username ? `@${p.username}` : ''}{p.mutual > 0 ? `${p.username ? ' · ' : ''}${t.fxMutual(p.mutual)}` : ''}</small></span>
+      {p.status === 'friend' && (onOpen ? <button className="btn ghost sm" onClick={onOpen}>{t.chat}</button> : <span className="fx-tag">{t.fxIsFriend}</span>)}
+      {p.status === 'outgoing' && <span className="fx-tag">{t.fxRequested}</span>}
+      {p.status === 'incoming' && <span className="fx-tag gold">{t.fxRespond}</span>}
+      {p.status === 'none' && <button className="btn primary sm" disabled={busy} onClick={onAdd}>{t.fxAdd}</button>}
+    </div>
+  );
+}
+
+/** A request can carry a short note, so the other person knows who is asking. */
+function RequestSheet({ t, player, busy, onClose, onSend }) {
+  const [text, setText] = useState('');
+  return (
+    <div className="overlay fx-sheet-bg" role="dialog" aria-modal="true" aria-label={t.fxNote} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <form className="fx-sheet fx-form" onSubmit={(e) => { e.preventDefault(); onSend(text.trim()); }}>
+        <span className="fx-sheet-who"><Avatar id={player.avatar} size={52} /><b>{player.name}</b>{player.username && <small>@{player.username}</small>}</span>
+        <label className="fx-field"><span>{t.fxNote}</span>
+          <input value={text} onChange={(e) => setText(e.target.value.slice(0, 100))} placeholder={t.fxNoteHint} maxLength={100} autoFocus />
+        </label>
+        <div className="result-actions"><button type="button" className="btn" onClick={onClose}>{t.cancel}</button><button className="btn primary" disabled={busy}>{t.sendRequest}</button></div>
+      </form>
+    </div>
+  );
+}
+
+/** My @username, bio, who can see my last seen, and the people I blocked. */
+function SettingsSheet({ t, friends, call, onClose }) {
+  const [name, setName] = useState(friends?.username || '');
+  const [bio, setBio] = useState(friends?.bio || '');
+  const [msg, setMsg] = useState('');
+  const check = name ? checkUsername(name) : { ok: true };
+  const blocked = Object.entries(friends?.blocked || {}).map(([id, c]) => ({ id, ...c }));
+  const lastSeen = friends?.privacy?.lastSeen || 'everyone';
+  const saveName = async (e) => { e.preventDefault(); const r = await call({ action: 'friendUsername', username: name }); if (r) { setName(r.username); setMsg(t.fxUsernameSaved); } };
+  return (
+    <div className="overlay fx-sheet-bg" role="dialog" aria-modal="true" aria-label={t.fxSettings} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="fx-sheet fx-settings">
+        <header><b>{t.fxSettings}</b><button className="icon-btn sm" onClick={onClose} aria-label={t.fxClose}>✕</button></header>
+
+        <form className="fx-form" onSubmit={saveName}>
+          <label className="fx-field"><span>{t.fxUsername}</span>
+            <span className="fx-at"><i>@</i><input value={name} onChange={(e) => setName(normalizeUsername(e.target.value))} placeholder="username" autoCapitalize="none" autoComplete="off" /></span>
+          </label>
+          <small className={check.ok ? 'muted' : 'bad'}>{check.ok ? t.fxUsernameHint : check.error}</small>
+          <button className="btn primary sm" disabled={!name || !check.ok}>{t.fxSave}</button>
+        </form>
+
+        <form className="fx-form" onSubmit={async (e) => { e.preventDefault(); const r = await call({ action: 'profileSet', bio }); if (r) setMsg(t.fxSave + ' ✓'); }}>
+          <label className="fx-field"><span>{t.fxBio}</span><input value={bio} onChange={(e) => setBio(e.target.value.slice(0, 70))} placeholder={t.fxBioHint} maxLength={70} /></label>
+          <button className="btn ghost sm">{t.fxSave}</button>
+        </form>
+
+        <div className="fx-form">
+          <span className="fx-field"><span>{t.fxLastSeenWho}</span></span>
+          <div className="fx-seg" role="radiogroup" aria-label={t.fxPrivacy}>
+            {[['everyone', t.fxEveryone], ['friends', t.fxFriendsOnly], ['nobody', t.fxNobody]].map(([id, label]) => (
+              <button key={id} role="radio" aria-checked={lastSeen === id} className={lastSeen === id ? 'on' : ''} onClick={() => call({ action: 'profileSet', lastSeen: id })}>{label}</button>
+            ))}
+          </div>
+          <small className="muted">{t.fxLastSeenHint}</small>
+        </div>
+
+        <div className="fx-form">
+          <span className="fx-field"><span>{t.fxBlockedList}</span></span>
+          {blocked.length === 0 && <small className="muted">{t.fxNoBlocked}</small>}
+          {blocked.map((b) => (
+            <div key={b.id} className="fx-row"><span className="fx-av"><Avatar id={b.avatar} size={38} /></span><span className="fx-name"><b>{b.name}</b></span>
+              <button className="btn ghost sm" onClick={() => call({ action: 'friendUnblock', to: b.id })}>{t.fxUnblock}</button></div>
+          ))}
+        </div>
+        {msg && <p className="fx-note" role="status">{msg}</p>}
+      </div>
     </div>
   );
 }
@@ -172,44 +359,6 @@ export function InviteSheet({ t, friend, busy, onClose, onPick }) {
           <button className="btn primary" disabled={busy} onClick={() => onPick(game, rs)}>{t.inviteToPlay}</button>
         </div>
       </div>
-    </div>
-  );
-}
-
-/** One-to-one chat with a friend. */
-export function FriendChat({ t, lang, uid, friend, chat, online, onBack, onInvite, sheet }) {
-  const [text, setText] = useState(''); const [busy, setBusy] = useState(false); const [err, setErr] = useState('');
-  const end = useRef(null);
-  const msgs = chat?.msgs || [];
-  const unread = chat?.unread?.[uid] || 0;
-  useEffect(() => { end.current?.scrollIntoView?.({ block: 'end' }); }, [msgs.length]);
-  useEffect(() => { if (unread > 0) apiCall({ action: 'chatRead', to: friend.id }, { retries: 0 }).catch(() => {}); }, [unread, friend.id]);
-  const send = async (value) => {
-    const v = (value ?? text).trim(); if (!v || busy) return;
-    setBusy(true); setErr('');
-    try { await apiCall({ action: 'chatSend', to: friend.id, text: v }); if (value === undefined) setText(''); } catch (e) { setErr(e.message); }
-    setBusy(false);
-  };
-  return (
-    <div className="panel fr-chat">
-      <div className="fr-chat-head">
-        <button className="icon-btn" onClick={onBack} aria-label={t.backHome}>‹</button>
-        <span className="fr-av"><Avatar id={friend.avatar} size={38} /><i className={`dot${online ? ' on' : ''}`} /></span>
-        <span className="fr-name"><b>{friend.name}</b><small>{online ? t.frOnline : t.frOffline}</small></span>
-        <button className="icon-btn fr-act gold" onClick={onInvite} aria-label={t.inviteToPlay}>🎮</button>
-      </div>
-      <div className="fr-msgs" role="log" aria-live="polite">
-        {msgs.length === 0 && <p className="muted center-text">{t.chatEmpty}</p>}
-        {msgs.map((m, i) => <div key={`${m.at}-${i}`} className={`bubble${m.from === uid ? ' me' : ''}`}><span>{m.text}</span></div>)}
-        <div ref={end} />
-      </div>
-      <div className="emote-row">{EMOTES.map((e) => <button key={e.id} className="chip" onClick={() => send(e[lang] || e.en)}>{e[lang] || e.en}</button>)}</div>
-      <form className="joinrow fr-send" onSubmit={(e) => { e.preventDefault(); send(); }}>
-        <input value={text} onChange={(e) => setText(e.target.value.slice(0, 300))} placeholder={t.chatWrite} aria-label={t.chatWrite} maxLength={300} autoComplete="off" />
-        <button className="btn primary" disabled={busy || !text.trim()}>{t.chatSend}</button>
-      </form>
-      {err && <p className="err" role="alert">{err}</p>}
-      {sheet}
     </div>
   );
 }
