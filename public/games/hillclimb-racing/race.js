@@ -172,7 +172,7 @@
   /* ---------- the race ---------- */
   function beginRace() {
     if (room.equal) eqApply(); else eqRestore();
-    view = 'none'; closeOverlay(); ghosts = {}; me = { fin: false, safe: 0 }; closing = false; lastSp = null; lastDraw = 0;
+    view = 'none'; closeOverlay(); ghosts = {}; me = { fin: false, safe: 0 }; closing = false; lastSp = null; lastSent = ''; lastDraw = 0;
     start(room.world, room.level);                              // the game's own level start (same seed for everyone)
     R.on = true; R.hold = function () { return sNow() < room.startAt; };
     inp.gas = 0; inp.brake = 0;
@@ -190,6 +190,7 @@
   }
   function applyCar(u, d) {   // one update of another racer's car (from Firestore or from the nearby link)
     if (u === user.uid) return; var gh = ghosts[u];
+    if (room && room.startAt && !(d.t >= room.startAt - 10000)) return;   // a car left over from the previous round (the server keeps old car documents): not part of this race
     if (!gh) gh = ghosts[u] = { x: d.x, y: d.y, a: d.a, vx: 0, vy: 0, av: 0, sp0: d.s0 || 0, sp1: d.s1 || 0, d: 0 };
     if (gh.t != null && d.t <= gh.t) return;   // an old packet that arrived late
     if (gh.ts0 == null) { gh.ts0 = d.s0 || 0; gh.ts1 = d.s1 || 0; }
@@ -216,7 +217,7 @@
     if (!R.on || !car || run.over || R.hold()) return;
     if (car.air < 0.05 && Math.abs(Math.sin(car.a)) < 0.45 && !inGorge(car.x)) me.safe = Math.max(me.safe, car.x - 40);
   }
-  var lastSp = null, legacy = false, sendFails = 0, linkMsgAt = 0;
+  var lastSp = null, legacy = false, sendFails = 0, linkMsgAt = 0, lastSent = '', lastSentAt = 0;
   function linkErr(m) { if (Date.now() - linkMsgAt < 20000) return; linkMsgAt = Date.now(); try { toast(m); } catch (e) {} }   // live link problems are shown, not swallowed
   function sendCar() {
     if (!R.on || !car || !room) return; var r = function (v) { return Math.round(v * 10) / 10; }, sp = car.sp || [0, 0], ws = car.ws || [0, 0];
@@ -224,6 +225,9 @@
     var om = [0, 0]; if (lastSp) { var dt = (nowp - lastSp.t) / 1000; if (dt > 0.02 && dt < 1) om = [(sp[0] - lastSp.a[0]) / dt, (sp[1] - lastSp.a[1]) / dt]; } lastSp = { t: nowp, a: [sp[0], sp[1]] };
     var pkt = { x: r(car.x), y: r(car.y), a: Math.round(car.a * 100) / 100, s0: Math.round(sp[0] * 100) / 100, s1: Math.round(sp[1] * 100) / 100, o0: r(om[0]), o1: r(om[1]), w0: r(ws[0]), w1: r(ws[1]), vx: Math.round(car.vx), vy: Math.round(car.vy), av: Math.round((car.w || 0) * 100) / 100, v: S.veh, g: car.air > 0.12 ? 1 : 0, f: me.fin ? 1 : 0, t: sNow(), d: Math.round(d * 1000) / 1000 };
     if (R.p2p) { R.p2p.sendCar(user.uid, pkt); return; }
+    var sig = pkt.x + '|' + pkt.y + '|' + pkt.a + '|' + pkt.s0 + '|' + pkt.s1 + '|' + pkt.f + '|' + pkt.g;
+    if (sig === lastSent && nowp - lastSentAt < 700) return;   // standing still (countdown, finished): no need to write 10 times a second
+    lastSent = sig; lastSentAt = nowp;
     if (legacy) { ['o0', 'o1', 'vx', 'vy', 'av'].forEach(function (k) { delete pkt[k]; }); }   // rules from before v3.16 still deployed: send the old packet
     Net.roomRef(code).collection('cars').doc(user.uid).set(pkt).then(function () { sendFails = 0; }).catch(function (e) { if (!legacy && e && e.code === 'permission-denied') { legacy = true; return; } if (++sendFails === 8) linkErr('Your car is not reaching the others (' + ((e && e.code) || 'error') + ')'); });
   }

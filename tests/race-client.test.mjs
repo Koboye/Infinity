@@ -13,3 +13,8 @@ const allowed = rules.match(/hasOnly\(\[('x'[^\]]*)\]\)/)[1].match(/'(\w+)'/g).m
 const pkt = src.match(/var pkt = \{([^}]*)\}/)[1].match(/(\w+):/g).map((k) => k.replace(':', ''));
 for (const k of pkt) assert.ok(allowed.includes(k), `rules allow packet key ${k}`);
 console.log('race client ok');
+// cars left in Firestore by the previous round must be ignored, and a standing-still car must not flood Firestore
+assert.ok(/room\.startAt - 10000/.test(src), 'stale cars from the previous round are ignored');
+assert.ok(/nowp - lastSentAt < 700/.test(src), 'idle cars write less often');
+assert.ok(/lastSent = ''/.test(src), 'first packet of a race is always sent');
+console.log('race stale/idle ok');
