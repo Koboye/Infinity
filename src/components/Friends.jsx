@@ -6,6 +6,7 @@ import { GAMES } from '@/lib/games.js';
 import { isOnline, isTyping, lastSeenParts, normalizeFriendCode, pairId, REACTIONS } from '@/lib/social';
 import { GameIcon } from './GameIcons';
 import { EMOJI_TABS, splitEmoji, RECENT_KEY, pushRecent } from '@/lib/emoji.js';
+import { groupFlags, isEmojiOnly, parseRich, safeUrl } from '@/lib/chatText.js';
 
 const THEMES = ['classic', 'wa-light', 'wa-dark'];   // chat look: our own, WhatsApp light, WhatsApp dark
 const THEME_KEY = 'afro.chatTheme';
@@ -261,6 +262,19 @@ export function InviteSheet({ t, friend, busy, onClose, onPick }) {
   );
 }
 
+/** Message text with WhatsApp formatting (*bold* _italic_ ~strike~ `mono`) and tappable web links. Rendered as React elements, never as HTML. */
+function RichText({ text }) {
+  return parseRich(text).map((p, i) => {
+    if (p.t === 'text') return <React.Fragment key={i}>{p.v}</React.Fragment>;
+    if (p.t === 'bold') return <strong key={i}>{p.v}</strong>;
+    if (p.t === 'italic') return <em key={i}>{p.v}</em>;
+    if (p.t === 'strike') return <s key={i}>{p.v}</s>;
+    if (p.t === 'mono') return <code key={i} className="tg-mono">{p.v}</code>;
+    const url = safeUrl(p.v);
+    return url ? <span key={i} role="link" tabIndex={0} className="tg-link" onClick={(e) => { e.stopPropagation(); window.open(url, '_blank', 'noopener,noreferrer'); }} onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); window.open(url, '_blank', 'noopener,noreferrer'); } }}>{p.v}</span> : <React.Fragment key={i}>{p.v}</React.Fragment>;
+  });
+}
+
 /** One-to-one chat: bubbles with reply quotes, edited mark, ticks, reactions, typing and last seen. Tap a bubble for its actions. */
 export function FriendChat({ t, lang, uid, friend, chat, seenAt, social, onBack, onInvite, onUnfriend, sheet }) {
   const [text, setText] = useState(''); const [busy, setBusy] = useState(false); const [err, setErr] = useState('');
@@ -269,11 +283,11 @@ export function FriendChat({ t, lang, uid, friend, chat, seenAt, social, onBack,
   const [editing, setEditing] = useState(null); // message being edited
   const [pending, setPending] = useState([]);   // lines sent but not yet echoed back (shown at once, like Telegram)
   const [more, setMore] = useState(false);
-  const [theme, setTheme] = useState('classic');
+  const [theme, setTheme] = useState('wa-light');
   const [emojiOpen, setEmojiOpen] = useState(false); const [etab, setEtab] = useState('smile'); const [recent, setRecent] = useState([]);
   const [down, setDown] = useState(0);              // floating "jump to latest" button: number of new lines while scrolled up
   const input = useRef(null); const seenLen = useRef(0);
-  useEffect(() => { const v = store.get(THEME_KEY, 'classic'); if (THEMES.includes(v)) setTheme(v); try { setRecent(JSON.parse(store.get(RECENT_KEY, '[]')).slice(0, 24)); } catch { /* ignore */ } }, []);
+  useEffect(() => { const dark = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-color-scheme: dark)').matches; const v = store.get(THEME_KEY, dark ? 'wa-dark' : 'wa-light'); if (THEMES.includes(v)) setTheme(v); try { setRecent(JSON.parse(store.get(RECENT_KEY, '[]')).slice(0, 24)); } catch { /* ignore */ } }, []);
   const nextTheme = () => { const n = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length]; setTheme(n); store.set(THEME_KEY, n); setMore(false); };
   const addEmoji = (e) => {
     const el = input.current; const a = el?.selectionStart ?? text.length, b = el?.selectionEnd ?? text.length;
@@ -323,6 +337,19 @@ export function FriendChat({ t, lang, uid, friend, chat, seenAt, social, onBack,
   const copy = async (m) => { setMenu(null); try { await navigator.clipboard.writeText(m.text); } catch { /* ignore */ } };
   const jump = (id) => { const el = box.current?.querySelector(`[data-mid="${id}"]`); if (el) { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1200); } };
   const menuMsg = menu ? byId[menu] : null;
+  const flags = useMemo(() => groupFlags(msgs), [msgs]);
+  // swipe a message to the right to reply (like WhatsApp): only a mostly-horizontal drag counts, vertical scrolling is untouched
+  const sw = useRef(null); const SWIPE = 56;
+  const swReset = (s, row) => { if (s?.el) { s.el.style.transition = 'transform .18s ease'; s.el.style.transform = ''; } if (row) delete row.dataset.swipe; };
+  const swStart = (m) => (e) => { if (m.pending || m.deleted || e.touches.length !== 1) { sw.current = null; return; } const c = e.touches[0]; sw.current = { x: c.clientX, y: c.clientY, done: false, lock: false, el: e.currentTarget.querySelector('.tg-bubble') }; if (sw.current.el) sw.current.el.style.transition = 'none'; };
+  const swMove = (e) => {
+    const s = sw.current; if (!s?.el) return; const c = e.touches[0]; const dx = c.clientX - s.x, dy = c.clientY - s.y;
+    if (!s.lock) { if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { swReset(s, e.currentTarget); sw.current = null; return; } if (dx > 10 && dx > Math.abs(dy)) s.lock = true; else return; }
+    const x = Math.max(0, Math.min(dx, 72)); s.el.style.transform = `translateX(${x}px)`; e.currentTarget.dataset.swipe = x >= SWIPE ? 'ready' : 'pull';
+    if (x >= SWIPE && !s.done) { s.done = true; try { navigator.vibrate?.(12); } catch { /* not supported */ } } else if (x < SWIPE) s.done = false;
+  };
+  const swCancel = (e) => { const s = sw.current; sw.current = null; if (s) swReset(s, e.currentTarget); };
+  const swEnd = (m) => (e) => { const s = sw.current; sw.current = null; if (!s) return; const row = e.currentTarget; swReset(s, row); if (s.done) { startReply(m); requestAnimationFrame(() => input.current?.focus()); } };
 
   let lastDay = '';
   return (
@@ -338,16 +365,17 @@ export function FriendChat({ t, lang, uid, friend, chat, seenAt, social, onBack,
 
       <div className="tg-msgs" ref={box} onScroll={onScroll} role="log" aria-live="polite">
         {msgs.length === 0 && <p className="muted center-text">{t.chatEmpty}</p>}
-        {msgs.map((m) => {
+        {msgs.length > 0 && <div className="tg-note" role="note">💬 {t.chatNotice(friend.name)}</div>}
+        {msgs.map((m, mi) => {
           const mine = m.from === uid; const day = dayKey(m.at); const sep = day !== lastDay; lastDay = day;
-          const rx = Object.entries(m.reactions || {});
+          const rx = Object.entries(m.reactions || {}); const fl = flags[mi] || { first: true, last: true }; const big = !m.deleted && isEmojiOnly(m.text);
           return (
             <React.Fragment key={m.id}>
               {sep && <div className="tg-day"><span>{dayLabel(t, m.at)}</span></div>}
-              <div className={`tg-msg${mine ? ' me' : ''}${m.deleted ? ' gone' : ''}`} data-mid={m.id}>
+              <div className={`tg-msg${mine ? ' me' : ''}${m.deleted ? ' gone' : ''}${sep || fl.first ? ' first' : ''}${fl.last ? ' last' : ''}${big ? ' big' : ''}`} data-mid={m.id} onTouchStart={swStart(m)} onTouchMove={swMove} onTouchEnd={swEnd(m)} onTouchCancel={swCancel}>
                 <button className="tg-bubble" disabled={m.pending || m.deleted} onClick={() => setMenu(m.id)} aria-label={t.moreActions}>
                   {m.reply && <span className="tg-quote" onClick={(e) => { e.stopPropagation(); jump(m.reply.id); }}><b>{m.reply.from === uid ? t.chatYou : friend.name}</b><span>{m.reply.text || t.deletedMsg}</span></span>}
-                  <span className="tg-text">{m.deleted ? t.deletedMsg : m.text}</span>
+                  <span className="tg-text">{m.deleted ? t.deletedMsg : <RichText text={m.text} />}</span>
                   <small className="tg-meta">{m.edited && !m.deleted && <i>{t.edited}</i>}{hhmm(m.at)}{mine && !m.deleted && (m.pending ? <span className="tg-ticks">🕓</span> : <Ticks read={readAt >= m.at} />)}</small>
                 </button>
                 {rx.length > 0 && <div className="tg-rx">{rx.map(([e, ids]) => (

@@ -58,3 +58,47 @@
 .th-wa-light .tg-etabs button.on, .th-wa-dark .tg-etabs button.on { border-bottom-color: var(--wa-send); }
 .th-wa-light .tg-down, .th-wa-dark .tg-down { background: var(--wa-pill); color: var(--wa-meta); }
 @media (prefers-reduced-motion: reduce) { .tg-egrid button:active { transform: none; } }
+
+/* ═══ RC · Phase 3 — Friends chat at WhatsApp level ═══ */
+.tg-msg { position: relative; touch-action: pan-y; }
+.tg-msg.first { margin-top: 7px; }
+.tg-msg::before { content: '↩'; position: absolute; left: 4px; top: 50%; translate: 0 -50%; width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; font-size: 1rem; color: #fff; background: rgba(0,0,0,.35); opacity: 0; scale: .6; transition: opacity .12s, scale .12s; pointer-events: none; }
+.tg-msg[data-swipe]::before { opacity: .6; scale: .85; }
+.tg-msg[data-swipe="ready"]::before { opacity: 1; scale: 1; background: #00a884; }
+
+/* info chip at the top of the chat (like WhatsApp's yellow notice) */
+.tg-note { align-self: center; max-width: min(92%, 420px); margin: 8px 0 6px; padding: 7px 12px; border-radius: 9px; text-align: center; font-size: .78rem; line-height: 1.4; color: var(--r-text-2); background: var(--r-surface-2); }
+.th-wa-light .tg-note { background: #fff3c4; color: #54656f; box-shadow: 0 1px 1px rgba(0,0,0,.1); }
+.th-wa-dark .tg-note { background: #182229; color: #ffd279; box-shadow: 0 1px 1px rgba(0,0,0,.3); }
+
+/* text formatting + links */
+.tg-text strong { font-weight: 800; } .tg-text s { opacity: .85; }
+.tg-mono { font: .92em/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; padding: 0 3px; border-radius: 4px; background: rgba(128,128,128,.2); }
+.tg-link { color: #027eb5; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; overflow-wrap: anywhere; }
+.th-wa-dark .tg-link { color: #53bdeb; } .tg-msg.me .tg-link { color: #0B4EA8; } .th-wa-dark .tg-msg.me .tg-link { color: #7fd1f5; }
+
+/* big emoji: 1–3 emoji alone, no bubble */
+.tg-msg.big .tg-bubble { background: none !important; border: 0 !important; box-shadow: none !important; padding: 0 4px; }
+.tg-msg.big .tg-text { font-size: 2.7rem; line-height: 1.15; }
+.tg-msg.big .tg-bubble::before { display: none !important; }
+.tg-msg.big .tg-meta { background: rgba(0,0,0,.28); color: #fff !important; padding: 1px 7px; border-radius: 10px; }
+
+/* WhatsApp looks: grouped bubbles, tails on the first of a run, time inside the bubble */
+.th-wa-light .tg-msgs, .th-wa-dark .tg-msgs { gap: 2px; }
+.th-wa-light .tg-bubble, .th-wa-dark .tg-bubble { display: block; border-radius: 10px; min-width: 64px; }
+.th-wa-light .tg-msg.me .tg-bubble, .th-wa-dark .tg-msg.me .tg-bubble { border-radius: 10px; }
+.th-wa-light .tg-msg.first:not(.me) .tg-bubble, .th-wa-dark .tg-msg.first:not(.me) .tg-bubble { border-top-left-radius: 0; }
+.th-wa-light .tg-msg.first.me .tg-bubble, .th-wa-dark .tg-msg.first.me .tg-bubble { border-top-right-radius: 0; }
+.th-wa-light .tg-msg.first .tg-bubble::before, .th-wa-dark .tg-msg.first .tg-bubble::before { content: ''; position: absolute; top: 0; width: 9px; height: 13px; }
+.th-wa-light .tg-msg.first:not(.me) .tg-bubble::before, .th-wa-dark .tg-msg.first:not(.me) .tg-bubble::before { left: -8px; background: var(--wa-in); clip-path: polygon(100% 0, 100% 100%, 0 0); }
+.th-wa-light .tg-msg.first.me .tg-bubble::before, .th-wa-dark .tg-msg.first.me .tg-bubble::before { right: -8px; background: var(--wa-out); clip-path: polygon(0 0, 100% 0, 0 100%); }
+.th-wa-light .tg-bubble .tg-text, .th-wa-dark .tg-bubble .tg-text { display: inline; }
+.th-wa-light .tg-bubble .tg-meta, .th-wa-dark .tg-bubble .tg-meta { float: right; margin: 7px 0 -3px 12px; line-height: 1; }
+.th-wa-light .tg-bubble::after, .th-wa-dark .tg-bubble::after { content: ''; display: block; clear: both; }
+.th-wa-light .tg-bubble .tg-quote, .th-wa-dark .tg-bubble .tg-quote { display: block; margin-bottom: 4px; }
+.th-wa-light .tg-rx, .th-wa-dark .tg-rx { margin-top: -6px; position: relative; z-index: 1; }
+
+/* composer: green round send button, thumb-sized */
+.th-wa-light .tg-go, .th-wa-dark .tg-go { width: 48px; height: 48px; font-size: 1.2rem; }
+.th-wa-light .tg-go:disabled, .th-wa-dark .tg-go:disabled { opacity: .55; }
+@media (prefers-reduced-motion: reduce) { .tg-msg::before { transition: none; } }

@@ -1,5 +1,16 @@
 # Changelog
 
+## 3.13.0 — Release candidate, Phase 3: Friends chat at WhatsApp level
+- **Bubble tails and grouping**: messages from the same person within 5 minutes form one run; only the first has the tail and the extra space above (WhatsApp look). The time and ticks sit inside the bubble, bottom-right.
+- **Swipe a message to the right to reply** (vibration when it is ready); vertical scrolling is not affected.
+- **Text formatting**: `*bold*`, `_italic_`, `~strike~`, `` `mono` ``. Words like snake_case_name are left alone.
+- **Tappable links** (https/http only, opened in a new tab without access to the app).
+- **Big emoji**: 1–3 emoji alone are shown large without a bubble.
+- **WhatsApp look is now the default** and follows the phone (dark phone → WhatsApp dark, light → WhatsApp light); the ⋮ menu still switches looks and your choice is remembered.
+- Info chip at the top of each chat (English + Amharic) and a round green send button.
+- Not in this step (each needs server work): group chats, photos/voice notes, voice and video calls, end-to-end encryption. The chat does not claim any of these.
+- Pure helpers in `src/lib/chatText.js`, tests in `tests/rc1-chat.test.mjs`, SW cache v42.
+
 ## 3.12.0 — Release candidate, Phase 2: in-game screens
 - Games fill the real visible screen (browser bar, foldables, split-screen) instead of a fixed 100dvh.
 - Game top bar: 44px buttons, long titles shorten with …, notch-safe on both sides in landscape; compact bar on short landscape phones so the board gets the height.
