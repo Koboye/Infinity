@@ -1,0 +1,11 @@
+{
+  "appId": "com.koboye.infinity",
+  "appName": "Afro Zone",
+  "webDir": "android-web",
+  "server": {
+    "url": "https://infinity-now.vercel.app",
+    "cleartext": false,
+    "allowNavigation": ["infinity-now.vercel.app", "*.firebaseapp.com", "accounts.google.com"]
+  },
+  "android": { "allowMixedContent": false }
+}

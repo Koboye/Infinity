@@ -1,0 +1,15 @@
+<!-- Add these lines inside <manifest> of android/app/src/main/AndroidManifest.xml (before <application>). -->
+<uses-feature android:name="android.hardware.bluetooth" android:required="false" />
+
+<!-- Android 11 and older -->
+<uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+<uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30" />
+
+<!-- Android 12 and newer ("Nearby devices"); we never use Bluetooth to find the phone's location -->
+<uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+<uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />
+<uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+
+<!-- QR scanning for the Wi-Fi / hotspot nearby race -->
+<uses-permission android:name="android.permission.CAMERA" />

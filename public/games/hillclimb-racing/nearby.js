@@ -1,11 +1,13 @@
 /* Hill Climb Racer – NEARBY RACE (phase 3): two phones, NO internet.
    A direct phone-to-phone WebRTC link over the same Wi-Fi or one phone's hotspot. There is no server: the phones swap two short
    codes (shown as QR codes, or copy/paste text) once to connect, then race exactly like the online race (Race handles the race,
-   this file only handles the link). Browsers cannot use Bluetooth between two phones, so Wi-Fi / hotspot is the offline option. */
+   this file only handles the link).
+   BLUETOOTH: a browser cannot do phone-to-phone Bluetooth, but the native Android app can. When the app injects the `AfroBluetooth`
+   bridge (see android-bluetooth/), the SAME race runs over a Bluetooth (RFCOMM) stream instead. Nothing else changes. */
 (function () {
   'use strict';
   var N = window.Nearby = {};
-  var pc = null, ctl = null, car = null, role = '', me = '', peer = '', room = null, qrHost = '', qrAns = '', scan = null, stage = '', up = false;
+  var link = 'rtc', devs = [], btReady = false, pc = null, ctl = null, car = null, role = '', me = '', peer = '', room = null, qrHost = '', qrAns = '', scan = null, stage = '', up = false;
   var $q = function (s) { return document.querySelector(s); };
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
   var HOST = 'HOST', GUEST = 'GUEST';
@@ -70,7 +72,7 @@
   // what Race calls instead of the server
   var api = {
     sendCar: function (uid, pkt) { try { if (car && car.readyState === 'open') car.send(JSON.stringify({ u: uid, c: pkt })); } catch (e) {} },
-    close: function () { var was = up; up = false; if (was) send({ t: 'bye' }); try { ctl && ctl.close(); car && car.close(); pc && pc.close(); } catch (e) {} pc = ctl = car = null; stopScan(); },
+    close: function () { var was = up; up = false; if (was) send({ t: 'bye' }); try { ctl && ctl.close(); car && car.close(); pc && pc.close(); } catch (e) {} pc = ctl = car = null; stopScan(); if (link === 'bt') { try { var P = btp(); P && P.close(); } catch (e) {} } link = 'rtc'; },
     call: async function (b) {
       if (!room) throw new Error('Not connected');
       if (b.action === 'track') { if (role !== 'host') throw new Error('Only the host picks the road'); room.world = b.world | 0; room.level = b.level | 0; send({ t: 'room', room: room }); Race.ui.room(room); }
@@ -85,6 +87,32 @@
     },
   };
 
+  /* ---------- Bluetooth (native Android app only) ---------- */
+  // Bridge contract (implemented by android-bluetooth/AfroBluetoothPlugin.kt, or by a test double):
+  //   available() -> {available, enabled} | listen() | discover() | connect({address}) | send({data}) | close()
+  //   events: 'found' {name,address} · 'connected' {name,address} · 'line' {data} · 'closed' · 'error' {message}
+  function btp() { var C = window.Capacitor; return window.AfroBT || (C && C.Plugins && C.Plugins.AfroBluetooth) || null; }
+  function btChannel(P, name) {
+    return { label: name, readyState: 'open', onmessage: null, onopen: null, onclose: null, close: function () {},
+      send: function (str) { P.send({ data: JSON.stringify({ c: name, d: str }) }); } };
+  }
+  function btHook(P) {
+    if (btReady) return; btReady = true;
+    P.addListener('found', function (d) { if (link !== 'bt' || !d || !d.address) return; if (!devs.some(function (x) { return x.address === d.address; })) { devs.push({ name: d.name || 'Phone', address: d.address }); if (stage === 'nbtj') Race.ui.setView('nbtj'); } });
+    P.addListener('connected', function () { if (link !== 'bt') return; ctl = btChannel(P, 'ctl'); car = btChannel(P, 'car'); wire(); if (role === 'host') say('Connected. Waiting for the other phone…'); });
+    P.addListener('line', function (d) { if (link !== 'bt' || !d) return; try { var o = JSON.parse(d.data), ch = o.c === 'ctl' ? ctl : car; if (ch && ch.onmessage) ch.onmessage({ data: o.d }); } catch (e) {} });
+    P.addListener('closed', function () { if (link === 'bt' && ctl && ctl.onclose) ctl.onclose(); else if (link === 'bt' && !up) say('Bluetooth connection ended. Try again.'); });
+    P.addListener('error', function (e) { if (link === 'bt') say((e && e.message) || 'Bluetooth problem'); });
+  }
+  async function beginBT(kind) {
+    var P = btp();
+    if (!P) return say('Bluetooth play works in the Afro Zone Android app. In a browser use Wi-Fi / hotspot.');
+    try { var a = await P.available(); if (!a || !a.available) return say('This phone has no Bluetooth.'); if (!a.enabled) return say('Turn Bluetooth on, then try again.'); } catch (e) { return say('Bluetooth is not ready: ' + (e.message || e)); }
+    link = 'bt'; btHook(P); devs = []; role = kind; me = kind === 'host' ? HOST : GUEST; hostVeh = S.veh; room = null; rtt = 0; up = false;
+    Race.ui.useP2P(api, me); stage = kind === 'host' ? 'nbth' : 'nbtj'; Race.ui.msg(''); Race.ui.setView(stage);
+    try { if (kind === 'host') await P.listen(); else await P.discover(); } catch (e) { say(e.message || 'Bluetooth could not start (permission?)'); }
+  }
+
   /* ---------- pairing screens ---------- */
   function qrSvg(text) {
     if (!window.qrcode) return '<div class="s">QR not available, use the text code below.</div>';
@@ -95,7 +123,11 @@
   N.html = function (v, err) {
     var back = '<button class="b" data-n="cancel">BACK</button>';
     if (v === 'nmenu') return '<h1>NEARBY RACE</h1><div class="s">Two phones, no internet. Both phones must be on the <b>same Wi-Fi</b>, or one phone shares its <b>hotspot</b> and the other joins it. Race 1 vs 1.</div>' +
-      '<button class="b y" data-n="host">HOST A RACE</button><button class="b" data-n="join">JOIN A RACE</button>' + err + back;
+      '<button class="b y" data-n="host">HOST A RACE</button><button class="b" data-n="join">JOIN A RACE</button>' +
+      '<div class="s" style="margin-top:12px">' + (btp() ? 'Or use Bluetooth (no Wi-Fi needed, phones within a few metres):' : 'Bluetooth play is in the Afro Zone Android app.') + '</div>' +
+      '<button class="b" data-n="bth"' + (btp() ? '' : ' style="opacity:.55"') + '>BLUETOOTH · HOST</button><button class="b" data-n="btj"' + (btp() ? '' : ' style="opacity:.55"') + '>BLUETOOTH · JOIN</button>' + err + back;
+    if (v === 'nbth') return '<h1>BLUETOOTH · HOST</h1><div class="s">Your phone is now visible for 2 minutes. On the other phone choose <b>BLUETOOTH · JOIN</b> and tap this phone\'s name. The race opens by itself.</div><div class="code" style="font-size:clamp(20px,5vh,30px);letter-spacing:4px">WAITING…</div>' + err + back;
+    if (v === 'nbtj') return '<h1>BLUETOOTH · JOIN</h1><div class="s">Tap the host phone when it appears:</div>' + (devs.length ? devs.map(function (d) { return '<button class="b" data-n="pick" data-a="' + esc(d.address) + '">' + esc(d.name) + '</button>'; }).join('') : '<div class="s"><b>Searching…</b></div>') + '<button class="b" data-n="rescan">SEARCH AGAIN</button>' + err + back;
     if (v === 'nhost') return '<h1>HOST</h1>' + (qrHost ? '<div class="s"><b>Step 1.</b> The other phone taps JOIN and scans this (or pastes the text code).</div>' + qrSvg(qrHost) +
       '<button class="b" data-n="copyhost">COPY / SHARE TEXT CODE</button><div class="s" style="margin-top:10px"><b>Step 2.</b> Scan the answer from the other phone, or paste it here:</div>' +
       (canScan() ? '<button class="b" data-n="scan">SCAN ANSWER</button>' : '') + '<textarea id="nIn" rows="2" style="width:100%;box-sizing:border-box;margin-top:8px;border-radius:10px;background:#0a1328;color:#fff;border:2px solid #243a63;padding:8px" placeholder="Paste the answer code"></textarea><button class="b y" data-n="connect">CONNECT</button>' : '<div class="s">Preparing…</div>') + (scan ? '<video id="nVid" playsinline muted style="width:100%;border-radius:10px;margin-top:8px"></video>' : '') + err + back;
@@ -124,8 +156,8 @@
     } catch (e) { say(e.message || 'Could not read that code'); }
   }
   async function begin(kind) {
-    Race.ui.useP2P(api, kind === 'host' ? HOST : GUEST); role = kind; me = kind === 'host' ? HOST : GUEST; hostVeh = S.veh; qrHost = qrAns = ''; room = null; rtt = 0; up = false;
-    stage = kind === 'host' ? 'nhost' : 'njoin'; Race.ui.setView(stage);
+    link = 'rtc'; Race.ui.useP2P(api, kind === 'host' ? HOST : GUEST); role = kind; me = kind === 'host' ? HOST : GUEST; hostVeh = S.veh; qrHost = qrAns = ''; room = null; rtt = 0; up = false;
+    stage = kind === 'host' ? 'nhost' : 'njoin'; Race.ui.msg(''); Race.ui.setView(stage);
     if (!window.RTCPeerConnection) return say('This phone cannot do nearby play (no WebRTC).');
     if (kind === 'host') {
       try {
@@ -140,9 +172,12 @@
     if (a === 'menu') Race.ui.setView('nmenu');
     else if (a === 'host') begin('host'); else if (a === 'join') begin('guest');
     else if (a === 'cancel') { stopScan(); api.close(); Race.open(); }
+    else if (a === 'bth') beginBT('host'); else if (a === 'btj') beginBT('guest');
+    else if (a === 'pick') { var P = btp(); if (P) { say('Connecting…'); P.connect({ address: t.dataset.a }).catch(function (e) { say((e && e.message) || 'Could not connect'); }); } }
+    else if (a === 'rescan') { var Q = btp(); devs = []; Race.ui.setView('nbtj'); if (Q) Q.discover().catch(function () {}); }
     else if (a === 'scan') startScan();
     else if (a === 'copyhost') share(qrHost); else if (a === 'copyans') share(qrAns);
     else if (a === 'connect') { var el = $q('#nIn'); if (el && el.value.trim()) gotCode(el.value.trim()); else say('Paste the code first'); }
   });
-  N._state = function () { return { qrHost: qrHost, qrAns: qrAns, rtt: rtt, up: up }; }; N._api = api; N._unpack = unpack; N._pack = pack;
+  N._state = function () { return { qrHost: qrHost, qrAns: qrAns, rtt: rtt, up: up, link: link }; }; N._api = api; N._unpack = unpack; N._pack = pack;
 })();

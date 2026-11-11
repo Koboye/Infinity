@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.7.0 — Phase 3b: Bluetooth ready for the Android app
+- The nearby race now has a **Bluetooth** link next to Wi-Fi / hotspot: BLUETOOTH · HOST and BLUETOOTH · JOIN (pick the host phone from a list). It switches on only inside the native Android app; in a browser the buttons explain that it is an Android-app feature.
+- Same race as before over a Bluetooth stream (shared start, live ghost car, crash respawn, results, rematch). The game talks to a small bridge (`AfroBluetooth`); tested here against a simulated bridge.
+- New `android-bluetooth/`: the native Android plugin (Kotlin, Bluetooth RFCOMM), MainActivity, Capacitor config (loads the live site), manifest permissions and a step-by-step README. Not yet run on a real phone.
+- Service-worker cache bumped (v36).
+
 ## 3.6.0 — Phase 3: nearby race, no internet (Hill Climb Racer)
 - New **NEARBY · NO INTERNET** option in the car game's race menu: two phones race 1 vs 1 over the **same Wi-Fi** or one phone's **hotspot**. No data, no server, no sign-in needed.
 - Connecting: the host shows a QR code, the other phone scans it (or pastes the text code) and shows an answer QR back; the race lobby then opens on both phones by itself. Same race as online: shared 3-2-1-GO, live ghost car, crash respawn, results, rematch.
