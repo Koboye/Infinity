@@ -5,6 +5,7 @@ import {
   emptyFriends, makeFriendCode, normalizeFriendCode, requestFriend, acceptFriend, severFriend, areFriends,
   pairId, pushChat, markRead, pushInvite, dropInvite, cleanText,
   editMsg, deleteMsg, reactMsg, setTyping, togglePin,
+  hideMsg, starMsg, clearChat, toggleFlag, isBlocked, markDelivered,
 } from '../social.js';
 
 const friendsRef = (db, uid) => db.collection('friends').doc(uid);
@@ -96,15 +97,22 @@ export async function remove(db, uid, other) {
   });
 }
 
-/** Direct message to a friend (friends only). */
-export async function chatSend(db, uid, to, text, replyTo = null) {
+/**
+ * Direct message to a friend (friends only). If I blocked them I must unblock first; if THEY blocked me the line is kept for me
+ * (one tick) but never reaches them, like WhatsApp. `fwd` marks a forwarded line.
+ */
+export async function chatSend(db, uid, to, text, replyTo = null, fwd = false) {
   to = String(to || '');
   if (!cleanText(text)) fail(400, 'Write a message first');
   return db.runTransaction(async (tx) => {
     const mine = await tx.get(friendsRef(db, uid));
-    if (!areFriends(mine.exists ? mine.data() : null, to)) fail(403, 'You can only chat with friends');
+    const mineData = mine.exists ? mine.data() : null;
+    if (!areFriends(mineData, to)) fail(403, 'You can only chat with friends');
+    if (isBlocked(mineData, to)) fail(403, 'Unblock this friend to send a message');
+    const theirs = await tx.get(friendsRef(db, to));
+    const held = isBlocked(theirs.exists ? theirs.data() : null, uid);
     const cur = await tx.get(chatRef(db, uid, to));
-    const out = pushChat(cur.exists ? cur.data() : null, uid, to, text, Date.now(), replyTo ? String(replyTo) : null);
+    const out = pushChat(cur.exists ? cur.data() : null, uid, to, text, Date.now(), replyTo ? String(replyTo) : null, { fwd: !!fwd, held });
     if (out.error) fail(400, out.error);
     tx.set(chatRef(db, uid, to), out.chat);
     return { ok: true, id: out.chat.msgs.at(-1).id };
@@ -135,6 +143,7 @@ export async function inviteFriend(db, uid, { to, room, makeRoom }) {
     if (!r.exists || r.data().players[0] !== uid || r.data().status !== 'waiting') fail(409, 'Your room is no longer waiting');
   } else code = await makeRoom();
   const r = (await db.collection('gebetaRooms').doc(code).get()).data();
+  if (await blockedBy(db, to, uid)) return { code, status: 'waiting' };   // blocked: the room opens for me, the invite never arrives
   await db.runTransaction(async (tx) => {
     const me = await profileOf(tx, db, uid);
     const cur = await tx.get(inviteRef(db, to));
@@ -160,6 +169,7 @@ export async function inviteFriendRace(db, uid, { to, code, makeRoom }) {
     const r = await db.collection('raceRooms').doc(c).get();
     if (!r.exists || r.data().host !== uid || r.data().status !== 'wait') fail(409, 'Your race room is no longer waiting');
   } else c = await makeRoom();
+  if (await blockedBy(db, to, uid)) return { code: c, status: 'wait', game: 'car' };
   await db.runTransaction(async (tx) => {
     const me = await profileOf(tx, db, uid);
     const cur = await tx.get(inviteRef(db, to));
@@ -193,7 +203,7 @@ export async function presence(db, uid) {
   return { ok: true };
 }
 
-/** Edit, delete or react to one line of a chat (`kind` = 'edit' | 'delete' | 'react'). Only the two people in the chat can touch it. */
+/** Edit, delete or react to one line of a chat (`kind` = 'edit' | 'delete' | 'react' | 'hide' | 'star'). Only the two people in the chat can touch it. */
 export async function chatChange(db, uid, other, kind, id, value) {
   other = String(other || ''); id = String(id || '');
   return db.runTransaction(async (tx) => {
@@ -201,7 +211,9 @@ export async function chatChange(db, uid, other, kind, id, value) {
     if (!areFriends(mine.exists ? mine.data() : null, other)) fail(403, 'You can only chat with friends');
     const cur = await tx.get(chatRef(db, uid, other));
     if (!cur.exists) fail(404, 'That chat is empty');
-    const out = kind === 'edit' ? editMsg(cur.data(), uid, id, value) : kind === 'delete' ? deleteMsg(cur.data(), uid, id) : reactMsg(cur.data(), uid, id, String(value || ''));
+    const c = cur.data();
+    const out = kind === 'edit' ? editMsg(c, uid, id, value) : kind === 'delete' ? deleteMsg(c, uid, id)
+      : kind === 'hide' ? hideMsg(c, uid, id) : kind === 'star' ? starMsg(c, uid, id) : reactMsg(c, uid, id, String(value || ''));
     if (out.error) fail(400, out.error);
     tx.set(chatRef(db, uid, other), out.chat);
     return { ok: true };
@@ -225,6 +237,37 @@ export async function friendPin(db, uid, other) {
     tx.set(friendsRef(db, uid), next);
     return { ok: true, pins: next.pins };
   });
+}
+
+/** "Clear chat": my view of the chat is emptied; the other person's is untouched. */
+export async function chatClearMine(db, uid, other) {
+  other = String(other || '');
+  const ref = chatRef(db, uid, other);
+  return db.runTransaction(async (tx) => {
+    const s = await tx.get(ref);
+    if (s.exists && (s.data().users || []).includes(uid)) tx.set(ref, clearChat(s.data(), uid));
+    return { ok: true };
+  });
+}
+
+/** Block / unblock (flag 'blocked') or mute / unmute (flag 'muted') a friend. Kept on my own friends document. */
+export async function friendFlag(db, uid, other, flag) {
+  other = String(other || '');
+  if (!['blocked', 'muted'].includes(flag)) fail(400, 'Unknown option');
+  return db.runTransaction(async (tx) => {
+    const s = await tx.get(friendsRef(db, uid));
+    const cur = s.exists ? s.data() : null;
+    if (!areFriends(cur, other) && !(cur?.[flag] || []).includes(other)) fail(404, 'That player is not your friend');
+    const next = toggleFlag(cur, flag, other);
+    tx.set(friendsRef(db, uid), next);
+    return { ok: true, [flag]: next[flag] };
+  });
+}
+
+/** Has `uid` been blocked by `by`? Used so a blocked player's game invites never reach the person who blocked them. */
+async function blockedBy(db, by, uid) {
+  const s = await friendsRef(db, by).get();
+  return isBlocked(s.exists ? s.data() : null, uid);
 }
 
 /** Find players by name (starts-with, case-sensitive on the stored name) so a friend can be added without a code. */
@@ -253,9 +296,23 @@ export async function socialSync(db, uid) {
     db.collection('chats').where('users', 'array-contains', uid).get(),
   ]);
   const friends = fs.exists ? fs.data() : emptyFriends();
+  // my phone is open: lines waiting for me are now "delivered" (grey double tick for the sender). Written only when something is new.
+  const chats = await Promise.all(cs.docs.map(async (d) => {
+    const raw = d.data(); const data = { id: d.id, ...raw };
+    if (markDelivered(raw, uid) === raw) return data;   // nothing new for me: no transaction, no write
+    const ref = db.collection('chats').doc(d.id);
+    const upd = await db.runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      if (!snap.exists) return null;
+      const cur = snap.data(); const next = markDelivered(cur, uid);
+      if (next !== cur) tx.set(ref, next);
+      return next;
+    }).catch(() => null);
+    return upd ? { id: d.id, ...upd } : data;
+  }));
   const ids = Object.keys(friends.list || {}).slice(0, 100);
   const seen = {};
   await Promise.all(ids.map(async (id) => { const p = await db.collection('presence').doc(id).get(); if (p.exists) seen[id] = p.data().at; }));
   await db.collection('presence').doc(uid).set({ at: Date.now() });
-  return { friends, invites: inv.exists ? inv.data() : null, chats: cs.docs.map((d) => ({ id: d.id, ...d.data() })), seen, now: Date.now() };
+  return { friends, invites: inv.exists ? inv.data() : null, chats, seen, now: Date.now() };
 }

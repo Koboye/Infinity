@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { apiCall, serverNow } from '@/lib/firebase';
 import { heroById } from '@/lib/i18n';
 import { GAMES } from '@/lib/games.js';
-import { isOnline, isTyping, lastSeenParts, normalizeFriendCode, pairId, REACTIONS } from '@/lib/social';
+import { firstUnreadId, isOnline, isTyping, lastSeenParts, normalizeFriendCode, pairId, REACTIONS, searchMsgs, tickState, visibleMsgs } from '@/lib/social';
 import { GameIcon } from './GameIcons';
 import { EMOJI_TABS, splitEmoji, RECENT_KEY, pushRecent } from '@/lib/emoji.js';
 import { groupFlags, isEmojiOnly, parseRich, safeUrl } from '@/lib/chatText.js';
@@ -49,8 +49,11 @@ function Avatar({ id, size = 44 }) {
   const h = heroById(id);
   return <span className="hero" style={{ background: h.color, width: size, height: size, fontSize: size * 0.55 }} aria-hidden="true">{h.glyph}</span>;
 }
-/** ✓ sent · ✓✓ read (the other person opened the chat after it was sent). */
-function Ticks({ read }) { return <span className={`tg-ticks${read ? ' read' : ''}`} aria-label={read ? 'read' : 'sent'}>{read ? '✓✓' : '✓'}</span>; }
+/** WhatsApp ticks: ✓ sent · grey ✓✓ delivered (their app is open) · blue ✓✓ read (they opened the chat). */
+function Ticks({ state = 'sent', t }) {
+  const label = state === 'read' ? t?.tickRead || 'read' : state === 'delivered' ? t?.tickDelivered || 'delivered' : t?.tickSent || 'sent';
+  return <span className={`tg-ticks${state === 'read' ? ' read' : state === 'delivered' ? ' delivered' : ''}`} aria-label={label}>{state === 'sent' ? '✓' : '✓✓'}</span>;
+}
 
 /** Friends hub: chat list (pinned first, last line, ticks, unread), requests, add by code or by name, my friend code. */
 export default function FriendsScreen({ t, lang, uid, social, onEnterRoom, openChat, onOpenChat }) {
@@ -66,6 +69,8 @@ export default function FriendsScreen({ t, lang, uid, social, onEnterRoom, openC
   const incoming = useMemo(() => Object.entries(friends?.incoming || {}).map(([id, c]) => ({ id, ...c })), [friends]);
   const outgoing = useMemo(() => Object.entries(friends?.outgoing || {}).map(([id, c]) => ({ id, ...c })), [friends]);
   const pins = friends?.pins || [];
+  const muted = friends?.muted || [];
+  const blocked = friends?.blocked || [];
   const chatOf = (fid) => chats.find((c) => c.id === pairId(uid, fid));
 
   const call = useCallback(async (body, ok) => {
@@ -79,10 +84,10 @@ export default function FriendsScreen({ t, lang, uid, social, onEnterRoom, openC
   const rows = useMemo(() => {
     const term = q.trim().toLowerCase();
     return list.filter((f) => !term || f.name.toLowerCase().includes(term)).map((f) => {
-      const c = chatOf(f.id); const last = c?.msgs?.at(-1);
-      return { ...f, last, at: last?.at || 0, unread: c?.unread?.[uid] || 0, pinned: pins.includes(f.id), chat: c };
+      const c = chatOf(f.id); const last = visibleMsgs(c, uid).at(-1);
+      return { ...f, last, at: last?.at || 0, unread: c?.unread?.[uid] || 0, pinned: pins.includes(f.id), muted: muted.includes(f.id), blocked: blocked.includes(f.id), chat: c };
     }).sort((a, b) => (b.pinned - a.pinned) || (b.at - a.at) || a.name.localeCompare(b.name));
-  }, [list, chats, q, pins, uid]);   // eslint-disable-line react-hooks/exhaustive-deps
+  }, [list, chats, q, pins, muted, blocked, uid]);   // eslint-disable-line react-hooks/exhaustive-deps
 
   // typing in the search box finds other players by name (after a short pause)
   useEffect(() => {
@@ -118,7 +123,7 @@ export default function FriendsScreen({ t, lang, uid, social, onEnterRoom, openC
   };
 
   const chatFriend = openChat ? list.find((f) => f.id === openChat) : null;
-  if (chatFriend) return <FriendChat t={t} lang={lang} uid={uid} friend={chatFriend} chat={chatOf(chatFriend.id)} seenAt={seen[chatFriend.id]} social={social}
+  if (chatFriend) return <FriendChat t={t} lang={lang} uid={uid} friend={chatFriend} chat={chatOf(chatFriend.id)} seenAt={seen[chatFriend.id]} social={social} muted={muted.includes(chatFriend.id)} blocked={blocked.includes(chatFriend.id)}
     onBack={() => onOpenChat(null)} onInvite={() => setInviting(chatFriend.id)}
     onUnfriend={async () => { if (window.confirm(t.frRemoveConfirm(chatFriend.name))) { await call({ action: 'friendRemove', to: chatFriend.id }); onOpenChat(null); } }}
     sheet={inviting === chatFriend.id ? <InviteSheet t={t} friend={chatFriend} busy={busy} onClose={() => setInviting(null)} onPick={(g, rs) => invite(chatFriend, g, rs)} /> : null} />;
@@ -144,19 +149,19 @@ export default function FriendsScreen({ t, lang, uid, social, onEnterRoom, openC
           {q && rows.length === 0 && strangers.length === 0 && <p className="muted center-text">{t.noMatches}</p>}
           <ul className="tg-list">
             {rows.map((f) => {
-              const on = isOnline(seen[f.id], serverNow()); const typing = isTyping(f.chat, f.id, serverNow());
+              const on = !f.blocked && isOnline(seen[f.id], serverNow()); const typing = !f.blocked && isTyping(f.chat, f.id, serverNow());
               const mineLast = f.last && f.last.from === uid && !f.last.deleted;
               return (
-                <li key={f.id} className={`tg-row${f.unread ? ' unread' : ''}`}>
+                <li key={f.id} className={`tg-row${f.unread ? ' unread' : ''}${f.muted ? ' muted' : ''}`}>
                   <button className="tg-open" onClick={() => onOpenChat(f.id)} aria-label={`${t.chat}: ${f.name}`}>
                     <span className="tg-av"><Avatar id={f.avatar} size={52} /><i className={`dot${on ? ' on' : ''}`} title={on ? t.frOnline : t.frOffline} /></span>
                     <span className="tg-mid">
-                      <b className="tg-name">{f.pinned && <span className="tg-pin" aria-hidden="true">📌</span>}{f.name}</b>
-                      <small className={`tg-last${typing ? ' typing' : ''}`}>{typing ? t.typing : f.last ? previewOf(t, uid, f.last) : on ? t.frOnline : seenText(t, seen[f.id])}</small>
+                      <b className="tg-name">{f.pinned && <span className="tg-pin" aria-hidden="true">📌</span>}{f.name}{f.muted && <span className="tg-mute" aria-hidden="true"> 🔕</span>}{f.blocked && <span className="tg-mute" aria-hidden="true"> 🚫</span>}</b>
+                      <small className={`tg-last${typing ? ' typing' : ''}`}>{typing ? t.typing : f.last ? previewOf(t, uid, f.last) : f.blocked ? '' : on ? t.frOnline : seenText(t, seen[f.id])}</small>
                     </span>
                     <span className="tg-end">
-                      <small className="tg-time">{mineLast && <Ticks read={(f.chat?.readAt?.[f.id] || 0) >= f.last.at} />}{listTime(f.at, t, serverNow())}</small>
-                      {f.unread > 0 && <em className="badge tg-badge">{f.unread > 99 ? '99+' : f.unread}</em>}
+                      <small className="tg-time">{mineLast && <Ticks t={t} state={tickState(f.chat, f.id, f.last)} />}{listTime(f.at, t, serverNow())}</small>
+                      {f.unread > 0 && <em className={`badge tg-badge${f.muted ? ' muted' : ''}`}>{f.unread > 99 ? '99+' : f.unread}</em>}
                     </span>
                   </button>
                   <span className="tg-quick">
@@ -276,13 +281,18 @@ function RichText({ text }) {
 }
 
 /** One-to-one chat: bubbles with reply quotes, edited mark, ticks, reactions, typing and last seen. Tap a bubble for its actions. */
-export function FriendChat({ t, lang, uid, friend, chat, seenAt, social, onBack, onInvite, onUnfriend, sheet }) {
+export function FriendChat({ t, lang, uid, friend, chat, seenAt, social, muted = false, blocked = false, onBack, onInvite, onUnfriend, sheet }) {
   const [text, setText] = useState(''); const [busy, setBusy] = useState(false); const [err, setErr] = useState('');
   const [menu, setMenu] = useState(null);       // message id whose action sheet is open
   const [reply, setReply] = useState(null);     // message being answered
   const [editing, setEditing] = useState(null); // message being edited
   const [pending, setPending] = useState([]);   // lines sent but not yet echoed back (shown at once, like Telegram)
   const [more, setMore] = useState(false);
+  const [view, setView] = useState(null);       // null | 'search' | 'starred': filters what the chat shows
+  const [term, setTerm] = useState('');
+  const [fwd, setFwd] = useState(null);         // message being forwarded (friend picker open)
+  const [note, setNote] = useState('');
+  const [divider, setDivider] = useState(null); // { id, n }: where "N unread messages" is drawn (kept after the chat is marked read)
   const [theme, setTheme] = useState('wa-light');
   const [emojiOpen, setEmojiOpen] = useState(false); const [etab, setEtab] = useState('smile'); const [recent, setRecent] = useState([]);
   const [down, setDown] = useState(0);              // floating "jump to latest" button: number of new lines while scrolled up
@@ -297,17 +307,19 @@ export function FriendChat({ t, lang, uid, friend, chat, seenAt, social, onBack,
   };
   const toBottom = () => { stick.current = true; setDown(0); end.current?.scrollIntoView?.({ block: 'end', behavior: 'smooth' }); };
   const box = useRef(null); const end = useRef(null); const lastPing = useRef(0); const stick = useRef(true);
-  const online = isOnline(seenAt, serverNow());
-  const typing = isTyping(chat, friend.id, serverNow());
+  const online = !blocked && isOnline(seenAt, serverNow());
+  const typing = !blocked && isTyping(chat, friend.id, serverNow());
   const unread = chat?.unread?.[uid] || 0;
-  const readAt = chat?.readAt?.[friend.id] || 0;
-  const real = chat?.msgs || [];
+  const real = useMemo(() => visibleMsgs(chat, uid), [chat, uid]);   // not cleared, not deleted for me, nothing held back from a block
   const msgs = useMemo(() => {
     const ids = new Set(real.map((m) => m.id));
     const ghosts = pending.filter((p) => !ids.has(p.id) && !real.some((m) => m.from === uid && m.text === p.text && Math.abs(m.at - p.at) < 20000));
     return [...real, ...ghosts];
   }, [real, pending, uid]);
   const byId = useMemo(() => Object.fromEntries(real.map((m) => [m.id, m])), [real]);
+  const starredCount = useMemo(() => real.filter((m) => !m.deleted && (m.starred || []).includes(uid)).length, [real, uid]);
+  const shown = useMemo(() => (view === 'starred' ? msgs.filter((m) => !m.deleted && (m.starred || []).includes(uid)) : view === 'search' && term.trim() ? searchMsgs(msgs, term) : msgs), [msgs, view, term, uid]);
+  useEffect(() => { if (divider || unread <= 0) return; const id = firstUnreadId(real, friend.id, unread); if (id) setDivider({ id, n: unread }); }, [unread, real, divider, friend.id]);
 
   useEffect(() => { social?.boost?.(true); return () => social?.boost?.(false); }, [social?.boost]);   // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (stick.current) end.current?.scrollIntoView?.({ block: 'end' }); }, [msgs.length, typing]);
@@ -332,12 +344,18 @@ export function FriendChat({ t, lang, uid, friend, chat, seenAt, social, onBack,
     setBusy(false);
   };
   const act = async (body) => { setMenu(null); setErr(''); try { await apiCall(body); social?.refresh?.(); } catch (e) { setErr(e.message); } };
+  const flag = async (body, confirm) => { setMore(false); if (confirm && !window.confirm(confirm)) return; setErr(''); try { await apiCall(body); social?.refresh?.(); } catch (e) { setErr(e.message); } };
+  const openView = (v) => { setMore(false); setTerm(''); setView(v); };
+  const forwardTo = async (f) => {
+    const m = fwd; setFwd(null); if (!m) return; setErr('');
+    try { await apiCall({ action: 'chatSend', to: f.id, text: m.text, fwd: true }); setNote(t.forwardDone(f.name)); setTimeout(() => setNote(''), 2200); social?.refresh?.(); } catch (e) { setErr(e.message); }
+  };
   const startEdit = (m) => { setMenu(null); setReply(null); setEditing(m); setText(m.text); };
   const startReply = (m) => { setMenu(null); setEditing(null); setReply(m); };
   const copy = async (m) => { setMenu(null); try { await navigator.clipboard.writeText(m.text); } catch { /* ignore */ } };
   const jump = (id) => { const el = box.current?.querySelector(`[data-mid="${id}"]`); if (el) { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1200); } };
   const menuMsg = menu ? byId[menu] : null;
-  const flags = useMemo(() => groupFlags(msgs), [msgs]);
+  const flags = useMemo(() => groupFlags(shown), [shown]);
   // swipe a message to the right to reply (like WhatsApp): only a mostly-horizontal drag counts, vertical scrolling is untouched
   const sw = useRef(null); const SWIPE = 56;
   const swReset = (s, row) => { if (s?.el) { s.el.style.transition = 'transform .18s ease'; s.el.style.transform = ''; } if (row) delete row.dataset.swipe; };
@@ -360,23 +378,43 @@ export function FriendChat({ t, lang, uid, friend, chat, seenAt, social, onBack,
         <span className="fr-name"><b>{friend.name}</b><small className={typing ? 'typing' : ''}>{typing ? t.typing : online ? t.frOnline : seenText(t, seenAt)}</small></span>
         <button className="icon-btn fr-act gold" onClick={onInvite} aria-label={t.inviteToPlay}>🎮</button>
         <button className="icon-btn" onClick={() => setMore((v) => !v)} aria-label={t.moreActions} aria-expanded={more}>⋮</button>
-        {more && <div className="tg-more" role="menu"><button role="menuitem" className="neutral" onClick={nextTheme}>🎨 {t.chatTheme}: {t[`chatTheme_${theme}`]}</button><button role="menuitem" onClick={() => { setMore(false); onUnfriend(); }}>🚫 {t.frRemove}</button></div>}
+        {more && <div className="tg-more" role="menu">
+          <button role="menuitem" className="neutral" onClick={() => openView('search')}>🔍 {t.searchInChat}</button>
+          <button role="menuitem" className="neutral" onClick={() => openView('starred')}>⭐ {t.starredMsgs}{starredCount ? ` · ${starredCount}` : ''}</button>
+          <button role="menuitem" className="neutral" onClick={() => flag({ action: 'friendMute', to: friend.id })}>{muted ? '🔔' : '🔕'} {muted ? t.unmuteChat : t.muteChat}</button>
+          <button role="menuitem" className="neutral" onClick={nextTheme}>🎨 {t.chatTheme}: {t[`chatTheme_${theme}`]}</button>
+          <button role="menuitem" onClick={() => flag({ action: 'chatClear', to: friend.id }, t.clearChatConfirm)}>🧹 {t.clearChat}</button>
+          <button role="menuitem" onClick={() => flag({ action: 'friendBlock', to: friend.id }, blocked ? null : t.blockConfirm(friend.name))}>⛔ {blocked ? t.unblockFriend : t.blockFriend}</button>
+          <button role="menuitem" onClick={() => { setMore(false); onUnfriend(); }}>🚫 {t.frRemove}</button>
+        </div>}
       </div>
+
+      {view && (
+        <div className="tg-find" role="search">
+          {view === 'search'
+            ? <input autoFocus value={term} onChange={(e) => setTerm(e.target.value.slice(0, 40))} placeholder={t.searchPh} aria-label={t.searchPh} autoComplete="off" />
+            : <b className="tg-find-title">⭐ {t.starredMsgs}</b>}
+          <small>{view === 'search' ? (term.trim() ? t.searchCount(shown.length) : '') : starredCount ? '' : t.noStarred}</small>
+          <button className="icon-btn" aria-label={t.cancel} onClick={() => { setView(null); setTerm(''); }}>✕</button>
+        </div>
+      )}
 
       <div className="tg-msgs" ref={box} onScroll={onScroll} role="log" aria-live="polite">
         {msgs.length === 0 && <p className="muted center-text">{t.chatEmpty}</p>}
-        {msgs.length > 0 && <div className="tg-note" role="note">💬 {t.chatNotice(friend.name)}</div>}
-        {msgs.map((m, mi) => {
+        {msgs.length > 0 && !view && <div className="tg-note" role="note">💬 {t.chatNotice(friend.name)}</div>}
+        {shown.map((m, mi) => {
           const mine = m.from === uid; const day = dayKey(m.at); const sep = day !== lastDay; lastDay = day;
           const rx = Object.entries(m.reactions || {}); const fl = flags[mi] || { first: true, last: true }; const big = !m.deleted && isEmojiOnly(m.text);
           return (
             <React.Fragment key={m.id}>
               {sep && <div className="tg-day"><span>{dayLabel(t, m.at)}</span></div>}
+              {!view && divider && divider.id === m.id && <div className="tg-unread" role="separator" data-divider><span>{t.unreadDivider(divider.n)}</span></div>}
               <div className={`tg-msg${mine ? ' me' : ''}${m.deleted ? ' gone' : ''}${sep || fl.first ? ' first' : ''}${fl.last ? ' last' : ''}${big ? ' big' : ''}`} data-mid={m.id} onTouchStart={swStart(m)} onTouchMove={swMove} onTouchEnd={swEnd(m)} onTouchCancel={swCancel}>
                 <button className="tg-bubble" disabled={m.pending || m.deleted} onClick={() => setMenu(m.id)} aria-label={t.moreActions}>
+                  {m.fwd && !m.deleted && <span className="tg-fwd">↪ {t.forwarded}</span>}
                   {m.reply && <span className="tg-quote" onClick={(e) => { e.stopPropagation(); jump(m.reply.id); }}><b>{m.reply.from === uid ? t.chatYou : friend.name}</b><span>{m.reply.text || t.deletedMsg}</span></span>}
                   <span className="tg-text">{m.deleted ? t.deletedMsg : <RichText text={m.text} />}</span>
-                  <small className="tg-meta">{m.edited && !m.deleted && <i>{t.edited}</i>}{hhmm(m.at)}{mine && !m.deleted && (m.pending ? <span className="tg-ticks">🕓</span> : <Ticks read={readAt >= m.at} />)}</small>
+                  <small className="tg-meta">{(m.starred || []).includes(uid) && !m.deleted && <span className="tg-star" aria-label={t.starMsg}>★</span>}{m.edited && !m.deleted && <i>{t.edited}</i>}{hhmm(m.at)}{mine && !m.deleted && (m.pending ? <span className="tg-ticks">🕓</span> : <Ticks t={t} state={tickState(chat, friend.id, m)} />)}</small>
                 </button>
                 {rx.length > 0 && <div className="tg-rx">{rx.map(([e, ids]) => (
                   <button key={e} className={`tg-chip${ids.includes(uid) ? ' mine' : ''}`} onClick={() => act({ action: 'chatReact', to: friend.id, id: m.id, emoji: e })}>{e}{ids.length > 1 ? <em>{ids.length}</em> : null}</button>
@@ -385,7 +423,7 @@ export function FriendChat({ t, lang, uid, friend, chat, seenAt, social, onBack,
             </React.Fragment>
           );
         })}
-        {typing && <div className="tg-msg"><span className="tg-bubble tg-dots" aria-label={t.typing}><i /><i /><i /></span></div>}
+        {typing && !view && <div className="tg-msg"><span className="tg-bubble tg-dots" aria-label={t.typing}><i /><i /><i /></span></div>}
         <div ref={end} />
       </div>
 
@@ -397,7 +435,9 @@ export function FriendChat({ t, lang, uid, friend, chat, seenAt, social, onBack,
         </div>
       )}
       {down > 0 || !stick.current ? <button className="tg-down" onClick={toBottom} aria-label={t.chatDown}>⌄{down > 0 ? <em>{down}</em> : null}</button> : null}
-      <form className="tg-send" onSubmit={(e) => { e.preventDefault(); send(); }}>
+      {blocked && <p className="tg-blocked" role="status">⛔ {t.blockedNote}</p>}
+      {note && <p className="fr-note tg-toast" role="status">{note}</p>}
+      <form className="tg-send" hidden={blocked} onSubmit={(e) => { e.preventDefault(); send(); }}>
         <span className="tg-pill">
           <button type="button" className="tg-emoji-btn" aria-label={t.chatEmoji} aria-expanded={emojiOpen} onClick={() => setEmojiOpen((v) => !v)}>{emojiOpen ? '⌨️' : '😊'}</button>
           <input ref={input} value={text} onChange={(e) => { setText(e.target.value.slice(0, 1000)); if (e.target.value) ping(); }} onFocus={() => setEmojiOpen(false)} placeholder={t.chatWrite} aria-label={t.chatWrite} maxLength={1000} autoComplete="off" enterKeyHint="send" />
@@ -423,8 +463,22 @@ export function FriendChat({ t, lang, uid, friend, chat, seenAt, social, onBack,
             <div className="tg-react-bar">{REACTIONS.map((e) => <button key={e} className={(menuMsg.reactions?.[e] || []).includes(uid) ? 'mine' : ''} onClick={() => act({ action: 'chatReact', to: friend.id, id: menuMsg.id, emoji: e })}>{e}</button>)}</div>
             <button className="tg-act" onClick={() => startReply(menuMsg)}>↩️ {t.replyTo}</button>
             <button className="tg-act" onClick={() => copy(menuMsg)}>📋 {t.copyMsg}</button>
+            <button className="tg-act" onClick={() => act({ action: 'chatStar', to: friend.id, id: menuMsg.id })}>{(menuMsg.starred || []).includes(uid) ? '☆' : '⭐'} {(menuMsg.starred || []).includes(uid) ? t.unstarMsg : t.starMsg}</button>
+            <button className="tg-act" onClick={() => { setFwd(menuMsg); setMenu(null); }}>↪️ {t.forwardMsg}</button>
+            <button className="tg-act" onClick={() => act({ action: 'chatHide', to: friend.id, id: menuMsg.id })}>🗑️ {t.deleteForMe}</button>
             {menuMsg.from === uid && <button className="tg-act" onClick={() => startEdit(menuMsg)}>✏️ {t.editMsg}</button>}
             {menuMsg.from === uid && <button className="tg-act bad" onClick={() => act({ action: 'chatDelete', to: friend.id, id: menuMsg.id })}>🗑️ {t.deleteMsg}</button>}
+          </div>
+        </div>
+      )}
+      {fwd && (
+        <div className="overlay" role="dialog" aria-modal="true" aria-label={t.forwardTo} onClick={(e) => { if (e.target === e.currentTarget) setFwd(null); }}>
+          <div className="dialog tg-sheet tg-fwd-sheet">
+            <h3>{t.forwardTo}</h3>
+            {(() => { const fl = Object.entries(social?.friends?.list || {}).filter(([id]) => !(social?.friends?.blocked || []).includes(id)).map(([id, c]) => ({ id, ...c })); return fl.length === 0 ? <p className="muted small">{t.forwardNone}</p> : fl.map((f) => (
+              <button key={f.id} className="tg-act tg-fwd-row" onClick={() => forwardTo(f)}><Avatar id={f.avatar} size={34} /><span>{f.name}</span></button>
+            )); })()}
+            <button className="tg-act" onClick={() => setFwd(null)}>{t.cancel}</button>
           </div>
         </div>
       )}

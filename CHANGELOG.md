@@ -1,5 +1,17 @@
 # Changelog
 
+## 3.15.0 -- Friends chat: the rest of WhatsApp's chat features
+- **Three tick states**: one grey tick = sent, two grey ticks = delivered (their app is open and has your message), two blue ticks = read. Also shown on the chat list.
+- **Block / unblock**: a blocked friend can still send, but you never see it and it never counts as unread. They see one tick and are not told. Game invites from a blocked player are not delivered. You must unblock to send.
+- **Mute**: unread lines from a muted chat stay out of the Friends badge; the row shows a bell-off icon and a grey count.
+- **Delete for me** (any line, yours or theirs) next to the existing Delete for everyone, and **Clear chat** (only your own view; the other person keeps theirs).
+- **Star** lines (private to each person) and a **Starred messages** view; **Search in chat**.
+- **Forward** a line to any friend (shows "Forwarded").
+- **"N unread messages" divider** where you left off.
+- Server: new actions `chatStar`, `chatHide`, `chatClear`, `friendBlock`, `friendMute`; `chatSend` accepts `fwd`; `socialSync` marks delivered (written only when something is new).
+- Texts in English and Amharic, tests `tests/chat-whatsapp.test.mjs`, SW cache v44.
+- Not included (needs file storage, which this project does not have yet): photos, voice notes and documents; push notifications when the app is closed.
+
 ## 3.14.0 — Release candidate, Phase 4: Wallet, ads & earn, Profile, Settings
 - **Settings in Amharic**: every On/Off switch and the text-size buttons were hard-coded English; now translated.
 - **Lucky-spin wheel scales with the screen** (it was a fixed 240 px and pushed the buttons off short phones); the sheet scrolls instead of clipping, and in landscape its buttons stay in reach.

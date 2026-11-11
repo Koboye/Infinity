@@ -102,3 +102,28 @@
 .th-wa-light .tg-go, .th-wa-dark .tg-go { width: 48px; height: 48px; font-size: 1.2rem; }
 .th-wa-light .tg-go:disabled, .th-wa-dark .tg-go:disabled { opacity: .55; }
 @media (prefers-reduced-motion: reduce) { .tg-msg::before { transition: none; } }
+
+/* ── WhatsApp-level chat (v3.15): delivered ticks, search / starred bar, unread divider, forwarded label, stars, block banner ── */
+.tg-ticks.delivered { color: var(--r-text-3); }
+.th-wa-light .tg-msg.me .tg-ticks.delivered, .th-wa-dark .tg-msg.me .tg-ticks.delivered { color: var(--wa-meta); }
+.tg-mute { font-size: .8em; opacity: .8; }
+.tg-badge.muted { background: var(--r-surface-2); color: var(--r-text-2); box-shadow: none; }
+.tg-row.muted .tg-badge { background: #8696a0; color: #fff; }
+.tg-find { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: var(--r-surface); border-bottom: 1px solid var(--r-line); }
+.tg-find input { flex: 1; min-width: 0; height: 38px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--r-line); background: var(--r-surface-2); color: var(--r-text); font: inherit; }
+.tg-find small, .tg-find-title { color: var(--r-text-2); font-size: .8rem; white-space: nowrap; }
+.tg-find-title { flex: 1; font-size: .9rem; }
+.th-wa-light .tg-find, .th-wa-dark .tg-find { background: var(--wa-bar); border-bottom: 0; }
+.th-wa-light .tg-find input, .th-wa-dark .tg-find input { background: var(--wa-pill); color: var(--wa-ink); border-color: transparent; }
+.th-wa-light .tg-find small, .th-wa-dark .tg-find small, .th-wa-light .tg-find-title, .th-wa-dark .tg-find-title { color: var(--wa-meta); }
+.tg-unread { align-self: stretch; display: flex; justify-content: center; margin: 10px 0 6px; }
+.tg-unread span { padding: 4px 14px; border-radius: 999px; font-size: .74rem; font-weight: 800; letter-spacing: .02em; color: var(--r-text); background: var(--r-surface-2); }
+.th-wa-light .tg-unread span { background: #e1f3fb; color: #54656f; box-shadow: 0 1px 1px rgba(0,0,0,.1); }
+.th-wa-dark .tg-unread span { background: #182229; color: #8696a0; box-shadow: 0 1px 1px rgba(0,0,0,.3); }
+.tg-fwd { display: block; margin-bottom: 2px; font-size: .74rem; font-style: italic; opacity: .7; }
+.tg-star { margin-right: 3px; font-size: .78rem; color: #f5b301; }
+.tg-blocked { margin: 0; padding: 12px 14px; text-align: center; font-size: .85rem; font-weight: 700; color: #FFB0B8; background: var(--r-surface); }
+.th-wa-light .tg-blocked, .th-wa-dark .tg-blocked { background: var(--wa-bar); color: var(--wa-meta); }
+.tg-toast { align-self: center; margin: 4px auto; }
+.tg-fwd-sheet { max-height: 70vh; overflow-y: auto; }
+.tg-fwd-row { display: flex; align-items: center; gap: 12px; }

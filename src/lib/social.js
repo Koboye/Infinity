@@ -75,16 +75,18 @@ const newId = (now) => `${now.toString(36)}${Math.random().toString(36).slice(2,
 const snippet = (m) => (m?.deleted ? '' : String(m?.text || '').slice(0, 80));
 
 /** Append a message to a pair's chat (newest last, capped) and count it as unread for the other person. `replyTo` = id of the line answered. */
-export function pushChat(chatIn, from, to, text, now = Date.now(), replyTo = null) {
+export function pushChat(chatIn, from, to, text, now = Date.now(), replyTo = null, opts = {}) {
   const t = cleanText(text);
   if (!t) return { chat: chatIn, error: 'Write a message first' };
   const chat = { ...(chatIn || {}), users: [from, to].sort(), msgs: [...(chatIn?.msgs || [])], unread: { ...(chatIn?.unread || {}) }, updatedAt: now };
   const msg = { id: newId(now), from, text: t, at: now };
+  if (opts.fwd) msg.fwd = true;       // forwarded from another chat
+  if (opts.held) msg.held = true;     // the receiver blocked the sender: kept for the sender (one tick), never shown or counted for the receiver
   const target = replyTo ? chat.msgs.find((m) => m.id === replyTo && !m.deleted) : null;
   if (target) msg.reply = { id: target.id, from: target.from, text: snippet(target) };
   chat.msgs.push(msg);
   if (chat.msgs.length > MAX_MSGS) chat.msgs = chat.msgs.slice(-MAX_MSGS);
-  chat.unread[to] = (chat.unread[to] || 0) + 1;
+  if (!opts.held) chat.unread[to] = (chat.unread[to] || 0) + 1;
   chat.unread[from] = 0;
   chat.typing = { ...(chat.typing || {}), [from]: 0 };
   return { chat };
@@ -92,7 +94,21 @@ export function pushChat(chatIn, from, to, text, now = Date.now(), replyTo = nul
 /** `uid` has opened the chat: their unread count is cleared and the time is kept so the sender sees the double tick. */
 export function markRead(chatIn, uid, now = Date.now()) {
   if (!chatIn) return chatIn;
-  return { ...chatIn, unread: { ...(chatIn.unread || {}), [uid]: 0 }, readAt: { ...(chatIn.readAt || {}), [uid]: now } };
+  return { ...chatIn, unread: { ...(chatIn.unread || {}), [uid]: 0 }, readAt: { ...(chatIn.readAt || {}), [uid]: now }, deliveredAt: { ...(chatIn.deliveredAt || {}), [uid]: now } };
+}
+/** `uid`'s phone has the chat (the app is open) but they have not read it yet: the sender's ticks turn grey ✓✓. Returns the SAME object when nothing is new, so the caller can skip the write. */
+export function markDelivered(chatIn, uid, now = Date.now()) {
+  if (!chatIn) return chatIn;
+  const since = chatIn.deliveredAt?.[uid] || 0;
+  if (!(chatIn.msgs || []).some((m) => m.from !== uid && !m.held && m.at > since)) return chatIn;
+  return { ...chatIn, deliveredAt: { ...(chatIn.deliveredAt || {}), [uid]: now } };
+}
+/** WhatsApp ticks for one of MY lines: 'sent' ✓ · 'delivered' grey ✓✓ · 'read' blue ✓✓. A line the other person blocked me from stays 'sent'. */
+export function tickState(chat, otherUid, msg) {
+  if (!msg || msg.held) return 'sent';
+  if ((chat?.readAt?.[otherUid] || 0) >= msg.at) return 'read';
+  if ((chat?.deliveredAt?.[otherUid] || 0) >= msg.at) return 'delivered';
+  return 'sent';
 }
 /** One of my own lines, with new text (marked edited). */
 export function editMsg(chatIn, uid, id, text) {
@@ -122,6 +138,57 @@ export function reactMsg(chatIn, uid, id, emoji) {
   const msgs = chatIn.msgs.slice(); msgs[i] = { ...msgs[i], reactions };
   return { chat: { ...chatIn, msgs } };
 }
+/** Remove one line from MY view only ("delete for me"); the other person still sees it. */
+export function hideMsg(chatIn, uid, id) {
+  const i = (chatIn?.msgs || []).findIndex((m) => m.id === id);
+  if (i < 0) return { chat: chatIn, error: 'That message is gone' };
+  const msgs = chatIn.msgs.slice(); const hideFor = [...new Set([...(msgs[i].hideFor || []), uid])];
+  msgs[i] = { ...msgs[i], hideFor };
+  return { chat: { ...chatIn, msgs } };
+}
+/** Star or un-star a line for myself. Stars are private to each person. */
+export function starMsg(chatIn, uid, id) {
+  const i = (chatIn?.msgs || []).findIndex((m) => m.id === id);
+  if (i < 0 || chatIn.msgs[i].deleted) return { chat: chatIn, error: 'That message is gone' };
+  const had = (chatIn.msgs[i].starred || []).includes(uid);
+  const starred = had ? chatIn.msgs[i].starred.filter((u) => u !== uid) : [...(chatIn.msgs[i].starred || []), uid];
+  const msgs = chatIn.msgs.slice(); msgs[i] = { ...msgs[i], starred };
+  return { chat: { ...chatIn, msgs } };
+}
+/** "Clear chat": everything up to now disappears from MY view (and my unread count resets). The other person keeps theirs.
+ *  Anchored to the id of the newest line, not to a clock, so a line sent right after can never be hidden by clock differences. */
+export function clearChat(chatIn, uid) {
+  if (!chatIn) return chatIn;
+  const last = (chatIn.msgs || []).at(-1);
+  return { ...chatIn, clearedAfter: { ...(chatIn.clearedAfter || {}), ...(last ? { [uid]: last.id } : {}) }, unread: { ...(chatIn.unread || {}), [uid]: 0 } };
+}
+/** The lines `uid` should see: after their last clear, not deleted for them, and not held back because they blocked the sender. */
+export function visibleMsgs(chat, uid) {
+  const all = chat?.msgs || [];
+  const anchor = chat?.clearedAfter?.[uid];
+  const at = anchor ? all.findIndex((m) => m.id === anchor) : -1;   // not found = trimmed away long ago, so every remaining line is newer
+  return all.slice(at + 1).filter((m) => !(m.hideFor || []).includes(uid) && !(m.held && m.from !== uid));
+}
+/** Id of the first of the last `n` lines from the friend: where WhatsApp draws "N unread messages". null when there is nothing unread. */
+export function firstUnreadId(msgs, friendUid, n) {
+  if (!(n > 0)) return null;
+  const theirs = (msgs || []).filter((m) => m.from === friendUid);
+  return theirs.length ? theirs.slice(-n)[0].id : null;
+}
+/** Case-insensitive search over the visible lines (deleted lines never match). */
+export function searchMsgs(msgs, term) {
+  const q = String(term || '').trim().toLowerCase();
+  return q ? (msgs || []).filter((m) => !m.deleted && String(m.text || '').toLowerCase().includes(q)) : [];
+}
+/** Block or unblock someone, and mute or unmute their chat: both are per-person lists on MY friends document. */
+export const MAX_FLAGS = 100;
+export function toggleFlag(friendsIn, flag, uid) {
+  const f = norm(friendsIn); const cur = (friendsIn?.[flag] || []).filter((x) => typeof x === 'string');
+  const next = cur.includes(uid) ? cur.filter((x) => x !== uid) : [uid, ...cur].slice(0, MAX_FLAGS);
+  return { ...f, [flag]: next };
+}
+export const isBlocked = (friendsDoc, uid) => (friendsDoc?.blocked || []).includes(uid);
+export const isMuted = (friendsDoc, uid) => (friendsDoc?.muted || []).includes(uid);
 export const setTyping = (chatIn, uid, now = Date.now()) => (chatIn ? { ...chatIn, typing: { ...(chatIn.typing || {}), [uid]: now } } : chatIn);
 export const isTyping = (chat, uid, now = Date.now()) => Number.isFinite(chat?.typing?.[uid]) && now - chat.typing[uid] < TYPING_MS;
 /** Pin or unpin a friend at the top of my chat list (kept on my own friends document). */
@@ -161,6 +228,7 @@ export function pushRoomChat(chatIn, seat, text, now = Date.now()) {
 /** How many things want this player's attention: requests, unread chats, live invites (the badge on the Friends tab). */
 export function badgeCount({ friends, chats = [], invites }, uid, now = Date.now()) {
   const req = Object.keys(friends?.incoming || {}).length;
-  const unread = chats.reduce((n, c) => n + (c.unread?.[uid] || 0), 0);
+  const muted = friends?.muted || [];
+  const unread = chats.reduce((n, c) => (muted.includes((c.users || []).find((u) => u !== uid)) ? n : n + (c.unread?.[uid] || 0)), 0);
   return req + unread + liveInvites(invites, now).length;
 }

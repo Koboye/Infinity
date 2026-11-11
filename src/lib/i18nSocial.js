@@ -25,6 +25,15 @@ export const SOCIAL_EN = {
   replyTo: 'Reply', editMsg: 'Edit', deleteMsg: 'Delete for everyone', copyMsg: 'Copy', edited: 'edited', deletedMsg: 'This message was deleted', editing: 'Editing message',
   pinChat: 'Pin', unpinChat: 'Unpin', youPrefix: 'You: ', today: 'Today', moreActions: 'More', statusSent: 'Request sent', statusIncoming: 'Wants to be your friend',
   addByNameHint: 'Tip: type a name in the search box on the Chats tab to find players.',
+  // WhatsApp-level chat (v3.15)
+  tickDelivered: 'delivered', tickRead: 'read', tickSent: 'sent',
+  forwardMsg: 'Forward', forwarded: 'Forwarded', forwardTo: 'Forward to...', forwardDone: (n) => `Forwarded to ${n}`, forwardNone: 'Add a friend first to forward messages',
+  deleteForMe: 'Delete for me', starMsg: 'Star', unstarMsg: 'Unstar', starredMsgs: 'Starred messages', noStarred: 'No starred messages yet',
+  searchInChat: 'Search', searchPh: 'Search in this chat', searchCount: (n) => `${n} found`,
+  clearChat: 'Clear chat', clearChatConfirm: 'Clear all messages in this chat? Only your own view is cleared.',
+  blockFriend: 'Block', unblockFriend: 'Unblock', blockedNote: 'You blocked this friend. Unblock to send messages.', blockConfirm: (n) => `Block ${n}? You will stop getting their messages and game invites.`,
+  muteChat: 'Mute notifications', unmuteChat: 'Unmute notifications',
+  unreadDivider: (n) => (n === 1 ? '1 unread message' : `${n} unread messages`),
 };
 
 export const SOCIAL_AM = {
@@ -51,4 +60,13 @@ export const SOCIAL_AM = {
   replyTo: 'መልስ', editMsg: 'አስተካክል', deleteMsg: 'ለሁሉም ሰርዝ', copyMsg: 'ቅዳ', edited: 'ተስተካክሏል', deletedMsg: 'ይህ መልእክት ተሰርዟል', editing: 'መልእክት እያስተካከሉ ነው',
   pinChat: 'ሰካ', unpinChat: 'አስወግድ', youPrefix: 'አንተ: ', today: 'ዛሬ', moreActions: 'ተጨማሪ', statusSent: 'ጥያቄ ተልኳል', statusIncoming: 'ጓደኛህ መሆን ይፈልጋል',
   addByNameHint: 'ጠቃሚ ምክር፦ ተጫዋቾችን ለማግኘት በ"ውይይቶች" ትር ውስጥ ስም ይጻፉ።',
+  // WhatsApp-level chat (v3.15)
+  tickDelivered: 'ደርሷል', tickRead: 'ተነብቧል', tickSent: 'ተልኳል',
+  forwardMsg: 'አስተላልፍ', forwarded: 'ተላልፏል', forwardTo: 'አስተላልፍ ለ...', forwardDone: (n) => `ለ${n} ተላልፏል`, forwardNone: 'መልዕክት ለማስተላለፍ መጀመሪያ ጓደኛ ይጨምሩ',
+  deleteForMe: 'ለእኔ ብቻ ሰርዝ', starMsg: 'ኮከብ አድርግ', unstarMsg: 'ኮከቡን አስወግድ', starredMsgs: 'ኮከብ የተደረገባቸው መልዕክቶች', noStarred: 'ኮከብ የተደረገበት መልዕክት የለም',
+  searchInChat: 'ፈልግ', searchPh: 'በዚህ ውይይት ፈልግ', searchCount: (n) => `${n} ተገኝቷል`,
+  clearChat: 'ውይይቱን አጽዳ', clearChatConfirm: 'በዚህ ውይይት ያሉ መልዕክቶች ሁሉ ይጽዱ? የሚጸዳው የእርስዎ እይታ ብቻ ነው።',
+  blockFriend: 'አግድ', unblockFriend: 'እገዳ አንሳ', blockedNote: 'ይህን ጓደኛ አግደዋል። መልዕክት ለመላክ እገዳውን ያንሱ።', blockConfirm: (n) => `${n} ይታገድ? መልዕክቶቹንና የጨዋታ ግብዣዎቹን አይቀበሉም።`,
+  muteChat: 'ማሳወቂያ ድምጸ-ከል', unmuteChat: 'ድምጸ-ከሉን አንሳ',
+  unreadDivider: (n) => `${n} ያልተነበቡ መልዕክቶች`,
 };
