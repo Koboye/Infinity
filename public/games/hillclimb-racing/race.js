@@ -180,7 +180,7 @@
       if (unsubCars) unsubCars();
       unsubCars = Net.roomRef(code).collection('cars').onSnapshot(function (qs) {
         qs.docChanges().forEach(function (ch) { if (ch.type !== 'removed') applyCar(ch.doc.id, ch.doc.data()); });
-      }, function () {});
+      }, function (e) { linkErr('Cannot see the other cars (' + ((e && e.code) || 'error') + ')'); });
     }
     clearInterval(sendT); sendT = setInterval(sendCar, SEND_MS);
     clearInterval(hudT); hudT = setInterval(hud, 250);
@@ -216,7 +216,8 @@
     if (!R.on || !car || run.over || R.hold()) return;
     if (car.air < 0.05 && Math.abs(Math.sin(car.a)) < 0.45 && !inGorge(car.x)) me.safe = Math.max(me.safe, car.x - 40);
   }
-  var lastSp = null, legacy = false;
+  var lastSp = null, legacy = false, sendFails = 0, linkMsgAt = 0;
+  function linkErr(m) { if (Date.now() - linkMsgAt < 20000) return; linkMsgAt = Date.now(); try { toast(m); } catch (e) {} }   // live link problems are shown, not swallowed
   function sendCar() {
     if (!R.on || !car || !room) return; var r = function (v) { return Math.round(v * 10) / 10; }, sp = car.sp || [0, 0], ws = car.ws || [0, 0];
     var d = Math.max(0, Math.min(1, car.x / (LV.fin || 1))), nowp = performance.now();
@@ -224,7 +225,7 @@
     var pkt = { x: r(car.x), y: r(car.y), a: Math.round(car.a * 100) / 100, s0: Math.round(sp[0] * 100) / 100, s1: Math.round(sp[1] * 100) / 100, o0: r(om[0]), o1: r(om[1]), w0: r(ws[0]), w1: r(ws[1]), vx: Math.round(car.vx), vy: Math.round(car.vy), av: Math.round((car.w || 0) * 100) / 100, v: S.veh, g: car.air > 0.12 ? 1 : 0, f: me.fin ? 1 : 0, t: sNow(), d: Math.round(d * 1000) / 1000 };
     if (R.p2p) { R.p2p.sendCar(user.uid, pkt); return; }
     if (legacy) { ['o0', 'o1', 'vx', 'vy', 'av'].forEach(function (k) { delete pkt[k]; }); }   // rules from before v3.16 still deployed: send the old packet
-    Net.roomRef(code).collection('cars').doc(user.uid).set(pkt).catch(function (e) { if (!legacy && e && e.code === 'permission-denied') legacy = true; });
+    Net.roomRef(code).collection('cars').doc(user.uid).set(pkt).then(function () { sendFails = 0; }).catch(function (e) { if (!legacy && e && e.code === 'permission-denied') { legacy = true; return; } if (++sendFails === 8) linkErr('Your car is not reaching the others (' + ((e && e.code) || 'error') + ')'); });
   }
   R.crash = function (why) {   // replaces the game's "run over" screen: you lose time, not the race
     if (!R.on) return false; if (run.over) return true;
@@ -247,14 +248,14 @@
     room.players.forEach(function (u, i) {
       var isMe = u === user.uid, g = ghosts[u], d = isMe ? (car ? Math.max(0, Math.min(1, car.x / (LV.fin || 1))) : 0) : (g ? g.d : 0);
       var fr = room.results.findIndex(function (r) { return r.uid === u; });
-      out.push({ name: room.names[u], d: fr >= 0 ? 1 : d, me: isMe, fin: fr >= 0, fr: fr, col: COLORS[i % 4] });
+      out.push({ name: room.names[u], d: fr >= 0 ? 1 : d, me: isMe, fin: fr >= 0, fr: fr, col: COLORS[i % 4], wait: !isMe && fr < 0 && !(g && g.tx != null) && sNow() - room.startAt > 2500 });
     });
     out.sort(function (a, b) { if (a.fin && b.fin) return a.fr - b.fr; if (a.fin) return -1; if (b.fin) return 1; return b.d - a.d; });
     return out;
   }
   function hud() {
     if (!R.on || !room) return; var e = $q('#rchud'); if (!e) { e = document.createElement('div'); e.id = 'rchud'; document.body.appendChild(e); }
-    e.innerHTML = rankList().map(function (r, i) { return '<div class="r' + (r.me ? ' me' : '') + '"><span>' + (i + 1) + '</span><span style="min-width:62px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(r.name) + '</span><span class="bar"><i style="width:' + Math.round(r.d * 100) + '%;background:' + r.col + '"></i></span><span>' + (r.fin ? '🏁' : Math.round(r.d * 100) + '%') + '</span></div>'; }).join('');
+    e.innerHTML = rankList().map(function (r, i) { return '<div class="r' + (r.me ? ' me' : '') + '"><span>' + (i + 1) + '</span><span style="min-width:62px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(r.name) + (r.wait ? ' ⏳' : '') + '</span><span class="bar"><i style="width:' + Math.round(r.d * 100) + '%;background:' + r.col + '"></i></span><span>' + (r.fin ? '🏁' : Math.round(r.d * 100) + '%') + '</span></div>'; }).join('');
     if (room.firstAt && !closing && sNow() - room.firstAt >= 60000 && room.status === 'race') { closing = true; Net.call({ action: 'close', code: code }).catch(function () { closing = false; }); }
   }
   function watch() {   // the player left the race through the game's own menus → leave the room too
@@ -269,7 +270,7 @@
   function stopRace() {   // back to the lobby (rematch) or leaving
     eqRestore(); R.on = false; R.hold = function () { return false; };
     [sendT, hudT, dogT, tickT].forEach(clearInterval); if (unsubCars) { unsubCars(); unsubCars = null; }
-    var h = $q('#rchud'); if (h) h.remove(); var c = $q('#rccd'); if (c) c.remove();
+    var h = $q('#rchud'); if (h) h.remove(); document.querySelectorAll('[id^=rcmk]').forEach(function (m) { m.remove(); }); var c = $q('#rccd'); if (c) c.remove();
     ghosts = {}; paused = false; mode = 'menu'; try { $q('#hud').classList.add('hide'); } catch (e) {}
   }
   R.leave = function (silent) {
@@ -330,9 +331,22 @@
         cx.restore();
         cx.save(); cx.globalAlpha = 0.95; cx.font = '800 22px system-ui,Arial'; cx.textAlign = 'center'; cx.lineWidth = 5; cx.strokeStyle = '#0a1328'; cx.fillStyle = COLORS[idx % 4];
         var nm = (room.names[u] || 'Racer'); cx.strokeText(nm, gh.x, gh.y - 80); cx.fillText(nm, gh.x, gh.y - 80); cx.restore();
-      } catch (e) { try { cx.restore(); } catch (x) {} }
+      } catch (e) { try { cx.restore(); } catch (x) {} if (!gh.errShown) { gh.errShown = 1; try { console.error('Opponent car could not be drawn', e); } catch (x) {} } }
     }
+    edgeMarks();
   };
+  // An opponent outside the screen is shown as a name + arrow at the left / right edge, so you always know where they are.
+  function edgeMarks() {
+    for (var u in ghosts) {
+      var gh = ghosts[u]; if (gh.tx == null || !car) continue;
+      var id = 'rcmk' + room.players.indexOf(u), e = document.getElementById(id), dx = gh.x - car.x, side = dx > 640 ? 'r' : dx < -640 ? 'l' : '';
+      if (!e) { e = document.createElement('div'); e.id = id; e.style.cssText = 'position:fixed;top:44%;z-index:61;pointer-events:none;font:800 13px system-ui,Arial;color:#fff;background:rgba(5,10,24,.72);border:2px solid ' + COLORS[Math.max(0, room.players.indexOf(u)) % 4] + ';border-radius:10px;padding:4px 9px;display:none;white-space:nowrap'; document.body.appendChild(e); }
+      if (!side) { if (e.style.display !== 'none') e.style.display = 'none'; continue; }
+      var txt = side === 'r' ? esc(room.names[u] || 'Racer') + ' ▶' : '◀ ' + esc(room.names[u] || 'Racer');
+      if (e.dataset.s !== side) { e.dataset.s = side; e.style.left = side === 'l' ? '6px' : 'auto'; e.style.right = side === 'r' ? '6px' : 'auto'; }
+      if (e.innerHTML !== txt) e.innerHTML = txt; if (e.style.display !== 'block') e.style.display = 'block';
+    }
+  }
 
   /* ---------- car-to-car contact: when two cars overlap they push each other like real bodies (equal mass, a little bounce).
      Both phones run the same rule on their own car, so the two sides agree without any extra network traffic. ---------- */
