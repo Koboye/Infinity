@@ -75,11 +75,26 @@ const newId = (now) => `${now.toString(36)}${Math.random().toString(36).slice(2,
 const snippet = (m) => (m?.deleted ? '' : String(m?.text || '').slice(0, 80));
 
 /** Append a message to a pair's chat (newest last, capped) and count it as unread for the other person. `replyTo` = id of the line answered. */
+export const ATT_KINDS = ['image', 'voice', 'file'];
+export const ATT_LABEL = { image: '📷 Photo', voice: '🎤 Voice message', file: '📄 Document' };
+/** An attachment is only kept when its file really lives in this sender's own Storage folder (u/{uid}/...). Returns the clean object or null. */
+export function cleanAttachment(att, uid) {
+  if (!att || typeof att !== 'object' || !ATT_KINDS.includes(att.kind)) return null;
+  const url = String(att.url || '');
+  if (!/^https:\/\/firebasestorage\.googleapis\.com\/v0\/b\/[a-z0-9._-]+\/o\/u%2F/i.test(url) || url.length > 800) return null;
+  if (!url.includes(`/o/u%2F${encodeURIComponent(uid)}%2F`)) return null;   // somebody else's file: refused
+  const out = { kind: att.kind, url, name: cleanText(att.name || '', 80), size: Math.max(0, Math.min(50 * 1024 * 1024, Math.floor(Number(att.size) || 0))), mime: cleanText(att.mime || '', 60) };
+  if (att.kind === 'voice') out.dur = Math.max(0, Math.min(600, Math.round(Number(att.dur) || 0)));
+  return out;
+}
 export function pushChat(chatIn, from, to, text, now = Date.now(), replyTo = null, opts = {}) {
-  const t = cleanText(text);
+  const att = opts.att ? cleanAttachment(opts.att, from) : null;
+  if (opts.att && !att) return { chat: chatIn, error: 'That file cannot be sent' };
+  const t = cleanText(text) || (att ? (att.kind === 'file' && att.name ? `📄 ${att.name}` : ATT_LABEL[att.kind]) : '');
   if (!t) return { chat: chatIn, error: 'Write a message first' };
   const chat = { ...(chatIn || {}), users: [from, to].sort(), msgs: [...(chatIn?.msgs || [])], unread: { ...(chatIn?.unread || {}) }, updatedAt: now };
   const msg = { id: newId(now), from, text: t, at: now };
+  if (att) msg.att = att;
   if (opts.fwd) msg.fwd = true;       // forwarded from another chat
   if (opts.held) msg.held = true;     // the receiver blocked the sender: kept for the sender (one tick), never shown or counted for the receiver
   const target = replyTo ? chat.msgs.find((m) => m.id === replyTo && !m.deleted) : null;

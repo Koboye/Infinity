@@ -60,6 +60,7 @@ service cloud.firestore {
       allow write: if false;
     }
     match /friendCodes/{code} { allow read, write: if false; }
+    match /usernames/{name} { allow read, write: if false; }   // unique usernames: server-only (checked through /api/account)
 
     // Online matches (Gebeta, Checkers, Dominoes). Only the two players can read the room they are in.
     // ALL writes go through /api/gebeta (server validates every move with the shared engines).
@@ -86,7 +87,7 @@ service cloud.firestore {
           && request.auth.uid in get(/databases/$(database)/documents/raceRooms/$(code)).data.players;
         allow create, update: if request.auth != null && request.auth.uid == uid
           && uid in get(/databases/$(database)/documents/raceRooms/$(code)).data.players
-          && request.resource.data.keys().hasOnly(['x', 'y', 'a', 's0', 's1', 'w0', 'w1', 'v', 'g', 'f', 't', 'd'])
+          && request.resource.data.keys().hasOnly(['x', 'y', 'a', 's0', 's1', 'o0', 'o1', 'w0', 'w1', 'vx', 'vy', 'av', 'v', 'g', 'f', 't', 'd'])
           && request.resource.data.x is number && request.resource.data.y is number && request.resource.data.a is number;
         allow delete: if false;
       }

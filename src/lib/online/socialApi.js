@@ -101,9 +101,9 @@ export async function remove(db, uid, other) {
  * Direct message to a friend (friends only). If I blocked them I must unblock first; if THEY blocked me the line is kept for me
  * (one tick) but never reaches them, like WhatsApp. `fwd` marks a forwarded line.
  */
-export async function chatSend(db, uid, to, text, replyTo = null, fwd = false) {
+export async function chatSend(db, uid, to, text, replyTo = null, fwd = false, att = null) {
   to = String(to || '');
-  if (!cleanText(text)) fail(400, 'Write a message first');
+  if (!cleanText(text) && !att) fail(400, 'Write a message first');
   return db.runTransaction(async (tx) => {
     const mine = await tx.get(friendsRef(db, uid));
     const mineData = mine.exists ? mine.data() : null;
@@ -112,7 +112,7 @@ export async function chatSend(db, uid, to, text, replyTo = null, fwd = false) {
     const theirs = await tx.get(friendsRef(db, to));
     const held = isBlocked(theirs.exists ? theirs.data() : null, uid);
     const cur = await tx.get(chatRef(db, uid, to));
-    const out = pushChat(cur.exists ? cur.data() : null, uid, to, text, Date.now(), replyTo ? String(replyTo) : null, { fwd: !!fwd, held });
+    const out = pushChat(cur.exists ? cur.data() : null, uid, to, text, Date.now(), replyTo ? String(replyTo) : null, { fwd: !!fwd, held, att });
     if (out.error) fail(400, out.error);
     tx.set(chatRef(db, uid, to), out.chat);
     return { ok: true, id: out.chat.msgs.at(-1).id };
@@ -274,11 +274,16 @@ async function blockedBy(db, by, uid) {
 export async function friendSearch(db, uid, q) {
   const term = cleanText(q, 20);
   if (term.length < 2) fail(400, 'Type at least 2 letters');
-  const snap = await db.collection('users').where('displayName', '>=', term).where('displayName', '<', term + '\uf8ff').limit(10).get();
+  const handle = term.replace(/^@/, '').toLowerCase();
+  const [byName, byHandle] = await Promise.all([
+    db.collection('users').where('displayName', '>=', term).where('displayName', '<', term + '\uf8ff').limit(10).get(),
+    db.collection('users').where('usernameLower', '>=', handle).where('usernameLower', '<', handle + '\uf8ff').limit(10).get().catch(() => ({ docs: [] })),
+  ]);
+  const seenIds = new Set(); const snap = { docs: [...byHandle.docs, ...byName.docs].filter((d) => !seenIds.has(d.id) && seenIds.add(d.id)).slice(0, 10) };
   const mine = await friendsRef(db, uid).get(); const f = mine.exists ? mine.data() : {};
   return {
     players: snap.docs.filter((d) => d.id !== uid).map((d) => ({
-      uid: d.id, name: d.data().displayName || 'Player', avatar: d.data().avatar || 'lion',
+      uid: d.id, name: d.data().displayName || 'Player', avatar: d.data().avatar || 'lion', username: d.data().username || '',
       status: f.list?.[d.id] ? 'friend' : f.outgoing?.[d.id] ? 'sent' : f.incoming?.[d.id] ? 'incoming' : 'none',
     })),
   };

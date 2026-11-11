@@ -6,8 +6,10 @@ import {
   collection, query, orderBy, limit, getDocs, doc, updateDoc, getDoc,
 } from 'firebase/firestore';
 import {
-  signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, signInAnonymously, updateProfile,
+  signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, updateProfile, sendEmailVerification, sendPasswordResetEmail,
+  reauthenticateWithCredential, reauthenticateWithPopup, EmailAuthProvider, signOut as fbSignOut,
 } from 'firebase/auth';
+import { usernameProblem, normalizeUsername, USERNAME_TEXT } from '@/lib/username';
 import { auth, db, googleProvider, apiCall } from '@/lib/firebase';
 import SwipePicker from '@/components/SwipePicker';
 import { HEROES, heroById } from '@/lib/i18n';
@@ -19,7 +21,7 @@ import { FeePicker } from './Wallet';
 import EarnOffer from './EarnOffer';
 import PhotoPicker from './PhotoPicker';
 import GebetaRules from './GebetaRules';
-import { getPhoto, storePhoto } from '@/lib/photo';
+import { storePhoto } from '@/lib/photo';
 import { KINDS, STONE_SETS, stoneSet, stoneVars } from '@/lib/stones';
 
 export const Tibeb = () => <div className="tibeb" aria-hidden="true" />;
@@ -198,43 +200,87 @@ const friendly = (e) => {
   const c = e?.code || '';
   if (c.includes('invalid-credential') || c.includes('wrong-password') || c.includes('user-not-found')) return 'Wrong email or password.';
   if (c.includes('email-already-in-use')) return 'That email already has an account — sign in instead.';
-  if (c.includes('weak-password')) return 'Password needs at least 6 characters.';
+  if (c.includes('weak-password')) return 'Password needs at least 8 characters.';
   if (c.includes('invalid-email')) return 'Enter a valid email address.';
-  if (c.includes('popup-closed')) return '';
+  if (c.includes('popup-closed') || c.includes('cancelled-popup')) return '';
+  if (c.includes('popup-blocked')) return 'Your browser blocked the Google window. Allow pop-ups and try again.';
+  if (c.includes('too-many-requests')) return 'Too many tries. Wait a few minutes, then try again.';
+  if (c.includes('network-request-failed')) return 'No internet connection.';
+  if (c.includes('requires-recent-login')) return 'Please sign in again first.';
   if (c.includes('operation-not-allowed')) return 'This sign-in method is not enabled in Firebase yet.';
   return e?.message || 'Something went wrong.';
 };
+const PENDING_KEY = 'afro.pendingSignup';
+export const readPendingSignup = () => { try { const v = JSON.parse(window.sessionStorage.getItem(PENDING_KEY) || 'null'); return v && typeof v === 'object' ? v : null; } catch { return null; } };
+export const clearPendingSignup = () => { try { window.sessionStorage.removeItem(PENDING_KEY); } catch { /* ignore */ } };
+
+/** Live "is this username free?" for a text field. Returns { state: 'idle'|'checking'|'ok'|'bad', message }. */
+export function useUsernameCheck(raw, { skip = false, own = '' } = {}) {
+  const [r, setR] = useState({ state: 'idle', message: '' });
+  useEffect(() => {
+    const name = normalizeUsername(raw);
+    if (skip || !name) { setR({ state: 'idle', message: '' }); return undefined; }
+    const bad = usernameProblem(name);
+    if (bad) { setR({ state: 'bad', message: USERNAME_TEXT[bad] }); return undefined; }
+    if (own && name === own) { setR({ state: 'ok', message: '✓ This is your username' }); return undefined; }
+    setR({ state: 'checking', message: 'Checking…' });
+    let dead = false;
+    const id = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/account?u=${encodeURIComponent(name)}`, { cache: 'no-store' }); const d = await res.json();
+        if (dead) return;
+        if (!res.ok) setR({ state: 'idle', message: '' });
+        else setR(d.ok ? { state: 'ok', message: `✓ @${name} is free` } : { state: 'bad', message: d.message || USERNAME_TEXT.taken });
+      } catch { if (!dead) setR({ state: 'idle', message: '' }); }
+    }, 400);
+    return () => { dead = true; clearTimeout(id); };
+  }, [raw, skip, own]);
+  return r;
+}
 
 export function AuthForm({ t }) {
-  const [mode, setMode] = useState('in');
-  const [email, setEmail] = useState(''); const [pw, setPw] = useState(''); const [name, setName] = useState('');
-  const [busy, setBusy] = useState(false); const [err, setErr] = useState('');
-  const run = async (fn) => { setBusy(true); setErr(''); try { await fn(); } catch (e) { setErr(friendly(e)); } setBusy(false); };
+  const [mode, setMode] = useState('in');   // in | up | reset
+  const [email, setEmail] = useState(''); const [pw, setPw] = useState(''); const [pw2, setPw2] = useState(''); const [name, setName] = useState(''); const [uname, setUname] = useState('');
+  const [busy, setBusy] = useState(false); const [err, setErr] = useState(''); const [info, setInfo] = useState('');
+  const uc = useUsernameCheck(uname, { skip: mode !== 'up' });
+  const run = async (fn) => { setBusy(true); setErr(''); setInfo(''); try { await fn(); } catch (e) { setErr(friendly(e)); } setBusy(false); };
   const submit = (e) => {
     e.preventDefault();
     run(async () => {
-      if (mode === 'in') await signInWithEmailAndPassword(auth, email.trim(), pw);
-      else {
-        const n = name.trim();
-        if (n.length < 2 || n.length > 20) throw new Error('Display name must be 2–20 characters.');
-        const cred = await createUserWithEmailAndPassword(auth, email.trim(), pw);
-        await updateProfile(cred.user, { displayName: n });
-      }
+      if (mode === 'reset') { await sendPasswordResetEmail(auth, email.trim()); setInfo('If that email has an account, a reset link is on its way. Check your inbox (and spam).'); return; }
+      if (mode === 'in') { await signInWithEmailAndPassword(auth, email.trim(), pw); return; }
+      const n = name.trim(); const u = normalizeUsername(uname);
+      if (n.length < 2 || n.length > 20) throw new Error('Display name must be 2–20 characters.');
+      const bad = usernameProblem(u); if (bad) throw new Error(USERNAME_TEXT[bad]);
+      if (uc.state === 'bad') throw new Error(uc.message);
+      if (pw.length < 8) throw new Error('Password needs at least 8 characters.');
+      if (pw !== pw2) throw new Error('The two passwords are not the same.');
+      try { window.sessionStorage.setItem(PENDING_KEY, JSON.stringify({ name: n, username: u })); } catch { /* ignore */ }
+      const cred = await createUserWithEmailAndPassword(auth, email.trim(), pw);
+      await updateProfile(cred.user, { displayName: n }).catch(() => {});
+      sendEmailVerification(cred.user).catch(() => {});
     });
   };
+  const google = () => run(() => signInWithPopup(auth, googleProvider));
   return (
     <div className="panel auth">
-      <p className="muted">{t.onlineNeedsSignIn}</p>
-      <button className="btn wide" onClick={() => run(() => signInWithPopup(auth, googleProvider))} disabled={busy}>{t.google}</button>
+      <p className="muted">{mode === 'reset' ? 'Enter your email and we will send you a link to choose a new password.' : t.onlineNeedsSignIn}</p>
+      {mode !== 'reset' && <button className="btn wide" onClick={google} disabled={busy}>{t.google}</button>}
       <form onSubmit={submit} className="form">
-        {mode === 'up' && <label>{t.name}<input value={name} onChange={(e) => setName(e.target.value)} maxLength={20} autoComplete="nickname" required /></label>}
+        {mode === 'up' && <>
+          <label>Username<input value={uname} onChange={(e) => setUname(e.target.value.toLowerCase().replace(/\s/g, ''))} maxLength={20} autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck="false" required />
+            <small className={`hint ${uc.state === 'ok' ? 'ok' : uc.state === 'bad' ? 'bad' : ''}`}>{uc.message || 'Unique. Letters, numbers, dot and underscore. Friends can find you by it.'}</small></label>
+          <label>{t.name}<input value={name} onChange={(e) => setName(e.target.value)} maxLength={20} autoComplete="nickname" required /></label>
+        </>}
         <label>{t.email}<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required /></label>
-        <label>{t.password}<input type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete={mode === 'in' ? 'current-password' : 'new-password'} minLength={6} required /></label>
+        {mode !== 'reset' && <label>{t.password}<input type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete={mode === 'in' ? 'current-password' : 'new-password'} minLength={mode === 'up' ? 8 : 6} required /></label>}
+        {mode === 'up' && <label>Repeat password<input type="password" value={pw2} onChange={(e) => setPw2(e.target.value)} autoComplete="new-password" minLength={8} required /></label>}
         {err && <p className="err" role="alert">{err}</p>}
-        <button className="btn primary wide" disabled={busy}>{mode === 'in' ? t.signIn : t.signUp}</button>
+        {info && <p className="hint ok" role="status">{info}</p>}
+        <button className="btn primary wide" disabled={busy || (mode === 'up' && uc.state === 'bad')}>{mode === 'in' ? t.signIn : mode === 'up' ? t.signUp : 'Send reset link'}</button>
       </form>
-      <button className="link" onClick={() => { setMode(mode === 'in' ? 'up' : 'in'); setErr(''); }}>{mode === 'in' ? t.noAccount : t.haveAccount}</button>
-      <button className="btn ghost wide" onClick={() => run(() => signInAnonymously(auth))} disabled={busy}>{t.guest}</button>
+      {mode === 'in' && <button className="link" onClick={() => { setMode('reset'); setErr(''); setInfo(''); }}>Forgot password?</button>}
+      <button className="link" onClick={() => { setMode(mode === 'up' ? 'in' : mode === 'in' ? 'up' : 'in'); setErr(''); setInfo(''); }}>{mode === 'in' ? t.noAccount : mode === 'up' ? t.haveAccount : t.signIn}</button>
     </div>
   );
 }
@@ -327,12 +373,76 @@ export function Leaders({ t, uid, game }) {
 }
 
 /* ───────── Profile ───────── */
+function UsernameCard({ profile, user }) {
+  const [val, setVal] = useState(profile?.username || ''); const [busy, setBusy] = useState(false); const [msg, setMsg] = useState(''); const [editing, setEditing] = useState(!profile?.username);
+  const uc = useUsernameCheck(val, { skip: !editing, own: profile?.username || '' });
+  useEffect(() => { if (profile?.username) { setVal(profile.username); setEditing(false); } }, [profile?.username]);
+  const save = async (e) => {
+    e.preventDefault(); setMsg(''); setBusy(true);
+    try { await apiCall({ action: 'usernameClaim', username: val }, { retries: 0 }); setEditing(false); setMsg('Saved'); setTimeout(() => setMsg(''), 1500); }
+    catch (x) { setMsg(x.message); }
+    setBusy(false);
+  };
+  if (!editing) return (
+    <div className="acct-box"><h3>Username</h3><b>@{profile.username}</b> <button className="link" onClick={() => setEditing(true)}>Change</button>{msg && <small className="hint ok"> {msg}</small>}</div>
+  );
+  return (
+    <form className="acct-box" onSubmit={save}>
+      <h3>{profile?.username ? 'Change username' : 'Choose your username'}</h3>
+      {!profile?.username && <p className="muted small">Every player needs a unique username. Friends use it to find you.</p>}
+      <input value={val} onChange={(e) => setVal(e.target.value.toLowerCase().replace(/\s/g, ''))} maxLength={20} autoCapitalize="none" autoCorrect="off" spellCheck="false" aria-label="Username" />
+      <small className={`hint ${uc.state === 'ok' ? 'ok' : uc.state === 'bad' ? 'bad' : ''}`}>{uc.message}</small>
+      {msg && <p className="err" role="alert">{msg}</p>}
+      <button className="btn primary wide" disabled={busy || uc.state === 'bad' || uc.state === 'checking' || !val}>Save username</button>
+      {profile?.username && <button type="button" className="link" onClick={() => { setEditing(false); setVal(profile.username); setMsg(''); }}>Cancel</button>}
+    </form>
+  );
+}
+
+function AccountSection({ user, onSignOut }) {
+  const [open, setOpen] = useState(false); const [pw, setPw] = useState(''); const [busy, setBusy] = useState(false); const [err, setErr] = useState(''); const [info, setInfo] = useState('');
+  const hasPassword = user.providerData?.some((p) => p.providerId === 'password');
+  const resetPw = async () => { setErr(''); setInfo(''); try { await sendPasswordResetEmail(auth, user.email); setInfo(`A link to change your password was sent to ${user.email}.`); } catch (e) { setErr(friendly(e)); } };
+  const del = async () => {
+    setErr(''); setBusy(true);
+    try {
+      if (hasPassword) await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, pw));
+      else await reauthenticateWithPopup(user, googleProvider);
+      await apiCall({ action: 'accountDelete' }, { retries: 0 });
+      try { storePhoto(null); } catch { /* ignore */ }
+      await fbSignOut(auth).catch(() => {});
+    } catch (e) { setErr(friendly(e)); setBusy(false); }
+  };
+  return (
+    <>
+      <div className="acct-box">
+        <h3>Account</h3>
+        <p className="muted small">{user.email || 'Signed in with Google'}</p>
+        {hasPassword && <button className="btn wide" onClick={resetPw}>Change password (email me a link)</button>}
+        {info && <p className="hint ok" role="status">{info}</p>}
+        <button className="btn ghost wide" onClick={onSignOut}>Sign out</button>
+      </div>
+      <div className="acct-box">
+        <h3>Delete account</h3>
+        {!open ? <button className="btn danger wide" onClick={() => setOpen(true)}>Delete my account…</button> : (
+          <>
+            <p className="muted small">This permanently deletes your profile, username, coins, friends, chats and uploaded files. It cannot be undone.</p>
+            {hasPassword && <input type="password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="Enter your password to confirm" autoComplete="current-password" aria-label="Password" />}
+            {err && <p className="err" role="alert">{err}</p>}
+            <button className="btn danger wide" disabled={busy || (hasPassword && pw.length < 6)} onClick={del}>{busy ? 'Deleting…' : 'Yes, delete everything'}</button>
+            <button className="link" onClick={() => { setOpen(false); setErr(''); setPw(''); }}>Keep my account</button>
+          </>
+        )}
+      </div>
+    </>
+  );
+}
+
 export function ProfileScreen({ t, lang, user, profile, onSignOut }) {
   const [name, setName] = useState(profile?.displayName || '');
   const [avatar, setAvatar] = useState(profile?.avatar || 'lion');
-  const [saved, setSaved] = useState(false); const [err, setErr] = useState('');
+  const [saved, setSaved] = useState(false); const [err, setErr] = useState(''); const [sent, setSent] = useState(false);
   useEffect(() => { if (profile) { setName(profile.displayName); setAvatar(profile.avatar); } }, [profile?.displayName, profile?.avatar]); // eslint-disable-line
-  useEffect(() => { if (profile?.photo && !getPhoto()) storePhoto(profile.photo); }, [profile?.photo]); // the account's picture follows you to a new device
   if (!user) return <AuthForm t={t} />;
   const save = async () => {
     setErr('');
@@ -341,8 +451,16 @@ export function ProfileScreen({ t, lang, user, profile, onSignOut }) {
     try { await updateDoc(doc(db, 'users', user.uid), { displayName: n, avatar, lang }); setSaved(true); setTimeout(() => setSaved(false), 1500); }
     catch (e) { setErr(e.message); }
   };
+  const needsVerify = !user.emailVerified && user.providerData?.some((p) => p.providerId === 'password');
   return (
     <div className="panel prof">
+      {needsVerify && (
+        <div className="verify-bar" role="status">
+          ✉️ Please confirm your email ({user.email}).{' '}
+          <button className="link" disabled={sent} onClick={() => { sendEmailVerification(user).then(() => setSent(true)).catch(() => {}); }}>{sent ? 'Link sent' : 'Send the link again'}</button>
+        </div>
+      )}
+      {profile && <UsernameCard profile={profile} user={user} />}
       <PhotoPicker lang={lang} heroId={avatar} onChange={(url) => updateDoc(doc(db, 'users', user.uid), { photo: url || '' }).catch(() => {})} />
       <fieldset className="seg-group">
         <legend>{t.avatar}</legend>
@@ -375,7 +493,7 @@ export function ProfileScreen({ t, lang, user, profile, onSignOut }) {
           </div>
         );
       })}
-      <button className="btn ghost wide" onClick={onSignOut}>{t.signOut}</button>
+      <AccountSection user={user} onSignOut={onSignOut} />
     </div>
   );
 }

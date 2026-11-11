@@ -5,7 +5,7 @@
    The transport is isolated in `Net` so phase 3 (Bluetooth / hotspot / Wi-Fi) can plug in the same way. */
 (function () {
   'use strict';
-  var API = '/api/race', SEND_MS = 200, FB = 'https://www.gstatic.com/firebasejs/11.1.0/';
+  var API = '/api/race', SEND_MS = 100, FB = 'https://www.gstatic.com/firebasejs/11.1.0/';
   var COLORS = ['#35c6ff', '#ff5a5a', '#7be08a', '#ffd33d'];
   var R = window.Race = { on: false, hold: function () { return false; } };
   var fb = null, auth = null, fs = null, user = null, realUser = null, skew = 0;
@@ -172,7 +172,7 @@
   /* ---------- the race ---------- */
   function beginRace() {
     if (room.equal) eqApply(); else eqRestore();
-    view = 'none'; closeOverlay(); ghosts = {}; me = { fin: false, safe: 0 }; closing = false;
+    view = 'none'; closeOverlay(); ghosts = {}; me = { fin: false, safe: 0 }; closing = false; lastSp = null; lastDraw = 0;
     start(room.world, room.level);                              // the game's own level start (same seed for everyone)
     R.on = true; R.hold = function () { return sNow() < room.startAt; };
     inp.gas = 0; inp.brake = 0;
@@ -190,9 +190,17 @@
   }
   function applyCar(u, d) {   // one update of another racer's car (from Firestore or from the nearby link)
     if (u === user.uid) return; var gh = ghosts[u];
-    if (!gh) gh = ghosts[u] = { x: d.x, y: d.y, a: d.a, vx: 0, vy: 0, d: 0 };
-    if (gh.t != null && d.t > gh.t) { var dt = (d.t - gh.t) / 1000; if (dt > 0.02 && dt < 2) { gh.vx = (d.x - gh.tx) / dt; gh.vy = (d.y - gh.ty) / dt; } }
-    gh.tx = d.x; gh.ty = d.y; gh.ta = d.a; gh.t = d.t; gh.rx = performance.now(); gh.s0 = d.s0; gh.s1 = d.s1; gh.w0 = d.w0; gh.w1 = d.w1; gh.v = d.v; gh.g = d.g; gh.f = d.f; gh.d = d.d || 0;
+    if (!gh) gh = ghosts[u] = { x: d.x, y: d.y, a: d.a, vx: 0, vy: 0, av: 0, sp0: d.s0 || 0, sp1: d.s1 || 0, d: 0 };
+    if (gh.t != null && d.t <= gh.t) return;   // an old packet that arrived late
+    if (gh.ts0 == null) { gh.ts0 = d.s0 || 0; gh.ts1 = d.s1 || 0; }
+    // the car's own velocity is sent, so the ghost can fly on between updates exactly like the real car
+    gh.vx = d.vx != null ? d.vx : (gh.t != null && d.t > gh.t ? (d.x - gh.tx) / Math.max(0.02, (d.t - gh.t) / 1000) : 0);
+    gh.vy = d.vy != null ? d.vy : (gh.t != null && d.t > gh.t ? (d.y - gh.ty) / Math.max(0.02, (d.t - gh.t) / 1000) : 0);
+    gh.av = d.av || 0;
+    if (d.o0 != null) { gh.o0 = d.o0; gh.o1 = d.o1 || 0; }
+    else if (gh.t != null) { var dtp = Math.max(0.05, (d.t - gh.t) / 1000); gh.o0 = ((d.s0 || 0) - gh.ts0) / dtp; gh.o1 = ((d.s1 || 0) - gh.ts1) / dtp; }   // old packets: tyre speed from the angle change
+    gh.tx = d.x; gh.ty = d.y; gh.ta = d.a; gh.t = d.t; gh.rx = performance.now(); gh.ts0 = d.s0 || 0; gh.ts1 = d.s1 || 0;
+    gh.s0 = d.w0 || 0; gh.s1 = d.w1 || 0; gh.v = d.v; gh.g = d.g; gh.f = d.f; gh.d = d.d || 0;
   }
   function countdown() {
     var e = $q('#rccd'); if (!e) { e = document.createElement('div'); e.id = 'rccd'; document.body.appendChild(e); }
@@ -208,11 +216,15 @@
     if (!R.on || !car || run.over || R.hold()) return;
     if (car.air < 0.05 && Math.abs(Math.sin(car.a)) < 0.45 && !inGorge(car.x)) me.safe = Math.max(me.safe, car.x - 40);
   }
+  var lastSp = null, legacy = false;
   function sendCar() {
     if (!R.on || !car || !room) return; var r = function (v) { return Math.round(v * 10) / 10; }, sp = car.sp || [0, 0], ws = car.ws || [0, 0];
-    var d = Math.max(0, Math.min(1, car.x / (LV.fin || 1)));
-    var pkt = { x: r(car.x), y: r(car.y), a: Math.round(car.a * 100) / 100, s0: r(sp[0]), s1: r(sp[1]), w0: r(ws[0]), w1: r(ws[1]), v: S.veh, g: car.air > 0.12 ? 1 : 0, f: me.fin ? 1 : 0, t: sNow(), d: Math.round(d * 1000) / 1000 };
-    if (R.p2p) R.p2p.sendCar(user.uid, pkt); else Net.roomRef(code).collection('cars').doc(user.uid).set(pkt).catch(function () {});
+    var d = Math.max(0, Math.min(1, car.x / (LV.fin || 1))), nowp = performance.now();
+    var om = [0, 0]; if (lastSp) { var dt = (nowp - lastSp.t) / 1000; if (dt > 0.02 && dt < 1) om = [(sp[0] - lastSp.a[0]) / dt, (sp[1] - lastSp.a[1]) / dt]; } lastSp = { t: nowp, a: [sp[0], sp[1]] };
+    var pkt = { x: r(car.x), y: r(car.y), a: Math.round(car.a * 100) / 100, s0: Math.round(sp[0] * 100) / 100, s1: Math.round(sp[1] * 100) / 100, o0: r(om[0]), o1: r(om[1]), w0: r(ws[0]), w1: r(ws[1]), vx: Math.round(car.vx), vy: Math.round(car.vy), av: Math.round((car.w || 0) * 100) / 100, v: S.veh, g: car.air > 0.12 ? 1 : 0, f: me.fin ? 1 : 0, t: sNow(), d: Math.round(d * 1000) / 1000 };
+    if (R.p2p) { R.p2p.sendCar(user.uid, pkt); return; }
+    if (legacy) { ['o0', 'o1', 'vx', 'vy', 'av'].forEach(function (k) { delete pkt[k]; }); }   // rules from before v3.16 still deployed: send the old packet
+    Net.roomRef(code).collection('cars').doc(user.uid).set(pkt).catch(function (e) { if (!legacy && e && e.code === 'permission-denied') legacy = true; });
   }
   R.crash = function (why) {   // replaces the game's "run over" screen: you lose time, not the race
     if (!R.on) return false; if (run.over) return true;
@@ -295,20 +307,46 @@
   })();
 
   /* ---------- drawing other racers ---------- */
+  var lastDraw = 0;
   R.draw = function (cx) {
-    if (!R.on) return; var now = performance.now();
+    if (!R.on) return; var now = performance.now(), dtf = lastDraw ? Math.min(0.05, (now - lastDraw) / 1000) : 0.016; lastDraw = now;
     for (var u in ghosts) {
       var gh = ghosts[u]; if (gh.tx == null) continue;
-      var age = Math.min(0.35, (now - gh.rx) / 1000), px = gh.tx + gh.vx * age, py = gh.ty + gh.vy * age;
-      var k = 0.28; gh.x += (px - gh.x) * k; gh.y += (py - gh.y) * k; gh.a += (gh.ta - gh.a) * k;
+      var age = Math.min(0.3, (now - gh.rx) / 1000);
+      var px = gh.tx + gh.vx * age, py = gh.ty + gh.vy * age, pa = gh.ta + gh.av * age;
+      var k = 1 - Math.pow(0.0005, dtf);   // frame-rate independent smoothing (about 90 ms to catch up)
+      if (Math.abs(px - gh.x) > 600 || Math.abs(py - gh.y) > 600) { gh.x = px; gh.y = py; gh.a = pa; }   // respawn after a crash: jump, do not slide across the map
+      gh.x += (px - gh.x) * k; gh.y += (py - gh.y) * k;
+      var da = Math.atan2(Math.sin(pa - gh.a), Math.cos(pa - gh.a)); gh.a += da * k;
+      // tyres: spin at the rate the real wheel turns (sent as rad/s), and gently pull toward the true angle so they never drift
+      gh.sp0 += (gh.o0 || 0) * dtf; gh.sp1 += (gh.o1 || 0) * dtf;
+      var e0 = gh.ts0 + (gh.o0 || 0) * age - gh.sp0, e1 = gh.ts1 + (gh.o1 || 0) * age - gh.sp1;
+      gh.sp0 += Math.max(-1, Math.min(1, e0)) * k * 0.5; gh.sp1 += Math.max(-1, Math.min(1, e1)) * k * 0.5;
       var idx = Math.max(0, room.players.indexOf(u));
+      bump(gh, dtf);
       try {
-        cx.save(); cx.globalAlpha = 0.62; cx.translate(gh.x, gh.y); cx.rotate(gh.a);
-        drawVeh(cx, gh.v | 0, { sp: [gh.s0 || 0, gh.s1 || 0], ws: [gh.w0 || 0, gh.w1 || 0], t: run.t, dx: 0, dy: 0, ha: 0, bl: 0, air: !!gh.g, hard: false, dead: -1 });
+        cx.save(); cx.globalAlpha = 0.85; cx.translate(gh.x, gh.y); cx.rotate(gh.a);
+        drawVeh(cx, gh.v | 0, { sp: [gh.sp0, gh.sp1], ws: [gh.s0 || 0, gh.s1 || 0], t: run.t, dx: 0, dy: 0, ha: 0, bl: 0, air: !!gh.g, hard: false, dead: -1 });
         cx.restore();
         cx.save(); cx.globalAlpha = 0.95; cx.font = '800 22px system-ui,Arial'; cx.textAlign = 'center'; cx.lineWidth = 5; cx.strokeStyle = '#0a1328'; cx.fillStyle = COLORS[idx % 4];
         var nm = (room.names[u] || 'Racer'); cx.strokeText(nm, gh.x, gh.y - 80); cx.fillText(nm, gh.x, gh.y - 80); cx.restore();
       } catch (e) { try { cx.restore(); } catch (x) {} }
     }
   };
+
+  /* ---------- car-to-car contact: when two cars overlap they push each other like real bodies (equal mass, a little bounce).
+     Both phones run the same rule on their own car, so the two sides agree without any extra network traffic. ---------- */
+  var bumpT = 0;
+  function bump(gh, dt) {
+    if (!car || run.over || me.fin || R.hold()) return;
+    var dx = car.x - gh.x, dy = car.y - gh.y, ax = Math.abs(dx);
+    if (ax > 120 || Math.abs(dy) > 62) return;   // roughly one car length and one car height
+    var ov = 120 - ax, dir = dx >= 0 ? 1 : -1;
+    var rvx = car.vx - (gh.vx || 0), closing = -rvx * dir;   // > 0 when we are driving into each other
+    var push = ov * 9 + (closing > 0 ? closing * 0.55 : 0);   // spring out of the overlap + take back the closing speed
+    car.vx += dir * push * dt * 6;
+    car.vy -= Math.max(0, 62 - Math.abs(dy)) * 0.8 * dt * 6 * (dy <= 0 ? 1 : 0);   // the upper car is nudged up and over, not pinned
+    car.w = (car.w || 0) + (dy < 0 ? -dir : dir) * 0.6 * dt * 4;
+    if (closing > 160 && performance.now() - bumpT > 350) { bumpT = performance.now(); try { sfx.bad && sfx.bad(); navigator.vibrate && navigator.vibrate(25); } catch (e) {} }
+  }
 })();

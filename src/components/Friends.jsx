@@ -1,5 +1,7 @@
 'use client';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { uploadAttachment, shrinkImage, startRecording, storageAvailable, MAX_VOICE_SECONDS } from '@/lib/upload';
+import { CAR_WORLDS, CAR_LEVELS, carTier } from '@/lib/carWorlds';
 import { apiCall, serverNow } from '@/lib/firebase';
 import { heroById } from '@/lib/i18n';
 import { GAMES } from '@/lib/games.js';
@@ -116,8 +118,8 @@ export default function FriendsScreen({ t, lang, uid, social, onEnterRoom, openC
     const how = await shareOrCopy(t.addMeText(myCode), friendLink(myCode));
     if (how === 'copied') { setNote(t.codeCopied); setTimeout(() => setNote(''), 1800); }
   };
-  const invite = async (friend, game, ruleset) => {
-    const r = await call({ action: 'friendInvite', to: friend.id, game, ruleset, fee: 0 });
+  const invite = async (friend, game, ruleset, track) => {
+    const r = await call({ action: 'friendInvite', to: friend.id, game, ruleset, fee: 0, ...(track || {}) });
     if (r?.code && game === 'car') { setInviting(null); window.location.href = carRaceUrl(r.code); return; }   // host waits in the race lobby
     if (r?.code) { setInviting(null); onEnterRoom(r.code); }
   };
@@ -126,7 +128,7 @@ export default function FriendsScreen({ t, lang, uid, social, onEnterRoom, openC
   if (chatFriend) return <FriendChat t={t} lang={lang} uid={uid} friend={chatFriend} chat={chatOf(chatFriend.id)} seenAt={seen[chatFriend.id]} social={social} muted={muted.includes(chatFriend.id)} blocked={blocked.includes(chatFriend.id)}
     onBack={() => onOpenChat(null)} onInvite={() => setInviting(chatFriend.id)}
     onUnfriend={async () => { if (window.confirm(t.frRemoveConfirm(chatFriend.name))) { await call({ action: 'friendRemove', to: chatFriend.id }); onOpenChat(null); } }}
-    sheet={inviting === chatFriend.id ? <InviteSheet t={t} friend={chatFriend} busy={busy} onClose={() => setInviting(null)} onPick={(g, rs) => invite(chatFriend, g, rs)} /> : null} />;
+    sheet={inviting === chatFriend.id ? <InviteSheet t={t} friend={chatFriend} busy={busy} onClose={() => setInviting(null)} onPick={(g, rs, tr) => invite(chatFriend, g, rs, tr)} /> : null} />;
 
   const strangers = (found || []).filter((p) => p.status !== 'friend');
   return (
@@ -229,7 +231,7 @@ export default function FriendsScreen({ t, lang, uid, social, onEnterRoom, openC
       {note && <p className="fr-note" role="status">{note}</p>}
       {err && <p className="err" role="alert">{err}</p>}
 
-      {inviting && list.find((f) => f.id === inviting) && <InviteSheet t={t} friend={list.find((f) => f.id === inviting)} busy={busy} onClose={() => setInviting(null)} onPick={(g, rs) => invite(list.find((f) => f.id === inviting), g, rs)} />}
+      {inviting && list.find((f) => f.id === inviting) && <InviteSheet t={t} friend={list.find((f) => f.id === inviting)} busy={busy} onClose={() => setInviting(null)} onPick={(g, rs, tr) => invite(list.find((f) => f.id === inviting), g, rs, tr)} />}
     </div>
   );
 }
@@ -239,6 +241,7 @@ export function InviteSheet({ t, friend, busy, onClose, onPick }) {
   const [game, setGame] = useState('gebeta');
   const info = game === 'car' ? CAR : GAMES[game];
   const [rs, setRs] = useState(info.defaultRuleset);
+  const [world, setWorld] = useState(0); const [level, setLevel] = useState(0);   // car game: the road the host picks, like the ruleset of the board games
   useEffect(() => { setRs((game === 'car' ? CAR : GAMES[game]).defaultRuleset); }, [game]);
   return (
     <div className="overlay" role="dialog" aria-modal="true" aria-label={t.inviteToPlay} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
@@ -257,14 +260,40 @@ export function InviteSheet({ t, friend, busy, onClose, onPick }) {
             {info.rulesets.map((id) => <button key={id} className={rs === id ? 'on' : ''} aria-pressed={rs === id} onClick={() => setRs(id)}>{t.rs[game][id][0]}</button>)}
           </div>
         )}
+        {game === 'car' && (
+          <div className="fr-car-pick">
+            <label>{t.carWorld || 'World'}
+              <select value={world} onChange={(e) => setWorld(+e.target.value)}>{CAR_WORLDS.map((n, i) => <option key={i} value={i}>{n}</option>)}</select>
+            </label>
+            <label>{t.carStage || 'Stage'}
+              <select value={level} onChange={(e) => setLevel(+e.target.value)}>{Array.from({ length: CAR_LEVELS }, (_, l) => <option key={l} value={l}>{`${l + 1} · ${carTier(l)}`}</option>)}</select>
+            </label>
+          </div>
+        )}
         <p className="muted small">{t.inviteFriendly}</p>
         <div className="result-actions">
           <button className="btn" onClick={onClose}>{t.cancel}</button>
-          <button className="btn primary" disabled={busy} onClick={() => onPick(game, rs)}>{t.inviteToPlay}</button>
+          <button className="btn primary" disabled={busy} onClick={() => onPick(game, rs, game === 'car' ? { world, level } : undefined)}>{t.inviteToPlay}</button>
         </div>
       </div>
     </div>
   );
+}
+
+const attLabelOf = (a) => (a ? (a.kind === 'file' && a.name ? `📄 ${a.name}` : { image: '📷 Photo', voice: '🎤 Voice message', file: '📄 Document' }[a.kind]) : '');
+const sizeText = (n) => (n >= 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
+/** The bubble is a button, except when it holds a file: a player or a link cannot live inside a button. */
+function Bub({ m, children, disabled, onClick, ...rest }) {
+  return m.att && !m.deleted
+    ? <div role="button" tabIndex={0} onClick={onClick} onKeyDown={(e) => { if (e.key === 'Enter') onClick?.(e); }} {...rest}>{children}</div>
+    : <button disabled={disabled} onClick={onClick} {...rest}>{children}</button>;
+}
+/** A photo, voice note or document inside a chat bubble. */
+function Attachment({ att }) {
+  const stop = (e) => e.stopPropagation();
+  if (att.kind === 'image') return <a className="tg-att img" href={att.url} target="_blank" rel="noopener noreferrer" onClick={stop}><img src={att.url} alt="" loading="lazy" /></a>;
+  if (att.kind === 'voice') return <span className="tg-att voice" onClick={stop}><audio controls preload="none" src={att.url} /></span>;
+  return <a className="tg-att doc" href={att.url} target="_blank" rel="noopener noreferrer" download={att.name || true} onClick={stop}><span aria-hidden="true">📄</span><b>{att.name || 'Document'}</b><small>{sizeText(att.size || 0)}</small></a>;
 }
 
 /** Message text with WhatsApp formatting (*bold* _italic_ ~strike~ `mono`) and tappable web links. Rendered as React elements, never as HTML. */
@@ -296,7 +325,9 @@ export function FriendChat({ t, lang, uid, friend, chat, seenAt, social, muted =
   const [theme, setTheme] = useState('wa-light');
   const [emojiOpen, setEmojiOpen] = useState(false); const [etab, setEtab] = useState('smile'); const [recent, setRecent] = useState([]);
   const [down, setDown] = useState(0);              // floating "jump to latest" button: number of new lines while scrolled up
-  const input = useRef(null); const seenLen = useRef(0);
+  const [rec, setRec] = useState(null);           // { stop, cancel, sec } while a voice note is being recorded
+  const [up, setUp] = useState(null);             // { label, pct } while a file is uploading
+  const input = useRef(null); const seenLen = useRef(0); const photoIn = useRef(null); const fileIn = useRef(null);
   useEffect(() => { const dark = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-color-scheme: dark)').matches; const v = store.get(THEME_KEY, dark ? 'wa-dark' : 'wa-light'); if (THEMES.includes(v)) setTheme(v); try { setRecent(JSON.parse(store.get(RECENT_KEY, '[]')).slice(0, 24)); } catch { /* ignore */ } }, []);
   const nextTheme = () => { const n = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length]; setTheme(n); store.set(THEME_KEY, n); setMore(false); };
   const addEmoji = (e) => {
@@ -343,6 +374,22 @@ export function FriendChat({ t, lang, uid, friend, chat, seenAt, social, muted =
     } catch (e) { setErr(e.message); }
     setBusy(false);
   };
+  const sendAtt = async (kind, blob, extra = {}) => {
+    setErr(''); setUp({ label: kind === 'image' ? '📷' : kind === 'voice' ? '🎤' : '📄', pct: 0 });
+    try {
+      const att = await uploadAttachment(uid, kind, blob, { ...extra, onProgress: (p) => setUp((u) => (u ? { ...u, pct: p } : u)) });
+      stick.current = true;
+      await apiCall({ action: 'chatSend', to: friend.id, att, replyTo: reply?.id });
+      setReply(null); social?.refresh?.();
+    } catch (e) { setErr(e.message || 'Could not send the file'); }
+    setUp(null);
+  };
+  const pickPhoto = async (e) => { const f = e.target.files?.[0]; e.target.value = ''; if (!f) return; try { await sendAtt('image', await shrinkImage(f)); } catch (x) { setErr(x.message); } };
+  const pickFile = async (e) => { const f = e.target.files?.[0]; e.target.value = ''; if (!f) return; await sendAtt(/^image\//.test(f.type) ? 'image' : 'file', /^image\//.test(f.type) ? await shrinkImage(f).catch(() => f) : f, { name: f.name }); };
+  useEffect(() => { if (!rec) return undefined; const id = setInterval(() => setRec((r) => { if (!r) return r; if (r.sec + 1 >= MAX_VOICE_SECONDS) { finishRec(true); return r; } return { ...r, sec: r.sec + 1 }; }), 1000); return () => clearInterval(id); }, [!!rec]);   // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => { rec?.cancel?.(); }, []);   // eslint-disable-line react-hooks/exhaustive-deps
+  const startRec = async () => { setErr(''); try { const r = await startRecording(); setRec({ ...r, sec: 0 }); } catch (e) { setErr(e.name === 'NotAllowedError' ? 'Allow the microphone to record a voice note.' : e.message); } };
+  const finishRec = async (send) => { const r = rec; if (!r) return; setRec(null); if (!send) { r.cancel(); return; } const { blob, dur } = await r.stop(); if (dur < 0.6 || blob.size < 500) return; await sendAtt('voice', blob, { dur }); };
   const act = async (body) => { setMenu(null); setErr(''); try { await apiCall(body); social?.refresh?.(); } catch (e) { setErr(e.message); } };
   const flag = async (body, confirm) => { setMore(false); if (confirm && !window.confirm(confirm)) return; setErr(''); try { await apiCall(body); social?.refresh?.(); } catch (e) { setErr(e.message); } };
   const openView = (v) => { setMore(false); setTerm(''); setView(v); };
@@ -410,12 +457,13 @@ export function FriendChat({ t, lang, uid, friend, chat, seenAt, social, muted =
               {sep && <div className="tg-day"><span>{dayLabel(t, m.at)}</span></div>}
               {!view && divider && divider.id === m.id && <div className="tg-unread" role="separator" data-divider><span>{t.unreadDivider(divider.n)}</span></div>}
               <div className={`tg-msg${mine ? ' me' : ''}${m.deleted ? ' gone' : ''}${sep || fl.first ? ' first' : ''}${fl.last ? ' last' : ''}${big ? ' big' : ''}`} data-mid={m.id} onTouchStart={swStart(m)} onTouchMove={swMove} onTouchEnd={swEnd(m)} onTouchCancel={swCancel}>
-                <button className="tg-bubble" disabled={m.pending || m.deleted} onClick={() => setMenu(m.id)} aria-label={t.moreActions}>
+                <Bub m={m} className="tg-bubble" disabled={m.pending || m.deleted} onClick={() => setMenu(m.id)} aria-label={t.moreActions}>
                   {m.fwd && !m.deleted && <span className="tg-fwd">↪ {t.forwarded}</span>}
                   {m.reply && <span className="tg-quote" onClick={(e) => { e.stopPropagation(); jump(m.reply.id); }}><b>{m.reply.from === uid ? t.chatYou : friend.name}</b><span>{m.reply.text || t.deletedMsg}</span></span>}
-                  <span className="tg-text">{m.deleted ? t.deletedMsg : <RichText text={m.text} />}</span>
+                  {!m.deleted && m.att && <Attachment att={m.att} />}
+                  {(!m.att || m.deleted || (m.text && m.text !== attLabelOf(m.att))) && <span className="tg-text">{m.deleted ? t.deletedMsg : <RichText text={m.text} />}</span>}
                   <small className="tg-meta">{(m.starred || []).includes(uid) && !m.deleted && <span className="tg-star" aria-label={t.starMsg}>★</span>}{m.edited && !m.deleted && <i>{t.edited}</i>}{hhmm(m.at)}{mine && !m.deleted && (m.pending ? <span className="tg-ticks">🕓</span> : <Ticks t={t} state={tickState(chat, friend.id, m)} />)}</small>
-                </button>
+                </Bub>
                 {rx.length > 0 && <div className="tg-rx">{rx.map(([e, ids]) => (
                   <button key={e} className={`tg-chip${ids.includes(uid) ? ' mine' : ''}`} onClick={() => act({ action: 'chatReact', to: friend.id, id: m.id, emoji: e })}>{e}{ids.length > 1 ? <em>{ids.length}</em> : null}</button>
                 ))}</div>}
@@ -435,14 +483,27 @@ export function FriendChat({ t, lang, uid, friend, chat, seenAt, social, muted =
         </div>
       )}
       {down > 0 || !stick.current ? <button className="tg-down" onClick={toBottom} aria-label={t.chatDown}>⌄{down > 0 ? <em>{down}</em> : null}</button> : null}
+      {up && <p className="fr-note tg-toast" role="status">{up.label} {Math.round(up.pct * 100)}%</p>}
       {blocked && <p className="tg-blocked" role="status">⛔ {t.blockedNote}</p>}
       {note && <p className="fr-note tg-toast" role="status">{note}</p>}
       <form className="tg-send" hidden={blocked} onSubmit={(e) => { e.preventDefault(); send(); }}>
         <span className="tg-pill">
           <button type="button" className="tg-emoji-btn" aria-label={t.chatEmoji} aria-expanded={emojiOpen} onClick={() => setEmojiOpen((v) => !v)}>{emojiOpen ? '⌨️' : '😊'}</button>
-          <input ref={input} value={text} onChange={(e) => { setText(e.target.value.slice(0, 1000)); if (e.target.value) ping(); }} onFocus={() => setEmojiOpen(false)} placeholder={t.chatWrite} aria-label={t.chatWrite} maxLength={1000} autoComplete="off" enterKeyHint="send" />
+          {rec ? <span className="tg-rec" role="status"><i /> {Math.floor(rec.sec / 60)}:{String(rec.sec % 60).padStart(2, '0')}</span> : null}
+          <input hidden={!!rec} ref={input} value={text} onChange={(e) => { setText(e.target.value.slice(0, 1000)); if (e.target.value) ping(); }} onFocus={() => setEmojiOpen(false)} placeholder={t.chatWrite} aria-label={t.chatWrite} maxLength={1000} autoComplete="off" enterKeyHint="send" />
         </span>
-        <button className="tg-go" disabled={busy || !text.trim()} aria-label={t.chatSend}>{editing ? '✓' : '➤'}</button>
+        {!rec && !editing && storageAvailable() && <>
+          <button type="button" className="tg-att-btn" aria-label="Document" disabled={!!up} onClick={() => fileIn.current?.click()}>📎</button>
+          <button type="button" className="tg-att-btn" aria-label="Photo" disabled={!!up} onClick={() => photoIn.current?.click()}>📷</button>
+        </>}
+        {rec ? (<>
+          <button type="button" className="tg-att-btn" aria-label={t.cancel} onClick={() => finishRec(false)}>🗑</button>
+          <button type="button" className="tg-go" aria-label={t.chatSend} onClick={() => finishRec(true)}>➤</button>
+        </>) : (!text.trim() && !editing && storageAvailable())
+          ? <button type="button" className="tg-go" disabled={!!up} aria-label="Voice message" onClick={startRec}>🎤</button>
+          : <button className="tg-go" disabled={busy || !text.trim()} aria-label={t.chatSend}>{editing ? '✓' : '➤'}</button>}
+        <input ref={photoIn} type="file" accept="image/*" hidden onChange={pickPhoto} />
+        <input ref={fileIn} type="file" hidden onChange={pickFile} />
       </form>
       {emojiOpen && (
         <div className="tg-emoji" role="group" aria-label={t.chatEmoji}>

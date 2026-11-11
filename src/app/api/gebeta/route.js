@@ -2,7 +2,7 @@
 // Clients can read their room (Firestore rules) but can never write it directly.
 import { NextResponse } from 'next/server';
 import { FieldValue } from 'firebase-admin/firestore';
-import { adminDb, adminAuth } from '@/lib/firebaseAdmin';
+import { adminDb, adminAuth, adminStorage } from '@/lib/firebaseAdmin';
 import {
   makeCode, normalizeCode, newRoomDoc, seatSecondPlayer, applyRoomAction, applyForfeit, settle, statFields,
   WAIT_MS, ROOM_TTL_MS, PRESENCE_MS,
@@ -21,6 +21,7 @@ export const runtime = 'nodejs';
 
 import { HttpError, fail } from '@/lib/online/httpError.js';
 import * as Social from '@/lib/online/socialApi.js';
+import * as Account from '@/lib/online/accountApi.js';
 import { makeCode as makeRaceCode, normalizeCode as normalizeRaceCode, newRaceRoom } from '@/lib/online/race.js';
 
 // A new waiting race room for a friend invite (same document shape as /api/race `create`).
@@ -31,7 +32,7 @@ async function createRaceRoom(db, uid, decoded, body) {
     const c = makeRaceCode(), ref = db.collection('raceRooms').doc(c);
     const made = await db.runTransaction(async (tx) => {
       if ((await tx.get(ref)).exists) return false;
-      tx.set(ref, newRaceRoom({ code: c, uid, name, veh: body.veh, world: body.world, level: body.level, now: Date.now() }));
+      tx.set(ref, newRaceRoom({ code: c, uid, name, veh: body.veh, world: body.world, level: body.level, equal: body.equal, now: Date.now() }));
       return true;
     });
     if (made) return c;
@@ -362,6 +363,15 @@ export async function POST(req) {
         return ok({ ok: true });
       }
       // ── friends, direct chat and invites (v73): see src/lib/online/socialApi.js
+      case 'usernameCheck':
+        return ok(await Account.usernameAvailable(db, body.username, uid));
+      case 'usernameClaim':
+        return ok(await Account.claimUsername(db, uid, body.username));
+      case 'accountDelete': {   // the sign-in must be fresh (they just re-entered their password / chose their Google account)
+        if (!decoded.auth_time || Date.now() / 1000 - decoded.auth_time > 300) fail(401, 'Please sign in again, then delete your account');
+        let bucket = null; try { if (process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET) bucket = adminStorage().bucket(process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET); } catch { /* no storage */ }
+        return ok(await Account.deleteAccount(db, adminAuth(), uid, bucket));
+      }
       case 'friendCode':
         return ok({ code: await Social.friendCode(db, uid) });
       case 'friendRequest':
@@ -373,7 +383,7 @@ export async function POST(req) {
       case 'friendRemove':
         return ok(await Social.remove(db, uid, body.to));
       case 'chatSend':
-        return ok(await Social.chatSend(db, uid, body.to, body.text, body.replyTo, body.fwd === true));
+        return ok(await Social.chatSend(db, uid, body.to, body.text, body.replyTo, body.fwd === true, body.att || null));
       case 'chatEdit':
         return ok(await Social.chatChange(db, uid, body.to, 'edit', body.id, body.text));
       case 'chatDelete':

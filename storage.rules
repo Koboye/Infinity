@@ -1,0 +1,13 @@
+rules_version = '2';
+// Chat files. Each person can only write inside their own folder u/{uid}/ (photos <= 15 MB, voice notes and documents <= 15 MB).
+// Reading uses the unguessable download link stored in the chat message, so friends can open a file without any extra permission.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /u/{uid}/{allPaths=**} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null && request.auth.uid == uid && request.resource.size < 15 * 1024 * 1024;
+      allow delete: if request.auth != null && request.auth.uid == uid;
+    }
+    match /{allPaths=**} { allow read, write: if false; }
+  }
+}

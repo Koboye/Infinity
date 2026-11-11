@@ -55,7 +55,7 @@ const query = (name, q) => ({
     let rows = [...store.entries()].filter(([k]) => k.startsWith(name + '/') && k.split('/').length === depth)
       .filter(([, d]) => q.f.every(([f, op, v]) => cmp[op](val(d, f), v instanceof Date ? v.getTime() : v)));
     if (q.ord) rows.sort((a, b) => (val(a[1], q.ord) || 0) - (val(b[1], q.ord) || 0));
-    return { docs: rows.slice(0, q.lim).map(([k, d]) => ({ id: lastId(k), data: () => withTs(clone(d)) })) };
+    return { docs: rows.slice(0, q.lim).map(([k, d]) => ({ id: lastId(k), ref: docRef(k), data: () => withTs(clone(d)) })) };
   },
 });
 const db = {
@@ -74,5 +74,6 @@ const db = {
   },
 };
 export const adminDb = () => db;
-export const adminAuth = () => ({ verifyIdToken: async (t) => { if (!t.startsWith('tok:')) throw new Error('bad'); return { uid: t.slice(4), name: t.slice(4) + '-name' }; } });
+export const adminAuth = () => ({ verifyIdToken: async (t) => { if (!t.startsWith('tok:')) throw new Error('bad'); return { uid: t.slice(4), name: t.slice(4) + '-name', auth_time: Math.floor(Date.now() / 1000) }; }, deleteUser: async (uid) => { (globalThis.__deletedUsers ||= []).push(uid); } });
+export const adminStorage = () => ({ bucket: () => ({ deleteFiles: async () => {} }) });
 export const __store = store;

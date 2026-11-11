@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.16.0 -- Real accounts, chat files, a better car race
+- **Real sign-in**: no more guest accounts. Sign up with a unique **username** (checked live, held by the server so two people can never share one), display name, email and an 8+ character password typed twice; a confirmation email is sent. Google sign-in still works. Forgot-password link, change-password link, **sign out** and **delete account** (re-enter password / pick the Google account again; removes profile, username, coins, friends, chats and uploaded files, and the sign-in itself).
+- Players with no username (Google sign-in, or a name taken a moment before) are asked to choose one on the Profile tab. Friends can be searched by `@username`.
+- **Profile photo belongs to the account**: it follows you to a new phone and only changes when you change it. It is cleared from the phone on sign out, so it can never carry over to the next person.
+- **Photos, voice notes and documents in chat** (Firebase Storage): 📎 document, 📷 photo (shrunk to 1600 px first), 🎤 voice note (tap, speak, send). The server only accepts a file that sits in the sender's own `u/{uid}/` folder.
+- **Car race**: other cars move smoothly (they use the real velocity and spin rate sent by each phone, sent 10 times a second), **tyres turn at the real wheel speed**, and cars **bump into each other** instead of driving through. Level cap bug fixed (the host could only pick stages 1-40; now 1-100).
+- **Friends > Invite > Car**: pick the **world** and **stage** (with difficulty) like the other games' rule choices.
+- Needs deploying: `firebase deploy --only firestore:rules,storage` (new `storage.rules`, `usernames` and car-packet rules). Old rules keep working: the car falls back to the old packet.
+- Tests `tests/account-files.test.mjs`, SW cache v45.
+
 ## 3.15.0 -- Friends chat: the rest of WhatsApp's chat features
 - **Three tick states**: one grey tick = sent, two grey ticks = delivered (their app is open and has your message), two blue ticks = read. Also shown on the chat list.
 - **Block / unblock**: a blocked friend can still send, but you never see it and it never counts as unread. They see one tick and are not told. Game invites from a blocked player are not delivered. You must unblock to send.

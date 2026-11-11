@@ -2,6 +2,7 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
 
 const cfg = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -18,6 +19,8 @@ if (onlineAvailable) app = getApps()[0] || initializeApp(cfg);
 
 export const auth = app ? getAuth(app) : null;
 export const db = app ? getFirestore(app) : null;
+/** Firebase Storage (photos, voice notes, documents). null until NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET is set. */
+export const storage = app && cfg.storageBucket ? getStorage(app) : null;
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 

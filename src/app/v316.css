@@ -1,0 +1,21 @@
+/* v3.16: chat files, account screens */
+.tg-att.img img { display: block; max-width: 100%; max-height: 260px; border-radius: 12px; object-fit: cover; }
+.tg-att.img { display: block; margin: -2px -4px 2px; }
+.tg-att.voice audio { width: min(240px, 62vw); height: 38px; display: block; }
+.tg-att.doc { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px; background: rgba(127,127,127,.14); color: inherit; text-decoration: none; min-width: 180px; }
+.tg-att.doc b { font-weight: 700; word-break: break-all; font-size: .92rem; }
+.tg-att.doc small { display: block; opacity: .7; margin-left: auto; white-space: nowrap; }
+.tg-att-btn { min-width: 40px; min-height: 40px; border: 0; background: transparent; font-size: 1.25rem; cursor: pointer; border-radius: 50%; }
+.tg-att-btn:disabled { opacity: .4; }
+.tg-rec { flex: 1; display: flex; align-items: center; gap: 8px; font-weight: 700; color: #d33; padding: 0 6px; }
+.tg-rec i { width: 10px; height: 10px; border-radius: 50%; background: #d33; animation: tgrec 1s infinite; }
+@keyframes tgrec { 50% { opacity: .25; } }
+.fr-car-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; }
+.fr-car-pick label { display: flex; flex-direction: column; gap: 4px; font-size: .8rem; font-weight: 700; }
+.fr-car-pick select { min-height: 44px; border-radius: 10px; padding: 0 8px; font: inherit; }
+.auth .hint { font-size: .8rem; opacity: .75; margin: 2px 0 0; }
+.auth .hint.ok { color: #2a9d5c; opacity: 1; } .auth .hint.bad { color: #d33; opacity: 1; }
+.acct-box { margin-top: 14px; padding: 12px; border-radius: 14px; border: 1px solid var(--r-line, rgba(127,127,127,.3)); }
+.acct-box h3 { margin: 0 0 6px; font-size: 1rem; }
+.btn.danger { background: #c0392b; color: #fff; border-color: #96281b; }
+.verify-bar { padding: 10px 12px; border-radius: 12px; background: rgba(242,182,50,.18); font-size: .9rem; margin-bottom: 10px; }

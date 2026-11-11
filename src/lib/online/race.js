@@ -10,7 +10,7 @@ export const LAST_CHANCE_MS = 60000;     // after the first finisher, the others
 export const ROOM_TTL_MS = 3 * 3600_000;
 export const PING_MS = 15000;         // every phone says "I am here" this often (v3.9)
 export const STALE_MS = 45000;        // a racer silent this long (app closed, phone off) is dropped from the room
-export const WORLDS_MAX = 200, LEVELS_MAX = 40;
+export const WORLDS_MAX = 200, LEVELS_MAX = 99;   // 100 stages per world (0-99): the old cap of 40 silently cut the host's stage choice
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
 export const makeCode = (rnd = Math.random) => { let c = ''; for (let i = 0; i < 5; i++) c += ALPHABET[Math.floor(rnd() * ALPHABET.length)]; return c; };

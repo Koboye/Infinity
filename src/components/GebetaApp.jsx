@@ -20,10 +20,10 @@ import * as Ads from '@/lib/ads';
 import * as Wallet from '@/lib/wallet';
 import FriendsScreen, { InviteInbox, carRaceUrl } from './Friends';
 import { useSocial } from '@/lib/useSocial';
-import { Home, Setup, RulesScreen, AuthForm, Lobby, Leaders, ProfileScreen, ProgressScreen, SettingsScreen, Tibeb } from './Screens';
+import { Home, Setup, RulesScreen, AuthForm, Lobby, Leaders, ProfileScreen, ProgressScreen, SettingsScreen, Tibeb, readPendingSignup, clearPendingSignup } from './Screens';
 import { isPlayable, GAMES } from '@/lib/games.js';
 import Coach, { needsCoach } from './Coach';
-import { usePhoto } from '@/lib/photo';
+import { usePhoto, getPhoto, storePhoto } from '@/lib/photo';
 import { setCurrentGame, visit, onUnlock, load as loadProgress, mergeProgress, saveMerged } from '@/lib/progress';
 
 // v68: each game's code is downloaded only when it is opened, so the app opens faster on a slow connection.
@@ -114,9 +114,12 @@ export default function GebetaApp() {
       try {
         const snap = await getDoc(ref);
         if (!snap.exists()) {
-          const raw = (u.displayName || '').trim();
-          const displayName = raw.length >= 2 ? raw.slice(0, 20) : `Guest ${Math.floor(1000 + Math.random() * 9000)}`;
+          const pending = readPendingSignup();   // the sign-up form's name, kept until the profile exists (the account is created before updateProfile runs)
+          const raw = ((pending?.name) || u.displayName || '').trim();
+          const displayName = raw.length >= 2 ? raw.slice(0, 20) : `Player ${Math.floor(1000 + Math.random() * 9000)}`;
           await setDoc(ref, { displayName, avatar: 'lion', lang: read('gebeta.lang', 'en'), rating: 1000, wins: 0, losses: 0, draws: 0, games: 0, createdAt: serverTimestamp() });
+          const want = readPendingSignup(); clearPendingSignup();
+          if (want?.username) apiCall({ action: 'usernameClaim', username: want.username }, { retries: 1 }).catch(() => { /* taken in the meantime: the profile asks for a new one */ });
         }
       } catch (e) { console.error('profile init failed', e); }
       unsubProfile = onSnapshot(ref, (s) => setProfile(s.data() || null));
@@ -124,6 +127,17 @@ export default function GebetaApp() {
     });
     return () => { unsub(); unsubProfile?.(); };
   }, []);
+
+  // The profile picture belongs to the ACCOUNT: it follows you to a new phone and is never replaced until you change it yourself.
+  // (A picture left on this phone by another account is cleared when that account signs out, so it can never leak into this one.)
+  const photoFor = useRef(null);
+  useEffect(() => {
+    if (!user || !profile || !db || photoFor.current === user.uid) return;
+    photoFor.current = user.uid;
+    if (profile.photo) { if (getPhoto() !== profile.photo) storePhoto(profile.photo); }
+    else { const local = getPhoto(); if (local) updateDoc(doc(db, 'users', user.uid), { photo: local }).catch(() => {}); }   // picked before signing in: adopt it
+  }, [user, profile]);
+  const doSignOut = useCallback(async () => { storePhoto(null); photoFor.current = null; syncedFor.current = null; try { await signOut(auth); } catch { /* ignore */ } }, []);
 
   // Cloud sync: merge on-device progress with the signed-in account so streaks/achievements follow you.
   const syncedFor = useRef(null);
@@ -292,7 +306,7 @@ export default function GebetaApp() {
     case 'rules': body = <RulesScreen t={t} lang={lang} game={game} type={view.type} onPlay={(type) => go('ai', { ruleset: type })} />; break;
     case 'friends': body = !onlineAvailable ? <Unavailable t={t} /> : !authReady ? null : !user ? <AuthForm t={t} /> : <FriendsScreen t={t} lang={lang} uid={uid} social={social} onEnterRoom={(code) => go('room', { code })} openChat={view.chat || null} onOpenChat={(id) => setView({ name: 'friends', chat: id })} />; break;
     case 'leaders': body = !onlineAvailable ? <Unavailable t={t} /> : !user ? (authReady ? <AuthForm t={t} /> : null) : <Leaders t={t} uid={uid} game={game} />; break;
-    case 'profile': body = !onlineAvailable ? <Unavailable t={t} /> : authReady ? <ProfileScreen t={t} lang={lang} user={user} profile={profile} onSignOut={() => signOut(auth)} /> : null; break;
+    case 'profile': body = !onlineAvailable ? <Unavailable t={t} /> : authReady ? <ProfileScreen t={t} lang={lang} user={user} profile={profile} onSignOut={doSignOut} /> : null; break;
     case 'online': body = !onlineAvailable ? <Unavailable t={t} /> : !authReady ? null : !user ? <AuthForm t={t} /> : <Lobby t={t} lang={lang} game={game} initialRuleset={view.ruleset} onHelp={(type) => go('rules', { type })} onFriends={() => go('friends')} beforeStart={() => runAd('pre_game', { game })} onSpin={() => setSheet({ type: 'spin' })} onEnter={(code) => go('room', { code })} />; break;
     case 'room': body = <OnlineRoom key={view.code} t={t} lang={lang} uid={uid} friends={social.friends} code={view.code} onExit={home} onSwitchRoom={(code) => go('room', { code })} confirm={confirm} />; break;
     default: body = null;
