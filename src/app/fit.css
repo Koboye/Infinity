@@ -1,0 +1,44 @@
+/* v3.4 phase 1 — "Fit every screen". Loaded LAST.
+   Problem: menus, friends, profile … were sized in fixed px for one phone width, so they looked right on some devices and tiny or
+   cramped on others (and the chat box slid behind the bottom bar).
+   Fix: ViewportFit measures the real screen and writes --k (0.8 … 1.6). The whole page shell is zoomed by --k, so every device
+   shows the same ~390–480px-wide design at the right size. In-game screens are NOT zoomed: they already size from the real
+   visible area (--app-h, container units) and must keep using every pixel.
+   Inside the zoomed shell never use vw / vh / dvh: use --app-w-z / --app-h-z (real size ÷ k). */
+
+html:root { --col-w: 480px; }
+
+/* one root type size for the shell (v74 scaled it with vw, which would now double-scale) */
+html:not(.in-game) { font-size: 15px; }
+
+html[data-fit="zoom"]:not(.in-game) .app {
+  zoom: var(--k, 1);
+  max-width: var(--col-w);
+  min-height: var(--app-h-z, 100dvh);
+}
+/* games: full screen, no zoom */
+html.in-game .app { zoom: 1; }
+
+/* dialogs, invites and toasts sized from the scaled viewport, not the real one */
+html[data-fit="zoom"]:not(.in-game) .overlay .dialog { max-width: min(calc(var(--app-w-z, 100vw) * .94), 520px); max-height: calc(var(--app-h-z, 100dvh) - 24px); }
+html[data-fit="zoom"]:not(.in-game) .invite-card { width: min(calc(var(--app-w-z, 100vw) * .94), 460px); }
+
+/* friends chat: fills exactly the room between the top bar and the bottom bar, so the message box is always on screen
+   (it used to be 100dvh minus a guess, which pushed the composer under the navigation) */
+html:not(.in-game) .app:has(.tg-chat) { height: var(--app-h-z, 100dvh); min-height: 0; overflow: hidden; }
+html:not(.in-game) .app:has(.tg-chat) .screen { min-height: 0; overflow: hidden; padding-bottom: 14px; }
+html:not(.in-game) .app:has(.tg-chat) .tg-chat { height: auto; flex: 1 1 0; min-height: 0; }
+html:not(.in-game) .app:has(.tg-chat) .tg-msgs { min-height: 0; }
+
+/* top bar: let the chips shrink instead of overflowing on narrow screens */
+html body .topbar { flex-wrap: nowrap; min-width: 0; }
+html body .topbar-actions { min-width: 0; flex: 0 1 auto; }
+html body .topbar-actions > * { flex-shrink: 1; min-width: 0; }
+html body .topbar-actions .icon-btn, html body .topbar-actions .lang-chip, html body .topbar-actions .lang-switch { flex-shrink: 0; }
+
+/* never let a screen scroll sideways */
+html:not(.in-game) .screen { min-width: 0; overflow-x: clip; }
+img, svg, video, canvas { max-width: 100%; }
+
+/* very short windows (landscape phones, split screen): drop the floating install pill, keep the bar reachable */
+@media (max-height: 420px) { .install-pill { display: none; } }

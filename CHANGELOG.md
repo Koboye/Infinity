@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.4.0 — Phase 1: fit every screen
+- New scale engine (`ViewportFit` + `fit.css`): the app shell is scaled from the real screen size (0.8× small phones … 1.6× tablets/desktop), so menus, friends, profile and sheets look the same on every device instead of tiny on some.
+- Friends chat now fills exactly the space between the top bar and the bottom bar, so the message box is never hidden behind the navigation (also follows the on-screen keyboard).
+- Top-bar chips shrink instead of overflowing; dialogs, invites and toasts size from the scaled viewport; no sideways scrolling.
+- In-game screens are unchanged (they already use the full visible area).
+- Service-worker cache bumped (v33) so installed apps pick this up.
+
 ## 3.3.0 — Afro Zone
 - Brand: app name is **Afro Zone** everywhere (README, store listing, manifest, TWA); Afro portrait icon, maskable icon and share image.
 - Service-worker cache bumped so installed apps refresh the new icons.
