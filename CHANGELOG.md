@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.12.0 — Release candidate, Phase 2: in-game screens
+- Games fill the real visible screen (browser bar, foldables, split-screen) instead of a fixed 100dvh.
+- Game top bar: 44px buttons, long titles shorten with …, notch-safe on both sides in landscape; compact bar on short landscape phones so the board gets the height.
+- Thumb-sized action buttons (48px), no accidental text selection or double-tap zoom on controls, player names shorten instead of overflowing.
+- **Afro Climb page**: title was still "Infinity Climb" → now "Afro Climb"; added theme colour, favicon, Apple touch icon and manifest link so it installs and shows the right logo.
+- Test `tests/rc1-games.test.mjs`.
+
 ## 3.11.0 — Release candidate, Phase 1: Home screen & logos
 - **One logo size for every game card** (SVG or image): 60 / 76 / 84 / 96 px by screen size, same shadow and spacing. Afro Climb now uses the same icon system and is translated (English + Amharic) instead of a hard-coded English card with a 64×38 picture.
 - Equal card heights, names clamp to two lines, lone last card spans the row, 3-across layout on landscape phones.

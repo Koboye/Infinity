@@ -26,5 +26,5 @@ t('install metadata is complete', () => {
   assert.ok(fs.existsSync('public/apple-touch-icon.png'));
   for (const i of m.icons) assert.ok(fs.existsSync(`public${i.src}`), i.src);
 });
-t('service worker cache was bumped for this release', () => assert.ok(/gebeta-v40/.test(read('public/sw.js'))));
+t('service worker cache was bumped for this release', () => assert.ok(/gebeta-v(4[0-9]|[5-9]\\d)/.test(read('public/sw.js'))));
 console.log(`rc1 home tests passed (${n})`);

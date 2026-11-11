@@ -39,3 +39,29 @@ html body .home { padding-bottom: max(12px, env(safe-area-inset-bottom, 0px)); }
   html body .app .game-grid .gg-card:last-child:nth-child(odd) { grid-column: auto; }
 }
 @media (prefers-reduced-motion: reduce) { html body .app .game-grid .gg-card, html body .app .game-grid .gg-art { animation: none !important; transition: none !important; } }
+
+/* ═══ RC · Phase 2 — in-game screens (Gebeta, Dama, Ludo, Bingo): one shell, every device ═══ */
+/* the game fills the REAL visible area (ViewportFit's --app-h tracks the visual viewport: browser bar, foldables, split-screen) */
+html.in-game .app { height: var(--app-h, 100dvh); }
+html.in-game body { background-color: #072A1F; }
+
+/* top bar: 44px tap targets, long names never push the buttons off-screen, notch-safe on both sides in landscape */
+html.in-game .topbar { padding-left: max(10px, env(safe-area-inset-left, 0px)); padding-right: max(10px, env(safe-area-inset-right, 0px)); min-height: 48px; }
+html.in-game .topbar-title { min-width: 0; flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+html.in-game .icon-btn { width: 44px; height: 44px; min-width: 44px; min-height: 44px; touch-action: manipulation; }
+
+/* game controls: thumb-sized, never squashed by a small screen, no accidental text selection or double-tap zoom */
+html.in-game .match-actions .btn, html.in-game .result-actions .btn { min-height: 48px; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+html.in-game .match .pcard { min-width: 0; }
+html.in-game .match .pcard .nm, html.in-game .match .pcard .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* boards always fit: square boards use the smaller of width/height of their own stage */
+html.in-game .match .ckboard { max-width: none; }
+html.in-game .screen.ingame { padding-bottom: max(8px, env(safe-area-inset-bottom, 0px)); }
+
+/* short landscape phones: tighter chrome so the board gets the height */
+@media (orientation: landscape) and (max-height: 480px) {
+  html.in-game .topbar { min-height: 40px; padding-top: max(2px, env(safe-area-inset-top, 0px)); }
+  html.in-game .icon-btn { width: 40px; height: 40px; min-width: 40px; min-height: 40px; }
+  html.in-game .match-actions .btn { min-height: 42px; }
+}
