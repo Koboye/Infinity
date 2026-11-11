@@ -74,5 +74,22 @@ service cloud.firestore {
         allow write: if false;
       }
     }
+
+    // Online car race (Hill Climb Racer). The room is written only by /api/race; racers read it.
+    // Each racer writes ONLY their own car (position, a few numbers) to cars/{uid}; racers in the room read each other's.
+    match /raceRooms/{code} {
+      allow read: if request.auth != null && request.auth.uid in resource.data.players;
+      allow write: if false;
+
+      match /cars/{uid} {
+        allow read: if request.auth != null
+          && request.auth.uid in get(/databases/$(database)/documents/raceRooms/$(code)).data.players;
+        allow create, update: if request.auth != null && request.auth.uid == uid
+          && uid in get(/databases/$(database)/documents/raceRooms/$(code)).data.players
+          && request.resource.data.keys().hasOnly(['x', 'y', 'a', 's0', 's1', 'w0', 'w1', 'v', 'g', 'f', 't', 'd'])
+          && request.resource.data.x is number && request.resource.data.y is number && request.resource.data.a is number;
+        allow delete: if false;
+      }
+    }
   }
 }

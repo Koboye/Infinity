@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.5.0 — Phase 2: online race (Hill Climb Racer)
+- New **ONLINE RACE** button on the car game's title screen: create a room (5-letter code), friends join with the code, 2 to 4 racers drive the **same road** at the same time and see each other as live translucent cars with name tags.
+- Host picks the world and level in the lobby; everyone starts together after a shared 3-2-1-GO (server clock, so a wrong phone clock cannot cheat the start). Live standings bar (place, progress, finish flag).
+- A crash costs time, not the race: you are put back on the last safe spot. First to the flag wins; the others have 60 s to finish, then they are DNF. Coins for finishing (300 / 150 / 100 / 60). Host can race again in the same room.
+- Server: new `/api/race` (rooms, start, finish order measured by the server clock). Each phone writes only its own car to `raceRooms/{code}/cars/{uid}` and listens to the others (about 5 updates per second, smoothed on screen).
+- **Deploy `firestore.rules` for this release** (`firebase deploy --only firestore:rules`): they add `raceRooms`. Without it the lobby works but cars cannot see each other.
+- Needs the player to be signed in to the app (the car page reuses that sign-in) and an internet connection. Offline play is unchanged. Bluetooth / hotspot / Wi-Fi play is phase 3.
+- Service-worker cache bumped (v34).
+
 ## 3.4.0 — Phase 1: fit every screen
 - New scale engine (`ViewportFit` + `fit.css`): the app shell is scaled from the real screen size (0.8× small phones … 1.6× tablets/desktop), so menus, friends, profile and sheets look the same on every device instead of tiny on some.
 - Friends chat now fills exactly the space between the top bar and the bottom bar, so the message box is never hidden behind the navigation (also follows the on-screen keyboard).
