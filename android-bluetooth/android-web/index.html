@@ -1,1 +1,42 @@
-<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=https://infinity-now.vercel.app/"><title>Afro Zone</title>
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Afro Zone</title>
+<style>
+:root{--bg:#0b1020;--fg:#f3f6ff;--card:#18223f;--gold:#f2b632;--mut:#9fb0d6}
+@media (prefers-color-scheme:light){:root{--bg:#f4f6fc;--fg:#10182e;--card:#fff;--mut:#51607f}}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,Arial,sans-serif}
+body{display:flex;align-items:center;justify-content:center;padding:env(safe-area-inset-top) 16px env(safe-area-inset-bottom);box-sizing:border-box}
+.box{width:100%;max-width:420px;text-align:center}
+img{width:84px;height:84px;border-radius:20px}
+h1{margin:12px 0 4px;font-size:1.5rem}p{color:var(--mut);margin:6px 0 18px}
+.b{display:block;width:100%;box-sizing:border-box;padding:14px;margin:10px 0;border-radius:14px;border:0;background:var(--card);color:var(--fg);font:700 1rem system-ui;text-decoration:none;box-shadow:0 1px 6px #0003}
+.b.y{background:var(--gold);color:#241a00}
+#off{display:none}
+</style></head>
+<body><div class="box">
+<img src="icon-192.png" alt="" onerror="this.style.display='none'">
+<h1>Afro Zone</h1>
+<p id="msg">Opening…</p>
+<div id="off">
+  <p>You are offline. These games work without internet:</p>
+  <a class="b y" href="games/hillclimb-racing/index.html">🏁 Hill Climb Racer<br><small>Offline play · Nearby race by Bluetooth or Wi-Fi</small></a>
+  <a class="b" id="cached" href="#">🎲 Board games<br><small>Work offline if you opened them once with internet</small></a>
+  <button class="b" id="retry">Try again</button>
+</div></div>
+<script>
+// Online → the live site (same app the website shows; the Bluetooth plugin is available there too).
+// Offline → this menu, with the games that are bundled inside the app.
+var LIVE = 'https://infinity-now.vercel.app/';
+function offline() { document.getElementById('msg').style.display = 'none'; document.getElementById('off').style.display = 'block'; }
+function go() {
+  document.getElementById('msg').style.display = ''; document.getElementById('off').style.display = 'none';
+  var done = false, t = setTimeout(function () { if (!done) { done = true; offline(); } }, 4000);
+  fetch(LIVE + 'manifest.json', { method: 'HEAD', mode: 'no-cors', cache: 'no-store' }).then(function () {
+    if (done) return; done = true; clearTimeout(t); location.replace(LIVE);
+  }).catch(function () { if (done) return; done = true; clearTimeout(t); offline(); });
+}
+document.getElementById('retry').onclick = go;
+document.getElementById('cached').onclick = function (e) { e.preventDefault(); location.href = LIVE; };   // the service worker serves it from cache when it was opened before
+go();
+</script></body></html>

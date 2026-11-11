@@ -9,7 +9,7 @@
   var COLORS = ['#35c6ff', '#ff5a5a', '#7be08a', '#ffd33d'];
   var R = window.Race = { on: false, hold: function () { return false; } };
   var fb = null, auth = null, fs = null, user = null, realUser = null, skew = 0;
-  var code = '', room = null, view = 'menu', msg = '', busy = false, fList = null, fSent = {}, fOpen = false;
+  var code = '', room = null, view = 'menu', msg = '', busy = false, fList = null, fSent = {}, fOpen = false, pingT = 0, lastSig = '', eqSave = null;
   var unsubRoom = null, unsubCars = null, sendT = 0, hudT = 0, dogT = 0, tickT = 0;
   var ghosts = {}, me = { fin: false, safe: 0 }, awarded = {}, closing = false, lastStatus = '';
   var $q = function (s) { return document.querySelector(s); };
@@ -23,6 +23,7 @@
   var Net = {
     init: async function () {
       if (fb) return;
+      if (location.hostname === 'localhost' || location.protocol === 'file:') throw new Error('Online race needs the live Afro Zone. Open the app with internet, or use NEARBY (Bluetooth / Wi-Fi).');   // the copy bundled inside the Android app has no server
       if (!navigator.onLine) throw new Error('No internet. Online race needs a connection.');
       var res = await fetch(API, { cache: 'no-store' }); var d = await res.json().catch(function () { return {}; });
       if (!res.ok || !d.cfg) throw new Error(d.error || 'Online play is not available right now.');
@@ -81,13 +82,13 @@
       h = Nearby.html(view, err);
     } else if (view === 'room' && room) {
       var host = room.host === user.uid, pl = room.players.map(function (u, i) {
-        return '<div class="pl"><span class="dot" style="background:' + COLORS[i % 4] + '"></span><b>' + esc(room.names[u]) + (u === room.host ? ' ★' : '') + (u === user.uid ? ' (you)' : '') + '</b><small>' + esc(vname(room.veh[u])) + '</small></div>';
+        return '<div class="pl"><span class="dot" style="background:' + COLORS[i % 4] + '"></span><b>' + esc(room.names[u]) + (u === room.host ? ' ★' : '') + (u === user.uid ? ' (you)' : '') + '</b><small>' + (room.equal ? 'Equal car' : esc(vname(room.veh[u]))) + '</small></div>';
       }).join('');
       var wopts = WORLDS.map(function (w, i) { return '<option value="' + i + '"' + (i === room.world ? ' selected' : '') + '>' + esc(w.name || w.n || ('World ' + (i + 1))) + '</option>'; }).join('');
       var lopts = ''; for (var l = 0; l < LEVELS; l++) lopts += '<option value="' + l + '"' + (l === room.level ? ' selected' : '') + '>Level ' + (l + 1) + '</option>';
       var wn = WORLDS[room.world] ? (WORLDS[room.world].name || WORLDS[room.world].n || '') : '';
       h = '<h1>' + (R.p2p ? 'NEARBY RACE' : 'ROOM') + '</h1>' + (R.p2p ? '' : '<div class="code">' + esc(room.code) + '</div><div class="s">Share this code · ' + room.players.length + '/4 racers</div>') + pl +
-        (host ? '<div class="row"><select id="rcW">' + wopts + '</select><select id="rcL">' + lopts + '</select></div>' : '<div class="s">Road: ' + esc(wn) + ' · Level ' + (room.level + 1) + '</div>') +
+        (host ? '<div class="row"><select id="rcW">' + wopts + '</select><select id="rcL">' + lopts + '</select></div>' + (R.p2p ? '' : '<label class="s" style="display:flex;gap:8px;justify-content:center;align-items:center;margin:6px 0"><input type="checkbox" id="rcEq"' + (room.equal ? ' checked' : '') + '> Equal cars (stock car for everyone)</label>') : '<div class="s">Road: ' + esc(wn) + ' · Level ' + (room.level + 1) + (room.equal ? ' · Equal cars' : '') + '</div>') +
         (host ? '<button class="b y" data-r="start"' + (room.players.length < 2 || busy ? ' disabled' : '') + '>START RACE</button>' : '<div class="s">Waiting for the host to start…</div>') +
         (R.p2p ? '' : '<button class="b" data-r="share">SHARE CODE</button><button class="b" data-r="friends">' + (fOpen ? 'HIDE FRIENDS' : 'INVITE FRIENDS') + '</button>' + (fOpen ? friendsHtml() : '')) + err + '<button class="b" data-r="leave">LEAVE ROOM</button>';
     } else if (view === 'result' && room) {
@@ -112,15 +113,20 @@
     try { busy = true; render(); await Net.init(); busy = false; if (!user) msg = 'Sign in to Afro Zone first (home screen), then come back to race.'; } catch (e) { busy = false; msg = e.message; }
     render();
   };
+  function kicked() { if (code && !R.p2p) { toast('You were removed from the room'); R.leave(true); } }
+  function ping() { if (!code || R.p2p || !user) return; Net.call({ action: 'ping', code: code }).catch(function (e) { if (/Not in this room|Room not found/i.test(e && e.message || '')) kicked(); }); }
   function enterRoom(c) {
-    code = c; view = 'room'; room = null; render(); listenRoom();
+    code = c; view = 'room'; room = null; lastSig = ''; render(); listenRoom();
+    clearInterval(pingT); if (!R.p2p) { ping(); pingT = setInterval(ping, 15000); }   // "I am here": a racer who closes the app is dropped by the server after 45 s
   }
   function listenRoom() {
     if (unsubRoom) unsubRoom();
     unsubRoom = Net.roomRef(code).onSnapshot(function (s) {
       if (!s.exists) { if (code) { toast('Room closed'); R.leave(true); } return; }
-      room = s.data(); onRoom();
-    }, function () { /* lost access after leaving: ignore */ });
+      var d = s.data(), sig = JSON.stringify(Object.assign({}, d, { seen: 0 }));   // the heartbeat times change every few seconds: not worth a redraw
+      if (sig === lastSig && room) { room = d; return; }
+      lastSig = sig; room = d; onRoom();
+    }, function (e) { if (e && e.code === 'permission-denied') kicked(); });   // removed from the room (we went quiet) → no access any more
   }
   function onRoom() {
     var st = room.status;
@@ -143,12 +149,29 @@
     else if (a === 'share') { var txt = 'Race me in Hill Climb Racer on Afro Zone! Room code: ' + code; if (navigator.share) navigator.share({ text: txt }).catch(function () {}); else if (navigator.clipboard) navigator.clipboard.writeText(txt).then(function () { toast('Code copied'); }); }
   });
   document.addEventListener('change', function (ev) {
-    if (!room || (ev.target.id !== 'rcW' && ev.target.id !== 'rcL')) return;
-    Net.call({ action: 'track', code: code, world: +$q('#rcW').value, level: +$q('#rcL').value }).catch(function (e) { setMsg(e.message); });
+    if (!room || (ev.target.id !== 'rcW' && ev.target.id !== 'rcL' && ev.target.id !== 'rcEq')) return;
+    var eq = $q('#rcEq');
+    Net.call({ action: 'track', code: code, world: +$q('#rcW').value, level: +$q('#rcL').value, equal: eq ? !!eq.checked : undefined }).catch(function (e) { setMsg(e.message); });
   });
+
+  /* ---------- equal cars: everyone drives the stock car, upgrades off; the player's own garage is put back afterwards ---------- */
+  function eqApply() {
+    if (eqSave) return;
+    if (typeof window.save === 'function' && !window.save.__eq) {   // never let an autosave write the temporary stock car into the player's garage
+      var s0 = window.save; window.save = function () { if (!eqSave) return s0.apply(this, arguments); eqRestore(); try { return s0.apply(this, arguments); } finally { eqApply(); } }; window.save.__eq = 1;
+    }
+    eqSave = { veh: S.veh, up: S.up, drv: S.drv, p0: S.parts && S.parts[0] };
+    S.veh = 0; S.up = [0, 0, 0, 0]; S.drv = 0; if (S.parts) S.parts[0] = [0, 0, 0, 0, 0];
+  }
+  function eqRestore() {
+    if (!eqSave) return; var e = eqSave; eqSave = null;
+    S.veh = e.veh; S.up = e.up; S.drv = e.drv; if (S.parts) { if (e.p0 === undefined) delete S.parts[0]; else S.parts[0] = e.p0; }
+  }
+  window.addEventListener('pagehide', eqRestore);
 
   /* ---------- the race ---------- */
   function beginRace() {
+    if (room.equal) eqApply(); else eqRestore();
     view = 'none'; closeOverlay(); ghosts = {}; me = { fin: false, safe: 0 }; closing = false;
     start(room.world, room.level);                              // the game's own level start (same seed for everyone)
     R.on = true; R.hold = function () { return sNow() < room.startAt; };
@@ -226,19 +249,19 @@
     if (R.on && mode !== 'play' && mode !== 'over' && view !== 'result') R.leave(false);
   }
   function finishAll() {
-    if (view === 'result') return; view = 'result'; paused = true;
+    if (view === 'result') return; view = 'result'; paused = true; eqRestore();
     var key = code + ':' + (room.round || 1);
     if (!awarded[key]) { awarded[key] = 1; var i = room.results.findIndex(function (r) { return r.uid === user.uid; }); if (i >= 0) { S.coins += [300, 150, 100, 60][Math.min(3, i)]; try { save(); } catch (e) {} } }
     render();
   }
   function stopRace() {   // back to the lobby (rematch) or leaving
-    R.on = false; R.hold = function () { return false; };
+    eqRestore(); R.on = false; R.hold = function () { return false; };
     [sendT, hudT, dogT, tickT].forEach(clearInterval); if (unsubCars) { unsubCars(); unsubCars = null; }
     var h = $q('#rchud'); if (h) h.remove(); var c = $q('#rccd'); if (c) c.remove();
     ghosts = {}; paused = false; mode = 'menu'; try { $q('#hud').classList.add('hide'); } catch (e) {}
   }
   R.leave = function (silent) {
-    var c = code; code = ''; stopRace(); fOpen = false; fSent = {};
+    var c = code; code = ''; clearInterval(pingT); stopRace(); eqRestore(); fOpen = false; fSent = {};
     if (unsubRoom) { unsubRoom(); unsubRoom = null; }
     if (R.p2p) { try { R.p2p.close(); } catch (e) {} R.p2p = null; user = realUser; }
     else if (c && !silent && user) Net.call({ action: 'leave', code: c }).catch(function () {});

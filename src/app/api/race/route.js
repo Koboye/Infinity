@@ -6,7 +6,7 @@ import { adminDb, adminAuth } from '@/lib/firebaseAdmin';
 import * as Social from '@/lib/online/socialApi.js';
 import { HttpError, fail } from '@/lib/online/httpError.js';
 import {
-  makeCode, normalizeCode, newRaceRoom, joinRaceRoom, leaveRaceRoom, setTrack, startRace, finishRace, closeRace, rematch,
+  makeCode, normalizeCode, newRaceRoom, joinRaceRoom, leaveRaceRoom, setTrack, startRace, touchRace, pruneStale, finishRace, closeRace, rematch,
 } from '@/lib/online/race.js';
 
 export const dynamic = 'force-dynamic';
@@ -74,7 +74,7 @@ export async function POST(req) {
           const ref = rooms(db).doc(c);
           const made = await db.runTransaction(async (tx) => {
             if ((await tx.get(ref)).exists) return false;
-            tx.set(ref, newRaceRoom({ code: c, uid, name, veh: body.veh, world: body.world, level: body.level, now }));
+            tx.set(ref, newRaceRoom({ code: c, uid, name, veh: body.veh, world: body.world, level: body.level, equal: body.equal, now }));
             return true;
           });
           if (made) return ok({ code: c });
@@ -85,14 +85,15 @@ export async function POST(req) {
       case 'join': {
         if (code.length !== 5) fail(400, 'Enter the 5-letter room code');
         const name = await displayName(db, uid, decoded);
-        return ok(await mutate(db, code, (r) => joinRaceRoom(r, { uid, name, veh: body.veh })));
+        return ok(await mutate(db, code, (r, t) => joinRaceRoom(pruneStale(r, t), { uid, name, veh: body.veh, now: t })));
       }
       case 'track': return ok(await mutate(db, code, (r) => setTrack(r, uid, body)));
-      case 'start': return ok(await mutate(db, code, (r, t) => startRace(r, uid, t)));
+      case 'start': return ok(await mutate(db, code, (r, t) => startRace(pruneStale(r, t), uid, t)));
       case 'finish': return ok(await mutate(db, code, (r, t) => finishRace(r, uid, t)));
       case 'close': return ok(await mutate(db, code, (r, t) => closeRace(r, t)));
       case 'again': return ok(await mutate(db, code, (r) => rematch(r, uid)));
       case 'leave': return ok(await mutate(db, code, (r) => leaveRaceRoom(r, uid)));
+      case 'ping': return ok(await mutate(db, code, (r, t) => touchRace(r, uid, t)));
       case 'friends': return ok({ friends: await Social.friendNames(db, uid) });
       case 'invite': return ok(await Social.inviteFriendRace(db, uid, { to: body.to, code }));
       case 'time': return ok({});

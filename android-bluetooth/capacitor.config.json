@@ -3,9 +3,15 @@
   "appName": "Afro Zone",
   "webDir": "android-web",
   "server": {
-    "url": "https://infinity-now.vercel.app",
+    "androidScheme": "https",
     "cleartext": false,
-    "allowNavigation": ["infinity-now.vercel.app", "*.firebaseapp.com", "accounts.google.com"]
+    "allowNavigation": [
+      "infinity-now.vercel.app",
+      "*.firebaseapp.com",
+      "accounts.google.com"
+    ]
   },
-  "android": { "allowMixedContent": false }
+  "android": {
+    "allowMixedContent": false
+  }
 }

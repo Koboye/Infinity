@@ -60,4 +60,29 @@ t('only the host can change the road, only in the lobby', () => {
   const r = mk(); err(() => R.setTrack(r, 'B', { world: 1, level: 1 }), 403);
   R.setTrack(r, 'A', { world: 7, level: 2 }); assert.equal(r.world, 7);
 });
+
+t('equal cars: host switches it in the lobby only; new rooms can start with it', () => {
+  const r = mk(); assert.equal(r.equal, false);
+  R.setTrack(r, 'A', { world: 1, level: 1, equal: true }); assert.equal(r.equal, true);
+  R.setTrack(r, 'A', { world: 2, level: 2 }); assert.equal(r.equal, true);            // not mentioned → unchanged
+  R.setTrack(r, 'A', { equal: false }); assert.equal(r.equal, false);
+  err(() => R.setTrack(r, 'B', { equal: true }), 403);
+  assert.equal(R.newRaceRoom({ code: 'QQQQQ', uid: 'A', name: 'a', now: 0, equal: 1 }).equal, true);
+});
+t('closing the app: a racer silent for 45 s is dropped, the host moves on, and a ping keeps you in', () => {
+  const r = mk(); R.joinRaceRoom(r, { uid: 'B', name: 'B', veh: 0, now: 1000 }); R.joinRaceRoom(r, { uid: 'C', name: 'C', veh: 0, now: 1000 });
+  R.touchRace(r, 'C', 30000);                                       // C pings; A (host) has been silent since 0, B since 1000
+  assert.deepEqual(r.players, ['A', 'B', 'C']);                      // 30 s: nobody is stale yet
+  R.touchRace(r, 'C', R.STALE_MS + 2000);                           // A and B are now stale, C is fresh
+  assert.deepEqual(r.players, ['C']); assert.equal(r.host, 'C'); assert.equal(r.names.A, undefined); assert.equal(r.seen.A, undefined);
+  err(() => R.touchRace(r, 'A', 99999), 403);
+});
+t('stale sweep never empties a room, and never drops a racer who already finished', () => {
+  const r = mk(); R.joinRaceRoom(r, { uid: 'B', name: 'B', veh: 0, now: 0 });
+  R.pruneStale(r, R.STALE_MS + 5000); assert.deepEqual(r.players, ['A', 'B']);      // all stale → nobody removed
+  R.joinRaceRoom(r, { uid: 'C', name: 'C', veh: 0, now: 0 });
+  R.startRace(r, 'A', 100); R.touchRace(r, 'B', 100 + 9000); R.finishRace(r, 'A', 100 + R.COUNTDOWN_MS + 20000);
+  R.touchRace(r, 'B', R.STALE_MS + 60000);                                          // A finished (stays); C silent → dropped
+  assert.ok(r.players.includes('A')); assert.ok(!r.players.includes('C')); assert.ok(r.players.includes('B'));
+});
 console.log(`${n} race-room tests passed`);

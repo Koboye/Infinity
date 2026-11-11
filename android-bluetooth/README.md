@@ -13,11 +13,19 @@ npx cap add android
 # 1. copy the Kotlin files into android/app/src/main/java/com/koboye/infinity/  (replace the generated MainActivity)
 cp android-bluetooth/AfroBluetoothPlugin.kt android-bluetooth/MainActivity.kt android/app/src/main/java/com/koboye/infinity/
 # 2. paste the permissions from AndroidManifest.permissions.xml into android/app/src/main/AndroidManifest.xml
-# 3. make sure android-web/index.html exists (it is in this folder) and capacitor.config.json is in the project root
+# 3. put capacitor.config.json in the project root, then fill android-web/ with the offline games
+node scripts/build-android-web.mjs      # copies the car game (about 37 MB) into android-bluetooth/android-web/ ; run it again after every game change
 npx cap sync android
 npx cap open android      # run on two real phones (Bluetooth does not work in the emulator)
 ```
 Kotlin must be enabled in the Android project (Capacitor 6+ projects already have it; otherwise add the Kotlin Gradle plugin).
+
+## Offline (v3.9)
+The app now **starts from a page inside the app** (`android-web/index.html`):
+- **With internet** it opens the live site straight away (same app as the website, always up to date).
+- **Without internet** it shows an offline menu: **Hill Climb Racer** runs fully from the copy bundled in the app (play alone, or race a phone nearby by **Bluetooth** / Wi-Fi), and **Board games** open from the browser cache if they were opened once with internet.
+- Online races and sign-in need internet, so inside the bundled copy the ONLINE buttons say so and point to NEARBY.
+- The config has no `server.url` any more: the app loads its own files, then jumps to the live site. `allowNavigation` keeps that jump inside the app. **Check on a device** that the Bluetooth buttons still work after the jump to the live site (they should; if not, tell me and the live site can be loaded from the bundle instead).
 
 ## Keep the same app id
 `com.koboye.infinity` is the id of the current TWA. Using the same id and the **same signing key** (`twa/android.keystore`)

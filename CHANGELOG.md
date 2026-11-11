@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.9.0 — Equal cars, auto-drop, offline Android bundle
+- **Equal cars** (online race lobby, host option): everyone drives the same stock car with upgrades, driver and parts switched off, so skill decides. Your own garage is restored after the race and never saved with the stock car.
+- **Closing the app drops you from the room**: every phone sends an "I am here" every 15 s; a racer silent for 45 s is removed by the server when anyone pings, joins or starts (a finished racer keeps their result; a room is never emptied by this). A removed player is told and sent back to the menu. The host passes on automatically.
+- **Android works offline**: the app starts from a bundled launcher: internet → live site, no internet → offline menu with Hill Climb Racer (bundled, Bluetooth/Wi-Fi nearby race works) and the cached board games. `node scripts/build-android-web.mjs` fills the bundle. Not yet run on a device.
+- New server action `ping` on `/api/race`; room field `equal`; tests added; SW cache v38.
+
 ## 3.8.0 — Review pass: the car game joins Friends
 - **Friends can invite each other to Hill Climb Racer**, same as the board games: the 🎮 button (friends list and chat) now lists the car game; the friend gets the normal invite card and one tap takes them straight into your race lobby (the car page joins the room by itself).
 - Inside the car race lobby there is a new **INVITE FRIENDS** button: pick friends from your list and they get the invite on any screen.
