@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.6.0 — Phase 3: nearby race, no internet (Hill Climb Racer)
+- New **NEARBY · NO INTERNET** option in the car game's race menu: two phones race 1 vs 1 over the **same Wi-Fi** or one phone's **hotspot**. No data, no server, no sign-in needed.
+- Connecting: the host shows a QR code, the other phone scans it (or pastes the text code) and shows an answer QR back; the race lobby then opens on both phones by itself. Same race as online: shared 3-2-1-GO, live ghost car, crash respawn, results, rematch.
+- Browsers cannot use Bluetooth between two phones, so Wi-Fi / hotspot is the offline option in the web app. True Bluetooth needs the native Android app (a later step).
+- Camera permission is now allowed for the app itself (`camera=(self)`) so the QR can be scanned. QR scanning needs Chrome on Android; other browsers use the text code.
+- Service-worker cache bumped (v35).
+
 ## 3.5.0 — Phase 2: online race (Hill Climb Racer)
 - New **ONLINE RACE** button on the car game's title screen: create a room (5-letter code), friends join with the code, 2 to 4 racers drive the **same road** at the same time and see each other as live translucent cars with name tags.
 - Host picks the world and level in the lobby; everyone starts together after a shared 3-2-1-GO (server clock, so a wrong phone clock cannot cheat the start). Live standings bar (place, progress, finish flag).

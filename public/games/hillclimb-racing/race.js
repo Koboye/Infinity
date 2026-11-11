@@ -8,7 +8,7 @@
   var API = '/api/race', SEND_MS = 200, FB = 'https://www.gstatic.com/firebasejs/11.1.0/';
   var COLORS = ['#35c6ff', '#ff5a5a', '#7be08a', '#ffd33d'];
   var R = window.Race = { on: false, hold: function () { return false; } };
-  var fb = null, auth = null, fs = null, user = null, skew = 0;
+  var fb = null, auth = null, fs = null, user = null, realUser = null, skew = 0;
   var code = '', room = null, view = 'menu', msg = '', busy = false;
   var unsubRoom = null, unsubCars = null, sendT = 0, hudT = 0, dogT = 0, tickT = 0;
   var ghosts = {}, me = { fin: false, safe: 0 }, awarded = {}, closing = false, lastStatus = '';
@@ -29,9 +29,10 @@
       skew = d.serverNow - Date.now();
       await loadScript(FB + 'firebase-app-compat.js'); await loadScript(FB + 'firebase-auth-compat.js'); await loadScript(FB + 'firebase-firestore-compat.js');
       fb = window.firebase; fb.initializeApp(d.cfg); auth = fb.auth(); fs = fb.firestore();
-      await new Promise(function (ok) { var off = auth.onAuthStateChanged(function (u) { user = u; off(); ok(); }); setTimeout(ok, 6000); });
+      await new Promise(function (ok) { var off = auth.onAuthStateChanged(function (u) { user = realUser = u; off(); ok(); }); setTimeout(ok, 6000); });
     },
     call: async function (body) {
+      if (R.p2p) return R.p2p.call(body);   // nearby race: no server, the other phone is the room
       if (!user) throw new Error('Sign in to Afro Zone first, then come back to race.');
       var token = await user.getIdToken(), t0 = Date.now();
       var res = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }, body: JSON.stringify(body) });
@@ -70,7 +71,9 @@
       h = '<h1>ONLINE RACE</h1><div class="s">Race friends on the same road, live. 2 to 4 racers.</div>' +
         '<button class="b y" data-r="create"' + (busy ? ' disabled' : '') + '>CREATE ROOM</button>' +
         '<input id="rcCode" maxlength="5" placeholder="CODE" autocomplete="off" autocapitalize="characters">' +
-        '<button class="b" data-r="join"' + (busy ? ' disabled' : '') + '>JOIN WITH CODE</button>' + err + '<button class="b" data-r="back">BACK</button>';
+        '<button class="b" data-r="join"' + (busy ? ' disabled' : '') + '>JOIN WITH CODE</button>' + err + '<button class="b" data-n="menu" style="border-color:#1f7a4a">NEARBY · NO INTERNET (WI-FI / HOTSPOT)</button><button class="b" data-r="back">BACK</button>';
+    } else if (view.indexOf('n') === 0 && view !== 'none' && window.Nearby) {
+      h = Nearby.html(view, err);
     } else if (view === 'room' && room) {
       var host = room.host === user.uid, pl = room.players.map(function (u, i) {
         return '<div class="pl"><span class="dot" style="background:' + COLORS[i % 4] + '"></span><b>' + esc(room.names[u]) + (u === room.host ? ' ★' : '') + (u === user.uid ? ' (you)' : '') + '</b><small>' + esc(vname(room.veh[u])) + '</small></div>';
@@ -78,10 +81,10 @@
       var wopts = WORLDS.map(function (w, i) { return '<option value="' + i + '"' + (i === room.world ? ' selected' : '') + '>' + esc(w.name || w.n || ('World ' + (i + 1))) + '</option>'; }).join('');
       var lopts = ''; for (var l = 0; l < LEVELS; l++) lopts += '<option value="' + l + '"' + (l === room.level ? ' selected' : '') + '>Level ' + (l + 1) + '</option>';
       var wn = WORLDS[room.world] ? (WORLDS[room.world].name || WORLDS[room.world].n || '') : '';
-      h = '<h1>ROOM</h1><div class="code">' + esc(room.code) + '</div><div class="s">Share this code · ' + room.players.length + '/4 racers</div>' + pl +
+      h = '<h1>' + (R.p2p ? 'NEARBY RACE' : 'ROOM') + '</h1>' + (R.p2p ? '' : '<div class="code">' + esc(room.code) + '</div><div class="s">Share this code · ' + room.players.length + '/4 racers</div>') + pl +
         (host ? '<div class="row"><select id="rcW">' + wopts + '</select><select id="rcL">' + lopts + '</select></div>' : '<div class="s">Road: ' + esc(wn) + ' · Level ' + (room.level + 1) + '</div>') +
         (host ? '<button class="b y" data-r="start"' + (room.players.length < 2 || busy ? ' disabled' : '') + '>START RACE</button>' : '<div class="s">Waiting for the host to start…</div>') +
-        '<button class="b" data-r="share">SHARE CODE</button>' + err + '<button class="b" data-r="leave">LEAVE ROOM</button>';
+        (R.p2p ? '' : '<button class="b" data-r="share">SHARE CODE</button>') + err + '<button class="b" data-r="leave">LEAVE ROOM</button>';
     } else if (view === 'result' && room) {
       var rs = room.results.slice(), rk = rs.map(function (r, i) {
         return '<div class="pl"><b style="width:26px">' + (i + 1) + '</b><span class="dot" style="background:' + COLORS[Math.max(0, room.players.indexOf(r.uid)) % 4] + '"></span><b>' + esc(room.names[r.uid] || 'Racer') + (r.uid === user.uid ? ' (you)' : '') + '</b><small>' + fmt(r.ms) + '</small></div>';
@@ -100,7 +103,7 @@
   var level0 = function () { var w = S.world, p = (S.lp && S.lp[w]) || 0; return { world: w, level: Math.min(LEVELS - 1, p * 10) }; };
 
   R.open = async function () {
-    css(); view = 'menu'; msg = ''; render();
+    css(); R.p2p = null; user = realUser; view = 'menu'; msg = ''; render();
     try { busy = true; render(); await Net.init(); busy = false; if (!user) msg = 'Sign in to Afro Zone first (home screen), then come back to race.'; } catch (e) { busy = false; msg = e.message; }
     render();
   };
@@ -143,20 +146,23 @@
     start(room.world, room.level);                              // the game's own level start (same seed for everyone)
     R.on = true; R.hold = function () { return sNow() < room.startAt; };
     inp.gas = 0; inp.brake = 0;
-    if (unsubCars) unsubCars();
-    unsubCars = Net.roomRef(code).collection('cars').onSnapshot(function (qs) {
-      qs.docChanges().forEach(function (ch) {
-        var u = ch.doc.id; if (u === user.uid || ch.type === 'removed') return; var d = ch.doc.data(), gh = ghosts[u];
-        if (!gh) gh = ghosts[u] = { x: d.x, y: d.y, a: d.a, vx: 0, vy: 0, d: 0 };
-        if (gh.t != null && d.t > gh.t) { var dt = (d.t - gh.t) / 1000; if (dt > 0.02 && dt < 2) { gh.vx = (d.x - gh.tx) / dt; gh.vy = (d.y - gh.ty) / dt; } }
-        gh.tx = d.x; gh.ty = d.y; gh.ta = d.a; gh.t = d.t; gh.rx = performance.now(); gh.s0 = d.s0; gh.s1 = d.s1; gh.w0 = d.w0; gh.w1 = d.w1; gh.v = d.v; gh.g = d.g; gh.f = d.f; gh.d = d.d || 0;
-      });
-    }, function () {});
+    if (!R.p2p) {
+      if (unsubCars) unsubCars();
+      unsubCars = Net.roomRef(code).collection('cars').onSnapshot(function (qs) {
+        qs.docChanges().forEach(function (ch) { if (ch.type !== 'removed') applyCar(ch.doc.id, ch.doc.data()); });
+      }, function () {});
+    }
     clearInterval(sendT); sendT = setInterval(sendCar, SEND_MS);
     clearInterval(hudT); hudT = setInterval(hud, 250);
     clearInterval(dogT); dogT = setInterval(watch, 400);
     clearInterval(tickT); tickT = setInterval(tick, 150);
     countdown();
+  }
+  function applyCar(u, d) {   // one update of another racer's car (from Firestore or from the nearby link)
+    if (u === user.uid) return; var gh = ghosts[u];
+    if (!gh) gh = ghosts[u] = { x: d.x, y: d.y, a: d.a, vx: 0, vy: 0, d: 0 };
+    if (gh.t != null && d.t > gh.t) { var dt = (d.t - gh.t) / 1000; if (dt > 0.02 && dt < 2) { gh.vx = (d.x - gh.tx) / dt; gh.vy = (d.y - gh.ty) / dt; } }
+    gh.tx = d.x; gh.ty = d.y; gh.ta = d.a; gh.t = d.t; gh.rx = performance.now(); gh.s0 = d.s0; gh.s1 = d.s1; gh.w0 = d.w0; gh.w1 = d.w1; gh.v = d.v; gh.g = d.g; gh.f = d.f; gh.d = d.d || 0;
   }
   function countdown() {
     var e = $q('#rccd'); if (!e) { e = document.createElement('div'); e.id = 'rccd'; document.body.appendChild(e); }
@@ -175,7 +181,8 @@
   function sendCar() {
     if (!R.on || !car || !room) return; var r = function (v) { return Math.round(v * 10) / 10; }, sp = car.sp || [0, 0], ws = car.ws || [0, 0];
     var d = Math.max(0, Math.min(1, car.x / (LV.fin || 1)));
-    Net.roomRef(code).collection('cars').doc(user.uid).set({ x: r(car.x), y: r(car.y), a: Math.round(car.a * 100) / 100, s0: r(sp[0]), s1: r(sp[1]), w0: r(ws[0]), w1: r(ws[1]), v: S.veh, g: car.air > 0.12 ? 1 : 0, f: me.fin ? 1 : 0, t: sNow(), d: Math.round(d * 1000) / 1000 }).catch(function () {});
+    var pkt = { x: r(car.x), y: r(car.y), a: Math.round(car.a * 100) / 100, s0: r(sp[0]), s1: r(sp[1]), w0: r(ws[0]), w1: r(ws[1]), v: S.veh, g: car.air > 0.12 ? 1 : 0, f: me.fin ? 1 : 0, t: sNow(), d: Math.round(d * 1000) / 1000 };
+    if (R.p2p) R.p2p.sendCar(user.uid, pkt); else Net.roomRef(code).collection('cars').doc(user.uid).set(pkt).catch(function () {});
   }
   R.crash = function (why) {   // replaces the game's "run over" screen: you lose time, not the race
     if (!R.on) return false; if (run.over) return true;
@@ -226,8 +233,19 @@
   R.leave = function (silent) {
     var c = code; code = ''; stopRace();
     if (unsubRoom) { unsubRoom(); unsubRoom = null; }
-    if (c && !silent && user) Net.call({ action: 'leave', code: c }).catch(function () {});
+    if (R.p2p) { try { R.p2p.close(); } catch (e) {} R.p2p = null; user = realUser; }
+    else if (c && !silent && user) Net.call({ action: 'leave', code: c }).catch(function () {});
     room = null; view = 'none'; closeOverlay(); mode = 'menu'; showScr('title');
+  };
+
+  /* ---------- hooks for the nearby (phase 3) link ---------- */
+  R.ui = {
+    useP2P: function (p, uid) { R.p2p = p; user = { uid: uid }; skew = 0; css(); },
+    setView: function (v) { view = v; render(); },
+    msg: setMsg,
+    enter: function (rm) { code = 'NEARBY'; view = 'room'; room = rm; render(); onRoom(); },
+    room: function (rm) { room = rm; onRoom(); },
+    car: applyCar,
   };
 
   /* ---------- drawing other racers ---------- */
