@@ -49,7 +49,6 @@ import './v97.css';
 import './release.css';
 import './tg.css';
 import './afro.css';
-import './fit.css';
 import RegisterSW from '@/components/RegisterSW';
 import ViewportFit from '@/components/ViewportFit';
 import '@fontsource/noto-sans-ethiopic/400.css';
