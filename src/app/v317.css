@@ -1,0 +1,7 @@
+/* v3.17: slide between tabs when the person swipes (or taps) to the next / previous one. */
+@keyframes tab-from-right { from { opacity: .0; transform: translateX(36px); } to { opacity: 1; transform: none; } }
+@keyframes tab-from-left  { from { opacity: .0; transform: translateX(-36px); } to { opacity: 1; transform: none; } }
+.screen[data-slide='left']  > * { animation: tab-from-right .24s cubic-bezier(.2,.8,.2,1) both; }
+.screen[data-slide='right'] > * { animation: tab-from-left  .24s cubic-bezier(.2,.8,.2,1) both; }
+.screen { touch-action: pan-y pinch-zoom; }
+@media (prefers-reduced-motion: reduce) { .screen[data-slide] > * { animation: none; } }

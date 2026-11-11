@@ -11,6 +11,7 @@ import dynamic from 'next/dynamic';
 import { touchRecent } from '@/lib/recent.js';
 import ModesScreen from './ModesScreen';
 import BottomNav from './BottomNav';
+import useTabSwipe, { tabIndexOf } from './useTabSwipe';
 import { WalletChip, SpinSheet, WelcomeGift } from './Wallet';
 import RewardedAdButton from './RewardedAdButton';
 import EarnOffer from './EarnOffer';
@@ -53,6 +54,7 @@ export default function GebetaApp() {
   const [adShow, setAdShow] = useState(null);                // { ad, placement, resolve }: the full-screen ad on screen right now
   const adRef = useRef(null); adRef.current = adShow;
   const langRef = useRef(lang); langRef.current = lang;   // the ad picker reads the current language without re-creating runAd
+  const mainRef = useRef(null);
   const [sheet, setSheet] = useState(null);                  // { type: 'spin' | 'gift' }
   const viewRef = useRef(view); viewRef.current = view;
   const [user, setUser] = useState(null);
@@ -312,16 +314,22 @@ export default function GebetaApp() {
     default: body = null;
   }
 
+  const openTab = (to, dir) => {
+    if (dir && mainRef.current) { mainRef.current.dataset.slide = dir; setTimeout(() => { if (mainRef.current) delete mainRef.current.dataset.slide; }, 260); }
+    if (to === 'home') return home();
+    if (to === 'leaders' && GAMES[game]?.offlineOnly) { const g = GAME_LIST_ONLINE[0]; if (g) pickGame(g); }
+    go(to);
+  };
+  const swipeOn = !inGame && !adShow && !sheet && !dialog && tabIndexOf(view.name) >= 0 && !(view.name === 'friends' && view.chat);
+  const swipe = useTabSwipe({ viewName: view.name, enabled: swipeOn, onGo: openTab });
+
   return (
     <div className={`app${inGame ? '' : ' has-nav'}`}>
       {offline && <div className="offline-bar" role="status">{t.offline}</div>}
       <Tibeb />
       {!inGame && (
         <BottomNav lang={lang} view={view.name} profile={profile} badge={social.badge} onHome={home}
-          onOpen={(to) => {
-            if (to === 'leaders' && GAMES[game]?.offlineOnly) { const g = GAME_LIST_ONLINE[0]; if (g) pickGame(g); }
-            go(to);
-          }} />
+          onOpen={(to) => openTab(to)} />
       )}
       {user && !inGame && !adShow && <InviteInbox t={t} invites={social.invites} busy={joining} onJoin={joinInvite} onDismiss={dismissInvite} />}
       {adShow && <AdOverlay ad={adShow.ad} lang={lang} placement={adShow.placement} seconds={adShow.ad.durationSec} onShown={(a) => Ads.shown(adShow.placement, a)} onClick={(a) => Ads.clicked(a)} onClose={(_done, reason) => { adShow.resolve(reason); setAdShow(null); }} />}
@@ -346,7 +354,7 @@ export default function GebetaApp() {
           <button className="icon-btn" onClick={toggleMute} aria-label={t.sound} aria-pressed={!muted}>{muted ? '🔇' : '🔊'}</button>
         </div>
       </header>
-      <main className={`screen${inGame ? ' ingame' : ''}`}>{body}</main>
+      <main ref={mainRef} className={`screen${inGame ? ' ingame' : ''}`} {...swipe}>{body}</main>
       {coach && view.name === 'game' && <Coach t={t} game={coach} onClose={() => setCoach(null)} />}
       {toast && <div className="toast" role="status">{toast.text ? `${toast.info ? 'ℹ️' : '⚠️'} ${toast.text}` : `${toast.icon} ${t.unlocked} ${toast[lang] || toast.en}`}</div>}
       {dialog && (
