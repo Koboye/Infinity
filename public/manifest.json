@@ -1,7 +1,7 @@
 {
   "name": "Afro Zone",
   "short_name": "Afro Zone",
-  "description": "Play Gebeta, Dama, Ludo, Dominoes, Tuz and Bingo online with friends or against the computer. Works offline.",
+  "description": "Play Gebeta, Dama, Ludo, Bingo and Afro Climb with friends online or against the computer. Works offline.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "any",
@@ -77,6 +77,18 @@
       "name": "ቢንጎ · Bingo",
       "short_name": "Bingo",
       "url": "/?game=bingo",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "አፍሮ ክላይም · Afro Climb",
+      "short_name": "Afro Climb",
+      "url": "/games/hillclimb-racing/index.html",
       "icons": [
         {
           "src": "/icon-192.png",

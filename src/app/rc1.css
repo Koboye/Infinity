@@ -1,0 +1,41 @@
+/* RC · Phase 1 — Home screen & game logos. Loaded last so it settles every earlier override.
+   One logo size for every card, equal card heights, 44px+ tap targets, safe-area aware, readable on small phones. */
+:root { --rc-art: 76px; --rc-card-h: 168px; }
+
+html body .app .game-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: minmax(var(--rc-card-h), auto); gap: 12px; align-items: stretch; }
+html body .app .game-grid .gg-card { min-height: var(--rc-card-h); height: 100%; padding: 14px 10px 12px; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+
+/* every logo — SVG or image — sits in the same square, same shadow, same optical size */
+html body .app .game-grid .gg-art { width: var(--rc-art); height: var(--rc-art); display: grid; place-items: center; flex: none; }
+html body .app .game-grid .gg-art > svg, html body .app .game-grid .gg-art > img { width: 100%; height: 100%; max-width: none; object-fit: contain; display: block; }
+
+/* names never clip: wrap to two lines at most, Amharic gets a little more line height */
+html body .app .game-grid .gg-name { font-size: clamp(1.05rem, 4.6vw, 1.3rem); line-height: 1.15; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+html[lang="am"] body .app .game-grid .gg-name { line-height: 1.3; }
+html body .app .game-grid .gg-tag { font-size: .68rem; line-height: 1.3; max-width: 100%; overflow-wrap: anywhere; }
+html body .app .game-grid .gg-mode { min-height: 24px; padding: 3px 10px; }
+
+/* a lone last card never looks orphaned */
+html body .app .game-grid .gg-card:last-child:nth-child(odd) { grid-column: 1 / -1; }
+
+/* home header + daily card: consistent logo, comfortable tap size */
+html body .home .brand .afro-logo { width: 88px; height: 88px; }
+html body .daily { min-height: 56px; }
+html body .stat-strip > div { min-width: 0; }
+
+/* safe areas: notch, rounded corners, home-bar */
+html body .app { padding-left: max(12px, env(safe-area-inset-left, 0px)); padding-right: max(12px, env(safe-area-inset-right, 0px)); }
+html body .home { padding-bottom: max(12px, env(safe-area-inset-bottom, 0px)); }
+
+/* small phones */
+@media (max-width: 360px) { :root { --rc-art: 60px; --rc-card-h: 148px; } html body .app .game-grid { gap: 10px; } }
+/* large phones & small tablets */
+@media (min-width: 420px) { :root { --rc-art: 84px; --rc-card-h: 180px; } }
+@media (min-width: 700px) { :root { --rc-art: 96px; --rc-card-h: 200px; } html body .app .game-grid { gap: 16px; } }
+/* landscape phones: short screens get shorter cards, three across */
+@media (orientation: landscape) and (max-height: 480px) {
+  :root { --rc-art: 52px; --rc-card-h: 132px; }
+  html body .app .game-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  html body .app .game-grid .gg-card:last-child:nth-child(odd) { grid-column: auto; }
+}
+@media (prefers-reduced-motion: reduce) { html body .app .game-grid .gg-card, html body .app .game-grid .gg-art { animation: none !important; transition: none !important; } }

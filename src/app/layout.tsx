@@ -51,6 +51,7 @@ import './tg.css';
 import './wa.css';
 import './afro.css';
 import './fit.css';
+import './rc1.css';
 import RegisterSW from '@/components/RegisterSW';
 import ViewportFit from '@/components/ViewportFit';
 import '@fontsource/noto-sans-ethiopic/400.css';
@@ -72,7 +73,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://infinity.vercel.app'),
   openGraph: { title: 'Afro Zone', siteName: 'Afro Zone', description: 'Gebeta, Dama, Ludo, Dominoes and Bingo — play online or offline.', images: ['/og-image.png'], type: 'website' },
   twitter: { card: 'summary_large_image', title: 'Afro Zone', images: ['/og-image.png'] },
-  icons: { icon: '/icon.svg', apple: '/icon-192.png' },
+  icons: { icon: [{ url: '/icon.svg', type: 'image/svg+xml' }, { url: '/icon-192.png', sizes: '192x192', type: 'image/png' }], apple: [{ url: '/apple-touch-icon.png', sizes: '180x180' }] },
   appleWebApp: { capable: true, title: 'Afro Zone', statusBarStyle: 'black-translucent' },
 };
 

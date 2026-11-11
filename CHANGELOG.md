@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.11.0 — Release candidate, Phase 1: Home screen & logos
+- **One logo size for every game card** (SVG or image): 60 / 76 / 84 / 96 px by screen size, same shadow and spacing. Afro Climb now uses the same icon system and is translated (English + Amharic) instead of a hard-coded English card with a 64×38 picture.
+- Equal card heights, names clamp to two lines, lone last card spans the row, 3-across layout on landscape phones.
+- Safe-area padding for notches and home-bar, reduced-motion respected, tap targets 44px+.
+- Install: manifest description matches the released games, new **Afro Climb** shortcut, dedicated 180×180 `apple-touch-icon.png`, favicon set (SVG + 192 PNG).
+- New `src/app/rc1.css` (loaded last), test `tests/rc1-home.test.mjs`, SW cache v40.
+
 ## 3.10.0 — Friends chat, WhatsApp style
 - **Emoji picker** in the chat box (😊 button): 8 groups plus recently used, inserts at the cursor.
 - **Chat looks**: ⋮ menu → "Chat look" cycles Afro Zone, WhatsApp light, WhatsApp dark (doodle wallpaper, green bubbles, blue read ticks, green header). Your choice is remembered on the phone.

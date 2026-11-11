@@ -25,6 +25,11 @@ t('after the opening ad the app quietly fetches every game (not on Data Saver, n
 });
 t('install shortcuts exist for playable games only, each with a name and a working link', () => {
   const m = JSON.parse(read('public/manifest.json')); assert.ok(m.shortcuts.length >= 3);
-  for (const s of m.shortcuts) { const g = new URL(s.url, 'https://x').searchParams.get('game'); assert.ok(GAMES[g] && isPlayable(g), s.url); assert.ok(s.name && s.icons?.length); }
+  for (const s of m.shortcuts) {
+    const u = new URL(s.url, 'https://x'), g = u.searchParams.get('game');
+    // a shortcut is either a playable in-app game (?game=) or a stand-alone page that really exists in /public (Afro Climb)
+    if (g) assert.ok(GAMES[g] && isPlayable(g), s.url); else assert.ok(fs.existsSync(new URL(`../public${u.pathname}`, import.meta.url)), s.url);
+    assert.ok(s.name && s.icons?.length);
+  }
 });
 console.log(`i18n-offline tests passed (${n})`);
