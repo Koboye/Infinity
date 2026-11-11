@@ -48,6 +48,7 @@ import './v96.css';
 import './v97.css';
 import './release.css';
 import './tg.css';
+import './wa.css';
 import './afro.css';
 import './fit.css';
 import RegisterSW from '@/components/RegisterSW';

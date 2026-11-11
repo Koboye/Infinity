@@ -5,6 +5,11 @@ import { heroById } from '@/lib/i18n';
 import { GAMES } from '@/lib/games.js';
 import { isOnline, isTyping, lastSeenParts, normalizeFriendCode, pairId, REACTIONS } from '@/lib/social';
 import { GameIcon } from './GameIcons';
+import { EMOJI_TABS, splitEmoji, RECENT_KEY, pushRecent } from '@/lib/emoji.js';
+
+const THEMES = ['classic', 'wa-light', 'wa-dark'];   // chat look: our own, WhatsApp light, WhatsApp dark
+const THEME_KEY = 'afro.chatTheme';
+const store = { get(k, d) { try { const v = window.localStorage.getItem(k); return v == null ? d : v; } catch { return d; } }, set(k, v) { try { window.localStorage.setItem(k, v); } catch { /* private mode */ } } };
 
 const CAR = { id: 'car', rulesets: [], defaultRuleset: '' };   // Hill Climb Racer: a stand-alone page with its own race rooms
 const ONLINE_GAMES = [...Object.values(GAMES).filter((g) => !g.offlineOnly && !g.comingSoon), CAR];
@@ -19,6 +24,13 @@ export const friendLink = (code) => siteUrl({ friend: code });
 
 const hhmm = (at) => new Date(at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 const dayKey = (at) => new Date(at).toDateString();
+/** "Today", "Yesterday", the weekday for this week, otherwise the date (like WhatsApp). */
+function dayLabel(t, at) {
+  const d = new Date(at), n = new Date(), days = Math.round((new Date(n.getFullYear(), n.getMonth(), n.getDate()) - new Date(d.getFullYear(), d.getMonth(), d.getDate())) / 86400000);
+  if (days <= 0) return t.today; if (days === 1) return t.yesterday || 'Yesterday';
+  if (days < 7) return d.toLocaleDateString([], { weekday: 'long' });
+  return d.toLocaleDateString([], { month: 'long', day: 'numeric', year: d.getFullYear() === n.getFullYear() ? undefined : 'numeric' });
+}
 function listTime(at, t, now = Date.now()) {
   if (!at) return '';
   const d = new Date(at), n = new Date(now);
@@ -257,6 +269,19 @@ export function FriendChat({ t, lang, uid, friend, chat, seenAt, social, onBack,
   const [editing, setEditing] = useState(null); // message being edited
   const [pending, setPending] = useState([]);   // lines sent but not yet echoed back (shown at once, like Telegram)
   const [more, setMore] = useState(false);
+  const [theme, setTheme] = useState('classic');
+  const [emojiOpen, setEmojiOpen] = useState(false); const [etab, setEtab] = useState('smile'); const [recent, setRecent] = useState([]);
+  const [down, setDown] = useState(0);              // floating "jump to latest" button: number of new lines while scrolled up
+  const input = useRef(null); const seenLen = useRef(0);
+  useEffect(() => { const v = store.get(THEME_KEY, 'classic'); if (THEMES.includes(v)) setTheme(v); try { setRecent(JSON.parse(store.get(RECENT_KEY, '[]')).slice(0, 24)); } catch { /* ignore */ } }, []);
+  const nextTheme = () => { const n = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length]; setTheme(n); store.set(THEME_KEY, n); setMore(false); };
+  const addEmoji = (e) => {
+    const el = input.current; const a = el?.selectionStart ?? text.length, b = el?.selectionEnd ?? text.length;
+    const v = (text.slice(0, a) + e + text.slice(b)).slice(0, 1000); setText(v);
+    const r = pushRecent(recent, e); setRecent(r); store.set(RECENT_KEY, JSON.stringify(r)); ping();
+    requestAnimationFrame(() => { try { el?.setSelectionRange(a + e.length, a + e.length); } catch { /* ignore */ } });
+  };
+  const toBottom = () => { stick.current = true; setDown(0); end.current?.scrollIntoView?.({ block: 'end', behavior: 'smooth' }); };
   const box = useRef(null); const end = useRef(null); const lastPing = useRef(0); const stick = useRef(true);
   const online = isOnline(seenAt, serverNow());
   const typing = isTyping(chat, friend.id, serverNow());
@@ -273,7 +298,8 @@ export function FriendChat({ t, lang, uid, friend, chat, seenAt, social, onBack,
   useEffect(() => { social?.boost?.(true); return () => social?.boost?.(false); }, [social?.boost]);   // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (stick.current) end.current?.scrollIntoView?.({ block: 'end' }); }, [msgs.length, typing]);
   useEffect(() => { if (unread > 0) apiCall({ action: 'chatRead', to: friend.id }, { retries: 0 }).then(() => social?.refresh?.()).catch(() => {}); }, [unread, friend.id]);   // eslint-disable-line react-hooks/exhaustive-deps
-  const onScroll = () => { const b = box.current; if (b) stick.current = b.scrollHeight - b.scrollTop - b.clientHeight < 120; };
+  const onScroll = () => { const b = box.current; if (b) { stick.current = b.scrollHeight - b.scrollTop - b.clientHeight < 120; if (stick.current) setDown(0); } };
+  useEffect(() => { const add = msgs.length - seenLen.current; seenLen.current = msgs.length; if (add > 0 && !stick.current && seenLen.current > add) setDown((d) => d + add); }, [msgs.length]);
 
   const ping = () => { const n = Date.now(); if (n - lastPing.current > 3000) { lastPing.current = n; apiCall({ action: 'chatTyping', to: friend.id }, { retries: 0 }).catch(() => {}); } };
   const send = async () => {
@@ -300,14 +326,14 @@ export function FriendChat({ t, lang, uid, friend, chat, seenAt, social, onBack,
 
   let lastDay = '';
   return (
-    <div className="panel tg-chat">
+    <div className={`panel tg-chat th-${theme}`}>
       <div className="tg-head">
         <button className="icon-btn" onClick={onBack} aria-label={t.backHome}>‹</button>
         <span className="fr-av"><Avatar id={friend.avatar} size={40} /><i className={`dot${online ? ' on' : ''}`} /></span>
         <span className="fr-name"><b>{friend.name}</b><small className={typing ? 'typing' : ''}>{typing ? t.typing : online ? t.frOnline : seenText(t, seenAt)}</small></span>
         <button className="icon-btn fr-act gold" onClick={onInvite} aria-label={t.inviteToPlay}>🎮</button>
         <button className="icon-btn" onClick={() => setMore((v) => !v)} aria-label={t.moreActions} aria-expanded={more}>⋮</button>
-        {more && <div className="tg-more" role="menu"><button role="menuitem" onClick={() => { setMore(false); onUnfriend(); }}>🚫 {t.frRemove}</button></div>}
+        {more && <div className="tg-more" role="menu"><button role="menuitem" className="neutral" onClick={nextTheme}>🎨 {t.chatTheme}: {t[`chatTheme_${theme}`]}</button><button role="menuitem" onClick={() => { setMore(false); onUnfriend(); }}>🚫 {t.frRemove}</button></div>}
       </div>
 
       <div className="tg-msgs" ref={box} onScroll={onScroll} role="log" aria-live="polite">
@@ -317,7 +343,7 @@ export function FriendChat({ t, lang, uid, friend, chat, seenAt, social, onBack,
           const rx = Object.entries(m.reactions || {});
           return (
             <React.Fragment key={m.id}>
-              {sep && <div className="tg-day"><span>{new Date(m.at).toDateString() === new Date().toDateString() ? t.today : new Date(m.at).toLocaleDateString([], { month: 'long', day: 'numeric' })}</span></div>}
+              {sep && <div className="tg-day"><span>{dayLabel(t, m.at)}</span></div>}
               <div className={`tg-msg${mine ? ' me' : ''}${m.deleted ? ' gone' : ''}`} data-mid={m.id}>
                 <button className="tg-bubble" disabled={m.pending || m.deleted} onClick={() => setMenu(m.id)} aria-label={t.moreActions}>
                   {m.reply && <span className="tg-quote" onClick={(e) => { e.stopPropagation(); jump(m.reply.id); }}><b>{m.reply.from === uid ? t.chatYou : friend.name}</b><span>{m.reply.text || t.deletedMsg}</span></span>}
@@ -342,10 +368,25 @@ export function FriendChat({ t, lang, uid, friend, chat, seenAt, social, onBack,
           <button className="icon-btn" aria-label={t.cancel} onClick={() => { setReply(null); setEditing(null); setText(''); }}>✕</button>
         </div>
       )}
+      {down > 0 || !stick.current ? <button className="tg-down" onClick={toBottom} aria-label={t.chatDown}>⌄{down > 0 ? <em>{down}</em> : null}</button> : null}
       <form className="tg-send" onSubmit={(e) => { e.preventDefault(); send(); }}>
-        <input value={text} onChange={(e) => { setText(e.target.value.slice(0, 1000)); if (e.target.value) ping(); }} placeholder={t.chatWrite} aria-label={t.chatWrite} maxLength={1000} autoComplete="off" enterKeyHint="send" />
+        <span className="tg-pill">
+          <button type="button" className="tg-emoji-btn" aria-label={t.chatEmoji} aria-expanded={emojiOpen} onClick={() => setEmojiOpen((v) => !v)}>{emojiOpen ? '⌨️' : '😊'}</button>
+          <input ref={input} value={text} onChange={(e) => { setText(e.target.value.slice(0, 1000)); if (e.target.value) ping(); }} onFocus={() => setEmojiOpen(false)} placeholder={t.chatWrite} aria-label={t.chatWrite} maxLength={1000} autoComplete="off" enterKeyHint="send" />
+        </span>
         <button className="tg-go" disabled={busy || !text.trim()} aria-label={t.chatSend}>{editing ? '✓' : '➤'}</button>
       </form>
+      {emojiOpen && (
+        <div className="tg-emoji" role="group" aria-label={t.chatEmoji}>
+          <div className="tg-etabs" role="tablist">
+            {EMOJI_TABS.map((c) => <button key={c.id} type="button" role="tab" aria-selected={etab === c.id} className={etab === c.id ? 'on' : ''} onClick={() => setEtab(c.id)}>{c.icon}</button>)}
+          </div>
+          <div className="tg-egrid">
+            {(etab === 'recent' ? recent : splitEmoji(EMOJI_TABS.find((c) => c.id === etab)?.list || '')).map((e) => <button key={e} type="button" onClick={() => addEmoji(e)}>{e}</button>)}
+            {etab === 'recent' && !recent.length && <p className="muted small">{t.chatNoRecent}</p>}
+          </div>
+        </div>
+      )}
       {err && <p className="err" role="alert">{err}</p>}
 
       {menuMsg && (

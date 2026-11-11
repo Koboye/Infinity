@@ -1,0 +1,60 @@
+/* v3.10 — WhatsApp-style chat looks. The chat keeps its own "Afro Zone" look by default; the ⋮ menu cycles it to WhatsApp light or dark.
+   Everything is scoped to .tg-chat.th-wa-* so no other screen changes. Emoji picker, jump-to-latest button and pill composer work in every look. */
+.tg-chat { --wa-wall: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160' fill='none' stroke='%23888' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' opacity='.22'%3E%3Ccircle cx='24' cy='26' r='8'/%3E%3Cpath d='M70 18l5 10 11 2-8 8 2 11-10-5-10 5 2-11-8-8 11-2z'/%3E%3Cpath d='M118 22q10-12 20 0t-20 22'/%3E%3Crect x='20' y='78' width='22' height='16' rx='4'/%3E%3Cpath d='M70 86h26M70 94h18'/%3E%3Ccircle cx='128' cy='92' r='10'/%3E%3Cpath d='M124 92l3 3 6-6'/%3E%3Cpath d='M30 130l12-8 12 8v14H30z'/%3E%3Cpath d='M86 128a10 10 0 1 0 20 0a10 10 0 1 0-20 0M92 126h.1M100 126h.1M92 131q4 4 8 0'/%3E%3Cpath d='M130 128l10 14M140 128l-10 14'/%3E%3C/svg%3E"); }
+
+/* composer (all looks) */
+.tg-send { position: relative; }
+.tg-pill { flex: 1; min-width: 0; display: flex; align-items: center; gap: 2px; padding: 0 6px 0 4px; border-radius: 999px; background: var(--r-surface-2); border: 1px solid var(--r-line); }
+.tg-pill input { flex: 1; min-width: 0; border: 0 !important; background: transparent !important; box-shadow: none !important; min-height: 44px; border-radius: 999px; }
+.tg-emoji-btn { flex: none; width: 40px; height: 40px; border: 0; background: none; font-size: 1.35rem; cursor: pointer; border-radius: 50%; }
+.tg-emoji { flex: none; height: min(260px, 38vh); display: flex; flex-direction: column; border-top: 1px solid var(--r-line); background: var(--r-surface); }
+.tg-etabs { flex: none; display: flex; overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid var(--r-line); }
+.tg-etabs button { flex: 1 0 44px; min-height: 42px; border: 0; background: none; font-size: 1.3rem; cursor: pointer; border-bottom: 3px solid transparent; }
+.tg-etabs button.on { border-bottom-color: var(--r-gold); }
+.tg-egrid { flex: 1; min-height: 0; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); align-content: start; padding: 6px; overscroll-behavior: contain; }
+.tg-egrid button { height: 44px; border: 0; background: none; font-size: 1.6rem; cursor: pointer; border-radius: 10px; }
+.tg-egrid button:active { background: var(--r-surface-2); transform: scale(1.15); }
+.tg-egrid p { grid-column: 1 / -1; text-align: center; margin: 12px 0; }
+.tg-down { position: absolute; right: 14px; bottom: 76px; z-index: 4; width: 42px; height: 42px; border-radius: 50%; border: 0; font-size: 1.5rem; line-height: 1; cursor: pointer; color: var(--r-text); background: var(--r-surface-2); box-shadow: 0 3px 10px rgba(0,0,0,.35); }
+.tg-down em { position: absolute; top: -8px; right: -4px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 999px; font: 900 .72rem/20px system-ui; font-style: normal; text-align: center; color: #fff; background: #25d366; }
+.tg-more button.neutral { color: var(--r-text); }
+
+/* WhatsApp looks */
+.tg-chat.th-wa-light, .tg-chat.th-wa-dark { --wa-send: #00a884; border-radius: 0; }
+.th-wa-light { --wa-bg: #efeae2; --wa-head: #008069; --wa-head-ink: #fff; --wa-in: #ffffff; --wa-out: #d9fdd3; --wa-ink: #111b21; --wa-meta: #667781; --wa-read: #53bdeb; --wa-bar: #f0f2f5; --wa-pill: #ffffff; --wa-chip: #ffffffd9; --wa-chip-ink: #54656f; --wa-sheet: #ffffff; --wa-wall-op: .5; }
+.th-wa-dark { --wa-bg: #0b141a; --wa-head: #202c33; --wa-head-ink: #e9edef; --wa-in: #202c33; --wa-out: #005c4b; --wa-ink: #e9edef; --wa-meta: #8696a0; --wa-read: #53bdeb; --wa-bar: #202c33; --wa-pill: #2a3942; --wa-chip: #182229; --wa-chip-ink: #8696a0; --wa-sheet: #233138; --wa-wall-op: .35; }
+.th-wa-light .tg-head, .th-wa-dark .tg-head { background: var(--wa-head); border-bottom: 0; color: var(--wa-head-ink); backdrop-filter: none; }
+.th-wa-light .tg-head .fr-name b, .th-wa-dark .tg-head .fr-name b, .th-wa-light .tg-head .icon-btn, .th-wa-dark .tg-head .icon-btn { color: var(--wa-head-ink); }
+.th-wa-light .tg-head .fr-name small, .th-wa-dark .tg-head .fr-name small { color: color-mix(in srgb, var(--wa-head-ink) 72%, transparent); }
+.th-wa-light .tg-head .icon-btn, .th-wa-dark .tg-head .icon-btn, .th-wa-light .tg-head .fr-act.gold, .th-wa-dark .tg-head .fr-act.gold { background: none; border: 0; box-shadow: none; }
+.th-wa-light .tg-head .dot, .th-wa-dark .tg-head .dot { border-color: var(--wa-head); }
+.th-wa-light .tg-more, .th-wa-dark .tg-more { background: var(--wa-sheet); border-color: transparent; }
+.th-wa-light .tg-more button.neutral, .th-wa-dark .tg-more button.neutral { color: var(--wa-ink); }
+.th-wa-light .tg-msgs, .th-wa-dark .tg-msgs { background-color: var(--wa-bg); background-image: var(--wa-wall); background-size: 160px; gap: 3px; color: var(--wa-ink); }
+.th-wa-light .tg-msgs .muted, .th-wa-dark .tg-msgs .muted { color: var(--wa-meta); }
+.th-wa-light .tg-day span, .th-wa-dark .tg-day span { background: var(--wa-chip); color: var(--wa-chip-ink); font-weight: 700; text-transform: uppercase; letter-spacing: .03em; font-size: .72rem; box-shadow: 0 1px 1px rgba(0,0,0,.12); border-radius: 8px; padding: 5px 10px; }
+.th-wa-light .tg-bubble, .th-wa-dark .tg-bubble { background: var(--wa-in); color: var(--wa-ink); border: 0; border-radius: 10px 10px 10px 2px; box-shadow: 0 1px 1px rgba(0,0,0,.14); padding: 6px 9px 5px; }
+.th-wa-light .tg-msg.me .tg-bubble, .th-wa-dark .tg-msg.me .tg-bubble { background: var(--wa-out); color: var(--wa-ink); border-radius: 10px 10px 2px 10px; }
+.th-wa-light .tg-msg.gone .tg-bubble, .th-wa-dark .tg-msg.gone .tg-bubble { background: var(--wa-in); border: 0; color: var(--wa-meta); opacity: .85; }
+.th-wa-light .tg-meta, .th-wa-dark .tg-meta { color: var(--wa-meta); opacity: 1; font-size: .68rem; }
+.th-wa-light .tg-msg.me .tg-ticks, .th-wa-dark .tg-msg.me .tg-ticks { color: var(--wa-meta); }
+.th-wa-light .tg-msg.me .tg-ticks.read, .th-wa-dark .tg-msg.me .tg-ticks.read { color: var(--wa-read); }
+.th-wa-light .tg-quote, .th-wa-dark .tg-quote { border-left-color: #06cf9c; background: rgba(0,0,0,.07); color: var(--wa-ink); }
+.th-wa-dark .tg-quote { background: rgba(0,0,0,.25); }
+.th-wa-light .tg-chip, .th-wa-dark .tg-chip { background: var(--wa-in); border-color: transparent; color: var(--wa-ink); box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+.th-wa-light .tg-dots i, .th-wa-dark .tg-dots i { background: var(--wa-meta); }
+.th-wa-light .tg-ctx, .th-wa-dark .tg-ctx { background: var(--wa-bar); border-top: 0; }
+.th-wa-light .tg-ctx-txt span, .th-wa-dark .tg-ctx-txt span { color: var(--wa-meta); }
+.th-wa-light .tg-ctx-txt b, .th-wa-dark .tg-ctx-txt b { color: #06cf9c; }
+.th-wa-light .tg-ctx-bar, .th-wa-dark .tg-ctx-bar { background: #06cf9c; }
+.th-wa-light .tg-ctx .icon-btn, .th-wa-dark .tg-ctx .icon-btn { color: var(--wa-meta); }
+.th-wa-light .tg-send, .th-wa-dark .tg-send { background: var(--wa-bar); border-top: 0; }
+.th-wa-light .tg-pill, .th-wa-dark .tg-pill { background: var(--wa-pill); border: 0; }
+.th-wa-light .tg-pill input, .th-wa-dark .tg-pill input { color: var(--wa-ink); }
+.th-wa-light .tg-pill input::placeholder, .th-wa-dark .tg-pill input::placeholder { color: var(--wa-meta); }
+.th-wa-light .tg-go, .th-wa-dark .tg-go { background: var(--wa-send); color: #fff; box-shadow: none; }
+.th-wa-light .tg-emoji, .th-wa-dark .tg-emoji { background: var(--wa-bar); border-top: 1px solid rgba(128,128,128,.25); }
+.th-wa-light .tg-etabs, .th-wa-dark .tg-etabs { border-bottom-color: rgba(128,128,128,.25); }
+.th-wa-light .tg-etabs button.on, .th-wa-dark .tg-etabs button.on { border-bottom-color: var(--wa-send); }
+.th-wa-light .tg-down, .th-wa-dark .tg-down { background: var(--wa-pill); color: var(--wa-meta); }
+@media (prefers-reduced-motion: reduce) { .tg-egrid button:active { transform: none; } }

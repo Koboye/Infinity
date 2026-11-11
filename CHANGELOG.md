@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.10.0 — Friends chat, WhatsApp style
+- **Emoji picker** in the chat box (😊 button): 8 groups plus recently used, inserts at the cursor.
+- **Chat looks**: ⋮ menu → "Chat look" cycles Afro Zone, WhatsApp light, WhatsApp dark (doodle wallpaper, green bubbles, blue read ticks, green header). Your choice is remembered on the phone.
+- Pill-shaped message bar like WhatsApp, a **jump-to-latest** button with a count of new lines while you are scrolled up, and day labels Today / Yesterday / weekday / date.
+- Texts in English and Amharic, test added, SW cache v39.
+- Not in this step: group chats, photos, voice notes (each needs server and storage work).
+
 ## 3.9.0 — Equal cars, auto-drop, offline Android bundle
 - **Equal cars** (online race lobby, host option): everyone drives the same stock car with upgrades, driver and parts switched off, so skill decides. Your own garage is restored after the race and never saved with the stock car.
 - **Closing the app drops you from the room**: every phone sends an "I am here" every 15 s; a racer silent for 45 s is removed by the server when anyone pings, joins or starts (a finished racer keeps their result; a room is never emptied by this). A removed player is told and sent back to the menu. The host passes on automatically.
