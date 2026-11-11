@@ -50,6 +50,16 @@ export async function deleteAccount(db, auth, uid, bucket = null) {
   }
   const chats = await db.collection('chats').where('users', 'array-contains', uid).get();
   for (const c of chats.docs) await db.collection('chats').doc(c.id).delete();
+  // race rooms: remove my live car position from every room I was racing in
+  try {
+    const races = await db.collection('raceRooms').where('players', 'array-contains', uid).get();
+    for (const r of races.docs) await r.ref.collection('cars').doc(uid).delete().catch(() => {});
+  } catch { /* no race rooms */ }
+  // match rooms: remove my hidden hand (dominoes) from every room I played in
+  try {
+    const rooms = await db.collection('gebetaRooms').where('players', 'array-contains', uid).get();
+    for (const r of rooms.docs) await r.ref.collection('private').doc(uid).delete().catch(() => {});
+  } catch { /* no match rooms */ }
   const u = await db.collection('users').doc(uid).get();
   const name = u.exists ? u.data().usernameLower : null;
   if (name) { const n = await nameRef(db, name).get(); if (n.exists && n.data().uid === uid) await nameRef(db, name).delete(); }
