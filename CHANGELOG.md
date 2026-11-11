@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.14.0 — Release candidate, Phase 4: Wallet, ads & earn, Profile, Settings
+- **Settings in Amharic**: every On/Off switch and the text-size buttons were hard-coded English; now translated.
+- **Lucky-spin wheel scales with the screen** (it was a fixed 240 px and pushed the buttons off short phones); the sheet scrolls instead of clipping, and in landscape its buttons stay in reach.
+- **Profile**: photo, avatar and name come first, stats below; Enter saves (real form), name hint, "Saved" confirmation.
+- Tap targets 44 px+ on switches, avatar picks, ad Skip/CTA, earn-offer close, fee tiles; wallet buttons 48 px.
+- Long labels wrap instead of clipping on small phones.
+- Tests `tests/rc1-account.test.mjs`, SW cache v43.
+
 ## 3.13.0 — Release candidate, Phase 3: Friends chat at WhatsApp level
 - **Bubble tails and grouping**: messages from the same person within 5 minutes form one run; only the first has the tail and the extra space above (WhatsApp look). The time and ticks sit inside the bubble, bottom-right.
 - **Swipe a message to the right to reply** (vibration when it is ready); vertical scrolling is not affected.

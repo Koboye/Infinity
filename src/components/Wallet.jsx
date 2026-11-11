@@ -131,7 +131,7 @@ export function SpinSheet({ lang, onClose }) {
       <div className="wheel-wrap">
         <i className="wheel-pointer" aria-hidden="true" />
         <div className="wheel" style={{ background: grad, transform: `rotate(${rot}deg)`, transition: reduce ? 'none' : 'transform 4s cubic-bezier(.12,.7,.1,1)' }}>
-          {W.SPIN_PRIZES.map((p, i) => <span key={i} className="wheel-lbl" style={{ transform: `rotate(${(i + 0.5) * SLICE}deg) translateY(-92px)` }}>{p.coins}</span>)}
+          {W.SPIN_PRIZES.map((p, i) => <span key={i} className="wheel-lbl" style={{ transform: `rotate(${(i + 0.5) * SLICE}deg) translateY(calc(var(--wd) * -0.383))` }}>{p.coins}</span>)}
         </div>
       </div>
       <p className="wheel-result" role="status" aria-live="polite">{err || adMsg || (won != null ? L.won(won) : w.ready && w.spins === 0 && !busy ? (w.adsLeft > 0 ? '\u00a0' : L.none) : '\u00a0')}</p>

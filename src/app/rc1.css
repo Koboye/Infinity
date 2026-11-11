@@ -65,3 +65,35 @@ html.in-game .screen.ingame { padding-bottom: max(8px, env(safe-area-inset-botto
   html.in-game .icon-btn { width: 40px; height: 40px; min-width: 40px; min-height: 40px; }
   html.in-game .match-actions .btn { min-height: 42px; }
 }
+
+/* ═══ RC · Phase 4 — Wallet, ads & earn, Profile, Settings ═══ */
+/* thumb-sized controls everywhere outside the games */
+html body .seg button { min-height: 44px; }
+html body .set-row { min-height: 56px; }
+html body .set-row input[type=range] { min-height: 44px; touch-action: pan-y; }
+html body .hero-pick { min-height: 84px; touch-action: manipulation; }
+html body .ad-skip, html body .ad-cta { min-height: 44px; touch-action: manipulation; }
+html body .earn-x { width: 44px; height: 44px; }
+html body .earn-go { min-height: 44px; }
+html body .fee-tile { min-height: 64px; touch-action: manipulation; }
+html body .wallet-card .btn, html body .ad-earn .btn { min-height: 48px; }
+
+/* lucky-spin: the wheel scales with the real screen (it was a fixed 240px and pushed the buttons off short phones) */
+html body .wheel-wrap { --wd: clamp(150px, min(calc(var(--app-w-z, 390px) * .62), calc(var(--app-h-z, 700px) * .34)), 240px); width: var(--wd); height: var(--wd); }
+html body .wheel-lbl { font-size: clamp(.72rem, calc(var(--wd) * .004), .95rem); }
+html body .wallet-card { max-height: calc(var(--app-h-z, 100dvh) - 24px); overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+html body .wallet-card h2 { overflow-wrap: anywhere; }
+html body .coin-chip { max-width: 100%; }
+html body .coin-chip b { white-space: nowrap; }
+html body .wheel-result { overflow-wrap: anywhere; }
+
+/* profile: editor first, stats below; settings rows never clip long Amharic labels */
+html body .prof-form { display: grid; gap: 10px; }
+html body .prof-form .form-label small { display: block; margin-top: 4px; font-size: .74rem; }
+html body .prof-form input { min-height: 48px; }
+html body .prof-sec { margin: 8px 0 0; font: 800 .74rem/1.2 "Figtree", system-ui, sans-serif; letter-spacing: .14em; text-transform: uppercase; color: var(--r-text-3, rgba(255, 255, 255, .6)); }
+html body .set-row > span { min-width: 0; overflow-wrap: anywhere; }
+html body .set-row .seg { flex-shrink: 0; max-width: 100%; }
+
+/* short landscape: sheets scroll, never clip */
+@media (orientation: landscape) and (max-height: 480px) { html body .wallet-card { padding: 14px 16px; } html body .wallet-card .match-actions { position: sticky; bottom: 0; }}
