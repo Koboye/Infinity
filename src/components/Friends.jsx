@@ -6,7 +6,10 @@ import { GAMES } from '@/lib/games.js';
 import { isOnline, isTyping, lastSeenParts, normalizeFriendCode, pairId, REACTIONS } from '@/lib/social';
 import { GameIcon } from './GameIcons';
 
-const ONLINE_GAMES = Object.values(GAMES).filter((g) => !g.offlineOnly && !g.comingSoon);
+const CAR = { id: 'car', rulesets: [], defaultRuleset: '' };   // Hill Climb Racer: a stand-alone page with its own race rooms
+const ONLINE_GAMES = [...Object.values(GAMES).filter((g) => !g.offlineOnly && !g.comingSoon), CAR];
+/** Where the invited (and inviting) player lands for the car game. */
+export const carRaceUrl = (code) => `/games/hillclimb-racing/index.html?race=${encodeURIComponent(code)}`;
 const shareOrCopy = async (text, url) => {
   try { if (navigator.share) { await navigator.share({ title: 'Afro Zone', text, url }); return 'shared'; } } catch (e) { if (e?.name === 'AbortError') return 'cancelled'; }
   try { await navigator.clipboard.writeText(url ? `${text} ${url}` : text); return 'copied'; } catch { return 'failed'; }
@@ -97,6 +100,7 @@ export default function FriendsScreen({ t, lang, uid, social, onEnterRoom, openC
   };
   const invite = async (friend, game, ruleset) => {
     const r = await call({ action: 'friendInvite', to: friend.id, game, ruleset, fee: 0 });
+    if (r?.code && game === 'car') { setInviting(null); window.location.href = carRaceUrl(r.code); return; }   // host waits in the race lobby
     if (r?.code) { setInviting(null); onEnterRoom(r.code); }
   };
 
@@ -215,9 +219,9 @@ export default function FriendsScreen({ t, lang, uid, social, onEnterRoom, openC
 /** Pick a game (and for Gebeta the type), then send the invite: the host waits in a private room, no coins. */
 export function InviteSheet({ t, friend, busy, onClose, onPick }) {
   const [game, setGame] = useState('gebeta');
-  const info = GAMES[game];
+  const info = game === 'car' ? CAR : GAMES[game];
   const [rs, setRs] = useState(info.defaultRuleset);
-  useEffect(() => { setRs(GAMES[game].defaultRuleset); }, [game]);
+  useEffect(() => { setRs((game === 'car' ? CAR : GAMES[game]).defaultRuleset); }, [game]);
   return (
     <div className="overlay" role="dialog" aria-modal="true" aria-label={t.inviteToPlay} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="dialog fr-invite">

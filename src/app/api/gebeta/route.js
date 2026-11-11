@@ -21,6 +21,23 @@ export const runtime = 'nodejs';
 
 import { HttpError, fail } from '@/lib/online/httpError.js';
 import * as Social from '@/lib/online/socialApi.js';
+import { makeCode as makeRaceCode, normalizeCode as normalizeRaceCode, newRaceRoom } from '@/lib/online/race.js';
+
+// A new waiting race room for a friend invite (same document shape as /api/race `create`).
+async function createRaceRoom(db, uid, decoded, body) {
+  let name = decoded.name || (decoded.email ? decoded.email.split('@')[0] : 'Racer');
+  try { const s = await db.collection('users').doc(uid).get(); if (s.exists && s.data().displayName) name = s.data().displayName; } catch { /* keep fallback */ }
+  for (let i = 0; i < 6; i++) {
+    const c = makeRaceCode(), ref = db.collection('raceRooms').doc(c);
+    const made = await db.runTransaction(async (tx) => {
+      if ((await tx.get(ref)).exists) return false;
+      tx.set(ref, newRaceRoom({ code: c, uid, name, veh: body.veh, world: body.world, level: body.level, now: Date.now() }));
+      return true;
+    });
+    if (made) return c;
+  }
+  const e = new Error('Could not make a room, try again'); e.status = 503; throw e;
+}
 import { pushRoomChat } from '@/lib/social.js';
 
 // Best-effort per-instance rate limit (add Upstash/Redis for a hard global limit).
@@ -374,6 +391,9 @@ export async function POST(req) {
       case 'chatRead':
         return ok(await Social.chatRead(db, uid, body.to));
       case 'friendInvite':
+        if (body.game === 'car') {   // Hill Climb Racer: a race room (raceRooms), not a board-game room
+          return ok(await Social.inviteFriendRace(db, uid, { to: body.to, code: normalizeRaceCode(body.code) || null, makeRoom: () => createRaceRoom(db, uid, decoded, body) }));
+        }
         return ok(await Social.inviteFriend(db, uid, { to: body.to, room: code || null, makeRoom: () => createRoom(db, uid, decoded.name, { ...common, isPublic: false }) }));
       case 'inviteDismiss':
         return ok(await Social.inviteDismiss(db, uid, body.id));

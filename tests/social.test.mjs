@@ -141,6 +141,17 @@ await t('API: a waiting room can invite a friend afterwards, but only its owner 
   await ok('bob', { action: 'join', code: w.code });
   await bad('alice', { action: 'friendInvite', to: 'bob', code: w.code }, 409);       // already started
 });
+await t('API: inviting a friend to the CAR game opens a race room and sends a car invite; strangers and wrong owners are refused', async () => {
+  await bad('alice', { action: 'friendInvite', to: 'carl', game: 'car' }, 403);
+  const r = await ok('alice', { action: 'friendInvite', to: 'bob', game: 'car', world: 2, level: 3, veh: 1 });
+  assert.match(r.code, /^[A-HJ-NP-Z2-9]{5}$/); assert.equal(r.game, 'car');
+  const room = __store.get(`raceRooms/${r.code}`);
+  assert.equal(room.host, 'alice'); assert.equal(room.status, 'wait'); assert.equal(room.world, 2); assert.deepEqual(room.players, ['alice']);
+  const inv = __store.get('invites/bob').items[0];
+  assert.equal(inv.game, 'car'); assert.equal(inv.code, r.code); assert.equal(inv.name, 'Alice');
+  await bad('bob', { action: 'friendInvite', to: 'alice', game: 'car', code: r.code }, 409);   // bob does not host it
+  await ok('alice', { action: 'friendInvite', to: 'bob', game: 'car', code: r.code });         // re-invite the same waiting room
+});
 await t('API: in-match chat is for the two players only, and the room keeps the last lines', async () => {
   const w = await ok('alice', { action: 'friendInvite', to: 'bob', game: 'gebeta', ruleset: 'gebeta', fee: 0 });
   await ok('bob', { action: 'join', code: w.code });

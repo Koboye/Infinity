@@ -2,6 +2,16 @@ import React from 'react';
 
 // Small hand-drawn SVG icons for the game picker (no image files needed).
 export function GameIcon({ game, size = 44 }) {
+  if (game === 'car') {
+    return (
+      <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden="true">
+        <rect x="3" y="3" width="42" height="42" rx="8" fill="#FF7A2F" />
+        <path d="M3 34 Q16 26 26 31 T45 24 V45 H3Z" fill="#7A3A12" />
+        <rect x="12" y="22" width="22" height="8" rx="3" fill="#F5F7FA" /><path d="M17 22l3-5h8l3 5z" fill="#BFE3FF" />
+        <circle cx="18" cy="31" r="4" fill="#1b1b1b" /><circle cx="30" cy="31" r="4" fill="#1b1b1b" />
+      </svg>
+    );
+  }
   if (game === 'checkers') {
     return (
       <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden="true">

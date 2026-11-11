@@ -7,6 +7,6 @@ t('hides X-Powered-By', () => assert.equal(cfg.poweredByHeader, false));
 t('HSTS in production', () => assert.match(h['Strict-Transport-Security'], /max-age=\d{7,}/));
 t('clickjacking blocked twice', () => { assert.equal(h['X-Frame-Options'], 'DENY'); assert.match(h['Content-Security-Policy'], /frame-ancestors 'none'/); });
 t('nosniff + referrer policy', () => { assert.equal(h['X-Content-Type-Options'], 'nosniff'); assert.ok(h['Referrer-Policy']); });
-t('permissions policy denies camera/payment', () => { assert.match(h['Permissions-Policy'], /camera=\(\)/); assert.match(h['Permissions-Policy'], /payment=\(\)/); });
+t('permissions policy: camera only for this app (nearby-race QR scan), payment denied', () => { assert.match(h['Permissions-Policy'], /camera=\(self\)/); assert.match(h['Permissions-Policy'], /payment=\(\)/); });
 t('CSP: no eval in production, no plugins, locked base/form', () => { const c = h['Content-Security-Policy']; assert.ok(!c.includes("'unsafe-eval'")); assert.match(c, /object-src 'none'/); assert.match(c, /base-uri 'self'/); assert.match(c, /form-action 'self'/); });
 console.log(n, 'tests passed');

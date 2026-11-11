@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.8.0 — Review pass: the car game joins Friends
+- **Friends can invite each other to Hill Climb Racer**, same as the board games: the 🎮 button (friends list and chat) now lists the car game; the friend gets the normal invite card and one tap takes them straight into your race lobby (the car page joins the room by itself).
+- Inside the car race lobby there is a new **INVITE FRIENDS** button: pick friends from your list and they get the invite on any screen.
+- New server actions: `friendInvite` with `game: 'car'` (opens a race room), and `friends` / `invite` on `/api/race`. Invites expire with the waiting room, like every other game.
+- New car icon in the game picker, Amharic/English invite text, tests for the car invite, service-worker cache bumped (v37).
+
 ## 3.7.0 — Phase 3b: Bluetooth ready for the Android app
 - The nearby race now has a **Bluetooth** link next to Wi-Fi / hotspot: BLUETOOTH · HOST and BLUETOOTH · JOIN (pick the host phone from a list). It switches on only inside the native Android app; in a browser the buttons explain that it is an Android-app feature.
 - Same race as before over a Bluetooth stream (shared start, live ghost car, crash respawn, results, rematch). The game talks to a small bridge (`AfroBluetooth`); tested here against a simulated bridge.

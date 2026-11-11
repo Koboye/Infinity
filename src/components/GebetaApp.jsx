@@ -18,7 +18,7 @@ import InstallPill from './InstallPill';
 import AdOverlay from './AdOverlay';
 import * as Ads from '@/lib/ads';
 import * as Wallet from '@/lib/wallet';
-import FriendsScreen, { InviteInbox } from './Friends';
+import FriendsScreen, { InviteInbox, carRaceUrl } from './Friends';
 import { useSocial } from '@/lib/useSocial';
 import { Home, Setup, RulesScreen, AuthForm, Lobby, Leaders, ProfileScreen, ProgressScreen, SettingsScreen, Tibeb } from './Screens';
 import { isPlayable, GAMES } from '@/lib/games.js';
@@ -209,6 +209,10 @@ export default function GebetaApp() {
       .catch((e) => { setToast({ text: e.message }); setTimeout(() => setToast(null), 3500); go('friends'); });
   }, [authReady, user]); // eslint-disable-line react-hooks/exhaustive-deps
   const joinInvite = async (inv) => {
+    if (inv.game === 'car') {   // Hill Climb Racer invite: the car page joins the race room by itself
+      apiCall({ action: 'inviteDismiss', id: inv.id }, { retries: 0 }).catch(() => {});
+      window.location.href = carRaceUrl(inv.code); return;
+    }
     setJoining(true);
     try { const r = await apiCall({ action: 'join', code: inv.code }); apiCall({ action: 'inviteDismiss', id: inv.id }, { retries: 0 }).catch(() => {}); if (inv.game && isPlayable(inv.game)) pickGame(inv.game); go('room', { code: r.code }); }
     catch (e) { setToast({ text: e.message || t.inviteGone }); setTimeout(() => setToast(null), 3500); apiCall({ action: 'inviteDismiss', id: inv.id }, { retries: 0 }).catch(() => {}); }

@@ -3,6 +3,7 @@
 // creates / joins / starts rooms and decides finishing order with the SERVER clock.
 import { NextResponse } from 'next/server';
 import { adminDb, adminAuth } from '@/lib/firebaseAdmin';
+import * as Social from '@/lib/online/socialApi.js';
 import { HttpError, fail } from '@/lib/online/httpError.js';
 import {
   makeCode, normalizeCode, newRaceRoom, joinRaceRoom, leaveRaceRoom, setTrack, startRace, finishRace, closeRace, rematch,
@@ -92,6 +93,8 @@ export async function POST(req) {
       case 'close': return ok(await mutate(db, code, (r, t) => closeRace(r, t)));
       case 'again': return ok(await mutate(db, code, (r) => rematch(r, uid)));
       case 'leave': return ok(await mutate(db, code, (r) => leaveRaceRoom(r, uid)));
+      case 'friends': return ok({ friends: await Social.friendNames(db, uid) });
+      case 'invite': return ok(await Social.inviteFriendRace(db, uid, { to: body.to, code }));
       case 'time': return ok({});
       default: fail(400, 'Unknown action');
     }

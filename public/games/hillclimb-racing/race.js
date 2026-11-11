@@ -9,7 +9,7 @@
   var COLORS = ['#35c6ff', '#ff5a5a', '#7be08a', '#ffd33d'];
   var R = window.Race = { on: false, hold: function () { return false; } };
   var fb = null, auth = null, fs = null, user = null, realUser = null, skew = 0;
-  var code = '', room = null, view = 'menu', msg = '', busy = false;
+  var code = '', room = null, view = 'menu', msg = '', busy = false, fList = null, fSent = {}, fOpen = false;
   var unsubRoom = null, unsubCars = null, sendT = 0, hudT = 0, dogT = 0, tickT = 0;
   var ghosts = {}, me = { fin: false, safe: 0 }, awarded = {}, closing = false, lastStatus = '';
   var $q = function (s) { return document.querySelector(s); };
@@ -61,6 +61,11 @@
       '#rccd{position:fixed;inset:0;z-index:9980;display:flex;align-items:center;justify-content:center;pointer-events:none;font:900 clamp(60px,26vh,200px) Arial;color:#fff;text-shadow:0 6px 0 #1a3a8a,0 0 40px #35c6ff}';
     document.head.appendChild(st);
   }
+  function friendsHtml() {
+    if (!fList) return '<div class="s">Loading friends…</div>';
+    if (!fList.length) return '<div class="s">No friends yet. Add friends on the Afro Zone Friends tab.</div>';
+    return fList.map(function (f) { return '<div class="pl"><b>' + esc(f.name) + '</b><button class="b" style="margin:0;padding:4px 10px;width:auto" data-r="inv" data-f="' + esc(f.id) + '"' + (fSent[f.id] ? ' disabled' : '') + '>' + (fSent[f.id] ? 'SENT ✓' : 'INVITE') + '</button></div>'; }).join('');
+  }
   function overlay() { var o = $q('#rc'); if (!o) { o = document.createElement('div'); o.id = 'rc'; document.body.appendChild(o); } return o; }
   function closeOverlay() { var o = $q('#rc'); if (o) o.remove(); }
   function render() {
@@ -84,7 +89,7 @@
       h = '<h1>' + (R.p2p ? 'NEARBY RACE' : 'ROOM') + '</h1>' + (R.p2p ? '' : '<div class="code">' + esc(room.code) + '</div><div class="s">Share this code · ' + room.players.length + '/4 racers</div>') + pl +
         (host ? '<div class="row"><select id="rcW">' + wopts + '</select><select id="rcL">' + lopts + '</select></div>' : '<div class="s">Road: ' + esc(wn) + ' · Level ' + (room.level + 1) + '</div>') +
         (host ? '<button class="b y" data-r="start"' + (room.players.length < 2 || busy ? ' disabled' : '') + '>START RACE</button>' : '<div class="s">Waiting for the host to start…</div>') +
-        (R.p2p ? '' : '<button class="b" data-r="share">SHARE CODE</button>') + err + '<button class="b" data-r="leave">LEAVE ROOM</button>';
+        (R.p2p ? '' : '<button class="b" data-r="share">SHARE CODE</button><button class="b" data-r="friends">' + (fOpen ? 'HIDE FRIENDS' : 'INVITE FRIENDS') + '</button>' + (fOpen ? friendsHtml() : '')) + err + '<button class="b" data-r="leave">LEAVE ROOM</button>';
     } else if (view === 'result' && room) {
       var rs = room.results.slice(), rk = rs.map(function (r, i) {
         return '<div class="pl"><b style="width:26px">' + (i + 1) + '</b><span class="dot" style="background:' + COLORS[Math.max(0, room.players.indexOf(r.uid)) % 4] + '"></span><b>' + esc(room.names[r.uid] || 'Racer') + (r.uid === user.uid ? ' (you)' : '') + '</b><small>' + fmt(r.ms) + '</small></div>';
@@ -132,6 +137,8 @@
     else if (a === 'join') guard(async function () { var c = ($q('#rcCode').value || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); if (c.length !== 5) throw new Error('Type the 5-letter code'); var d = await Net.call({ action: 'join', code: c, veh: S.veh }); enterRoom(d.code); });
     else if (a === 'start') guard(async function () { await Net.call({ action: 'start', code: code }); });
     else if (a === 'again') guard(async function () { await Net.call({ action: 'again', code: code }); });
+    else if (a === 'friends') { fOpen = !fOpen; render(); if (fOpen && !fList) Net.call({ action: 'friends' }).then(function (d) { fList = d.friends || []; render(); }).catch(function (e) { fList = []; setMsg(e.message); }); }
+    else if (a === 'inv') guard(async function () { var id = t.dataset.f; await Net.call({ action: 'invite', code: code, to: id }); fSent[id] = true; toast('Invite sent'); });
     else if (a === 'leave') R.leave(false);
     else if (a === 'share') { var txt = 'Race me in Hill Climb Racer on Afro Zone! Room code: ' + code; if (navigator.share) navigator.share({ text: txt }).catch(function () {}); else if (navigator.clipboard) navigator.clipboard.writeText(txt).then(function () { toast('Code copied'); }); }
   });
@@ -231,7 +238,7 @@
     ghosts = {}; paused = false; mode = 'menu'; try { $q('#hud').classList.add('hide'); } catch (e) {}
   }
   R.leave = function (silent) {
-    var c = code; code = ''; stopRace();
+    var c = code; code = ''; stopRace(); fOpen = false; fSent = {};
     if (unsubRoom) { unsubRoom(); unsubRoom = null; }
     if (R.p2p) { try { R.p2p.close(); } catch (e) {} R.p2p = null; user = realUser; }
     else if (c && !silent && user) Net.call({ action: 'leave', code: c }).catch(function () {});
@@ -247,6 +254,22 @@
     room: function (rm) { room = rm; onRoom(); },
     car: applyCar,
   };
+
+  /* ---------- invited by a friend: /games/hillclimb-racing/index.html?race=CODE joins that room by itself ---------- */
+  R.joinInvited = async function (c) {
+    css(); R.p2p = null; view = 'menu'; msg = ''; busy = true; render();
+    try {
+      await Net.init(); user = realUser;
+      var d = await Net.call({ action: 'join', code: c, veh: S.veh }); busy = false; enterRoom(d.code);
+    } catch (e) { busy = false; msg = e.message || 'Could not join this race'; render(); }
+  };
+  (function () {
+    var c = ''; try { c = new URLSearchParams(location.search).get('race') || ''; } catch (e) {}
+    c = c.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); if (c.length !== 5) return;
+    try { history.replaceState(null, '', location.pathname); } catch (e) {}
+    var go = function () { setTimeout(function () { R.joinInvited(c); }, 600); };
+    if (document.readyState === 'complete') go(); else window.addEventListener('load', go);
+  })();
 
   /* ---------- drawing other racers ---------- */
   R.draw = function (cx) {

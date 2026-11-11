@@ -147,6 +147,38 @@ export async function inviteFriend(db, uid, { to, room, makeRoom }) {
   return { code, status: 'waiting' };
 }
 
+/**
+ * Invite a friend to a Hill Climb Racer online race (v3.8). `code` is a waiting race room I host; without it `makeRoom()` opens one.
+ * The invite carries game 'car', so the friend's inbox shows it like any other game and sends them to the car page.
+ */
+export async function inviteFriendRace(db, uid, { to, code, makeRoom }) {
+  to = String(to || '');
+  const mine = await friendsRef(db, uid).get();
+  if (!areFriends(mine.exists ? mine.data() : null, to)) fail(403, 'You can only invite friends');
+  let c = code;
+  if (c) {
+    const r = await db.collection('raceRooms').doc(c).get();
+    if (!r.exists || r.data().host !== uid || r.data().status !== 'wait') fail(409, 'Your race room is no longer waiting');
+  } else c = await makeRoom();
+  await db.runTransaction(async (tx) => {
+    const me = await profileOf(tx, db, uid);
+    const cur = await tx.get(inviteRef(db, to));
+    tx.set(inviteRef(db, to), pushInvite(cur.exists ? cur.data() : null, {
+      id: randomUUID().slice(0, 8), from: uid, name: me?.name || 'Player', avatar: me?.avatar || 'lion', game: 'car', ruleset: '', code: c, fee: 0,
+    }));
+  });
+  return { code: c, status: 'wait', game: 'car' };
+}
+
+/** Friends the car page can invite (names only): same data the Friends tab uses. */
+export async function friendNames(db, uid) {
+  const fs = await friendsRef(db, uid).get();
+  const ids = Object.keys((fs.exists ? fs.data().list : null) || {}).slice(0, 50);
+  const out = [];
+  await Promise.all(ids.map(async (id) => { const u = await db.collection('users').doc(id).get().catch(() => null); out.push({ id, name: (u && u.exists && u.data().displayName) || 'Player' }); }));
+  return out;
+}
+
 export async function inviteDismiss(db, uid, id) {
   return db.runTransaction(async (tx) => {
     const s = await tx.get(inviteRef(db, uid));
