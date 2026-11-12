@@ -5,3 +5,16 @@
 .screen[data-slide='right'] > * { animation: tab-from-left  .24s cubic-bezier(.2,.8,.2,1) both; }
 .screen { touch-action: pan-y pinch-zoom; }
 @media (prefers-reduced-motion: reduce) { .screen[data-slide] > * { animation: none; } }
+
+/* v3.17: the opening screen - logo, name and a moving bar on the app's own night-blue, instead of a bobbing dot. */
+.boot { background: radial-gradient(120% 80% at 50% 0%, #14226b 0%, #070d2e 45%, #02040f 100%); }
+.boot-card { display: grid; justify-items: center; gap: 10px; animation: boot-in .45s cubic-bezier(.2,.8,.2,1) both; }
+.boot-logo { width: 96px; height: 96px; border-radius: 22px; box-shadow: 0 0 0 2px rgba(255,200,60,.35), 0 10px 40px rgba(255,170,0,.28); animation: boot-glow 1.6s ease-in-out infinite alternate; }
+.boot-name { font: 900 30px/1 Georgia, 'Times New Roman', serif; letter-spacing: .12em; color: #ffc93c; text-shadow: 0 2px 0 #7a4a00, 0 0 18px rgba(255,190,40,.45); }
+.boot-tag { font: 600 11px/1 system-ui, sans-serif; letter-spacing: .22em; text-transform: uppercase; color: rgba(255,255,255,.55); }
+.boot-bar { width: 150px; height: 4px; margin-top: 10px; border-radius: 4px; background: rgba(255,255,255,.12); overflow: hidden; }
+.boot-bar > i { display: block; width: 40%; height: 100%; border-radius: 4px; background: linear-gradient(90deg, #ffb300, #ffe27a); animation: boot-slide 1s ease-in-out infinite; }
+@keyframes boot-in { from { opacity: 0; transform: translateY(10px) scale(.97); } to { opacity: 1; transform: none; } }
+@keyframes boot-glow { from { transform: scale(1); } to { transform: scale(1.04); } }
+@keyframes boot-slide { from { transform: translateX(-110%); } to { transform: translateX(260%); } }
+@media (prefers-reduced-motion: reduce) { .boot-card, .boot-logo, .boot-bar > i { animation: none; } }
