@@ -295,7 +295,7 @@ export default function GebetaApp() {
   // Daily level pass: starting a game against the computer spends one of today's levels (the server decides).
   // With the paywall off (default) this is a plain `go('game', ...)`.
   const startLevel = async (o) => {
-    if (!Pass.paywallEnabled || o.mode !== 'ai') { go('game', o); return; }
+    if (!Pass.paywallEnabled || !['ai', 'pass'].includes(o.mode)) { go('game', o); return; }
     if (!user) { go('online'); return; }   // the pass belongs to the account: sign in first
     const r = await Pass.start();
     if (r.ok) { go('game', o); return; }

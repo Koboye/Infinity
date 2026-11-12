@@ -45,6 +45,7 @@ export default function PassSheet({ lang, onClose, onUnlocked }) {
         ) : (
           <>
             <p className="muted">{L.sub(P.PASS_LEVELS)}</p>
+            {P.passPrice && <p><b>{lang === 'am' ? `ዋጋ: ${P.passPrice} ብር` : `Price: ${P.passPrice} birr`}</b></p>}
             {!claim && <label className="muted small">{L.phone}<input inputMode="tel" autoComplete="tel" maxLength={16} value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="09xxxxxxxx" /></label>}
             {!claim && <button type="button" className="btn primary wide" disabled={busy || !/^(\+?251|0)?[79]\d{8}$/.test(phone.replace(/[\s-]/g, ''))} onClick={pay}>{L.pay}</button>}
             {claim && (

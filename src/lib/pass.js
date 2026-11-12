@@ -5,6 +5,8 @@ export { PASS_LEVELS };
 
 /** Build-time switch for the client (the server has its own PAYWALL switch). Off = every level is free, as before. */
 export const paywallEnabled = process.env.NEXT_PUBLIC_PAYWALL === '1' || process.env.NEXT_PUBLIC_PAYWALL === 'true';
+/** The price shown on the pay screen, in birr (set NEXT_PUBLIC_PASS_PRICE). The player must see the amount before dialing. */
+export const passPrice = (process.env.NEXT_PUBLIC_PASS_PRICE || '').replace(/[^\d.]/g, '');
 export const ussdCode = process.env.NEXT_PUBLIC_PAY_USSD || DEFAULT_USSD;
 
 let state = { active: false, left: 0, total: PASS_LEVELS, locked: true, pending: false, ready: false };

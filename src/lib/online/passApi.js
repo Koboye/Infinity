@@ -122,11 +122,13 @@ const smsRef = (db, raw) => db.collection('smsInbox').doc(createHash('sha256').u
 
 /** Use up a waiting SMS that names this phone (looked up by number, then filtered here: no composite index needed). */
 async function takeSms(db, phone, now) {
-  const q = await db.collection('smsInbox').where('phones', 'array-contains', phone).limit(20).get();
-  const hit = q.docs.find((d) => !d.data().used && now - d.data().at < 36 * 3600_000);
-  if (!hit) return false;
-  await hit.ref.set({ ...hit.data(), used: true, usedAt: now });
-  return true;
+  return db.runTransaction(async (tx) => {   // read and spend in one transaction: two parallel requests cannot both take the same SMS
+    const q = await tx.get(db.collection('smsInbox').where('phones', 'array-contains', phone).limit(20));
+    const hit = q.docs.find((d) => !d.data().used && now - d.data().at < 36 * 3600_000);
+    if (!hit) return false;
+    tx.set(hit.ref, { ...hit.data(), used: true, usedAt: now });
+    return true;
+  });
 }
 
 export async function approveFromSms(db, text, now = Date.now()) {
