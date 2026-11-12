@@ -43,7 +43,8 @@ service cloud.firestore {
       allow read: if request.auth != null && request.auth.uid == uid;
       allow write: if false;
     }
-    match /payClaims/{id} { allow read, write: if false; }   // owner-only (confirmed through /api/pay/confirm)
+    match /payClaims/{id} { allow read, write: if false; }
+    match /smsInbox/{id} { allow read, write: if false; }   // payment SMS text from the owner's phone: server-only   // owner-only (confirmed through /api/pay/confirm)
 
     // Ads: the ads themselves, their counters and the rewarded-ad sessions are read and written only by the server
     // (/api/ads, /api/admin/ads, /api/gebeta). Phones get ads through the API, never from Firestore directly.

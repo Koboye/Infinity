@@ -39,6 +39,7 @@ assert.equal((await call(null, { action: 'passStart' })).status, 401);
 assert.equal((await call('amy', { action: 'passStart' })).status, 402, 'locked until paid');
 assert.equal((await call('amy', { action: 'passClaim', phone: 'abc' })).status, 400);
 const c1 = await ok('amy', { action: 'passClaim', phone: '0912345678' });
+assert.equal((await call('bob', { action: 'passClaim' })).status, 400, 'a new claim needs the payer number');
 const c2 = await ok('amy', { action: 'passClaim' });
 assert.equal(c2.claim, c1.claim); assert.equal(c2.reused, true, 'one open claim per day');
 assert.equal(__store.get(`payClaims/${c1.claim}`).phone, '0912345678');
@@ -63,7 +64,7 @@ for (let i = 1; i <= 10; i++) assert.equal((await ok('amy', { action: 'passStart
 const over = await call('amy', { action: 'passStart' });
 assert.equal(over.status, 402); assert.match(over.body.error, /all 10 levels/);
 // pays again after using them all
-const c3 = await ok('amy', { action: 'passClaim' }); assert.notEqual(c3.claim, c1.claim);
+const c3 = await ok('amy', { action: 'passClaim', phone: '0912345678' }); assert.notEqual(c3.claim, c1.claim);
 assert.equal((await cfm('a'.repeat(24), { claim: c3.claim })).status, 200);
 assert.equal((await ok('amy', { action: 'pass' })).pass.left, 10);
 // a pass is personal

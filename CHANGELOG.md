@@ -5,6 +5,7 @@
 - New: pay once per Ethiopian day (UTC+3) to unlock 10 computer-game starts; the next day, or after the 10, the player pays again.
 - The server decides: `passes/{uid}` is written only by the API; `/api/pay/confirm` (secret-protected) opens a pass when your payment channel confirms a claim.
 - The pay sheet opens the phone dialer with the code (`NEXT_PUBLIC_PAY_USSD`); a web page cannot dial silently or read the result, so the player presses call.
+- Payment approval: the player enters the number they pay from; `/api/pay/sms` reads your phone's payment SMS (via an SMS-forwarder app) and opens the matching player's pass automatically; anything unmatched is approved or rejected at `/admin/pay`. One SMS pays once; ambiguous matches are left to you.
 - Off unless `PAYWALL=1` (server) and `NEXT_PUBLIC_PAYWALL=1` (build). New Firestore rules for `passes` and `payClaims`: run `firebase deploy --only firestore:rules`.
 
 ## 3.17.0 -- Release polish and hardening

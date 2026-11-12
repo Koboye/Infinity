@@ -3,9 +3,9 @@ import React, { useEffect, useState } from 'react';
 import * as P from '@/lib/pass';
 
 const TXT = {
-  en: { title: 'Unlock today\'s levels', sub: (n) => `Pay once and play ${n} levels today. Tomorrow you unlock again.`, phone: 'Your phone number (optional, helps us find your payment)', pay: 'Pay & unlock', dial: 'Your phone\'s dialer opens with the code. Press call, finish the payment, then come back.',
+  en: { title: 'Unlock today\'s levels', sub: (n) => `Pay once and play ${n} levels today. Tomorrow you unlock again.`, phone: 'The phone number you pay from (we match your payment with it)', pay: 'Pay & unlock', dial: 'Your phone\'s dialer opens with the code. Press call, finish the payment, then come back.',
     code: 'Payment code', waiting: 'Waiting for your payment to be confirmed…', check: 'I have paid — check now', notYet: 'Not confirmed yet. It can take a minute.', unlocked: (n) => `Unlocked! ${n} levels today.`, play: 'Play now', close: 'Close', retry: 'Could not reach the server. Check your connection.', usedUp: 'You used all your levels today. Pay again to unlock more.' },
-  am: { title: 'የዛሬን ደረጃዎች ክፈት', sub: (n) => `አንድ ጊዜ ይክፈሉ፤ ዛሬ ${n} ደረጃዎችን ይጫወቱ። ነገ እንደገና ይከፍታሉ።`, phone: 'ስልክ ቁጥርዎ (አማራጭ፣ ክፍያዎን ለማግኘት ይረዳል)', pay: 'ክፈል እና ክፈት', dial: 'የስልክዎ መደወያ በኮዱ ይከፈታል። ደውለው ክፍያውን ጨርሰው ይመለሱ።',
+  am: { title: 'የዛሬን ደረጃዎች ክፈት', sub: (n) => `አንድ ጊዜ ይክፈሉ፤ ዛሬ ${n} ደረጃዎችን ይጫወቱ። ነገ እንደገና ይከፍታሉ።`, phone: 'የሚከፍሉበት ስልክ ቁጥር (ክፍያዎን በእሱ እናዛምዳለን)', pay: 'ክፈል እና ክፈት', dial: 'የስልክዎ መደወያ በኮዱ ይከፈታል። ደውለው ክፍያውን ጨርሰው ይመለሱ።',
     code: 'የክፍያ ኮድ', waiting: 'ክፍያዎ እስኪረጋገጥ በመጠበቅ ላይ…', check: 'ከፍያለሁ — አሁን አረጋግጥ', notYet: 'ገና አልተረጋገጠም። አንድ ደቂቃ ሊወስድ ይችላል።', unlocked: (n) => `ተከፍቷል! ዛሬ ${n} ደረጃዎች።`, play: 'አሁን ተጫወት', close: 'ዝጋ', retry: 'ሰርቨሩን ማግኘት አልተቻለም። ግንኙነትዎን ይመልከቱ።', usedUp: 'ዛሬ ደረጃዎችዎ አልቀዋል። ለተጨማሪ እንደገና ይክፈሉ።' },
 };
 
@@ -46,7 +46,7 @@ export default function PassSheet({ lang, onClose, onUnlocked }) {
           <>
             <p className="muted">{L.sub(P.PASS_LEVELS)}</p>
             {!claim && <label className="muted small">{L.phone}<input inputMode="tel" autoComplete="tel" maxLength={16} value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="09xxxxxxxx" /></label>}
-            {!claim && <button type="button" className="btn primary wide" disabled={busy} onClick={pay}>{L.pay}</button>}
+            {!claim && <button type="button" className="btn primary wide" disabled={busy || !/^(\+?251|0)?[79]\d{8}$/.test(phone.replace(/[\s-]/g, ''))} onClick={pay}>{L.pay}</button>}
             {claim && (
               <>
                 <p className="muted small">{L.dial}</p>
