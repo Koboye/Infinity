@@ -13,7 +13,7 @@ import { usernameProblem, normalizeUsername, USERNAME_TEXT } from '@/lib/usernam
 import { auth, db, googleProvider, apiCall } from '@/lib/firebase';
 import SwipePicker from '@/components/SwipePicker';
 import { HEROES, heroById } from '@/lib/i18n';
-import { GAME_LIST, GAMES, gameInfo, statFields } from '@/lib/games.js';
+import { GAME_LIST, GAMES, gameInfo, statFields, isPlayable } from '@/lib/games.js';
 import { GameIcon } from './GameIcons';
 import { sfx } from '@/lib/sound';
 import { load as loadProgress, ACHIEVEMENTS, dailyGame, dailyDone, total as totalOf } from '@/lib/progress';
@@ -21,6 +21,7 @@ import { FeePicker } from './Wallet';
 import EarnOffer from './EarnOffer';
 import PhotoPicker from './PhotoPicker';
 import GebetaRules from './GebetaRules';
+import { GEBETA_TYPES } from '@/lib/gebetaRules';
 import { storePhoto } from '@/lib/photo';
 import { KINDS, STONE_SETS, stoneSet, stoneVars } from '@/lib/stones';
 
@@ -180,17 +181,76 @@ export function TargetPicker({ t, value, onChange }) {
 }
 
 /* ───────── Rules ───────── */
-export function RulesScreen({ t, lang, game, type, onPlay }) {
-  if (game === 'gebeta') return <GebetaRules t={t} lang={lang} type={type} onPlay={onPlay} />;   // v73: the three Gebeta types, one rule at a time + ask box
-  const title = game === 'checkers' ? t.rulesTitleCheckers : game === 'dominoes' ? t.rulesTitleDominoes : game === 'bingo' ? t.rulesTitleBingo : game === 'ludo' ? t.rulesTitleLudo : t.rulesTitle;
+const rulesOf = (t, g) => (Array.isArray(t[`rules_${g}`]) ? t[`rules_${g}`] : []);
+const ruleTitle = (t, g) => (g === 'checkers' ? t.rulesTitleCheckers : g === 'dominoes' ? t.rulesTitleDominoes : g === 'bingo' ? t.rulesTitleBingo : g === 'ludo' ? t.rulesTitleLudo : t.rulesTitle);
+
+/** Rules tab. With no game chosen it is a hub: every game as a card (recent first), a search across all rules, and a tap opens that game's rules. */
+export function RulesScreen({ t, lang, game, hub = false, onPickGame, onPlayGame, type, onPlay }) {
+  const [q, setQ] = useState(''); const [recent, setRecent] = useState([]); const [openIds, setOpenIds] = useState(() => new Set([0]));
+  useEffect(() => { try { setRecent(JSON.parse(localStorage.getItem('gebeta.recent')) || []); } catch { /* no history yet */ } }, []);
+  const pick = (g) => { try { sfx?.tap?.(); } catch { /* sound is optional */ } onPickGame?.(g); };
+  const L = lang === 'am' ? 'am' : 'en';
+
+  if (hub) {
+    const needle = q.trim().toLowerCase();
+    const order = orderGames(GAME_LIST, recent, (id) => !!GAMES[id].comingSoon);
+    const rows = order.map((id, i) => {
+      const g = GAMES[id], soon = !!g.comingSoon, rules = rulesOf(t, id);
+      const hit = needle ? rules.find(([h, b]) => `${h} ${b}`.toLowerCase().includes(needle)) : null;
+      const nameHit = needle && `${t[`${id}Name`]} ${t[`${id}Tag`]}`.toLowerCase().includes(needle);
+      return { id, g, soon, i, count: id === 'gebeta' ? GEBETA_TYPES.length : rules.length, hit, show: !needle || nameHit || !!hit };
+    }).filter((r) => r.show);
+    return (
+      <div className="panel rules-hub">
+        <header className="rh-head"><h2>{t.rulesHub}</h2><p className="muted">{t.rulesHubSub}</p></header>
+        <input className="rh-search" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t.rulesSearch} aria-label={t.rulesSearch} autoComplete="off" enterKeyHint="search" />
+        <div className="rh-list" role="list">
+          {rows.map((r) => (
+            <button key={r.id} type="button" role="listitem" className={`rh-card${r.soon ? ' soon' : ''}`} disabled={r.soon} onClick={() => pick(r.id)} style={{ '--accent': r.g.accent, '--i': r.i }}>
+              <span className="rh-art"><GameIcon game={r.id} size={56} /></span>
+              <span className="rh-txt">
+                <b>{t[`${r.id}Name`]}</b>
+                <small>{r.soon ? t.comingSoon : t[`${r.id}Tag`]}</small>
+                {r.hit && <em className="rh-hit">{t.rulesMatch}: {r.hit[0]}</em>}
+              </span>
+              <span className="rh-meta">{!r.soon && <span className="rh-chip">{r.id === 'gebeta' ? t.rulesTypes(r.count) : t.rulesCount(r.count)}</span>}{!r.soon && <i className="rh-go" aria-hidden="true" />}</span>
+            </button>
+          ))}
+          {rows.length === 0 && <p className="muted rh-none" role="status">{t.rulesNone}</p>}
+        </div>
+      </div>
+    );
+  }
+
+  const playable = GAME_LIST.filter((g) => isPlayable(g));
+  const rules = rulesOf(t, game);
+  const switcher = (
+    <nav className="rh-switch" aria-label={t.rulesAllGames}>
+      <button type="button" className="rh-chip back" onClick={() => onPickGame?.(null)}>‹ {t.rulesAllGames}</button>
+      {playable.map((g) => <button key={g} type="button" className={`rh-chip${g === game ? ' on' : ''}`} aria-current={g === game ? 'true' : undefined} onClick={() => pick(g)}><GameIcon game={g} size={18} /> {t[`${g}Name`]}</button>)}
+    </nav>
+  );
+  if (game === 'gebeta') return <div className="rules-wrap">{switcher}<GebetaRules t={t} lang={lang} type={type} onPlay={onPlay} /></div>;   // v73: the three Gebeta types, one rule at a time + ask box
+  const allOpen = openIds.size >= rules.length;
+  const toggle = (i, on) => setOpenIds((cur) => { const n = new Set(cur); if (on) n.add(i); else n.delete(i); return n; });
   return (
-    <div className="panel rules">
-      <h2>{title}</h2>
-      <ol>
-        {t[`rules_${game}`].map(([head, body]) => (
-          <li key={head}><b>{head}</b><p>{body}</p></li>
-        ))}
-      </ol>
+    <div className="rules-wrap">
+      {switcher}
+      <div className="panel rules" style={{ '--accent': GAMES[game]?.accent }}>
+        <header className="rd-head"><span className="rd-art"><GameIcon game={game} size={60} /></span><span><h2>{ruleTitle(t, game)}</h2><small className="muted">{t[`${game}Tag`]} · {t.rulesCount(rules.length)}</small></span></header>
+        <div className="rd-tools"><button type="button" className="link" onClick={() => setOpenIds(allOpen ? new Set() : new Set(rules.map((_, i) => i)))}>{allOpen ? t.rulesCloseAll : t.rulesOpenAll}</button></div>
+        <ol className="rd-list">
+          {rules.map(([head, body], i) => (
+            <li key={head}>
+              <details className="rd-item" open={openIds.has(i)} onToggle={(e) => toggle(i, e.currentTarget.open)}>
+                <summary><span className="rd-n" aria-hidden="true">{i + 1}</span><b>{head}</b><i className="pg-chev" aria-hidden="true" /></summary>
+                <p>{body}</p>
+              </details>
+            </li>
+          ))}
+        </ol>
+        {isPlayable(game) && onPlayGame && <button type="button" className="btn primary wide rd-play" onClick={() => onPlayGame(game)}>▶ {t.rulesPlay}</button>}
+      </div>
     </div>
   );
 }

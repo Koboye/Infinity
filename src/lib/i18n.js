@@ -41,6 +41,7 @@ export const STRINGS = {
     oppLeft: 'Opponent timed out', youTimedOut: 'You ran out of time', byResign: 'Opponent resigned', youResigned: 'You resigned',
     store: 'Families', emptyBoard: 'No leaders yet. Win a match to claim the first place.',
     rulesTitle: 'How to play ገበጣ',
+    rulesHub: 'Rules', rulesHubSub: 'Pick a game to learn how to play', rulesSearch: 'Search a game or a rule…', rulesCount: (n) => `${n} rules`, rulesTypes: (n) => `${n} game types`, rulesNone: 'Nothing matches. Try another word.', rulesPlay: 'Play now', rulesOpenAll: 'Open all', rulesCloseAll: 'Close all', rulesAllGames: 'All games', rulesMatch: 'Found in',
     seedsLabel: 'seeds', moveFailed: 'Move failed',
     firstRun: 'Welcome to ገበጣ',
 
@@ -190,6 +191,7 @@ export const STRINGS = {
     oppLeft: 'የተቃዋሚ ጊዜ አልቋል', youTimedOut: 'ጊዜህ አልቋል', byResign: 'ተቃዋሚ እጅ ሰጠ', youResigned: 'እጅ ሰጠህ',
     store: 'ቤተሰብ', emptyBoard: 'እስካሁን ማንም የለም። አንድ ጨዋታ አሸንፈህ የመጀመሪያ ሁን።',
     rulesTitle: 'ገበጣን እንዴት እንደሚጫወቱ',
+    rulesHub: 'ሕግጋት', rulesHubSub: 'እንዴት እንደሚጫወቱ ለመማር ጨዋታ ይምረጡ', rulesSearch: 'ጨዋታ ወይም ሕግ ይፈልጉ…', rulesCount: (n) => `${n} ሕግጋት`, rulesTypes: (n) => `${n} የጨዋታ ዓይነቶች`, rulesNone: 'ምንም አልተገኘም። ሌላ ቃል ይሞክሩ።', rulesPlay: 'አሁን ተጫወት', rulesOpenAll: 'ሁሉንም ክፈት', rulesCloseAll: 'ሁሉንም ዝጋ', rulesAllGames: 'ሁሉም ጨዋታዎች', rulesMatch: 'የተገኘው በ',
     seedsLabel: 'ዘሮች', moveFailed: 'እንቅስቃሴው አልተሳካም',
     firstRun: 'እንኳን ወደ ገበጣ በደህና መጡ',
 

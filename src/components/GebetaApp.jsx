@@ -245,6 +245,7 @@ export default function GebetaApp() {
     if (adRef.current) return 'stay';
     if (sheet) { setSheet(null); return 'stay'; }
     if (view.name === 'game' || view.name === 'room') { leaveGame(); return 'stay'; }
+    if (view.name === 'rules' && (view.hub || view.fromHub)) { if (view.hub) home(); else go('rules', { hub: true }); return 'stay'; }
     if (['ai', 'pass', 'online', 'leaders', 'rules'].includes(view.name)) { go('modes'); return 'stay'; }
     if (view.name !== 'home') { home(); return 'stay'; }
     if (Date.now() - exitArm.current < 2000) return 'exit';
@@ -305,7 +306,10 @@ export default function GebetaApp() {
     }
     case 'settings': body = <SettingsScreen t={t} lang={lang} heroId={profile?.avatar} onLang={chooseLang} music={music} onMusic={setMusicTo} muted={muted} onMute={(m) => { setMutedState(m); setMuted(m); write('gebeta.muted', m ? '1' : '0'); }} settings={settings} onSettings={changeSettings} />; break;
     case 'progress': body = <ProgressScreen t={t} lang={lang} />; break;
-    case 'rules': body = <RulesScreen t={t} lang={lang} game={game} type={view.type} onPlay={(type) => go('ai', { ruleset: type })} />; break;
+    case 'rules': body = <RulesScreen t={t} lang={lang} hub={!!view.hub} game={view.game || game} type={view.type}
+      onPickGame={(g) => (g ? go('rules', { game: g, fromHub: true }) : go('rules', { hub: true }))}
+      onPlayGame={(g) => { pickGame(g); go('modes'); }}
+      onPlay={(type) => { if (view.game && view.game !== game) pickGame(view.game); go('ai', { ruleset: type }); }} />; break;
     case 'friends': body = !onlineAvailable ? <Unavailable t={t} /> : !authReady ? null : !user ? <AuthForm t={t} /> : <FriendsScreen t={t} lang={lang} uid={uid} social={social} onEnterRoom={(code) => go('room', { code })} openChat={view.chat || null} onOpenChat={(id) => setView({ name: 'friends', chat: id })} />; break;
     case 'leaders': body = !onlineAvailable ? <Unavailable t={t} /> : !user ? (authReady ? <AuthForm t={t} /> : null) : <Leaders t={t} uid={uid} game={game} />; break;
     case 'profile': body = !onlineAvailable ? <Unavailable t={t} /> : authReady ? <ProfileScreen t={t} lang={lang} user={user} profile={profile} onSignOut={doSignOut} /> : null; break;
@@ -317,6 +321,7 @@ export default function GebetaApp() {
   const openTab = (to, dir) => {
     if (dir && mainRef.current) { mainRef.current.dataset.slide = dir; setTimeout(() => { if (mainRef.current) delete mainRef.current.dataset.slide; }, 260); }
     if (to === 'home') return home();
+    if (to === 'rules') return go('rules', { hub: true });   // the Rules tab is a hub: every game, tap one to open its rules
     if (to === 'leaders' && GAMES[game]?.offlineOnly) { const g = GAME_LIST_ONLINE[0]; if (g) pickGame(g); }
     go(to);
   };
@@ -339,7 +344,7 @@ export default function GebetaApp() {
       {sheet?.type === 'spin' && <SpinSheet lang={lang} onClose={() => setSheet(null)} />}
       <header className="topbar">
         {view.name === 'home' ? <span className="topbar-spacer" /> :
-          <button className="icon-btn" onClick={view.name === 'game' ? leaveGame : ['ai', 'pass', 'online', 'leaders', 'rules'].includes(view.name) ? () => go('modes') : home} aria-label={t.backHome}>‹</button>}
+          <button className="icon-btn" onClick={view.name === 'game' ? leaveGame : view.name === 'rules' && view.hub ? home : view.name === 'rules' && view.fromHub ? () => go('rules', { hub: true }) : ['ai', 'pass', 'online', 'leaders', 'rules'].includes(view.name) ? () => go('modes') : home} aria-label={t.backHome}>‹</button>}
         <h2 className="topbar-title">{view.name === 'home' || view.name === 'modes' ? '' : titles[view.name] || (view.name === 'room' ? `# ${view.code}` : 'ገበጣ')}</h2>
         <div className="topbar-actions">
           {onlineAvailable && <RewardedAdButton lang={lang} signedIn={!!user} onNeedSignIn={() => go('online')} />}
