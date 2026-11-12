@@ -19,6 +19,6 @@ t('the Rules tab opens the hub; a card opens that game; back goes game â†’ hub â
   assert.ok(app.includes("go('rules', { game: g, fromHub: true })"));
   assert.ok(app.includes("view.hub) home(); else go('rules', { hub: true })"));
   const s = read('src/components/Screens.jsx');
-  assert.ok(s.includes('className="rh-card') && s.includes('rh-search') && s.includes('<details className="rd-item"'));
+  assert.ok(s.includes('rh-card${r.soon') && s.includes('rh-search') && s.includes('<details className="rd-item"'));
 });
 console.log(`${n} checks passed`);
