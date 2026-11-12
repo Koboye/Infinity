@@ -22,4 +22,12 @@ t('rules: sign-up cannot smuggle per-game ratings; revoked sessions cannot spend
   assert.ok(/allow create:[\s\S]*?keys\(\)\.hasOnly\(\['displayName', 'avatar', 'lang', 'rating', 'wins', 'losses', 'draws', 'games', 'createdAt'\]\)/.test(r));
   assert.ok(read('src/app/api/gebeta/route.js').includes('verifyIdToken(token, true)'));
 });
+import { cleanAttachment } from '../src/lib/social.js';
+t('chat attachment must live in this project\'s own bucket', () => {
+  const was = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET; process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET = 'mine.appspot.com';
+  const mk = (b) => ({ kind: 'image', url: `https://firebasestorage.googleapis.com/v0/b/${b}/o/u%2Fabc%2Fp.jpg?alt=media&token=x` });
+  assert.ok(cleanAttachment(mk('mine.appspot.com'), 'abc'));
+  assert.equal(cleanAttachment(mk('evil.appspot.com'), 'abc'), null);
+  if (was === undefined) delete process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET; else process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET = was;
+});
 console.log(`${n} checks passed`);

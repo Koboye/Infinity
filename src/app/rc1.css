@@ -176,3 +176,36 @@ html body .reward-btn { white-space: nowrap; flex: 0 0 auto; }
 .pt-panel { min-height: 120px; animation: pt-in .22s ease-out; }
 @keyframes pt-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .pt-panel, .pg-chev { animation: none; transition: none; } }
+
+/* ═══ Brand lock (v3.17): ONE palette — Ethiopian green, gold and ember red. Nothing else is allowed to tint the UI. ═══
+   Earlier layers still mention indigo / royal blue; this block, loaded last, wins and keeps every screen consistent. */
+:root {
+  --brand-green-0: #05261B; --brand-green-1: #0A3A28; --brand-green-2: #0C4A34; --brand-green-3: #13805A;
+  --brand-gold: #FFC52E; --brand-gold-hi: #FFD85A; --brand-gold-lo: #F29A0C; --brand-ink: #2A1500;
+  --brand-red: #E4572E; --brand-red-lo: #B63A1C; --brand-ivory: #FFF6E3;
+  --surface-deep: linear-gradient(180deg, var(--brand-green-0), var(--brand-green-1));
+  color-scheme: dark;
+}
+/* chips, stat tiles, wallet pills: deep green glass instead of indigo */
+html body .coin-chip, html body .wallet-bal, html body .ad-earn, html body .stat-strip > *, html body .stats > *, html body .prog-top > div, html body .fee-tile {
+  background: var(--surface-deep); color: var(--brand-ivory); border-color: color-mix(in srgb, var(--brand-gold) 70%, transparent);
+}
+html body .coin-chip .coin-dot { background: var(--brand-red); color: #fff; }
+html body .reward-btn { border-color: var(--brand-gold); background: color-mix(in srgb, var(--brand-gold) 18%, var(--brand-green-0)); color: var(--brand-gold-hi); }
+/* game tiles: deep green, gold frame, the game's own accent only as a soft glow from the top */
+html body .gg-card, html body .mode-tile, html body .mode-tile.small, html body .mode-tile.big {
+  --c: var(--accent, var(--brand-gold));
+  background: radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--c) 38%, var(--brand-green-2)) 0%, var(--brand-green-1) 55%, var(--brand-green-0) 100%);
+}
+/* buttons: three roles only — primary (gold), secondary (green glass + gold line), danger (ember red) */
+html body .btn:not(.primary):not(.danger):not(.ghost):not(.link) {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--brand-green-3) 55%, var(--brand-green-1)), var(--brand-green-1));
+  color: var(--brand-ivory); border: 1.5px solid color-mix(in srgb, var(--brand-gold) 65%, transparent); box-shadow: 0 3px 0 rgba(0, 0, 0, .35);
+}
+html body .btn.danger, html body .btn.primary.danger {
+  background: linear-gradient(180deg, var(--brand-red), var(--brand-red-lo)); color: #fff; border: 1.5px solid #FFB199; box-shadow: 0 4px 0 #6E1F0A;
+}
+html body .btn.danger:hover:not(:disabled) { filter: brightness(1.08); }
+html body .btn:focus-visible, html body .icon-btn:focus-visible, html body .tg-play:focus-visible { outline: 3px solid var(--brand-gold-hi); outline-offset: 2px; }
+html body input, html body select, html body textarea { accent-color: var(--brand-gold); }
+html body ::selection { background: color-mix(in srgb, var(--brand-gold) 45%, transparent); color: #fff; }

@@ -83,6 +83,8 @@ export function cleanAttachment(att, uid) {
   const url = String(att.url || '');
   if (!/^https:\/\/firebasestorage\.googleapis\.com\/v0\/b\/[a-z0-9._-]+\/o\/u%2F/i.test(url) || url.length > 800) return null;
   if (!url.includes(`/o/u%2F${encodeURIComponent(uid)}%2F`)) return null;   // somebody else's file: refused
+  const bucket = (typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET) || '';
+  if (bucket && !url.toLowerCase().startsWith(`https://firebasestorage.googleapis.com/v0/b/${bucket.toLowerCase()}/o/`)) return null;   // another project's bucket (anyone can make one): refused
   const out = { kind: att.kind, url, name: cleanText(att.name || '', 80), size: Math.max(0, Math.min(50 * 1024 * 1024, Math.floor(Number(att.size) || 0))), mime: cleanText(att.mime || '', 60) };
   if (att.kind === 'voice') out.dur = Math.max(0, Math.min(600, Math.round(Number(att.dur) || 0)));
   return out;

@@ -6,7 +6,9 @@
 - **Profile**: avatar picker and Account are collapsible groups; per-game progress is one compact table.
 - **Progress**: Stats / Achievements / Recent tabs instead of one long page.
 - **Security**: Firestore sign-up rule now allows only the base profile fields (no pre-set per-game ratings) and caps avatar/lang; spin, top-up and ad rewards also check the sign-in session was not revoked.
-- Needs deploying: `firebase deploy --only firestore:rules`.
+- **Brand**: one palette (Ethiopian green, gold, ember red) locked in the last stylesheet; stray indigo/royal blue removed; buttons have three roles only (gold primary, green-glass secondary, ember danger).
+- **Security**: chat attachments must live in this project's own Storage bucket; `SECURITY.md` added for reviewers (trust model, limits, release checklist).
+- Needs deploying: `firebase deploy --only firestore:rules,storage`.
 
 ## 3.16.0 -- Real accounts, chat files, a better car race
 - **Real sign-in**: no more guest accounts. Sign up with a unique **username** (checked live, held by the server so two people can never share one), display name, email and an 8+ character password typed twice; a confirmation email is sent. Google sign-in still works. Forgot-password link, change-password link, **sign out** and **delete account** (re-enter password / pick the Google account again; removes profile, username, coins, friends, chats and uploaded files, and the sign-in itself).
