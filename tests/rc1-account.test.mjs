@@ -15,7 +15,7 @@ t('Settings uses the translated On/Off, no hard-coded English toggles', () => {
 });
 t('Profile: editor first, Enter saves (a real form), stats below', () => {
   const s = read('src/components/Screens.jsx'); const p = s.slice(s.indexOf('export function ProfileScreen'), s.indexOf('Progress (on-device)'));
-  assert.ok(p.indexOf('<PhotoPicker') < p.indexOf('prof-form') && p.indexOf('prof-form') < p.indexOf('<StatTable'));
+  assert.ok(p.indexOf('prof-form') < p.indexOf('<StatTable') && p.indexOf('<PhotoPicker') < p.indexOf('<StatTable'));
   assert.ok(p.includes('onSubmit') && p.includes('type="submit"') && p.includes('autoComplete="nickname"'));
 });
 t('Spin wheel scales with the screen; labels follow the wheel size', () => {

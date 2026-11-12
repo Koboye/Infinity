@@ -540,6 +540,7 @@ export function ProfileScreen({ t, lang, user, profile, onSignOut }) {
     catch (e) { setErr(e.message); }
   };
   const needsVerify = !user.emailVerified && user.providerData?.some((p) => p.providerId === 'password');
+  const hero = heroById(avatar); const ownPhoto = profile?.photo && /^data:image\/jpeg;base64,/.test(profile.photo) ? profile.photo : null;
   return (
     <div className="panel prof">
       {needsVerify && (
@@ -548,9 +549,21 @@ export function ProfileScreen({ t, lang, user, profile, onSignOut }) {
           <button className="link" disabled={sent} onClick={() => { sendEmailVerification(user).then(() => setSent(true)).catch(() => {}); }}>{sent ? 'Link sent' : 'Send the link again'}</button>
         </div>
       )}
-      {profile && <UsernameCard profile={profile} user={user} />}
-      <PhotoPicker lang={lang} heroId={avatar} onChange={(url) => updateDoc(doc(db, 'users', user.uid), { photo: url || '' }).catch(() => {})} />
-      <Group title={t.avatar} hint={(heroById(avatar)?.name?.[lang]) || heroById(avatar)?.name?.en}>
+      <header className="prof-card">
+        <span className="pc-face" style={ownPhoto ? undefined : { background: hero.color }}>{ownPhoto ? <img src={ownPhoto} alt="" /> : <span aria-hidden="true">{hero.glyph}</span>}</span>
+        <span className="pc-txt"><b>{profile?.displayName || name || user.displayName || 'Player'}</b><small>{profile?.username ? `@${profile.username}` : (hero.name[lang] || hero.name.en)}</small></span>
+      </header>
+      <Group title={t.profEdit || 'Edit profile'} hint={profile?.username ? `@${profile.username}` : undefined} open>
+        {profile && <UsernameCard profile={profile} user={user} />}
+        <form className="prof-form" onSubmit={(e) => { e.preventDefault(); save(); }}>
+          <label className="form-label">{t.name}<input value={name} onChange={(e) => setName(e.target.value)} maxLength={20} autoComplete="nickname" autoCapitalize="words" enterKeyHint="done" aria-describedby="prof-hint" /><small id="prof-hint" className="muted">{t.nameHint}</small></label>
+          {err && <p className="err" role="alert">{err}</p>}
+          <button type="submit" className="btn primary wide" aria-live="polite">{saved ? `✓ ${t.savedOk}` : t.save}</button>
+        </form>
+      </Group>
+      <Group title={t.setPhoto || 'Profile picture'} hint={ownPhoto ? '📷' : hero.glyph}>
+        <PhotoPicker lang={lang} heroId={avatar} onChange={(url) => updateDoc(doc(db, 'users', user.uid), { photo: url || '' }).catch(() => {})} />
+        <p className="muted small pg-or">{t.avatar}</p>
         <div className="heroes">
           {HEROES.map((h) => (
             <button type="button" key={h.id} className={`hero-pick${avatar === h.id ? ' on' : ''}`} onClick={() => setAvatar(h.id)} aria-pressed={avatar === h.id} title={h.name[lang] || h.name.en}>
@@ -559,19 +572,15 @@ export function ProfileScreen({ t, lang, user, profile, onSignOut }) {
             </button>
           ))}
         </div>
+        <button type="button" className="btn small wide" onClick={save}>{saved ? `✓ ${t.savedOk}` : t.save}</button>
       </Group>
-      <form className="prof-form" onSubmit={(e) => { e.preventDefault(); save(); }}>
-        <label className="form-label">{t.name}<input value={name} onChange={(e) => setName(e.target.value)} maxLength={20} autoComplete="nickname" autoCapitalize="words" enterKeyHint="done" aria-describedby="prof-hint" /><small id="prof-hint" className="muted">{t.nameHint}</small></label>
-        {err && <p className="err" role="alert">{err}</p>}
-        <button type="submit" className="btn primary wide" aria-live="polite">{saved ? `✓ ${t.savedOk}` : t.save}</button>
-      </form>
       <Group title={t.progress} open>
         <StatTable t={t} rating rows={GAME_LIST.filter((g) => !GAMES[g].offlineOnly).map((g) => {
           const f = statFields(g);
           return { g, rating: profile?.[f.rating] ?? 1000, w: profile?.[f.wins] ?? 0, l: profile?.[f.losses] ?? 0, d: profile?.[f.draws] ?? 0 };
         })} />
       </Group>
-      <Group title="Account"><AccountSection user={user} onSignOut={onSignOut} /></Group>
+      <Group title={t.profAccount || 'Account'} hint={user.email || undefined}><AccountSection user={user} onSignOut={onSignOut} /></Group>
     </div>
   );
 }
@@ -647,30 +656,48 @@ function StonePicker({ t, lang, value, onPick }) {
 }
 
 /* ───────── Settings ───────── */
+/** One settings line: label (and optional hint) on the left, control on the right; an optional slider sits underneath and greys out when its switch is off. */
+function SetRow({ label, hint, children, slider, sliderOn = true }) {
+  return (
+    <div className="set-item">
+      <div className="set-row"><span>{label}{hint && <small className="set-hint">{hint}</small>}</span>{children}</div>
+      {slider && <div className={`set-slider${sliderOn ? '' : ' off'}`}>{slider}</div>}
+    </div>
+  );
+}
+
 export function SettingsScreen({ t, lang, heroId, onLang, music, onMusic, muted, onMute, settings, onSettings }) {
   const set = (k, v) => onSettings({ ...settings, [k]: v });
   const Seg = ({ value, opts, onPick, label }) => (
     <div className="seg" role="group" aria-label={label}>
-      {opts.map(([v, text]) => <button key={String(v)} className={value === v ? 'on' : ''} aria-pressed={value === v} onClick={() => onPick(v)}>{text}</button>)}
+      {opts.map(([v, text]) => <button type="button" key={String(v)} className={value === v ? 'on' : ''} aria-pressed={value === v} onClick={() => onPick(v)}>{text}</button>)}
     </div>
   );
+  const onOff = (value, onPick, label) => <Seg label={label} value={value} onPick={onPick} opts={[[true, t.on], [false, t.off]]} />;
+  const vol = (k, label) => <input type="range" min="0.1" max="1" step="0.05" value={settings[k]} aria-label={label} onChange={(e) => set(k, +e.target.value)} />;
+  const voiceLabel = t.voice || 'Bingo caller voice';
+  const state = (on) => (on ? t.on : t.off);
   return (
-    <div className="panel">
-      <PhotoPicker lang={lang} heroId={heroId} />
-      <div className="set-row"><span>{t.language}</span><Seg label={t.language} value={lang} onPick={onLang} opts={[['en', t.langEn], ['am', t.langAm]]} /></div>
-      <div className="set-row"><span>🎵 {t.music}</span><Seg label={t.music} value={music} onPick={onMusic} opts={[[true, t.on], [false, t.off]]} /></div>
-      <div className="set-row"><span>{t.volume}</span><input type="range" min="0.1" max="1" step="0.05" value={settings.music} aria-label={t.music + ' ' + t.volume} onChange={(e) => set('music', +e.target.value)} /></div>
-      <div className="set-row"><span>🔊 {t.sound}</span><Seg label={t.sound} value={!muted} onPick={(v) => onMute(!v)} opts={[[true, t.on], [false, t.off]]} /></div>
-      <div className="set-row"><span>{t.volume}</span><input type="range" min="0.1" max="1" step="0.05" value={settings.sfx} aria-label={t.sound + ' ' + t.volume} onChange={(e) => set('sfx', +e.target.value)} /></div>
-      <div className="set-row"><span>📳 {t.vibration}</span><Seg label={t.vibration} value={settings.haptics} onPick={(v) => set('haptics', v)} opts={[[true, t.on], [false, t.off]]} /></div>
-      <div className="set-row"><span>🐢 {t.paceLabel}</span><Seg label={t.paceLabel} value={settings.pace === 'normal' ? 'normal' : 'slow'} onPick={(v) => set('pace', v)} opts={[['slow', t.paceSlow], ['normal', t.paceNormal]]} /></div>
-      <div className="set-row"><span>🎭 {t.genderLabel}</span><Seg label={t.genderLabel} value={settings.gender || 'auto'} onPick={(v) => set('gender', v)} opts={[['auto', t.genderAuto], ['m', t.genderMale], ['f', t.genderFemale]]} /></div>
-      <StonePicker t={t} lang={lang} value={settings.stones} onPick={(v) => set('stones', v)} />
-      <div className="set-row"><span>{t.textSize}</span><Seg label={t.textSize} value={settings.text} onPick={(v) => set('text', v)} opts={[['normal', t.textNormal], ['large', `${t.textNormal}+`], ['xlarge', `${t.textNormal}++`]]} /></div>
-      <div className="set-row"><span>🔊 {t.voice || 'Bingo caller voice'}</span><Seg label={t.voice || 'Bingo caller voice'} value={settings.voice !== false} onPick={(v) => set('voice', v)} opts={[[true, t.on], [false, t.off]]} /></div>
-      <div className="set-row"><span>✓ {t.assist || 'Show ready fours'}</span><Seg label={t.assist || 'Show ready fours'} value={!!settings.assist} onPick={(v) => set('assist', v)} opts={[[false, t.off], [true, t.on]]} /></div>
-      <div className="set-row"><span>{t.contrast}</span><Seg label={t.contrast} value={settings.contrast} onPick={(v) => set('contrast', v)} opts={[[false, t.off], [true, t.on]]} /></div>
-      <AppActions />
+    <div className="panel set-page">
+      <Group title={t.setSound || 'Sound & vibration'} hint={`🎵 ${state(music)} · 🔊 ${state(!muted)}`} open>
+        <SetRow label={`🎵 ${t.music}`} slider={vol('music', `${t.music} ${t.volume}`)} sliderOn={music}>{onOff(music, onMusic, t.music)}</SetRow>
+        <SetRow label={`🔊 ${t.sound}`} slider={vol('sfx', `${t.sound} ${t.volume}`)} sliderOn={!muted}>{onOff(!muted, (v) => onMute(!v), t.sound)}</SetRow>
+        <SetRow label={`📳 ${t.vibration}`}>{onOff(!!settings.haptics, (v) => set('haptics', v), t.vibration)}</SetRow>
+        <SetRow label={`🎙 ${voiceLabel}`}>{onOff(settings.voice !== false, (v) => set('voice', v), voiceLabel)}</SetRow>
+      </Group>
+      <Group title={t.setDisplay || 'Language & display'} hint={lang === 'am' ? t.langAm : t.langEn} open>
+        <SetRow label={`🌐 ${t.language}`}><Seg label={t.language} value={lang} onPick={onLang} opts={[['en', t.langEn], ['am', t.langAm]]} /></SetRow>
+        <SetRow label={`Aa ${t.textSize}`}><Seg label={t.textSize} value={settings.text} onPick={(v) => set('text', v)} opts={[['normal', t.textNormal], ['large', `${t.textNormal}+`], ['xlarge', `${t.textNormal}++`]]} /></SetRow>
+        <SetRow label={`◐ ${t.contrast}`}>{onOff(!!settings.contrast, (v) => set('contrast', v), t.contrast)}</SetRow>
+      </Group>
+      <Group title={t.setGameplay || 'Gameplay'}>
+        <SetRow label={`🐢 ${t.paceLabel}`}><Seg label={t.paceLabel} value={settings.pace === 'normal' ? 'normal' : 'slow'} onPick={(v) => set('pace', v)} opts={[['slow', t.paceSlow], ['normal', t.paceNormal]]} /></SetRow>
+        <SetRow label={`✓ ${t.assist || 'Show ready fours'}`}>{onOff(!!settings.assist, (v) => set('assist', v), t.assist || 'Show ready fours')}</SetRow>
+        <SetRow label={`🎭 ${t.genderLabel}`}><Seg label={t.genderLabel} value={settings.gender || 'auto'} onPick={(v) => set('gender', v)} opts={[['auto', t.genderAuto], ['m', t.genderMale], ['f', t.genderFemale]]} /></SetRow>
+        <StonePicker t={t} lang={lang} value={settings.stones} onPick={(v) => set('stones', v)} />
+      </Group>
+      <Group title={t.setPhoto || 'Profile picture'}><PhotoPicker lang={lang} heroId={heroId} /></Group>
+      <Group title={t.setApp || 'App'}><AppActions /></Group>
     </div>
   );
 }

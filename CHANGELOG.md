@@ -6,6 +6,8 @@
 - **Profile**: avatar picker and Account are collapsible groups; per-game progress is one compact table.
 - **Progress**: Stats / Achievements / Recent tabs instead of one long page.
 - **Security**: Firestore sign-up rule now allows only the base profile fields (no pre-set per-game ratings) and caps avatar/lang; spin, top-up and ad rewards also check the sign-in session was not revoked.
+- **Friends**: the invite button is now a round joystick (stick wobbles, ring when the friend is online).
+- **Settings** grouped into Sound & vibration, Language & display, Gameplay, Profile picture, App (sliders sit under their switch); **Profile** has a header card, then Edit profile, Picture, Progress, Account.
 - **Rules tab**: a hub of every game (recent first, search across all rules); tap a game to open its rules as an accordion with a Play button and a game switcher; back goes game → hub → home.
 - **Brand**: one palette (Ethiopian green, gold, ember red) locked in the last stylesheet; stray indigo/royal blue removed; buttons have three roles only (gold primary, green-glass secondary, ember danger).
 - **Security**: chat attachments must live in this project's own Storage bucket; `SECURITY.md` added for reviewers (trust model, limits, release checklist).

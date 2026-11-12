@@ -8,15 +8,19 @@ import { GAMES } from '@/lib/games.js';
 import { firstUnreadId, isOnline, isTyping, lastSeenParts, normalizeFriendCode, pairId, REACTIONS, searchMsgs, tickState, visibleMsgs } from '@/lib/social';
 import { GameIcon } from './GameIcons';
 
-/** "Play together" glyph: a die tilting over a spark. Pure SVG, animated in CSS (see v319.css), still when motion is reduced. */
+/** "Play together" joystick: base, stick and a red ball that wobbles like a thumb is on it. Pure SVG, animated in CSS, still when motion is reduced. */
 function PlayGlyph() {
   return (
     <svg className="pg" viewBox="0 0 32 32" width="100%" height="100%" aria-hidden="true" focusable="false">
-      <g className="pg-die">
-        <rect x="5" y="9" width="16" height="16" rx="4.5" fill="#FFF7DC" stroke="#7A4A00" strokeWidth="1.6" />
-        <circle cx="10" cy="14" r="1.7" fill="#3A210F" /><circle cx="16" cy="20" r="1.7" fill="#3A210F" /><circle cx="10" cy="20" r="1.7" fill="#3A210F" /><circle cx="16" cy="14" r="1.7" fill="#3A210F" />
+      <ellipse cx="16" cy="25.5" rx="11" ry="3.6" fill="#2A1500" opacity=".28" />
+      <path d="M6 21.5c0-1.6 1.2-2.6 2.8-2.6h14.4c1.6 0 2.8 1 2.8 2.6v1.4c0 1.8-1.4 3-3.1 3H9.1C7.4 25.9 6 24.7 6 22.9z" fill="#3A210F" />
+      <circle cx="10.6" cy="22.2" r="1.35" fill="#FFD85A" /><circle cx="14.2" cy="22.2" r="1.35" fill="#35E0C2" />
+      <rect x="20.2" y="21.2" width="5" height="2" rx="1" fill="#FFF1B0" opacity=".9" />
+      <g className="pg-stick">
+        <rect x="14.7" y="8.5" width="2.6" height="11" rx="1.3" fill="#3A210F" />
+        <circle cx="16" cy="7.6" r="5" fill="#E4572E" /><circle cx="16" cy="7.6" r="5" fill="none" stroke="#7A2410" strokeWidth="1.2" />
+        <ellipse cx="14.4" cy="5.7" rx="1.7" ry="1.1" fill="#fff" opacity=".6" transform="rotate(-30 14.4 5.7)" />
       </g>
-      <path className="pg-spark" d="M25 4l1.5 3.5L30 9l-3.5 1.5L25 14l-1.5-3.5L20 9l3.5-1.5z" fill="#FFD25A" stroke="#7A4A00" strokeWidth="1" strokeLinejoin="round" />
     </svg>
   );
 }
