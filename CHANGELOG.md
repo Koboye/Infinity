@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.17.0 -- Release polish and hardening
+- **Top bar**: the spin counter is now part of the coin chip instead of a badge laid over the amount, so numbers never overlap; on narrow screens spacing tightens first, then decoration goes (never the numbers).
+- **Friends**: the invite button is a larger animated dice-and-spark button (soft ring when the friend is online); still when "reduce motion" is on.
+- **Profile**: avatar picker and Account are collapsible groups; per-game progress is one compact table.
+- **Progress**: Stats / Achievements / Recent tabs instead of one long page.
+- **Security**: Firestore sign-up rule now allows only the base profile fields (no pre-set per-game ratings) and caps avatar/lang; spin, top-up and ad rewards also check the sign-in session was not revoked.
+- Needs deploying: `firebase deploy --only firestore:rules`.
+
 ## 3.16.0 -- Real accounts, chat files, a better car race
 - **Real sign-in**: no more guest accounts. Sign up with a unique **username** (checked live, held by the server so two people can never share one), display name, email and an 8+ character password typed twice; a confirmation email is sent. Google sign-in still works. Forgot-password link, change-password link, **sign out** and **delete account** (re-enter password / pick the Google account again; removes profile, username, coins, friends, chats and uploaded files, and the sign-in itself).
 - Players with no username (Google sign-in, or a name taken a moment before) are asked to choose one on the Profile tab. Friends can be searched by `@username`.

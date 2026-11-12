@@ -293,6 +293,10 @@ export async function POST(req) {
     if (!(await globalRateLimit(uid))) rateLimit(uid);
     if (Number(req.headers.get('content-length') || 0) > MAX_BODY_BYTES) fail(413, 'Request too large');   // no game action is anywhere near this size
     const body = await req.json().catch(() => ({}));
+    // Anything that pays or spends coins also checks the token was not revoked (stolen phone, password reset, account disabled).
+    if (['spin', 'topup', 'adStart', 'adDone'].includes(body.action)) {
+      try { await adminAuth().verifyIdToken(token, true); } catch { fail(401, 'Session expired, sign in again'); }
+    }
     const db = adminDb();
     const game = normalizeGame(body.game);
     const code = normalizeCode(body.code);

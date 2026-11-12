@@ -7,6 +7,19 @@ import { heroById } from '@/lib/i18n';
 import { GAMES } from '@/lib/games.js';
 import { firstUnreadId, isOnline, isTyping, lastSeenParts, normalizeFriendCode, pairId, REACTIONS, searchMsgs, tickState, visibleMsgs } from '@/lib/social';
 import { GameIcon } from './GameIcons';
+
+/** "Play together" glyph: a die tilting over a spark. Pure SVG, animated in CSS (see v319.css), still when motion is reduced. */
+function PlayGlyph() {
+  return (
+    <svg className="pg" viewBox="0 0 32 32" width="100%" height="100%" aria-hidden="true" focusable="false">
+      <g className="pg-die">
+        <rect x="5" y="9" width="16" height="16" rx="4.5" fill="#FFF7DC" stroke="#7A4A00" strokeWidth="1.6" />
+        <circle cx="10" cy="14" r="1.7" fill="#3A210F" /><circle cx="16" cy="20" r="1.7" fill="#3A210F" /><circle cx="10" cy="20" r="1.7" fill="#3A210F" /><circle cx="16" cy="14" r="1.7" fill="#3A210F" />
+      </g>
+      <path className="pg-spark" d="M25 4l1.5 3.5L30 9l-3.5 1.5L25 14l-1.5-3.5L20 9l3.5-1.5z" fill="#FFD25A" stroke="#7A4A00" strokeWidth="1" strokeLinejoin="round" />
+    </svg>
+  );
+}
 import { EMOJI_TABS, splitEmoji, RECENT_KEY, pushRecent } from '@/lib/emoji.js';
 import { groupFlags, isEmojiOnly, parseRich, safeUrl } from '@/lib/chatText.js';
 
@@ -168,7 +181,7 @@ export default function FriendsScreen({ t, lang, uid, social, onEnterRoom, openC
                   </button>
                   <span className="tg-quick">
                     <button className="icon-btn" aria-label={`${f.pinned ? t.unpinChat : t.pinChat}: ${f.name}`} onClick={() => call({ action: 'friendPin', to: f.id })}>{f.pinned ? '📍' : '📌'}</button>
-                    <button className="icon-btn gold" aria-label={`${t.inviteToPlay}: ${f.name}`} onClick={() => setInviting(f.id)}>🎮</button>
+                    <button type="button" className={`tg-play${on ? ' live' : ''}`} aria-label={`${t.inviteToPlay}: ${f.name}`} title={t.inviteToPlay} onClick={() => setInviting(f.id)}><PlayGlyph /></button>
                   </span>
                 </li>
               );
@@ -423,7 +436,7 @@ export function FriendChat({ t, lang, uid, friend, chat, seenAt, social, muted =
         <button className="icon-btn" onClick={onBack} aria-label={t.backHome}>‹</button>
         <span className="fr-av"><Avatar id={friend.avatar} size={40} /><i className={`dot${online ? ' on' : ''}`} /></span>
         <span className="fr-name"><b>{friend.name}</b><small className={typing ? 'typing' : ''}>{typing ? t.typing : online ? t.frOnline : seenText(t, seenAt)}</small></span>
-        <button className="icon-btn fr-act gold" onClick={onInvite} aria-label={t.inviteToPlay}>🎮</button>
+        <button type="button" className="tg-play head" onClick={onInvite} aria-label={t.inviteToPlay} title={t.inviteToPlay}><PlayGlyph /></button>
         <button className="icon-btn" onClick={() => setMore((v) => !v)} aria-label={t.moreActions} aria-expanded={more}>⋮</button>
         {more && <div className="tg-more" role="menu">
           <button role="menuitem" className="neutral" onClick={() => openView('search')}>🔍 {t.searchInChat}</button>

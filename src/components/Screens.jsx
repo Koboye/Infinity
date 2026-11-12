@@ -438,6 +438,34 @@ function AccountSection({ user, onSignOut }) {
   );
 }
 
+/** One compact table for every game (replaces a stack of per-game tiles). rows: [{ g, rating?, w, l, d }] */
+function StatTable({ t, rows, rating = false }) {
+  return (
+    <table className="st-table">
+      <thead><tr><th scope="col" className="st-game"><span className="sr-only">{t.games}</span></th>{rating && <th scope="col">{t.rating}</th>}<th scope="col">{t.gamesWon}</th><th scope="col">{t.gamesLost}</th><th scope="col">{t.gamesDrawn}</th></tr></thead>
+      <tbody>
+        {rows.map((r) => (
+          <tr key={r.g}>
+            <th scope="row" className="st-game"><GameIcon game={r.g} size={24} /><span>{t[`${r.g}Name`]}</span></th>
+            {rating && <td className="st-rate">{r.rating}</td>}
+            <td className="st-w">{r.w}</td><td className="st-l">{r.l}</td><td>{r.d}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+/** Native disclosure: keeps long sections one tap away instead of one long scroll. */
+function Group({ title, hint, children, open = false }) {
+  return (
+    <details className="prof-group" open={open}>
+      <summary><span className="pg-title">{title}</span>{hint && <small className="pg-hint">{hint}</small>}<i className="pg-chev" aria-hidden="true" /></summary>
+      <div className="pg-body">{children}</div>
+    </details>
+  );
+}
+
 export function ProfileScreen({ t, lang, user, profile, onSignOut }) {
   const [name, setName] = useState(profile?.displayName || '');
   const [avatar, setAvatar] = useState(profile?.avatar || 'lion');
@@ -462,80 +490,70 @@ export function ProfileScreen({ t, lang, user, profile, onSignOut }) {
       )}
       {profile && <UsernameCard profile={profile} user={user} />}
       <PhotoPicker lang={lang} heroId={avatar} onChange={(url) => updateDoc(doc(db, 'users', user.uid), { photo: url || '' }).catch(() => {})} />
-      <fieldset className="seg-group">
-        <legend>{t.avatar}</legend>
+      <Group title={t.avatar} hint={(heroById(avatar)?.name?.[lang]) || heroById(avatar)?.name?.en}>
         <div className="heroes">
           {HEROES.map((h) => (
-            <button key={h.id} className={`hero-pick${avatar === h.id ? ' on' : ''}`} onClick={() => setAvatar(h.id)} aria-pressed={avatar === h.id} title={h.name[lang] || h.name.en}>
+            <button type="button" key={h.id} className={`hero-pick${avatar === h.id ? ' on' : ''}`} onClick={() => setAvatar(h.id)} aria-pressed={avatar === h.id} title={h.name[lang] || h.name.en}>
               <span className="hero big" style={{ background: h.color }}>{h.glyph}</span>
               <small>{h.name[lang] || h.name.en}</small>
             </button>
           ))}
         </div>
-      </fieldset>
+      </Group>
       <form className="prof-form" onSubmit={(e) => { e.preventDefault(); save(); }}>
         <label className="form-label">{t.name}<input value={name} onChange={(e) => setName(e.target.value)} maxLength={20} autoComplete="nickname" autoCapitalize="words" enterKeyHint="done" aria-describedby="prof-hint" /><small id="prof-hint" className="muted">{t.nameHint}</small></label>
         {err && <p className="err" role="alert">{err}</p>}
         <button type="submit" className="btn primary wide" aria-live="polite">{saved ? `✓ ${t.savedOk}` : t.save}</button>
       </form>
-      <h3 className="prof-sec">{t.progress}</h3>
-      {GAME_LIST.filter((g) => !GAMES[g].offlineOnly).map((g) => {
-        const f = statFields(g);
-        return (
-          <div key={g} className="stats-game">
-            <span className="sg-name"><GameIcon game={g} size={26} /> {t[`${g}Name`]}</span>
-            <div className="stats">
-              <div><b>{profile?.[f.rating] ?? 1000}</b><span>{t.rating}</span></div>
-              <div><b>{profile?.[f.wins] ?? 0}</b><span>{t.gamesWon}</span></div>
-              <div><b>{profile?.[f.losses] ?? 0}</b><span>{t.gamesLost}</span></div>
-              <div><b>{profile?.[f.draws] ?? 0}</b><span>{t.gamesDrawn}</span></div>
-            </div>
-          </div>
-        );
-      })}
-      <AccountSection user={user} onSignOut={onSignOut} />
+      <Group title={t.progress} open>
+        <StatTable t={t} rating rows={GAME_LIST.filter((g) => !GAMES[g].offlineOnly).map((g) => {
+          const f = statFields(g);
+          return { g, rating: profile?.[f.rating] ?? 1000, w: profile?.[f.wins] ?? 0, l: profile?.[f.losses] ?? 0, d: profile?.[f.draws] ?? 0 };
+        })} />
+      </Group>
+      <Group title="Account"><AccountSection user={user} onSignOut={onSignOut} /></Group>
     </div>
   );
 }
 
 /* ───────── Progress (on-device): streak, record, achievements, history ───────── */
 export function ProgressScreen({ t, lang }) {
-  const [p, setP] = useState(null);
+  const [p, setP] = useState(null); const [tab, setTab] = useState('stats');
   useEffect(() => { setP(loadProgress()); }, []);
   if (!p) return null;
   const tone = { w: t.youWin, l: t.youLose, d: t.draw };
+  const earned = ACHIEVEMENTS.filter((a) => p.ach[a.id]).length;
+  const tabs = [['stats', t.progress || 'Stats'], ['ach', `${t.achievements} ${earned}/${ACHIEVEMENTS.length}`], ['recent', t.recent]];
+  const onKey = (e) => { // arrow keys move between tabs, as in any tablist
+    const i = tabs.findIndex(([id]) => id === tab); const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+    if (d) { e.preventDefault(); setTab(tabs[(i + d + tabs.length) % tabs.length][0]); }
+  };
   return (
     <div className="panel">
       <div className="prog-top">
         <div><b>🔥 {p.streak}</b><span>{t.streakDays(p.streak)}</span></div>
         <div><b>{p.best}</b><span>{t.bestStreak}</span></div>
       </div>
-      {GAME_LIST.map((g) => {
-        const r = p.rec[g] || { w: 0, l: 0, d: 0 };
-        return (
-          <div key={g} className="stats-game">
-            <span className="sg-name"><GameIcon game={g} size={26} /> {t[`${g}Name`]}</span>
-            <div className="stats">
-              <div><b>{r.w}</b><span>{t.gamesWon}</span></div>
-              <div><b>{r.l}</b><span>{t.gamesLost}</span></div>
-              <div><b>{r.d}</b><span>{t.gamesDrawn}</span></div>
-              <div><b>{r.w + r.l + r.d}</b><span>{t.games}</span></div>
-            </div>
-          </div>
-        );
-      })}
-      <h3>{t.achievements}</h3>
-      <div className="ach-grid">
-        {ACHIEVEMENTS.map((a) => (
-          <div key={a.id} className={`ach${p.ach[a.id] ? ' on' : ''}`}><i>{a.icon}</i>{a[lang] || a.en}</div>
-        ))}
+      <div className="seg prog-tabs" role="tablist" aria-label={t.progress || 'Progress'} onKeyDown={onKey}>
+        {tabs.map(([id, label]) => <button key={id} type="button" role="tab" id={`pt-${id}`} aria-selected={tab === id} aria-controls="pt-panel" tabIndex={tab === id ? 0 : -1} className={tab === id ? 'on' : ''} onClick={() => setTab(id)}>{label}</button>)}
       </div>
-      <h3>{t.recent}</h3>
-      <div className="hist">
-        {p.hist.length === 0 && <p className="muted">{t.noGames}</p>}
-        {p.hist.slice(0, 10).map((h, i) => (
-          <div key={i}><span>{t[`${h.g}Name`]}</span><span className={h.r}>{tone[h.r === 'win' ? 'w' : h.r === 'lose' ? 'l' : 'd']}</span><small className="muted">{new Date(h.at).toLocaleDateString(lang === 'am' ? 'am-ET' : undefined)}</small></div>
-        ))}
+      <div id="pt-panel" role="tabpanel" aria-labelledby={`pt-${tab}`} className="pt-panel">
+        {tab === 'stats' && <StatTable t={t} rows={GAME_LIST.map((g) => { const r = p.rec[g] || { w: 0, l: 0, d: 0 }; return { g, w: r.w, l: r.l, d: r.d }; })} />}
+        {tab === 'ach' && (
+          <div className="ach-grid">
+            {ACHIEVEMENTS.map((a) => (
+              <div key={a.id} className={`ach${p.ach[a.id] ? ' on' : ''}`}><i>{a.icon}</i>{a[lang] || a.en}</div>
+            ))}
+          </div>
+        )}
+        {tab === 'recent' && (
+          <div className="hist">
+            {p.hist.length === 0 && <p className="muted">{t.noGames}</p>}
+            {p.hist.slice(0, 10).map((h, i) => (
+              <div key={i}><span>{t[`${h.g}Name`]}</span><span className={h.r}>{tone[h.r === 'win' ? 'w' : h.r === 'lose' ? 'l' : 'd']}</span><small className="muted">{new Date(h.at).toLocaleDateString(lang === 'am' ? 'am-ET' : undefined)}</small></div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
