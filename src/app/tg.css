@@ -46,7 +46,7 @@
 
 /* messages */
 .tg-msgs { flex: 1; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 4px; padding: 12px 12px 8px; background:
-  radial-gradient(900px 300px at 100% 0, rgba(255,197,46,.06), transparent 60%), radial-gradient(700px 300px at 0 100%, rgba(124,196,255,.07), transparent 60%); }
+  radial-gradient(900px 300px at 100% 0, rgba(255,197,46,.06), transparent 60%), radial-gradient(700px 300px at 0 100%, rgba(110,225,165,.07), transparent 60%); }
 .tg-day { align-self: center; margin: 10px 0 6px; }
 .tg-day span { padding: 4px 12px; border-radius: 999px; font-size: .78rem; font-weight: 800; color: var(--r-text-2); background: var(--r-surface-2); }
 .tg-msg { display: flex; flex-direction: column; align-items: flex-start; max-width: 100%; }
@@ -78,7 +78,7 @@
 .tg-ctx-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; font-size: .85rem; }
 .tg-ctx-txt b { color: var(--r-gold-hi); }
 .tg-ctx-txt span { color: var(--r-text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tg-send { display: flex; gap: 8px; align-items: center; padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--r-line); background: rgba(8, 14, 44, .55); }
+.tg-send { display: flex; gap: 8px; align-items: center; padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--r-line); background: rgba(3, 22, 15, .55); }
 .tg-send input { flex: 1; min-width: 0; border-radius: 999px; }
 .tg-go { flex: none; width: 46px; height: 46px; border-radius: 50%; border: 0; font-size: 1.15rem; font-weight: 900; cursor: pointer; color: var(--r-gold-ink); background: linear-gradient(180deg, var(--r-gold-hi), var(--r-gold)); box-shadow: 0 4px 12px rgba(0, 0, 0, .35); transition: transform .12s var(--r-ease), opacity .12s; }
 .tg-go:active { transform: scale(.92); }

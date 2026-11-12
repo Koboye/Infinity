@@ -2,7 +2,7 @@
    midnight indigo canvas, ember-gold actions, per-game tinted cards, pill chips, 3D press buttons.
    Loaded LAST: change a token here and the whole app follows. */
 :root {
-  --bg-0: #0A1F63; --bg-1: #123A9E; --bg-2: #2260E8;
+  --bg-0: #05261B; --bg-1: #0C4A34; --bg-2: #13805A;
   --ink: #FFF6E3; --ink-dim: #C9BFA8;
   --gold: #FFC52E; --gold-hi: #FFD85A; --gold-lo: #F29A0C; --gold-ink: #2A1500;
   --teal: #35E0C2; --rose: #FF6B9A; --violet: #8B7CFF; --leaf: #6BE3A4;
@@ -27,11 +27,11 @@ html body .lang-chip { border-radius: var(--r-pill); background: linear-gradient
 html body .coin-chip, html body .wallet-bal, html body .ad-earn { border-radius: var(--r-pill); border: 1.5px solid var(--gold); background: linear-gradient(180deg, rgba(245,190,60,.22), rgba(0,0,0,.35)); color: var(--ink); font-weight: 800; box-shadow: 0 3px 0 rgba(0,0,0,.35); }
 
 /* panels and sheets */
-html body .panel, html body .wallet-card, html body .wallet-sheet, html body .stonepick { border-radius: var(--r-card); border: 1.5px solid var(--line); background: linear-gradient(165deg, rgba(255,246,227,.09), rgba(8,24,90,.6)); box-shadow: 0 12px 28px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.1); }
+html body .panel, html body .wallet-card, html body .wallet-sheet, html body .stonepick { border-radius: var(--r-card); border: 1.5px solid var(--line); background: linear-gradient(165deg, rgba(255,246,227,.09), rgba(4,34,24,.6)); box-shadow: 0 12px 28px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.1); }
 
 /* game + mode cards: dark glass, border and glow take the card's accent colour */
 html body .gg-card, html body .mode-tile { --c: var(--accent, var(--gold)); border-radius: var(--r-card); border: 1.5px solid color-mix(in srgb, var(--c) 70%, transparent);
-  background: linear-gradient(170deg, color-mix(in srgb, var(--c) 24%, #0E3187) 0%, #0B2680 100%); color: var(--ink);
+  background: linear-gradient(170deg, color-mix(in srgb, var(--c) 24%, #0E4A34) 0%, #0A3A28 100%); color: var(--ink);
   box-shadow: 0 5px 0 color-mix(in srgb, var(--c) 35%, #000), 0 12px 22px rgba(0,0,0,.4); }
 html body .gg-card::before, html body .mode-tile::before { display: none; }
 html body .gg-card:active:not(:disabled), html body .mode-tile:active { transform: translateY(4px); box-shadow: 0 1px 0 color-mix(in srgb, var(--c) 35%, #000), 0 4px 10px rgba(0,0,0,.35); }
@@ -51,7 +51,7 @@ html body .fee-tile.on, html body .stone-opt.on, html body .hero-pick.on { borde
 html body .set-row { border-bottom: 1px solid var(--line); }
 
 /* bottom navigation: indigo bar, raised gold pill for the active tab */
-html body .bottom-nav { background: linear-gradient(180deg, #1747C4, #0A1F63); border: 1.5px solid var(--line); border-bottom: 0; border-radius: 24px 24px 0 0; box-shadow: 0 -8px 24px rgba(0,0,0,.45); }
+html body .bottom-nav { background: linear-gradient(180deg, #1747C4, #05261B); border: 1.5px solid var(--line); border-bottom: 0; border-radius: 24px 24px 0 0; box-shadow: 0 -8px 24px rgba(0,0,0,.45); }
 html body .bn-tab { min-height: 56px; color: var(--ink-dim); border-radius: 16px; }
 html body .bn-tab.on { color: var(--gold-ink); background: linear-gradient(180deg, var(--gold-hi), var(--gold-lo)); transform: translateY(-8px); }
 html body .bn-lbl { font-size: .72rem; font-weight: 800; }
@@ -91,8 +91,8 @@ html body .btn.primary:active, html body .start-cta:active { transform: translat
 html body .btn.ghost { background: rgba(255,255,255,.12); border: 2px solid var(--line); color: #fff; box-shadow: 0 4px 0 rgba(0,0,0,.3); }
 
 /* currency capsules: dark inset track, gold rim */
-html body .coin-chip, html body .wallet-bal, html body .ad-earn { min-height: 42px; padding-inline: 14px; border: 2px solid var(--gold); background: linear-gradient(180deg, #0A1F63, #12308F); color: #fff; font-weight: 900; box-shadow: inset 0 2px 6px rgba(0,0,0,.55), 0 3px 0 rgba(0,0,0,.35); }
-html body .icon-btn { background: linear-gradient(180deg, #2F6BF0, #1642B8); border: 2px solid var(--gold); box-shadow: 0 4px 0 #0A1F63; }
+html body .coin-chip, html body .wallet-bal, html body .ad-earn { min-height: 42px; padding-inline: 14px; border: 2px solid var(--gold); background: linear-gradient(180deg, #05261B, #12308F); color: #fff; font-weight: 900; box-shadow: inset 0 2px 6px rgba(0,0,0,.55), 0 3px 0 rgba(0,0,0,.35); }
+html body .icon-btn { background: linear-gradient(180deg, #2F6BF0, #1642B8); border: 2px solid var(--gold); box-shadow: 0 4px 0 #05261B; }
 
 html body .panel, html body .wallet-card, html body .wallet-sheet, html body .stonepick { border: 2.5px solid var(--gold); background: linear-gradient(180deg, rgba(34,96,232,.55), rgba(10,31,99,.85)); box-shadow: 0 8px 0 rgba(0,0,0,.25), 0 16px 28px rgba(0,0,0,.4), inset 0 2px 0 rgba(255,255,255,.2); }
 html body .seg button.on, html body .fee-tile.on, html body .stone-opt.on { background: linear-gradient(180deg, #FFE27A, var(--gold-lo)); color: #14245E; border-color: #FFF1B0; }
@@ -107,7 +107,7 @@ html body .ad-ov { background: radial-gradient(120% 90% at 50% 0%, var(--bg-2) 0
 html body .ad-card { background: linear-gradient(180deg, rgba(34,96,232,.8), rgba(10,31,99,.95)); }
 html body .daily { border: 3px solid var(--gold); border-radius: var(--r-card); background: linear-gradient(180deg, #2F6BF0, #1642B8 60%, #0E2E8C); color: #fff; box-shadow: 0 5px 0 var(--gold-lo), 0 12px 20px rgba(0,0,0,.4), inset 0 2px 0 rgba(255,255,255,.25); }
 html body .daily.done { filter: saturate(.7); }
-html body .stat-strip > *, html body .stats > * { background: linear-gradient(180deg, #0A1F63, #12308F); border: 2px solid var(--line); border-radius: var(--r-ctl); box-shadow: inset 0 2px 5px rgba(0,0,0,.5); }
+html body .stat-strip > *, html body .stats > * { background: linear-gradient(180deg, #05261B, #12308F); border: 2px solid var(--line); border-radius: var(--r-ctl); box-shadow: inset 0 2px 5px rgba(0,0,0,.5); }
 /* level / game-type pickers (SwipePicker) */
 html body .swipe-card { --t: var(--tone, var(--gold)); border: 3px solid color-mix(in srgb, var(--t) 55%, var(--gold)); border-radius: var(--r-card); color: #fff;
   background: linear-gradient(180deg, color-mix(in srgb, var(--t) 30%, #2A66EE) 0%, #1642B8 60%, #0E2E8C 100%);

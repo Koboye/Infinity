@@ -1,0 +1,27 @@
+/* v3.18 - one integrated surface. Loaded LAST.
+   1) Brand: deep Ethiopian green + gold (the same green as the installed app's theme colour) instead of blue.
+   2) Friends and chat use the whole width: no centred card on a different background; the chat sits directly on the app canvas. */
+:root { --bg-0: #05261B; --bg-1: #0C4A34; --bg-2: #13805A; }
+html body { background: radial-gradient(120% 60% at 50% -5%, var(--bg-2) 0%, var(--bg-1) 40%, var(--bg-0) 100%) fixed; }
+
+/* full width for the Friends list and the open chat */
+html:not(.in-game) .app:has(.tg-chat), html:not(.in-game) .app:has(.tg-screen) { max-width: none; }
+html:not(.in-game) .app:has(.tg-chat) .screen { padding-inline: 0; }
+html:not(.in-game) .app:has(.tg-screen) .screen { padding-inline: clamp(10px, 3vw, 28px); }
+html body .tg-screen { width: 100%; max-width: 860px; margin-inline: auto; }
+
+/* the chat is part of the page, not a card on top of it */
+html body .tg-chat { width: 100%; border: 0; border-radius: 0; box-shadow: none; background: transparent; }
+html body .tg-chat.th-wa-dark, html body .tg-chat.th-wa-light {
+  --wa-bg: transparent; --wa-wall: none; --wa-head: rgba(3, 22, 15, .55); --wa-head-ink: #FFF6E3;
+  --wa-in: rgba(255, 255, 255, .11); --wa-out: #17805A; --wa-ink: #FFF6E3; --wa-meta: rgba(255, 246, 227, .62);
+  --wa-bar: rgba(3, 22, 15, .55); --wa-pill: rgba(255, 255, 255, .10); --wa-chip: rgba(3, 22, 15, .72); --wa-chip-ink: #FFF6E3;
+  --wa-sheet: #0B3A29; --wa-send: #F2A20C;
+}
+html body .tg-chat .tg-head, html body .tg-chat .tg-send { backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-color: rgba(255, 200, 46, .18); }
+html body .tg-chat .tg-head { border-bottom: 1px solid rgba(255, 200, 46, .18); }
+html body .tg-chat .tg-send { border-top: 1px solid rgba(255, 200, 46, .18); }
+/* keep the text column readable on wide screens while the background stays full width */
+html body .tg-chat .tg-msgs { padding-inline: max(12px, calc((100% - 820px) / 2)); }
+html body .tg-chat .tg-bubble { border-radius: 16px 16px 16px 5px; box-shadow: 0 1px 2px rgba(0, 0, 0, .25); }
+html body .tg-chat .tg-msg.me .tg-bubble { border-radius: 16px 16px 5px 16px; }

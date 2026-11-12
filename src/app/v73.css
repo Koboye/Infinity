@@ -10,7 +10,7 @@
   /* spacing ladder */
   --sp-1: 6px; --sp-2: 10px; --sp-3: 14px; --sp-4: 20px;
   /* state colours that sit with the indigo/gold palette */
-  --ok: #6BE3A4; --bad: #FF7A8A; --ink-soft: #D6E4FF; --well: #0A1F63; --well-hi: #12308F;
+  --ok: #6BE3A4; --bad: #FF7A8A; --ink-soft: #D6E4FF; --well: #05261B; --well-hi: #12308F;
   --rim: 2px solid var(--line);
   --lift: 0 6px 0 rgba(0,0,0,.28), 0 14px 24px rgba(0,0,0,.4);
   --press: 0 1px 0 rgba(0,0,0,.28), 0 4px 8px rgba(0,0,0,.35);
