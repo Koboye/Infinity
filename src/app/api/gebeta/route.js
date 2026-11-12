@@ -22,6 +22,7 @@ export const runtime = 'nodejs';
 import { HttpError, fail } from '@/lib/online/httpError.js';
 import * as Social from '@/lib/online/socialApi.js';
 import * as Account from '@/lib/online/accountApi.js';
+import * as Pass from '@/lib/online/passApi.js';
 import { makeCode as makeRaceCode, normalizeCode as normalizeRaceCode, newRaceRoom } from '@/lib/online/race.js';
 
 // A new waiting race room for a friend invite (same document shape as /api/race `create`).
@@ -294,7 +295,7 @@ export async function POST(req) {
     if (Number(req.headers.get('content-length') || 0) > MAX_BODY_BYTES) fail(413, 'Request too large');   // no game action is anywhere near this size
     const body = await req.json().catch(() => ({}));
     // Anything that pays or spends coins also checks the token was not revoked (stolen phone, password reset, account disabled).
-    if (['spin', 'topup', 'adStart', 'adDone'].includes(body.action)) {
+    if (['spin', 'topup', 'adStart', 'adDone', 'passClaim', 'passStart'].includes(body.action)) {
       try { await adminAuth().verifyIdToken(token, true); } catch { fail(401, 'Session expired, sign in again'); }
     }
     const db = adminDb();
@@ -305,6 +306,12 @@ export async function POST(req) {
     switch (body.action) {
       case 'wallet':
         return ok(await walletInfo(db, uid));
+      case 'pass':
+        return ok(await Pass.passInfo(db, uid));
+      case 'passClaim':
+        return ok(await Pass.passClaim(db, uid, body.phone));
+      case 'passStart':
+        return ok(await Pass.passStart(db, uid));
       case 'spin':
         return ok(await spinWallet(db, uid));
       case 'topup':

@@ -1,5 +1,12 @@
 # Changelog
 
+
+## Unreleased — Daily level pass (off by default)
+- New: pay once per Ethiopian day (UTC+3) to unlock 10 computer-game starts; the next day, or after the 10, the player pays again.
+- The server decides: `passes/{uid}` is written only by the API; `/api/pay/confirm` (secret-protected) opens a pass when your payment channel confirms a claim.
+- The pay sheet opens the phone dialer with the code (`NEXT_PUBLIC_PAY_USSD`); a web page cannot dial silently or read the result, so the player presses call.
+- Off unless `PAYWALL=1` (server) and `NEXT_PUBLIC_PAYWALL=1` (build). New Firestore rules for `passes` and `payClaims`: run `firebase deploy --only firestore:rules`.
+
 ## 3.17.0 -- Release polish and hardening
 - **Top bar**: the spin counter is now part of the coin chip instead of a badge laid over the amount, so numbers never overlap; on narrow screens spacing tightens first, then decoration goes (never the numbers).
 - **Friends**: the invite button is a larger animated dice-and-spark button (soft ring when the friend is online); still when "reduce motion" is on.

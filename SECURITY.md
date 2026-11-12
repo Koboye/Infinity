@@ -21,6 +21,10 @@ The phone is **never trusted**. Everything that has value (coins, ratings, wins,
 - Chat text is rendered as React text (no `innerHTML`); links use `rel="noopener noreferrer"`.
 - No secrets in the repository (`.env*` ignored; `env.example` has names only). Service-account keys live in Vercel environment variables.
 
+## Daily level pass
+- `passes/*` and `payClaims/*` are server-written only. A pass is confirmed by `/api/pay/confirm` (`PAY_WEBHOOK_SECRET`, 24+ chars, constant-time compare, lockout after 10 wrong secrets); a claim pays once.
+- Limit: games against the computer run on the phone, so the pass gate on those is enforced by the app and server together but a modified client could skip it. Strong enforcement needs the match to be played on the server (as online rooms are).
+
 ## Known limitations (accepted, documented)
 1. CSP still allows `'unsafe-inline'` scripts (Next.js inline bootstrap). Moving to nonces removes it.
 2. Without the optional Upstash variables, rate limits are per server instance (a determined attacker can spread requests across instances).

@@ -47,7 +47,7 @@ export async function apiCall(body, { retries = 2 } = {}) {
       try { data = await res.json(); } catch { /* empty */ }
       if (data && Number.isFinite(data.serverNow)) skew = data.serverNow - (t0 + t1) / 2;
       if (res.status >= 500 && attempt < retries) { await sleep(500 * (attempt + 1)); continue; }
-      if (!res.ok) throw Object.assign(new Error(data?.error || `Request failed (${res.status})`), { final: true });
+      if (!res.ok) throw Object.assign(new Error(data?.error || `Request failed (${res.status})`), { final: true, status: res.status });
       return data;
     } catch (e) {
       if (e.final) throw e;

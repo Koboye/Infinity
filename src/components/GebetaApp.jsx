@@ -19,6 +19,8 @@ import InstallPill from './InstallPill';
 import AdOverlay from './AdOverlay';
 import * as Ads from '@/lib/ads';
 import * as Wallet from '@/lib/wallet';
+import * as Pass from '@/lib/pass';
+import PassSheet from './PassSheet';
 import FriendsScreen, { InviteInbox, carRaceUrl } from './Friends';
 import { useSocial } from '@/lib/useSocial';
 import { Home, Setup, RulesScreen, AuthForm, Lobby, Leaders, ProfileScreen, ProgressScreen, SettingsScreen, Tibeb, readPendingSignup, clearPendingSignup } from './Screens';
@@ -192,7 +194,7 @@ export default function GebetaApp() {
   const walletFor = useRef(null);
   useEffect(() => {
     if (!authReady) return;
-    if (!user) { walletFor.current = null; Wallet.reset(); return; }
+    if (!user) { walletFor.current = null; Wallet.reset(); Pass.reset(); return; }
     if (walletFor.current === user.uid) return;
     walletFor.current = user.uid;
     Wallet.refresh().then((r) => { if (r.gift) setSheet({ type: 'gift' }); });
@@ -290,11 +292,22 @@ export default function GebetaApp() {
     else document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }).catch(() => {});
   };
 
+  // Daily level pass: starting a game against the computer spends one of today's levels (the server decides).
+  // With the paywall off (default) this is a plain `go('game', ...)`.
+  const startLevel = async (o) => {
+    if (!Pass.paywallEnabled || o.mode !== 'ai') { go('game', o); return; }
+    if (!user) { go('online'); return; }   // the pass belongs to the account: sign in first
+    const r = await Pass.start();
+    if (r.ok) { go('game', o); return; }
+    if (r.locked) { setSheet({ type: 'pass', then: o }); return; }
+    setToast({ text: r.error }); setTimeout(() => setToast(null), 3500);
+  };
+
   let body;
   switch (view.name) {
     case 'home': body = <Home t={t} go={go} onlineOn={onlineAvailable} user={user} profile={profile} game={game} onPickGame={(g) => { pickGame(g); if (isPlayable(g)) go('modes'); }} />; break;
     case 'modes': body = <ModesScreen t={t} lang={lang} game={game} go={go} onlineOn={onlineAvailable} />; break;
-    case 'ai': case 'pass': body = <Setup t={t} mode={view.name} game={game} initialRuleset={view.ruleset} onHelp={(type) => go('rules', { type })} onStart={(o) => go('game', { mode: view.name, game, ...o })} />; break;
+    case 'ai': case 'pass': body = <Setup t={t} mode={view.name} game={game} initialRuleset={view.ruleset} onHelp={(type) => go('rules', { type })} onStart={(o) => startLevel({ mode: view.name, game, ...o })} />; break;
     case 'game': {
       const P = { t, mode: view.mode, level: view.level, ruleset: view.ruleset, opts: view.opts || {}, me, onExit: home, onLeave: leaveGame };
       body = view.game === 'checkers' ? <CheckersLocal {...P} />
@@ -342,6 +355,7 @@ export default function GebetaApp() {
       {view.name === 'home' && !adShow && !sheet && <InstallPill t={t} />}
       {sheet?.type === 'gift' && <WelcomeGift lang={lang} onClose={() => setSheet(null)} />}
       {sheet?.type === 'spin' && <SpinSheet lang={lang} onClose={() => setSheet(null)} />}
+      {sheet?.type === 'pass' && <PassSheet lang={lang} onClose={() => setSheet(null)} onUnlocked={() => { const o = sheet.then; setSheet(null); if (o) startLevel(o); }} />}
       <header className="topbar">
         {view.name === 'home' ? <span className="topbar-spacer" /> :
           <button className="icon-btn" onClick={view.name === 'game' ? leaveGame : view.name === 'rules' && view.hub ? home : view.name === 'rules' && view.fromHub ? () => go('rules', { hub: true }) : ['ai', 'pass', 'online', 'leaders', 'rules'].includes(view.name) ? () => go('modes') : home} aria-label={t.backHome}>‹</button>}
