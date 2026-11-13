@@ -149,7 +149,7 @@ input::placeholder { color: rgba(244,233,207,.45); }
   box-shadow: inset -2px -3px 3px rgba(0,0,0,.35), inset 2px 2px 3px rgba(255,255,255,.45), 0 1px 2px rgba(0,0,0,.5); animation: seedIn .42s cubic-bezier(.2,.9,.3,1.2); }
 .pit.store .seed { width: 24%; }
 @keyframes seedIn { 0% { transform: translate(-50%, -190%) scale(1.9); opacity: .2; } 70% { transform: translate(-50%, -45%) scale(.9); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(1); } }
-/* The seeds still in the player's hand, floating over the hole being sown (Ludo-King style token). */
+/* The seeds still in the player's hand, floating over the hole being sown (floating token). */
 .hand { position: absolute; left: 50%; top: -14%; transform: translate(-50%, -50%); z-index: 4; min-width: 1.9em; height: 1.9em; padding: 0 7px; display: grid; place-items: center; border-radius: 99px; background: var(--gold); color: #2A1A05; border: 2px solid #fff6d6; font: 900 1rem var(--font-ui); box-shadow: 0 6px 12px rgba(0,0,0,.5); animation: handHop .5s ease-out; pointer-events: none; }
 @keyframes handHop { 0% { transform: translate(-50%, -140%) scale(.8); } 55% { transform: translate(-50%, -30%) scale(1.15); } 100% { transform: translate(-50%, -50%) scale(1); } }
 .pit.hot { transition: box-shadow .35s ease; }

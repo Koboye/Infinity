@@ -1,4 +1,4 @@
-/* v45 "Everything Visible" — Ludo-King-style: no hidden sideways lists. Games, play modes, levels and game types are big tap tiles you can see at once; the bottom bar is a fixed 4-tab bar. */
+/* v45 "Everything Visible" — no hidden sideways lists. Games, play modes, levels and game types are big tap tiles you can see at once; the bottom bar is a fixed 4-tab bar. */
 
 /* kill every swipe affordance */
 .rail-dots, .swipe-dots, .swipe-arrow, .swipe-hint, .swipe-count { display: none !important; }

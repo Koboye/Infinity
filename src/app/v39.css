@@ -102,7 +102,7 @@ input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(53,224,194,.
 .check input { accent-color: var(--ember); width: 20px; height: 20px; }
 
 /* ───── in-game: lit table, glass player cards, bigger status ───── */
-.match .status, .ludo-status, .status { background: var(--glass); border: 1.5px solid var(--glass-line); border-radius: 99px; color: var(--ivory-2); font-weight: 800; padding: 9px 18px; box-shadow: 0 5px 14px rgba(0,0,0,.35); }
+.match .status, .status { background: var(--glass); border: 1.5px solid var(--glass-line); border-radius: 99px; color: var(--ivory-2); font-weight: 800; padding: 9px 18px; box-shadow: 0 5px 14px rgba(0,0,0,.35); }
 .pcard { background: var(--glass); border: 1.5px solid var(--glass-line); border-radius: 20px; box-shadow: 0 5px 0 rgba(0,0,0,.3); }
 .pcard.on { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(53,224,194,.3), 0 0 26px rgba(53,224,194,.4); }
 .screen.ingame { padding-inline: 8px; }
@@ -110,7 +110,7 @@ input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(53,224,194,.
 .offline-bar { background: linear-gradient(90deg, #B01238, #E0264F); }
 
 /* ───── accent per game on shared chrome ───── */
-html[data-game='ludo'] .topbar, html[data-game='checkers'] .topbar, html[data-game='bingo'] .topbar, html[data-game='dominoes'] .topbar, html[data-game='gebeta'] .topbar { border-color: color-mix(in srgb, var(--ga) 50%, transparent); }
+html[data-game='checkers'] .topbar, html[data-game='bingo'] .topbar, html[data-game='dominoes'] .topbar, html[data-game='gebeta'] .topbar { border-color: color-mix(in srgb, var(--ga) 50%, transparent); }
 html[data-game] .tibeb { background: repeating-linear-gradient(90deg, var(--ga) 0 14px, var(--ember) 14px 28px, var(--rose) 28px 42px, var(--teal) 42px 46px); }
 
 @media (prefers-reduced-motion: reduce) { body::before, .brand-am, .rail-games .gp-card.on, .swipe-card.on { animation: none; } }
@@ -119,5 +119,3 @@ html[data-game] .tibeb { background: repeating-linear-gradient(90deg, var(--ga) 
 .demo .board { width: 125%; zoom: .8; }
 .topbar-title { font-size: .95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .dock-chip { padding: 10px 12px; font-size: .8rem; }
-.ludo-auto { display: flex; align-items: center; gap: 10px; text-align: left; padding: 10px 12px; border-radius: 14px; background: rgba(0,0,0,.25); border: 1px solid var(--glass-line); }
-.ludo-auto input { accent-color: var(--ember); width: 20px; height: 20px; flex: none; margin: 0; }

@@ -1,27 +1,14 @@
-/* v52 — Ludo: compact player cards with the die beside the base and full names, a bigger board, a visible turn clock.
-   Photos: your own picture on your Ludo card, your Dama card and your Dama king (a 3D medal), with a coronation animation. */
+/* v52 — Photos: your own picture on your */
 
 /* ── profile picture picker ── */
 .photo-pick { display: flex; gap: 14px; align-items: center; padding: 12px; margin-bottom: 12px; border-radius: 20px; background: linear-gradient(160deg, rgba(255, 244, 214, .10), rgba(255, 244, 214, .03)); border: 1px solid rgba(255, 214, 120, .25); }
 .pp-face { flex: none; width: 84px; height: 84px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; font-size: 2.4rem; border: 3px solid #ffe08a; box-shadow: 0 6px 14px rgba(0, 0, 0, .45), 0 0 0 4px rgba(255, 224, 138, .18); }
-.pp-face img, .hero.photo img, .ludo-panel .av.photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pp-face img, .hero.photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .pp-txt { display: grid; gap: 4px; min-width: 0; } .pp-txt small { opacity: .75; line-height: 1.3; }
 .pp-acts { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; } .pp-msg { color: #9be8a8; }
-.hero.photo { overflow: hidden; padding: 0; } .ludo-panel .av.photo { overflow: hidden; padding: 0; border: 2px solid var(--pc); }
+.hero.photo { overflow: hidden; padding: 0; }
 
-/* ── Ludo: compact cards, die next to its own base ── */
-.ludo { gap: 8px; }
-.ludo-panel { padding: 6px 9px 9px; gap: 8px; border-radius: 18px; align-items: center; }
-.ludo-panel .ludo-die3d { --s: 29px; width: 54px; height: 54px; }
-.ludo-panel .info { gap: 3px; }
-.ludo-panel .nm { align-items: center; font-size: .82rem; }
-.ludo-panel .nm .tx { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.15; overflow: hidden; }
-.ludo-panel .pips { order: 2; }
-.ludo-panel.on .ludo-die3d { filter: drop-shadow(0 0 8px color-mix(in srgb, var(--pc) 85%, #fff)); }
-.ludo-board { width: min(100% - 4px, calc(var(--app-h, 100dvh) - 296px), 680px); }
-.ludo-dock { padding: 8px 12px 10px; gap: 6px; }
-.ludo-dock .ludo-say b { font-size: 1.02rem; } .ludo-dock .ludo-say small { display: none; }
-.ludo-tools { display: flex; flex-wrap: wrap; gap: 6px; } .ludo-tools .tool { padding: 6px 10px; font-size: .78rem; }
+/* ── */
 
 /* turn clock: a bar along the bottom of the active card, red in the last five seconds */
 .tclock { position: absolute; left: 12px; right: 12px; bottom: 3px; height: 6px; border-radius: 99px; background: rgba(0, 0, 0, .45); overflow: visible; display: block; }
@@ -30,7 +17,6 @@
 .tclock.low i { background: linear-gradient(90deg, #ff5c4a, #ff9a6b); animation: tc-pulse .5s ease-in-out infinite alternate; }
 .tclock.low b { background: #ff8a78; }
 @keyframes tc-pulse { to { filter: brightness(1.5); } }
-.ludo-panel .sixes { bottom: auto; top: -9px; left: 12px; transform: none; }
 
 /* ── Dama: your picture as a minted medal on the king ── */
 .k3d-fig u.medal { width: 1em; height: 1em; font-size: 1.7em; border-radius: 50%; overflow: hidden; border: .07em solid #ffe08a; box-sizing: border-box;
@@ -58,4 +44,3 @@
 @keyframes ck-burst { 0% { transform: scale(.2) rotateX(70deg); opacity: 1; } 100% { transform: scale(2.6) rotateX(70deg); opacity: 0; } }
 @keyframes ck-burst2 { 0% { transform: scale(.6); opacity: .9; } 100% { transform: scale(1.5); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .ck-piece.crowning .k3d-fig, .ck-piece.crowning .ck-crown, .ck-piece.crowning .k3d-base, .ck-piece.crowning .ck-face, .k3d-burst { animation: none !important; } .k3d-burst { display: none; } }
-.ludo-panel .av { width: 30px; height: 30px; }

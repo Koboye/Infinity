@@ -23,7 +23,7 @@ const TABS = [
   { id: 'profile', icon: '👤', on: ['profile', 'settings'], to: 'profile' },
 ];
 
-/** Permanent bottom tab bar (like Ludo King): always on screen outside a running game. */
+/** Permanent bottom tab bar (always visible): always on screen outside a running game. */
 export default function BottomNav({ lang, view, onHome, onOpen, profile, badge = 0 }) {
   const t = L[lang === 'am' ? 'am' : 'en'];
   return (

@@ -1,6 +1,8 @@
 # Afro Zone · አፍሮ ዞን
 
-Afro Zone is a multiplayer games hub (Gebeta ገበጣ, Dama ዳማ, Ludo, Dominoes, Tuz, Bingo, Hill Climb) with friends and chat. Next.js + Firebase. Three games share one profile, one rating system, one room/matchmaking server and one look.
+Afro Zone is a multiplayer games hub (Gebeta ገበጣ, Dama ዳማ, Dominoes, Tuz, Bingo, Hill Climb) with friends and chat. Next.js + Firebase. Three games share one profile, one rating system, one room/matchmaking server and one look.
+
+> **Companion apps in this repo:** `apps/exam-prep` (university exam and exit-exam practice, 15 ETB/month or 15 contributed questions) and `apps/addis-runner` (endless runner on a route built from real Addis Ababa GPS points). Each has its own README. The Ludo game has been removed.
 
 ## Games
 | Game | Offline | Online | Rule sets |

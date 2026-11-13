@@ -39,7 +39,7 @@ export function useCheckersAnimator(initialBoard, t) {
   const strikes = useRef(0);
 
   const commit = (p) => { ref.current = p; setPieces(p.map((x) => ({ ...x }))); };
-  /** Ludo-King style kill: the attacker lunges, the victim is KICKED away in the direction of travel, with an impact burst. */
+  /** Capture kill: the attacker lunges, the victim is KICKED away in the direction of travel, with an impact burst. */
   const kick = (p, mover, victim, hop, startFrom) => {
     const dx = Math.sign(colOf(hop.to) - colOf(hop.from)), dy = Math.sign(rowOf(hop.to) - rowOf(hop.from));
     const total = Math.max(Math.abs(colOf(hop.to) - colOf(hop.from)), Math.abs(rowOf(hop.to) - rowOf(hop.from))) || 1;

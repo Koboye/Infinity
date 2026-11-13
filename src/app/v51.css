@@ -1,4 +1,4 @@
-/* v51 — Home becomes a real game grid (live records, no demo boards); clearer top bar; Ludo polish. */
+/* v51 — Home becomes a real game grid (live records, no demo boards); clearer top bar. */
 .home { gap: 14px; padding-bottom: 8px; }
 .home .brand { padding-top: 0; }
 .home .brand-am { font-size: clamp(3.2rem, 17vw, 4.8rem); }

@@ -1,4 +1,4 @@
-/* ═════ Dama capture: Ludo-King style KILL ═════
+/* ═════ Dama capture: KILL ═════
    The attacker lunges, the captured piece is KICKED off in the direction of the strike (tumbling, squashed on impact),
    a burst of light marks the square and the board jolts. Kings hit harder, so do chains of two or more.
    Loaded last so it wins over the older fade-out. All motion is switched off for "reduce motion". */

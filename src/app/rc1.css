@@ -40,7 +40,7 @@ html body .home { padding-bottom: max(12px, env(safe-area-inset-bottom, 0px)); }
 }
 @media (prefers-reduced-motion: reduce) { html body .app .game-grid .gg-card, html body .app .game-grid .gg-art { animation: none !important; transition: none !important; } }
 
-/* ═══ RC · Phase 2 — in-game screens (Gebeta, Dama, Ludo, Bingo): one shell, every device ═══ */
+/* ═══ RC · Phase 2 — in-game screens (Gebeta, Dama, Bingo): one shell, every device ═══ */
 /* the game fills the REAL visible area (ViewportFit's --app-h tracks the visual viewport: browser bar, foldables, split-screen) */
 html.in-game .app { height: var(--app-h, 100dvh); }
 html.in-game body { background-color: #072A1F; }
