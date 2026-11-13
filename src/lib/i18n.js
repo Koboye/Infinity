@@ -82,7 +82,7 @@ export const STRINGS = {
     cardsLabel: 'Cards', powerLabel: 'Power', pwInstant: 'Instant daub', pwDouble: 'Double daub', pwShield: 'Shield', chestOpen: (n) => `Treasure! +${n} coins`, coinsLabel: 'coins',
     spinTie: 'Both hold two stones — spinning for the extra hole…', spinTieWon: (n) => `${n} wins the spin and takes the extra hole!`,
     climbName: 'Afro Climb', climbTag: 'Hill-climb racing',
-    examName: 'ExamPrep', examTag: 'Grade 1–12, university & exit exams', runnerName: 'Addis Runner', runnerTag: 'Run through Addis Ababa',
+    examName: 'ExamPro', examTag: 'Grade 1–12, university & exit exams', runnerName: 'Addis Runner', runnerTag: 'Run through Addis Ababa',
     on: 'On', off: 'Off', textNormal: 'A', nameHint: '2–20 letters', savedOk: 'Saved',
     chatNotice: (n) => `This is your chat with ${n}. Tap 🎮 to invite them to a game.`, chatSwipeReply: 'Swipe a message to reply',
     comingSoon: 'Coming soon', comingSoonSub: (n) => `${n} is on its way — it will appear here when it is ready.`,
