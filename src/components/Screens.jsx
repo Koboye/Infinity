@@ -29,7 +29,7 @@ export const Tibeb = () => <div className="tibeb" aria-hidden="true" />;
 
 /* ───────── Home ───────── */
 /** Every game as a card. Numbers come from this device's real progress record; nothing is invented. */
-export function GameGrid({ t, onPick }) {
+export function GameGrid({ t, onPick, onClimb }) {
   const [p, setP] = useState(null);
   const [recent, setRecent] = useState([]);
   useEffect(() => { setP(loadProgress()); try { setRecent(JSON.parse(localStorage.getItem('gebeta.recent')) || []); } catch { /* no history yet */ } }, []);
@@ -56,12 +56,12 @@ export function GameGrid({ t, onPick }) {
         );
       })}
       {/* Hill Climb Racer: the full game (worlds, vehicles, drivers, difficulty) is a stand-alone arcade page (/games/hillclimb-racing/), so it is a link card and not part of GAME_LIST (no ratings, no online matches). */}
-      <a role="listitem" className="gg-card" href="/games/hillclimb-racing/index.html" aria-label={`${t.climbName} · ${t.climbTag}`} style={{ '--accent': '#FF7A2F', '--i': order.length, textDecoration: 'none' }}>
+      <button type="button" role="listitem" className="gg-card" onClick={onClimb} aria-label={`${t.climbName} · ${t.climbTag}`} style={{ '--accent': '#FF7A2F', '--i': order.length }}>
         <span className="gg-art"><GameIcon game="car" size={52} /></span>
         <b className="gg-name">{t.climbName}</b>
         <small className="gg-tag">{t.climbTag}</small>
         <span className="gg-foot"><span className="gg-mode">{t.badgeOffline}</span></span>
-      </a>
+      </button>
     </div>
   );
 }
@@ -93,7 +93,7 @@ function DailyCard({ t, onPick }) {
   );
 }
 
-export function Home({ t, onPickGame }) {
+export function Home({ t, onPickGame, onClimb }) {
   return (
     <div className="home">
       <div className="brand">
@@ -102,7 +102,7 @@ export function Home({ t, onPickGame }) {
         <p className="brand-en">{t.subtitle}</p>
       </div>
       <DailyCard t={t} onPick={onPickGame} />
-      <GameGrid t={t} onPick={onPickGame} />
+      <GameGrid t={t} onPick={onPickGame} onClimb={onClimb} />
       <StatStrip t={t} />
     </div>
   );

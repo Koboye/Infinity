@@ -303,9 +303,20 @@ export default function GebetaApp() {
     setToast({ text: r.error }); setTimeout(() => setToast(null), 3500);
   };
 
+  // Hill Climb is a stand-alone page: with the paywall on, the home screen opens it only with an open pass (the game page then spends a level per start).
+  const openClimb = async () => {
+    const enter = () => { globalThis.location.href = '/games/hillclimb-racing/index.html'; };
+    if (!Pass.paywallEnabled) { enter(); return; }
+    if (!user) { go('online'); return; }
+    const r = await Pass.enterClimb();
+    if (r.ok) { enter(); return; }
+    if (r.locked) { setSheet({ type: 'pass', then: { climb: true } }); return; }
+    setToast({ text: r.error }); setTimeout(() => setToast(null), 3500);
+  };
+
   let body;
   switch (view.name) {
-    case 'home': body = <Home t={t} go={go} onlineOn={onlineAvailable} user={user} profile={profile} game={game} onPickGame={(g) => { pickGame(g); if (isPlayable(g)) go('modes'); }} />; break;
+    case 'home': body = <Home t={t} go={go} onlineOn={onlineAvailable} user={user} profile={profile} game={game} onPickGame={(g) => { pickGame(g); if (isPlayable(g)) go('modes'); }} onClimb={openClimb} />; break;
     case 'modes': body = <ModesScreen t={t} lang={lang} game={game} go={go} onlineOn={onlineAvailable} />; break;
     case 'ai': case 'pass': body = <Setup t={t} mode={view.name} game={game} initialRuleset={view.ruleset} onHelp={(type) => go('rules', { type })} onStart={(o) => startLevel({ mode: view.name, game, ...o })} />; break;
     case 'game': {
@@ -355,7 +366,7 @@ export default function GebetaApp() {
       {view.name === 'home' && !adShow && !sheet && <InstallPill t={t} />}
       {sheet?.type === 'gift' && <WelcomeGift lang={lang} onClose={() => setSheet(null)} />}
       {sheet?.type === 'spin' && <SpinSheet lang={lang} onClose={() => setSheet(null)} />}
-      {sheet?.type === 'pass' && <PassSheet lang={lang} onClose={() => setSheet(null)} onUnlocked={() => { const o = sheet.then; setSheet(null); if (o) startLevel(o); }} />}
+      {sheet?.type === 'pass' && <PassSheet lang={lang} onClose={() => setSheet(null)} onUnlocked={() => { const o = sheet.then; setSheet(null); if (o?.climb) openClimb(); else if (o) startLevel(o); }} />}
       <header className="topbar">
         {view.name === 'home' ? <span className="topbar-spacer" /> :
           <button className="icon-btn" onClick={view.name === 'game' ? leaveGame : view.name === 'rules' && view.hub ? home : view.name === 'rules' && view.fromHub ? () => go('rules', { hub: true }) : ['ai', 'pass', 'online', 'leaders', 'rules'].includes(view.name) ? () => go('modes') : home} aria-label={t.backHome}>‹</button>}

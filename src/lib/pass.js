@@ -1,5 +1,5 @@
 // Client side of the daily level pass. The server owns every pass; this module asks and shows. Nothing is stored on the phone.
-import { apiCall } from './firebase';
+import { apiCall, auth } from './firebase';
 import { DEFAULT_USSD, ussdLink, PASS_LEVELS } from './passCore.js';
 export { PASS_LEVELS };
 
@@ -32,4 +32,15 @@ export async function pay(phone) {
     try { globalThis.location.href = ussdLink(ussdCode); } catch { /* the code is also shown on screen */ }
     return { ok: true, claim: r.claim };
   } catch (e) { return { ok: false, error: e.message }; }
+}
+/** Open Hill Climb: needs an open pass (spends nothing) and sets the ticket cookie the game page uses. { ok:true } | { ok:false, locked:true } | { ok:false, error } */
+export async function enterClimb() {
+  try {
+    if (!auth?.currentUser) return { ok: false, error: 'Sign in to play' };
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch('/api/hillclimb', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ action: 'enter' }) });
+    const j = await res.json().catch(() => ({}));
+    if (res.ok) return { ok: true, free: !!j.free };
+    return { ok: false, locked: res.status === 402, error: j.error || 'Try again' };
+  } catch { return { ok: false, error: 'Connection problem, try again' }; }
 }
