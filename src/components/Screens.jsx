@@ -69,7 +69,7 @@ export function GameGrid({ t, onPick, onClimb }) {
         <small className="gg-tag">{t.runnerTag}</small>
         <span className="gg-foot"><span className="gg-mode">{t.badgeOffline}</span></span>
       </button>
-      <button type="button" role="listitem" className="gg-card" onClick={() => { globalThis.location.href = '/games/exam-prep/index.html'; }} aria-label={`${t.examName} · ${t.examTag}`} style={{ '--accent': '#5B3DF5', '--i': order.length + 2 }}>
+      <button type="button" role="listitem" className="gg-card" onClick={() => { globalThis.location.href = '/games/exam-prep/index.html'; }} aria-label={`${t.examName} · ${t.examTag}`} style={{ '--accent': '#0B8A5F', '--i': order.length + 2 }}>
         <span className="gg-art"><GameIcon game="exam" size={52} /></span>
         <b className="gg-name">{t.examName}</b>
         <small className="gg-tag">{t.examTag}</small>
