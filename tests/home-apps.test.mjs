@@ -4,7 +4,7 @@ const read = (p) => fs.readFileSync(new URL(`../${p}`, import.meta.url), 'utf8')
 const t = (n, f) => { f(); console.log('ok', n); };
 t('home screen lists Addis Runner and ExamPrep', () => {
   const s = read('src/components/Screens.jsx'), i = read('src/lib/i18n.js');
-  assert.ok(s.includes("/games/addis-runner/index.html") && s.includes('NEXT_PUBLIC_EXAMPREP_URL'));
+  assert.ok(s.includes("/games/addis-runner/index.html") && s.includes('/games/exam-prep/index.html'));
   for (const k of ['examName', 'examTag', 'runnerName', 'runnerTag']) assert.equal((i.match(new RegExp(`${k}:`, 'g')) || []).length, 2, `${k} in English and Amharic`);
 });
 t('the served Addis Runner page matches apps/addis-runner', () => {

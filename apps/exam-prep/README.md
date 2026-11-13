@@ -33,9 +33,5 @@ This app is in `apps/exam-prep/` of the Infinity repo and is independent of the 
 Only import questions you wrote, or that the rights holder has licensed to you. Put them in a CSV (`dept,question,A,B,C,D,answer,explanation,topic`) or JSON file, then run
 `node tools/import-questions.mjs file.csv` from `apps/exam-prep/`. Each row is checked with the app's own rules and against the existing bank; rejects are listed. Results go to `src/data/imported.json`. Freshman common courses (Logic, Physics, English...) are in the "Freshman Common Courses" college.
 
-## Taking the "coming soon" card live
-The home-screen card says "coming soon" until `NEXT_PUBLIC_EXAMPREP_URL` is set in the main app's environment to the deployed ExamPrep address (Vercel, Root Directory `apps/exam-prep`, plus the env vars in `env.example`).
-
-## Grade 12 Entrance (ESSLCE) bank
-A "Grade 12 Entrance (ESSLCE)" college (10 subjects) holds 1,421 questions imported from past entrance/model papers (2006-2018 EC). **Only questions whose answer key agrees with their own explanation were imported.** A first extraction of ~12,000 questions showed about half of the checkable keys contradicting their explanations, so the rest are held back until the answer keys are re-checked against the source papers. Questions that depend on a figure or table were skipped.
-**Content rights:** the owner has confirmed these questions are free to use; branding was removed and choice/question order re-shuffled. `review/teacher-review.csv` lists every question with automatic flags and sign-off columns for a teacher per subject. Reviewers record verdicts there; answers are not changed without the owner's approval.
+## Opening it from the games app
+The games app serves a stand-alone, offline copy of ExamPrep at `/games/exam-prep/` (home-screen card, no deployment or env var needed): all questions free, progress saved on the device. After changing questions run `node tools/build-static.mjs` from `apps/exam-prep/` to refresh `public/games/exam-prep/bank.js`. This Next.js + Firebase app is the version with accounts, payments and contributions; deploy it separately only when you need those.

@@ -69,16 +69,12 @@ export function GameGrid({ t, onPick, onClimb }) {
         <small className="gg-tag">{t.runnerTag}</small>
         <span className="gg-foot"><span className="gg-mode">{t.badgeOffline}</span></span>
       </button>
-      {(() => {
-        const examUrl = process.env.NEXT_PUBLIC_EXAMPREP_URL || '', soon = !examUrl;
-        return (
-          <button type="button" role="listitem" className={`gg-card${soon ? ' soon' : ''}`} disabled={soon} onClick={() => { globalThis.location.href = examUrl; }} aria-label={`${t.examName} · ${soon ? t.comingSoon : t.examTag}`} style={{ '--accent': '#3B7BFF', '--i': order.length + 2 }}>
-            <span className="gg-art"><GameIcon game="exam" size={52} /></span>
-            <b className="gg-name">{t.examName}</b>
-            <small className="gg-tag">{soon ? t.comingSoon : t.examTag}</small>
-          </button>
-        );
-      })()}
+      <button type="button" role="listitem" className="gg-card" onClick={() => { globalThis.location.href = '/games/exam-prep/index.html'; }} aria-label={`${t.examName} · ${t.examTag}`} style={{ '--accent': '#5B3DF5', '--i': order.length + 2 }}>
+        <span className="gg-art"><GameIcon game="exam" size={52} /></span>
+        <b className="gg-name">{t.examName}</b>
+        <small className="gg-tag">{t.examTag}</small>
+        <span className="gg-foot"><span className="gg-mode">{t.badgeOffline}</span></span>
+      </button>
     </div>
   );
 }
