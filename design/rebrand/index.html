@@ -119,6 +119,30 @@ main{padding:0 40px 56px;min-width:0}
 .opt:disabled{cursor:default}
 .fb{font-weight:600;min-height:1.6em}
 .big{font:800 3.4rem var(--font-d)}
+
+/* mini calculator */
+.calc-fab{position:fixed;right:22px;bottom:22px;z-index:20;display:flex;align-items:center;gap:10px;padding:14px 20px;border-radius:999px;border:0;background:var(--ink);color:#fff;font:700 1rem var(--font-b);cursor:pointer;box-shadow:0 8px 24px rgba(15,27,76,.3)}
+.calc-fab svg{width:22px;height:22px}
+@media (prefers-color-scheme:dark){.calc-fab{background:var(--sun);color:var(--ink)}}
+.calc{position:fixed;right:22px;bottom:88px;z-index:20;width:272px;background:var(--card);border:1.5px solid var(--line);border-radius:20px;box-shadow:0 12px 36px rgba(15,27,76,.28);padding:12px;color:inherit}
+.calc[hidden],.calc-fab[hidden]{display:none}
+.calc-h{display:flex;justify-content:space-between;align-items:center;font-weight:700;padding:2px 4px 8px}
+.calc-x{border:0;background:transparent;color:inherit;font-size:1.4rem;line-height:1;cursor:pointer;padding:4px 8px;border-radius:8px}
+.screen-d{background:var(--paper);border-radius:12px;padding:8px 14px;text-align:right;margin-bottom:10px;overflow:hidden}
+.screen-d small{display:block;min-height:1.2em;color:var(--mute);font-size:.9rem}
+.screen-d output{display:block;font:700 1.9rem var(--font-d);white-space:nowrap;overflow:hidden;text-overflow:clip}
+.keys{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.keys button{font:600 1.15rem var(--font-b);padding:12px 0;border-radius:12px;border:1.5px solid var(--line);background:var(--card);color:inherit;cursor:pointer}
+.keys button:hover{border-color:var(--blue)}
+.keys .op{background:var(--paper);color:var(--blue);font-weight:700}
+.keys .eq{background:var(--blue);color:#fff;border-color:var(--blue)}
+.keys .fn{color:var(--mute)}
+@media (min-width:981px){body.calc-open main{padding-right:340px}}
+@media (max-width:980px){
+  .calc{left:12px;right:12px;width:auto;bottom:80px;max-width:340px;margin:0 auto}
+  body.calc-open main{padding-bottom:420px}
+  .calc-fab{right:14px;bottom:14px}
+}
 </style>
 </head>
 <body>
@@ -215,6 +239,22 @@ main{padding:0 40px 56px;min-width:0}
   </section>
 </main>
 
+
+<button class="calc-fab" id="calc-btn" aria-expanded="false" aria-controls="calc" hidden>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2.5" width="14" height="19" rx="2.5"/><path d="M8.5 7h7M8.5 12h.01M12 12h.01M15.5 12h.01M8.5 16h.01M12 16h.01M15.5 16h.01"/></svg>Calculator
+</button>
+<div class="calc" id="calc" role="dialog" aria-label="Calculator" hidden>
+  <div class="calc-h"><span>Calculator</span><button class="calc-x" id="calc-x" aria-label="Close calculator">&times;</button></div>
+  <div class="screen-d"><small id="c-expr" aria-hidden="true"></small><output id="c-out" aria-live="polite">0</output></div>
+  <div class="keys" id="keys">
+    <button class="fn" data-k="C">C</button><button class="fn" data-k="back" aria-label="Delete">&#9003;</button><button class="fn" data-k="pct" aria-label="Percent">%</button><button class="op" data-k="/" aria-label="Divide">&divide;</button>
+    <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button><button class="op" data-k="*" aria-label="Multiply">&times;</button>
+    <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button><button class="op" data-k="-" aria-label="Subtract">&minus;</button>
+    <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button><button class="op" data-k="+" aria-label="Add">+</button>
+    <button class="fn" data-k="neg" aria-label="Change sign">&plusmn;</button><button data-k="0">0</button><button data-k=".">.</button><button class="eq" data-k="=" aria-label="Equals">=</button>
+    <button class="fn" data-k="sqrt" aria-label="Square root">&radic;</button><button class="fn" data-k="sq" aria-label="Square">x&sup2;</button>
+  </div>
+</div>
 <script src="gk-data.js"></script>
 <script>
 const G={cat:"All",pool:[],i:0,score:0,locked:false};
@@ -253,6 +293,43 @@ function gkEnd(){
 }
 </script>
 <script>
+const C={cur:"0",acc:null,op:null,fresh:true};
+const cf=n=>!isFinite(n)?"Error":String(parseFloat(n.toPrecision(12)));
+const sym={"/":"\u00f7","*":"\u00d7","-":"\u2212","+":"+"};
+function cShow(){$("c-out").textContent=C.cur;$("c-expr").textContent=C.op?cf(C.acc)+" "+sym[C.op]:""}
+function cCalc(a,b,o){return o==="+"?a+b:o==="-"?a-b:o==="*"?a*b:b===0?NaN:a/b}
+function cKey(k){
+  if(C.cur==="Error"&&k!=="C")return;
+  if(/^\d$/.test(k)){C.cur=C.fresh||C.cur==="0"?k:(C.cur.replace(/[-.]/g,"").length<14?C.cur+k:C.cur);C.fresh=false}
+  else if(k==="."){if(C.fresh){C.cur="0.";C.fresh=false}else if(!C.cur.includes("."))C.cur+="."}
+  else if("+-*/".includes(k)){
+    if(C.op&&!C.fresh)C.acc=cCalc(C.acc,+C.cur,C.op);else C.acc=+C.cur;
+    C.op=k;C.fresh=true;C.cur=cf(C.acc);if(C.cur==="Error"){C.op=null}
+  }
+  else if(k==="="){if(C.op){C.cur=cf(cCalc(C.acc,+C.cur,C.op));C.op=null;C.acc=null;C.fresh=true}}
+  else if(k==="C"){C.cur="0";C.acc=null;C.op=null;C.fresh=true}
+  else if(k==="back"){if(!C.fresh){C.cur=C.cur.length>1&&!(C.cur.length===2&&C.cur[0]==="-")?C.cur.slice(0,-1):"0"}}
+  else if(k==="neg"){if(C.cur!=="0")C.cur=C.cur[0]==="-"?C.cur.slice(1):"-"+C.cur}
+  else if(k==="pct"){C.cur=cf(+C.cur/100);C.fresh=true}
+  else if(k==="sqrt"){C.cur=+C.cur<0?"Error":cf(Math.sqrt(+C.cur));C.fresh=true}
+  else if(k==="sq"){C.cur=cf(+C.cur*+C.cur);C.fresh=true}
+  cShow();
+}
+function cOpen(o){
+  $("calc").hidden=!o;document.body.classList.toggle("calc-open",o);
+  $("calc-btn").setAttribute("aria-expanded",o);
+  if(o)$("keys").querySelector('[data-k="7"]').focus();else $("calc-btn").focus();
+}
+$("calc-btn").onclick=()=>cOpen($("calc").hidden);
+$("calc-x").onclick=()=>cOpen(false);
+$("keys").onclick=e=>{const b=e.target.closest("button");if(b)cKey(b.dataset.k)};
+$("calc").onkeydown=e=>{
+  if(e.key==="Escape"){cOpen(false);return}
+  const k=e.key==="Enter"?"=":e.key==="Backspace"?"back":e.key==="Delete"||e.key==="c"||e.key==="C"?"C":e.key;
+  if(/^[\d.+\-*\/=]$|^C$|^back$/.test(k)&&!(e.key==="Enter"&&e.target.closest("button")&&e.target.id==="calc-x")){e.preventDefault();cKey(k)}
+};
+</script>
+<script>
 const L=[
  {n:"Grade 1–6",s:["Mathematics","English","Amharic","Environmental Science"]},
  {n:"Grade 7–8",s:["Mathematics","English","Biology","Chemistry","Physics","Civics"]},
@@ -289,6 +366,7 @@ function route(){
   $(nav).setAttribute("aria-current","page");
   if(id==="s-test"&&!$("tabs").children.length)render();
   if(id==="s-gk")gkStart();
+  const ex=id!=="s-home";$("calc-btn").hidden=!ex;if(!ex){$("calc").hidden=true;document.body.classList.remove("calc-open")}
   scrollTo(0,0);
 }
 addEventListener("hashchange",route);route();
