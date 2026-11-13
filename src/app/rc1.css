@@ -130,23 +130,20 @@ html body .reward-btn { white-space: nowrap; flex: 0 0 auto; }
 .tg-quick { flex: none; display: flex; flex-direction: row; align-items: center; gap: 6px; padding-right: 8px; }
 .tg-quick .icon-btn { width: 32px; height: 32px; min-height: 0; font-size: .95rem; opacity: .75; }
 .tg-play {
-  --size: 46px; position: relative; flex: none; display: inline-grid; place-items: center; width: var(--size); height: var(--size); padding: 6px; border-radius: 50%;
-  border: 1.5px solid color-mix(in srgb, var(--brand-gold, #FFC52E) 75%, #fff); background: radial-gradient(circle at 35% 28%, #FFE9A3 0%, #FFC52E 48%, #E59A12 100%);
-  box-shadow: 0 2px 0 #8A5200, 0 6px 12px rgba(0, 0, 0, .28), inset 0 1px 0 rgba(255, 255, 255, .6);
+  --w: 54px; --h: 40px; position: relative; flex: none; display: inline-grid; place-items: center; width: var(--w); height: var(--h); padding: 5px 6px; border-radius: 14px;
+  border: 1.5px solid #3B8CFF; background: linear-gradient(180deg, #14224A 0%, #080C1C 100%);
+  box-shadow: 0 0 10px rgba(59, 140, 255, .55), inset 0 1px 0 rgba(140, 190, 255, .35);
   cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: transform .16s cubic-bezier(.3, 1.6, .5, 1), box-shadow .16s;
 }
-.tg-play.head { --size: 42px; }
-.tg-play:hover { transform: translateY(-1px) scale(1.05); }
-.tg-play:active { transform: translateY(1px) scale(.94); box-shadow: 0 0 0 #8A5200, 0 2px 5px rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .5); }
+.tg-play.head { --w: 56px; --h: 40px; }
+.tg-play:hover { transform: translateY(-1px) scale(1.05); box-shadow: 0 0 14px rgba(90, 162, 255, .8), inset 0 1px 0 rgba(140, 190, 255, .45); }
+.tg-play:active { transform: translateY(1px) scale(.95); box-shadow: 0 0 6px rgba(59, 140, 255, .5); }
 .tg-play:focus-visible { outline: 3px solid var(--brand-gold-hi, #FFD85A); outline-offset: 3px; }
-.tg-play .pg { overflow: visible; }
-.tg-play .pg-stick { transform-box: view-box; transform-origin: 16px 19px; animation: pg-stick 4s ease-in-out infinite; }
+.tg-play .pg { overflow: visible; display: block; }
 /* friend is online: a soft ring says "now is a good time" */
-.tg-play.live::after { content: ''; position: absolute; inset: -4px; border-radius: 50%; border: 2px solid rgba(255, 226, 120, .7); animation: pg-ring 2.2s ease-out infinite; pointer-events: none; }
-@keyframes pg-stick { 0%, 55%, 100% { transform: rotate(0); } 63% { transform: rotate(-16deg); } 72% { transform: rotate(14deg); } 81% { transform: rotate(-8deg); } 90% { transform: rotate(4deg); } }
+.tg-play.live::after { content: ''; position: absolute; inset: -4px; border-radius: 17px; border: 2px solid rgba(90, 162, 255, .75); animation: pg-ring 2.2s ease-out infinite; pointer-events: none; }
 @keyframes pg-ring { 0% { transform: scale(.92); opacity: .9; } 100% { transform: scale(1.25); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .tg-play, .tg-play * { animation: none !important; transition: none !important; } .tg-play.live::after { animation: none; opacity: .55; } }
-.th-wa-light .tg-head .tg-play, .th-wa-dark .tg-head .tg-play { border: 1.5px solid #FFF1B0; background: radial-gradient(circle at 35% 28%, #FFE9A3 0%, #FFC52E 48%, #E59A12 100%); box-shadow: 0 2px 0 #8A5200; }
 
 /* ── Profile & Progress: grouped, not endless ── */
 .prof-group { border-radius: 16px; border: 1.5px solid rgba(255, 226, 154, .28); background: rgba(0, 0, 0, .18); overflow: hidden; }

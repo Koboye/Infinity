@@ -11,16 +11,14 @@ import { GameIcon } from './GameIcons';
 /** "Play together" joystick: base, stick and a red ball that wobbles like a thumb is on it. Pure SVG, animated in CSS, still when motion is reduced. */
 function PlayGlyph() {
   return (
-    <svg className="pg" viewBox="0 0 32 32" width="100%" height="100%" aria-hidden="true" focusable="false">
-      <ellipse cx="16" cy="25.5" rx="11" ry="3.6" fill="#2A1500" opacity=".28" />
-      <path d="M6 21.5c0-1.6 1.2-2.6 2.8-2.6h14.4c1.6 0 2.8 1 2.8 2.6v1.4c0 1.8-1.4 3-3.1 3H9.1C7.4 25.9 6 24.7 6 22.9z" fill="#3A210F" />
-      <circle cx="10.6" cy="22.2" r="1.35" fill="#FFD85A" /><circle cx="14.2" cy="22.2" r="1.35" fill="#35E0C2" />
-      <rect x="20.2" y="21.2" width="5" height="2" rx="1" fill="#FFF1B0" opacity=".9" />
-      <g className="pg-stick">
-        <rect x="14.7" y="8.5" width="2.6" height="11" rx="1.3" fill="#3A210F" />
-        <circle cx="16" cy="7.6" r="5" fill="#E4572E" /><circle cx="16" cy="7.6" r="5" fill="none" stroke="#7A2410" strokeWidth="1.2" />
-        <ellipse cx="14.4" cy="5.7" rx="1.7" ry="1.1" fill="#fff" opacity=".6" transform="rotate(-30 14.4 5.7)" />
-      </g>
+    <svg className="pg" viewBox="0 0 64 44" width="100%" height="100%" aria-hidden="true" focusable="false">
+      <path d="M17 7c-6 0-10 6-12.5 17C2 34 3 39.5 8 39.5c4 0 6-4 10-7h28c4 3 6 7 10 7 5 0 6-5.5 3.5-15.5C57 13 53 7 47 7H38l-2 3.5h-8L26 7z" fill="#0B0F1E" stroke="#3B8CFF" strokeWidth="1.6" strokeLinejoin="round" />
+      <rect x="27" y="11.5" width="10" height="5" rx="2" fill="#10224F" stroke="#5AA2FF" strokeWidth=".8" />
+      <path d="M13.5 14.5h3v3h3v3h-3v3h-3v-3h-3v-3h3z" fill="#1B2A55" stroke="#5AA2FF" strokeWidth=".9" strokeLinejoin="round" />
+      <circle cx="25" cy="27" r="5.6" fill="#10224F" stroke="#3B8CFF" strokeWidth="1.2" /><circle cx="25" cy="27" r="3.2" fill="#05070F" />
+      <circle cx="39" cy="27" r="5.6" fill="#10224F" stroke="#3B8CFF" strokeWidth="1.2" /><circle cx="39" cy="27" r="3.2" fill="#05070F" />
+      <circle cx="49" cy="13.2" r="2.7" fill="#22D65A" /><circle cx="44.5" cy="17.7" r="2.7" fill="#E040D8" />
+      <circle cx="53.5" cy="17.7" r="2.7" fill="#FFB020" /><circle cx="49" cy="22.2" r="2.7" fill="#FF3B3B" />
     </svg>
   );
 }

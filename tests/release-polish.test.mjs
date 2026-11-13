@@ -8,10 +8,10 @@ t('spin badge is part of the coin chip flow (never absolutely laid over the amou
   const css = read('src/app/rc1.css');
   assert.ok(/html body \.coin-chip \.coin-dot\s*\{[^}]*position:\s*static/.test(css));
 });
-t('invite button is an animated SVG that respects reduced motion', () => {
+t('invite button is a gamepad SVG whose online ring respects reduced motion', () => {
   const css = read('src/app/rc1.css'); const f = read('src/components/Friends.jsx');
   assert.ok(f.includes('<PlayGlyph />') && !f.includes('>🎮</button>'));
-  assert.ok(css.includes('@keyframes pg-stick') && /prefers-reduced-motion: reduce\) \{ \.tg-play/.test(css));
+  assert.ok(f.includes('viewBox="0 0 64 44"') && css.includes('@keyframes pg-ring') && /prefers-reduced-motion: reduce\) \{ \.tg-play/.test(css));
 });
 t('Progress is tabbed and Profile sections are grouped', () => {
   const s = read('src/components/Screens.jsx');
