@@ -118,6 +118,29 @@ a:focus-visible,button:focus-visible,summary:focus-visible,input:focus-visible,s
 @media(prefers-contrast:more){:root{--muted:#2a3556;--line:#7f95cc}}
 @media(forced-colors:active){.opt.right,.opt.wrong,.stage.on,.opt.sel{border:3px solid Highlight}.btn{border:2px solid ButtonText}}
 .top a{white-space:nowrap;min-height:44px;display:inline-flex;align-items:center}
+
+/* ExamPro v2: one clear home screen (supersedes the layers above) */
+body{line-height:1.5}.wrap{max-width:720px}
+.hero2{position:relative;overflow:hidden;color:#fff;border-radius:28px;padding:clamp(22px,5vw,36px);margin:0 0 20px;background:radial-gradient(420px 240px at 100% 0,rgba(255,211,107,.38),transparent 65%),linear-gradient(145deg,#0a2a8a,#1747d6 65%,#2f6bff);box-shadow:0 14px 32px rgba(10,42,138,.28)}
+.hero2 .kick{display:inline-block;background:rgba(255,255,255,.16);border-radius:99px;padding:6px 14px;font-weight:700;font-size:.875rem;margin-bottom:14px}
+.hero2 h1{font-size:clamp(1.9rem,6vw,2.7rem);line-height:1.12;margin:0 0 .4em;font-weight:850}.hero2 h1 em{font-style:normal;color:var(--gold2)}
+.hero2 p{margin:0 0 18px;font-size:1.05rem;opacity:.95;max-width:32em}
+.btn.lg{min-height:54px;padding:14px 26px;font-size:1.1rem;border-radius:16px}
+.hstats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:22px 0 16px}
+.hstats div{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);border-radius:16px;padding:12px 6px;text-align:center}
+.hstats b{display:block;font-size:1.3rem;font-weight:850}.hstats small{font-size:.875rem;opacity:.92}
+.goal{display:flex;justify-content:space-between;font-weight:700;font-size:.95rem}.hero2 .ring{background:rgba(255,255,255,.22)}
+.hero2 .rev{margin:12px 0 0;font-weight:700;font-size:.95rem}
+.sec{font-size:1.4rem;margin:26px 2px 12px}.sec small{font-size:.9rem}
+.path{display:flex;flex-direction:column;gap:12px;overflow:visible;padding:0}
+.stage{width:100%;flex-direction:row;align-items:center;gap:14px;padding:14px 16px;border-radius:20px;min-height:76px}
+.stage .num{margin:0;flex:none;width:3.4rem;height:3.4rem;font-size:1.05rem;border-radius:16px;color:#fff}
+.stage .st{flex:1;min-width:0}.stage b{font-size:1.1rem}.stage small{font-size:.95rem}
+.stage .pill{margin:0;font-size:.85rem;white-space:nowrap}.stage::after{content:"›";font-size:1.8rem;color:var(--muted)}
+.soonrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 2px 4px;color:var(--muted);font-size:.95rem}
+.soonrow b{margin-right:4px}.soonrow span{background:var(--soft);border-radius:99px;padding:5px 12px;font-weight:600}
+.grid{grid-template-columns:repeat(2,1fr)}.dept{padding:14px 16px;min-height:76px;justify-content:center}.dept b{font-size:1rem}.dept small{font-size:.9rem}
+.found,.pill{font-size:.9rem}@media(min-width:640px){.grid{grid-template-columns:repeat(3,1fr)}}
 </style>
 </head>
 <body>
@@ -197,11 +220,15 @@ a:focus-visible,button:focus-visible,summary:focus-visible,input:focus-visible,s
     var colleges = [], rank = {}; list.forEach(function (d) { if (colleges.indexOf(d.college) < 0) { colleges.push(d.college); rank[d.college] = gi(d.group); } });
     colleges.sort(function (a, b) { return rank[a] - rank[b]; });
     var total = BANK.reduce(function (n, d) { return n + d.q.length; }, 0);
-    var html = '<section class="card hero"><span class="kick">Grade 1 → University → NGAT</span><h1>Pass your <em>entrance</em>, <em>university</em> and <em>exit</em> exams</h1><p>Real past-paper questions with a smart explanation after every answer. ' + total.toLocaleString() + ' questions and growing. Free to practise.</p></section>' +
-      '<div class="stats"><div class="stat"><b><span aria-hidden="true">🔥</span> ' + p.streak + '</b><small>day streak</small></div><div class="stat"><b><span aria-hidden="true">⭐</span> ' + p.xp + '</b><small>XP · Level ' + level(p.xp) + '</small></div><div class="stat"><b><span aria-hidden="true">🎯</span> ' + acc + '%</b><small>accuracy</small></div><div class="stat"><b>📝 ' + mist + '</b><small>to review</small></div></div>' +
-      '<div class="card"><div class="row sp"><b>Daily goal</b><span class="pill ' + (pct >= 100 ? 'good' : '') + '">' + Math.min(p.today, GOAL) + '/' + GOAL + (pct >= 100 ? ' 🎉' : '') + '</span></div><div class="ring" role="progressbar" aria-label="Daily goal" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct + '"><i style="width:' + pct + '%"></i></div></div>' +
-      '<ul class="perks"><li>Real exam practice</li><li>Instant results</li><li>Smart explanations</li><li>Progress tracking</li></ul><h2 class="sec">Your learning path<small>Pick your stage</small></h2><div class="path" role="group" aria-label="Choose your stage">' +
-      STAGES.map(function (g) { var n = stageCount(g.id); return '<button class="stage ' + (n ? '' : 'soon ') + (ui.group === g.id ? 'on' : '') + '" aria-pressed="' + (ui.group === g.id) + '" ' + (n ? 'data-g="' + g.id + '"' : 'disabled aria-disabled="true"') + '><span class="num">' + g.num + '</span><b>' + g.name + '</b><small>' + g.sub + '</small><span class="pill ' + (n ? '' : 'warn') + '">' + (n ? n.toLocaleString() + ' questions' : 'Coming soon') + '</span></button>'; }).join('') + '</div>' +
+    var avail = STAGES.filter(function (g) { return stageCount(g.id); }), soonL = STAGES.filter(function (g) { return !stageCount(g.id); });
+    var html = '<section class="hero2"><span class="kick">Grade 1 → University → NGAT</span><h1>Pass your <em>entrance</em>, <em>university</em> and <em>exit</em> exams</h1><p>' + total.toLocaleString() + ' real past-paper questions, each with a clear explanation. Free to practise.</p>' +
+      '<button class="btn gold lg" id="startgo">Start practice <span aria-hidden="true">→</span></button>' +
+      '<div class="hstats"><div><b><span aria-hidden="true">🔥</span> ' + p.streak + '</b><small>day streak</small></div><div><b><span aria-hidden="true">⭐</span> ' + p.xp + '</b><small>XP · Level ' + level(p.xp) + '</small></div><div><b><span aria-hidden="true">🎯</span> ' + acc + '%</b><small>accuracy</small></div></div>' +
+      '<div class="goal"><span>Daily goal</span><span>' + Math.min(p.today, GOAL) + '/' + GOAL + (pct >= 100 ? ' 🎉' : '') + '</span></div><div class="ring" role="progressbar" aria-label="Daily goal" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct + '"><i style="width:' + pct + '%"></i></div>' +
+      (mist ? '<p class="rev">📝 ' + mist + ' question' + (mist === 1 ? '' : 's') + ' to review</p>' : '') + '</section>' +
+      '<h2 class="sec" id="paths">Choose your exam<small>Pick a stage</small></h2><div class="path" role="group" aria-label="Choose your stage">' +
+      avail.map(function (g) { var n = stageCount(g.id); return '<button class="stage ' + (ui.group === g.id ? 'on' : '') + '" aria-pressed="' + (ui.group === g.id) + '" data-g="' + g.id + '"><span class="num" style="background:var(--l' + (STAGES.indexOf(g) + 1) + ')">' + g.num + '</span><span class="st"><b>' + g.name + '</b><small>' + g.sub + '</small></span><span class="pill">' + n.toLocaleString() + ' questions</span></button>'; }).join('') + '</div>' +
+      (soonL.length ? '<p class="soonrow"><b>Coming soon</b>' + soonL.map(function (g) { return '<span>' + g.name + '</span>'; }).join('') + '</p>' : '') +
       '<label class="lbl" for="search">Find your subject or department</label><input id="search" type="search" autocomplete="off" placeholder="For example: Mathematics" value="' + esc(ui.search) + '"><div class="found row sp"><span>Showing ' + list.length + ' subject' + (list.length === 1 ? '' : 's') + (ui.group === 'all' ? '' : ' in ' + (STAGES.filter(function (g) { return g.id === ui.group; })[0] || {}).name) + '</span>' + (ui.group !== 'all' || k ? '<button class="btn alt sm" data-g="all">Show all</button>' : '') + '</div>';
     colleges.forEach(function (c, ci) {
       var ds = list.filter(function (d) { return d.college === c; }), n = ds.reduce(function (t, d) { return t + d.q.length; }, 0);
@@ -211,6 +238,7 @@ a:focus-visible,button:focus-visible,summary:focus-visible,input:focus-visible,s
     if (!colleges.length) html += '<p class="hint">Nothing matches “' + esc(ui.search) + '”.</p>';
     html += '<p class="foot"><b>ExamPro</b> by Afro Zone · Answers and progress are saved on this device. Always study your course materials too.</p>';
     app.innerHTML = html;
+    var sg = document.getElementById('startgo'); if (sg) sg.onclick = function () { var t = document.getElementById('paths'); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
     var s = document.getElementById('search'); if (s) s.oninput = function () { ui.search = s.value; var pos = s.selectionStart; home(true); var n = document.getElementById('search'); n.focus(); n.setSelectionRange(pos, pos); };
     [].forEach.call(app.querySelectorAll('[data-g]'), function (b) { b.onclick = function () { var g = b.getAttribute('data-g'); ui.group = g; if (g === 'all') ui.search = ''; home(true); var nb = app.querySelector('.stage[data-g="' + g + '"]') || app.querySelector('#search'); if (nb) nb.focus({ preventScroll: true }); say(g === 'all' ? 'Showing all subjects' : 'Showing ' + (STAGES.filter(function (x) { return x.id === g; })[0] || {}).name); }; });
     [].forEach.call(app.querySelectorAll('[data-d]'), function (b) { b.onclick = function () { deptPage(b.getAttribute('data-d'), ''); }; });
