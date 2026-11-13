@@ -4,7 +4,7 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { db, apiCall } from '@/lib/firebase';
 import { letterOf, LETTERS, FREE, CALL_SECONDS } from '@/lib/bingo/engine.js';
 import { sfx } from '@/lib/sound';
-import { speakBall, stopSpeaking, speechSupported, ballLabel } from '@/lib/speech';
+import { speakBall, speakAnnouncement, stopSpeaking, speechSupported, ballLabel } from '@/lib/speech';
 import { MatchFrame } from '../MatchView';
 import { useMatchLifecycle } from '../online/useMatch';
 import { RoomControls, RoomResult } from '../online/RoomParts';
@@ -54,7 +54,7 @@ export default function BingoOnline({ t, lang, room, uid, code, onExit, onSwitch
     if (!lm || room.status !== 'playing') return;
     if (lm.kind === 'false' && lm.by !== seat) say(`${room.names[lm.by]}: ${t.bingoFalse}`, 'relay');
   }, [lmSeq]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { if (room.status === 'finished' && room.winner === seat) sfx.cheer?.(); }, [room.status]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (room.status === 'finished' && room.winner === seat) { sfx.cheer?.(); if (voiceOn) setTimeout(() => speakAnnouncement('WINNER', document.documentElement.lang === 'am' ? 'am' : 'en'), 1800); } }, [room.status]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const lock = room.lock?.[seat] || 0;
   const playing = room.status === 'playing';

@@ -10,3 +10,8 @@ t('home screen lists Addis Runner and ExamPrep', () => {
 t('the served Addis Runner page matches apps/addis-runner', () => {
   for (const f of ['index.html', 'src/game.js', 'src/route.js']) assert.equal(read(`public/games/addis-runner/${f}`), read(`apps/addis-runner/${f}`), `${f} is in sync (copy apps/addis-runner into public/games/addis-runner)`);
 });
+t('the audio generator names every clip the caller asks for', () => {
+  const g = read('tools/generate-bingo-audio.py');
+  for (const k of ['START', 'BINGO', 'WINNER']) assert.ok(g.includes(`"${k}"`) && read('src/lib/speech.js').includes(`${k}:`));
+  assert.ok(g.includes('f"{L}{n}"') && read('src/lib/speech.js').includes('${LETTERS_EN[ballLetterIndex(n)]}${n}'), 'clip names are letter+number, e.g. B12');
+});

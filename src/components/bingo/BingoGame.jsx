@@ -6,7 +6,7 @@ import {
   letterOf, LETTERS, FREE, CALL_SECONDS, AI_LEVELS, FREEZE_MS, PERFECT_MS, POWER_MAX,
 } from '@/lib/bingo/engine.js';
 import { sfx } from '@/lib/sound';
-import { speakBall, stopSpeaking, speechSupported, ballLabel } from '@/lib/speech';
+import { speakBall, speakAnnouncement, stopSpeaking, speechSupported, ballLabel } from '@/lib/speech';
 import { MatchFrame } from '../MatchView';
 import ResultOverlay from '../ResultOverlay';
 
@@ -29,6 +29,9 @@ export default function BingoGame({ t, level, ruleset, me, opts = {}, onExit, on
   const [flash, setFlash] = useState(null);
   const [paused, setPaused] = useState(false);
   const [voiceOn, setVoiceOn] = useState(true);
+  const voiceOnRef = useRef(true); voiceOnRef.current = voiceOn;
+  // Amharic: announce the start of the game once.
+  useEffect(() => { speakAnnouncement('START', document.documentElement.lang === 'am' ? 'am' : 'en'); }, []);
   const warnedAm = useRef(false);
   const pausedRef = useRef(false);
   const gameRef = useRef(game);
@@ -66,7 +69,7 @@ export default function BingoGame({ t, level, ruleset, me, opts = {}, onExit, on
       later(() => {
         const cur = gameRef.current; if (cur.over) return;
         const r = claim(cur, 1); commit(r.state);
-        if (r.ok) { sfx.bingoCall(); say(`${t.computer}: BINGO!`, 'relay'); }
+        if (r.ok) { sfx.bingoCall(); say(`${t.computer}: BINGO!`, 'relay'); if (voiceOnRef.current) speakAnnouncement('BINGO', document.documentElement.lang === 'am' ? 'am' : 'en'); }
       }, rand(...cfg.shout));
     }
   }, [cfg, commit, later]);
@@ -133,7 +136,7 @@ export default function BingoGame({ t, level, ruleset, me, opts = {}, onExit, on
     const s = gameRef.current;
     if (s.over || pausedRef.current || Date.now() < frozenUntil.current) return;
     const r = claim(s, 0); commit(r.state);
-    if (r.ok) { sfx.bingoCall(); say(s.ruleset === 'full' ? t.jackpot : 'BINGO!', 'capture'); }
+    if (r.ok) { sfx.bingoCall(); say(s.ruleset === 'full' ? t.jackpot : 'BINGO!', 'capture'); if (voiceOn) speakAnnouncement('BINGO', document.documentElement.lang === 'am' ? 'am' : 'en'); }
     else if (r.error === 'shielded') { sfx.tap(); say(t.bingoShield, 'extra'); }
     else if (r.error === 'false') {
       sfx.pass(); buzz(120);
@@ -146,7 +149,7 @@ export default function BingoGame({ t, level, ruleset, me, opts = {}, onExit, on
   useEffect(() => {
     if (!finished || doneSound.current) return;
     doneSound.current = true;
-    if (game.winner === 1) sfx.lose(); else if (game.winner === 0) sfx.cheer();
+    if (game.winner === 1) sfx.lose(); else if (game.winner === 0) { sfx.cheer(); if (voiceOn) setTimeout(() => speakAnnouncement('WINNER', document.documentElement.lang === 'am' ? 'am' : 'en'), 1800); }
   }, [finished, game.winner]);
   const doAgain = () => {
     timers.current.forEach(clearTimeout); timers.current = [];

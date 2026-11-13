@@ -1,7 +1,7 @@
 // Bingo caller's voice: reads each ball aloud ONCE ("G, fifty-five" / "ጂ፣ ሃምሳ አምስት").
-// English uses the phone's built-in text-to-speech. Amharic first plays recorded clips (the letter, then the number, from
-// /audio/bingo/am/ — see the README there); when no clips are installed it uses an Amharic text-to-speech voice, and when the
-// phone has none the caller falls back to English and tells the player once.
+// English uses the phone's built-in text-to-speech. Amharic first plays one recorded clip per call (B12.mp3, O75.mp3 … plus
+// START / BINGO / WINNER from /audio/bingo/am/ — made by tools/generate-bingo-audio.py); when no clips are installed it uses an
+// Amharic text-to-speech voice, and when the phone has none the caller falls back to English and tells the player once.
 
 const LETTERS_EN = ['B', 'I', 'N', 'G', 'O'];
 const LETTERS_AM = ['ቢ', 'አይ', 'ኤን', 'ጂ', 'ኦ'];            // how the five letters are said in Amharic
@@ -48,11 +48,16 @@ if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
 const pick = (prefix) => voices.find((v) => v.lang && v.lang.toLowerCase().replace('_', '-').startsWith(prefix));
 export const hasAmharicVoice = () => { if (!voices.length) loadVoices(); return !!pick('am'); };
 
-// ── recorded Amharic clips: /audio/bingo/am/B.mp3 … O.mp3 (letters) and 1.mp3 … 75.mp3 (numbers) ──
+// ── recorded Amharic clips: /audio/bingo/am/B1.mp3 … O75.mp3 (one whole call each) and START / BINGO / WINNER ──
 export const AM_AUDIO_BASE = '/audio/bingo/am/';
+export const ANNOUNCEMENTS = {
+  START: 'ጨዋታው ተጀምሯል፣ መልካም እድል!',
+  BINGO: 'ቢንጎ! ካርቴላዎን ያረጋግጡ።',
+  WINNER: 'እንኳን ደስ አለዎት! አሸናፊ ተገኝቷል።',
+};
 let clipsMissing = false, seq = 0, clip = null;
 if (typeof window !== 'undefined' && typeof fetch === 'function') {
-  fetch(`${AM_AUDIO_BASE}B.mp3`, { method: 'HEAD' }).then((r) => { if (!r.ok) clipsMissing = true; }).catch(() => {});
+  fetch(`${AM_AUDIO_BASE}B1.mp3`, { method: 'HEAD' }).then((r) => { if (!r.ok) clipsMissing = true; }).catch(() => {});
 }
 export const amharicClipsAvailable = () => !clipsMissing && typeof Audio !== 'undefined';
 function playClip(src, volume) {
@@ -78,20 +83,29 @@ function speakText(text, lang, voice, volume) {
 }
 const englishVoice = () => pick('en-us') || pick('en-gb') || pick('en');
 
-/** Letter clip, then number clip. If a clip cannot load, remember that and read what is left with text-to-speech. */
-function speakAmharicClips(n, volume) {
-  const my = ++seq, letter = LETTERS_EN[ballLetterIndex(n)];
-  let letterDone = false;
-  playClip(`${AM_AUDIO_BASE}${letter}.mp3`, volume)
-    .then(() => { if (my !== seq) return undefined; letterDone = true; return playClip(`${AM_AUDIO_BASE}${n}.mp3`, volume); })
-    .catch(() => {
-      if (my !== seq) return;
-      clipsMissing = true;
-      if (!speechSupported()) return;
-      const am = pick('am');
-      if (am) speakText(letterDone ? amharicNumber(n) : ballPhrase(n, 'am'), 'am', am, volume);
-      else speakText(letterDone ? String(n) : ballPhrase(n, 'en'), 'en', englishVoice(), volume);
-    });
+/** Play one clip; if it cannot load, remember that and read `text` with text-to-speech instead (Amharic voice, else `enText`). */
+function speakClip(key, text, enText, volume) {
+  const my = ++seq;
+  playClip(`${AM_AUDIO_BASE}${key}.mp3`, volume).catch(() => {
+    if (my !== seq) return;
+    clipsMissing = true;
+    if (!speechSupported()) return;
+    const am = pick('am');
+    if (am) speakText(text, 'am', am, volume); else if (enText) speakText(enText, 'en', englishVoice(), volume);
+  });
+}
+
+/** START / BINGO / WINNER in Amharic (clip, else an Amharic voice; silent otherwise: the screen already shows the message). */
+export function speakAnnouncement(kind, lang = 'en', volume = 1) {
+  if (!enabled || lang !== 'am' || !ANNOUNCEMENTS[kind]) return 'off';
+  const vol = Math.max(0, Math.min(1, volume));
+  try {
+    stopSpeaking();
+    if (amharicClipsAvailable()) { speakClip(kind, ANNOUNCEMENTS[kind], '', vol); return 'am'; }
+    const am = speechSupported() ? pick('am') : null;
+    if (!am) return 'off';
+    speakText(ANNOUNCEMENTS[kind], 'am', am, vol); return 'am';
+  } catch { return 'off'; }
 }
 
 /**
@@ -103,7 +117,7 @@ export function speakBall(n, lang = 'en', volume = 1) {
   const vol = Math.max(0, Math.min(1, volume));
   try {
     const wantAm = lang === 'am';
-    if (wantAm && amharicClipsAvailable()) { stopSpeaking(); speakAmharicClips(n, vol); return 'am'; }
+    if (wantAm && amharicClipsAvailable()) { stopSpeaking(); speakClip(`${LETTERS_EN[ballLetterIndex(n)]}${n}`, ballPhrase(n, 'am'), ballPhrase(n, 'en'), vol); return 'am'; }
     if (!speechSupported()) return 'off';
     stopSpeaking();
     const am = wantAm ? pick('am') : null;
