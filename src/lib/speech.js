@@ -18,6 +18,26 @@ export function amharicNumber(n) {
   return o ? `${TENS[t]} ${ONES[o]}` : TENS[t];
 }
 
+// Phonetic respelling of the same words for an ENGLISH voice (used when the phone has no Amharic voice and no clips are installed):
+// ah = a in "father", eh = e in "bed", oo = oo in "boot", oh = o in "more", ny = the "ni" in "onion"; doubled consonants are held.
+// Written once here, hyphenated, exactly as the caller's guide gives it. (Sixty is Sil-sah: ስልሳ. Six, ስድስት, is Sid-dist.)
+const ONES_PH = ['', 'Ahnd', 'Hoo-let', 'Sohst', 'Ah-raht', 'Ah-mist', 'Sid-dist', 'Seh-baht', 'Sim-mint', 'Zeh-teny'];
+const TENS_PH = ['', 'Ahs-sir', 'Hah-yah', 'Seh-lah-sah', 'Ahr-bah', 'Hahm-sah', 'Sil-sah', 'Seh-bah'];
+
+/** 1…75 as the phonetic guide spells it: 12 → "Ahs-rah Hoo-let". */
+export function phoneticNumber(n) {
+  if (!Number.isInteger(n) || n < 1 || n > 99) return String(n);
+  const t = Math.floor(n / 10), o = n % 10;
+  if (n < 10) return ONES_PH[n];
+  if (n === 10) return TENS_PH[1];
+  if (n < 20) return `Ahs-rah ${ONES_PH[o]}`;
+  return o ? `${TENS_PH[t]} ${ONES_PH[o]}` : TENS_PH[t];
+}
+
+/** What an English voice says for an Amharic call: the English letter, then the Amharic number as sounds (syllables joined so
+ *  the voice does not pause): "B. Ahsrah Hoolet." */
+export const ballPhonetic = (n) => `${LETTERS_EN[ballLetterIndex(n)]}. ${phoneticNumber(n).replace(/-/g, '')}.`;
+
 /** The letter of a ball: 1-15 B, 16-30 I, 31-45 N, 46-60 G, 61-75 O. */
 export const ballLetterIndex = (n) => Math.min(4, Math.floor((n - 1) / 15));
 
@@ -117,12 +137,13 @@ export function speakBall(n, lang = 'en', volume = 1) {
   const vol = Math.max(0, Math.min(1, volume));
   try {
     const wantAm = lang === 'am';
-    if (wantAm && amharicClipsAvailable()) { stopSpeaking(); speakClip(`${LETTERS_EN[ballLetterIndex(n)]}${n}`, ballPhrase(n, 'am'), ballPhrase(n, 'en'), vol); return 'am'; }
+    if (wantAm && amharicClipsAvailable()) { stopSpeaking(); speakClip(`${LETTERS_EN[ballLetterIndex(n)]}${n}`, ballPhrase(n, 'am'), ballPhonetic(n), vol); return 'am'; }
     if (!speechSupported()) return 'off';
     stopSpeaking();
     const am = wantAm ? pick('am') : null;
     const useLang = wantAm && am ? 'am' : 'en';
-    speakText(ballPhrase(n, useLang), useLang, useLang === 'am' ? am : englishVoice(), vol);
+    // Amharic chosen but no Amharic voice: the English voice says the Amharic words from the phonetic guide.
+    speakText(wantAm && !am ? ballPhonetic(n) : ballPhrase(n, useLang), useLang, useLang === 'am' ? am : englishVoice(), vol);
     return wantAm && !am ? 'en-fallback' : useLang;
   } catch { return 'off'; }
 }
