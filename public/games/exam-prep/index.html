@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0a2a8a">
-<title>ExamPro · Study · Practice · Pass — Grade 1–12, university, exit exams &amp; NGAT</title>
+<meta name="theme-color" content="#050B2E">
+<title>exam.pro · Learn · Practice · Excel — Grade 1–12, university, exit exams &amp; NGAT</title>
 <link rel="preload" href="fonts/figtree-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <style>
 @font-face{font-family:'Figtree';src:url(fonts/figtree-latin-wght-normal.woff2) format('woff2');font-weight:300 900;font-display:swap}
@@ -141,12 +141,65 @@ body{line-height:1.5}.wrap{max-width:720px}
 .soonrow b{margin-right:4px}.soonrow span{background:var(--soft);border-radius:99px;padding:5px 12px;font-weight:600}
 .grid{grid-template-columns:repeat(2,1fr)}.dept{padding:14px 16px;min-height:76px;justify-content:center}.dept b{font-size:1rem}.dept small{font-size:.9rem}
 .found,.pill{font-size:.9rem}@media(min-width:640px){.grid{grid-template-columns:repeat(3,1fr)}}
+
+/* ── exam.pro brand tokens (phase 1: splash; reused by every screen that follows) ── */
+:root{--ep-navy-950:#050B2E;--ep-navy-900:#08124A;--ep-navy-800:#0E1E7A;--ep-blue:#2F6BFF;--ep-violet:#6D4CF0;--ep-gold:#F5B82E;--ep-gold-soft:#FFE29A;--ep-green:#1DB66A;--ep-paper:#FFFFFF;--ep-r-lg:20px;--ep-r-xl:28px}
+body.sp-lock{overflow:hidden}
+.splash{position:fixed;inset:0;z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#fff;overflow:hidden;
+padding:max(20px,env(safe-area-inset-top)) 24px max(20px,env(safe-area-inset-bottom));
+background:radial-gradient(70% 45% at 50% 22%,rgba(109,76,240,.38),transparent 70%),radial-gradient(60% 40% at 85% 70%,rgba(47,107,255,.28),transparent 70%),linear-gradient(180deg,var(--ep-navy-950),var(--ep-navy-900) 55%,var(--ep-navy-800));transition:opacity .35s,transform .35s}
+.splash.out{opacity:0;transform:scale(1.03);pointer-events:none}
+.sp-stars{position:absolute;inset:0;opacity:.5;background-image:radial-gradient(1.5px 1.5px at 12% 18%,#fff,transparent),radial-gradient(1.5px 1.5px at 78% 12%,#fff,transparent),radial-gradient(1px 1px at 30% 40%,#fff,transparent),radial-gradient(1.5px 1.5px at 90% 36%,#FFE29A,transparent),radial-gradient(1px 1px at 8% 62%,#fff,transparent),radial-gradient(1px 1px at 66% 28%,#fff,transparent)}
+.sp-main{position:relative;z-index:2;width:100%;max-width:26rem;display:flex;flex-direction:column;align-items:center;margin-bottom:clamp(110px,24vh,190px)}
+.sp-emblem{width:clamp(8.5rem,38vw,12rem);height:auto;filter:drop-shadow(0 8px 22px rgba(245,184,46,.28));animation:spIn .7s cubic-bezier(.2,.8,.2,1) both}
+.sp-word{margin:.1em 0 0;font:850 clamp(3.1rem,17vw,4.6rem)/1 var(--sans);letter-spacing:-.045em;animation:spUp .6s .15s both}
+.sp-word i{font-style:normal;color:var(--ep-gold)}
+.sp-slogan{margin:.55rem 0 0;font-size:1.05rem;font-weight:600;letter-spacing:.02em;color:#C9D6FF;animation:spUp .6s .25s both}
+.sp-mission{margin:1.6rem 0 0;font-size:1.5rem;font-weight:800;line-height:1.2;letter-spacing:-.01em;animation:spUp .6s .35s both}
+.sp-mission span{display:block;color:var(--ep-gold)}
+.sp-go{margin-top:1.6rem;min-height:3.5rem;padding:.9rem 2.2rem;border:0;border-radius:999px;font:inherit;font-size:1.15rem;font-weight:800;color:#2b1800;cursor:pointer;
+background:linear-gradient(180deg,var(--ep-gold-soft),var(--ep-gold));box-shadow:0 4px 0 #A8700B,0 12px 28px rgba(245,184,46,.3);transition:transform .12s,box-shadow .12s;animation:spUp .6s .45s both}
+.sp-go:active{transform:translateY(3px);box-shadow:0 1px 0 #A8700B,0 6px 14px rgba(245,184,46,.25)}
+.sp-go:focus-visible{outline:2px solid var(--ep-gold-soft);outline-offset:4px}
+.sp-art{position:absolute;left:0;right:0;bottom:0;height:clamp(150px,30vh,230px);z-index:1;pointer-events:none}
+.sp-africa{position:absolute;left:0;right:0;margin:0 auto;bottom:clamp(54px,9vh,80px);width:clamp(6.5rem,30vw,9.5rem);height:auto;filter:drop-shadow(0 0 26px rgba(245,184,46,.35));animation:spIn .9s .3s both}
+.sp-ping{transform-box:fill-box;transform-origin:center;animation:ping 2.4s 1.2s infinite ease-out}
+.sp-sky{position:absolute;left:0;bottom:0;width:100%;height:clamp(70px,13vh,110px);display:block}
+@keyframes spIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:none}}
+@keyframes spUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes ping{0%{transform:scale(1);opacity:.9}100%{transform:scale(3.4);opacity:0}}
+@media(max-height:640px){.sp-main{margin-bottom:96px}.sp-mission{margin-top:1rem}.sp-go{margin-top:1rem}.sp-africa{display:none}}
+@media(min-width:700px){.sp-main{max-width:30rem}}
+@media(prefers-reduced-motion:reduce){.splash,.splash *{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
+<div class="splash" id="splash" role="dialog" aria-modal="true" aria-labelledby="sp-title" hidden>
+<div class="sp-stars" aria-hidden="true"></div>
+<div class="sp-main"><svg class="sp-emblem" viewBox="0 0 240 230" aria-hidden="true"><defs>
+<linearGradient id="gd" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFE9A6"/><stop offset=".55" stop-color="#F5B82E"/><stop offset="1" stop-color="#C98512"/></linearGradient>
+<linearGradient id="pg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#C9D6FF"/></linearGradient></defs>
+<g fill="url(#gd)"><path d="M122 213C160 205 196 170 200 130" stroke="url(#gd)" stroke-width="2.2" fill="none" stroke-linecap="round"/><ellipse cx="139.4" cy="209.6" rx="11.0" ry="4.6" transform="rotate(-44.0 139.4 209.6)"/><ellipse cx="136.9" cy="199.9" rx="9.0" ry="3.8" transform="rotate(41.0 136.9 199.9)"/><ellipse cx="156.9" cy="202.7" rx="10.5" ry="4.4" transform="rotate(-57.5 156.9 202.7)"/><ellipse cx="152.3" cy="193.9" rx="8.6" ry="3.7" transform="rotate(27.5 152.3 193.9)"/><ellipse cx="172.5" cy="191.9" rx="10.0" ry="4.3" transform="rotate(-71.0 172.5 191.9)"/><ellipse cx="165.9" cy="184.3" rx="8.2" ry="3.6" transform="rotate(14.0 165.9 184.3)"/><ellipse cx="185.1" cy="177.6" rx="9.5" ry="4.1" transform="rotate(-84.5 185.1 177.6)"/><ellipse cx="177.0" cy="171.8" rx="7.8" ry="3.4" transform="rotate(0.5 177.0 171.8)"/><ellipse cx="194.2" cy="160.7" rx="9.0" ry="4.0" transform="rotate(-98.0 194.2 160.7)"/><ellipse cx="184.9" cy="157.0" rx="7.4" ry="3.3" transform="rotate(-13.0 184.9 157.0)"/><ellipse cx="199.1" cy="142.1" rx="8.5" ry="3.8" transform="rotate(-111.5 199.1 142.1)"/><ellipse cx="189.2" cy="140.6" rx="7.0" ry="3.2" transform="rotate(-26.5 189.2 140.6)"/><ellipse cx="199.7" cy="122.9" rx="8.0" ry="3.7" transform="rotate(-125.0 199.7 122.9)"/><ellipse cx="189.7" cy="123.7" rx="6.6" ry="3.1" transform="rotate(-40.0 189.7 123.7)"/><ellipse cx="195.9" cy="104.0" rx="7.5" ry="3.5" transform="rotate(-138.5 195.9 104.0)"/><ellipse cx="186.4" cy="107.2" rx="6.2" ry="3.0" transform="rotate(-53.5 186.4 107.2)"/><ellipse cx="187.8" cy="86.5" rx="7.0" ry="3.4" transform="rotate(-152.0 187.8 86.5)"/><ellipse cx="179.4" cy="91.8" rx="5.8" ry="2.8" transform="rotate(-67.0 179.4 91.8)"/></g><g fill="url(#gd)" transform="translate(240 0) scale(-1 1)"><path d="M122 213C160 205 196 170 200 130" stroke="url(#gd)" stroke-width="2.2" fill="none" stroke-linecap="round"/><ellipse cx="139.4" cy="209.6" rx="11.0" ry="4.6" transform="rotate(-44.0 139.4 209.6)"/><ellipse cx="136.9" cy="199.9" rx="9.0" ry="3.8" transform="rotate(41.0 136.9 199.9)"/><ellipse cx="156.9" cy="202.7" rx="10.5" ry="4.4" transform="rotate(-57.5 156.9 202.7)"/><ellipse cx="152.3" cy="193.9" rx="8.6" ry="3.7" transform="rotate(27.5 152.3 193.9)"/><ellipse cx="172.5" cy="191.9" rx="10.0" ry="4.3" transform="rotate(-71.0 172.5 191.9)"/><ellipse cx="165.9" cy="184.3" rx="8.2" ry="3.6" transform="rotate(14.0 165.9 184.3)"/><ellipse cx="185.1" cy="177.6" rx="9.5" ry="4.1" transform="rotate(-84.5 185.1 177.6)"/><ellipse cx="177.0" cy="171.8" rx="7.8" ry="3.4" transform="rotate(0.5 177.0 171.8)"/><ellipse cx="194.2" cy="160.7" rx="9.0" ry="4.0" transform="rotate(-98.0 194.2 160.7)"/><ellipse cx="184.9" cy="157.0" rx="7.4" ry="3.3" transform="rotate(-13.0 184.9 157.0)"/><ellipse cx="199.1" cy="142.1" rx="8.5" ry="3.8" transform="rotate(-111.5 199.1 142.1)"/><ellipse cx="189.2" cy="140.6" rx="7.0" ry="3.2" transform="rotate(-26.5 189.2 140.6)"/><ellipse cx="199.7" cy="122.9" rx="8.0" ry="3.7" transform="rotate(-125.0 199.7 122.9)"/><ellipse cx="189.7" cy="123.7" rx="6.6" ry="3.1" transform="rotate(-40.0 189.7 123.7)"/><ellipse cx="195.9" cy="104.0" rx="7.5" ry="3.5" transform="rotate(-138.5 195.9 104.0)"/><ellipse cx="186.4" cy="107.2" rx="6.2" ry="3.0" transform="rotate(-53.5 186.4 107.2)"/><ellipse cx="187.8" cy="86.5" rx="7.0" ry="3.4" transform="rotate(-152.0 187.8 86.5)"/><ellipse cx="179.4" cy="91.8" rx="5.8" ry="2.8" transform="rotate(-67.0 179.4 91.8)"/></g>
+<path d="M120 62l-11 15-17-9 6 26h44l6-26-17 9z" fill="url(#gd)"/>
+<circle cx="92" cy="66" r="4" fill="#FFE9A6"/><circle cx="120" cy="56" r="4.6" fill="#FFE9A6"/><circle cx="148" cy="66" r="4" fill="#FFE9A6"/>
+<rect x="98" y="95" width="44" height="6" rx="3" fill="url(#gd)"/>
+<path d="M120 190c-10-9-34-12-52-8v-46c18-4 42-1 52 8z" fill="url(#pg)"/>
+<path d="M120 190c10-9 34-12 52-8v-46c-18-4-42-1-52 8z" fill="#E4ECFF"/>
+<path d="M120 144v46" stroke="#F5B82E" stroke-width="3"/>
+<path d="M78 150c12-2 26 0 36 5M78 162c12-2 26 0 36 5M126 155c10-5 24-7 36-5M126 167c10-5 24-7 36-5" stroke="#9FB3F0" stroke-width="2.4" stroke-linecap="round" fill="none"/></svg><h1 class="sp-word" id="sp-title" aria-label="exam dot pro">exam<i>.pro</i></h1><p class="sp-slogan">Learn · Practice · Excel</p>
+<p class="sp-mission">Your success,<span>our mission</span></p>
+<button class="sp-go" id="sp-go" type="button">Get started <span aria-hidden="true">→</span></button></div>
+<div class="sp-art" aria-hidden="true"><svg class="sp-africa" viewBox="0 0 110 118" aria-hidden="true"><defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFD36B"/><stop offset="1" stop-color="#C98512"/></linearGradient></defs>
+<path d="M38 6L52 4 62 8 72 8 80 14 84 24 90 34 98 42 96 48 88 52 86 60 82 70 80 80 74 90 68 100 60 104 54 100 50 88 46 76 42 66 36 60 30 56 26 50 14 48 8 40 6 32 12 24 20 16 30 10Z" fill="url(#ag)" stroke="url(#ag)" stroke-width="3" stroke-linejoin="round" opacity=".92"/>
+<circle cx="85" cy="46" r="3.2" fill="#fff"/><circle class="sp-ping" cx="85" cy="46" r="3.2" fill="none" stroke="#fff" stroke-width="1.2"/></svg><svg class="sp-sky" viewBox="0 0 400 90" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+<g fill="#0A1650" stroke="#F5B82E" stroke-opacity=".55" stroke-width="1">
+<path d="M0 90V58l12-6 12 6v32zM34 90V40h10V28l6-10 6 10v12h10v50zM76 90V52l14-12 14 12v38zM118 90V34l8-16 8 16v56zM148 90V60h22v30zM182 90V46c0-14 12-22 18-22s18 8 18 22v44zM232 90V30h12v-8l5-10 5 10v8h12v60zM282 90V54l16-14 16 14v36zM326 90V44h10V30l6-12 6 12v14h10v46zM368 90V62l16-8 16 8v28z"/></g>
+<path d="M0 90v-6c70-14 140-10 200-2s130 12 200 0v8z" fill="#078930"/>
+<path d="M0 90v-3c70-11 140-7 200 1s130 11 200 1v5z" fill="#FCDD09"/>
+<path d="M0 90v-1c70-8 140-4 200 3s130 9 200 2v-4z" fill="#DA121A"/></svg></div></div>
 <a class="skip" href="#app">Skip to content</a><div id="live" class="sr" role="status" aria-live="polite"></div>
-<header class="top"><div class="wrap"><button class="brand" id="home" aria-label="ExamPro home"><svg class="logo" viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffd36b"/><stop offset="1" stop-color="#f5a623"/></linearGradient></defs><path d="M24 6 4 15l20 9 20-9z" fill="url(#lg)"/><path d="M12 21v8c0 3 5 6 12 6s12-3 12-6v-8l-12 5.4z" fill="#fff" opacity=".95"/><path d="M42 16v12" stroke="#ffd36b" stroke-width="2.4" stroke-linecap="round"/><path d="M8 40h32" stroke="#ffd36b" stroke-width="2.4" stroke-linecap="round"/></svg><span><span class="bt">Exam<i>Pro</i></span><span class="bs">Study · Practice · Pass</span></span></button><a href="/">← Games</a><div class="tsz" role="group" aria-label="Text size"><button id="tsd" type="button" aria-label="Smaller text">A−</button><button id="tsu" type="button" aria-label="Larger text">A+</button></div></div></header>
-<main class="wrap" id="app" aria-label="ExamPro"></main>
+<header class="top"><div class="wrap"><button class="brand" id="home" aria-label="exam.pro home"><svg class="logo" viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffd36b"/><stop offset="1" stop-color="#f5a623"/></linearGradient></defs><path d="M24 6 4 15l20 9 20-9z" fill="url(#lg)"/><path d="M12 21v8c0 3 5 6 12 6s12-3 12-6v-8l-12 5.4z" fill="#fff" opacity=".95"/><path d="M42 16v12" stroke="#ffd36b" stroke-width="2.4" stroke-linecap="round"/><path d="M8 40h32" stroke="#ffd36b" stroke-width="2.4" stroke-linecap="round"/></svg><span><span class="bt">exam<i>.pro</i></span><span class="bs">Learn · Practice · Excel</span></span></button><a href="/">← Games</a><div class="tsz" role="group" aria-label="Text size"><button id="tsd" type="button" aria-label="Smaller text">A−</button><button id="tsu" type="button" aria-label="Larger text">A+</button></div></div></header>
+<main class="wrap" id="app" aria-label="exam.pro"></main>
 <script src="bank.js"></script>
 <script>
 (function () {
@@ -166,7 +219,7 @@ body{line-height:1.5}.wrap{max-width:720px}
   var ui = { group: 'all', search: '' };
   var live = document.getElementById('live'), SC = [0.9, 1, 1.12, 1.25, 1.4], ZK = 'exampro.textsize', zi = 1;
   function say(t) { live.textContent = ''; setTimeout(function () { live.textContent = t; }, 60); }
-  function landed(title, sel) { document.title = title + ' · ExamPro'; var e = (sel && app.querySelector(sel)) || app; e.setAttribute('tabindex', '-1'); e.focus({ preventScroll: true }); window.scrollTo(0, 0); }
+  function landed(title, sel) { document.title = title + ' · exam.pro'; var e = (sel && app.querySelector(sel)) || app; e.setAttribute('tabindex', '-1'); e.focus({ preventScroll: true }); window.scrollTo(0, 0); }
   function zoom(d, announce) {
     zi = Math.max(0, Math.min(SC.length - 1, zi + d));
     document.documentElement.style.setProperty('--scale', SC[zi]);
@@ -236,7 +289,7 @@ body{line-height:1.5}.wrap{max-width:720px}
         ds.map(function (d) { return '<button class="dept" data-d="' + esc(d.id) + '"><b>' + esc(d.name) + '</b><small>' + d.q.length + ' questions</small></button>'; }).join('') + '</div></details>';
     });
     if (!colleges.length) html += '<p class="hint">Nothing matches “' + esc(ui.search) + '”.</p>';
-    html += '<p class="foot"><b>ExamPro</b> by Afro Zone · Answers and progress are saved on this device. Always study your course materials too.</p>';
+    html += '<p class="foot"><b>exam.pro</b> by Afro Zone · Answers and progress are saved on this device. Always study your course materials too.</p>';
     app.innerHTML = html;
     var sg = document.getElementById('startgo'); if (sg) sg.onclick = function () { var t = document.getElementById('paths'); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
     var s = document.getElementById('search'); if (s) s.oninput = function () { ui.search = s.value; var pos = s.selectionStart; home(true); var n = document.getElementById('search'); n.focus(); n.setSelectionRange(pos, pos); };
@@ -321,6 +374,26 @@ body{line-height:1.5}.wrap{max-width:720px}
   }
   document.getElementById('home').onclick = function () { clearInterval(timer); document.onkeydown = null; home(); };
   home(true);
+})();
+</script>
+<script>
+// exam.pro splash: shown once per browser session (add ?splash=1 to the address to preview it again).
+(function () {
+  var sp = document.getElementById('splash'), go = document.getElementById('sp-go'), SK = 'exampro.splash.seen';
+  if (!sp || !go) return;
+  var seen = false; try { seen = sessionStorage.getItem(SK) === '1'; } catch (e) {}
+  if (/[?&]splash=1\b/.test(location.search)) seen = false;
+  if (seen) { sp.remove(); return; }
+  var behind = [document.querySelector('.top'), document.getElementById('app'), document.querySelector('.skip')].filter(Boolean);
+  function setBehind(on) { behind.forEach(function (n) { if (on) n.setAttribute('inert', ''); else n.removeAttribute('inert'); }); }
+  function close() {
+    try { sessionStorage.setItem(SK, '1'); } catch (e) {}
+    sp.classList.add('out'); document.removeEventListener('keydown', onKey);
+    setTimeout(function () { sp.remove(); document.body.classList.remove('sp-lock'); setBehind(false); var a = document.getElementById('app'); a.setAttribute('tabindex', '-1'); a.focus({ preventScroll: true }); }, 350);
+  }
+  function onKey(e) { if (e.key === 'Escape') close(); }
+  sp.hidden = false; document.body.classList.add('sp-lock'); setBehind(true);
+  go.addEventListener('click', close); document.addEventListener('keydown', onKey); go.focus({ preventScroll: true });
 })();
 </script>
 </body>

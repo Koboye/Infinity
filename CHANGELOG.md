@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased — exam.pro rebrand, phase 1 (Splash)
+- New: exam.pro splash screen (crown + book emblem, "Learn · Practice · Excel", Get started button) in `public/games/exam-prep/`. Shown once per session; add `?splash=1` to preview it again.
+- New: exam.pro brand tokens (`--ep-*`: midnight navy, electric blue, royal violet, gold, green) for the screens that follow.
+- Changed: header wordmark and page title now read exam.pro with the new slogan. Questions, progress and every other screen are untouched.
+
 
 ## Unreleased — Daily level pass (off by default)
 - New: pay once per Ethiopian day (UTC+3) to unlock 10 computer-game starts; the next day, or after the 10, the player pays again.
