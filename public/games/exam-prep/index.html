@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#063d2e">
-<title>ExamPrep · Grade 1–12, university &amp; exit-exam practice</title>
+<meta name="theme-color" content="#0a2a8a">
+<title>ExamPro · Study · Practice · Pass — Grade 1–12, university, exit exams &amp; NGAT</title>
 <link rel="preload" href="fonts/figtree-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/fraunces-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <style>
@@ -66,10 +66,37 @@ a{color:var(--brand);font-weight:700}
 #app>*{animation:fade .3s both}
 @media(max-width:520px){body{font-size:16.5px}.stats{gap:6px;padding:0}.stat b{font-size:18px}.hero{padding:22px 18px 28px}.stage{width:136px}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ExamPro brand system — royal blue, gold, level colours */
+:root{--bg:#eef4ff;--bg2:#dfe9fb;--card:#fff;--ink:#0d1b3d;--muted:#58668a;--line:#d6e0f5;--brand:#1747d6;--brand2:#0a2a8a;--brand3:#2f6bff;--gold:#f5a623;--gold2:#ffd36b;--soft:#e4ecff;--goodbg:#dcf5e8;--warnbg:#fff1cf;--shadow:0 1px 2px rgba(10,42,138,.06),0 10px 28px rgba(10,42,138,.10);--r:20px;--fs:clamp(16px,.35vw + 15px,18px);--sans:'Figtree','Noto Sans Ethiopic',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;--serif:'Figtree','Noto Sans Ethiopic',system-ui,sans-serif;--l1:#1fa463;--l2:#1c86e8;--l3:#8240e0;--l4:#f08a1c;--l5:#10a5a0;--l6:#3a3fc4}
+@media(prefers-color-scheme:dark){:root{--bg:#07123a;--bg2:#0b1b52;--card:#0f2160;--ink:#eef3ff;--muted:#a3b2dc;--line:#223a8a;--brand:#6c9aff;--brand2:#061049;--brand3:#4d82ff;--soft:#16308a;--goodbg:#0f4a33;--badbg:#4a1f2c;--warnbg:#4a3a10}}
+html{font-size:var(--fs)}
+body{font-size:1rem;background-color:var(--bg);background-image:radial-gradient(1100px 520px at 85% -8%,rgba(47,107,255,.22),transparent 60%),radial-gradient(800px 480px at -10% 8%,rgba(245,166,35,.16),transparent 60%),linear-gradient(180deg,var(--bg),var(--bg2));background-attachment:fixed}
+h1,h2,h3,.big,.stat b,.sec{font-family:var(--sans);letter-spacing:-.02em}
+h1{font-weight:850}
+.wrap{max-width:960px;padding:clamp(12px,3vw,24px)}
+.top{background:linear-gradient(90deg,#0a2a8a,#1747d6);border-image:linear-gradient(90deg,var(--gold),var(--gold2),var(--gold)) 1}
+.bt{font-size:1.4rem;font-weight:850;letter-spacing:-.03em}.bt i{color:var(--gold2)}.bs{font-size:.68rem;letter-spacing:.12em;text-transform:none;opacity:.85}
+.brand{gap:12px}.brand>span{display:block}.logo{width:2.6rem;height:2.6rem}
+.hero{background:radial-gradient(500px 260px at 100% 0,rgba(255,211,107,.35),transparent 65%),linear-gradient(140deg,#0a2a8a 0%,#1747d6 62%,#2f6bff 100%);padding:clamp(24px,5vw,40px) clamp(20px,4vw,36px) clamp(34px,5vw,48px)}
+.hero h1{font-size:clamp(1.9rem,5.4vw,2.9rem);max-width:15em}.hero h1 em{color:var(--gold2)}
+.hero .kick{background:rgba(255,255,255,.14);padding:6px 12px;border-radius:99px;letter-spacing:.04em;text-transform:none;font-size:.8rem;color:#fff}
+.btn{background:linear-gradient(180deg,#2f6bff,#1747d6);box-shadow:0 3px 0 rgba(10,42,138,.45)}
+.btn.alt{background:transparent;color:var(--brand);border-color:var(--brand)}
+.btn.gold{background:linear-gradient(180deg,var(--gold2),var(--gold));color:#2b1800;box-shadow:0 3px 0 rgba(150,90,0,.4)}
+.ring i,.bar i{background:linear-gradient(90deg,var(--gold),var(--gold2))}
+.stage{width:156px;border-radius:22px;border-width:2px;padding:14px}
+.stage .num{width:3rem;height:3rem;border-radius:16px;color:#fff;font-size:1rem;background:var(--l1)}
+.stage:nth-child(2) .num{background:var(--l2)}.stage:nth-child(3) .num{background:var(--l3)}.stage:nth-child(4) .num{background:var(--l4)}.stage:nth-child(5) .num{background:var(--l5)}.stage:nth-child(6) .num{background:var(--l6)}.stage:nth-child(7) .num{background:linear-gradient(135deg,var(--l6),var(--l3))}
+.stage.on{border-color:var(--gold);box-shadow:0 0 0 3px rgba(245,166,35,.28)}
+.dept,.opt{border-radius:18px}.opt{font-size:1.05rem}
+.opt:hover:not([disabled]){border-color:var(--brand)}
+input:focus,select:focus,.btn:focus-visible,.stage:focus-visible,.opt:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.foot b{color:var(--brand)}
 </style>
 </head>
 <body>
-<header class="top"><div class="wrap"><button class="brand" id="home" aria-label="ExamPrep home"><svg class="logo" viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#16a06b"/><stop offset="1" stop-color="#064a35"/></linearGradient></defs><rect width="48" height="48" rx="13" fill="url(#lg)"/><path d="M24 11 7 19l17 8 17-8z" fill="#ffd36b"/><path d="M13 24v7c0 3 5 6 11 6s11-3 11-6v-7l-11 5z" fill="#f5b82e"/><path d="M41 20v10" stroke="#ffd36b" stroke-width="2.4" stroke-linecap="round"/><circle cx="41" cy="32" r="2.2" fill="#d94a3d"/></svg><span><span class="bt">Exam<i>Prep</i></span><span class="bs">by Afro Zone</span></span></button><a href="/">← Games</a></div></header>
+<header class="top"><div class="wrap"><button class="brand" id="home" aria-label="ExamPro home"><svg class="logo" viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffd36b"/><stop offset="1" stop-color="#f5a623"/></linearGradient></defs><path d="M24 6 4 15l20 9 20-9z" fill="url(#lg)"/><path d="M12 21v8c0 3 5 6 12 6s12-3 12-6v-8l-12 5.4z" fill="#fff" opacity=".95"/><path d="M42 16v12" stroke="#ffd36b" stroke-width="2.4" stroke-linecap="round"/><path d="M8 40h32" stroke="#ffd36b" stroke-width="2.4" stroke-linecap="round"/></svg><span><span class="bt">Exam<i>Pro</i></span><span class="bs">Study · Practice · Pass</span></span></button><a href="/">← Games</a></div></header>
 <main class="wrap" id="app"></main>
 <script src="bank.js"></script>
 <script>
@@ -84,7 +111,7 @@ a{color:var(--brand);font-weight:700}
     { id: 'g12', num: '12', name: 'Grade 12', sub: 'Entrance (ESSLCE)' },
     { id: 'fresh', num: 'F', name: 'Freshman', sub: 'First-year courses' },
     { id: 'uni', num: 'EX', name: 'University Exit', sub: 'Exit exams by department' },
-    { id: 'ngat', num: 'MS', name: 'Graduate (NGAT)', sub: 'Master’s admission' }
+    { id: 'ngat', num: 'MS', name: 'NGAT & Master’s', sub: 'Graduate admission' }
   ];
   function stageCount(id) { return BANK.reduce(function (n, d) { return d.group === id ? n + d.q.length : n; }, 0); }
   var ui = { group: 'all', search: '' };
@@ -145,7 +172,7 @@ a{color:var(--brand);font-weight:700}
         ds.map(function (d) { return '<button class="dept" data-d="' + esc(d.id) + '"><b>' + esc(d.name) + '</b><small>' + d.q.length + ' questions</small></button>'; }).join('') + '</div></details>';
     });
     if (!colleges.length) html += '<p class="hint">Nothing matches “' + esc(ui.search) + '”.</p>';
-    html += '<p class="foot"><b>ExamPrep</b> by Afro Zone · Answers and progress are saved on this device. Always study your course materials too.</p>';
+    html += '<p class="foot"><b>ExamPro</b> by Afro Zone · Answers and progress are saved on this device. Always study your course materials too.</p>';
     app.innerHTML = html;
     var s = document.getElementById('search'); if (s) s.oninput = function () { ui.search = s.value; var pos = s.selectionStart; home(); var n = document.getElementById('search'); n.focus(); n.setSelectionRange(pos, pos); };
     [].forEach.call(app.querySelectorAll('[data-g]'), function (b) { b.onclick = function () { ui.group = b.getAttribute('data-g'); home(); }; });
