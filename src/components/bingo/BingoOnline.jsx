@@ -4,7 +4,7 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { db, apiCall } from '@/lib/firebase';
 import { letterOf, LETTERS, FREE, CALL_SECONDS } from '@/lib/bingo/engine.js';
 import { sfx } from '@/lib/sound';
-import { speakBall, stopSpeaking, speechSupported } from '@/lib/speech';
+import { speakBall, stopSpeaking, speechSupported, ballLabel } from '@/lib/speech';
 import { MatchFrame } from '../MatchView';
 import { useMatchLifecycle } from '../online/useMatch';
 import { RoomControls, RoomResult } from '../online/RoomParts';
@@ -85,6 +85,7 @@ export default function BingoOnline({ t, lang, room, uid, code, onExit, onSwitch
           <small>{lastCalled ? letterOf(lastCalled) : ''}</small><b>{lastCalled || '—'}</b>
         </div>
         <div className="bcall-meta">
+          <span className="bsay">{lastCalled ? ballLabel(lastCalled, typeof document !== 'undefined' && document.documentElement.lang === 'am' ? 'am' : 'en') : ''}</span>
           <span className="bnext" aria-label={t.bingoNext(secs)}><i style={{ '--p': `${Math.min(100, (secs / CALL_SECONDS) * 100)}%` }} /><em>{playing ? secs : ''}</em></span>
           <div className="brecent">{recent.map((n) => <span key={n} className={`bchip l${'BINGO'.indexOf(letterOf(n))}`}>{letterOf(n)}{n}</span>)}</div>
           <span className="bcount">{room.called.length}/75 · {t[`bingoR_${room.ruleset}`]}</span>

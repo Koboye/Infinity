@@ -1,14 +1,16 @@
 // Bingo caller: every ball 1-75 has a spoken form in English and Amharic.
 import assert from 'node:assert/strict';
-import { ballPhrase, amharicNumber, ballLetterIndex } from '../src/lib/speech.js';
+import { ballPhrase, ballLabel, amharicNumber, ballLetterIndex } from '../src/lib/speech.js';
 
 let n = 0; const t = (name, fn) => { fn(); n++; console.log('ok', name); };
 t('letters follow the B-I-N-G-O ranges', () => {
   assert.deepEqual([1, 15, 16, 30, 31, 45, 46, 60, 61, 75].map(ballLetterIndex), [0, 0, 1, 1, 2, 2, 3, 3, 4, 4]);
 });
 t('English: letter, number, then the digits one by one', () => {
-  assert.equal(ballPhrase(55, 'en'), 'G. 55. 5, 5.');
-  assert.equal(ballPhrase(30, 'en'), 'I. 30. 3, 0.');
+  assert.equal(ballPhrase(55, 'en'), 'G. 55.');
+  assert.equal(ballPhrase(30, 'en'), 'I. 30.');
+  assert.equal((ballPhrase(55, 'en').match(/55/g) || []).length, 1, 'the number is said once, not twice');
+  assert.equal(ballLabel(12, 'am'), 'ቢ - አስራ ሁለት'); assert.equal(ballLabel(12, 'en'), 'B - 12'); assert.equal(ballLabel(75, 'am'), 'ኦ - ሰባ አምስት');
   assert.equal(ballPhrase(7, 'en').startsWith('B. 7.'), true);
 });
 t('Amharic numbers compose correctly', () => {

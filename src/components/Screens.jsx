@@ -62,6 +62,23 @@ export function GameGrid({ t, onPick, onClimb }) {
         <small className="gg-tag">{t.climbTag}</small>
         <span className="gg-foot"><span className="gg-mode">{t.badgeOffline}</span></span>
       </button>
+      {/* ExamPrep and Addis Runner are separate apps of this repo. Addis Runner is served as a static page from /games/addis-runner/; ExamPrep is its own Next.js + Firebase deploy, so its card opens NEXT_PUBLIC_EXAMPREP_URL (and shows "coming soon" until that address is set). */}
+      <button type="button" role="listitem" className="gg-card" onClick={() => { globalThis.location.href = '/games/addis-runner/index.html'; }} aria-label={`${t.runnerName} · ${t.runnerTag}`} style={{ '--accent': '#1FAF6B', '--i': order.length + 1 }}>
+        <span className="gg-art"><GameIcon game="runner" size={52} /></span>
+        <b className="gg-name">{t.runnerName}</b>
+        <small className="gg-tag">{t.runnerTag}</small>
+        <span className="gg-foot"><span className="gg-mode">{t.badgeOffline}</span></span>
+      </button>
+      {(() => {
+        const examUrl = process.env.NEXT_PUBLIC_EXAMPREP_URL || '', soon = !examUrl;
+        return (
+          <button type="button" role="listitem" className={`gg-card${soon ? ' soon' : ''}`} disabled={soon} onClick={() => { globalThis.location.href = examUrl; }} aria-label={`${t.examName} · ${soon ? t.comingSoon : t.examTag}`} style={{ '--accent': '#3B7BFF', '--i': order.length + 2 }}>
+            <span className="gg-art"><GameIcon game="exam" size={52} /></span>
+            <b className="gg-name">{t.examName}</b>
+            <small className="gg-tag">{soon ? t.comingSoon : t.examTag}</small>
+          </button>
+        );
+      })()}
     </div>
   );
 }

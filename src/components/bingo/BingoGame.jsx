@@ -6,7 +6,7 @@ import {
   letterOf, LETTERS, FREE, CALL_SECONDS, AI_LEVELS, FREEZE_MS, PERFECT_MS, POWER_MAX,
 } from '@/lib/bingo/engine.js';
 import { sfx } from '@/lib/sound';
-import { speakBall, stopSpeaking, speechSupported } from '@/lib/speech';
+import { speakBall, stopSpeaking, speechSupported, ballLabel } from '@/lib/speech';
 import { MatchFrame } from '../MatchView';
 import ResultOverlay from '../ResultOverlay';
 
@@ -177,6 +177,7 @@ export default function BingoGame({ t, level, ruleset, me, opts = {}, onExit, on
           <small>{lastCalled ? letterOf(lastCalled) : ''}</small><b>{lastCalled || '—'}</b>
         </div>
         <div className="bcall-meta">
+          <span className="bsay">{lastCalled ? ballLabel(lastCalled, typeof document !== 'undefined' && document.documentElement.lang === 'am' ? 'am' : 'en') : ''}</span>
           <span className="bnext" aria-label={t.bingoNext(secs)}><i style={{ '--p': `${(secs / CALL_SECONDS) * 100}%` }} /><em>{game.over ? '' : secs}</em></span>
           <div className="brecent">{recent.map((n) => <span key={n} className={`bchip l${'BINGO'.indexOf(letterOf(n))}`}>{letterOf(n)}{n}</span>)}</div>
           <span className="bcount">{game.called.length}/75 · {t[`bingoR_${game.ruleset}`]}</span>

@@ -12,6 +12,25 @@ export function GameIcon({ game, size = 44 }) {
       </svg>
     );
   }
+  if (game === 'exam') {
+    return (
+      <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden="true">
+        <rect x="3" y="3" width="42" height="42" rx="8" fill="#1F4FBF" />
+        <path d="M24 12L6 20l18 8 18-8z" fill="#FFD85A" /><path d="M13 25v7c0 2.5 5 5 11 5s11-2.5 11-5v-7l-11 5z" fill="#F5F7FA" />
+        <path d="M40 21v10" stroke="#FFD85A" strokeWidth="2" strokeLinecap="round" /><circle cx="40" cy="33" r="2" fill="#FFD85A" />
+      </svg>
+    );
+  }
+  if (game === 'runner') {
+    return (
+      <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden="true">
+        <rect x="3" y="3" width="42" height="42" rx="8" fill="#0F7B4A" />
+        <path d="M24 14L8 45h32z" fill="#3A3A3A" /><path d="M24 14l-1 31h2z" fill="#FCDD09" />
+        <circle cx="24" cy="31" r="3.5" fill="#F5F7FA" /><rect x="21.5" y="34" width="5" height="7" rx="2" fill="#E4572E" />
+        <path d="M3 18h42" stroke="#DA121A" strokeWidth="2.5" opacity=".85" />
+      </svg>
+    );
+  }
   if (game === 'checkers') {
     return (
       <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden="true">

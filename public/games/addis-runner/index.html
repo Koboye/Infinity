@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Addis Runner</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #10261a; overflow: hidden; touch-action: none; font-family: system-ui, sans-serif; }
+  canvas { display: block; width: 100vw; height: 100vh; }
+  #hud { position: fixed; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; gap: 8px; padding: 10px 14px; color: #fff; font-weight: 700; text-shadow: 0 1px 3px #000; pointer-events: none; }
+  #place { position: fixed; top: 44px; width: 100%; text-align: center; color: #FCDD09; font-weight: 800; text-shadow: 0 1px 3px #000; pointer-events: none; }
+  #ov { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; background: rgba(8, 24, 14, .72); color: #fff; text-align: center; padding: 24px; }
+  #ov h1 { margin: 0; font-size: 2rem; } #ov p { margin: 0; max-width: 28rem; opacity: .9; }
+  #ov button { margin-top: 8px; font: inherit; font-weight: 800; padding: 12px 28px; border: 0; border-radius: 12px; background: #FCDD09; color: #10261a; cursor: pointer; }
+  small { opacity: .7; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"><span id="dist">0 m</span><span id="coins">0 birr</span><span id="best">Best 0 m</span></div>
+<div id="place"></div>
+<div id="ov">
+  <h1>Addis Runner</h1>
+  <p>Run Sidist Kilo to Arat Kilo, Meskel Square and Bole. Dodge blue taxis, jump goats and potholes, slide under the LRT bridges, grab the birr.</p>
+  <p><small>Arrows / WASD / Space, or swipe on a phone.</small></p>
+  <p><small id="src"></small></p>
+  <button id="go">Run</button>
+</div>
+<script type="module" src="src/game.js"></script>
+</body>
+</html>
