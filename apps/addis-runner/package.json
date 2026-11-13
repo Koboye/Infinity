@@ -1,0 +1,11 @@
+{
+  "name": "addis-runner",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node scripts/serve.mjs",
+    "test": "node tests/route.test.mjs",
+    "fetch-route": "node scripts/fetch-route.mjs"
+  }
+}
