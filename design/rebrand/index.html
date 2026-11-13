@@ -107,6 +107,18 @@ main{padding:0 40px 56px;min-width:0}
 @media (max-width:560px){.levels,.subj{grid-template-columns:1fr}.top input{max-width:none}.user span{display:none}}
 @media (prefers-reduced-motion:no-preference){.step{animation:rise .8s cubic-bezier(.2,.8,.2,1) both}.step:nth-child(2){animation-delay:.06s}.step:nth-child(3){animation-delay:.12s}.step:nth-child(4){animation-delay:.18s}.step:nth-child(5){animation-delay:.24s}.step:nth-child(6){animation-delay:.3s}}
 @keyframes rise{from{transform:translateY(40px);opacity:0}}
+
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px}
+.gkc{max-width:720px;gap:16px}.gkc h2{font-size:1.6rem;line-height:1.25}
+.meta{display:flex;justify-content:space-between;color:var(--mute);font-weight:600}
+.prog{height:8px;border-radius:99px;background:var(--line);overflow:hidden}.prog i{display:block;height:100%;background:var(--blue);transition:width .3s}
+.opts{display:grid;gap:10px}
+.opt{font:600 1.05rem var(--font-b);text-align:left;padding:15px 18px;border-radius:14px;border:1.5px solid var(--line);background:transparent;color:inherit;cursor:pointer}
+.opt:hover:not(:disabled){border-color:var(--blue)}
+.opt.ok{background:#DDF6EA;border-color:var(--g1);color:#0B5B3B}.opt.no{background:#FDE4E4;border-color:#D64545;color:#7A1F1F}
+.opt:disabled{cursor:default}
+.fb{font-weight:600;min-height:1.6em}
+.big{font:800 3.4rem var(--font-d)}
 </style>
 </head>
 <body>
@@ -119,6 +131,7 @@ main{padding:0 40px 56px;min-width:0}
   </div>
   <a href="#home" id="n-home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg><span>Home</span></a>
   <a href="#take-test" id="n-take-test"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 12l2 2 4-4"/></svg><span>Take test</span></a>
+  <a href="#general-knowledge" id="n-general-knowledge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg><span>General knowledge</span></a>
   <a href="#results"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 20V10M12 20V4M19 20v-7"/></svg><span>My results</span></a>
   <a href="#materials"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 6c-2-2-5-2-8-1v14c3-1 6-1 8 1 2-2 5-2 8-1V5c-3-1-6-1-8 1zM12 6v14"/></svg><span>Study materials</span></a>
   <a href="#achievements"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><circle cx="12" cy="9" r="6"/><path d="M8.5 14L7 21l5-3 5 3-1.5-7"/></svg><span>Achievements</span></a>
@@ -194,8 +207,51 @@ main{padding:0 40px 56px;min-width:0}
       </aside>
     </div>
   </section>
+
+  <!-- SCREEN 3 -->
+  <section class="screen" id="s-gk" aria-labelledby="h-gk">
+    <div class="head2"><h1 id="h-gk">General knowledge</h1><p id="gk-sub">Quick practice in the style of graduate and entrance aptitude tests. Pick a topic and answer 10 questions.</p></div>
+    <div id="gk-body"></div>
+  </section>
 </main>
 
+<script src="gk-data.js"></script>
+<script>
+const G={cat:"All",pool:[],i:0,score:0,locked:false};
+const shuf=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+function gkStart(){
+  const cats=["All",...new Set(GK.map(x=>x[0]))];
+  $("gk-body").innerHTML=`<div class="chips" role="group" aria-label="Topic">${cats.map(c=>`<button class="tab" aria-pressed="${c===G.cat}" data-c="${c}">${c}</button>`).join("")}</div>
+  <div class="card gkc"><h2>${G.cat==="All"?"Mixed topics":G.cat}</h2><p>${(G.cat==="All"?GK:GK.filter(x=>x[0]===G.cat)).length} questions available. You get 10 at random, with instant feedback.</p><div><button class="btn" id="gk-go">Start practice</button></div></div>`;
+  $("gk-body").querySelector(".chips").onclick=e=>{const b=e.target.closest(".tab");if(b){G.cat=b.dataset.c;gkStart()}};
+  $("gk-go").onclick=gkBegin;
+}
+function gkBegin(){
+  const src=G.cat==="All"?GK:GK.filter(x=>x[0]===G.cat);
+  G.pool=shuf(src).slice(0,10);G.i=0;G.score=0;gkShow();
+}
+function gkShow(){
+  const r=G.pool[G.i],n=G.pool.length;G.locked=false;
+  $("gk-body").innerHTML=`<div class="card gkc"><div class="meta"><span>${r[0]}</span><span>Question ${G.i+1} of ${n}</span></div>
+  <div class="prog" aria-hidden="true"><i style="width:${G.i/n*100}%"></i></div><h2>${r[1]}</h2>
+  <div class="opts">${shuf(r.slice(2)).map(o=>`<button class="opt">${o}</button>`).join("")}</div>
+  <div class="fb" aria-live="polite"></div><div><button class="btn" id="nx" hidden>${G.i+1===n?"See my score":"Next question"}</button></div></div>`;
+  document.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{
+    if(G.locked)return;G.locked=true;const good=b.textContent===r[2];if(good)G.score++;
+    document.querySelectorAll(".opt").forEach(x=>{x.disabled=true;if(x.textContent===r[2])x.classList.add("ok")});
+    if(!good)b.classList.add("no");
+    document.querySelector(".fb").textContent=good?"Correct.":"Not quite. The answer is "+r[2]+".";
+    $("nx").hidden=false;$("nx").focus();
+  });
+  $("nx").onclick=()=>{G.i++;G.i<G.pool.length?gkShow():gkEnd()};
+}
+function gkEnd(){
+  const n=G.pool.length,p=Math.round(G.score/n*100);
+  $("gk-body").innerHTML=`<div class="card gkc"><h2>Your score</h2><div class="big">${G.score} / ${n}</div><p>${p>=80?"Excellent work.":p>=50?"Good progress. Another round will sharpen it.":"Keep practising. Every round helps."}</p>
+  <div class="row"><button class="btn" id="again">Try 10 more</button><button class="btn ghost" id="topics">Change topic</button></div></div>`;
+  $("again").onclick=gkBegin;$("topics").onclick=gkStart;
+}
+</script>
 <script>
 const L=[
  {n:"Grade 1–6",s:["Mathematics","English","Amharic","Environmental Science"]},
@@ -225,12 +281,14 @@ $("subj").onchange=e=>{e.target.checked?sel.add(e.target.value):sel.delete(e.tar
 $("go").onclick=()=>alert("Next screen: the live test. Coming in the next step.");
 function route(){
   const [h,q]=(location.hash.slice(1)||"home").split("?");
-  const test=h==="take-test";
-  if(test&&q&&q.startsWith("l=")){cur=+q.slice(2)||0;sel.clear();render()}
-  $("s-home").classList.toggle("on",!test);$("s-test").classList.toggle("on",test);
+  const m={"take-test":"s-test","general-knowledge":"s-gk"};
+  const id=m[h]||"s-home", nav="n-"+(m[h]?h:"home");
+  if(h==="take-test"&&q&&q.startsWith("l=")){cur=+q.slice(2)||0;sel.clear();render()}
+  document.querySelectorAll(".screen").forEach(e=>e.classList.toggle("on",e.id===id));
   document.querySelectorAll("nav.side a").forEach(a=>a.removeAttribute("aria-current"));
-  $(test?"n-take-test":"n-home").setAttribute("aria-current","page");
-  if(test&&!$("tabs").children.length)render();
+  $(nav).setAttribute("aria-current","page");
+  if(id==="s-test"&&!$("tabs").children.length)render();
+  if(id==="s-gk")gkStart();
   scrollTo(0,0);
 }
 addEventListener("hashchange",route);route();
