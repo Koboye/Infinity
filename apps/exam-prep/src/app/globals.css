@@ -1,5 +1,5 @@
-:root { --bg:#f6f4ee; --card:#fff; --ink:#1b2a22; --muted:#5d6b63; --line:#e3dfd2; --brand:#0e6b4a; --brand2:#0a4f37; --gold:#e0a526; --bad:#b3261e; --good:#12803f; --soft:#eef5f0; }
-@media (prefers-color-scheme: dark) { :root { --bg:#0f1713; --card:#17221c; --ink:#e8efe9; --muted:#9db0a5; --line:#26352c; --brand:#3fbf8a; --brand2:#2f9c6f; --soft:#1b2a22; --bad:#ff8a80; --good:#6fe3a0; } }
+:root { --bg:#f4f3ff; --card:#fff; --ink:#1a1838; --muted:#605d8a; --line:#dedcf5; --brand:#5b3df5; --brand2:#3a21b8; --gold:#ffb020; --bad:#c62828; --good:#12803f; --soft:#ecebff; }
+@media (prefers-color-scheme: dark) { :root { --bg:#0f0d1f; --card:#181533; --ink:#ecebff; --muted:#a9a5d6; --line:#2a2650; --brand:#8f7bff; --brand2:#5a44d6; --soft:#211d45; --bad:#ff8a80; --good:#6fe3a0; } }
 * { box-sizing: border-box; } html { -webkit-text-size-adjust: 100%; }
 body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.5 system-ui,-apple-system,'Segoe UI',Roboto,'Noto Sans Ethiopic',sans-serif; }
 a { color:var(--brand); } h1,h2,h3 { line-height:1.25; margin:0 0 .5em; }
