@@ -42,6 +42,12 @@ export const COLLEGES = [
     ['educational-planning', 'Educational Planning & Management'], ['special-needs', 'Special Needs & Inclusive Education'], ['early-childhood', 'Early Childhood Education'],
     ['teacher-education', 'Teacher Education (Pedagogy)'],
   ]),
+  C('freshman', 'Freshman Common Courses', [
+    ['freshman-logic', 'Logic'], ['freshman-english', 'Freshman English'], ['freshman-maths-natural', 'Mathematics (Natural)'], ['freshman-maths-social', 'Mathematics (Social)'],
+    ['freshman-physics', 'Physics'], ['freshman-geography', 'Geography'], ['freshman-psychology', 'Psychology'], ['freshman-economics', 'Economics'],
+    ['freshman-history', 'History of Ethiopia & the Horn'], ['freshman-civics', 'Civic & Ethical Education'], ['freshman-emerging-tech', 'Emerging Technology'],
+    ['freshman-global-trend', 'Global Trends'], ['freshman-anthropology', 'Anthropology'], ['freshman-entrepreneurship', 'Entrepreneurship'], ['freshman-inclusiveness', 'Inclusiveness'],
+  ]),
 ];
 
 export const DEPARTMENTS = COLLEGES.flatMap((c) => c.depts);

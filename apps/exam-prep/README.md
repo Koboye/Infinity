@@ -28,3 +28,10 @@ This app is in `apps/exam-prep/` of the Infinity repo and is independent of the 
 - The seed bank is tiny. Contribution volume decides how useful the app is.
 - Subscribers receive each question with its answer (needed for instant feedback), so one subscriber could copy the bank. Treat the bank as content you police by reviewing and, if needed, per-user rate limits.
 - The per-instance rate limiter is in-memory; use a shared one (e.g. Upstash) when running many instances.
+
+## Importing real exam questions
+Only import questions you wrote, or that the rights holder has licensed to you. Put them in a CSV (`dept,question,A,B,C,D,answer,explanation,topic`) or JSON file, then run
+`node tools/import-questions.mjs file.csv` from `apps/exam-prep/`. Each row is checked with the app's own rules and against the existing bank; rejects are listed. Results go to `src/data/imported.json`. Freshman common courses (Logic, Physics, English...) are in the "Freshman Common Courses" college.
+
+## Taking the "coming soon" card live
+The home-screen card says "coming soon" until `NEXT_PUBLIC_EXAMPREP_URL` is set in the main app's environment to the deployed ExamPrep address (Vercel, Root Directory `apps/exam-prep`, plus the env vars in `env.example`).
