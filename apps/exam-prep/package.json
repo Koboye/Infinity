@@ -1,0 +1,27 @@
+{
+  "name": "exam-prep",
+  "version": "0.1.0",
+  "private": true,
+  "engines": { "node": ">=20.9" },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "test": "node scripts/run-tests.mjs",
+    "verify": "npm run typecheck && npm test && npm run build"
+  },
+  "dependencies": {
+    "firebase": "^11.1.0",
+    "firebase-admin": "^13.0.2",
+    "next": "^15.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.7.0"
+  }
+}
