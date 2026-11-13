@@ -58,7 +58,6 @@ t('every game asks the gate before "Play again", online rematch does too, and a 
   for (const f of ['src/components/LocalGame.jsx', 'src/components/checkers/CheckersLocal.jsx', 'src/components/dominoes/DominoesLocal.jsx', 'src/components/bingo/BingoGame.jsx']) {
     const s = read(f); assert.match(s, /await Ads\.gate\(\)/, f); assert.match(s, /const doAgain = /, f); assert.match(s, /againBusy\.current/, f);
   }
-  const ludo = read('src/components/ludo/LudoGame.jsx'); assert.match(ludo, /await Ads\.gate\(\)/); assert.match(ludo, /restartBusy\.current/);
   assert.match(read('src/components/online/useMatch.js'), /await Ads\.gate\(\);\s*const r = await api\(\{ action: 'rematch' \}\)/);
 });
 t('the shell registers the gate, waits for the opening ad before the banner, and shows it only on menu screens', () => {

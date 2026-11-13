@@ -1,7 +1,7 @@
 # Store listing
 
 **App name (30):** Afro Zone
-**Short description (80), EN:** Afro Zone: Gebeta, Dama, Ludo, Dominoes & Bingo with friends — online or offline.
+**Short description (80), EN:** Afro Zone: Gebeta, Dama, Dominoes & Bingo with friends — online or offline.
 **Short description, AM:** አፍሮ ዞን፦ ገበጣ፣ ዳማ፣ ሉዶ፣ ዶሚኖ እና ቢንጎ ከጓደኛ ጋር — በኢንተርኔት ወይም ያለ ኢንተርኔት።
 
 **Full description (EN):**

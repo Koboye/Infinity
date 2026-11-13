@@ -2,8 +2,8 @@
 import { isOwnAdImage } from './adImageCore.js';
 export const today = () => new Date().toISOString().slice(0, 10);
 export const plus = (d) => new Date(Date.now() + d * 86_400_000).toISOString().slice(0, 10);
-export const GAME_IDS = ['gebeta', 'checkers', 'bingo', 'ludo', 'dominoes'];
-export const GAME_NAME = { gebeta: 'Gebeta', checkers: 'Dama (Checkers)', bingo: 'Bingo', ludo: 'Ludo', dominoes: 'Dominoes' };
+export const GAME_IDS = ['gebeta', 'checkers', 'bingo', 'dominoes'];
+export const GAME_NAME = { gebeta: 'Gebeta', checkers: 'Dama (Checkers)', bingo: 'Bingo', dominoes: 'Dominoes' };
 export const PLACE_LABEL = { splash: 'App open', pre_game: 'Before a game', rewarded: 'Watch for +2 spins' };
 
 // ── dropdown presets (the owner picks; nothing needs typing except the client's own words and links) ──

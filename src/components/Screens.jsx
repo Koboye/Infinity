@@ -115,7 +115,6 @@ export function Setup({ t, mode, game, onStart, initialRuleset, onHelp }) {
   const [ruleset, setRuleset] = useState(info.rulesets.includes(initialRuleset) ? initialRuleset : info.defaultRuleset);
   const [target, setTarget] = useState(info.defaultTarget);
   const [numCards, setNumCards] = useState(1);      // Bingo: 1-4 cards
-  const [ludoPlayers, setLudoPlayers] = useState(4);  // Ludo: 2 or 4
   return (
     <div className="panel">
       {mode === 'ai' && (
@@ -128,15 +127,6 @@ export function Setup({ t, mode, game, onStart, initialRuleset, onHelp }) {
       <RulesetPicker t={t} game={game} value={ruleset} onChange={setRuleset} onHelp={onHelp} />
       {game === 'dominoes' && <TargetPicker t={t} value={target} onChange={setTarget} />}
       {game === 'checkers' && <p className="muted small">{t.ckFirst}</p>}
-      {game === 'ludo' && (
-        <fieldset className="seg-group">
-          <legend>{t.ludoPlayers}</legend>
-          <div className="seg">
-            {[2, 4].map((n) => <button key={n} className={ludoPlayers === n ? 'on' : ''} onClick={() => setLudoPlayers(n)} aria-pressed={ludoPlayers === n}>{n}</button>)}
-          </div>
-          <p className="muted small">{t.ludoSquareNote}</p>
-        </fieldset>
-      )}
       {game === 'bingo' && (
         <fieldset className="seg-group">
           <legend>{t.cardsLabel}</legend>
@@ -145,7 +135,7 @@ export function Setup({ t, mode, game, onStart, initialRuleset, onHelp }) {
           </div>
         </fieldset>
       )}
-      <button className="btn primary wide start-cta" onClick={() => onStart({ level, ruleset, target, opts: { ultra: false, suddenDeath: false, careless: false, cards: numCards, players: ludoPlayers } })}>{mode === 'ai' ? t.playComputer : t.passPlay}</button>
+      <button className="btn primary wide start-cta" onClick={() => onStart({ level, ruleset, target, opts: { ultra: false, suddenDeath: false, careless: false, cards: numCards } })}>{mode === 'ai' ? t.playComputer : t.passPlay}</button>
     </div>
   );
 }
@@ -182,7 +172,7 @@ export function TargetPicker({ t, value, onChange }) {
 
 /* ───────── Rules ───────── */
 const rulesOf = (t, g) => (Array.isArray(t[`rules_${g}`]) ? t[`rules_${g}`] : []);
-const ruleTitle = (t, g) => (g === 'checkers' ? t.rulesTitleCheckers : g === 'dominoes' ? t.rulesTitleDominoes : g === 'bingo' ? t.rulesTitleBingo : g === 'ludo' ? t.rulesTitleLudo : t.rulesTitle);
+const ruleTitle = (t, g) => (g === 'checkers' ? t.rulesTitleCheckers : g === 'dominoes' ? t.rulesTitleDominoes : g === 'bingo' ? t.rulesTitleBingo : t.rulesTitle);
 
 /** Rules tab. With no game chosen it is a hub: every game as a card (recent first), a search across all rules, and a tap opens that game's rules. */
 export function RulesScreen({ t, lang, game, hub = false, onPickGame, onPlayGame, type, onPlay }) {

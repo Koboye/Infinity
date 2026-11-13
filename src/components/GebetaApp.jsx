@@ -36,10 +36,9 @@ const LocalGame = lazy(() => import('./LocalGame'));
 const CheckersLocal = lazy(() => import('./checkers/CheckersLocal'));
 const DominoesLocal = lazy(() => import('./dominoes/DominoesLocal'));
 const BingoGame = lazy(() => import('./bingo/BingoGame'));
-const LudoGame = lazy(() => import('./ludo/LudoGame'));
 const OnlineRoom = lazy(() => import('./online/OnlineRoom'));
 
-const PRELOAD = { gebeta: () => import('./LocalGame'), checkers: () => import('./checkers/CheckersLocal'), dominoes: () => import('./dominoes/DominoesLocal'), bingo: () => import('./bingo/BingoGame'), ludo: () => import('./ludo/LudoGame') };
+const PRELOAD = { gebeta: () => import('./LocalGame'), checkers: () => import('./checkers/CheckersLocal'), dominoes: () => import('./dominoes/DominoesLocal'), bingo: () => import('./bingo/BingoGame') };
 const preload = (g) => { try { PRELOAD[g]?.().catch(() => {}); } catch { /* the normal load will try again */ } };   // starts the download while the pre-game ad is on screen
 
 const read = (k, d) => { try { return localStorage.getItem(k) ?? d; } catch { return d; } };
@@ -324,7 +323,6 @@ export default function GebetaApp() {
       body = view.game === 'checkers' ? <CheckersLocal {...P} />
         : view.game === 'dominoes' ? <DominoesLocal {...P} target={view.target} />
         : view.game === 'bingo' ? <BingoGame {...P} />
-        : view.game === 'ludo' ? <LudoGame {...P} />
         : <LocalGame {...P} />;
       break;
     }

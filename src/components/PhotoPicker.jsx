@@ -4,7 +4,7 @@ import { usePhoto, storePhoto, photoFromFile } from '@/lib/photo';
 import { heroById } from '@/lib/i18n';
 
 const TX = {
-  en: { title: 'Profile picture', sub: 'Shown on your Ludo card and on your Dama king. It stays on this device (and on your account when you are signed in).', pick: 'Choose photo', change: 'Change photo', remove: 'Remove', bad: 'That file is not a usable picture.', big: 'That picture is too large.', saved: 'Saved' },
+  en: { title: 'Profile picture', sub: 'Shown on your player card and on your Dama king. It stays on this device (and on your account when you are signed in).', pick: 'Choose photo', change: 'Change photo', remove: 'Remove', bad: 'That file is not a usable picture.', big: 'That picture is too large.', saved: 'Saved' },
   am: { title: 'የመገለጫ ፎቶ', sub: 'በሉዶ ካርድህ እና በዳማ ንጉሥህ ላይ ይታያል። በዚህ መሣሪያ ላይ ይቀመጣል (ከገባህ በመለያህም ላይ)።', pick: 'ፎቶ ምረጥ', change: 'ፎቶ ቀይር', remove: 'አስወግድ', bad: 'ይህ ፋይል ተስማሚ ፎቶ አይደለም።', big: 'ፎቶው በጣም ትልቅ ነው።', saved: 'ተቀምጧል' },
 };
 

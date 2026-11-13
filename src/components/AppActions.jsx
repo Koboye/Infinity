@@ -26,7 +26,7 @@ export default function AppActions() {
     else note('Open your browser menu and choose “Install app”.');
   };
   const share = async () => {
-    const data = { title: 'ገበጣ · ዳማ · ሉዶ', text: 'Play Gebeta, Dama, Ludo, Dominoes and Bingo with me!', url: window.location.origin };
+    const data = { title: 'ገበጣ · ዳማ · ሉዶ', text: 'Play Gebeta, Dama, Dominoes and Bingo with me!', url: window.location.origin };
     try {
       if (navigator.share) await navigator.share(data);
       else { await navigator.clipboard.writeText(data.url); note('Link copied'); }
