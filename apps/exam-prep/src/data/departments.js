@@ -42,6 +42,10 @@ export const COLLEGES = [
     ['educational-planning', 'Educational Planning & Management'], ['special-needs', 'Special Needs & Inclusive Education'], ['early-childhood', 'Early Childhood Education'],
     ['teacher-education', 'Teacher Education (Pedagogy)'],
   ]),
+  C('grade12', 'Grade 12 Entrance (ESSLCE)', [
+    ['g12-english', 'English'], ['g12-mathematics', 'Mathematics'], ['g12-biology', 'Biology'], ['g12-chemistry', 'Chemistry'], ['g12-physics', 'Physics'],
+    ['g12-civics', 'Civics & Ethical Education'], ['g12-economics', 'Economics'], ['g12-geography', 'Geography'], ['g12-history', 'History'], ['g12-aptitude', 'Scholastic Aptitude'],
+  ]),
   C('freshman', 'Freshman Common Courses', [
     ['freshman-logic', 'Logic'], ['freshman-english', 'Freshman English'], ['freshman-maths-natural', 'Mathematics (Natural)'], ['freshman-maths-social', 'Mathematics (Social)'],
     ['freshman-physics', 'Physics'], ['freshman-geography', 'Geography'], ['freshman-psychology', 'Psychology'], ['freshman-economics', 'Economics'],

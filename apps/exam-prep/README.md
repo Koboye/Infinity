@@ -35,3 +35,7 @@ Only import questions you wrote, or that the rights holder has licensed to you. 
 
 ## Taking the "coming soon" card live
 The home-screen card says "coming soon" until `NEXT_PUBLIC_EXAMPREP_URL` is set in the main app's environment to the deployed ExamPrep address (Vercel, Root Directory `apps/exam-prep`, plus the env vars in `env.example`).
+
+## Grade 12 Entrance (ESSLCE) bank
+A "Grade 12 Entrance (ESSLCE)" college (10 subjects) holds 1,421 questions imported from past entrance/model papers (2006-2018 EC). **Only questions whose answer key agrees with their own explanation were imported.** A first extraction of ~12,000 questions showed about half of the checkable keys contradicting their explanations, so the rest are held back until the answer keys are re-checked against the source papers. Questions that depend on a figure or table were skipped.
+**Before charging for it:** the papers/explanations carry Temari.et branding; confirm you may republish them commercially (see "Importing real exam questions" above). Have a teacher per subject spot-check answers.
