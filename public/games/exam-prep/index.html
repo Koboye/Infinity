@@ -587,6 +587,43 @@ body.has-xbar .xb.main{min-width:125px}
 .ep-review-item .explain{margin:0 14px 15px}
 .ep-result-screen button:focus-visible,.ep-review-item summary:focus-visible{outline:3px solid #f1bb3d;outline-offset:3px}
 @media(max-width:480px){.ep-result-hero{padding:20px 14px}.ep-result-score{width:145px;height:145px}.ep-result-actions .btn{flex:1 1 135px}.ep-review-item summary{padding:12px 9px;gap:7px}.ep-review-status{font-size:10px;padding:4px 6px}.ep-result-review-head button{width:100%}}
+</style><style id="ep-screen-06">
+/* Screen 06 — progress analytics and mastery priorities */
+#ep-unified-panel{width:min(100%,820px);margin:0 auto;padding:8px 0 38px}
+#ep-unified-panel[hidden],#app[hidden]{display:none!important}
+#ep-unified-panel .ep-unified-hero{padding:clamp(23px,5vw,34px);border-radius:25px;background:radial-gradient(circle at 95% 0%,rgba(255,211,107,.24),transparent 43%),linear-gradient(125deg,#1a369e,#6042b7);border:1px solid rgba(255,255,255,.23);box-shadow:0 16px 35px rgba(4,12,60,.19)}
+#ep-unified-panel .ep-unified-hero h1{font-size:clamp(1.7rem,5vw,2.35rem);letter-spacing:-.04em;line-height:1.16}
+#ep-unified-panel .ep-unified-hero p{font-size:14px;line-height:1.55}
+#ep-unified-panel .ep-unified-back{min-height:43px;border-radius:12px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);color:#fff}
+#ep-unified-panel .ep-progress-stats{grid-template-columns:repeat(4,minmax(0,1fr));gap:11px;margin:17px 0}
+#ep-unified-panel .ep-progress-stats>div{min-height:125px;justify-content:center;gap:7px;border-radius:18px;padding:14px 7px;background:linear-gradient(145deg,#fff,#f0f2ff);border:1px solid #e1e5f8}
+#ep-unified-panel .ep-progress-stats b{font-size:clamp(1.35rem,3vw,1.85rem);font-variant-numeric:tabular-nums;color:#182452}
+#ep-unified-panel .ep-progress-stats small{color:#5a6284;font-size:11px;line-height:1.35}
+#ep-unified-panel .ep-progress-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+#ep-unified-panel .ep-progress-grid .ep-unified-card{margin:0}
+#ep-unified-panel .ep-unified-card{padding:clamp(17px,4vw,24px);border-radius:20px;border:1px solid #e2e6f4;box-shadow:0 7px 20px rgba(6,13,60,.055)}
+#ep-unified-panel .ep-unified-card h2{font-size:clamp(1.12rem,3vw,1.3rem);letter-spacing:-.025em;color:#1b2656}
+#ep-unified-panel .ep-unified-card p{line-height:1.5;font-size:13px}
+#ep-unified-panel .ep-unified-meter{height:10px;background:#e9edfa;border-radius:999px}
+#ep-unified-panel .ep-unified-meter span{background:linear-gradient(90deg,#4667e9,#8c65e6)}
+#ep-unified-panel .ep-progress-kicker{display:block;font-size:10px;letter-spacing:.13em;font-weight:900;color:#6552bf;margin-bottom:9px}
+#ep-unified-panel .ep-progress-section-title{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+#ep-unified-panel .ep-progress-section-title h2{margin:0}
+#ep-unified-panel .ep-progress-count{padding:7px 11px;border-radius:999px;background:#fff1d7;color:#815419;font-size:11px;font-weight:800}
+#ep-unified-panel .ep-progress-priority{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 0;border-top:1px solid #e7eaf5}
+#ep-unified-panel .ep-progress-priority>span:first-child{display:flex;flex-direction:column;gap:4px;min-width:0}
+#ep-unified-panel .ep-progress-priority b{font-size:13px;color:#222c5a;overflow-wrap:anywhere}
+#ep-unified-panel .ep-progress-priority small{font-size:11px;color:#65708e}
+#ep-unified-panel .ep-progress-priority-tag{flex:none;border-radius:999px;padding:6px 10px;background:#eae6ff;color:#5944bd;font-size:11px;font-weight:800}
+#ep-unified-panel .ep-progress-score{display:flex;align-items:center;gap:12px;border-top:1px solid #e7eaf5;padding:14px 0}
+#ep-unified-panel .ep-progress-score-label{width:40%;min-width:0;display:flex;flex-direction:column;gap:4px}
+#ep-unified-panel .ep-progress-score-label b{font-size:12px;color:#24305d;overflow-wrap:anywhere}
+#ep-unified-panel .ep-progress-score-label small{font-size:11px;color:#68738e}
+#ep-unified-panel .ep-progress-score-bar{flex:1}
+#ep-unified-panel .ep-progress-score-bar .ep-unified-meter{margin:0}
+#ep-unified-panel .ep-progress-score>strong{width:43px;text-align:right;font-size:13px;color:#24305d;font-variant-numeric:tabular-nums}
+#ep-unified-panel .ep-progress-note{font-size:12px;color:#b9c5ed;line-height:1.55;margin:16px 4px}
+@media(max-width:560px){#ep-unified-panel .ep-progress-stats{grid-template-columns:repeat(2,minmax(0,1fr))}#ep-unified-panel .ep-progress-grid{grid-template-columns:1fr}#ep-unified-panel .ep-progress-stats>div{min-height:108px}#ep-unified-panel .ep-progress-score-label{width:43%}}
 </style></head>
 <body>
 <div class="splash" id="splash" role="dialog" aria-modal="true" aria-labelledby="sp-title" hidden>
