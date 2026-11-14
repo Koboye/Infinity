@@ -792,6 +792,27 @@ body.exam-on .ep-nav-menu{display:none}
     { id: 'ngat', num: 'MS', name: 'NGAT & Master’s', sub: 'Graduate admission' }
   ];
   function stageCount(id) { return BANK.reduce(function (n, d) { return d.group === id ? n + d.q.length : n; }, 0); }
+  var PROFILE_KEY = 'exampro.profile.v1';
+  function learner() { try { var p = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}'); return p && typeof p === 'object' ? p : {}; } catch (e) { return {}; } }
+  function learnerGroup() {
+    var x = learner().stage;
+    if (x === 'university') return ['uni', 'fresh'];
+    if (x === 'ngat') return ['ngat'];
+    if (x === 'gk') return ['gk'];
+    if (/^g([1-9]|1[0-2])$/.test(x || '')) {
+      var n = Number(x.slice(1)); return [n <= 4 ? 'g1_4' : n <= 8 ? 'g5_8' : n <= 10 ? 'g9_10' : 'g12'];
+    }
+    return null;
+  }
+  function learnerBank() { var groups = learnerGroup(); return groups ? BANK.filter(function (d) { return groups.indexOf(d.group) >= 0; }) : BANK; }
+  function learnerCategories() {
+    var x = learner().stage;
+    if (x === 'university') return CATS.filter(function (c) { return c.id === 'uni'; });
+    if (x === 'ngat') return CATS.filter(function (c) { return c.id === 'ngat'; });
+    if (x === 'gk') return CATS.filter(function (c) { return c.id === 'gk'; });
+    if (/^g([1-9]|1[0-2])$/.test(x || '')) return CATS.filter(function (c) { return c.id === (Number(x.slice(1)) <= 8 ? 'pri' : 'sec'); });
+    return CATS.filter(function (c) { return c.id !== 'kg'; });
+  }
   var ui = { group: 'all', search: '', cat: null };
   var live = document.getElementById('live'), SC = [0.9, 1, 1.12, 1.25, 1.4], ZK = 'exampro.textsize', zi = 1;
   function say(t) { live.textContent = ''; setTimeout(function () { live.textContent = t; }, 60); }
@@ -883,7 +904,7 @@ body.exam-on .ep-nav-menu{display:none}
     { id: 'ngat', icon: 'ngat', name: 'NGAT', short: 'NGAT', sub: 'National Graduate Admission Test', groups: ['ngat'], c: ['#FFC0D2', '#FF92B2'] },
     { id: 'gk', icon: 'gk', name: 'General Knowledge', short: 'GK', sub: 'Everyday knowledge', groups: ['gk'], c: ['#8DE8D8', '#52CFC4'] }
   ];
-  function catCount(c) { return BANK.reduce(function (n, d) { return c.groups.indexOf(d.group) >= 0 ? n + d.q.length : n; }, 0); }
+  function catCount(c) { return learnerBank().reduce(function (n, d) { return c.groups.indexOf(d.group) >= 0 ? n + d.q.length : n; }, 0); }
   function catById(id) { return CATS.filter(function (c) { return c.id === id; })[0]; }
   var tt = 0;
   function toast(t) { var e = document.getElementById('toast'); e.textContent = t; e.classList.add('on'); say(t); clearTimeout(tt); tt = setTimeout(function () { e.classList.remove('on'); }, 3200); }
@@ -911,7 +932,7 @@ body.exam-on .ep-nav-menu{display:none}
     return '<ul class="wk">' + out + '</ul>';
   }
   function dailyChallenge() {
-    var pool = BANK.filter(function (d) { return d.q.length >= 10; }).sort(function (a, b) { return a.id < b.id ? -1 : 1; });
+    var pool = learnerBank().filter(function (d) { return d.q.length >= 10; }).sort(function (a, b) { return a.id < b.id ? -1 : 1; });
     if (!pool.length) return null;
     var d = pool[hashStr(ymd()) % pool.length], r = rng(hashStr(ymd() + d.id)), ix = d.q.map(function (_, i) { return i; });
     for (var i = ix.length - 1; i > 0; i--) { var j = Math.floor(r() * (i + 1)), t = ix[i]; ix[i] = ix[j]; ix[j] = t; }
@@ -922,9 +943,9 @@ body.exam-on .ep-nav-menu{display:none}
     var rs = null; try { var x = JSON.parse(localStorage.getItem(XK) || 'null'); if (x && x.v === 1 && x.set && x.set.length && dept(x.id)) rs = x; } catch (e) {}
     if (rs) { var live = rs.endAt > Date.now();
       return { kind: 'resume', rs: rs, kick: '⏯ Unfinished exam', title: live ? 'Pick your exam back up' : 'Your exam is waiting', sub: dept(rs.id).name + ' · ' + Object.keys(rs.picked || {}).length + ' of ' + rs.set.length + ' answered' + (live ? ' · ' + clockTxt(Math.ceil((rs.endAt - Date.now()) / 1000)) + ' left' : ' · time is up'), btn: live ? 'Resume' : 'See result' }; }
-    var d = p.lastDept && dept(p.lastDept);
+    var d = p.lastDept && dept(p.lastDept); if (d && learnerBank().indexOf(d) < 0) d = null;
     if (d && d.q.length) return { kind: 'go', d: d, n: 10, kick: '▶ Continue', title: d.name, sub: '10 fresh questions · about 4 minutes', btn: 'Go' };
-    var f = BANK.filter(function (x) { return x.group === 'g12' && /math/i.test(x.name); })[0] || BANK.filter(function (x) { return x.group === 'g12'; })[0] || BANK[0];
+    var allowed = learnerBank(); var f = allowed.filter(function (x) { return /math/i.test(x.name); })[0] || allowed[0];
     return f ? { kind: 'go', d: f, n: 5, kick: '👋 Start here', title: 'Try 5 questions in ' + f.name, sub: 'Takes 2 minutes · see how you do', btn: 'Start' } : null;
   }
   function dash(soft) {
@@ -945,9 +966,9 @@ body.exam-on .ep-nav-menu{display:none}
       (mist ? '<button type="button" class="qtile warn" id="tfix"><span class="qi" aria-hidden="true">📝</span><b>Fix mistakes</b><small>' + mMax + ' in ' + esc(dept(mDept).name) + '</small></button>'
         : '<button type="button" class="qtile" id="tsur"><span class="qi" aria-hidden="true">🎲</span><b>Surprise me</b><small>10 random questions</small></button>') + '</div>' +
       '<div class="dsum" aria-label="Your progress"><div><b><span aria-hidden="true">⭐</span> ' + p.xp.toLocaleString() + '</b><small>total XP</small></div><div><b><span aria-hidden="true">🎯</span> ' + acc + '%</b><small>accuracy</small></div><div><b><span aria-hidden="true">📚</span> ' + p.answered.toLocaleString() + '</b><small>answered</small></div></div>' +
-      '<div class="ep-smart-tip"><span aria-hidden="true">🧠</span><div><strong>' + (mist ? 'Your next best move: review mistakes' : p.today < GOAL ? 'Keep your momentum going' : 'Great work — your daily goal is complete') + '</strong><small>' + (mist ? mist + ' saved mistakes across your subjects. Revisiting them helps you improve.' : p.today < GOAL ? (GOAL - p.today) + ' questions left to reach today’s goal. Short sessions add up.' : 'Explore another subject or take a refreshing break.') + '</small></div><button type="button" id="ep-smart-action">' + (mist ? 'Review' : 'Study') + ' →</button></div>' +
+      '<div class="ep-smart-tip"><span aria-hidden="true">🧠</span><div><strong>' + (mist ? 'Your next best move: review mistakes' : p.today < GOAL ? 'Keep your momentum going' : 'Great work — your daily goal is complete') + '</strong><small>' + (mist ? mist + ' saved mistakes across your subjects. Revisiting them helps you improve.' : p.today < dailyGoal() ? (dailyGoal() - p.today) + ' questions left to reach today’s goal. Short sessions add up.' : 'Explore another subject or take a refreshing break.') + '</small></div><button type="button" id="ep-smart-action">' + (mist ? 'Review' : 'Study') + ' →</button></div>' +
       '<h2 class="dh2">Browse by level</h2>' +
-      '<div class="cats" role="group" aria-label="Learning categories">' + CATS.slice().sort(function (a, b) { return (catCount(b) > 0) - (catCount(a) > 0); }).map(function (c, i) {
+      '<div class="cats" role="group" aria-label="Learning categories">' + learnerCategories().slice().sort(function (a, b) { return (catCount(b) > 0) - (catCount(a) > 0); }).map(function (c, i) {
         var n = catCount(c), ready = n > 0;
         return '<button type="button" class="cat ' + (ready ? 'ready' : 'soon') + '" data-c="' + c.id + '" style="--c1:' + c.c[0] + ';--c2:' + c.c[1] + ';--i:' + i + '"' + (ready ? '' : ' aria-disabled="true"') + '><span class="tag">' + (ready ? n.toLocaleString() + ' questions' : 'Soon') + '</span>' + ICON[c.icon] + '<b>' + c.name + '</b><small>' + c.sub + '</small></button>';
       }).join('') + '</div></div>';
@@ -958,7 +979,7 @@ body.exam-on .ep-nav-menu{display:none}
     var smart = document.getElementById('ep-smart-action'); if (smart) smart.onclick = function () { if (mist && mDept) { var mm = load().mistakes[mDept] || {}; quiz(mDept, 'practice', Object.keys(mm).map(function (k) { return mm[k]; }), 'Fix my mistakes'); } else { document.querySelector('.home2 .cats')?.scrollIntoView({behavior:'smooth',block:'start'}); } };
     var tc = document.getElementById('tchal'); if (tc) tc.onclick = function () { buzz(); quiz(ch.d.id, 'practice', ch.ix.map(function (i) { return prep(ch.d.q[i], ch.d.id, i); }), 'Daily challenge'); };
     var tf = document.getElementById('tfix'); if (tf) tf.onclick = function () { buzz(); var m = load().mistakes[mDept] || {}; quiz(mDept, 'practice', Object.keys(m).map(function (k) { return m[k]; }), 'Fix my mistakes'); };
-    var ts = document.getElementById('tsur'); if (ts) ts.onclick = function () { buzz(); var rd = BANK.filter(function (d) { return d.q.length >= 10; }); var d = rd[Math.floor(Math.random() * rd.length)]; if (d) quiz(d.id, 'practice', quickSet(d, 10), 'Surprise me'); };
+    var ts = document.getElementById('tsur'); if (ts) ts.onclick = function () { buzz(); var rd = learnerBank().filter(function (d) { return d.q.length >= 10; }); var d = rd[Math.floor(Math.random() * rd.length)]; if (d) quiz(d.id, 'practice', quickSet(d, 10), 'Surprise me'); };
     [].forEach.call(app.querySelectorAll('.cat'), function (b) {
       b.onclick = function () {
         var c = catById(b.getAttribute('data-c'));
@@ -995,10 +1016,10 @@ body.exam-on .ep-nav-menu{display:none}
   }
   // The levels of a category come from the data: grades for secondary, colleges (programs) for university.
   function levelsFor(c) {
-    if (c.id === 'sec') return [['9', 'g9_10'], ['10', 'g9_10'], ['11', 'g11'], ['12', 'g12']].map(function (x) { return { id: x[0], label: x[0], group: x[1], name: 'Grade ' + x[0] }; })
+    if (c.id === 'sec') return [['9', 'g9_10'], ['10', 'g9_10'], ['11', 'g11'], ['12', 'g12']].filter(function (x) { var st = learner().stage; return !/^g([1-9]|1[0-2])$/.test(st || '') || x[0] === st.slice(1); }).map(function (x) { return { id: x[0], label: x[0], group: x[1], name: 'Grade ' + x[0] }; })
       .map(function (l) { l.subjects = BANK.filter(function (d) { return d.group === l.group; }); return l; });
-    var out = [], seen = {}; BANK.forEach(function (d) { if (c.groups.indexOf(d.group) >= 0 && !seen[d.college]) { seen[d.college] = 1; out.push({ id: d.college, label: d.college, name: d.college, subjects: [] }); } });
-    out.forEach(function (l) { l.subjects = BANK.filter(function (d) { return c.groups.indexOf(d.group) >= 0 && d.college === l.id; }); });
+    var out = [], seen = {}; BANK.forEach(function (d) { if (learnerBank().indexOf(d) >= 0 && c.groups.indexOf(d.group) >= 0 && !seen[d.college]) { seen[d.college] = 1; out.push({ id: d.college, label: d.college, name: d.college, subjects: [] }); } });
+    out.forEach(function (l) { l.subjects = learnerBank().filter(function (d) { return c.groups.indexOf(d.group) >= 0 && d.college === l.id; }); });
     return out;
   }
   function pcTxt(m, t) { var v = t ? m / t * 100 : 0; return m && v < 1 ? '<1%' : Math.round(v) + '%'; }
@@ -1016,7 +1037,7 @@ body.exam-on .ep-nav-menu{display:none}
     if (!ui.sel && subs.length) ui.sel = subs[0].id;
     var selD = subs.filter(function (d) { return d.id === ui.sel; })[0];
     function pctOf(list) { var t = 0, m = 0; list.forEach(function (d) { t += d.q.length; m += masteredOf(p, d); }); return { t: t, m: m, pct: t ? Math.round(m / t * 100) : 0, txt: pcTxt(m, t), w: pcW(m, t) }; }
-    var all = pctOf(BANK.filter(function (d) { return c.groups.indexOf(d.group) >= 0; })), ct = pctOf(subs);
+    var all = pctOf(learnerBank().filter(function (d) { return c.groups.indexOf(d.group) >= 0; })), ct = pctOf(subs);
     var html = '<div class="dash catv' + (soft ? '' : ' ent') + '"><div class="pick-h"><div class="pick-h-icon">' + ICON[c.icon] + '</div><div class="pick-h-copy"><span class="pick-eyebrow">YOUR LEARNING PATH</span><h1>' + esc(c.name) + '</h1><p>' + esc(c.sub) + '</p></div></div>' +
       '<div class="catp"><div class="catp-t"><b>' + all.txt + '</b> mastered · ' + all.m.toLocaleString() + ' of ' + all.t.toLocaleString() + ' questions</div><div class="dbar" role="progressbar" aria-label="Mastery" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + all.pct + '"><i style="width:' + all.w + '%"></i></div></div>' +
       '<h2 class="pk-l" id="lvl">' + (isGrade ? 'Choose your grade' : 'Choose your program') + '</h2>' +
@@ -1058,15 +1079,15 @@ body.exam-on .ep-nav-menu{display:none}
     var p = load(), k = ui.search.trim().toLowerCase(), acc = p.answered ? Math.round(p.correct / p.answered * 100) : 0, pct = Math.min(100, Math.round(p.today / dailyGoal() * 100));
     var mist = 0; Object.keys(p.mistakes).forEach(function (d) { mist += Object.keys(p.mistakes[d]).length; });
     var gi = function (g) { for (var i = 0; i < STAGES.length; i++) if (STAGES[i].id === g) return i; return 99; };
-    var list = BANK.filter(function (d) { return (ui.group === 'all' || d.group === ui.group) && (!k || d.name.toLowerCase().indexOf(k) >= 0 || d.college.toLowerCase().indexOf(k) >= 0); });
+    var list = learnerBank().filter(function (d) { return (ui.group === 'all' || d.group === ui.group) && (!k || d.name.toLowerCase().indexOf(k) >= 0 || d.college.toLowerCase().indexOf(k) >= 0); });
     var colleges = [], rank = {}; list.forEach(function (d) { if (colleges.indexOf(d.college) < 0) { colleges.push(d.college); rank[d.college] = gi(d.group); } });
     colleges.sort(function (a, b) { return rank[a] - rank[b]; });
-    var total = BANK.reduce(function (n, d) { return n + d.q.length; }, 0);
-    var avail = STAGES.filter(function (g) { return stageCount(g.id); }), soonL = STAGES.filter(function (g) { return !stageCount(g.id); });
+    var total = learnerBank().reduce(function (n, d) { return n + d.q.length; }, 0);
+    var groups = learnerGroup(); var avail = STAGES.filter(function (g) { return (!groups || groups.indexOf(g.id) >= 0) && stageCount(g.id); }), soonL = STAGES.filter(function (g) { return (!groups || groups.indexOf(g.id) >= 0) && !stageCount(g.id); });
     var html = '<section class="hero2"><span class="kick">Grade 1 → University → NGAT</span><h1>Pass your <em>entrance</em>, <em>university</em> and <em>exit</em> exams</h1><p>' + total.toLocaleString() + ' real past-paper questions, each with a clear explanation. Free to practise.</p>' +
       '<button class="btn gold lg" id="startgo">Start practice <span aria-hidden="true">→</span></button>' +
       '<div class="hstats"><div><b><span aria-hidden="true">🔥</span> ' + p.streak + '</b><small>day streak</small></div><div><b><span aria-hidden="true">⭐</span> ' + p.xp + '</b><small>XP · Level ' + level(p.xp) + '</small></div><div><b><span aria-hidden="true">🎯</span> ' + acc + '%</b><small>accuracy</small></div></div>' +
-      '<div class="goal"><span>Daily goal</span><span>' + Math.min(p.today, GOAL) + '/' + GOAL + (pct >= 100 ? ' 🎉' : '') + '</span></div><div class="ring" role="progressbar" aria-label="Daily goal" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct + '"><i style="width:' + pct + '%"></i></div>' +
+      '<div class="goal"><span>Daily goal</span><span>' + Math.min(p.today, dailyGoal()) + '/' + dailyGoal() + (pct >= 100 ? ' 🎉' : '') + '</span></div><div class="ring" role="progressbar" aria-label="Daily goal" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct + '"><i style="width:' + pct + '%"></i></div>' +
       (mist ? '<p class="rev">📝 ' + mist + ' question' + (mist === 1 ? '' : 's') + ' to review</p>' : '') + '</section>' +
       '<h2 class="sec" id="paths">Choose your exam<small>Pick a stage</small></h2><div class="path" role="group" aria-label="Choose your stage">' +
       avail.map(function (g) { var n = stageCount(g.id); return '<button class="stage ' + (ui.group === g.id ? 'on' : '') + '" aria-pressed="' + (ui.group === g.id) + '" data-g="' + g.id + '"><span class="num" style="background:var(--l' + (STAGES.indexOf(g) + 1) + ')">' + g.num + '</span><span class="st"><b>' + g.name + '</b><small>' + g.sub + '</small></span><span class="pill">' + n.toLocaleString() + ' questions</span></button>'; }).join('') + '</div>' +
