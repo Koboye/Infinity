@@ -99,13 +99,13 @@
       '<section class="ep-unified-card"><span class="ep-progress-kicker">DATA & PRIVACY</span><h2>Your progress, your data</h2><p>Practice records, study-plan settings and this profile are stored in this browser. They are not a Firebase account and do not sync across devices.</p><button class="ep-unified-action ep-profile-export" type="button" id="ep-profile-export">Export my learning data</button><p id="ep-export-status" role="status" class="ep-profile-status"></p></section>';
   }
   function close() {
-    panel.hidden = true; app.hidden = false; nav.classList.remove('ep-unified-active');
+    panel.hidden = true; app.hidden = false; nav.classList.remove('ep-unified-active'); document.body.classList.remove('ep-panel-open');
     nav.querySelectorAll('.ep-unified-tab').forEach(function (b) { b.removeAttribute('aria-current'); });
   }
   function open(name) {
     if (document.body.classList.contains('exam-on')) return;
     panel.innerHTML = '<button type="button" class="ep-unified-back" id="ep-unified-back">← Back to learning</button>' + (name === 'progress' ? progress() : name === 'plan' ? plan() : profile());
-    panel.hidden = false; app.hidden = true; nav.classList.add('ep-unified-active');
+    panel.hidden = false; app.hidden = true; nav.classList.add('ep-unified-active'); document.body.classList.add('ep-panel-open');
     nav.querySelectorAll('.ep-unified-tab').forEach(function (b) { b.setAttribute('aria-current', b.dataset.panel === name ? 'page' : 'false'); });
     panel.querySelector('#ep-unified-back').addEventListener('click', function () { close(); document.getElementById('nv-home').click(); });
     panel.querySelectorAll('[data-task]').forEach(function (box) {
