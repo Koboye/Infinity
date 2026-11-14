@@ -317,86 +317,129 @@ html:has(.inf-root){font-size:112.5%}
 .inf-root .inf-slide>.inf-link.inf-forgot{display:block;margin:-8px 0 16px auto;text-align:right}
 .inf-root .inf-auth-panel form>.inf-link{display:block;margin:12px auto 0}
 
-/* ===== v7 rebrand: auth screens (sign in, sign up, level, department) =====
-   Scoped with :has(.inf-auth) so the home, subjects and game screens are untouched.
-   One violet glow, solid panels, one type scale, one set of sizes for every step. */
+/* ===== v8 level picker (auth screen + in-app "Choose your level") =====
+   Uses theme variables, so it follows light or dark. Tabs, then one swipeable rail of grouped panels. */
+.inf-root .inf-sr{position:absolute!important;width:1px!important;height:1px!important;margin:-1px!important;padding:0!important;overflow:hidden!important;clip:rect(0 0 0 0)!important;white-space:nowrap!important;border:0!important}
+.inf-root .inf-picker{margin:4px 0 6px;min-width:0}
+.inf-root .inf-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px;margin:0 0 14px;border-radius:999px;
+  background:color-mix(in srgb,var(--inf-text) 9%,transparent);border:1px solid color-mix(in srgb,var(--inf-text) 18%,transparent)}
+.inf-root .inf-tabs button{display:flex;align-items:center;justify-content:center;gap:7px;min-height:46px;padding:6px 8px;border:0;border-radius:999px;
+  background:none;color:var(--inf-text);font-size:.94rem;font-weight:700;white-space:nowrap}
+.inf-root .inf-tabs button.is-on{background:linear-gradient(180deg,#8D5CFF,#5E34F0);color:#fff;box-shadow:0 6px 16px rgba(94,52,240,.45)}
+.inf-root .inf-rail{display:flex;gap:12px;min-width:0;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding:4px 2px 8px;
+  overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scroll-padding-inline:2px;
+  mask-image:linear-gradient(90deg,transparent 0,#000 14px,#000 calc(100% - 22px),transparent 100%)}
+.inf-root .inf-rail::-webkit-scrollbar{display:none}
+.inf-root .inf-pane{flex:0 0 auto;scroll-snap-align:start;--tone:#7BA0FF;padding:12px 12px 14px;border-radius:22px;
+  background:color-mix(in srgb,var(--tone) 9%,transparent);border:1px solid color-mix(in srgb,var(--tone) 32%,transparent)}
+.inf-root .inf-pane[data-tone=kg]{--tone:#FFC83D}
+.inf-root .inf-pane[data-tone=pri]{--tone:#7BA0FF}
+.inf-root .inf-pane[data-tone=prep]{--tone:#B58BFF}
+.inf-root .inf-pane[data-tone=sec]{--tone:#FF8FB0}
+.inf-root .inf-pane-head{display:flex;align-items:center;gap:10px;margin:0 2px 11px;white-space:nowrap}
+.inf-root .inf-pane-ico{display:grid;place-items:center;flex:0 0 auto;width:36px;height:36px;border-radius:12px;font-size:1.15rem;background:color-mix(in srgb,var(--tone) 30%,transparent)}
+.inf-root .inf-pane-head b{display:block;font:700 1.02rem var(--inf-font-d);color:var(--inf-text)}
+.inf-root .inf-pane-head small{display:block;margin-top:1px;font-size:.76rem;font-weight:600;color:var(--inf-mute)}
+.inf-root .inf-tl-row{display:flex;gap:8px}
+.inf-root .inf-tl{position:relative;flex:0 0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  min-width:70px;min-height:88px;padding:8px 8px;border-radius:18px;text-align:center;
+  background:color-mix(in srgb,var(--inf-text) 7%,transparent);border:1.5px solid color-mix(in srgb,var(--tone) 38%,transparent)}
+.inf-root .inf-tl i{font-style:normal;font-size:1.65rem;line-height:1}
+.inf-root .inf-tl b{font:800 1.08rem var(--inf-font-d);letter-spacing:-.01em;line-height:1.1}
+.inf-root .inf-tl small{font-size:.72rem;font-weight:600;opacity:.8;line-height:1.1}
+.inf-root .inf-tl[aria-pressed=true]{color:#0F1B4C;background:var(--inf-sun);border-color:var(--inf-sun);transform:translateY(-3px) scale(1.04);
+  box-shadow:0 10px 24px rgba(255,200,61,.42);animation:inf-pop .32s cubic-bezier(.3,1.6,.5,1)}
+.inf-root .inf-chk{position:absolute;top:-8px;right:-8px;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#6A3FF0;color:#fff;
+  font:800 .75rem/1 var(--inf-font-b);font-style:normal;box-shadow:0 0 0 2px var(--inf-sun)}
+.inf-root .inf-solo{display:grid;place-items:center;padding:8px 0 4px}
+.inf-root .inf-tl-wide{min-width:min(100%,260px);min-height:120px;padding:14px 18px}
+.inf-root .inf-tl-wide i{font-size:2.2rem}
+.inf-root .inf-tl-wide b{font-size:1.5rem}
+.inf-root .inf-tl-wide small{font-size:.85rem}
+.inf-root .inf-swipe{display:flex;justify-content:center;align-items:center;gap:6px;margin:0 0 14px;font-size:.82rem;font-weight:600;color:var(--inf-mute)}
+.inf-root .inf-swipe span{animation:inf-nudge 1.4s ease-in-out infinite}
+@keyframes inf-nudge{0%,100%{transform:translateX(0)}50%{transform:translateX(5px)}}
+@media(prefers-reduced-motion:reduce){.inf-root .inf-swipe span,.inf-root .inf-tl[aria-pressed=true]{animation:none}}
+
+/* ===== v8 rebrand: auth screens =====
+   Scoped with :has(.inf-auth) so home, subjects and games are untouched. */
 html:has(.inf-auth){font-size:100%}
 .inf-root:has(.inf-auth){
-  --inf-ink:#0A0B2E;--inf-paper:#0A0B2E;--inf-card:#14154D;--inf-field:#1B1C63;
-  --inf-text:#F5F4FF;--inf-mute:#B9B7EA;--inf-line:#35368F;--inf-blue:#7A4DFF;--inf-focus:#FFC83D;
-  --inf-err:#FFB4C0;--inf-ok:#7BE0B5;--inf-violet:#7A4DFF;--inf-violet2:#5A2FEA;color-scheme:dark;
-  background:radial-gradient(80% 55% at 50% -8%,rgba(122,77,255,.55) 0,transparent 70%),radial-gradient(60% 40% at 100% 100%,rgba(90,47,234,.28) 0,transparent 70%),#0A0B2E;
+  --inf-ink:#0A0B3A;--inf-paper:#0B0C45;--inf-card:#1A1670;--inf-field:rgba(52,40,170,.55);
+  --inf-text:#F7F4FF;--inf-mute:#CFC7F5;--inf-line:rgba(190,172,255,.38);--inf-blue:#8D5CFF;--inf-focus:#FFC83D;
+  --inf-err:#FFC2CC;--inf-ok:#7BE0B5;color-scheme:dark;
+  background:radial-gradient(90% 46% at 50% 0%,#4A2CC9 0,transparent 72%),radial-gradient(70% 44% at 100% 100%,#5B34E0 0,transparent 72%),linear-gradient(180deg,#0E1164,#0A0B42 55%,#130C5E);
 }
-.inf-root .inf-app.inf-auth{background:none}
+.inf-root .inf-app.inf-auth{position:relative;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto 1fr;min-height:100dvh;background:none;overflow:hidden}
+.inf-root .inf-bg{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.inf-root .inf-auth-brand,.inf-root .inf-auth-panel{position:relative;z-index:1}
 
-/* brand: no dark slab, no watermark, just the lockup on the page background */
-.inf-root .inf-auth-brand{background:none;border-radius:0;padding:max(28px,env(safe-area-inset-top)) 22px 8px;text-align:center}
+/* header: laurel + logo + tagline */
+.inf-root .inf-auth-brand{background:none;border-radius:0;text-align:center;display:block;padding:max(26px,env(safe-area-inset-top)) 18px 4px}
 .inf-root .inf-auth-brand::before,.inf-root .inf-auth-brand::after{display:none}
-.inf-root .inf-lockup{justify-content:center;font-size:2rem}
-.inf-root .inf-auth-brand h1{font-size:clamp(1.05rem,3.6vw,1.25rem);font-weight:600;letter-spacing:0;color:var(--inf-mute);margin:12px auto 0;max-width:30ch}
-.inf-root .inf-auth.is-compact .inf-auth-brand h1{display:none}
-.inf-root .inf-auth.is-compact .inf-auth-brand{padding-bottom:0}
-@media(min-width:900px){
-  .inf-root .inf-auth-brand{text-align:left;padding:56px 48px}
-  .inf-root .inf-lockup{justify-content:flex-start;font-size:2.4rem}
-  .inf-root .inf-auth-brand h1{display:block;color:var(--inf-text);font-size:clamp(1.9rem,3vw,2.6rem);font-weight:800;letter-spacing:-.02em;margin:28px 0 12px;max-width:16ch}
-  .inf-root .inf-auth-brand p{display:block;color:var(--inf-mute);font-size:1.05rem}
-  .inf-root .inf-ladder li{background:rgba(122,77,255,.18);border:1px solid rgba(160,140,255,.28);color:var(--inf-text)}
-}
+.inf-root .inf-lockup{display:flex;justify-content:center;align-items:center;gap:12px;font:800 2.1rem var(--inf-font-d);letter-spacing:-.03em;color:#fff}
+.inf-root .inf-laurel{width:22px;height:44px;flex:0 0 auto}
+.inf-root .inf-tag{display:flex;justify-content:center;align-items:center;gap:12px;margin-top:6px;font-size:.7rem;font-weight:700;letter-spacing:.34em;text-transform:uppercase;color:#D7CCFF}
+.inf-root .inf-tag i{width:5px;height:5px;border-radius:50%;background:#9B7BFF;flex:0 0 auto}
 
-/* panel: one solid card, same width and padding on every step */
-.inf-root .inf-auth-panel{background:none;padding:18px 16px calc(32px + env(safe-area-inset-bottom))}
-.inf-root .inf-auth-panel form{width:min(100%,520px);padding:clamp(22px,5vw,34px);background:var(--inf-card);
-  border:1px solid rgba(160,140,255,.28);border-radius:28px;box-shadow:0 24px 60px rgba(4,4,30,.55),inset 0 1px 0 rgba(255,255,255,.06)}
-.inf-root .inf-auth-panel header{margin-bottom:22px;text-align:center}
-.inf-root .inf-auth-panel h2,.inf-root .inf-auth-panel header h2{font-size:clamp(1.7rem,5.2vw,2.1rem);font-weight:800;letter-spacing:-.025em}
-.inf-root .inf-auth-panel header p{font-size:1rem;line-height:1.45;color:var(--inf-mute);margin:8px auto 0;max-width:34ch}
+/* card */
+.inf-root .inf-auth-panel{display:grid;place-items:start center;background:none;padding:16px 14px calc(34px + env(safe-area-inset-bottom))}
+.inf-root .inf-auth-panel form{width:min(100%,440px);padding:clamp(20px,5vw,30px) clamp(18px,5vw,30px) 26px;border-radius:36px;
+  background:linear-gradient(165deg,rgba(158,118,255,.55) 0,rgba(78,56,214,.46) 38%,rgba(36,30,158,.62) 100%);
+  border:1.5px solid rgba(205,188,255,.55);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  box-shadow:0 30px 80px rgba(8,6,52,.6),0 0 64px rgba(122,77,255,.28),inset 0 1px 0 rgba(255,255,255,.18)}
+.inf-root .inf-auth-panel header{margin:0 0 18px;text-align:center}
+.inf-root .inf-auth-panel h2,.inf-root .inf-auth-panel header h2{margin:6px 0 8px;font-size:clamp(1.85rem,7vw,2.25rem);font-weight:800;letter-spacing:-.025em;color:#fff;text-shadow:0 2px 14px rgba(20,10,90,.5)}
+.inf-root .inf-auth-panel header p{margin:0 auto;max-width:32ch;font-size:1rem;line-height:1.45;color:#EAE4FF}
+.inf-root .inf-hero-art{display:block;width:150px;height:auto;margin:0 auto -2px;filter:drop-shadow(0 10px 18px rgba(10,6,70,.45))}
+.inf-root .inf-foot-art{display:block;width:min(100%,250px);height:auto;margin:16px auto 0}
+@media(max-height:760px){.inf-root .inf-hero-art{width:112px}.inf-root .inf-foot-art{width:200px;margin-top:8px}}
 
-/* infinity progress line: the logo loop fills as the person moves through sign up */
-.inf-root .inf-progress{display:block;width:68px;height:auto;margin:0 auto 16px;overflow:visible}
-.inf-root .inf-progress path{fill:none;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}
-.inf-root .inf-progress .trk{stroke:var(--inf-line)}
-.inf-root .inf-progress .fill{stroke:var(--inf-sun);stroke-dasharray:100;filter:drop-shadow(0 0 6px rgba(255,200,61,.55));transition:stroke-dashoffset .5s cubic-bezier(.2,.8,.3,1)}
-@media(prefers-reduced-motion:reduce){.inf-root .inf-progress .fill{transition:none}}
+/* step dots */
+.inf-root .inf-dots{display:flex;align-items:center;justify-content:center;margin:0 0 10px}
+.inf-root .inf-dots i{display:grid;place-items:center;flex:0 0 auto;width:22px;height:22px;border-radius:50%;border:2px solid #C9B8FF;background:#8F62FF}
+.inf-root .inf-dots i.now{background:#fff;border-color:#fff;box-shadow:0 0 0 5px rgba(255,255,255,.18)}
+.inf-root .inf-dots i.next{width:14px;height:14px;border-color:#7C68F0;background:#5B47DA}
+.inf-root .inf-dots span{width:30px;height:3px;border-radius:2px;background:rgba(190,170,255,.45)}
+.inf-root .inf-dots span.on{background:#C9B8FF}
+.inf-root .inf-dot-tick{width:12px;height:12px;stroke-width:3.4;color:#fff}
 
-/* fields and buttons: one size everywhere */
-.inf-root .inf-field{font-size:.92rem;font-weight:600;margin-bottom:16px;color:var(--inf-text)}
-.inf-root .inf-field>span:first-child{margin-bottom:7px;color:var(--inf-mute)}
-.inf-root .inf-app input:not([type=range]):not([type=checkbox]),.inf-root .inf-app select{min-height:56px;font-size:1rem;padding:12px 16px;border-radius:16px;
-  background:var(--inf-field);border:1.5px solid var(--inf-line)}
-.inf-root .inf-app input:focus{border-color:var(--inf-sun);box-shadow:0 0 0 4px rgba(255,200,61,.18)}
-.inf-root .inf-pass input{padding-right:84px!important}
-.inf-root .inf-ghost{font-size:.95rem;color:var(--inf-mute)}
-.inf-root .inf-link{font-size:.98rem;color:#CDBEFF}
-.inf-root .inf-switch{font-size:.98rem}
-.inf-root .inf-auth-panel .inf-primary{min-height:58px;font-size:1.05rem;border-radius:18px;margin-top:6px;border:0;color:#fff;
-  background:linear-gradient(135deg,var(--inf-violet) 0,var(--inf-violet2) 100%);box-shadow:0 10px 26px rgba(90,47,234,.45)}
-.inf-root .inf-auth-panel .inf-primary:hover{filter:brightness(1.08)}
-.inf-root .inf-auth-panel .inf-primary:disabled{background:var(--inf-line);color:var(--inf-mute);box-shadow:none;filter:none}
-.inf-root .inf-primary[data-ready]{animation:inf-glow7 1.8s ease-in-out infinite}
-@keyframes inf-glow7{0%,100%{box-shadow:0 10px 26px rgba(90,47,234,.45),0 0 0 0 rgba(122,77,255,.5)}50%{box-shadow:0 10px 26px rgba(90,47,234,.45),0 0 0 9px rgba(122,77,255,0)}}
-@media(prefers-reduced-motion:reduce){.inf-root .inf-primary[data-ready]{animation:none}}
+/* fields: pill, leading icon, trailing eye or check */
+.inf-root .inf-field{display:block;margin:0 0 14px;font-size:1rem}
+.inf-root .inf-ctl{position:relative;display:flex;align-items:center}
+.inf-root .inf-ico{position:absolute;left:20px;width:22px;height:22px;color:#F1ECFF;pointer-events:none}
+.inf-root:has(.inf-auth) .inf-app input:not([type=range]):not([type=checkbox]){width:100%;min-height:58px;padding:12px 56px 12px 56px;font-size:1rem;font-weight:500;
+  color:#fff;background:var(--inf-field);border:1.5px solid rgba(190,172,255,.42);border-radius:999px;box-shadow:inset 0 2px 8px rgba(10,6,70,.25)}
+.inf-root:has(.inf-auth) .inf-app input:focus{border-color:#FFC83D;box-shadow:0 0 0 4px rgba(255,200,61,.2);outline:none}
+.inf-root:has(.inf-auth) .inf-app input::placeholder{color:#E3DCFF;opacity:.9}
+.inf-root .inf-ctl .inf-eye{position:absolute;right:10px;display:grid;place-items:center;width:42px;height:42px;min-height:42px;padding:0;border:0;border-radius:50%;background:none;color:#F1ECFF}
+.inf-root .inf-ctl .inf-eye .inf-ico{position:static}
+.inf-root .inf-ok{position:absolute;right:14px;display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#18B26B;box-shadow:0 0 0 3px rgba(24,178,107,.25)}
+.inf-root .inf-ok-ico{width:16px;height:16px;stroke-width:3.4;color:#fff}
+.inf-root .inf-slide>.inf-link.inf-forgot{display:block;margin:-4px 4px 16px auto;text-align:right}
 
-/* level picker: swipeable strip, tiles one size, selected tile in sun yellow */
-.inf-root .inf-grade-track{gap:20px;mask-image:linear-gradient(90deg,transparent 0,#000 18px,#000 calc(100% - 18px),transparent 100%)}
-.inf-root .inf-grade-track button{min-width:76px;min-height:96px;border-radius:20px;border-width:1.5px;background:color-mix(in srgb,var(--tone) 12%,var(--inf-card))}
-.inf-root .inf-grade-track button b{font-size:1.75rem}
-.inf-root .inf-grade-track button small{font-size:.8rem}
-.inf-root .inf-grade-track button.inf-wide{min-width:132px}
-.inf-root .inf-grade-track button.inf-wide b{font-size:1.25rem}
-.inf-root .inf-grade-track button[aria-pressed=true]{background:var(--inf-sun);border-color:var(--inf-sun);color:#0F1B4C;box-shadow:0 8px 22px rgba(255,200,61,.4)}
-.inf-root .inf-stage-cap{font-size:.72rem}
-.inf-root .inf-grade-arrow{background:var(--inf-field)}
-@media(max-width:520px){.inf-root .inf-grade-track button{min-width:70px}.inf-root .inf-grade-track button.inf-wide{min-width:120px}}
+/* links + primary button */
+.inf-root:has(.inf-auth) .inf-link{font-size:1rem;font-weight:700;color:#DCCFFF}
+.inf-root .inf-switch{margin:16px 0 0;font-size:1rem;color:#EAE4FF}
+.inf-root:has(.inf-auth) .inf-primary{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;min-height:60px;margin-top:6px;padding:12px 22px;
+  font-size:1.18rem;font-weight:800;color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:999px;
+  background:linear-gradient(180deg,#9462FF 0,#6035F0 100%);box-shadow:0 12px 30px rgba(84,44,230,.55),inset 0 1px 0 rgba(255,255,255,.35)}
+.inf-root:has(.inf-auth) .inf-primary:hover{background:linear-gradient(180deg,#A070FF 0,#6A40FA 100%)}
+.inf-root:has(.inf-auth) .inf-primary:disabled{background:rgba(120,100,230,.42);border-color:rgba(255,255,255,.18);color:#E3DCFF;box-shadow:none;opacity:1}
+.inf-root .inf-arrow{width:22px;height:22px;flex:0 0 auto;stroke-width:2.4}
+.inf-root:has(.inf-auth) .inf-primary[data-ready]{animation:inf-glow8 1.8s ease-in-out infinite}
+@keyframes inf-glow8{0%,100%{box-shadow:0 12px 30px rgba(84,44,230,.55),0 0 0 0 rgba(160,120,255,.55)}50%{box-shadow:0 12px 30px rgba(84,44,230,.55),0 0 0 9px rgba(160,120,255,0)}}
+@media(prefers-reduced-motion:reduce){.inf-root:has(.inf-auth) .inf-primary[data-ready]{animation:none}}
+.inf-root .inf-auth-panel .inf-error{text-align:center}
 
-/* department cards */
-.inf-root .inf-dept-track button{font-size:1rem;min-height:68px;border-radius:18px;background:var(--inf-field)}
-.inf-root .inf-dept-track button span{background:var(--inf-violet);font-size:1rem}
-.inf-root .inf-dept-track button[aria-pressed=true]{background:var(--inf-sun);color:#0F1B4C}
-
-/* v7 fix: the auth screen is always dark, so group captions always use the bright tones */
-.inf-root:has(.inf-auth) .inf-stage[data-tone=kg]{--tone:#FFC83D}
-.inf-root:has(.inf-auth) .inf-stage[data-tone=pri]{--tone:#9FB2FF}
-.inf-root:has(.inf-auth) .inf-stage[data-tone=sec]{--tone:#C3AAFF}
-.inf-root:has(.inf-auth) .inf-stage[data-tone=uni]{--tone:#5FE0B8}
-.inf-root:has(.inf-auth) .inf-stage[data-tone=exam]{--tone:#FF9AAB}
+/* level picker inside the glass card */
+.inf-root:has(.inf-auth) .inf-tabs{background:rgba(214,202,255,.22);border-color:rgba(214,202,255,.4)}
+.inf-root:has(.inf-auth) .inf-pane{background:rgba(30,22,130,.4)}
+.inf-root:has(.inf-auth) .inf-tl{background:rgba(40,30,150,.5)}
+.inf-root:has(.inf-auth) .inf-tl[aria-pressed=true]{background:var(--inf-sun)}
+.inf-root:has(.inf-auth) .inf-grade-arrow{background:rgba(40,30,150,.55);border-color:rgba(190,172,255,.4);color:#fff}
+.inf-root:has(.inf-auth) .inf-dept-track button{background:rgba(40,30,150,.5);color:#fff}
+.inf-root:has(.inf-auth) .inf-dept-track button[aria-pressed=true]{background:var(--inf-sun);color:#0F1B4C}
+.inf-root:has(.inf-auth) .inf-dept-track button span{background:#7A4DFF}
+@media(max-width:520px){.inf-root .inf-tl{min-width:66px}.inf-root .inf-tabs button{font-size:.88rem;gap:5px}}
+.inf-root .inf-pane-head{position:sticky;left:14px;width:max-content;max-width:calc(100vw - 110px)}
