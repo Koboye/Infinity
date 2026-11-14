@@ -176,3 +176,8 @@ body { padding-bottom:76px; }
 .ep-splash-cta { background:linear-gradient(#ffe56e,#ffbd05); color:#16154c; border-radius:999px; padding:14px 45px; text-decoration:none; font-weight:800; }
 .ep-splash-sign { color:#fff; margin-top:20px; }
 @media(max-width:600px){ .ep-level-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .ep-metric-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .ep-top nav { gap:8px; font-size:12px; } .ep-top nav a:first-child,.ep-top nav a:nth-child(2) { display:none; } }
+
+.ep-home-shortcuts { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:9px; margin:0 0 24px; }
+.ep-home-shortcuts a { text-align:center; padding:15px 7px; border:1px solid var(--line); background:var(--card); border-radius:13px; color:var(--ink); text-decoration:none; font-size:13px; font-weight:700; }
+.ep-home-shortcuts a:hover { border-color:var(--brand); }
+@media(max-width:520px) { .ep-home-shortcuts { grid-template-columns:repeat(2,minmax(0,1fr)); } }
