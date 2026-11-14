@@ -503,6 +503,26 @@ body.dash-on{background:#080f32 radial-gradient(ellipse 80% 55% at 90% 0%,rgba(8
 @media(max-width:500px){.catv .pick-h{padding:17px;gap:12px}.catv .pick-h-icon{width:59px;height:59px;border-radius:16px}.catv .pick-h-icon svg{width:42px;height:42px}.catv .lv{grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}.catv .lv button{min-height:72px}.catv .sjs{gap:9px}.catv .sj{min-height:147px;padding:14px 7px}.catv .sj b{font-size:.9rem}}
 @media(max-width:360px){.catv .lv{grid-template-columns:repeat(2,minmax(0,1fr))}.catv .lv button{min-height:65px}.catv .pick-h{align-items:flex-start}.catv .pick-h h1{font-size:1.35rem}}
 @media(prefers-reduced-motion:reduce){.catv .sj,.catv .lv button,.catv .prg button{transition:none!important;animation:none!important}}
+</style><style id="ep-screen-03">
+/* Screen 03 — Subject dashboard: same exam logic, cohesive information hierarchy */
+.ep-subject-screen{max-width:760px;margin:0 auto;padding-bottom:28px}
+.ep-subject-back{margin:4px 0 14px}.ep-subject-back a{display:inline-flex;align-items:center;min-height:38px;padding:7px 12px;border-radius:11px;color:#dce6ff;text-decoration:none;background:rgba(255,255,255,.08);font-weight:750;font-size:13px}
+.ep-subject-hero{padding:clamp(20px,5vw,32px)!important;border-radius:24px!important;background:radial-gradient(circle at 92% 8%,rgba(255,214,111,.27),transparent 46%),linear-gradient(130deg,#1c3b9c,#5940b4)!important;color:#fff!important;border:1px solid rgba(255,255,255,.23)!important;box-shadow:0 16px 34px rgba(7,18,76,.24)}
+.ep-subject-eyebrow{display:block;font-size:11px;letter-spacing:.14em;font-weight:900;color:#ffdc85;margin-bottom:10px}
+.ep-subject-hero h1{font-size:clamp(1.6rem,5vw,2.4rem)!important;letter-spacing:-.04em;line-height:1.16;margin:0 0 9px!important;color:#fff!important}
+.ep-subject-hero p{color:#e0e6ff!important;line-height:1.5;margin:0!important}
+.ep-subject-stats{display:flex;gap:9px;flex-wrap:wrap;margin-top:21px}
+.ep-subject-stats span{display:inline-flex;align-items:center;gap:6px;padding:9px 12px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);border-radius:11px;color:#fff;font-size:12px}
+.ep-subject-stats strong{font-variant-numeric:tabular-nums}
+.ep-subject-screen>.card:not(.ep-subject-hero){border-radius:20px;padding:clamp(17px,4vw,24px);margin-bottom:13px;border:1px solid var(--line);box-shadow:0 8px 25px rgba(0,0,0,.065)}
+.ep-subject-screen>.card h2{font-size:clamp(1.1rem,3vw,1.32rem);letter-spacing:-.025em;line-height:1.3}
+.ep-subject-screen>.card .hint{line-height:1.55}
+.ep-subject-screen>.card .btn{min-height:44px;border-radius:12px;font-weight:800}
+.ep-subject-screen>.card select{min-height:46px;border-radius:12px;margin-top:6px}
+.ep-subject-screen .chips{display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;padding:5px 2px 13px;scrollbar-width:thin}
+.ep-subject-screen .chips button{flex:none;min-height:39px;border-radius:999px;padding:8px 14px}
+.ep-subject-screen button:focus-visible,.ep-subject-screen a:focus-visible,.ep-subject-screen select:focus-visible{outline:3px solid #e9b946;outline-offset:3px}
+@media(max-width:460px){.ep-subject-stats{gap:7px}.ep-subject-stats span{font-size:11px;padding:8px 9px}.ep-subject-hero{padding:19px!important}}
 </style></head>
 <body>
 <div class="splash" id="splash" role="dialog" aria-modal="true" aria-labelledby="sp-title" hidden>
@@ -831,12 +851,12 @@ body.dash-on{background:#080f32 radial-gradient(ellipse 80% 55% at 90% 0%,rgba(8
     var pool = d.q.filter(function (r) { return !topic || r[4] === topic; }), max = pool.length;
     var sizes = [5, 10, 20, 30, 50, 100, max].filter(function (x, i, a) { return x <= max && a.indexOf(x) === i; }).sort(function (a, b) { return a - b; });
     var b1 = p.best[id + ':practice'], b2 = p.best[id + ':exam'];
-    app.innerHTML = '<p style="margin:2px 0 12px"><a href="#" id="back">← Back to subjects</a></p><section class="card hero"><h1>' + esc(d.name) + '</h1><p>' + d.q.length + ' questions with explanations</p></section>' +
+    app.innerHTML = '<div class="ep-subject-screen"><p class="ep-subject-back"><a href="#" id="back">← Back to subjects</a></p><section class="card hero ep-subject-hero"><span class="ep-subject-eyebrow">YOUR SUBJECT DASHBOARD</span><h1>' + esc(d.name) + '</h1><p>' + d.q.length + ' questions with explanations · ' + esc(d.college) + '</p><div class="ep-subject-stats"><span>📚 <strong>' + d.q.length + '</strong> questions</span><span>📝 <strong>' + mist + '</strong> to review</span><span>🎯 <strong>' + (b1 || 0) + '%</strong> practice best</span></div></section>' +
       (rs ? '<div class="card" style="border-color:var(--brand)"><h2>⏯ Resume your exam</h2><p class="hint">' + Object.keys(rs.picked).length + ' of ' + rs.set.length + ' answered · ' + (rs.endAt > Date.now() ? clockTxt(Math.ceil((rs.endAt - Date.now()) / 1000)) + ' left' : 'time is up') + '</p><button class="btn" id="resume">' + (rs.endAt > Date.now() ? 'Resume exam' : 'See my result') + '</button></div>' : '') +
       (mist ? '<div class="card" style="border-color:var(--bad)"><h2>📝 Fix my mistakes</h2><p class="hint">' + mist + ' question(s) you got wrong. Answer one correctly and it leaves the list.</p><button class="btn" id="fix">Practise my mistakes (' + mist + ')</button></div>' : '') +
       (topics.length > 1 ? '<div class="chips"><button data-t="" aria-pressed="' + (!topic) + '" class="' + (!topic ? 'on' : '') + '">All</button>' + topics.map(function (t) { return '<button data-t="' + esc(t) + '" aria-pressed="' + (topic === t) + '" class="' + (topic === t ? 'on' : '') + '">' + esc(t) + '</button>'; }).join('') + '</div>' : '') +
       '<div class="card"><h2>Practice ' + (b1 ? '<span class="pill good">best ' + b1 + '%</span>' : '') + '</h2><p class="hint">See the answer and a smart explanation after every question.</p><button class="btn" id="prac">Start practice (' + max + ')</button></div>' +
-      '<div class="card"><h2>' + (d.group === 'uni' || d.group === 'ngat' ? 'Exit exam simulation' : 'Mock exam') + ' ' + (b2 ? '<span class="pill good">best ' + b2 + '%</span>' : '') + '</h2><p class="hint">Timed, answers shown only at the end.</p><label for="n" class="hint">Number of questions</label><select id="n">' + sizes.map(function (x) { return '<option>' + x + '</option>'; }).join('') + '</select><button class="btn gold mt" id="exam">Start timed exam</button></div>';
+      '<div class="card"><h2>' + (d.group === 'uni' || d.group === 'ngat' ? 'Exit exam simulation' : 'Mock exam') + ' ' + (b2 ? '<span class="pill good">best ' + b2 + '%</span>' : '') + '</h2><p class="hint">Timed, answers shown only at the end.</p><label for="n" class="hint">Number of questions</label><select id="n">' + sizes.map(function (x) { return '<option>' + x + '</option>'; }).join('') + '</select><button class="btn gold mt" id="exam">Start timed exam</button></div></div>';
     document.getElementById('back').onclick = function (e) { e.preventDefault(); home(); };
     var rb = document.getElementById('resume'); if (rb) rb.onclick = function () { quiz(id, 'exam', null, rs.label, rs); };
     [].forEach.call(app.querySelectorAll('[data-t]'), function (b) { b.onclick = function () { deptPage(id, b.getAttribute('data-t')); }; });
