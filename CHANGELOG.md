@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased — exam.pro upgrade, screen 3 (Grade / program and subject picker)
+- The bottom bar is never a dead end any more: the subject you studied last is already selected (or the first one), and the main button starts 10 practice questions right away ("▶ Practice Biology"). A small Options button opens the full subject page (timed exam, topics, resume).
+- Tap a subject once to select it, tap it again to start. Opening Grades 9–12 jumps to the grade of your last subject.
+- New: each subject shows a mastery bar ("Not started" / "12% mastered"), a "Last studied" tag, and how many mistakes are waiting. The header shows total mastery for the whole category.
+- Grade tiles show progress ("Ready", "4% done") and the unavailable grades are clearly marked 🔒 Soon.
+- "Mastered" means answered correctly at least once. It is stored on the device and starts counting from this update; saved streaks, XP and mistakes are untouched.
+
 ## Unreleased — exam.pro upgrade, screen 2 (Home dashboard)
 - New "next up" card at the top, so a student is one tap from a question: it resumes an unfinished exam, or starts 10 fresh questions in the subject they studied last, or (first visit) 5 quick Grade 12 Mathematics questions.
 - New: level ring around the avatar that fills toward the next level ("20 XP to Level 4"), a time-of-day greeting, and a streak flame that only lights while the streak is alive.

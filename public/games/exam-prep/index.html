@@ -274,6 +274,23 @@ body.has-nav .bnav{display:flex}
 @keyframes homeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 @media(max-width:360px){.hero2{flex-direction:column;align-items:stretch}.h2go{width:100%}}
 @media(prefers-reduced-motion:reduce){.hero2,.gcard,.qtile,.home2 .dsum,.home2 .cat,.rgf,.strk.on span{animation:none!important}}
+/* ── upgrade screen 3: grade / program and subject picker ── */
+.catp{margin:-.2rem 0 .3rem}.catp-t{font-size:.875rem;color:#B9C6F5;font-weight:600}.catp-t b{color:var(--ep-gold-soft);font-size:1rem;font-weight:850}
+.catp .dbar{margin:.4rem 0 .4rem}
+.pk-s{font:600 .8rem var(--sans);color:#B9C6F5;margin-left:.4rem}
+.lv button small{font-size:.7rem}
+.lv button[aria-pressed=true] small{color:#fff}
+.pbar .pop{flex:none;background:transparent;color:#fff;border:2px solid rgba(255,255,255,.4);box-shadow:none;padding:.6rem 1rem}.pbar .pop:disabled{opacity:.4}
+.pbar .bk{padding:.6rem 1rem}
+.sj{overflow:hidden}
+.sj .mb{display:block;width:78%;height:.38rem;margin-top:.25rem;border-radius:9px;background:rgba(11,18,69,.14);overflow:hidden}
+.sj .mb i{display:block;height:100%;width:var(--w);border-radius:9px;background:linear-gradient(90deg,#1DB66A,#7EE6AD);transition:width .6s}
+.sj em{font-style:normal;font-size:.7rem;font-weight:800;color:#0B7A45}
+.sj .lastr{position:absolute;top:.5rem;left:.5rem;padding:.12rem .5rem;border-radius:99px;font-size:.65rem;font-weight:850;letter-spacing:.02em;color:#2b1800;background:linear-gradient(180deg,var(--ep-gold-soft),var(--ep-gold))}
+.sj[aria-pressed=true]{transform:translateY(-3px)}
+.sj[aria-pressed=true] small{color:#0B1245}
+.catv.ent .sj,.catv.ent .lv button,.catv.ent .prg button{animation:homeUp .45s calc(.05s + var(--i,0) * .04s) both}
+@media(prefers-reduced-motion:reduce){.catv.ent .sj,.catv.ent .lv button,.catv.ent .prg button{animation:none!important}.sj,.sj .mb i{transition:none}}
 .toast{position:fixed;left:1rem;right:1rem;bottom:calc(5.6rem + env(safe-area-inset-bottom));z-index:50;max-width:26rem;margin:0 auto;padding:.8rem 1.1rem;border-radius:var(--ep-r-lg);background:#fff;color:#0B1245;font-weight:700;box-shadow:0 10px 30px rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .2s}
 .toast.on{opacity:1}
 .catv .back{margin:0 0 .8rem}
@@ -460,6 +477,7 @@ body.has-xbar .xbar{display:flex}
     var dd = s.days = s.days || {}; dd[t] = (dd[t] || 0) + 1; var dk = Object.keys(dd).sort(); while (dk.length > 60) delete dd[dk.shift()];
     var gain = ok ? 10 + Math.min(combo, 5) * 2 : 2; s.xp += gain; if (ok) s.correct++;
     var m = s.mistakes[dept] = s.mistakes[dept] || {};
+    if (ok) { var mk = s.ok = s.ok || {}, md = mk[dept] = mk[dept] || {}, ix = String(q.id).slice(String(dept).length + 1); if (/^\d+$/.test(ix)) md[ix] = 1; }
     if (ok) delete m[q.id]; else if (Object.keys(m).length < 200) m[q.id] = { id: q.id, text: q.text, options: q.options, answer: q.answer, explanation: q.explanation, topic: q.topic };
     save(s); return { s: s, gain: gain };
   }
@@ -609,25 +627,38 @@ body.has-xbar .xbar{display:flex}
     out.forEach(function (l) { l.subjects = BANK.filter(function (d) { return c.groups.indexOf(d.group) >= 0 && d.college === l.id; }); });
     return out;
   }
+  function pcTxt(m, t) { var v = t ? m / t * 100 : 0; return m && v < 1 ? '<1%' : Math.round(v) + '%'; }
+  function pcW(m, t) { var v = t ? m / t * 100 : 0; return m ? Math.max(3, Math.round(v)) : 0; }
+  function masteredOf(p, d) { return Math.min(d.q.length, Object.keys((p.ok || {})[d.id] || {}).length); }
   function catView(soft) {
     chrome('pick');
-    var c = catById(ui.cat), lvs = levelsFor(c), isGrade = c.id === 'sec';
+    var c = catById(ui.cat), lvs = levelsFor(c), isGrade = c.id === 'sec', p = load();
+    if (!ui.lv && p.lastDept) { var lw = lvs.filter(function (l) { return l.subjects.some(function (d) { return d.id === p.lastDept; }); })[0]; if (lw) ui.lv = lw.id; }
     var cur = lvs.filter(function (l) { return l.id === ui.lv; })[0];
     if (!cur || !cur.subjects.length) { cur = lvs.filter(function (l) { return l.subjects.length; })[0]; ui.lv = cur ? cur.id : null; ui.sel = null; }
-    var subs = cur ? cur.subjects : [], selD = ui.sel && subs.filter(function (d) { return d.id === ui.sel; })[0];
-    if (!selD) ui.sel = null;
-    var html = '<div class="dash catv"><div class="pick-h">' + ICON[c.icon] + '<div><h1>' + esc(c.name) + '</h1><p>' + esc(c.sub) + '</p></div></div>' +
+    var subs = cur ? cur.subjects : [];
+    if (ui.sel && !subs.some(function (d) { return d.id === ui.sel; })) ui.sel = null;
+    if (!ui.sel && p.lastDept && subs.some(function (d) { return d.id === p.lastDept; })) ui.sel = p.lastDept;
+    if (!ui.sel && subs.length) ui.sel = subs[0].id;
+    var selD = subs.filter(function (d) { return d.id === ui.sel; })[0];
+    function pctOf(list) { var t = 0, m = 0; list.forEach(function (d) { t += d.q.length; m += masteredOf(p, d); }); return { t: t, m: m, pct: t ? Math.round(m / t * 100) : 0, txt: pcTxt(m, t), w: pcW(m, t) }; }
+    var all = pctOf(BANK.filter(function (d) { return c.groups.indexOf(d.group) >= 0; })), ct = pctOf(subs);
+    var html = '<div class="dash catv' + (soft ? '' : ' ent') + '"><div class="pick-h">' + ICON[c.icon] + '<div><h1>' + esc(c.name) + '</h1><p>' + esc(c.sub) + '</p></div></div>' +
+      '<div class="catp"><div class="catp-t"><b>' + all.txt + '</b> mastered · ' + all.m.toLocaleString() + ' of ' + all.t.toLocaleString() + ' questions</div><div class="dbar" role="progressbar" aria-label="Mastery" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + all.pct + '"><i style="width:' + all.w + '%"></i></div></div>' +
       '<h2 class="pk-l" id="lvl">' + (isGrade ? 'Choose your grade' : 'Choose your program') + '</h2>' +
       (isGrade ? '<div class="lv" role="group" aria-labelledby="lvl">' + lvs.map(function (l) {
-        var ok = l.subjects.length; return '<button type="button" data-l="' + esc(l.id) + '" aria-pressed="' + (cur && cur.id === l.id) + '"' + (ok ? '' : ' class="soon" aria-disabled="true"') + ' aria-label="' + l.name + (ok ? '' : ', coming soon') + '">' + l.label + (ok ? '' : '<small>Soon</small>') + '</button>'; }).join('') + '</div>'
-        : '<div class="prg" role="group" aria-labelledby="lvl">' + lvs.map(function (l) { return '<button type="button" data-l="' + esc(l.id) + '" aria-pressed="' + (cur && cur.id === l.id) + '">' + esc(l.label) + '<small>' + l.subjects.length + ' ' + (l.subjects.length === 1 ? 'subject' : 'subjects') + '</small></button>'; }).join('') + '</div>') +
-      '<h2 class="pk-l" id="sjl">Choose your subject</h2>' +
-      (subs.length ? '<div class="sjs" role="group" aria-labelledby="sjl">' + subs.map(function (d) {
-        return '<button type="button" class="sj" data-d="' + esc(d.id) + '" aria-pressed="' + (ui.sel === d.id) + '">' + subjIcon(d.name) + '<b>' + esc(d.name) + '</b><small>' + d.q.length + ' questions</small></button>'; }).join('') + '</div>' : '<p class="pk-e">No subjects here yet.</p>') + '</div>';
+        var ok = l.subjects.length, lp = ok ? pctOf(l.subjects).pct : 0; return '<button type="button" data-l="' + esc(l.id) + '" aria-pressed="' + (cur && cur.id === l.id) + '"' + (ok ? '' : ' class="soon" aria-disabled="true"') + ' aria-label="' + l.name + (ok ? ', ' + lp + ' percent mastered' : ', coming soon') + '">' + l.label + '<small>' + (ok ? (lp ? lp + '% done' : pctOf(l.subjects).m ? '<1% done' : 'Ready') : '🔒 Soon') + '</small></button>'; }).join('') + '</div>'
+        : '<div class="prg" role="group" aria-labelledby="lvl">' + lvs.map(function (l) { var lp = pctOf(l.subjects).pct; return '<button type="button" data-l="' + esc(l.id) + '" aria-pressed="' + (cur && cur.id === l.id) + '">' + esc(l.label) + '<small>' + l.subjects.length + ' ' + (l.subjects.length === 1 ? 'subject' : 'subjects') + (lp ? ' · ' + lp + '%' : '') + '</small></button>'; }).join('') + '</div>') +
+      '<h2 class="pk-l" id="sjl">Choose your subject <small class="pk-s">' + (ct.m ? ct.txt + ' mastered' : subs.length + ' subjects') + '</small></h2>' +
+      (subs.length ? '<div class="sjs" role="group" aria-labelledby="sjl">' + subs.map(function (d, i) {
+        var m = masteredOf(p, d), pc = pcW(m, d.q.length), ms = Object.keys(p.mistakes[d.id] || {}).length, last = p.lastDept === d.id;
+        return '<button type="button" class="sj" style="--i:' + i + '" data-d="' + esc(d.id) + '" aria-pressed="' + (ui.sel === d.id) + '">' + (last ? '<span class="lastr">Last studied</span>' : '') + subjIcon(d.name) + '<b>' + esc(d.name) + '</b><small>' + d.q.length + ' questions' + (ms ? ' · 📝 ' + ms : '') + '</small><span class="mb" aria-hidden="true"><i style="--w:' + pc + '%"></i></span><em>' + (m ? pcTxt(m, d.q.length) + ' mastered' : 'Not started') + '</em></button>'; }).join('') + '</div>' : '<p class="pk-e">No subjects here yet.</p>') + '</div>';
     app.innerHTML = html;
     var bar = document.getElementById('pbar');
-    bar.innerHTML = '<button type="button" class="btn bk" id="pbk"><span aria-hidden="true">←</span> Back</button><button type="button" class="btn gold go" id="pgo"' + (ui.sel ? '' : ' disabled') + '>' + (ui.sel ? 'Continue to ' + esc(selD.name) : 'Choose a subject') + '</button>';
+    bar.innerHTML = '<button type="button" class="btn bk" id="pbk" aria-label="Back"><span aria-hidden="true">←</span></button><button type="button" class="btn pop" id="popt"' + (selD ? '' : ' disabled') + '>Options</button><button type="button" class="btn gold go" id="pgo"' + (selD ? '' : ' disabled') + '>' + (selD ? '▶ Practice ' + esc(selD.name) : 'Choose a subject') + '</button>';
     function again(sel) { var y = window.scrollY; catView(true); window.scrollTo(0, y); var n = app.querySelector(sel); if (n) n.focus({ preventScroll: true }); }
+    function buzz() { try { if (navigator.vibrate) navigator.vibrate(10); } catch (e) {} }
+    function go(d) { buzz(); quiz(d.id, 'practice', quickSet(d, 10), 'Quick practice'); }
     [].forEach.call(app.querySelectorAll('[data-l]'), function (b) {
       b.onclick = function () {
         var id = b.getAttribute('data-l'), l = lvs.filter(function (x) { return x.id === id; })[0];
@@ -636,10 +667,11 @@ body.has-xbar .xbar{display:flex}
       };
     });
     [].forEach.call(app.querySelectorAll('.sj'), function (b) {
-      b.onclick = function () { var id = b.getAttribute('data-d'); ui.sel = ui.sel === id ? null : id; again('[data-d="' + id + '"]'); say(ui.sel ? dept(id).name + ' selected' : 'Selection cleared'); };
+      b.onclick = function () { var id = b.getAttribute('data-d'); if (ui.sel === id) { go(dept(id)); return; } buzz(); ui.sel = id; again('[data-d="' + id + '"]'); say(dept(id).name + ' selected. Tap again or press Practice to start.'); };
     });
     document.getElementById('pbk').onclick = function () { ui.search = ''; dash(); };
-    document.getElementById('pgo').onclick = function () { if (ui.sel) deptPage(ui.sel, ''); };
+    document.getElementById('popt').onclick = function () { if (selD) deptPage(selD.id, ''); };
+    document.getElementById('pgo').onclick = function () { if (selD) go(selD); };
     if (!soft) landed(c.name, 'h1');
   }
   document.getElementById('nv-home').onclick = function () { dash(); };
