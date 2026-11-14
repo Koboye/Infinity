@@ -19,8 +19,34 @@ const css=document.createElement('style');css.textContent=`
 .ep-auth form{display:grid;gap:13px}.ep-auth label{display:grid;gap:6px;font-size:12px;font-weight:800;color:#314773}.ep-auth input,.ep-auth select{width:100%;border:1px solid #cbd7ed;border-radius:12px;padding:13px;font:inherit;background:#fff;color:#1a2c54;min-height:48px}
 .ep-auth input:focus,.ep-auth select:focus{outline:3px solid #a9caff}.ep-auth-primary{background:linear-gradient(#ffdd61,#ffbf24);border:0;border-radius:13px;min-height:51px;font-size:16px;font-weight:900;color:#152c60;cursor:pointer}
 .ep-auth-google{border:1px solid #cbd7ed;border-radius:13px;background:#fff;color:#1d3668;width:100%;min-height:48px;font-weight:850;cursor:pointer}.ep-auth-divider{text-align:center;color:#8a9bb6;margin:13px}.ep-auth-error{color:#a4233b;font-size:12px;min-height:16px;text-align:center}.ep-auth-note{font-size:11px;text-align:center;color:#7888a2;line-height:1.5}.ep-auth button:focus-visible{outline:3px solid #f5c335;outline-offset:3px}
+
+/* v3: readable, spacious, accessible authentication layout */
+.ep-auth{background:radial-gradient(circle at 18% 8%,#2b78e7 0,transparent 37%),linear-gradient(145deg,#052967 0%,#0752ba 75%,#083c92 100%);padding:clamp(14px,4vh,36px) 16px!important}
+.ep-auth-card{max-width:440px!important;border-radius:24px!important;padding:clamp(20px,4vw,34px)!important;box-shadow:0 30px 90px #001b5660!important;position:relative}
+.ep-auth label[hidden],.ep-auth [hidden]{display:none!important}
+.ep-auth-back{display:inline-flex;align-items:center;gap:5px;font-size:13px!important;color:#647795!important}
+.ep-auth-brand{font-size:30px!important;margin:5px 0 21px!important;color:#133a83!important}
+.ep-auth-tabs{gap:6px!important;padding:5px!important;margin-bottom:20px!important}
+.ep-auth-tabs button{min-height:44px!important;font-size:13px!important;white-space:nowrap}
+.ep-auth h1{font-size:clamp(23px,5vw,28px)!important;line-height:1.2!important;margin:0 0 8px!important}
+.ep-auth-sub{font-size:13px!important;line-height:1.5!important;margin:0 0 23px!important}
+.ep-auth form{gap:14px!important}
+.ep-auth label{font-size:13px!important;gap:7px!important;line-height:1.3!important}
+.ep-auth input,.ep-auth select{display:block!important;box-sizing:border-box!important;min-width:0!important;font-size:15px!important;line-height:1.3!important;min-height:50px!important;padding:13px 14px!important;border:1.5px solid #d6e0ef!important;border-radius:11px!important;box-shadow:none!important}
+.ep-auth input:focus,.ep-auth select:focus{border-color:#1462d3!important;outline:3px solid #dbe9ff!important}
+.ep-auth-primary{margin-top:5px!important;min-height:52px!important;border-radius:12px!important;box-shadow:0 4px 0 #d49a18!important;cursor:pointer}
+.ep-auth-primary:disabled,.ep-auth-google:disabled{opacity:.65;cursor:wait;box-shadow:none!important}
+.ep-auth-link{font-size:13px!important;display:block;margin:13px 0 0 auto!important}
+.ep-auth-divider{display:flex;align-items:center;gap:12px;margin:18px 0!important;font-size:12px!important}
+.ep-auth-divider:before,.ep-auth-divider:after{content:"";height:1px;background:#e1e8f2;flex:1}
+.ep-auth-google{min-height:50px!important;font-size:14px!important}
+.ep-auth-error{margin:12px 0 0!important;line-height:1.5!important;font-weight:650!important}
+.ep-auth-error:empty{display:none!important}
+.ep-auth-note{margin:17px 0 0!important;font-size:11px!important}
+@media(max-width:420px){.ep-auth-card{padding:21px 17px!important}.ep-auth-brand{margin-bottom:15px!important}.ep-auth-tabs{margin-bottom:17px!important}.ep-auth-sub{margin-bottom:17px!important}}
 `;document.head.appendChild(css);
 function message(m){$('ep-auth-error').textContent=m||''}
+function setBusy(on){busy=on;$('ep-auth-submit').disabled=on;$('ep-auth-google').disabled=on;$('ep-auth-submit').textContent=on?'Please wait…':mode==='signup'?'Create account →':'Sign in →'}
 function setMode(m){mode=m;$('ep-tab-in').classList.toggle('active',m==='signin');$('ep-tab-up').classList.toggle('active',m==='signup');$('ep-auth-title').textContent=m==='signup'?'Create your account':'Welcome back';$('ep-auth-sub').textContent=m==='signup'?'Make your learning journey yours.':'Sign in to continue learning.';$('ep-name-wrap').hidden=m!=='signup';$('ep-grade-wrap').hidden=m!=='signup';$('ep-auth-submit').textContent=m==='signup'?'Create account →':'Sign in →';$('ep-auth-reset').hidden=m==='signup';$('ep-auth-password').autocomplete=m==='signup'?'new-password':'current-password';message('')}
 function open(){modal.hidden=false;document.body.style.overflow='hidden';setMode('signin');$('ep-auth-email').focus()}
 function close(){modal.hidden=true;document.body.style.overflow=''}
@@ -42,8 +68,8 @@ async function sync(u){
 }
 async function afterAuth(u){user=u;try{await sync(u)}catch(e){console.warn('ExamPro cloud progress sync failed; keeping local progress',e)}close();document.dispatchEvent(new CustomEvent('exampro:auth-changed',{detail:{uid:u.uid,email:u.email}}));}
 async function ensureReady(){if(!auth||!api)throw Error('Secure sign-in is not configured yet. Add the Firebase web configuration to firebase-config.js and enable Firebase Authentication and Firestore.')}
-$('ep-auth-form').onsubmit=async e=>{e.preventDefault();if(busy)return;busy=true;message('');try{await ensureReady();let email=$('ep-auth-email').value.trim(),pass=$('ep-auth-password').value;let result;if(mode==='signup'){let name=$('ep-auth-name').value.trim(),stage=$('ep-auth-grade').value;if(!name||!stage)throw Error('Enter your name and choose your learning level.');result=await api.createUserWithEmailAndPassword(auth,email,pass);await api.updateProfile(result.user,{displayName:name});putLocal(PROFILE,{...(getLocal(PROFILE)||{}),name,stage});}else result=await api.signInWithEmailAndPassword(auth,email,pass);await afterAuth(result.user)}catch(err){message(err.code==='auth/email-already-in-use'?'This email already has an account. Please sign in.':err.code==='auth/invalid-credential'?'Incorrect email or password.':err.message||'Sign-in failed.')}finally{busy=false}};
-$('ep-auth-google').onclick=async()=>{try{await ensureReady();const r=await api.signInWithPopup(auth,new api.GoogleAuthProvider());await afterAuth(r.user)}catch(e){message(e.message||'Google sign-in failed.')}};
+$('ep-auth-form').onsubmit=async e=>{e.preventDefault();if(busy)return;setBusy(true);message('');try{await ensureReady();let email=$('ep-auth-email').value.trim(),pass=$('ep-auth-password').value;let result;if(mode==='signup'){let name=$('ep-auth-name').value.trim(),stage=$('ep-auth-grade').value;if(!name||!stage)throw Error('Enter your name and choose your learning level.');result=await api.createUserWithEmailAndPassword(auth,email,pass);await api.updateProfile(result.user,{displayName:name});putLocal(PROFILE,{...(getLocal(PROFILE)||{}),name,stage});}else result=await api.signInWithEmailAndPassword(auth,email,pass);await afterAuth(result.user)}catch(err){message(err.code==='auth/email-already-in-use'?'This email already has an account. Please sign in.':err.code==='auth/invalid-credential'?'Incorrect email or password.':({'auth/network-request-failed':'Network problem. Check your connection and try again.','auth/too-many-requests':'Too many attempts. Please try again later.','auth/weak-password':'Use a password with at least 6 characters.','auth/operation-not-allowed':'This sign-in method is not enabled in Firebase.'}[err.code]||err.message||'Sign-in failed.'))}finally{setBusy(false)}};
+$('ep-auth-google').onclick=async()=>{if(busy)return;setBusy(true);try{await ensureReady();const r=await api.signInWithPopup(auth,new api.GoogleAuthProvider());await afterAuth(r.user)}catch(e){message(e.message||'Google sign-in failed.')}finally{setBusy(false)}};
 $('ep-auth-reset').onclick=async()=>{try{await ensureReady();let email=$('ep-auth-email').value.trim();if(!email)throw Error('Enter your email first.');await api.sendPasswordResetEmail(auth,email);message('Password reset email sent.')}catch(e){message(e.message)}};
 window.ExamProAuth={open,close,get configured(){return !!(CONFIG&&CONFIG.apiKey&&CONFIG.projectId)},get user(){return user},signOut:async()=>{await ensureReady();await api.signOut(auth);user=null;document.dispatchEvent(new Event('exampro:auth-changed'))},saveProgress:async()=>{if(!user||!db)return;await api.setDoc(api.doc(db,'students',user.uid),{profile:getLocal(PROFILE)||{},progress:getLocal(PROGRESS)||{},plan:getLocal(PLAN)||{},updatedAt:api.serverTimestamp()},{merge:true})}};
 document.addEventListener('click',e=>{const btn=e.target.closest('[data-ep-auth]');if(btn){e.preventDefault();open()}});
