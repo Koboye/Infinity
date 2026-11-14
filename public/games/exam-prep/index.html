@@ -147,28 +147,50 @@ body{line-height:1.5}.wrap{max-width:720px}
 body.sp-lock{overflow:hidden}
 .splash{position:fixed;inset:0;z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#fff;overflow:hidden;
 padding:max(20px,env(safe-area-inset-top)) 24px max(20px,env(safe-area-inset-bottom));
-background:radial-gradient(70% 45% at 50% 22%,rgba(109,76,240,.38),transparent 70%),radial-gradient(60% 40% at 85% 70%,rgba(47,107,255,.28),transparent 70%),linear-gradient(180deg,var(--ep-navy-950),var(--ep-navy-900) 55%,var(--ep-navy-800));transition:opacity .35s,transform .35s}
-.splash.out{opacity:0;transform:scale(1.03);pointer-events:none}
-.sp-stars{position:absolute;inset:0;opacity:.5;background-image:radial-gradient(1.5px 1.5px at 12% 18%,#fff,transparent),radial-gradient(1.5px 1.5px at 78% 12%,#fff,transparent),radial-gradient(1px 1px at 30% 40%,#fff,transparent),radial-gradient(1.5px 1.5px at 90% 36%,#FFE29A,transparent),radial-gradient(1px 1px at 8% 62%,#fff,transparent),radial-gradient(1px 1px at 66% 28%,#fff,transparent)}
+background:radial-gradient(70% 45% at 50% 22%,rgba(109,76,240,.38),transparent 70%),radial-gradient(60% 40% at 85% 70%,rgba(47,107,255,.28),transparent 70%),linear-gradient(180deg,var(--ep-navy-950),var(--ep-navy-900) 55%,var(--ep-navy-800));transition:opacity .4s,transform .4s}
+.splash.out{opacity:0;transform:scale(1.06);pointer-events:none}
+.sp-aurora{position:absolute;inset:-20%;pointer-events:none;filter:blur(40px);opacity:.75}
+.sp-aurora i{position:absolute;border-radius:50%;mix-blend-mode:screen}
+.sp-aurora i:nth-child(1){width:60%;height:40%;left:5%;top:8%;background:radial-gradient(closest-side,rgba(109,76,240,.55),transparent);animation:spDrift1 14s ease-in-out infinite alternate}
+.sp-aurora i:nth-child(2){width:55%;height:38%;right:0;top:34%;background:radial-gradient(closest-side,rgba(47,107,255,.45),transparent);animation:spDrift2 17s ease-in-out infinite alternate}
+.sp-aurora i:nth-child(3){width:40%;height:28%;left:30%;bottom:12%;background:radial-gradient(closest-side,rgba(245,184,46,.22),transparent);animation:spDrift1 20s ease-in-out infinite alternate-reverse}
+.sp-stars{position:absolute;inset:0;opacity:.55;background-image:radial-gradient(1.5px 1.5px at 12% 18%,#fff,transparent),radial-gradient(1.5px 1.5px at 78% 12%,#fff,transparent),radial-gradient(1px 1px at 30% 40%,#fff,transparent),radial-gradient(1.5px 1.5px at 90% 36%,#FFE29A,transparent),radial-gradient(1px 1px at 8% 62%,#fff,transparent),radial-gradient(1px 1px at 66% 28%,#fff,transparent);animation:spTwinkle 4.5s ease-in-out infinite alternate}
+.sp-stars::after{content:"";position:absolute;inset:0;background-image:radial-gradient(1px 1px at 22% 8%,#fff,transparent),radial-gradient(1.5px 1.5px at 55% 20%,#FFE29A,transparent),radial-gradient(1px 1px at 84% 52%,#fff,transparent),radial-gradient(1px 1px at 40% 70%,#fff,transparent),radial-gradient(1.5px 1.5px at 94% 8%,#fff,transparent);animation:spTwinkle 3.2s 1.2s ease-in-out infinite alternate-reverse}
 .sp-main{position:relative;z-index:2;width:100%;max-width:26rem;display:flex;flex-direction:column;align-items:center;margin-bottom:clamp(110px,24vh,190px)}
-.sp-emblem{width:clamp(8.5rem,38vw,12rem);height:auto;filter:drop-shadow(0 8px 22px rgba(245,184,46,.28));animation:spIn .7s cubic-bezier(.2,.8,.2,1) both}
-.sp-word{margin:.1em 0 0;font:850 clamp(3.1rem,17vw,4.6rem)/1 var(--sans);letter-spacing:-.045em;animation:spUp .6s .15s both}
-.sp-word i{font-style:normal;color:var(--ep-gold)}
-.sp-slogan{margin:.55rem 0 0;font-size:1.05rem;font-weight:600;letter-spacing:.02em;color:#C9D6FF;animation:spUp .6s .25s both}
-.sp-mission{margin:1.6rem 0 0;font-size:1.5rem;font-weight:800;line-height:1.2;letter-spacing:-.01em;animation:spUp .6s .35s both}
+.sp-emwrap{position:relative;display:grid;place-items:center;animation:spIn .8s cubic-bezier(.2,.8,.2,1) both}
+.sp-emwrap::before{content:"";position:absolute;width:150%;aspect-ratio:1;border-radius:50%;background:radial-gradient(closest-side,rgba(245,184,46,.30),rgba(245,184,46,0) 70%);animation:spHalo 3.6s ease-in-out infinite}
+.sp-emblem{position:relative;width:clamp(8.5rem,38vw,12rem);height:auto;filter:drop-shadow(0 8px 22px rgba(245,184,46,.32));animation:spFloat 5s ease-in-out 1s infinite}
+.sp-word{margin:.1em 0 0;font:850 clamp(3.1rem,17vw,4.6rem)/1 var(--sans);letter-spacing:-.045em;animation:spUp .6s .2s both}
+.sp-word i{font-style:normal;background:linear-gradient(100deg,#F5B82E 30%,#FFF3C4 48%,#F5B82E 66%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;animation:spShine 4.5s 1.4s ease-in-out infinite}
+.sp-slogan{margin:.6rem 0 0;display:flex;gap:.55rem;align-items:center;justify-content:center;font-size:1.05rem;font-weight:700;letter-spacing:.02em;color:#C9D6FF}
+.sp-slogan span{animation:spUp .5s both}.sp-slogan span:nth-child(1){animation-delay:.45s}.sp-slogan span:nth-child(3){animation-delay:.6s}.sp-slogan span:nth-child(5){animation-delay:.75s}
+.sp-slogan b{color:var(--ep-gold);opacity:.8;animation:spUp .5s .55s both}
+.sp-mission{margin:1.4rem 0 0;font-size:1.5rem;font-weight:800;line-height:1.2;letter-spacing:-.01em;animation:spUp .6s .9s both}
 .sp-mission span{display:block;color:var(--ep-gold)}
-.sp-go{margin-top:1.6rem;min-height:3.5rem;padding:.9rem 2.2rem;border:0;border-radius:999px;font:inherit;font-size:1.15rem;font-weight:800;color:#2b1800;cursor:pointer;
-background:linear-gradient(180deg,var(--ep-gold-soft),var(--ep-gold));box-shadow:0 4px 0 #A8700B,0 12px 28px rgba(245,184,46,.3);transition:transform .12s,box-shadow .12s;animation:spUp .6s .45s both}
+.sp-chips{margin:1.2rem 0 0;display:flex;flex-wrap:wrap;gap:.5rem;justify-content:center;animation:spUp .6s 1.05s both}
+.sp-chips span{display:inline-flex;align-items:center;gap:.35rem;padding:.38rem .8rem;border-radius:999px;font-size:.82rem;font-weight:700;color:#E6ECFF;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.sp-chips .hot{color:#2b1800;background:linear-gradient(180deg,var(--ep-gold-soft),var(--ep-gold));border-color:transparent}
+.sp-go{position:relative;overflow:hidden;margin-top:1.5rem;min-height:3.6rem;padding:.9rem 2.4rem;border:0;border-radius:999px;font:inherit;font-size:1.15rem;font-weight:800;color:#2b1800;cursor:pointer;
+background:linear-gradient(180deg,var(--ep-gold-soft),var(--ep-gold));box-shadow:0 4px 0 #A8700B,0 12px 28px rgba(245,184,46,.34);transition:transform .12s,box-shadow .12s;animation:spUp .6s 1.2s both,spPulse 2.6s 2.2s ease-in-out infinite}
+.sp-go::after{content:"";position:absolute;top:0;bottom:0;left:-60%;width:40%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.65),transparent);transform:skewX(-20deg);animation:spSweep 3.4s 2.4s ease-in-out infinite}
 .sp-go:active{transform:translateY(3px);box-shadow:0 1px 0 #A8700B,0 6px 14px rgba(245,184,46,.25)}
 .sp-go:focus-visible{outline:2px solid var(--ep-gold-soft);outline-offset:4px}
 .sp-art{position:absolute;left:0;right:0;bottom:0;height:clamp(150px,30vh,230px);z-index:1;pointer-events:none}
 .sp-africa{position:absolute;left:0;right:0;margin:0 auto;bottom:clamp(54px,9vh,80px);width:clamp(6.5rem,30vw,9.5rem);height:auto;filter:drop-shadow(0 0 26px rgba(245,184,46,.35));animation:spIn .9s .3s both}
 .sp-ping{transform-box:fill-box;transform-origin:center;animation:ping 2.4s 1.2s infinite ease-out}
 .sp-sky{position:absolute;left:0;bottom:0;width:100%;height:clamp(70px,13vh,110px);display:block}
-@keyframes spIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:none}}
-@keyframes spUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes spIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:none}}
+@keyframes spUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 @keyframes ping{0%{transform:scale(1);opacity:.9}100%{transform:scale(3.4);opacity:0}}
-@media(max-height:640px){.sp-main{margin-bottom:96px}.sp-mission{margin-top:1rem}.sp-go{margin-top:1rem}.sp-africa{display:none}}
+@keyframes spFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+@keyframes spHalo{0%,100%{opacity:.55;transform:scale(.92)}50%{opacity:1;transform:scale(1.08)}}
+@keyframes spShine{0%,55%{background-position:100% 0}100%{background-position:-60% 0}}
+@keyframes spSweep{0%,60%{left:-60%}100%{left:130%}}
+@keyframes spPulse{0%,100%{box-shadow:0 4px 0 #A8700B,0 12px 28px rgba(245,184,46,.34)}50%{box-shadow:0 4px 0 #A8700B,0 14px 40px rgba(245,184,46,.62)}}
+@keyframes spTwinkle{from{opacity:.25}to{opacity:.85}}
+@keyframes spDrift1{from{transform:translate(0,0) scale(1)}to{transform:translate(12%,8%) scale(1.15)}}
+@keyframes spDrift2{from{transform:translate(0,0) scale(1.1)}to{transform:translate(-14%,-6%) scale(.95)}}
+@media(max-height:640px){.sp-main{margin-bottom:96px}.sp-mission{margin-top:.8rem;font-size:1.25rem}.sp-chips{margin-top:.8rem}.sp-go{margin-top:1rem}.sp-africa{display:none}}
 @media(min-width:700px){.sp-main{max-width:30rem}}
 @media(prefers-reduced-motion:reduce){.splash,.splash *{animation:none!important;transition:none!important}}
 
@@ -317,8 +339,8 @@ body.has-xbar .xbar{display:flex}
 </head>
 <body>
 <div class="splash" id="splash" role="dialog" aria-modal="true" aria-labelledby="sp-title" hidden>
-<div class="sp-stars" aria-hidden="true"></div>
-<div class="sp-main"><svg class="sp-emblem" viewBox="0 0 240 230" aria-hidden="true"><defs>
+<div class="sp-aurora" aria-hidden="true"><i></i><i></i><i></i></div><div class="sp-stars" aria-hidden="true"></div>
+<div class="sp-main"><div class="sp-emwrap"><svg class="sp-emblem" viewBox="0 0 240 230" aria-hidden="true"><defs>
 <linearGradient id="gd" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFE9A6"/><stop offset=".55" stop-color="#F5B82E"/><stop offset="1" stop-color="#C98512"/></linearGradient>
 <linearGradient id="pg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#C9D6FF"/></linearGradient></defs>
 <g fill="url(#gd)"><path d="M122 213C160 205 196 170 200 130" stroke="url(#gd)" stroke-width="2.2" fill="none" stroke-linecap="round"/><ellipse cx="139.4" cy="209.6" rx="11.0" ry="4.6" transform="rotate(-44.0 139.4 209.6)"/><ellipse cx="136.9" cy="199.9" rx="9.0" ry="3.8" transform="rotate(41.0 136.9 199.9)"/><ellipse cx="156.9" cy="202.7" rx="10.5" ry="4.4" transform="rotate(-57.5 156.9 202.7)"/><ellipse cx="152.3" cy="193.9" rx="8.6" ry="3.7" transform="rotate(27.5 152.3 193.9)"/><ellipse cx="172.5" cy="191.9" rx="10.0" ry="4.3" transform="rotate(-71.0 172.5 191.9)"/><ellipse cx="165.9" cy="184.3" rx="8.2" ry="3.6" transform="rotate(14.0 165.9 184.3)"/><ellipse cx="185.1" cy="177.6" rx="9.5" ry="4.1" transform="rotate(-84.5 185.1 177.6)"/><ellipse cx="177.0" cy="171.8" rx="7.8" ry="3.4" transform="rotate(0.5 177.0 171.8)"/><ellipse cx="194.2" cy="160.7" rx="9.0" ry="4.0" transform="rotate(-98.0 194.2 160.7)"/><ellipse cx="184.9" cy="157.0" rx="7.4" ry="3.3" transform="rotate(-13.0 184.9 157.0)"/><ellipse cx="199.1" cy="142.1" rx="8.5" ry="3.8" transform="rotate(-111.5 199.1 142.1)"/><ellipse cx="189.2" cy="140.6" rx="7.0" ry="3.2" transform="rotate(-26.5 189.2 140.6)"/><ellipse cx="199.7" cy="122.9" rx="8.0" ry="3.7" transform="rotate(-125.0 199.7 122.9)"/><ellipse cx="189.7" cy="123.7" rx="6.6" ry="3.1" transform="rotate(-40.0 189.7 123.7)"/><ellipse cx="195.9" cy="104.0" rx="7.5" ry="3.5" transform="rotate(-138.5 195.9 104.0)"/><ellipse cx="186.4" cy="107.2" rx="6.2" ry="3.0" transform="rotate(-53.5 186.4 107.2)"/><ellipse cx="187.8" cy="86.5" rx="7.0" ry="3.4" transform="rotate(-152.0 187.8 86.5)"/><ellipse cx="179.4" cy="91.8" rx="5.8" ry="2.8" transform="rotate(-67.0 179.4 91.8)"/></g><g fill="url(#gd)" transform="translate(240 0) scale(-1 1)"><path d="M122 213C160 205 196 170 200 130" stroke="url(#gd)" stroke-width="2.2" fill="none" stroke-linecap="round"/><ellipse cx="139.4" cy="209.6" rx="11.0" ry="4.6" transform="rotate(-44.0 139.4 209.6)"/><ellipse cx="136.9" cy="199.9" rx="9.0" ry="3.8" transform="rotate(41.0 136.9 199.9)"/><ellipse cx="156.9" cy="202.7" rx="10.5" ry="4.4" transform="rotate(-57.5 156.9 202.7)"/><ellipse cx="152.3" cy="193.9" rx="8.6" ry="3.7" transform="rotate(27.5 152.3 193.9)"/><ellipse cx="172.5" cy="191.9" rx="10.0" ry="4.3" transform="rotate(-71.0 172.5 191.9)"/><ellipse cx="165.9" cy="184.3" rx="8.2" ry="3.6" transform="rotate(14.0 165.9 184.3)"/><ellipse cx="185.1" cy="177.6" rx="9.5" ry="4.1" transform="rotate(-84.5 185.1 177.6)"/><ellipse cx="177.0" cy="171.8" rx="7.8" ry="3.4" transform="rotate(0.5 177.0 171.8)"/><ellipse cx="194.2" cy="160.7" rx="9.0" ry="4.0" transform="rotate(-98.0 194.2 160.7)"/><ellipse cx="184.9" cy="157.0" rx="7.4" ry="3.3" transform="rotate(-13.0 184.9 157.0)"/><ellipse cx="199.1" cy="142.1" rx="8.5" ry="3.8" transform="rotate(-111.5 199.1 142.1)"/><ellipse cx="189.2" cy="140.6" rx="7.0" ry="3.2" transform="rotate(-26.5 189.2 140.6)"/><ellipse cx="199.7" cy="122.9" rx="8.0" ry="3.7" transform="rotate(-125.0 199.7 122.9)"/><ellipse cx="189.7" cy="123.7" rx="6.6" ry="3.1" transform="rotate(-40.0 189.7 123.7)"/><ellipse cx="195.9" cy="104.0" rx="7.5" ry="3.5" transform="rotate(-138.5 195.9 104.0)"/><ellipse cx="186.4" cy="107.2" rx="6.2" ry="3.0" transform="rotate(-53.5 186.4 107.2)"/><ellipse cx="187.8" cy="86.5" rx="7.0" ry="3.4" transform="rotate(-152.0 187.8 86.5)"/><ellipse cx="179.4" cy="91.8" rx="5.8" ry="2.8" transform="rotate(-67.0 179.4 91.8)"/></g>
@@ -328,9 +350,10 @@ body.has-xbar .xbar{display:flex}
 <path d="M120 190c-10-9-34-12-52-8v-46c18-4 42-1 52 8z" fill="url(#pg)"/>
 <path d="M120 190c10-9 34-12 52-8v-46c-18-4-42-1-52 8z" fill="#E4ECFF"/>
 <path d="M120 144v46" stroke="#F5B82E" stroke-width="3"/>
-<path d="M78 150c12-2 26 0 36 5M78 162c12-2 26 0 36 5M126 155c10-5 24-7 36-5M126 167c10-5 24-7 36-5" stroke="#9FB3F0" stroke-width="2.4" stroke-linecap="round" fill="none"/></svg><h1 class="sp-word" id="sp-title" aria-label="exam dot pro">exam<i>.pro</i></h1><p class="sp-slogan">Learn · Practice · Excel</p>
+<path d="M78 150c12-2 26 0 36 5M78 162c12-2 26 0 36 5M126 155c10-5 24-7 36-5M126 167c10-5 24-7 36-5" stroke="#9FB3F0" stroke-width="2.4" stroke-linecap="round" fill="none"/></svg></div><h1 class="sp-word" id="sp-title" aria-label="exam dot pro">exam<i>.pro</i></h1><p class="sp-slogan" aria-label="Learn, Practice, Excel"><span>Learn</span><b aria-hidden="true">·</b><span>Practice</span><b aria-hidden="true">·</b><span>Excel</span></p>
 <p class="sp-mission">Your success,<span>our mission</span></p>
-<button class="sp-go" id="sp-go" type="button">Get started <span aria-hidden="true">→</span></button></div>
+<div class="sp-chips" id="sp-chips" aria-live="off"></div>
+<button class="sp-go" id="sp-go" type="button"><span id="sp-go-t">Get started</span> <span aria-hidden="true">→</span></button></div>
 <div class="sp-art" aria-hidden="true"><svg class="sp-africa" viewBox="0 0 110 118" aria-hidden="true"><defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFD36B"/><stop offset="1" stop-color="#C98512"/></linearGradient></defs>
 <path d="M38 6L52 4 62 8 72 8 80 14 84 24 90 34 98 42 96 48 88 52 86 60 82 70 80 80 74 90 68 100 60 104 54 100 50 88 46 76 42 66 36 60 30 56 26 50 14 48 8 40 6 32 12 24 20 16 30 10Z" fill="url(#ag)" stroke="url(#ag)" stroke-width="3" stroke-linejoin="round" opacity=".92"/>
 <circle cx="85" cy="46" r="3.2" fill="#fff"/><circle class="sp-ping" cx="85" cy="46" r="3.2" fill="none" stroke="#fff" stroke-width="1.2"/></svg><svg class="sp-sky" viewBox="0 0 400 90" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
@@ -723,10 +746,32 @@ body.has-xbar .xbar{display:flex}
   function setBehind(on) { behind.forEach(function (n) { if (on) n.setAttribute('inert', ''); else n.removeAttribute('inert'); }); }
   function close() {
     try { sessionStorage.setItem(SK, '1'); } catch (e) {}
+    try { if (navigator.vibrate) navigator.vibrate(12); } catch (e) {}
     sp.classList.add('out'); document.removeEventListener('keydown', onKey);
     setTimeout(function () { sp.remove(); document.body.classList.remove('sp-lock'); setBehind(false); var a = document.getElementById('app'); a.setAttribute('tabindex', '-1'); a.focus({ preventScroll: true }); }, 350);
   }
   function onKey(e) { if (e.key === 'Escape') close(); }
+  // Personalise: live numbers from the bank, and a streak nudge for returning students.
+  (function () {
+    var B = window.BANK || [], n = 0, st = 0, ans = 0, today = '';
+    B.forEach(function (d) { n += d.q.length; });
+    try { var p = JSON.parse(localStorage.getItem('examprep.static.v1') || '{}'); st = p.streak || 0; ans = p.answered || 0; today = p.last || ''; } catch (e) {}
+    var box = document.getElementById('sp-chips'), t = document.getElementById('sp-go-t'), h = [];
+    function d2(x) { return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); }
+    var now = new Date(), y = new Date(); y.setDate(y.getDate() - 1);
+    var alive = st > 0 && (today === d2(now) || today === d2(y));
+    if (alive) h.push('<span class="hot">🔥 ' + st + '-day streak' + (today === d2(now) ? '' : ' · keep it alive') + '</span>');
+    h.push('<span>📚 <b id="sp-n" data-n="' + n + '">' + (n ? n.toLocaleString() : '') + '</b>' + (n ? '+ questions' : 'Grade 9–12 & University') + '</span>');
+    h.push('<span>⚡ Free · works offline</span>');
+    if (box) box.innerHTML = h.join('');
+    if (ans && t) t.textContent = alive && today !== d2(now) ? 'Save my streak' : 'Continue';
+    var el = document.getElementById('sp-n');
+    if (el && n && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      var t0 = null, dur = 1100, delay = 1100;
+      function step(ts) { if (t0 === null) t0 = ts; var k = Math.min(1, (ts - t0) / dur), e = 1 - Math.pow(1 - k, 3); el.textContent = Math.round(n * e).toLocaleString(); if (k < 1) requestAnimationFrame(step); }
+      el.textContent = '0'; setTimeout(function () { requestAnimationFrame(step); }, delay);
+    }
+  })();
   sp.hidden = false; document.body.classList.add('sp-lock'); setBehind(true);
   go.addEventListener('click', close); document.addEventListener('keydown', onKey); go.focus({ preventScroll: true });
 })();

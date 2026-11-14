@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased — exam.pro upgrade, screen 1 (Splash)
+- Splash is now alive: drifting aurora light, twinkling stars, a floating emblem with a gold halo, a shimmering ".pro", and Learn · Practice · Excel that lands word by word.
+- New: live proof chips. The question total is read from the bank and counts up; "Free · works offline" is shown; returning students see their streak.
+- New: returning students get a personal button: "Continue", or "Save my streak" when yesterday was their last study day. First-time students still see "Get started".
+- Button has a slow shine and glow so the next step is obvious, plus a light haptic tap on phones that support it. Reduced-motion settings turn all of it off.
+
 ## Unreleased — exam.pro rebrand, phase 4 (Exam interface)
 - New exam and practice screen: subject and grade/program header, live timer (exam), progress bar, "Question n of N", large question type with real superscripts for powers (x^2) and a square-root sign, A–D answer cards, and a fixed Flag / Previous / Next bar.
 - New: question navigator (answered, current, flagged), text-size controls, and a Submit confirmation that lists unanswered and flagged questions. Leaving an exam or practice asks first.
