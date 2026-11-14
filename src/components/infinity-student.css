@@ -115,3 +115,25 @@ html body:has(.inf-root){overscroll-behavior:none}
 .inf-root .inf-nav button[aria-current=page]{background:var(--inf-sun);color:#0F1B4C}
 @media(max-width:480px){.inf-root .inf-app{padding-left:12px;padding-right:12px}.inf-card{padding:18px}.inf-root .inf-app.inf-auth{padding:0}}
 @media(prefers-reduced-motion:reduce){.inf-root *{transition:none!important;scroll-behavior:auto!important}}
+
+/* Level tiles (two-line, sliding) */
+.inf-root .inf-grade-track button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:92px;min-height:92px;padding:10px 8px;border-radius:18px;text-align:center}
+.inf-root .inf-grade-track button small{font-size:.78rem;font-weight:600;opacity:.75}
+.inf-root .inf-grade-track button b{font:800 1.5rem var(--inf-font-d);letter-spacing:-.02em;line-height:1.1}
+.inf-root .inf-grade-track button[aria-pressed=true]{box-shadow:0 6px 16px color-mix(in srgb,var(--inf-sun) 45%,transparent);transform:translateY(-2px)}
+.inf-root .inf-grade-track{mask-image:linear-gradient(90deg,transparent 0,#000 14px,#000 calc(100% - 14px),transparent 100%)}
+.inf-root .inf-level{margin:6px 0 4px}
+.inf-root .inf-level-label{display:flex;justify-content:space-between;align-items:baseline;margin:4px 0 0;font-weight:700;font-size:.95rem}
+.inf-root .inf-level-label span{font-weight:500;color:var(--inf-mute);font-size:.85rem}
+
+/* Consistent app pieces */
+.inf-user{display:flex;align-items:center;gap:8px}
+.inf-user b{background:var(--inf-sun);color:#0F1B4C;border-radius:999px;padding:1px 10px;font-size:.82rem;white-space:nowrap}
+.inf-root .inf-hint{color:var(--inf-mute);font-size:.95rem}
+.inf-root .inf-lock{font:700 1.3rem var(--inf-font-d);margin:0 0 6px}
+.inf-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:10px;margin:18px 0 6px}
+.inf-stats div{padding:14px;border-radius:16px;background:var(--inf-paper);border:1.5px solid var(--inf-line)}
+.inf-stats b{display:block;font:800 1.6rem var(--inf-font-d);line-height:1.1}
+.inf-stats span{color:var(--inf-mute);font-size:.88rem;font-weight:600}
+.inf-root .inf-card>button.inf-primary{margin-top:6px}
+.inf-root .inf-card input[aria-label="Search subjects"]{margin:6px 0 12px}

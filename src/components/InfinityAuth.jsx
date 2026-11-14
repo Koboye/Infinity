@@ -2,12 +2,15 @@
 import {useId, useRef, useState} from 'react';
 
 export const GRADES = [
-  {id: 'kg', name: 'Kindergarten'},
+  {id: 'kg1', name: 'KG 1'},
+  {id: 'kg2', name: 'KG 2'},
+  {id: 'kg3', name: 'KG 3'},
   ...Array.from({length: 12}, (_, i) => ({id: 'g' + (i + 1), name: 'Grade ' + (i + 1)})),
   {id: 'uni', name: 'University / College'},
   {id: 'ngat', name: 'NGAT'},
-  {id: 'gk', name: 'General Knowledge'},
 ];
+const label = (g) => g.id.startsWith('g') && g.id !== 'gk' && /^g\d+$/.test(g.id) ? g.id.slice(1) : g.name.replace('University / College', 'University').replace(/^KG /, '');
+const kind = (g) => /^kg/.test(g.id) ? 'KG' : /^g\d+$/.test(g.id) ? 'Grade' : g.id === 'uni' ? 'College /' : 'Exam';
 
 /* The Infinity mark: a lemniscate on a sun-yellow tile. */
 export function Mark({size = 40}) {
@@ -49,7 +52,7 @@ export function GradePicker({grade, onChange}) {
             type="button" key={g.id} aria-pressed={grade === g.id}
             onClick={(e) => { onChange(g.id); e.currentTarget.scrollIntoView({block: 'nearest', inline: 'center', behavior: 'smooth'}); }}
           >
-            {g.name}
+            <small>{kind(g)}</small><b>{label(g)}</b>
           </button>
         ))}
       </div>
@@ -69,8 +72,8 @@ export default function AuthScreen({busy, error, notice, departments, onSubmit, 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [show, setShow] = useState(false);
-  const [grade, setGrade] = useState('');
-  const [dept, setDept] = useState('');
+  const [grade, setGrade] = useState(() => { try { return localStorage.getItem('infinity.last.grade') || ''; } catch { return ''; } });
+  const [dept, setDept] = useState(() => { try { return localStorage.getItem('infinity.last.dept') || ''; } catch { return ''; } });
   const [localError, setLocalError] = useState('');
   const errId = useId();
 
@@ -88,13 +91,28 @@ export default function AuthScreen({busy, error, notice, departments, onSubmit, 
       if (password.length < 6) return setLocalError('Use at least 6 characters for your password.');
       return setStep(2);
     }
-    if (signup && !grade) return setLocalError('Choose your level to continue.');
-    if (signup && grade === 'uni' && !dept) return setLocalError('Choose your department.');
+    if (!grade) return setLocalError('Slide and choose your level to continue.');
+    if (grade === 'uni' && !dept) return setLocalError('Choose your department.');
     await onSubmit({mode, name: name.trim(), email: cleanEmail, password, grade, dept});
   };
 
+  const levelBlock = (
+    <div className="inf-level">
+      <p className="inf-level-label" id="inf-level-label">Your level <span>Slide to choose</span></p>
+      <GradePicker grade={grade} onChange={(g) => { setGrade(g); if (g !== 'uni') setDept(''); setLocalError(''); }} />
+      {grade === 'uni' && (
+        <Field label="Department">
+          <select required value={dept} onChange={(e) => setDept(e.target.value)}>
+            <option value="">Choose department</option>
+            {departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+          </select>
+        </Field>
+      )}
+    </div>
+  );
+
   const title = !signup ? 'Welcome back' : step === 1 ? 'Create your account' : 'Choose your level';
-  const sub = !signup ? 'Sign in to continue studying.' : step === 1 ? 'Free to start. Takes under a minute.' : 'We use this to show the right subjects. You can change it later.';
+  const sub = !signup ? 'Sign in and pick your level. You will only see material for it.' : step === 1 ? 'Free to start. Takes under a minute.' : 'You will only see material for this level.';
   const cta = !signup ? 'Sign in' : step === 1 ? 'Continue' : 'Create account';
 
   return (
@@ -137,22 +155,11 @@ export default function AuthScreen({busy, error, notice, departments, onSubmit, 
               {!signup && (
                 <button type="button" className="inf-link inf-forgot" onClick={() => onReset(email.trim())}>Forgot password?</button>
               )}
+              {!signup && levelBlock}
             </>
           )}
 
-          {signup && step === 2 && (
-            <>
-              <GradePicker grade={grade} onChange={(g) => { setGrade(g); if (g !== 'uni') setDept(''); }} />
-              {grade === 'uni' && (
-                <Field label="Department">
-                  <select required value={dept} onChange={(e) => setDept(e.target.value)}>
-                    <option value="">Choose department</option>
-                    {departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-                  </select>
-                </Field>
-              )}
-            </>
-          )}
+          {signup && step === 2 && levelBlock}
 
           <div id={errId} aria-live="polite">
             {shownError && <p role="alert" className="inf-error">{shownError}</p>}
