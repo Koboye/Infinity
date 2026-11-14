@@ -57,3 +57,26 @@ test('companion screens and navigation are wired', () => {
   assert.match(unified, /ep-panel-open/);
   assert.match(navigation, /ep-nav-sheet/);
 });
+
+test('saved learner grade scopes home, subjects, and recommended practice', () => {
+  assert.match(html, /function learnerBank\(\)/);
+  assert.match(html, /function learnerCategories\(\)/);
+  assert.match(html, /learnerCategories\(\)\.slice\(\)/);
+  assert.match(html, /var list = learnerBank\(\)\.filter/);
+  assert.match(html, /var pool = learnerBank\(\)\.filter/);
+  assert.match(unified, /id="ep-profile-stage"/);
+  assert.match(unified, /stage:stage/);
+});
+test('Grade 1 practice exists and is loaded before the main exam script', () => {
+  const primary = readFileSync(base + 'primary-bank.js', 'utf8');
+  new vm.Script(primary);
+  assert.match(primary, /grade-1-foundations/);
+  assert.match(primary, /"grade":1/);
+  assert.ok(html.indexOf('src="primary-bank.js"') > html.indexOf('src="bank.js"'));
+  assert.match(html, /Number\(d\.grade\) === Number\(stage\.slice\(1\)\)/);
+});
+test('ExamPro game break cannot render old catalog even on home navigation', () => {
+  const app = readFileSync('src/components/GebetaApp.jsx', 'utf8');
+  assert.match(app, /examproBreak \? 'modes' : 'home'/);
+  assert.match(app, /if \(examproBreak\) \{ body = <ModesScreen/);
+});
