@@ -51,7 +51,8 @@ export default function GebetaApp() {
   const [game, setGame] = useState('gebeta');
   const [muted, setMutedState] = useState(false);
   const [music, setMusicState] = useState(false);
-  const [view, setView] = useState({ name: 'home' });
+  const examproBreak = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('from') === 'exampro';
+  const [view, setView] = useState({ name: examproBreak ? 'modes' : 'home' });
   const [adShow, setAdShow] = useState(null);                // { ad, placement, resolve }: the full-screen ad on screen right now
   const adRef = useRef(null); adRef.current = adShow;
   const langRef = useRef(lang); langRef.current = lang;   // the ad picker reads the current language without re-creating runAd
@@ -190,7 +191,7 @@ export default function GebetaApp() {
     const enter = () => { if (name === 'game') setCoach(needsCoach(extra.game) ? extra.game : null); setView({ name, ...extra }); };
     if (name === 'game') { preload(extra.game); runAd('pre_game', { game: extra.game }).then(enter); return; }   // a short ad before a local game (capped, see adsCore.CAPS)
     enter(); };
-  const home = () => setView({ name: 'home' });
+  const home = () => setView({ name: examproBreak ? 'modes' : 'home' });
   // The wallet belongs to the signed-in account and lives on the server: ask for it whenever the account changes.
   const walletFor = useRef(null);
   useEffect(() => {
@@ -317,7 +318,7 @@ export default function GebetaApp() {
 
   let body;
   switch (view.name) {
-    case 'home': body = <Home t={t} go={go} onlineOn={onlineAvailable} user={user} profile={profile} game={game} onPickGame={(g) => { pickGame(g); if (isPlayable(g)) go('modes'); }} onClimb={openClimb} />; break;
+    case 'home': if (examproBreak) { body = <ModesScreen t={t} lang={lang} game={game} go={go} onlineOn={onlineAvailable} />; break; } body = <Home t={t} go={go} onlineOn={onlineAvailable} user={user} profile={profile} game={game} onPickGame={(g) => { pickGame(g); if (isPlayable(g)) go('modes'); }} onClimb={openClimb} />; break;
     case 'modes': body = <ModesScreen t={t} lang={lang} game={game} go={go} onlineOn={onlineAvailable} />; break;
     case 'ai': case 'pass': body = <Setup t={t} mode={view.name} game={game} initialRuleset={view.ruleset} onHelp={(type) => go('rules', { type })} onStart={(o) => startLevel({ mode: view.name, game, ...o })} />; break;
     case 'game': {
