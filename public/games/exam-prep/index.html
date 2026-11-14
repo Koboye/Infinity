@@ -398,7 +398,7 @@ body.ep-auth-locked > :not(#ep-auth-gate):not(script) { visibility:hidden !impor
       return true;
     }) : [];
     var scopedCount = scopedSubjects.reduce(function(n,d){return n+(d.q||[]).length;},0);
-    var html = '<div class="dash"><div class="dhead"><span class="dav" aria-hidden="true">L' + level(p.xp) + '</span><div><small>' + (p.answered ? 'Welcome back' : 'Welcome to Infinity') + '</small><b>Student · Level ' + level(p.xp) + '</b></div></div>' +
+    var html = '<div class="dash"><div class="dhead"><span class="dav" aria-hidden="true">L' + level(p.xp) + '</span><div><small>' + (p.answered ? 'Welcome back' : 'Welcome to Infinity') + '</small><b>' + esc(studentName) + ' · Level ' + level(p.xp) + '</b></div></div>' +
       '<div class="in-grade-row"><div><small class="in-grade-eyebrow">YOUR LEARNING PATH</small><strong id="in-grade-current">Choose your grade</strong></div><button type="button" class="btn alt" id="in-grade-change">Change grade ↗</button></div>' +
       '<div class="in-home-path"><div><span class="in-home-kicker">YOUR STUDY SPACE</span><h1>' + esc(gradeName || 'Choose your learning level') + '</h1><p>' + esc(department ? department.name : (studentCategory ? studentCategory.sub : 'Choose your grade to see your subjects')) + '</p></div><div class="in-home-count"><strong>' + scopedCount.toLocaleString() + '</strong><span>Available questions</span></div></div>' +
       '<div class="in-home-actions"><button type="button" id="in-home-subjects" class="in-home-action primary">📚 <span><b>My Subjects</b><small>Open your learning resources</small></span></button><button type="button" id="in-home-games" class="in-home-action">🎮 <span><b>Game Break</b><small>Play and return to learning</small></span></button></div>' +
