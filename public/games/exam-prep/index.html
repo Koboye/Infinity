@@ -414,7 +414,7 @@ body.ep-auth-locked > :not(#ep-auth-gate):not(script) { visibility:hidden !impor
     [].forEach.call(app.querySelectorAll('.cat'), function (b) {
       b.onclick = function () {
         var c = catById(b.getAttribute('data-c'));
-        if (!catCount(c)) { toast(c.name + ' questions are coming soon. Grades 9–12 and University are ready now.'); return; }
+        if (!scopedCount) { toast('No questions are available for your selected learning level yet.'); return; }
         b.classList.add('pick'); setTimeout(function () { ui.cat = c.id; ui.search = ''; catView(); }, 240);
       };
     });
@@ -427,13 +427,14 @@ body.ep-auth-locked > :not(#ep-auth-gate):not(script) { visibility:hidden !impor
     document.getElementById('dsf').onsubmit = function (e) {
       e.preventDefault(); var v = document.getElementById('dsq').value.trim();
       if (!v) { toast('Type a subject or department to search.'); document.getElementById('dsq').focus(); return; }
-      ui.cat = null; ui.group = 'all'; ui.search = v; home();
+      ui.search = v; openStudentResources(true);
     };
     if (!soft) landed('Home', 'h1');
   }
   function catView(soft) {
     chrome('list'); setNav('sub');
     var c = catById(ui.cat), k = ui.search.trim().toLowerCase();
+    if (!c) { dash(); return; }
     var gradeId = window.infinityGetGradeId ? window.infinityGetGradeId() : '';
     var departmentId = window.infinityGetDepartmentId ? window.infinityGetDepartmentId() : '';
     // Only show resources explicitly tagged for this grade; grouped questions are not individual-grade resources.
@@ -459,8 +460,8 @@ body.ep-auth-locked > :not(#ep-auth-gate):not(script) { visibility:hidden !impor
     [].forEach.call(app.querySelectorAll('[data-d]'), function (b) { b.onclick = function () { deptPage(b.getAttribute('data-d'), ''); }; });
     if (!soft) landed(c.name, 'h1');
   }
-  document.getElementById('nv-home').onclick = function () { dash(); };
-  document.getElementById('nv-sub').onclick = function () { ui.cat = null; ui.group = 'all'; ui.search = ''; home(); };
+  document.getElementById('nv-home').onclick = function () { if (!window.infinityExamActive) dash(); };
+  document.getElementById('nv-sub').onclick = function () { if (!window.infinityExamActive) openStudentResources(); };
 
   // ── home (all-subjects browser)
   function home(soft) {
@@ -469,10 +470,19 @@ body.ep-auth-locked > :not(#ep-auth-gate):not(script) { visibility:hidden !impor
     var p = load(), k = ui.search.trim().toLowerCase(), acc = p.answered ? Math.round(p.correct / p.answered * 100) : 0, pct = Math.min(100, Math.round(p.today / GOAL * 100));
     var mist = 0; Object.keys(p.mistakes).forEach(function (d) { mist += Object.keys(p.mistakes[d]).length; });
     var gi = function (g) { for (var i = 0; i < STAGES.length; i++) if (STAGES[i].id === g) return i; return 99; };
-    var list = BANK.filter(function (d) { return (ui.group === 'all' || d.group === ui.group) && (!k || d.name.toLowerCase().indexOf(k) >= 0 || d.college.toLowerCase().indexOf(k) >= 0); });
+    var studentGrade = window.infinityGetGradeId ? window.infinityGetGradeId() : '';
+    var studentCategory = window.infinityGradeCategory ? catById(window.infinityGradeCategory()) : null;
+    var studentDepartment = window.infinityGetDepartmentId ? window.infinityGetDepartmentId() : '';
+    var list = BANK.filter(function(d){
+      if (!studentCategory || studentCategory.groups.indexOf(d.group)<0) return false;
+      if (studentGrade==='uni' && d.id!==studentDepartment) return false;
+      if (studentGrade==='g12' && d.group!=='g12') return false;
+      if (studentGrade==='kg' || /^g(?:[1-9]|10|11)$/.test(studentGrade)) { if(d.grade!==studentGrade) return false; }
+      return (ui.group==='all' || d.group===ui.group) && (!k || d.name.toLowerCase().indexOf(k)>=0 || d.college.toLowerCase().indexOf(k)>=0);
+    });
     var colleges = [], rank = {}; list.forEach(function (d) { if (colleges.indexOf(d.college) < 0) { colleges.push(d.college); rank[d.college] = gi(d.group); } });
     colleges.sort(function (a, b) { return rank[a] - rank[b]; });
-    var total = BANK.reduce(function (n, d) { return n + d.q.length; }, 0);
+    var total = list.reduce(function (n, d) { return n + d.q.length; }, 0);
     var avail = STAGES.filter(function (g) { return stageCount(g.id); }), soonL = STAGES.filter(function (g) { return !stageCount(g.id); });
     var html = '<section class="hero2"><span class="kick">Grade 1 → University → NGAT</span><h1>Pass your <em>entrance</em>, <em>university</em> and <em>exit</em> exams</h1><p>' + total.toLocaleString() + ' real past-paper questions, each with a clear explanation. Free to practise.</p>' +
       '<button class="btn gold lg" id="startgo">Start practice <span aria-hidden="true">→</span></button>' +
@@ -577,11 +587,12 @@ body.ep-auth-locked > :not(#ep-auth-gate):not(script) { visibility:hidden !impor
   }
   document.getElementById('home').onclick = function () { clearInterval(timer); document.onkeydown = null; dash(); };
   // Once a student chooses a level on the sign-in screen, open that learning area.
-  function openStudentResources() {
+  function openStudentResources(keepSearch) {
     if (window.infinityExamActive) return;
     var category = window.infinityGradeCategory && window.infinityGradeCategory();
-    if (!category || !catById(category)) return;
-    ui.cat = category; ui.search = '';
+    if (!category || !catById(category)) { dash(); return; }
+    ui.cat = category;
+    if (keepSearch !== true) ui.search = '';
     catView();
   }
   window.addEventListener('infinity-grade-changed', function (event) {
