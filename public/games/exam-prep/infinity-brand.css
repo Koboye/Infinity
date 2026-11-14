@@ -78,3 +78,9 @@ body.in-grade-open{overflow:hidden}
 .in-grade-footnote{margin:20px 0 0}
 @media(max-width:480px){.in-grade-row{padding:14px;gap:8px}.in-grade-row .btn{font-size:.78rem;padding:10px}.in-grade-sheet{padding:20px;border-radius:24px}#in-grade-options{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.in-grade-option{min-height:52px}}
 @media(prefers-reduced-motion:reduce){.in-grade-option{transition:none}}
+
+/* Learning level is part of the unified sign-in / registration experience. */
+.ep-auth-card #in-auth-grade{display:block;width:100%;min-height:50px;padding:11px 13px;margin:7px 0 16px;background:#f8faff!important;border:1px solid #d7dff0!important;border-radius:13px!important;color:#18294b!important;font:inherit;cursor:pointer}
+.ep-auth-card #in-auth-grade:focus-visible{outline:3px solid #6b61ff;outline-offset:2px}
+.ep-auth-card #in-auth-grade:invalid{color:#62718b!important}
+.ep-auth-card{max-height:calc(100dvh - 36px);overflow-y:auto}
