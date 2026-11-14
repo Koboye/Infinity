@@ -420,7 +420,7 @@ html:has(.inf-root),html body:has(.inf-root){background:#F4F2FF}
 .inf-root .inf-reward{display:flex;flex-direction:column;gap:12px}
 .inf-root .inf-reward-row p{margin:0 0 8px;font-weight:700}
 .inf-root .inf-reward-rank{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;min-height:48px;padding:10px 14px;border-radius:16px;border:1.5px solid var(--inf-line);background:var(--inf-card);color:var(--inf-text);font:700 .95rem inherit;cursor:pointer;text-align:left}
-.inf-root .inf-bonus-hint{margin:8px 0 0;padding:8px 14px;border-radius:999px;background:rgba(255,200,61,.2);color:var(--inf-text);font-weight:700;font-size:.9rem}
+.inf-root .inf-bonus-hint{margin:14px 0 6px;padding:8px 14px;border-radius:999px;background:rgba(255,200,61,.2);color:var(--inf-text);font-weight:700;font-size:.9rem}
 .inf-root .inf-rank{display:flex;flex-direction:column;gap:14px}
 .inf-root .inf-rank-top{display:flex;flex-direction:column;gap:4px;align-items:flex-start}
 .inf-root .inf-rank-top h1{margin:6px 0 0}

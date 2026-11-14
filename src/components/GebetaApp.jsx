@@ -81,7 +81,7 @@ export default function GebetaApp({ initialGame = null, embedded = false, onExit
 
   useEffect(() => {
     const l = read('gebeta.lang', null) || (navigator.language?.startsWith('am') ? 'am' : 'en');
-    const q = new URLSearchParams(window.location.search).get('game');
+    const q = initialGame || new URLSearchParams(window.location.search).get('game');
     const g = isPlayable(q) ? q : read('gebeta.game', 'gebeta'); if (isPlayable(g)) setGame(g); // a coming-soon game is never restored
     setLang(embedded && shellLang ? shellLang : l); setMusicState(read('gebeta.music', '1') === '1'); const m = read('gebeta.muted', '0') === '1'; setMutedState(m); setMuted(m);
   }, []);
@@ -254,7 +254,7 @@ export default function GebetaApp({ initialGame = null, embedded = false, onExit
   const backRef = useRef(null), exitArm = useRef(0);
   backRef.current = () => {
     if (adRef.current) return 'stay';
-    if (sheet) { setSheet(null); return 'stay'; }
+    if (sheet) { setSheet(null); if (view.name === 'launch') home(); return 'stay'; }
     if (view.name === 'game' || view.name === 'room') { leaveGame(); return 'stay'; }
     if (view.name === 'rules' && (view.hub || view.fromHub)) { if (view.hub) home(); else go('rules', { hub: true }); return 'stay'; }
     if (['ai', 'pass', 'online', 'leaders', 'rules'].includes(view.name)) { go('modes'); return 'stay'; }
@@ -305,25 +305,29 @@ export default function GebetaApp({ initialGame = null, embedded = false, onExit
   // Daily level pass: starting a game against the computer spends one of today's levels (the server decides).
   // With the paywall off (default) this is a plain `go('game', ...)`.
   const startLevel = async (o) => {
-    if (!Pass.paywallEnabled || !['ai', 'pass'].includes(o.mode)) { go('game', o); return; }
-    if (!user) { go('online'); return; }   // the pass belongs to the account: sign in first
+    if (!Pass.paywallEnabled || !['ai', 'pass'].includes(o.mode)) { go('game', o); return 'start'; }
+    if (!user) { go('online'); return 'online'; }   // the pass belongs to the account: sign in first
     const r = await Pass.start();
-    if (r.ok) { go('game', o); return; }
-    if (r.locked) { setSheet({ type: 'pass', then: o }); return; }
-    setToast({ text: r.error }); setTimeout(() => setToast(null), 3500);
+    if (r.ok) { go('game', o); return 'start'; }
+    if (r.locked) { setSheet({ type: 'pass', then: o }); return 'locked'; }
+    setToast({ text: r.error }); setTimeout(() => setToast(null), 3500); return 'error';
   };
 
   // One tap from the Infinity Games tab: straight into a game against the computer (medium, default rules).
-  const launched = useRef(false);
+  // It waits for the account check, and whatever happens it never strands the player on a menu or a blank screen:
+  // started -> the game, locked -> the pass sheet (closing it goes back to the Games tab), anything else -> back to the Games tab.
+  const launched = useRef(false), sheetRef = useRef(null); sheetRef.current = sheet;
   useEffect(() => {
-    if (view.name !== 'launch') { launched.current = false; return; }
-    if (launched.current) return;
+    if (view.name !== 'launch') { launched.current = false; return undefined; }
+    if (!authReady || launched.current) return undefined;
     launched.current = true;
     const info = gameInfo(game);
-    startLevel({ mode: 'ai', game, level: 'medium', ruleset: info.defaultRuleset, target: info.defaultTarget, opts: { ultra: false, suddenDeath: false, careless: false, cards: 1 } });
-    const fallback = setTimeout(() => { if (viewRef.current.name === 'launch') setView({ name: 'modes' }); }, 8000);   // never leave a blank screen
+    startLevel({ mode: 'ai', game, level: 'medium', ruleset: info.defaultRuleset, target: info.defaultTarget, opts: { ultra: false, suddenDeath: false, careless: false, cards: 1 } })
+      .then((r) => { if (r === 'error' && viewRef.current.name === 'launch') home(); })
+      .catch(() => { if (viewRef.current.name === 'launch') home(); });
+    const fallback = setTimeout(() => { if (viewRef.current.name === 'launch' && !sheetRef.current && !adRef.current) home(); }, 12000);
     return () => clearTimeout(fallback);
-  }, [view.name, game]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [view.name, game, authReady]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Hill Climb is a stand-alone page: with the paywall on, the home screen opens it only with an open pass (the game page then spends a level per start).
   const openClimb = async () => {
@@ -388,7 +392,7 @@ export default function GebetaApp({ initialGame = null, embedded = false, onExit
       {view.name === 'home' && !adShow && !sheet && <InstallPill t={t} />}
       {sheet?.type === 'gift' && <WelcomeGift lang={lang} onClose={() => setSheet(null)} />}
       {sheet?.type === 'spin' && <SpinSheet lang={lang} onClose={() => setSheet(null)} />}
-      {sheet?.type === 'pass' && <PassSheet lang={lang} onClose={() => setSheet(null)} onUnlocked={() => { const o = sheet.then; setSheet(null); if (o?.climb) openClimb(); else if (o) startLevel(o); }} />}
+      {sheet?.type === 'pass' && <PassSheet lang={lang} onClose={() => { setSheet(null); if (viewRef.current.name === 'launch') home(); }} onUnlocked={() => { const o = sheet.then; setSheet(null); if (o?.climb) openClimb(); else if (o) startLevel(o); }} />}
       <header className="topbar">
         {view.name === 'home' ? <span className="topbar-spacer" /> :
           <button className="icon-btn" onClick={view.name === 'game' ? leaveGame : view.name === 'rules' && view.hub ? home : view.name === 'rules' && view.fromHub ? () => go('rules', { hub: true }) : ['ai', 'pass', 'online', 'leaders', 'rules'].includes(view.name) ? () => go('modes') : home} aria-label={t.backHome}>‹</button>}
