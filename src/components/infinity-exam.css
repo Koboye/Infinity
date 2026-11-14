@@ -7,7 +7,9 @@
 
 /* running frame */
 .inf-root .inf-app.is-running{height:100dvh;overflow:hidden;padding-top:max(12px,env(safe-area-inset-top));padding-bottom:max(10px,env(safe-area-inset-bottom))}
-.inf-root .inf-x-run{flex:1 1 0;min-height:0;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr);gap:12px;width:100%;max-width:760px;margin-inline:auto}
+.inf-root .inf-x-run{flex:1 1 0;min-height:0;display:flex;flex-direction:column;gap:12px;width:100%;max-width:760px;margin-inline:auto}
+.inf-root .inf-x-run>.inf-x-top,.inf-root .inf-x-run>.inf-x-meta,.inf-root .inf-x-run>.inf-x-dock,.inf-root .inf-x-run>.inf-x-nav{flex:0 0 auto}
+.inf-root .inf-x-run>.inf-x-body{flex:1 1 0;min-height:0}
 .inf-root .inf-x-top{display:flex;align-items:center;gap:10px}
 .inf-root .inf-x-exit{display:inline-grid;place-items:center;flex:0 0 auto;width:44px;height:44px;min-height:44px;padding:0;border-radius:50%;background:var(--inf-card);color:var(--inf-text);border:1.5px solid var(--inf-line)}
 .inf-root .inf-x-title{flex:1;min-width:0}
@@ -25,7 +27,8 @@
 .inf-root .inf-x-qn{display:inline-flex;align-items:center;gap:8px;flex:0 0 auto;min-height:40px;padding:6px 14px;border-radius:999px;font:800 var(--fs-sm) var(--inf-font-b);color:var(--inf-violet);background:color-mix(in srgb,var(--inf-violet) 9%,var(--inf-card));border-color:transparent}
 .inf-root .inf-x-prog{flex:1;height:10px;border-radius:99px;background:color-mix(in srgb,var(--inf-violet) 14%,var(--inf-card));overflow:hidden}
 .inf-root .inf-x-prog i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--inf-violet),var(--inf-violet-2));transition:width .3s ease}
-.inf-root .inf-x-body{min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:2px 2px 8px;scrollbar-width:thin}
+.inf-root .inf-x-body{min-height:0;display:flex;flex-direction:column;overflow-y:auto;overscroll-behavior:contain;padding:2px 2px 8px;scrollbar-width:thin}
+.inf-root .inf-x-body>.inf-x-card{flex:1 0 auto}
 
 /* question card */
 .inf-root .inf-x-card{display:flex;flex-direction:column;gap:16px;padding:clamp(16px,4vw,24px);border-radius:var(--r-lg);background:var(--inf-card);border:1.5px solid var(--inf-line);box-shadow:var(--sh);animation:inf-x-in .22s ease}
@@ -94,7 +97,7 @@
 /* wide screens: calculator beside the question */
 @media(min-width:900px){
   .inf-root .inf-app:has(.inf-x-run.has-calc){max-width:1120px}
-  .inf-root .inf-x-run.has-calc{max-width:none;grid-template-columns:minmax(0,1fr) 340px;grid-template-rows:auto auto minmax(0,1fr) auto;column-gap:20px}
+  .inf-root .inf-x-run.has-calc{max-width:none;display:grid;grid-template-columns:minmax(0,1fr) 340px;grid-template-rows:auto auto minmax(0,1fr) auto;column-gap:20px}
   .inf-root .inf-x-run.has-calc>.inf-x-top,.inf-root .inf-x-run.has-calc>.inf-x-meta,.inf-root .inf-x-run.has-calc>.inf-x-body,.inf-root .inf-x-run.has-calc>.inf-x-nav{grid-column:1}
   .inf-root .inf-x-run.has-calc>.inf-x-dock{grid-column:2;grid-row:2/span 2;align-self:start}
   .inf-root .inf-x-calc-pad button{min-height:50px}
@@ -182,3 +185,26 @@
 .inf-root .inf-ex-plan{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px}
 .inf-root .inf-app .inf-ex-plan input{min-height:48px;font-size:var(--fs-md);padding:8px 14px;border-radius:14px}
 .inf-root .inf-ex-plan .inf-x-next{min-height:48px;padding:6px 18px}
+
+/* exam screen v2 */
+.inf-root .inf-x-segs{flex:1;display:flex;align-items:center;gap:4px;height:14px;min-width:0}
+.inf-root .inf-x-segs i{flex:1;height:8px;border-radius:99px;background:color-mix(in srgb,var(--inf-violet) 16%,var(--inf-card));transition:background .2s,transform .2s}
+.inf-root .inf-x-segs i.is-done{background:var(--inf-violet)}
+.inf-root .inf-x-segs i.is-flag{background:#FFC83D}
+.inf-root .inf-x-segs i.is-now{height:12px;box-shadow:0 0 0 2px var(--inf-violet)}
+.inf-root .inf-x-qhead{justify-content:flex-end;min-height:0}
+.inf-root .inf-x-card{gap:18px;background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 7%,var(--inf-card)),var(--inf-card) 45%)}
+.inf-root .inf-x-q{font-size:clamp(1.3rem,4.6vw,1.8rem)}
+.inf-root .inf-x-opts{gap:12px}
+.inf-root .inf-x-opt{min-height:62px}
+.inf-root .inf-x-nav{align-items:stretch;padding-top:2px}
+.inf-root .inf-x-nav>.inf-x-game{flex:0 0 54px;display:grid;place-items:center;min-height:54px;padding:0;border-radius:50%;background:var(--inf-card);border:1.5px solid var(--inf-line);color:var(--inf-violet)}
+.inf-root .inf-x-nav>.inf-x-game:hover{border-color:var(--inf-violet)}
+/* calculator: compact sheet above the footer */
+.inf-root .inf-x-calc{gap:6px;padding:8px 10px 10px;border-radius:22px 22px var(--r-md) var(--r-md);box-shadow:0 -10px 30px rgba(0,0,0,.28)}
+.inf-root .inf-x-calc-scr{padding:4px 14px}
+.inf-root .inf-x-calc-scr output{font-size:1.5rem}
+.inf-root .inf-x-calc-pad{gap:5px}
+.inf-root .inf-x-calc-pad button{min-height:40px;font-size:1.05rem;border-radius:12px}
+@media(min-width:900px){.inf-root .inf-x-calc-pad button{min-height:50px}}
+@media(max-height:620px){.inf-root .inf-x-calc-pad button{min-height:34px}.inf-root .inf-x-opt{min-height:52px}}

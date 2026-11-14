@@ -78,7 +78,9 @@ export function ExamRunner({exam, answers, seconds, flags, onPick, onGo, onFlag,
         <button type="button" className="inf-x-qn" onClick={() => setList(true)} aria-label={t('questionList')}>
           <Svg size={18}>{G.list}</Svg><span>{t('qOfN', {a: exam.index + 1, b: N})}</span>
         </button>
-        <div className="inf-x-prog" role="progressbar" aria-valuemin={1} aria-valuemax={N} aria-valuenow={exam.index + 1}><i style={{width: ((exam.index + 1) / N) * 100 + '%'}} /></div>
+        {N <= 24
+          ? <div className="inf-x-segs" role="progressbar" aria-valuemin={1} aria-valuemax={N} aria-valuenow={exam.index + 1}>{exam.questions.map((x, i) => <i key={x.id} className={(i === exam.index ? 'is-now ' : '') + (flags[x.id] ? 'is-flag ' : answers[x.id] != null ? 'is-done' : '')} />)}</div>
+          : <div className="inf-x-prog" role="progressbar" aria-valuemin={1} aria-valuemax={N} aria-valuenow={exam.index + 1}><i style={{width: ((exam.index + 1) / N) * 100 + '%'}} /></div>}
       </div>
 
       <div className="inf-x-body" ref={bodyRef}>
@@ -100,7 +102,6 @@ export function ExamRunner({exam, answers, seconds, flags, onPick, onGo, onFlag,
         ) : (
           <div className="inf-x-card" key={exam.index}>
             <div className="inf-x-qhead">
-              <span className="inf-x-qno">{t('questionN', {n: exam.index + 1})}</span>
               <button type="button" className={'inf-x-flag' + (flags[q.id] ? ' is-on' : '')} aria-pressed={!!flags[q.id]} aria-label={flags[q.id] ? t('flagged') : t('flag')} onClick={() => onFlag(q.id)}><Svg size={18}>{G.flag}</Svg><span>{flags[q.id] ? t('flagged') : t('flag')}</span></button>
             </div>
             <h2 className="inf-x-q">{vis.title}</h2>
@@ -120,7 +121,6 @@ export function ExamRunner({exam, answers, seconds, flags, onPick, onGo, onFlag,
             </div>
             {locked && picked === q.correct && combo >= 2 && <div className="inf-x-combo" role="status"><span aria-hidden="true">🔥</span> {t('combo', {n: combo})}</div>}
             {locked && q.explanation && <div className="inf-x-why" role="status"><b>{picked === q.correct ? t('correctLabel') : t('wrongLabel')}</b><p>{q.explanation}</p></div>}
-            <button type="button" className="inf-x-quiet" onClick={onBreak}><Svg size={18}>{G.game}</Svg>{t('gameBreak')}</button>
           </div>
         )}
       </div>
@@ -130,6 +130,7 @@ export function ExamRunner({exam, answers, seconds, flags, onPick, onGo, onFlag,
       {!main && (
         <footer className="inf-x-nav">
           <button type="button" className="inf-x-prev" disabled={exam.index === 0} onClick={() => onGo(exam.index - 1)} aria-label={t('previous')}><Svg size={22}>{G.left}</Svg><span>{t('previous')}</span></button>
+          <button type="button" className="inf-x-game" onClick={onBreak} aria-label={t('gameBreak')} title={t('gameBreak')}><Svg size={24}>{G.game}</Svg></button>
           {exam.index === N - 1
             ? <button type="button" className="inf-x-next" onClick={finish}>{t('finish')}</button>
             : <button type="button" className="inf-x-next" onClick={() => onGo(exam.index + 1)}><span>{t('next')}</span><Svg size={22}>{G.right}</Svg></button>}
