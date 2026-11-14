@@ -623,14 +623,14 @@ body.ep-auth-locked > :not(#ep-auth-gate):not(script) { visibility:hidden !impor
 </style>
 <div id="exampro-game-break" role="dialog" aria-modal="true" aria-label="Game break" hidden>
   <div class="game-break-bar"><strong>🎮 Game break — exam timer paused</strong><button type="button" id="exampro-game-return">Return to Exam</button></div>
-  <div class="game-break-bar"><button type="button" data-game="/games/board-games">Gebeta · Dama · Bingo</button><button type="button" data-game="/games/addis-runner/index.html">Addis Runner</button><button type="button" data-game="/games/hill-climb-racer/index.html">Hill Climb</button></div>
+  <div class="game-break-bar"><button type="button" data-game="/games/board-games?game=gebeta">Gebeta</button><button type="button" data-game="/games/board-games?game=checkers">Dama</button><button type="button" data-game="/games/board-games?game=bingo">Bingo</button><button type="button" data-game="/games/addis-runner/index.html">Addis Runner</button><button type="button" data-game="/games/hill-climb-racer/index.html">Hill Climb</button></div>
   <iframe id="exampro-game-frame" title="Game break" loading="lazy" allow="fullscreen"></iframe>
 </div>
 <script>
 (function(){
  var panel=document.getElementById('exampro-game-break'),frame=document.getElementById('exampro-game-frame'),back=document.getElementById('exampro-game-return');
  window.examproGameBreakOpen=false;
- window.examproOpenGameBreak=function(){window.examproGameBreakOpen=true;panel.hidden=false;frame.src='/games/addis-runner/index.html';back.focus();};
+ window.examproOpenGameBreak=function(){window.examproGameBreakOpen=true;panel.hidden=false;back.focus();};
  function close(){frame.removeAttribute('src');panel.hidden=true;window.examproGameBreakOpen=false;var b=document.getElementById('game-break');if(b)b.focus();}
  back.addEventListener('click',close);
  panel.querySelectorAll('[data-game]').forEach(function(button){button.addEventListener('click',function(){frame.src=button.getAttribute('data-game');});});
