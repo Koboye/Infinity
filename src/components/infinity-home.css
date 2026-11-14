@@ -1,0 +1,61 @@
+/* Infinity home tab: classic. Ink goal card, quiet stat strip, tinted subject cards.
+   Shares the app's Fraunces / Figtree scale and colour tokens, light and dark. */
+.inf-root .inf-card.inf-home{background:transparent;border:0;padding:0}
+.inf-root .inf-h{display:flex;flex-direction:column;gap:20px}
+.inf-root .inf-h h1,.inf-root .inf-h h2{margin:0}
+
+.inf-root .inf-h-hello h1{font:600 clamp(1.7rem,4.6vw,2.2rem)/1.12 var(--inf-font-d);letter-spacing:-.015em;margin:0 0 4px}
+.inf-root .inf-h-hello p{margin:0;color:var(--inf-mute);font-size:1.0625rem}
+
+/* Goal card */
+.inf-root .inf-h-goal{position:relative;overflow:hidden;isolation:isolate;display:flex;align-items:center;gap:clamp(16px,4vw,32px);
+  padding:clamp(18px,4vw,28px);border-radius:24px;background:#0F1B4C;color:#fff}
+.inf-root .inf-h-ring{flex:0 0 auto;width:clamp(92px,24vw,124px);height:auto}
+.inf-root .inf-h-ring-n{fill:#fff;font:700 1.45rem var(--inf-font-d)}
+.inf-root .inf-h-goal-text{min-width:0;padding-left:clamp(14px,3vw,28px);border-left:1px solid rgba(255,255,255,.18)}
+.inf-root .inf-h-goal h2{font:600 clamp(1.35rem,3.6vw,1.8rem)/1.15 var(--inf-font-d);color:#fff;letter-spacing:-.01em}
+.inf-root .inf-h-goal p{margin:6px 0 14px;color:#C9D1F7;font-size:1rem}
+.inf-root .inf-h-go{min-height:50px;padding:10px 24px;border:0;border-radius:999px;background:#FFC83D;color:#0F1B4C;font:700 1.0625rem var(--inf-font-b);box-shadow:0 8px 20px rgba(255,184,0,.28)}
+.inf-root .inf-h-go:hover{background:#FFD460;border:0}
+.inf-root .inf-h-mark{position:absolute;z-index:-1;right:-6%;bottom:-24%;width:min(60%,360px);color:#FFC83D;opacity:.13;pointer-events:none}
+@media(max-width:520px){.inf-root .inf-h-goal{flex-wrap:wrap}.inf-root .inf-h-goal-text{border-left:0;padding-left:0;flex:1 1 100%}}
+
+/* Stat strip */
+.inf-root .inf-h-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:0;padding:6px;border-radius:20px;background:var(--inf-card);border:1.5px solid var(--inf-line)}
+.inf-root .inf-h-stats>div{display:grid;grid-template-columns:auto 1fr;grid-template-areas:"i v" "i l";column-gap:10px;align-items:center;padding:12px;min-width:0}
+.inf-root .inf-h-stats>div+div{border-left:1px solid var(--inf-line)}
+.inf-root .inf-h-ico{grid-area:i;display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:color-mix(in srgb,var(--c) 14%,transparent);color:var(--c)}
+.inf-root .inf-h-ico[data-k=xp]{--c:#C9801A}.inf-root .inf-h-ico[data-k=acc]{--c:#6A3FD8}.inf-root .inf-h-ico[data-k=ans]{--c:#0E8A6B}.inf-root .inf-h-ico[data-k=streak]{--c:#D6551D}
+.inf-root .inf-h-stats dd{grid-area:v;margin:0;font:700 1.35rem/1.1 var(--inf-font-d)}
+.inf-root .inf-h-stats dt{grid-area:l;color:var(--inf-mute);font-size:.85rem;font-weight:600;white-space:nowrap}
+@media(max-width:640px){
+  .inf-root .inf-h-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .inf-root .inf-h-stats>div:nth-child(3){border-left:0}
+  .inf-root .inf-h-stats>div:nth-child(n+3){border-top:1px solid var(--inf-line)}
+}
+
+/* Subjects */
+.inf-root .inf-h-row{display:flex;justify-content:space-between;align-items:baseline;margin-top:4px}
+.inf-root .inf-h-row h2{font:600 1.45rem var(--inf-font-d);letter-spacing:-.01em}
+.inf-root .inf-h-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media(min-width:760px){.inf-root .inf-h-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.inf-root .inf-h-card{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-height:150px;padding:16px;text-align:left;border-radius:20px;
+  background:linear-gradient(160deg,color-mix(in srgb,var(--accent) 14%,var(--inf-card)),var(--inf-card) 75%);border:1.5px solid color-mix(in srgb,var(--accent) 26%,var(--inf-line))}
+.inf-root .inf-h-card:hover{border-color:var(--accent)}
+.inf-root .inf-h-card-ico{display:grid;place-items:center;width:46px;height:46px;margin-bottom:auto;border-radius:14px;background:var(--accent);color:#fff;font:700 1.2rem var(--inf-font-d)}
+.inf-root .inf-h-card b{margin-top:14px;font:600 1.15rem/1.2 var(--inf-font-d);overflow-wrap:anywhere}
+.inf-root .inf-h-card small{color:var(--inf-mute);font-size:.9rem;font-weight:600}
+.inf-root .inf-h-chev{position:absolute;top:16px;right:14px;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--inf-card);border:1.5px solid var(--inf-line);color:var(--inf-text)}
+
+/* Break bar */
+.inf-root .inf-h-break{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:18px 20px;border-radius:20px;
+  background:color-mix(in srgb,#FFC83D 14%,var(--inf-card));border:1.5px solid color-mix(in srgb,#FFC83D 45%,var(--inf-line))}
+.inf-root .inf-h-break h2{font:600 1.25rem var(--inf-font-d)}
+.inf-root .inf-h-break p{margin:2px 0 0;color:var(--inf-mute)}
+.inf-root .inf-h-break button{min-height:50px;padding:10px 24px;border-radius:999px;background:#0F1B4C;border-color:#0F1B4C;color:#fff;font-weight:700}
+@media (prefers-color-scheme:dark){.inf-root .inf-h-break button{background:#FFC83D;border-color:#FFC83D;color:#0F1B4C}}
+
+/* Bottom bar: gold pill on ink */
+.inf-root .inf-nav{padding:6px;border-radius:24px;gap:6px}
+.inf-root .inf-nav button{font-size:.82rem;font-weight:700}
+.inf-root .inf-nav button[aria-current=page]{background:#FFC83D;color:#0F1B4C;box-shadow:0 4px 14px rgba(255,184,0,.35)}
