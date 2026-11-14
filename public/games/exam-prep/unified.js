@@ -10,8 +10,7 @@
   panel.setAttribute('aria-live', 'polite');
   panel.setAttribute('aria-label', 'ExamPro learning dashboard');
   app.parentNode.insertBefore(panel, app.nextSibling);
-  var oldDisplay = '';
-  var tabs = [
+    var tabs = [
     ['progress', '📊', 'Progress'],
     ['plan', '📋', 'Study plan'],
     ['profile', '👤', 'Profile']
@@ -42,7 +41,8 @@
   }
   var tasks = [['Review formulas', 'Review your notes for 5 minutes'], ['Practice questions', 'Answer 10 questions'], ['Take a mock exam', 'Try a timed paper'], ['Fix mistakes', 'Learn from missed answers']];
   function plan() {
-    var saved = read(PLAN, {}), done = saved.day === today() && Array.isArray(saved.done) ? saved.done : [];
+    var saved = read(PLAN, {}), done = saved.day === today() && Array.isArray(saved.done) ? saved.done.filter(function (i) { return Number.isInteger(i) && i >= 0 && i < tasks.length; }) : [];
+    var p = getProgress(), weak = Object.keys(p.mistakes || {}).map(function (id) { return { id: id, count: Object.keys(p.mistakes[id] || {}).length }; }).sort(function (a,b) { return b.count - a.count; }).filter(function (x) { return x.count > 0; });
     var html = heading('STAY CONSISTENT', 'My study plan', 'Four small steps for today.');
     html += '<section class="ep-unified-card"><h2>Today\'s checklist</h2><p>' + done.length + ' of 4 completed · resets daily</p>' + meter(done.length * 25);
     html += tasks.map(function (t, i) { return '<label class="ep-unified-task"><input type="checkbox" data-task="' + i + '"' + (done.indexOf(i) >= 0 ? ' checked' : '') + '><span><b>' + t[0] + '</b><small>' + t[1] + '</small></span></label>'; }).join('');
