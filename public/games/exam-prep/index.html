@@ -811,8 +811,8 @@ body.dash-on{background:#f4f7fd!important;background-image:none!important;color:
 @media(max-width:560px){.home2{padding:14px 8px 38px!important}.home2 .hero2{padding:18px;align-items:flex-start;flex-direction:column}.home2 .hero2 .h2go{width:100%}.home2 .cats .cat{min-height:130px;padding:13px!important}.home2 .ep-home-intro small{display:none}.home2 .dsum{gap:6px}.home2 .dsum>div{padding:12px 4px}}
 @media(prefers-color-scheme:dark){body.dash-on{background:#101b35!important}.home2 .dwho h1,.home2 .ep-home-section-head .dh2{color:#eaf0ff}.home2 .dwho small{color:#a7b7d8}.home2 .gcard,.home2 .qtile,.home2 .dsum>div,.home2 .cats .cat,.home2 .ep-kg-book-link{background:#192b4d!important;border-color:#35496d!important}.home2 .qtile b,.home2 .gtxt b,.home2 .cats .cat b{color:#e8efff}.home2 .dsearch,.home2 .dsearch input{background:#192b4d;color:#fff}}
 </style></head>
-<body>
-<div class="splash" id="splash" role="dialog" aria-modal="true" aria-labelledby="sp-title" hidden>
+<body class="sp-lock">
+<div class="splash" id="splash" role="dialog" aria-modal="true" aria-labelledby="sp-title" style="display:flex">
   <div class="welcome-orb welcome-orb-a" aria-hidden="true"></div><div class="welcome-orb welcome-orb-b" aria-hidden="true"></div>
   <div class="sp-main">
     <div class="welcome-topline"><span class="welcome-dot"></span> MADE FOR ETHIOPIAN LEARNERS <span class="welcome-flag" aria-hidden="true">🇪🇹</span></div>
@@ -1384,7 +1384,7 @@ body.dash-on{background:#f4f7fd!important;background-image:none!important;color:
       el.textContent = '0'; setTimeout(function () { requestAnimationFrame(step); }, delay);
     }
   })();
-  sp.hidden = false; document.body.classList.add('sp-lock'); setBehind(true);
+  sp.hidden = false; sp.style.display = 'flex'; document.body.classList.add('sp-lock'); setBehind(true);
   go.addEventListener('click', close); document.addEventListener('keydown', onKey); go.focus({ preventScroll: true });
 })();
 </script>
