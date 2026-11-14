@@ -1,6 +1,7 @@
 'use client';
 import {goalOf, liveStreak, levelFor, nextUp, todayCount, upcomingExams, weekActivity} from '@/lib/studyStreak';
 import {makeT} from '@/lib/infText';
+import {bonusLine} from '@/lib/studyClient';
 const T0 = makeT('en');
 
 /* ---------- shared pieces: icons, subject colours, rings ---------- */
@@ -63,7 +64,7 @@ function Ring({value, goal, label}) {
   );
 }
 
-export default function HomeScreen({name, subjects, stats, onContinue, onOpen, onAll, onExams, now = new Date(), lang = 'en', t = T0}) {
+export default function HomeScreen({name, subjects, stats, onContinue, onOpen, onAll, onExams, onRank, server, now = new Date(), lang = 'en', t = T0}) {
   const goal = goalOf(stats), today = todayCount(stats, now), streak = liveStreak(stats, now), left = Math.max(0, goal - today);
   const acc = stats.answered ? Math.round(((stats.correct || 0) / stats.answered) * 100) : 0;
   const lv = levelFor(stats.xp);
@@ -104,6 +105,13 @@ export default function HomeScreen({name, subjects, stats, onContinue, onOpen, o
         <ol className="inf-week" aria-label={t('thisWeek')}>{weekActivity(stats, now, lang === 'am' ? 'am' : 'en').map((d) => <li key={d.key} className={(d.count >= goal ? 'is-full ' : d.count > 0 ? 'is-part ' : '') + (d.today ? 'is-today' : '')}><i aria-hidden="true">{d.count >= goal ? '🔥' : d.count > 0 ? '•' : ''}</i><span>{d.label.slice(0, 2)}</span></li>)}</ol>
         <div className="inf-lvl"><span>{t('levelN', {n: lv.level})}</span><div className="inf-bar" role="progressbar" aria-label={t('levelN', {n: lv.level})} aria-valuemin={0} aria-valuemax={lv.size} aria-valuenow={lv.into}><i style={{width: lv.into + '%'}} /></div><span>{t('xpToNext', {n: lv.size - lv.into, m: lv.level + 1})}</span></div>
       </section>
+
+      {server && (bonusLine(t, server) || server.hasGroup) && (
+        <section className="inf-panel inf-reward" aria-label={t('boardTitle')}>
+          {bonusLine(t, server) && <div className="inf-reward-row"><p>{bonusLine(t, server)}</p>{!server.bonus.granted && <div className="inf-bar" role="progressbar" aria-valuemin={0} aria-valuemax={server.bonus.goal} aria-valuenow={Math.min(server.bonus.answered, server.bonus.goal)}><i style={{width: Math.min(100, (server.bonus.answered / server.bonus.goal) * 100) + '%'}} /></div>}</div>}
+          {server.hasGroup && <button type="button" className="inf-reward-rank" onClick={onRank}><span>{server.rank ? t('rankRow', {n: server.rank}) : t('rankNone')}</span><Svg size={18}><path d="M9 5l7 7-7 7" /></Svg></button>}
+        </section>
+      )}
 
       <section className="inf-panel inf-up" aria-label={t('upcomingExams')}>
         <h2><Svg size={22}><rect x="3.5" y="5" width="17" height="15" rx="3" /><path d="M3.5 10h17M8 3v4M16 3v4" /></Svg>{t('upcomingExams')}</h2>

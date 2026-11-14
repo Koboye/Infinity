@@ -415,3 +415,20 @@ html:has(.inf-root),html body:has(.inf-root){background:#F4F2FF}
 .inf-root .inf-week .is-full i{border-style:solid;border-color:#FFC83D;background:rgba(255,200,61,.22)}
 .inf-root .inf-week .is-today span{color:var(--inf-text)}
 .inf-root .inf-week .is-today i{box-shadow:0 0 0 2px var(--inf-text) inset}
+
+/* Study-to-play bonus, leaderboard, toast */
+.inf-root .inf-reward{display:flex;flex-direction:column;gap:12px}
+.inf-root .inf-reward-row p{margin:0 0 8px;font-weight:700}
+.inf-root .inf-reward-rank{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;min-height:48px;padding:10px 14px;border-radius:16px;border:1.5px solid var(--inf-line);background:var(--inf-card);color:var(--inf-text);font:700 .95rem inherit;cursor:pointer;text-align:left}
+.inf-root .inf-bonus-hint{margin:8px 0 0;padding:8px 14px;border-radius:999px;background:rgba(255,200,61,.2);color:var(--inf-text);font-weight:700;font-size:.9rem}
+.inf-root .inf-rank{display:flex;flex-direction:column;gap:14px}
+.inf-root .inf-rank-top{display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+.inf-root .inf-rank-top h1{margin:6px 0 0}
+.inf-root .inf-rank-top p{margin:0;color:var(--inf-mute)}
+.inf-root .inf-rank-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.inf-root .inf-rank-list li{display:grid;grid-template-columns:40px 1fr auto;align-items:center;gap:10px;padding:12px 14px;border-radius:16px;border:1.5px solid var(--inf-line);background:var(--inf-card)}
+.inf-root .inf-rank-list li.is-me{border-color:#FFC83D;background:rgba(255,200,61,.18)}
+.inf-root .inf-rank-n{font-weight:800;text-align:center;font-size:1.1rem}
+.inf-root .inf-rank-list em{font-style:normal;font-weight:800;font-variant-numeric:tabular-nums}
+.inf-root .inf-rank-me{text-align:center;font-weight:700}
+.inf-root .inf-toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:50;max-width:calc(100vw - 32px);padding:12px 18px;border-radius:999px;background:#0F1B4C;color:#fff;font-weight:800;box-shadow:0 10px 28px rgba(0,0,0,.3);animation:inf-pop .35s ease-out}

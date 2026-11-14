@@ -6,6 +6,7 @@
 import { randomUUID, createHash } from 'node:crypto';
 import { fail } from './httpError.js';
 import { passView, grantPass, consumeLevel, passDay, cleanPhone } from '../passCore.js';
+import { bonusView, consumeBonus } from '../studyCore.js';
 
 const passRef = (db, uid) => db.collection('passes').doc(uid);
 const claimRef = (db, id) => db.collection('payClaims').doc(id);
@@ -59,6 +60,11 @@ export async function passStart(db, uid, now = Date.now()) {
     const s = await tx.get(passRef(db, uid));
     const p = s.exists ? s.data() : null;
     const r = consumeLevel(p, now);
+    if (!r.ok) {   // no paid level left: today's study bonus (earned by answering questions, see studyCore) pays for the start
+      const bs = await tx.get(db.collection('studyStats').doc(uid));
+      const b = bs.exists ? consumeBonus(bs.data(), now) : { ok: false };
+      if (b.ok) { tx.set(db.collection('studyStats').doc(uid), b.rec); return { pass: { ...passView(p, now), paywall: true, pending: false }, bonus: true, bonusLeft: bonusView(b.rec, now).left }; }
+    }
     if (!r.ok) fail(402, r.reason === 'used-up' ? 'You used all 10 levels today. Pay again to unlock 10 more.' : 'Pay to unlock today\'s 10 levels');
     tx.set(passRef(db, uid), { ...p, ...r.pass });
     return { pass: { ...passView(r.pass, now), paywall: true, pending: false } };

@@ -21,7 +21,7 @@ export async function refresh() {
 }
 /** Spend one level start. { ok:true } lets the game begin; { ok:false, locked:true } means "show the pay screen". */
 export async function start() {
-  try { const r = await apiCall({ action: 'passStart' }, { retries: 0 }); set(r.pass); return { ok: true, free: !!r.free, pass: r.pass }; }
+  try { const r = await apiCall({ action: 'passStart' }, { retries: 0 }); set(r.pass); return { ok: true, free: !!r.free, bonus: !!r.bonus, pass: r.pass }; }
   catch (e) { return { ok: false, locked: e.status === 402, error: e.message }; }
 }
 /** Tell the server "I am paying now" (optionally with the payer's number), then open the phone dialer with the code filled in. */

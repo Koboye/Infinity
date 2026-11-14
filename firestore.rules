@@ -50,6 +50,8 @@ service cloud.firestore {
       allow write: if false;
     }
     match /payClaims/{id} { allow read, write: if false; }
+    match /studyStats/{uid} { allow read, write: if false; }   // study ledger, streaks and the study bonus: server-only (checked through /api/study)
+    match /pushSubs/{uid} { allow read, write: if false; }   // reminder subscriptions: server-only (/api/push)
     match /smsInbox/{id} { allow read, write: if false; }   // payment SMS text from the owner's phone: server-only   // owner-only (confirmed through /api/pay/confirm)
 
     // Ads: the ads themselves, their counters and the rewarded-ad sessions are read and written only by the server

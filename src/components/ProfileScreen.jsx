@@ -6,6 +6,7 @@ import {Svg, initialOf} from './HomeScreen';
 import {uploadAvatar, removeAvatar} from '@/lib/upload';
 import {GOALS, LANGS, makeT} from '@/lib/infText';
 import {goalOf, levelFor} from '@/lib/studyStreak';
+import ReminderRow from './ReminderRow';
 
 const I = {
   cap: <><path d="M2 9l10-5 10 5-10 5z" /><path d="M6 11.5V16c0 1.5 3 3 6 3s6-1.5 6-3v-4.5" /></>,
@@ -124,6 +125,7 @@ export default function ProfileScreen({user, gradeName, deptName, stats, notice,
       <section className="inf-panel inf-set">
         <div className="inf-set-row"><div><b>{t('language')}</b><small>{t('languageSub')}</small></div><Seg label={t('language')} value={lang} options={LANGS} onPick={(v) => onLang?.(v)} /></div>
         <div className="inf-set-row"><div><b>{t('goal')}</b><small>{t('goalSub')}</small></div><Seg label={t('goal')} value={goal} options={GOALS.map((g) => [g, String(g)])} onPick={(v) => { onGoal?.(v); say('ok', t('goalSaved')); }} /></div>
+        <ReminderRow t={t} lang={lang} say={say} />
       </section>
       <p className="inf-legal"><a href="/privacy">{t('privacy')}</a> · <a href="/terms">{t('terms')}</a></p>
       {toast}

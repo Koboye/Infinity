@@ -1,5 +1,5 @@
 // Infinity service worker: offline play (computer + pass-and-play) after the first visit.
-const V = 'gebeta-v48';   // bumped so phones drop the old cache and pick up the Infinity rebrand (icons, sign-up, home)
+const V = 'gebeta-v49';   // bumped so phones drop the old cache and pick up the Infinity rebrand (icons, sign-up, home)
 const MAX_RUNTIME = 220;   // cap on runtime-cached files so panoramas cannot fill a phone
 const keep = (r, res) => { if (!res || !(res.ok || res.type === 'opaque')) return; const c = res.clone(); caches.open(V).then(async (x) => { await x.put(r, c); const ks = await x.keys(); if (ks.length > MAX_RUNTIME) await Promise.all(ks.slice(0, ks.length - MAX_RUNTIME).map((k) => x.delete(k))); }).catch(() => {}); };
 const SHELL = ['/', '/manifest.json', '/icon.svg', '/icon-192.png', '/icon-512.png', '/afro-logo.svg', '/infinity-logo.svg', '/og-image.png'];
@@ -18,4 +18,15 @@ self.addEventListener('fetch', (e) => {
     return;
   }
   e.respondWith(caches.match(r).then((m) => m || fetch(r).then((res) => { keep(r, res); return res; })));
+});
+
+// Daily study reminder (web push from /api/cron/remind).
+self.addEventListener('push', (e) => {
+  let d = {}; try { d = e.data ? e.data.json() : {}; } catch { /* plain text */ }
+  e.waitUntil(self.registration.showNotification(d.title || 'Infinity', { body: d.body || '', icon: '/icon-192.png', badge: '/icon-192.png', data: { url: d.url || '/' }, tag: 'infinity-daily' }));
+});
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || '/';
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((cs) => { const c = cs.find((x) => 'focus' in x); return c ? c.focus() : self.clients.openWindow(url); }));
 });
