@@ -1,0 +1,57 @@
+/* Infinity unified identity — presentation-only layer, Nov 2026.
+   Keep the existing Exam Pro text, language switching, quiz logic and bank intact. */
+:root {
+  --in-ink:#10223b;--in-muted:#52657c;--in-deep:#101e37;
+  --in-indigo:#5046db;--in-blue:#3279e4;--in-mint:#34d5b2;
+  --in-surface:#ffffff;--in-bg:#f4f7fc;--in-border:#e2e8f3;
+  --in-glow:0 16px 46px rgba(29,48,105,.10);
+  --bg:#f4f7fc;--bg2:#eaf0fb;--card:#ffffff;--ink:#10223b;
+  --muted:#52657c;--line:#e2e8f3;--brand:#5046db;--brand2:#30289b;
+  --brand3:#3279e4;--gold:#f4b544;--gold2:#ffdb84;
+  --shadow:var(--in-glow);--r:22px;
+}
+html{background:var(--in-bg)}
+body{background:radial-gradient(circle at 95% 0%,#e7e6ff 0,transparent 33%),radial-gradient(circle at 0% 35%,#dffaf4 0,transparent 34%),var(--in-bg);color:var(--in-ink)}
+button,input,select{font-family:inherit}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #6b61ff;outline-offset:3px}
+.top{background:rgba(255,255,255,.92)!important;border-bottom:1px solid var(--in-border)!important;box-shadow:0 6px 25px rgba(26,38,84,.04);backdrop-filter:blur(16px)}
+.top .brand{color:var(--in-deep)!important}
+.top .brand .bs{color:var(--in-muted)!important}
+.wrap{max-width:940px}
+.dash{padding-bottom:20px}
+.dhead{background:linear-gradient(120deg,#171e53,#5149d8 66%,#3785de);border-radius:26px;padding:22px!important;color:white!important;box-shadow:0 18px 35px rgba(57,61,162,.20);margin:16px 0 20px}
+.dhead small,.dhead b{color:white!important}
+.dhead .dav{background:linear-gradient(140deg,#78e9d0,#b6fff0)!important;color:#132c51!important;border:2px solid rgba(255,255,255,.8)}
+.card,.cat,.hero2,.dsearch{border:1px solid var(--in-border)!important;border-radius:22px!important;box-shadow:var(--in-glow)}
+.card{background:var(--in-surface)!important}
+.dsearch{background:white!important}
+.dsearch input{background:transparent!important;color:var(--in-ink)!important}
+.cat{background:#fff!important;transition:transform .16s ease,box-shadow .16s ease}
+.cat:active{transform:scale(.985)}
+.btn:not(.alt):not(.ghost),button.gold{background:linear-gradient(115deg,#5148db,#347ee5)!important;color:#fff!important;border-color:transparent!important;box-shadow:0 8px 20px rgba(71,83,210,.18)}
+.btn.alt{background:#eef1ff!important;color:#3532a1!important;border-color:#dce0ff!important}
+.bnav{background:rgba(255,255,255,.97)!important;border-top:1px solid var(--in-border)!important;box-shadow:0 -8px 30px rgba(31,45,91,.06)}
+.bnav button[aria-current="page"]{color:#4b42cf!important}
+#ep-auth-gate{background:radial-gradient(circle at 12% 18%,rgba(68,218,196,.24),transparent 35%),radial-gradient(circle at 88% 75%,rgba(124,100,255,.35),transparent 40%),linear-gradient(150deg,#0d1735,#202b68 55%,#4137a1)!important;padding:24px}
+.ep-auth-card{position:relative;background:rgba(255,255,255,.98)!important;border:1px solid rgba(255,255,255,.7);border-radius:30px!important;padding:32px!important;box-shadow:0 28px 80px rgba(5,12,42,.34)!important;max-width:450px}
+.ep-auth-card::before{content:'∞  INFINITY';display:inline-flex;align-items:center;margin-bottom:24px;padding:10px 15px;border-radius:999px;background:#eeedff;color:#3932b7;font-weight:900;font-size:.93rem;letter-spacing:.12em}
+.ep-auth-card h1{font-size:clamp(1.7rem,5vw,2.2rem)!important;letter-spacing:-.04em;color:#162343!important}
+.ep-auth-card p{color:#53657e!important}
+.ep-auth-card label{color:#22344e!important;font-size:.9rem}
+.ep-auth-card input{border:1px solid #d7dff0!important;border-radius:13px!important;background:#f8faff!important;min-height:48px}
+.ep-auth-card input:focus{background:#fff!important;border-color:#655be4!important}
+#ep-auth-submit{background:linear-gradient(110deg,#5548dc,#367cde)!important;min-height:52px;border-radius:14px!important;box-shadow:0 10px 22px rgba(74,70,207,.23)}
+#ep-auth-submit:disabled{opacity:.55}
+#ep-auth-toggle{color:#4b40c6!important;font-weight:700}
+#ep-auth-message{color:#b52741!important}
+#ep-auth-signout{border-radius:999px!important;background:#fff!important;color:#3933a3!important;border:1px solid #dcdff7!important;box-shadow:0 7px 20px #202f6420}
+#exampro-game-break{background:radial-gradient(circle at top right,#353f94,transparent 60%),#101936!important;padding:clamp(12px,3vw,24px)!important;gap:14px!important}
+#exampro-game-break .game-break-bar:first-child{background:#ffffff14;padding:12px 16px;border:1px solid #ffffff22;border-radius:18px}
+#exampro-game-break .game-break-bar:first-child strong{font-size:1.1rem}
+#exampro-game-break button{background:#fff!important;color:#3035a3!important;border:1px solid #ffffff88!important;border-radius:13px!important;box-shadow:0 6px 18px #0002}
+#exampro-game-return{background:#60e0c5!important;color:#0d2943!important}
+#exampro-game-break iframe{border-radius:20px!important;border:2px solid #ffffff24!important}
+#game-break{background:linear-gradient(110deg,#5146da,#327fe4)!important;color:#fff!important;border:0!important}
+.splash{background:radial-gradient(circle at 50% 25%,#4046a4,#0b1438 75%)!important}
+@media(max-width:480px){.ep-auth-card{padding:24px!important;border-radius:24px!important}.dhead{padding:16px!important}#exampro-game-break .game-break-bar{gap:8px}}
+@media(prefers-reduced-motion:reduce){.cat{transition:none}}
