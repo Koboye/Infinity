@@ -112,3 +112,5 @@ export default function HomeScreen({name, gradeName, subjects, stats, resume, on
     </div>
   );
 }
+
+export {iconFor, Svg, ACCENTS};
