@@ -507,9 +507,9 @@ body.ep-auth-locked > :not(#ep-auth-gate):not(script) { visibility:hidden !impor
         (q.topic ? '<p class="hint" style="margin:.4em 0 0">' + esc(q.topic) + '</p>' : '') + '<h3 class="q mt" id="qt">' + esc(q.text) + '</h3><div role="group" aria-labelledby="qt">' +
         q.options.map(function (o, k) { return '<button class="opt ' + (reveal ? (k === q.answer ? 'right' : k === c ? 'wrong' : '') : c === k ? 'sel' : '') + '" ' + (reveal ? 'disabled' : '') + ' aria-pressed="' + (c === k) + '" data-k="' + k + '"><b class="ltr" aria-hidden="true">' + L[k] + '</b><span>' + esc(o) + '</span>' + (reveal ? '<span class="sr">' + (k === q.answer ? ' (correct answer)' : k === c ? ' (your answer, incorrect)' : '') + '</span>' : '') + '</button>'; }).join('') + '</div>' +
         (reveal && flash ? '<div class="flash ' + (flash.ok ? 'ok' : 'err') + '">' + esc(flash.text) + ' · +' + flash.gain + ' XP</div>' : '') + (reveal ? explain(q, c) : '') +
-        '<div class="row sp mt"><button class="btn alt" id="quit">Quit</button><span class="row">' + (mode === 'exam' && i > 0 ? '<button class="btn alt" id="prev">Back</button>' : '') + '<button class="btn ' + (i + 1 >= set.length ? 'gold' : '') + '" id="next" ' + (mode === 'practice' && c == null ? 'disabled' : '') + '>' + (i + 1 < set.length ? 'Next →' : 'Finish') + '</button></span></div><p class="hint" style="margin:.6em 0 0">Tip: press A–D to answer, Enter for next.</p></div>';
+        '<div class="row sp mt"><button class="btn alt" id="quit">Quit</button><span class="row">' + (mode === 'exam' ? '<button class="btn alt" id="game-break" type="button">🎮 Play Game</button>' : '') + (mode === 'exam' && i > 0 ? '<button class="btn alt" id="prev">Back</button>' : '') + '<button class="btn ' + (i + 1 >= set.length ? 'gold' : '') + '" id="next" ' + (mode === 'practice' && c == null ? 'disabled' : '') + '>' + (i + 1 < set.length ? 'Next →' : 'Finish') + '</button></span></div><p class="hint" style="margin:.6em 0 0">Tip: press A–D to answer, Enter for next.</p></div>';
       [].forEach.call(app.querySelectorAll('[data-k]'), function (b) { b.onclick = function () { choose(+b.getAttribute('data-k')); }; });
-      document.getElementById('next').onclick = next; document.getElementById('quit').onclick = function () { clearInterval(timer); document.onkeydown = null; deptPage(id, ''); };
+      document.getElementById('next').onclick = next; var gb = document.getElementById('game-break'); if (gb) gb.onclick = window.examproOpenGameBreak; document.getElementById('quit').onclick = function () { clearInterval(timer); document.onkeydown = null; deptPage(id, ''); };
       var pv = document.getElementById('prev'); if (pv) pv.onclick = function () { i--; draw(); };
       if (reveal) { var ex = app.querySelector('.explain'); if (ex) { ex.setAttribute('tabindex', '-1'); ex.setAttribute('role', 'region'); ex.setAttribute('aria-label', 'Explanation'); ex.focus(); } say(c === q.answer ? 'Correct.' : 'Not quite. The correct answer is ' + L[q.answer] + '.'); }
       else if (c != null) { var ob = app.querySelector('[data-k="' + c + '"]'); if (ob) ob.focus({ preventScroll: true }); }
@@ -517,12 +517,12 @@ body.ep-auth-locked > :not(#ep-auth-gate):not(script) { visibility:hidden !impor
       lastQ = q.id;
     }
     document.onkeydown = function (e) {
-      if (done || /INPUT|SELECT|TEXTAREA/.test((e.target || {}).tagName || '')) return;
+      if (done || window.examproGameBreakOpen || /INPUT|SELECT|TEXTAREA/.test((e.target || {}).tagName || '')) return;
       var q = set[i], k = 'abcd'.indexOf(e.key.toLowerCase()), n = ['1', '2', '3', '4'].indexOf(e.key), c = q && picked[q.id];
       if (q && k >= 0 && k < q.options.length) choose(k); else if (q && n >= 0 && n < q.options.length) choose(n);
       else if ((e.key === 'Enter' || e.key === 'ArrowRight') && (mode === 'exam' || c != null)) next();
     };
-    if (mode === 'exam') timer = setInterval(function () { left--; if (left <= 0) { finish(); return; } if (left === 300 || left === 60 || left === 10) say(left === 300 ? '5 minutes left' : left === 60 ? '1 minute left' : '10 seconds left'); var el = document.getElementById('clock'); if (el) { el.textContent = '⏱ ' + String(Math.floor(left / 60)).padStart(2, '0') + ':' + String(left % 60).padStart(2, '0'); if (left < 60) el.className = 'pill bad'; } }, 1000);
+    if (mode === 'exam') timer = setInterval(function () { if (window.examproGameBreakOpen) return; left--; if (left <= 0) { finish(); return; } if (left === 300 || left === 60 || left === 10) say(left === 300 ? '5 minutes left' : left === 60 ? '1 minute left' : '10 seconds left'); var el = document.getElementById('clock'); if (el) { el.textContent = '⏱ ' + String(Math.floor(left / 60)).padStart(2, '0') + ':' + String(left % 60).padStart(2, '0'); if (left < 60) el.className = 'pill bad'; } }, 1000);
     if (!set.length) { app.innerHTML = '<div class="card"><p>No questions here.</p><button class="btn" id="exit">Back</button></div>'; document.getElementById('exit').onclick = function () { deptPage(id, ''); }; return; }
     draw();
   }
@@ -548,6 +548,30 @@ body.ep-auth-locked > :not(#ep-auth-gate):not(script) { visibility:hidden !impor
   function onKey(e) { if (e.key === 'Escape') close(); }
   sp.hidden = false; document.body.classList.add('sp-lock'); setBehind(true);
   go.addEventListener('click', close); document.addEventListener('keydown', onKey); go.focus({ preventScroll: true });
+})();
+</script>
+
+<style>
+#exampro-game-break[hidden]{display:none!important}
+#exampro-game-break{position:fixed;inset:0;z-index:100000;background:#07113beF;display:flex;flex-direction:column;color:white;padding:12px;gap:10px}
+#exampro-game-break .game-break-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+#exampro-game-break button{padding:10px 14px;border-radius:10px;border:0;background:#ffd36b;color:#07113b;font:700 1rem system-ui;cursor:pointer}
+#exampro-game-break iframe{flex:1;min-height:0;width:100%;border:0;border-radius:12px;background:#fff}
+</style>
+<div id="exampro-game-break" role="dialog" aria-modal="true" aria-label="Game break" hidden>
+  <div class="game-break-bar"><strong>🎮 Game break — exam timer paused</strong><button type="button" id="exampro-game-return">Return to Exam</button></div>
+  <div class="game-break-bar"><button type="button" data-game="/games/addis-runner/index.html">Addis Runner</button><button type="button" data-game="/games/hill-climb-racer/index.html">Hill Climb</button><button type="button" data-game="/games/sky-crawler/index.html">Sky Crawler</button></div>
+  <iframe id="exampro-game-frame" title="Game break" loading="lazy" allow="fullscreen"></iframe>
+</div>
+<script>
+(function(){
+ var panel=document.getElementById('exampro-game-break'),frame=document.getElementById('exampro-game-frame'),back=document.getElementById('exampro-game-return');
+ window.examproGameBreakOpen=false;
+ window.examproOpenGameBreak=function(){window.examproGameBreakOpen=true;panel.hidden=false;frame.src='/games/addis-runner/index.html';back.focus();};
+ function close(){frame.removeAttribute('src');panel.hidden=true;window.examproGameBreakOpen=false;var b=document.getElementById('game-break');if(b)b.focus();}
+ back.addEventListener('click',close);
+ panel.querySelectorAll('[data-game]').forEach(function(button){button.addEventListener('click',function(){frame.src=button.getAttribute('data-game');});});
+ document.addEventListener('keydown',function(e){if(window.examproGameBreakOpen&&e.key==='Escape'){e.preventDefault();close();}});
 })();
 </script>
 <script type="module" src="required-auth.js"></script>
