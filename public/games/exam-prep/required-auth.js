@@ -88,7 +88,7 @@ try {
         rememberDepartment(result.user.uid, requestedGrade === 'uni' ? requestedDepartment : '');
       }
       form.reset();
-      if (auth.currentUser) { syncGradeField(auth.currentUser.uid); window.dispatchEvent(new CustomEvent('infinity-grade-changed', { detail: { grade: selectedGrade(auth.currentUser.uid), department: selectedDepartment(auth.currentUser.uid) } })); }
+      // The finally handler calls allow() after UID, grade and department are saved.
     } catch (error) {
       const errors = {
         'auth/email-already-in-use': 'This email already has an account. Please sign in.',
