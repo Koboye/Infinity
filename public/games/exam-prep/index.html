@@ -215,8 +215,41 @@ body.has-nav .bnav{display:flex}
 .catv .back{margin:0 0 .8rem}
 @media(prefers-reduced-motion:reduce){.cat.pick{animation:none;box-shadow:0 0 0 4px var(--ep-gold-soft)}}
 </style>
+
+<style>
+/* Authentication is isolated from the existing Exam Pro design. */
+body.ep-auth-locked { overflow:hidden; }
+body.ep-auth-locked > :not(#ep-auth-gate):not(script) { visibility:hidden !important; }
+#ep-auth-gate[hidden],#ep-auth-signout[hidden],#ep-auth-name[hidden]{display:none!important}
+#ep-auth-gate{position:fixed;inset:0;z-index:2147483647;overflow:auto;display:grid;place-items:center;padding:24px;background:linear-gradient(150deg,#050b2e,#142a76);font-family:'Figtree',system-ui,sans-serif;color:#101d40}
+.ep-auth-card{width:min(100%,420px);padding:clamp(24px,5vw,36px);background:#fff;border-radius:22px;box-shadow:0 20px 60px #0005}
+.ep-auth-card h1{font-size:1.7rem;color:#0b1651;margin:0 0 8px}
+.ep-auth-card p{line-height:1.5;color:#52617a}
+.ep-auth-card label{display:block;font-weight:700;margin:14px 0 6px}
+.ep-auth-card input{box-sizing:border-box;width:100%;padding:13px;border:1px solid #aab5c9;border-radius:10px;font:inherit;color:#17213d;background:white}
+.ep-auth-card button{cursor:pointer;font:inherit}
+#ep-auth-submit{width:100%;margin-top:20px;padding:14px;background:#0c2879;color:#fff;border:0;border-radius:10px;font-weight:800}
+#ep-auth-toggle{display:block;margin:18px auto 0;background:none;border:0;color:#123aa1;text-decoration:underline}
+#ep-auth-message{min-height:24px;color:#a32121;overflow-wrap:anywhere}
+#ep-auth-signout{position:fixed;bottom:76px;right:12px;z-index:9999;padding:8px 12px;border-radius:10px;border:1px solid #ccd3e0;background:#fff;color:#17264a;font-weight:700}
+</style>
 </head>
-<body>
+<body class="ep-auth-locked">
+<div id="ep-auth-gate" role="dialog" aria-modal="true" aria-labelledby="ep-auth-title">
+  <div class="ep-auth-card">
+    <h1 id="ep-auth-title">Sign in</h1><p>Sign in to continue learning with exam.pro.</p>
+    <form id="ep-auth-form">
+      <div id="ep-auth-name" hidden><label for="ep-display-name">Student name</label><input id="ep-display-name" name="displayName" autocomplete="name" maxlength="80"></div>
+      <label for="ep-auth-email">Email</label><input id="ep-auth-email" name="email" type="email" autocomplete="email" required>
+      <label for="ep-auth-password">Password</label><input id="ep-auth-password" name="password" type="password" autocomplete="current-password" minlength="6" required>
+      <p id="ep-auth-message" role="alert" aria-live="polite"></p>
+      <button id="ep-auth-submit" type="submit">Sign in</button>
+    </form>
+    <button id="ep-auth-toggle" type="button">New student? Create account</button>
+  </div>
+</div>
+<button id="ep-auth-signout" type="button" hidden>Sign out</button>
+
 <div class="splash" id="splash" role="dialog" aria-modal="true" aria-labelledby="sp-title" hidden>
 <div class="sp-stars" aria-hidden="true"></div>
 <div class="sp-main"><svg class="sp-emblem" viewBox="0 0 240 230" aria-hidden="true"><defs>
@@ -517,5 +550,6 @@ body.has-nav .bnav{display:flex}
   go.addEventListener('click', close); document.addEventListener('keydown', onKey); go.focus({ preventScroll: true });
 })();
 </script>
+<script type="module" src="required-auth.js"></script>
 </body>
 </html>
