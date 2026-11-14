@@ -809,7 +809,30 @@ body.exam-on .ep-nav-menu{display:none}
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function ymd(d) { d = d || new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
   function yest() { var d = new Date(); d.setDate(d.getDate() - 1); return ymd(d); }
-  function load() { var s = { xp: 0, streak: 0, last: '', day: '', today: 0, best: {}, mistakes: {}, answered: 0, correct: 0 }; try { Object.assign(s, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) {} if (s.day !== ymd()) s.today = 0; return s; }
+  function load() {
+    var s = { xp: 0, streak: 0, last: '', day: '', today: 0, best: {}, mistakes: {}, answered: 0, correct: 0 };
+    try {
+      var primary = localStorage.getItem(KEY);
+      // One-time, non-destructive migration of the older Next.js local progress when
+      // it exists on this same origin. Never overwrite an established ExamPro record.
+      if (!primary) {
+        var legacy = localStorage.getItem('examprep.progress.v1');
+        if (legacy) {
+          var old = JSON.parse(legacy);
+          if (old && typeof old === 'object' && !Array.isArray(old)) {
+            Object.assign(s, old);
+            localStorage.setItem(KEY, JSON.stringify(s));
+            primary = localStorage.getItem(KEY);
+          }
+        }
+      }
+      if (primary) Object.assign(s, JSON.parse(primary));
+    } catch (e) {}
+    if (!s.best || typeof s.best !== 'object') s.best = {};
+    if (!s.mistakes || typeof s.mistakes !== 'object') s.mistakes = {};
+    if (s.day !== ymd()) s.today = 0;
+    return s;
+  }
   function save(s) { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {} }
   function dailyGoal() { try { var x = JSON.parse(localStorage.getItem('exampro.plan.settings.v1') || '{}'); var n = Number(x.goal); return [10,20,30,50,100].indexOf(n) >= 0 ? n : GOAL; } catch (e) { return GOAL; } }
   function level(xp) { var l = Math.floor(Math.sqrt(xp / 50)); return l + 1; }
