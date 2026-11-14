@@ -54,3 +54,13 @@ export async function startRecording() {
     cancel: () => { rec.onstop = null; try { rec.stop(); } catch { /* already stopped */ } release(); },
   };
 }
+
+/** Profile photo: one small JPEG per learner at u/{uid}/avatar.jpg. Resolves to its download link. */
+export async function uploadAvatar(uid, file) {
+  if (!storage) throw new Error('Photo upload is not switched on yet.');
+  if (!uid) throw new Error('Sign in first');
+  const blob = await shrinkImage(file, 384, 0.85);
+  const r = ref(storage, `u/${uid}/avatar.jpg`);
+  await new Promise((ok, no) => uploadBytesResumable(r, blob, { contentType: 'image/jpeg' }).on('state_changed', null, no, ok));
+  return getDownloadURL(r);
+}

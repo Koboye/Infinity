@@ -13,3 +13,17 @@ s = recordSession(s, 1, 1, d('2026-11-14'));
 assert.equal(s.streak, 1); assert.equal(s.best, 2);
 assert.equal(DAILY_GOAL, 10);
 console.log('ok study-streak');
+
+// profile helpers
+const { weekActivity, levelFor, subjectStats, achievements } = await import('../src/lib/studyStreak.js');
+let t = recordSession({}, 10, 8, d('2026-11-10'), 'Math');
+t = recordSession(t, 5, 2, d('2026-11-11'), 'Math');
+t = recordSession(t, 4, 4, d('2026-11-11'), 'English');
+assert.deepEqual(subjectStats(t).map((x) => [x.name, x.answered, x.pct]), [['Math', 15, 67], ['English', 4, 100]]);
+const wk = weekActivity(t, d('2026-11-12'));
+assert.equal(wk.length, 7); assert.equal(wk[6].today, true);
+assert.equal(wk.find((x) => x.key === '2026-11-10').count, 10); assert.equal(wk.find((x) => x.key === '2026-11-11').count, 9);
+assert.deepEqual(levelFor(250), {level: 3, into: 50, size: 100});
+assert.equal(achievements(t).find((x) => x.id === 'first').done, true);
+assert.equal(achievements(t).find((x) => x.id === 's7').done, false);
+console.log('ok profile helpers');
