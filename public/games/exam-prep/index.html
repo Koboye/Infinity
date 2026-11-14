@@ -1765,6 +1765,60 @@ body.ep-panel-open #ep-unified-panel.ep-profile-layout{width:calc(100% - 36px)!i
 @media(max-width:520px){body.ep-panel-open #ep-unified-panel.ep-profile-layout{width:calc(100% - 24px)!important;gap:11px!important;padding-top:15px!important}#ep-unified-panel.ep-profile-layout>.ep-unified-card{padding:20px!important}#ep-unified-panel.ep-profile-layout>.ep-profile-summary{padding:22px 18px!important;gap:14px!important}#ep-unified-panel.ep-profile-layout>.ep-profile-summary .ep-unified-avatar{width:61px!important;height:61px!important;font-size:28px!important}#ep-unified-panel.ep-profile-layout .ep-profile-rank{display:none}#ep-unified-panel.ep-profile-layout>.ep-profile-stats{grid-template-columns:repeat(2,minmax(0,1fr))!important}#ep-unified-panel.ep-profile-layout .ep-profile-fields{grid-template-columns:1fr}#ep-unified-panel.ep-profile-layout .ep-profile-grade-field{grid-column:1}}
 @media(prefers-reduced-motion:reduce){#ep-unified-panel.ep-profile-layout *{transition:none!important}}
 </style>
+<style id="ep-visual-reset-2026">
+/* One coherent ExamPro brand: full-width dashboard, readable contrast, responsive profile */
+:root{--ep-navy:#07163a;--ep-blue:#173e9a;--ep-gold:#ffcc55}
+body.dash-on,body.ep-panel-open{background:#071633!important;color:#f3f7ff!important}
+body.dash-on main#app.wrap{width:min(100%,1280px)!important;max-width:1280px!important;margin:0 auto!important;padding:0 22px 115px!important;box-sizing:border-box!important}
+body.dash-on main#app.wrap .home2{width:100%!important;max-width:1200px!important;margin:0 auto!important;padding:28px 0 60px!important;box-sizing:border-box!important}
+body.dash-on .home2 .ep-home-intro,body.dash-on .home2 .ep-home-intro *{color:#b9ceff!important}
+body.dash-on .home2 .ep-home-intro{margin:4px 0 17px!important}
+body.dash-on .home2 .dhead{min-height:150px!important;display:flex!important;align-items:center!important;background:radial-gradient(circle at 85% 0%,#7e5ec388,transparent 45%),linear-gradient(120deg,#1949a7,#203784)!important;border:1px solid #7c91dc!important;border-radius:23px!important;padding:26px 30px!important;box-shadow:0 18px 35px #0005!important}
+body.dash-on .home2 .dwho h1{font-size:clamp(24px,3.5vw,40px)!important;color:#fff!important}
+body.dash-on .home2 .dwho small{font-size:14px!important;color:#e2eaff!important}
+body.dash-on .home2 .ep-home-setup{background:#162f68!important;color:#fff!important;border:1px solid #5679c2!important;border-left:4px solid #ffcf58!important;border-radius:17px!important;padding:19px!important}
+body.dash-on .home2 .ep-home-setup span,body.dash-on .home2 .ep-home-setup b,body.dash-on .home2 .ep-home-setup strong,body.dash-on .home2 .ep-home-setup p{color:#fff!important}
+body.dash-on .home2 .ep-home-setup small{color:#c8d8fa!important}
+body.dash-on .home2 .ep-home-levels{background:linear-gradient(135deg,#112a60,#0e2252)!important;border:1px solid #365b9c!important;border-radius:22px!important;padding:25px!important;margin:22px 0!important}
+body.dash-on .home2 .ep-levels-heading h2{color:#fff!important}
+body.dash-on .home2 .ep-levels-heading p{color:#bfd1f7!important}
+body.dash-on .home2 .ep-level-grid{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:14px!important}
+body.dash-on .home2 .ep-level-card{min-height:190px!important;border:1px solid #ffffff7a!important;border-radius:19px!important}
+body.dash-on .home2 .ep-level-copy b,body.dash-on .home2 .ep-level-copy small{color:#fff!important}
+body.dash-on .home2 .ep-home-shortcuts{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+body.dash-on .home2 .ep-home-shortcuts button{min-height:80px!important;font-size:23px!important;border-radius:17px!important}
+body.dash-on .home2 .ep-home-shortcuts button span{color:#fff!important;font-size:15px!important}
+body.dash-on .home2 .ep-home-section-head>span{color:#a5c1ff!important}
+body.dash-on .home2 .ep-home-section-head .dh2{color:#fff!important}
+body.dash-on .home2 .hero2{padding:27px!important;border-radius:23px!important}
+body.dash-on .home2 .hero2 h2,body.dash-on .home2 .hero2 b,body.dash-on .home2 .hero2 p{color:#fff!important}
+body.dash-on .home2 .qtile,body.dash-on .home2 .gcard,body.dash-on .home2 .dsum>div{background:linear-gradient(135deg,#183878,#102858)!important;color:#fff!important;border:1px solid #4f71b7!important}
+body.dash-on .home2 .qtile *,body.dash-on .home2 .gcard *,body.dash-on .home2 .dsum>div *{color:#e9f0ff!important}
+body.dash-on .home2 .cats .cat{background:linear-gradient(140deg,#1a3a80,#102658)!important;border:1px solid #5576bd!important;color:#fff!important}
+body.dash-on .home2 .cats .cat b{color:#fff!important}
+body.dash-on .home2 .cats .cat small{color:#c5d7fb!important}
+body.dash-on .home2 .dsearch{border-radius:17px!important}
+body.ep-panel-open #ep-unified-panel.ep-profile-layout{width:min(calc(100% - 44px),1120px)!important;max-width:1120px!important;margin:0 auto!important;padding:24px 0 130px!important;display:grid!important;grid-template-columns:minmax(0,1.35fr) minmax(300px,1fr)!important;gap:17px!important;align-items:start!important;box-sizing:border-box!important}
+body.ep-panel-open #ep-unified-panel.ep-profile-layout>*{min-width:0!important}
+body.ep-panel-open #ep-unified-panel.ep-profile-layout>.ep-unified-back,body.ep-panel-open #ep-unified-panel.ep-profile-layout>.ep-profile-top,body.ep-panel-open #ep-unified-panel.ep-profile-layout>.ep-profile-banner,body.ep-panel-open #ep-unified-panel.ep-profile-layout>.ep-profile-summary,body.ep-panel-open #ep-unified-panel.ep-profile-layout>.ep-profile-stats{grid-column:1/-1!important;grid-row:auto!important}
+body.ep-panel-open #ep-unified-panel.ep-profile-layout>.ep-profile-editor{grid-column:1!important;grid-row:6/11!important}
+body.ep-panel-open #ep-unified-panel.ep-profile-layout>.ep-profile-achievements{grid-column:2!important;grid-row:6!important}
+body.ep-panel-open #ep-unified-panel.ep-profile-layout>.ep-profile-routine{grid-column:2!important;grid-row:7!important}
+body.ep-panel-open #ep-unified-panel.ep-profile-layout>.ep-profile-account{grid-column:2!important;grid-row:8!important}
+body.ep-panel-open #ep-unified-panel.ep-profile-layout>.ep-profile-data{grid-column:2!important;grid-row:9!important}
+body.ep-panel-open #ep-unified-panel.ep-profile-layout>.ep-unified-card{background:linear-gradient(145deg,#183878,#102452)!important;color:#fff!important;border:1px solid #5473ba!important;border-radius:20px!important;padding:25px!important;box-shadow:0 10px 30px #0003!important}
+body.ep-panel-open #ep-unified-panel.ep-profile-layout>.ep-profile-summary{background:radial-gradient(circle at 90% 0%,#7953bb77,transparent 45%),linear-gradient(115deg,#234eab,#172e75)!important;display:flex!important;align-items:center!important;gap:20px!important}
+body.ep-panel-open #ep-unified-panel.ep-profile-layout>.ep-profile-stats{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important}
+body.ep-panel-open #ep-unified-panel.ep-profile-layout .ep-profile-top h1,body.ep-panel-open #ep-unified-panel.ep-profile-layout h2{color:#fff!important}
+body.ep-panel-open #ep-unified-panel.ep-profile-layout p{color:#c5d5f4!important}
+body.ep-panel-open #ep-unified-panel.ep-profile-layout .ep-profile-badges{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+body.ep-panel-open #ep-unified-panel.ep-profile-layout .ep-profile-editor input,body.ep-panel-open #ep-unified-panel.ep-profile-layout .ep-profile-editor select{background:#f5f8ff!important;color:#142c60!important}
+body.ep-panel-open #ep-unified-panel.ep-profile-layout .ep-profile-primary{background:#ffca51!important;color:#16295a!important}
+@media(max-width:980px){body.dash-on .home2 .ep-level-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
+@media(max-width:800px){body.ep-panel-open #ep-unified-panel.ep-profile-layout{width:min(calc(100% - 24px),640px)!important;grid-template-columns:minmax(0,1fr)!important}body.ep-panel-open #ep-unified-panel.ep-profile-layout>*{grid-column:1!important;grid-row:auto!important}body.dash-on main#app.wrap{padding:0 15px 105px!important}}
+@media(max-width:650px){body.dash-on .home2 .ep-level-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}body.dash-on .home2 .ep-home-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr))!important}body.dash-on .home2 .ep-home-levels{padding:16px!important}body.dash-on .home2 .dhead{padding:20px!important;min-height:115px!important}body.ep-panel-open #ep-unified-panel.ep-profile-layout>.ep-profile-stats{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:400px){body.dash-on .home2 .ep-level-card{min-height:156px!important}body.dash-on .home2 .ep-level-copy b{font-size:15px!important}body.ep-panel-open #ep-unified-panel.ep-profile-layout>.ep-unified-card{padding:18px!important}}
+</style>
 <script src="firebase-config.js"></script>
 <script src="auth.js"></script>
 <script src="unified.js"></script>
