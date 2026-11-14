@@ -74,6 +74,8 @@ export default function GebetaApp() {
     const l = read('gebeta.lang', null) || (navigator.language?.startsWith('am') ? 'am' : 'en');
     const q = new URLSearchParams(window.location.search).get('game');
     const g = isPlayable(q) ? q : read('gebeta.game', 'gebeta'); if (isPlayable(g)) setGame(g); // a coming-soon game is never restored
+    // ExamPro game breaks enter the selected game's mode picker, never the old Afro Zone catalog.
+    if (isPlayable(q) && new URLSearchParams(window.location.search).get('from') === 'exampro') setView({ name: 'modes' });
     setLang(l); setMusicState(read('gebeta.music', '1') === '1'); const m = read('gebeta.muted', '0') === '1'; setMutedState(m); setMuted(m);
   }, []);
   useEffect(() => { document.documentElement.lang = lang; }, [lang]);
