@@ -4,6 +4,9 @@
   var open=document.getElementById('ep-break-open');
   if(!open)return;
   var games=[
+    ['🪵','Gebeta','Traditional strategy board game','/break?game=gebeta'],
+    ['♟️','Checkers','Classic board-game break','/break?game=checkers'],
+    ['🎱','Bingo','Quick number game','/break?game=bingo'],
     ['🏃','Addis Runner','Quick reflex challenge','/games/addis-runner/'],
     ['🚙','Hill Climb Racer','Take a driving break','/games/hill-climb-racer/'],
     ['☁️','Sky Crawler','Reach new heights','/games/sky-crawler/'],
