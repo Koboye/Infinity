@@ -406,17 +406,12 @@ body.ep-auth-locked > :not(#ep-auth-gate):not(script) { visibility:hidden !impor
       '<h1>What would you like to study today?</h1>' +
       '<div class="dsum" aria-label="Your progress"><div><b><span aria-hidden="true">🔥</span> ' + p.streak + '</b><small>day streak</small></div><div><b><span aria-hidden="true">⭐</span> ' + p.xp + '</b><small>XP</small></div><div><b><span aria-hidden="true">🎯</span> ' + acc + '%</b><small>accuracy</small></div></div>' +
       '<div class="dgoal"><span>Daily goal</span><span>' + Math.min(p.today, GOAL) + '/' + GOAL + (pct >= 100 ? ' 🎉' : '') + '</span></div><div class="dbar" role="progressbar" aria-label="Daily goal" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct + '"><i style="width:' + pct + '%"></i></div>' +
-      '<div class="cats" role="group" aria-label="Learning categories">' + CATS.filter(function(c){return !selectedCategory || c.id===selectedCategory;}).map(function (c) {
-        var n = scopedSubjects.filter(function(d){return c.groups.indexOf(d.group)>=0;}).reduce(function(total,d){return total+d.q.length;},0), ready = n > 0;
-        return '<button type="button" class="cat ' + (ready ? 'ready' : 'soon') + '" data-c="' + c.id + '" style="--c1:' + c.c[0] + ';--c2:' + c.c[1] + '"' + (ready ? '' : ' aria-disabled="true"') + '><span class="tag">' + (ready ? n.toLocaleString() + ' questions' : 'Soon') + '</span>' + ICON[c.icon] + '<b>' + c.name + '</b><small>' + c.sub + '</small></button>';
-      }).join('') + '</div></div>';
+      '<div class="in-home-study"><h2>Study for ' + esc(gradeName || 'your learning level') + '</h2><p>' + (scopedCount ? 'Choose a subject to start practicing.' : 'Resources for your exact learning level are being prepared. Other grades are not shown.') + '</p>' +
+      (scopedSubjects.length ? '<div class="in-home-subject-grid">' + scopedSubjects.slice(0,6).map(function(d){return '<button type="button" class="in-home-subject" data-home-dept="' + esc(d.id) + '"><b>' + esc(d.name) + '</b><small>' + d.q.length + ' questions</small></button>';}).join('') + '</div>' : '') +
+      '</div></div>';
     app.innerHTML = html;
-    [].forEach.call(app.querySelectorAll('.cat'), function (b) {
-      b.onclick = function () {
-        var c = catById(b.getAttribute('data-c'));
-        if (!scopedSubjects.some(function(d){return c.groups.indexOf(d.group)>=0;})) { toast('No questions are available for your selected learning level yet.'); return; }
-        b.classList.add('pick'); setTimeout(function () { ui.cat = c.id; ui.search = ''; catView(); }, 240);
-      };
+    [].forEach.call(app.querySelectorAll('[data-home-dept]'), function(b){
+      b.onclick=function(){if(window.infinityExamActive)return;deptPage(b.getAttribute('data-home-dept'),'');};
     });
     document.getElementById('in-home-subjects').onclick = function(){openStudentResources();};
     document.getElementById('in-home-games').onclick = function(){document.getElementById('nv-games').click();};
