@@ -269,3 +269,50 @@ html:has(.inf-root),html body:has(.inf-root){overflow-x:clip;max-width:100%}
 .inf-root .inf-mark.is-live path{stroke-dasharray:38 62;animation:inf-run 1.5s linear infinite}
 @keyframes inf-run{to{stroke-dashoffset:-100}}
 @media(prefers-reduced-motion:reduce){.inf-root .inf-mark.is-live path{animation:none;stroke-dasharray:none}}
+
+/* v6 bigger everything: the auth and app pages scale up, forms are roomier and touch targets larger */
+html:has(.inf-root){font-size:112.5%}
+@media(min-width:900px){html:has(.inf-root){font-size:125%}}
+.inf-root .inf-auth-panel form{width:min(100%,620px);padding:clamp(24px,5vw,40px)}
+.inf-root .inf-auth-panel{padding-inline:clamp(14px,4vw,28px)}
+.inf-root .inf-auth-panel h2,.inf-root .inf-auth-panel header h2{font-size:clamp(2rem,6vw,2.5rem)}
+.inf-root .inf-auth-panel header p{font-size:1.1rem;max-width:42ch}
+.inf-root .inf-field{font-size:1.05rem;margin-bottom:18px}
+.inf-root .inf-app input:not([type=range]):not([type=checkbox]),.inf-root .inf-app select{min-height:62px;font-size:1.15rem;padding:14px 18px;border-radius:16px}
+.inf-root .inf-pass input{padding-right:96px!important}
+.inf-root .inf-ghost{font-size:1.05rem}
+.inf-root .inf-primary{min-height:66px;font-size:1.2rem;border-radius:18px}
+.inf-root .inf-link{font-size:1.05rem}
+.inf-root .inf-switch{font-size:1.05rem}
+.inf-root .inf-steps i{height:7px}
+.inf-root .inf-auth-brand h1{font-size:clamp(1.7rem,6vw,2.4rem)}
+.inf-root .inf-lockup{font-size:1.9rem}
+.inf-root .inf-grade-track button{min-width:88px;min-height:108px}
+.inf-root .inf-grade-track button b{font-size:2.3rem}
+.inf-root .inf-grade-track button small{font-size:.9rem}
+.inf-root .inf-grade-track button.inf-wide{min-width:150px}
+.inf-root .inf-grade-track button.inf-wide b{font-size:1.5rem}
+.inf-root .inf-stage-cap{font-size:.8rem}
+@media(max-width:520px){.inf-root .inf-grade-track button{min-width:80px}.inf-root .inf-grade-track button.inf-wide{min-width:136px}}
+
+/* steps slide in from the right */
+.inf-root .inf-slide{animation:inf-in .32s cubic-bezier(.2,.8,.3,1)}
+@keyframes inf-in{from{opacity:0;transform:translateX(36px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.inf-root .inf-slide{animation:none}}
+
+/* departments: search + two rows that slide sideways */
+.inf-root .inf-dept-search{margin-bottom:12px}
+.inf-root .inf-dept-track{display:grid;grid-template-rows:repeat(2,auto);grid-auto-flow:column;grid-auto-columns:minmax(168px,max-content);gap:10px;
+  overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none;padding:6px 2px 10px;margin-inline:-2px;overscroll-behavior-x:contain;
+  mask-image:linear-gradient(90deg,transparent 0,#000 14px,#000 calc(100% - 22px),transparent 100%)}
+.inf-root .inf-dept-track::-webkit-scrollbar{display:none}
+.inf-root .inf-dept-track button{display:flex;align-items:center;gap:12px;text-align:left;scroll-snap-align:start;min-height:72px;padding:12px 16px;border-radius:18px;
+  font-size:1.05rem;line-height:1.2;white-space:normal;background:var(--inf-card);max-width:260px}
+.inf-root .inf-dept-track button span{flex:0 0 auto;display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:var(--inf-blue);color:#fff;font:800 1.1rem var(--inf-font-d)}
+.inf-root .inf-dept-track button[aria-pressed=true]{animation:inf-pop .3s cubic-bezier(.3,1.6,.5,1)}
+.inf-root .inf-dept-track button[aria-pressed=true] span{background:#0F1B4C;color:var(--inf-sun)}
+.inf-root .inf-dept-count{margin:2px 0 14px;font-size:.95rem}
+
+/* keep "Forgot password?" on the right now that step 1 sits inside the sliding wrapper */
+.inf-root .inf-slide>.inf-link.inf-forgot{display:block;margin:-8px 0 16px auto;text-align:right}
+.inf-root .inf-auth-panel form>.inf-link{display:block;margin:12px auto 0}

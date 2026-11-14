@@ -97,20 +97,40 @@ export function GradePicker({grade, onChange}) {
   );
 }
 
+/* Department picker: search, then slide sideways through two rows of cards. */
+export function DepartmentPicker({departments, value, onChange}) {
+  const [q, setQ] = useState('');
+  const list = departments.filter((d) => d.id === value || d.name.toLowerCase().includes(q.trim().toLowerCase()));
+  const pick = (d, e) => { onChange(d.id); e.currentTarget.scrollIntoView({block: 'nearest', inline: 'center', behavior: 'smooth'}); try { navigator.vibrate?.(12); } catch {} };
+  return (
+    <div className="inf-dept">
+      <input type="search" className="inf-dept-search" aria-label="Search departments" autoComplete="off" placeholder="Search your department" value={q} onChange={(e) => setQ(e.target.value)} />
+      <div className="inf-dept-track" role="radiogroup" aria-label="Department">
+        {list.map((d) => (
+          <button type="button" role="radio" key={d.id} aria-checked={value === d.id} aria-pressed={value === d.id} onClick={(e) => pick(d, e)}>
+            <span aria-hidden="true">{d.name.trim().charAt(0).toUpperCase()}</span>{d.name}
+          </button>
+        ))}
+      </div>
+      {!list.length && <p className="inf-hint">No department matches “{q}”.</p>}
+      <p className="inf-hint inf-dept-count">{list.length ? 'Slide for more · ' + list.length + ' departments' : ''}</p>
+    </div>
+  );
+}
+
 function Field({label, children}) {
   return <label className="inf-field"><span>{label}</span>{children}</label>;
 }
 
 export default function AuthScreen({busy, error, notice, departments, onSubmit, onReset, onClearError}) {
   const [mode, setMode] = useState('signin'); // signin | signup
-  const [step, setStep] = useState(1);        // signup only: 1 account, 2 level
+  const [step, setStep] = useState(1);        // signup only: 1 account, 2 level, 3 department (university only)
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [show, setShow] = useState(false);
   const [grade, setGrade] = useState('');
   const [dept, setDept] = useState('');
-  const [deptQuery, setDeptQuery] = useState('');
   const [localError, setLocalError] = useState('');
   const errId = useId();
 
@@ -128,40 +148,35 @@ export default function AuthScreen({busy, error, notice, departments, onSubmit, 
       if (password.length < 6) return setLocalError('Use at least 6 characters for your password.');
       return setStep(2);
     }
-    if (signup && !grade) return setLocalError('Slide and choose your level to continue.');
-    if (signup && grade === 'uni' && !dept) return setLocalError('Choose your department.');
+    if (signup && step === 2) {
+      if (!grade) return setLocalError('Slide and choose your level to continue.');
+      if (grade === 'uni') return setStep(3);
+    }
+    if (signup && step === 3 && !dept) return setLocalError('Choose your department.');
     await onSubmit({mode, name: name.trim(), email: cleanEmail, password, grade: signup ? grade : '', dept: signup ? dept : ''});
   };
 
   const levelBlock = (
     <div className="inf-level">
-      <GradePicker grade={grade} onChange={(g) => { setGrade(g); if (g !== 'uni') { setDept(''); setDeptQuery(''); } setLocalError(''); }} />
-      {grade === 'uni' && (
-        <>
-          {departments.length > 8 && (
-            <Field label="Find your department">
-              <input type="search" autoComplete="off" placeholder="Type to filter, e.g. Nursing" value={deptQuery} onChange={(e) => setDeptQuery(e.target.value)} />
-            </Field>
-          )}
-          <Field label="Department">
-            <select required value={dept} onChange={(e) => setDept(e.target.value)}>
-              <option value="">Choose department</option>
-              {departments.filter((d) => d.id === dept || d.name.toLowerCase().includes(deptQuery.trim().toLowerCase())).map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-            </select>
-          </Field>
-        </>
-      )}
+      <GradePicker grade={grade} onChange={(g) => { setGrade(g); if (g !== 'uni') setDept(''); setLocalError(''); }} />
     </div>
   );
 
-  const title = !signup ? 'Welcome back' : step === 1 ? 'Create your account' : 'What do you study?';
-  const sub = !signup ? 'Sign in to continue. Your level is saved on your account.' : step === 1 ? 'Free to start. Takes under a minute.' : 'Pick once. We only show material for your level.';
+  const total = signup && grade === 'uni' ? 3 : 2;
+  const title = !signup ? 'Welcome back' : step === 1 ? 'Create your account' : step === 2 ? 'What do you study?' : 'Your department';
+  const sub = !signup ? 'Sign in to continue. Your level is saved on your account.' : step === 1 ? 'Free to start. Takes under a minute.' : step === 2 ? 'Pick once. We only show material for your level.' : 'Slide sideways and tap yours.';
   const chosen = GRADES.find((g) => g.id === grade);
-  const ready = signup && step === 2 && !!grade && (grade !== 'uni' || !!dept);
-  const cta = !signup ? 'Sign in' : step === 1 ? 'Continue' : ready ? 'Start as ' + chosen.name.replace('University / College', 'University') + ' →' : 'Slide and pick your level';
+  const levelName = chosen ? chosen.name.replace('University / College', 'University') : '';
+  const deptName = departments.find((d) => d.id === dept)?.name || '';
+  const ready = signup && ((step === 2 && !!grade) || (step === 3 && !!dept));
+  const cta = !signup ? 'Sign in'
+    : step === 1 ? 'Continue'
+    : step === 2 ? (!grade ? 'Slide and pick your level' : grade === 'uni' ? 'Next: your department →' : 'Start as ' + levelName + ' →')
+    : dept ? 'Start as ' + levelName + ' · ' + (deptName.length > 22 ? deptName.slice(0, 21) + '…' : deptName) + ' →' : 'Pick your department';
+  const back = () => { setStep((v) => Math.max(1, v - 1)); setLocalError(''); };
 
   return (
-    <main className={'inf-app inf-auth' + (signup && step === 2 ? ' is-compact' : '')}>
+    <main className={'inf-app inf-auth' + (signup && step >= 2 ? ' is-compact' : '')}>
       <section className="inf-auth-brand" aria-hidden="false">
         <div className="inf-lockup"><Mark size={48} /><span>Infinity</span></div>
         <h1>Prepare for every exam, from Kindergarten to university.</h1>
@@ -174,13 +189,13 @@ export default function AuthScreen({busy, error, notice, departments, onSubmit, 
       <section className="inf-auth-panel">
         <form onSubmit={submit} noValidate={false} aria-labelledby="inf-auth-title">
           <header>
-            {signup && <div className="inf-steps" role="img" aria-label={'Step ' + step + ' of 2'}><i className="on" /><i className={step === 2 ? 'on' : ''} /></div>}
+            {signup && <div className="inf-steps" role="img" aria-label={'Step ' + step + ' of ' + total}>{Array.from({length: total}, (_, i) => <i key={i} className={step > i ? 'on' : ''} />)}</div>}
             <h2 id="inf-auth-title">{title}</h2>
             <p>{sub}</p>
           </header>
 
           {(!signup || step === 1) && (
-            <>
+            <div className="inf-slide" key="s1">
               {signup && (
                 <Field label="Full name">
                   <input required autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} />
@@ -200,19 +215,20 @@ export default function AuthScreen({busy, error, notice, departments, onSubmit, 
               {!signup && (
                 <button type="button" className="inf-link inf-forgot" onClick={() => onReset(email.trim())}>Forgot password?</button>
               )}
-            </>
+            </div>
           )}
 
-          {signup && step === 2 && levelBlock}
+          {signup && step === 2 && <div className="inf-slide" key="s2">{levelBlock}</div>}
+          {signup && step === 3 && <div className="inf-slide" key="s3"><DepartmentPicker departments={departments} value={dept} onChange={(id) => { setDept(id); setLocalError(''); }} /></div>}
 
           <div id={errId} aria-live="polite">
             {shownError && <p role="alert" className="inf-error">{shownError}</p>}
             {notice && !shownError && <p className="inf-notice">{notice}</p>}
           </div>
 
-          <button className="inf-primary" type="submit" data-ready={ready || undefined} disabled={busy || (signup && step === 2 && !ready)}>{busy ? 'Please wait…' : cta}</button>
-          {signup && step === 2 && (
-            <button type="button" className="inf-link" onClick={() => { setStep(1); setLocalError(''); }}>Back</button>
+          <button className="inf-primary" type="submit" data-ready={ready || undefined} disabled={busy || (signup && step >= 2 && !ready)}>{busy ? 'Please wait…' : cta}</button>
+          {signup && step >= 2 && (
+            <button type="button" className="inf-link" onClick={back}>Back</button>
           )}
           <p className="inf-switch">
             {signup ? 'Already have an account?' : 'New to Infinity?'}{' '}
