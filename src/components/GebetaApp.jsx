@@ -46,7 +46,9 @@ const write = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
 
 const GAME_LIST_ONLINE = Object.values(GAMES).filter((g) => !g.offlineOnly && !g.comingSoon).map((g) => g.id);
 
-export default function GebetaApp({ initialGame = null }) {
+// `embedded` = rendered as the Games zone of the Infinity shell: the shell owns the brand header, bottom nav and language,
+// so this component drops its own Tibeb strip, bottom nav and language switch, and reports play state back to the shell.
+export default function GebetaApp({ initialGame = null, embedded = false, onExit = null, lang: shellLang = null, onPlayingChange = null }) {
   const [lang, setLang] = useState('en');
   const [game, setGame] = useState('gebeta');
   const [muted, setMutedState] = useState(false);
@@ -81,7 +83,7 @@ export default function GebetaApp({ initialGame = null }) {
     const l = read('gebeta.lang', null) || (navigator.language?.startsWith('am') ? 'am' : 'en');
     const q = new URLSearchParams(window.location.search).get('game');
     const g = isPlayable(q) ? q : read('gebeta.game', 'gebeta'); if (isPlayable(g)) setGame(g); // a coming-soon game is never restored
-    setLang(l); setMusicState(read('gebeta.music', '1') === '1'); const m = read('gebeta.muted', '0') === '1'; setMutedState(m); setMuted(m);
+    setLang(embedded && shellLang ? shellLang : l); setMusicState(read('gebeta.music', '1') === '1'); const m = read('gebeta.muted', '0') === '1'; setMutedState(m); setMuted(m);
   }, []);
   useEffect(() => { document.documentElement.lang = lang; }, [lang]);
   useEffect(() => { const s = loadSettings(); setSettings(s); applySettings(s); }, []);
@@ -97,6 +99,7 @@ export default function GebetaApp({ initialGame = null }) {
 
   const pickGame = (g) => { setGame(g); if (isPlayable(g)) { write('gebeta.game', g); try { write('gebeta.recent', JSON.stringify(touchRecent(JSON.parse(read('gebeta.recent', '[]')), g))); } catch { /* history is a nicety */ } } };
   const chooseLang = (l) => { setLang(l); write('gebeta.lang', l); };
+  useEffect(() => { if (embedded && shellLang) setLang(shellLang); }, [embedded, shellLang]);
   // Browsers only allow audio after a tap, so music starts on the first interaction.
   useEffect(() => {
     if (!music) { setMusic(false); return undefined; }
@@ -195,7 +198,7 @@ export default function GebetaApp({ initialGame = null }) {
     const enter = () => { if (name === 'game') setCoach(needsCoach(extra.game) ? extra.game : null); setView({ name, ...extra }); };
     if (name === 'game') { preload(extra.game); runAd('pre_game', { game: extra.game }).then(enter); return; }   // a short ad before a local game (capped, see adsCore.CAPS)
     enter(); };
-  const home = () => setView({ name: 'home' });
+  const home = () => (embedded && onExit ? onExit() : setView({ name: 'home' }));
   // The wallet belongs to the signed-in account and lives on the server: ask for it whenever the account changes.
   const walletFor = useRef(null);
   useEffect(() => {
@@ -244,7 +247,7 @@ export default function GebetaApp({ initialGame = null }) {
   };
   const dismissInvite = (inv) => apiCall({ action: 'inviteDismiss', id: inv.id }, { retries: 0 }).catch(() => {});
   const leaving = useRef(false);
-  const leaveGame = async () => { if (leaving.current) return; leaving.current = true; try { if (await confirm(t.leaveConfirm)) home(); } finally { leaving.current = false; } };
+  const leaveGame = async () => { if (leaving.current) return; leaving.current = true; try { if (await confirm(t.leaveConfirm)) { if (embedded) setView({ name: 'modes' }); else home(); } } finally { leaving.current = false; } };
 
   // The phone's BACK button works like the ‹ button instead of closing the app: one screen up, a confirmation inside a game, and a
   // second press within 2 s at the home screen to really leave. A spare history entry is kept under the app so Back is always ours to handle.
@@ -274,6 +277,7 @@ export default function GebetaApp({ initialGame = null }) {
   const gname = t[`${game}Name`];
   const titles = { friends: t.friends, modes: gname, game: gname, ai: gname, pass: gname, online: gname, leaders: t.leaderboard, rules: t.rules, profile: t.profile, progress: t.progress, settings: t.settings };
   const inGame = view.name === 'game' || view.name === 'room';
+  useEffect(() => { onPlayingChange?.(inGame); }, [inGame]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Full-screen play ground: the page chrome shrinks away and, where the browser allows it, the whole screen is used.
   const [isFs, setIsFs] = useState(false);
@@ -354,14 +358,14 @@ export default function GebetaApp({ initialGame = null }) {
     if (to === 'leaders' && GAMES[game]?.offlineOnly) { const g = GAME_LIST_ONLINE[0]; if (g) pickGame(g); }
     go(to);
   };
-  const swipeOn = !inGame && !adShow && !sheet && !dialog && tabIndexOf(view.name) >= 0 && !(view.name === 'friends' && view.chat);
+  const swipeOn = !embedded && !inGame && !adShow && !sheet && !dialog && tabIndexOf(view.name) >= 0 && !(view.name === 'friends' && view.chat);
   const swipe = useTabSwipe({ viewName: view.name, enabled: swipeOn, onGo: openTab });
 
   return (
-    <div className={`app${inGame ? '' : ' has-nav'}`}>
+    <div className={`app${inGame ? '' : ' has-nav'}${embedded ? ' app-embedded' : ''}`}>
       {offline && <div className="offline-bar" role="status">{t.offline}</div>}
-      <Tibeb />
-      {!inGame && (
+      {!embedded && <Tibeb />}
+      {!inGame && !embedded && (
         <BottomNav lang={lang} view={view.name} profile={profile} badge={social.badge} onHome={home}
           onOpen={(to) => openTab(to)} />
       )}
@@ -379,11 +383,11 @@ export default function GebetaApp({ initialGame = null }) {
         <div className="topbar-actions">
           {onlineAvailable && <RewardedAdButton lang={lang} signedIn={!!user} onNeedSignIn={() => go('online')} />}
           {onlineAvailable && <WalletChip lang={lang} signedIn={!!user} onOpen={() => (user ? setSheet({ type: 'spin' }) : go('online'))} />}
-          <div className="lang-switch" role="group" aria-label={t.language}>
+          {!embedded && <div className="lang-switch" role="group" aria-label={t.language}>
             <button className={lang === 'en' ? 'on' : ''} onClick={() => chooseLang('en')} aria-pressed={lang === 'en'} lang="en" title="English">EN</button>
             <button className={lang === 'am' ? 'on' : ''} onClick={() => chooseLang('am')} aria-pressed={lang === 'am'} lang="am" title="አማርኛ">አማ</button>
-          </div>
-          <button className="lang-chip" onClick={() => chooseLang(lang === 'en' ? 'am' : 'en')} lang={lang === 'en' ? 'am' : 'en'} aria-label={t.language}>{lang === 'en' ? 'አማ' : 'EN'}</button>
+          </div>}
+          {!embedded && <button className="lang-chip" onClick={() => chooseLang(lang === 'en' ? 'am' : 'en')} lang={lang === 'en' ? 'am' : 'en'} aria-label={t.language}>{lang === 'en' ? 'አማ' : 'EN'}</button>}
           {inGame && <button className="icon-btn" onClick={toggleFs} aria-label="Full screen" aria-pressed={isFs}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{isFs ? <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" /> : <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />}</svg></button>}
           <button className="icon-btn" onClick={() => go('settings')} aria-label={t.settings}>⚙️</button>
           <button className="icon-btn" onClick={toggleMute} aria-label={t.sound} aria-pressed={!muted}>{muted ? '🔇' : '🔊'}</button>

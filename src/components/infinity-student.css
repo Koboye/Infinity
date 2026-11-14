@@ -390,3 +390,9 @@ html:has(.inf-root),html body:has(.inf-root){background:#F4F2FF}
 .inf-root .inf-back{align-self:flex-start;min-height:44px;padding:8px 18px;border-radius:999px;background:var(--inf-violet);border-color:var(--inf-violet);color:#fff;font-weight:800}
 .inf-root .inf-card.inf-home{padding:0}
 .inf-root .inf-card:not(.inf-home){border-radius:var(--r-lg);box-shadow:var(--sh)}
+
+/* Unified shell: the Games zone lives inside the Infinity shell (shared brand header + bottom nav). */
+.inf-root .inf-playing{flex:1}
+.inf-root .inf-playing .app-embedded{min-height:0;max-width:none;width:100%;margin:0;padding-left:0;padding-right:0;flex:1;background:transparent}
+.inf-root .inf-playing .app-embedded .tibeb{display:none}
+.inf-root .inf-playing .app-embedded .topbar{padding-left:0;padding-right:0}
