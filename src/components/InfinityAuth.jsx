@@ -72,8 +72,8 @@ export default function AuthScreen({busy, error, notice, departments, onSubmit, 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [show, setShow] = useState(false);
-  const [grade, setGrade] = useState(() => { try { return localStorage.getItem('infinity.last.grade') || ''; } catch { return ''; } });
-  const [dept, setDept] = useState(() => { try { return localStorage.getItem('infinity.last.dept') || ''; } catch { return ''; } });
+  const [grade, setGrade] = useState('');
+  const [dept, setDept] = useState('');
   const [localError, setLocalError] = useState('');
   const errId = useId();
 
@@ -91,9 +91,9 @@ export default function AuthScreen({busy, error, notice, departments, onSubmit, 
       if (password.length < 6) return setLocalError('Use at least 6 characters for your password.');
       return setStep(2);
     }
-    if (!grade) return setLocalError('Slide and choose your level to continue.');
-    if (grade === 'uni' && !dept) return setLocalError('Choose your department.');
-    await onSubmit({mode, name: name.trim(), email: cleanEmail, password, grade, dept});
+    if (signup && !grade) return setLocalError('Slide and choose your level to continue.');
+    if (signup && grade === 'uni' && !dept) return setLocalError('Choose your department.');
+    await onSubmit({mode, name: name.trim(), email: cleanEmail, password, grade: signup ? grade : '', dept: signup ? dept : ''});
   };
 
   const levelBlock = (
@@ -112,7 +112,7 @@ export default function AuthScreen({busy, error, notice, departments, onSubmit, 
   );
 
   const title = !signup ? 'Welcome back' : step === 1 ? 'Create your account' : 'Choose your level';
-  const sub = !signup ? 'Sign in and pick your level. You will only see material for it.' : step === 1 ? 'Free to start. Takes under a minute.' : 'You will only see material for this level.';
+  const sub = !signup ? 'Sign in to continue. Your level is saved on your account.' : step === 1 ? 'Free to start. Takes under a minute.' : 'Saved on your account. You will only see material for this level.';
   const cta = !signup ? 'Sign in' : step === 1 ? 'Continue' : 'Create account';
 
   return (
@@ -155,7 +155,6 @@ export default function AuthScreen({busy, error, notice, departments, onSubmit, 
               {!signup && (
                 <button type="button" className="inf-link inf-forgot" onClick={() => onReset(email.trim())}>Forgot password?</button>
               )}
-              {!signup && levelBlock}
             </>
           )}
 

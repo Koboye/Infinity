@@ -32,6 +32,12 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Learning level (grade / department): a student reads only their own; it is set once by the server (/api/learner).
+    match /learners/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+
     // Coin wallets. A player can read only their own; every change (gift, spins, fees, prizes) is made by the server.
     match /wallets/{uid} {
       allow read: if request.auth != null && request.auth.uid == uid;
