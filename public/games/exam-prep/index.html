@@ -395,6 +395,37 @@ body.has-xbar .xbar{display:flex}
 .lgd .a::before{background:#2F6BFF;border-color:#2F6BFF}.lgd .f::before{background:#FFE29A;border-color:#B45A00}.lgd .c::before{border-color:#F5B82E}
 .tsrow{display:flex;align-items:center;gap:.6rem;margin-top:.9rem;font-weight:700}.tsrow .btn{min-width:3rem;min-height:2.75rem;padding:0 .8rem}
 </style>
+<style id="ep-unified-styles">
+#ep-unified-panel{max-width:850px;margin:0 auto;padding:14px 0 100px;color:var(--ink)}
+#ep-unified-panel[hidden]{display:none!important}
+.ep-unified-hero{padding:24px;border-radius:21px;background:linear-gradient(120deg,#151b67,#6143c5);color:white;margin-bottom:14px}
+.ep-unified-hero>span{font-size:11px;font-weight:800;letter-spacing:.13em;color:#ffd451}
+.ep-unified-hero h1{margin:9px 0;font-size:clamp(26px,5vw,36px);color:#fff}
+.ep-unified-hero p{color:#e4ddff;margin:0}
+.ep-unified-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:12px 0}
+.ep-unified-stats>div{display:flex;flex-direction:column;align-items:center;gap:5px;padding:15px 5px;background:var(--card);border:1px solid var(--line);border-radius:15px;text-align:center}
+.ep-unified-stats b{font-size:24px;color:var(--ink)}
+.ep-unified-stats small{font-size:11px;color:var(--muted)}
+.ep-unified-card{padding:22px;background:var(--card);border:1px solid var(--line);border-radius:18px;margin:12px 0}
+.ep-unified-card h2{font-size:19px;margin:0 0 9px}
+.ep-unified-card h2:not(:first-child){margin-top:20px}
+.ep-unified-card p{color:var(--muted)}
+.ep-unified-meter{height:9px;background:var(--line);border-radius:20px;overflow:hidden;margin:13px 0}
+.ep-unified-meter span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#7451f5,#10be68)}
+.ep-unified-score{display:flex;justify-content:space-between;gap:15px;padding:12px 0;border-bottom:1px solid var(--line)}
+.ep-unified-task{display:flex;align-items:center;gap:14px;padding:16px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.ep-unified-task input{width:22px;height:22px;accent-color:#6744de}
+.ep-unified-task span{display:flex;flex-direction:column;gap:3px}
+.ep-unified-task small{color:var(--muted)}
+.ep-unified-profile{text-align:center}
+.ep-unified-avatar{font-size:50px}
+.ep-unified-back,.ep-unified-action{border:0;border-radius:12px;padding:12px 17px;cursor:pointer;font:inherit;font-weight:800}
+.ep-unified-back{margin-bottom:12px;background:var(--card);color:var(--ink)}
+.ep-unified-action{background:#5b3ed5;color:white}
+.bnav .ep-unified-tab{font-size:12px;white-space:nowrap;min-width:0}
+.bnav .ep-unified-tab[aria-current="page"]{color:var(--brand);font-weight:800}
+@media(max-width:520px){.ep-unified-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.bnav .ep-unified-tab{font-size:10px;padding-inline:3px}}
+</style>
 </head>
 <body>
 <div class="splash" id="splash" role="dialog" aria-modal="true" aria-labelledby="sp-title" hidden>
@@ -907,5 +938,6 @@ body.has-xbar .xbar{display:flex}
   go.addEventListener('click', close); document.addEventListener('keydown', onKey); go.focus({ preventScroll: true });
 })();
 </script>
+<script src="unified.js"></script>
 </body>
 </html>
