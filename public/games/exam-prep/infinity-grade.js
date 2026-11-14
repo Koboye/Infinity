@@ -31,6 +31,7 @@
   window.infinityShowGradePicker=function(){show(false);};
   window.infinityGetGradeLabel=function(){var g=getGrade();return g?g.name:'';};
   window.infinityGetGradeId=function(){return selected();};
+  window.infinityGetDepartmentId=function(){try{return localStorage.getItem('infinity.learning.department.'+(currentUser||'local'))||'';}catch(e){return '';}};
   window.infinityGradeCategory=function(){var g=getGrade();return g?g.cat:'';};
   window.addEventListener('infinity-auth-changed',function(e){if(!e.detail||!e.detail.uid){currentUser=null;close(true);return;}currentUser=e.detail.uid;updateLabel();});
   window.addEventListener('infinity-grade-changed',function(){updateLabel();});
