@@ -165,3 +165,12 @@ body.in-grade-open{overflow:hidden}
 .in-home-action:hover{border-color:#665cdb;transform:translateY(-1px)}
 @media(max-width:520px){.in-home-path{padding:18px;align-items:flex-start}.in-home-count{min-width:83px;padding:10px}.in-home-actions{gap:9px}.in-home-action{padding:13px 10px;gap:8px;min-height:90px;font-size:1.25rem}.in-home-action b{font-size:.88rem}.in-home-action small{font-size:.7rem}}
 @media(prefers-reduced-motion:reduce){.in-home-action:hover{transform:none}}
+
+/* Sign-in grade choice is a SLIDER, never a second dropdown/list. Keep native select for form validation. */
+#ep-auth-form #in-auth-grade{position:absolute!important;width:1px!important;height:1px!important;min-height:0!important;padding:0!important;margin:0!important;border:0!important;opacity:0!important;overflow:hidden!important;clip-path:inset(50%)!important;pointer-events:none!important}
+#ep-auth-form .in-auth-slider{margin:10px 0 16px;grid-template-columns:36px minmax(0,1fr) 36px;gap:8px}
+#ep-auth-form .in-auth-grade-track{min-width:0;max-width:100%;padding:10px 4px;gap:10px;scroll-snap-type:x mandatory}
+#ep-auth-form .in-auth-grade-chip{flex:0 0 115px;min-width:115px;min-height:86px;display:flex;align-items:center;justify-content:center;text-align:center;white-space:normal;line-height:1.25;border-radius:20px;padding:12px;font-size:1rem;font-weight:800;scroll-snap-align:center;box-shadow:0 4px 14px #253d7010}
+#ep-auth-form .in-auth-grade-chip.is-selected{transform:scale(1.035);box-shadow:0 8px 20px #5148db42}
+#ep-auth-form .in-auth-slide-arrow{width:36px;height:52px;border-radius:14px;font-size:1.65rem}
+@media(max-width:390px){#ep-auth-form .in-auth-grade-chip{flex-basis:100px;min-width:100px;min-height:78px}#ep-auth-form .in-auth-slider{grid-template-columns:28px minmax(0,1fr) 28px;gap:4px}#ep-auth-form .in-auth-slide-arrow{width:28px}}
