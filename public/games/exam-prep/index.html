@@ -977,7 +977,7 @@ body.dash-on{background:#f4f7fd!important;background-image:none!important;color:
     if (s.day !== ymd()) s.today = 0;
     return s;
   }
-  function save(s) { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {} }
+  function save(s) { try { localStorage.setItem(KEY, JSON.stringify(s)); document.dispatchEvent(new Event('exampro:progress-updated')); } catch (e) {} }
   function dailyGoal() { try { var x = JSON.parse(localStorage.getItem('exampro.plan.settings.v1') || '{}'); var n = Number(x.goal); return [10,20,30,50,100].indexOf(n) >= 0 ? n : GOAL; } catch (e) { return GOAL; } }
   function level(xp) { var l = Math.floor(Math.sqrt(xp / 50)); return l + 1; }
   function shuffle(a) { var b = a.slice(); for (var i = b.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = b[i]; b[i] = b[j]; b[j] = t; } return b; }
@@ -1063,7 +1063,7 @@ body.dash-on{background:#f4f7fd!important;background-image:none!important;color:
   }
   function quickSet(d, n) { return shuffle(d.q.map(function (_, i) { return i; })).slice(0, n).map(function (i) { return prep(d.q[i], d.id, i); }); }
   function homeNext(p) {
-    var rs = null; try { var x = JSON.parse(localStorage.getItem(XK) || 'null'); if (x && x.v === 1 && x.set && x.set.length && dept(x.id)) rs = x; } catch (e) {}
+    var rs = null; try { var x = JSON.parse(localStorage.getItem(XK) || 'null'); if (x && x.v === 1 && x.set && x.set.length && x.ownerUid === (localStorage.getItem('exampro.active.uid') || null) && dept(x.id)) rs = x; } catch (e) {}
     if (rs) { var live = rs.endAt > Date.now();
       return { kind: 'resume', rs: rs, kick: '⏯ Unfinished exam', title: live ? 'Pick your exam back up' : 'Your exam is waiting', sub: dept(rs.id).name + ' · ' + Object.keys(rs.picked || {}).length + ' of ' + rs.set.length + ' answered' + (live ? ' · ' + clockTxt(Math.ceil((rs.endAt - Date.now()) / 1000)) + ' left' : ' · time is up'), btn: live ? 'Resume' : 'See result' }; }
     var d = p.lastDept && dept(p.lastDept); if (d && learnerBank().indexOf(d) < 0) d = null;
@@ -1259,7 +1259,7 @@ body.dash-on{background:#f4f7fd!important;background-image:none!important;color:
   var timer = null, XK = 'exampro.exam.v1', modalEl = null, modalBack = null;
   function fmt(t) { return esc(t).replace(/sqrt\(/g, '√(').replace(/\^(-?[A-Za-z0-9.]+|\([^)]+\))/g, function (m, g) { return '<sup>' + g.replace(/^\((.*)\)$/, '$1') + '</sup>'; }); }
   function clockTxt(sec) { sec = Math.max(0, sec); var h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), x = sec % 60; return (h ? h + ':' : '') + String(m).padStart(2, '0') + ':' + String(x).padStart(2, '0'); }
-  function loadExam(id) { try { var x = JSON.parse(localStorage.getItem(XK) || 'null'); return x && x.v === 1 && x.id === id && x.set && x.set.length ? x : null; } catch (e) { return null; } }
+  function loadExam(id) { try { var x = JSON.parse(localStorage.getItem(XK) || 'null'); var uid = localStorage.getItem('exampro.active.uid'); return x && x.v === 1 && x.id === id && x.set && x.set.length && x.ownerUid === (uid || null) ? x : null; } catch (e) { return null; } }
   function clearExam() { try { localStorage.removeItem(XK); } catch (e) {} }
   function gradeOf(d) { return d.group === 'g12' ? 'Grade 12 · ESSLCE' : d.college; }
   function setBehind2(on) { [app, document.getElementById('xbar')].forEach(function (n) { if (n) { if (on) n.setAttribute('inert', ''); else n.removeAttribute('inert'); } }); }
@@ -1288,7 +1288,7 @@ body.dash-on{background:#f4f7fd!important;background-image:none!important;color:
     else { set = shuffle(qs); endAt = Date.now() + Math.max(1, Math.ceil(set.length * 1.2)) * 60000; }
     var total = set.length, xbar = document.getElementById('xbar'), kind = mode === 'exam' ? (d.group === 'uni' || d.group === 'ngat' ? 'Exit exam' : 'Mock exam') : (label || 'Practice');
     function left() { return Math.max(0, Math.ceil((endAt - Date.now()) / 1000)); }
-    function persist() { if (mode !== 'exam' || done) return; try { localStorage.setItem(XK, JSON.stringify({ v: 1, id: id, label: label, i: i, picked: picked, flagged: flagged, endAt: endAt, set: set })); } catch (e) {} }
+    function persist() { if (mode !== 'exam' || done) return; try { localStorage.setItem(XK, JSON.stringify({ v: 1, ownerUid: localStorage.getItem('exampro.active.uid') || null, id: id, label: label, i: i, picked: picked, flagged: flagged, endAt: endAt, set: set })); } catch (e) {} }
     function leave() { clearInterval(timer); document.onkeydown = null; closeModal(); chrome(null); deptPage(id, ''); }
     function finish(timeUp) {
       clearInterval(timer); done = true; clearExam(); closeModal(); document.onkeydown = null; chrome(null);
