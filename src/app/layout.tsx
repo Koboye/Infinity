@@ -69,14 +69,14 @@ import '@fontsource/fraunces/700.css';
 import '@fontsource/fraunces/900.css';
 
 export const metadata: Metadata = {
-  title: { default: 'Afro Zone', template: '%s · Afro Zone' },
-  description: 'Afro Zone: play ገበጣ (Gebeta), ዳማ (Dama), Dominoes, Bingo and Hill Climb online with friends or offline against the computer.',
+  title: { default: 'Infinity · Exam Pro', template: '%s · Infinity' },
+  description: 'Infinity: study and prepare for exams from kindergarten through university, with games during study breaks.',
   manifest: '/manifest.json',
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://infinity-now.vercel.app'),
-  openGraph: { title: 'Afro Zone', siteName: 'Afro Zone', description: 'Gebeta, Dama, Dominoes and Bingo — play online or offline.', images: ['/og-image.png'], type: 'website' },
-  twitter: { card: 'summary_large_image', title: 'Afro Zone', images: ['/og-image.png'] },
+  openGraph: { title: 'Infinity · Exam Pro', siteName: 'Infinity', description: 'Study, practice and prepare for exams with Infinity.', images: ['/og-image.png'], type: 'website' },
+  twitter: { card: 'summary_large_image', title: 'Infinity · Exam Pro', images: ['/og-image.png'] },
   icons: { icon: [{ url: '/icon.svg', type: 'image/svg+xml' }, { url: '/icon-192.png', sizes: '192x192', type: 'image/png' }], apple: [{ url: '/apple-touch-icon.png', sizes: '180x180' }] },
-  appleWebApp: { capable: true, title: 'Afro Zone', statusBarStyle: 'black-translucent' },
+  appleWebApp: { capable: true, title: 'Infinity', statusBarStyle: 'black-translucent' },
 };
 
 export const viewport: Viewport = {
@@ -84,7 +84,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   viewportFit: 'cover',
-  themeColor: "#072A1F",
+  themeColor: "#101e37",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
