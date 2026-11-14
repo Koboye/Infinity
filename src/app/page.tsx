@@ -1,7 +1,6 @@
-import { redirect } from 'next/navigation';
+import InfinityStudentApp from '@/components/InfinityStudentApp';
 
-// Infinity opens directly into Exam Pro's required sign-in / create-account screen.
-// The games remain available as an in-exam break, without a separate games dashboard.
+// Infinity is a React application. Original React games and the question bank remain intact.
 export default function Home() {
-  redirect('/games/exam-prep/index.html');
+  return <InfinityStudentApp />;
 }
