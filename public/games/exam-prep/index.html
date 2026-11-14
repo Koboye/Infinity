@@ -277,9 +277,9 @@ body.ep-auth-locked > :not(#ep-auth-gate):not(script) { visibility:hidden !impor
 <path d="M0 90v-3c70-11 140-7 200 1s130 11 200 1v5z" fill="#FCDD09"/>
 <path d="M0 90v-1c70-8 140-4 200 3s130 9 200 2v-4z" fill="#DA121A"/></svg></div></div>
 <a class="skip" href="#app">Skip to content</a><div id="live" class="sr" role="status" aria-live="polite"></div>
-<header class="top"><div class="wrap"><button class="brand" id="home" aria-label="exam.pro home"><svg class="logo" viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffd36b"/><stop offset="1" stop-color="#f5a623"/></linearGradient></defs><path d="M24 6 4 15l20 9 20-9z" fill="url(#lg)"/><path d="M12 21v8c0 3 5 6 12 6s12-3 12-6v-8l-12 5.4z" fill="#fff" opacity=".95"/><path d="M42 16v12" stroke="#ffd36b" stroke-width="2.4" stroke-linecap="round"/><path d="M8 40h32" stroke="#ffd36b" stroke-width="2.4" stroke-linecap="round"/></svg><span><span class="bt">exam<i>.pro</i></span><span class="bs">Learn · Practice · Excel</span></span></button><a href="/">← Games</a><div class="tsz" role="group" aria-label="Text size"><button id="tsd" type="button" aria-label="Smaller text">A−</button><button id="tsu" type="button" aria-label="Larger text">A+</button></div></div></header>
+<header class="top"><div class="wrap"><button class="brand" id="home" aria-label="Infinity home"><svg class="logo" viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffd36b"/><stop offset="1" stop-color="#f5a623"/></linearGradient></defs><path d="M24 6 4 15l20 9 20-9z" fill="url(#lg)"/><path d="M12 21v8c0 3 5 6 12 6s12-3 12-6v-8l-12 5.4z" fill="#fff" opacity=".95"/><path d="M42 16v12" stroke="#ffd36b" stroke-width="2.4" stroke-linecap="round"/><path d="M8 40h32" stroke="#ffd36b" stroke-width="2.4" stroke-linecap="round"/></svg><span><span class="bt">exam<i>.pro</i></span><span class="bs">Learn · Practice · Excel</span></span></button><a href="/">← Games</a><div class="tsz" role="group" aria-label="Text size"><button id="tsd" type="button" aria-label="Smaller text">A−</button><button id="tsu" type="button" aria-label="Larger text">A+</button></div></div></header>
 <div class="toast" id="toast" aria-hidden="true"></div>
-<main class="wrap" id="app" aria-label="exam.pro"></main>
+<main class="wrap" id="app" aria-label="Infinity Exam Pro"></main>
 <nav class="bnav" id="bnav" aria-label="Main"><button type="button" id="nv-home" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</button><button type="button" id="nv-sub"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16M4 12h16M4 19h10"/></svg>All subjects</button><button type="button" id="nv-games" class="in-nav-extra">🎮 Games</button><button type="button" id="nv-profile" class="in-nav-extra">👤 Profile</button></nav>
 <script src="bank.js"></script>
 <script>
@@ -311,7 +311,7 @@ body.ep-auth-locked > :not(#ep-auth-gate):not(script) { visibility:hidden !impor
   var ui = { group: 'all', search: '', cat: null };
   var live = document.getElementById('live'), SC = [0.9, 1, 1.12, 1.25, 1.4], ZK = 'exampro.textsize', zi = 1;
   function say(t) { live.textContent = ''; setTimeout(function () { live.textContent = t; }, 60); }
-  function landed(title, sel) { document.title = title + ' · exam.pro'; var e = (sel && app.querySelector(sel)) || app; e.setAttribute('tabindex', '-1'); e.focus({ preventScroll: true }); window.scrollTo(0, 0); }
+  function landed(title, sel) { document.title = title + ' · Infinity'; var e = (sel && app.querySelector(sel)) || app; e.setAttribute('tabindex', '-1'); e.focus({ preventScroll: true }); window.scrollTo(0, 0); }
   function zoom(d, announce) {
     zi = Math.max(0, Math.min(SC.length - 1, zi + d));
     document.documentElement.style.setProperty('--scale', SC[zi]);
@@ -383,7 +383,7 @@ body.ep-auth-locked > :not(#ep-auth-gate):not(script) { visibility:hidden !impor
   function dash(soft) {
     chrome('dash'); setNav('home'); ui.cat = null;
     var p = load(), acc = p.answered ? Math.round(p.correct / p.answered * 100) : 0, pct = Math.min(100, Math.round(p.today / GOAL * 100));
-    var html = '<div class="dash"><div class="dhead"><span class="dav" aria-hidden="true">L' + level(p.xp) + '</span><div><small>' + (p.answered ? 'Welcome back' : 'Welcome to exam.pro') + '</small><b>Student · Level ' + level(p.xp) + '</b></div></div>' +
+    var html = '<div class="dash"><div class="dhead"><span class="dav" aria-hidden="true">L' + level(p.xp) + '</span><div><small>' + (p.answered ? 'Welcome back' : 'Welcome to Infinity') + '</small><b>Student · Level ' + level(p.xp) + '</b></div></div>' +
       '<div class="in-grade-row"><div><small class="in-grade-eyebrow">YOUR LEARNING PATH</small><strong id="in-grade-current">Choose your grade</strong></div><button type="button" class="btn alt" id="in-grade-change">Change grade ↗</button></div>' +
       '<form class="dsearch" id="dsf" role="search"><label class="sr" for="dsq">Search subjects and departments</label><input id="dsq" type="search" autocomplete="off" placeholder="Search subjects"><button type="submit" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg></button></form>' +
       '<h1>What would you like to study today?</h1>' +
@@ -470,7 +470,7 @@ body.ep-auth-locked > :not(#ep-auth-gate):not(script) { visibility:hidden !impor
         ds.map(function (d) { return '<button class="dept" data-d="' + esc(d.id) + '"><b>' + esc(d.name) + '</b><small>' + d.q.length + ' questions</small></button>'; }).join('') + '</div></details>';
     });
     if (!colleges.length) html += '<p class="hint">Nothing matches “' + esc(ui.search) + '”.</p>';
-    html += '<p class="foot"><b>exam.pro</b> by Afro Zone · Answers and progress are saved on this device. Always study your course materials too.</p>';
+    html += '<p class="foot"><b>Infinity</b> · Answers and progress are saved on this device. Always study your course materials too.</p>';
     app.innerHTML = html;
     var sg = document.getElementById('startgo'); if (sg) sg.onclick = function () { var t = document.getElementById('paths'); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
     var s = document.getElementById('search'); if (s) s.oninput = function () { ui.search = s.value; var pos = s.selectionStart; home(true); var n = document.getElementById('search'); n.focus(); n.setSelectionRange(pos, pos); };
