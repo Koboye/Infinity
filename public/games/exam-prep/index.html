@@ -383,13 +383,30 @@ body.ep-auth-locked > :not(#ep-auth-gate):not(script) { visibility:hidden !impor
   function dash(soft) {
     chrome('dash'); setNav('home'); ui.cat = null;
     var p = load(), acc = p.answered ? Math.round(p.correct / p.answered * 100) : 0, pct = Math.min(100, Math.round(p.today / GOAL * 100));
+    var selectedCategory = window.infinityGradeCategory ? window.infinityGradeCategory() : '';
+    var gradeName = window.infinityGetGradeLabel ? window.infinityGetGradeLabel() : '';
+    var studentName = window.infinityStudentName || 'Student';
+    var studentCategory = catById(selectedCategory);
+    var departmentId = window.infinityGetDepartmentId ? window.infinityGetDepartmentId() : '';
+    var department = BANK.find(function(d){return d.id===departmentId && d.group==='uni';});
+    var gradeId = window.infinityGetGradeId ? window.infinityGetGradeId() : '';
+    var scopedSubjects = studentCategory ? BANK.filter(function(d){
+      if (studentCategory.groups.indexOf(d.group)<0) return false;
+      if (gradeId==='uni') return d.id===departmentId;
+      if (gradeId==='g12') return d.group==='g12';
+      if (gradeId==='kg' || /^g(?:[1-9]|10|11)$/.test(gradeId)) return d.grade===gradeId;
+      return true;
+    }) : [];
+    var scopedCount = scopedSubjects.reduce(function(n,d){return n+(d.q||[]).length;},0);
     var html = '<div class="dash"><div class="dhead"><span class="dav" aria-hidden="true">L' + level(p.xp) + '</span><div><small>' + (p.answered ? 'Welcome back' : 'Welcome to Infinity') + '</small><b>Student · Level ' + level(p.xp) + '</b></div></div>' +
       '<div class="in-grade-row"><div><small class="in-grade-eyebrow">YOUR LEARNING PATH</small><strong id="in-grade-current">Choose your grade</strong></div><button type="button" class="btn alt" id="in-grade-change">Change grade ↗</button></div>' +
+      '<div class="in-home-path"><div><span class="in-home-kicker">YOUR STUDY SPACE</span><h1>' + esc(gradeName || 'Choose your learning level') + '</h1><p>' + esc(department ? department.name : (studentCategory ? studentCategory.sub : 'Choose your grade to see your subjects')) + '</p></div><div class="in-home-count"><strong>' + scopedCount.toLocaleString() + '</strong><span>Available questions</span></div></div>' +
+      '<div class="in-home-actions"><button type="button" id="in-home-subjects" class="in-home-action primary">📚 <span><b>My Subjects</b><small>Open your learning resources</small></span></button><button type="button" id="in-home-games" class="in-home-action">🎮 <span><b>Game Break</b><small>Play and return to learning</small></span></button></div>' +
       '<form class="dsearch" id="dsf" role="search"><label class="sr" for="dsq">Search subjects and departments</label><input id="dsq" type="search" autocomplete="off" placeholder="Search subjects"><button type="submit" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg></button></form>' +
       '<h1>What would you like to study today?</h1>' +
       '<div class="dsum" aria-label="Your progress"><div><b><span aria-hidden="true">🔥</span> ' + p.streak + '</b><small>day streak</small></div><div><b><span aria-hidden="true">⭐</span> ' + p.xp + '</b><small>XP</small></div><div><b><span aria-hidden="true">🎯</span> ' + acc + '%</b><small>accuracy</small></div></div>' +
       '<div class="dgoal"><span>Daily goal</span><span>' + Math.min(p.today, GOAL) + '/' + GOAL + (pct >= 100 ? ' 🎉' : '') + '</span></div><div class="dbar" role="progressbar" aria-label="Daily goal" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct + '"><i style="width:' + pct + '%"></i></div>' +
-      '<div class="cats" role="group" aria-label="Learning categories">' + CATS.map(function (c) {
+      '<div class="cats" role="group" aria-label="Learning categories">' + CATS.filter(function(c){return !selectedCategory || c.id===selectedCategory;}).map(function (c) {
         var n = catCount(c), ready = n > 0;
         return '<button type="button" class="cat ' + (ready ? 'ready' : 'soon') + '" data-c="' + c.id + '" style="--c1:' + c.c[0] + ';--c2:' + c.c[1] + '"' + (ready ? '' : ' aria-disabled="true"') + '><span class="tag">' + (ready ? n.toLocaleString() + ' questions' : 'Soon') + '</span>' + ICON[c.icon] + '<b>' + c.name + '</b><small>' + c.sub + '</small></button>';
       }).join('') + '</div></div>';
@@ -401,6 +418,8 @@ body.ep-auth-locked > :not(#ep-auth-gate):not(script) { visibility:hidden !impor
         b.classList.add('pick'); setTimeout(function () { ui.cat = c.id; ui.search = ''; catView(); }, 240);
       };
     });
+    document.getElementById('in-home-subjects').onclick = function(){openStudentResources();};
+    document.getElementById('in-home-games').onclick = function(){document.getElementById('nv-games').click();};
     var gradeLabel = document.getElementById('in-grade-current');
     if (gradeLabel) gradeLabel.textContent = (window.infinityGetGradeLabel && window.infinityGetGradeLabel()) || 'Choose your grade';
     var gradeChange = document.getElementById('in-grade-change');
@@ -566,7 +585,10 @@ body.ep-auth-locked > :not(#ep-auth-gate):not(script) { visibility:hidden !impor
     catView();
   }
   window.addEventListener('infinity-grade-changed', function (event) {
-    if (event.detail && event.detail.grade) openStudentResources();
+    if (event.detail && event.detail.grade && !window.infinityExamActive) dash();
+  });
+  window.addEventListener('infinity-auth-changed', function(event){
+    if(event.detail && event.detail.uid && !window.infinityExamActive) dash();
   });
   window.infinityNavigateHome = function(){if (!window.infinityExamActive) dash();};
   window.infinityNavigateResources = openStudentResources;
