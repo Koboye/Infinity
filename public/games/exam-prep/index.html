@@ -553,6 +553,40 @@ body.has-xbar .xb.main{min-width:125px}
 @media(hover:hover){body.has-xbar .xo:hover:not([disabled]){border-color:#6671db;background:#f4f5ff;transform:translateY(-1px)}}
 @media(max-width:480px){body.has-xbar .xh{padding:10px;gap:8px}body.has-xbar .xt small{font-size:10px}body.has-xbar .xclk{font-size:11px;padding:8px}body.has-xbar .xrow{flex-wrap:wrap}body.has-xbar .xrow .xans{margin-left:auto}body.has-xbar .xcard{padding:17px 14px}body.has-xbar .xo{min-height:60px;padding:11px;gap:9px}body.has-xbar .xo .xl{width:32px;height:32px}body.has-xbar .xbar{gap:6px}body.has-xbar .xb{padding:8px;font-size:12px;min-height:49px}body.has-xbar .xb.main{min-width:100px}}
 @media(prefers-reduced-motion:reduce){body.has-xbar .xo,body.has-xbar .xprog i{transition:none!important}}
+</style><style id="ep-screen-05">
+/* Screen 05 — results, feedback, and actionable answer review. */
+.ep-result-screen{max-width:800px;margin:0 auto;padding:4px 0 40px}
+.ep-result-hero{padding:clamp(22px,5vw,36px);border-radius:27px;color:#fff;text-align:center;background:radial-gradient(circle at 90% 0%,rgba(255,214,109,.25),transparent 45%),linear-gradient(135deg,#17389f,#6043b5);border:1px solid rgba(255,255,255,.22);box-shadow:0 17px 35px rgba(4,14,68,.23)}
+.ep-result-eyebrow{display:block;font-size:11px;font-weight:900;letter-spacing:.13em;color:#f6d886}
+.ep-result-hero h1{font-size:clamp(1.55rem,5vw,2.2rem);letter-spacing:-.04em;line-height:1.2;margin:10px 0 5px}
+.ep-result-hero p{color:#dce4ff;font-size:14px;line-height:1.5}
+.ep-result-score{display:flex;flex-direction:column;align-items:center;justify-content:center;width:165px;height:165px;margin:24px auto;border-radius:50%;border:8px solid rgba(255,223,138,.88);background:rgba(255,255,255,.11);box-shadow:0 0 0 8px rgba(255,255,255,.07)}
+.ep-result-score .big{font-size:clamp(2.6rem,8vw,3.4rem);font-weight:900;line-height:1;color:#fff}
+.ep-result-score span{font-size:11px;color:#dce4ff;margin-top:8px}
+.ep-result-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:22px}
+.ep-result-metrics>div{display:flex;flex-direction:column;gap:4px;padding:14px 8px;border:1px solid rgba(255,255,255,.19);border-radius:16px;background:rgba(255,255,255,.09)}
+.ep-result-metrics strong{font-size:clamp(1.3rem,4vw,1.7rem);font-variant-numeric:tabular-nums}
+.ep-result-metrics span{font-size:12px;color:#e0e7ff}
+.ep-result-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin:19px 0}
+.ep-result-actions .btn{min-height:47px;border-radius:13px}
+.ep-result-rewards{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:0 0 22px}
+.ep-result-review{margin-top:24px;padding:clamp(16px,4vw,25px);border-radius:23px;background:#fff;color:#17224b}
+.ep-result-review .ep-result-eyebrow{color:#5e4cbe}
+.ep-result-review-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:19px}
+.ep-result-review-head h2{margin:6px 0;font-size:1.35rem;letter-spacing:-.025em}
+.ep-result-review-head p{margin:0;color:#5d6583;font-size:13px;line-height:1.45}
+.ep-result-review-head button{min-height:42px;border-radius:11px;font-size:12px}
+.ep-review-item{border:1px solid #e0e5f2;border-radius:15px;margin:9px 0;overflow:hidden;background:#fff}
+.ep-review-item[hidden]{display:none!important}
+.ep-review-item summary{display:flex;align-items:center;gap:10px;padding:15px;cursor:pointer;list-style:none}
+.ep-review-item summary::-webkit-details-marker{display:none}
+.ep-review-index{display:grid;place-items:center;flex:none;width:30px;height:30px;border-radius:9px;background:#edf0fb;color:#30417e;font-weight:850;font-size:12px}
+.ep-review-question{flex:1;min-width:0;font-size:13px;font-weight:750;line-height:1.5;overflow-wrap:anywhere}
+.ep-review-status{flex:none;font-size:11px;font-weight:800;padding:5px 8px;border-radius:999px}
+.ep-review-status.correct{background:#e1f7eb;color:#167347}.ep-review-status.incorrect{background:#ffe6e9;color:#ae3044}.ep-review-status.skipped{background:#fff1d7;color:#956016}
+.ep-review-item .explain{margin:0 14px 15px}
+.ep-result-screen button:focus-visible,.ep-review-item summary:focus-visible{outline:3px solid #f1bb3d;outline-offset:3px}
+@media(max-width:480px){.ep-result-hero{padding:20px 14px}.ep-result-score{width:145px;height:145px}.ep-result-actions .btn{flex:1 1 135px}.ep-review-item summary{padding:12px 9px;gap:7px}.ep-review-status{font-size:10px;padding:4px 6px}.ep-result-review-head button{width:100%}}
 </style></head>
 <body>
 <div class="splash" id="splash" role="dialog" aria-modal="true" aria-labelledby="sp-title" hidden>
@@ -937,11 +971,32 @@ body.has-xbar .xb.main{min-width:125px}
       if (mode === 'exam') set.forEach(function (q) { if (picked[q.id] != null) xp += record(id, q, picked[q.id] === q.answer, 0).gain; });
       var s = load(), k = id + ':' + mode; if (pct > (s.best[k] || 0)) { s.best[k] = pct; save(s); }
       var chalOn = label === 'Daily challenge'; if (chalOn) { var s2 = load(); if (s2.chal !== ymd()) { s2.chal = ymd(); s2.xp += 50; save(s2); xp += 50; } else chalOn = 'again'; }
-      app.innerHTML = '<div class="card"><div class="big">' + pct + '%</div>' + (timeUp ? '<p class="c"><b>⏱ Time is up.</b> Your exam was submitted automatically.</p>' : '') + '<p class="c"><b>' + score + ' of ' + set.length + '</b> correct · ' + (pct >= 80 ? '🏆 Outstanding!' : pct >= 50 ? '👏 Well done — keep going!' : '💪 Every mistake is saved to your review list.') + '</p><p class="c">' + (xp ? '<span class="pill good">+' + xp + ' XP</span> ' : '') + (bestCombo > 1 ? '<span class="pill warn">🔥 best combo ' + bestCombo + '</span> ' : '') + (chalOn === true ? '<span class="pill good">⚡ Daily challenge complete · +50 XP</span>' : '') + '</p>' +
-        '<div class="row mt" style="justify-content:center"><button class="btn" id="again">Try again</button><button class="btn alt" id="exit">Back</button></div><h3 class="mt">Review</h3>' +
-        set.map(function (q, n) { var c = picked[q.id]; return '<details ' + (c !== q.answer && n < 40 ? 'open' : '') + '><summary>' + (n + 1) + '. ' + (c === q.answer ? '✅' : c == null ? '⏭️' : '❌') + ' ' + esc(q.text) + '</summary>' + explain(q, c) + '</details>'; }).join('') + '</div>';
-      document.getElementById('again').onclick = function () { quiz(id, mode, qs, label); };
+      var wrong = set.filter(function (q) { return picked[q.id] != null && picked[q.id] !== q.answer; }).length;
+      var skipped = set.filter(function (q) { return picked[q.id] == null; }).length;
+      var incorrect = set.filter(function (q) { return picked[q.id] !== q.answer; });
+      var reviewSet = incorrect.map(function (q) { return q; });
+      var resultTitle = pct >= 80 ? 'Excellent work!' : pct >= 50 ? 'You are making progress' : 'Every attempt builds mastery';
+      app.innerHTML = '<section class="ep-result-screen" aria-label="Exam results">' +
+        '<div class="ep-result-hero"><span class="ep-result-eyebrow">' + (mode === 'exam' ? 'MOCK EXAM COMPLETE' : 'PRACTICE COMPLETE') + '</span><h1>' + resultTitle + '</h1><p>' + esc(L1) + (timeUp ? ' · Time expired — automatically submitted' : '') + '</p><div class="ep-result-score"><div class="big">' + pct + '%</div><span>Overall accuracy</span></div>' +
+        '<div class="ep-result-metrics"><div><strong>' + score + '</strong><span>Correct</span></div><div><strong>' + wrong + '</strong><span>Incorrect</span></div><div><strong>' + skipped + '</strong><span>Unanswered</span></div></div></div>' +
+        '<div class="ep-result-actions"><button class="btn" id="again">Try again</button><button class="btn alt" id="exit">Back to subject</button>' + (incorrect.length ? '<button class="btn alt" id="review-missed">Practice missed (' + incorrect.length + ')</button>' : '') + '</div>' +
+        (xp || bestCombo > 1 || chalOn === true ? '<div class="ep-result-rewards">' + (xp ? '<span class="pill good">+' + xp + ' XP earned</span> ' : '') + (bestCombo > 1 ? '<span class="pill warn">🔥 Best combo ' + bestCombo + '</span> ' : '') + (chalOn === true ? '<span class="pill good">⚡ Daily challenge complete</span>' : '') + '</div>' : '') +
+        '<section class="ep-result-review" aria-label="Answer review"><div class="ep-result-review-head"><div><span class="ep-result-eyebrow">LEARN FROM EVERY QUESTION</span><h2>Answer review</h2><p>Open any question to see the answer and explanation.</p></div><button class="btn alt" type="button" id="review-toggle">Show missed only</button></div>' +
+        set.map(function (q, n) { var c = picked[q.id], status = c === q.answer ? 'correct' : c == null ? 'skipped' : 'incorrect'; return '<details class="ep-review-item" data-result="' + status + '"' + (c !== q.answer && n < 12 ? ' open' : '') + '><summary><span class="ep-review-index">' + (n + 1) + '</span><span class="ep-review-question">' + esc(q.text) + '</span><span class="ep-review-status ' + status + '">' + (status === 'correct' ? 'Correct' : status === 'skipped' ? 'Skipped' : 'Incorrect') + '</span></summary>' + explain(q, c) + '</details>'; }).join('') + '</section></section>';
+      document.getElementById('again').onclick = function () { quiz(id, mode, set.slice(), label); };
       document.getElementById('exit').onclick = function () { if (label === 'Daily challenge') dash(); else deptPage(id, ''); };
+      var reviewMissed = document.getElementById('review-missed');
+      if (reviewMissed) reviewMissed.onclick = function () { quiz(id, 'practice', reviewSet.slice(), 'Review missed questions'); };
+      var reviewToggle = document.getElementById('review-toggle'), missedOnly = false;
+      reviewToggle.onclick = function () {
+        missedOnly = !missedOnly;
+        [].forEach.call(app.querySelectorAll('.ep-review-item'), function (el) {
+          el.hidden = missedOnly && el.getAttribute('data-result') === 'correct';
+          if (missedOnly && !el.hidden) el.open = true;
+        });
+        reviewToggle.textContent = missedOnly ? 'Show all questions' : 'Show missed only';
+        reviewToggle.setAttribute('aria-pressed', String(missedOnly));
+      };
       landed('Results', '.big'); say((timeUp ? 'Time is up. ' : '') + pct + ' percent. ' + score + ' of ' + set.length + ' correct.');
     }
     function counts() { var a = 0, f = 0; set.forEach(function (q) { if (picked[q.id] != null) a++; if (flagged[q.id]) f++; }); return { a: a, u: total - a, f: f }; }
