@@ -29,14 +29,27 @@
   function meter(v) { return '<div class="ep-unified-meter" role="progressbar" aria-valuenow="' + pct(v) + '" aria-valuemin="0" aria-valuemax="100"><span style="width:' + pct(v) + '%"></span></div>'; }
   function heading(kicker, title, desc) { return '<div class="ep-unified-hero"><span>' + kicker + '</span><h1>' + title + '</h1><p>' + desc + '</p></div>'; }
   function progress() {
-    var p = getProgress(), answered = p.answered || 0, accuracy = answered ? 100 * (p.correct || 0) / answered : 0;
-    var xp = p.xp || 0, lv = Math.floor(Math.sqrt(xp / 50)) + 1, low = 50 * (lv - 1) * (lv - 1), high = 50 * lv * lv;
-    var mistakes = Object.keys(p.mistakes || {}).reduce(function (sum, key) { return sum + Object.keys(p.mistakes[key] || {}).length; }, 0);
-    var scores = Object.keys(p.best || {}).sort(function (a,b) { return (p.best[b] || 0) - (p.best[a] || 0); }).slice(0, 12);
-    var html = heading('YOUR JOURNEY', 'My progress', 'Every question is a step forward.');
-    html += '<div class="ep-unified-stats"><div>🎯<b>' + pct(accuracy) + '%</b><small>Accuracy</small></div><div>🔥<b>' + (p.streak || 0) + '</b><small>Day streak</small></div><div>⭐<b>' + xp + '</b><small>XP earned</small></div><div>📝<b>' + mistakes + '</b><small>To review</small></div></div>';
-    html += '<section class="ep-unified-card"><h2>Level ' + lv + '</h2><p>' + (xp - low) + ' of ' + (high - low) + ' XP toward your next level</p>' + meter(100 * (xp - low) / (high - low)) + '<h2>Today\'s goal</h2><p>' + (p.day === today() ? (p.today || 0) : 0) + ' of 20 questions</p>' + meter((p.day === today() ? (p.today || 0) : 0) * 5) + '</section>';
-    html += '<section class="ep-unified-card"><h2>Best scores</h2>' + (scores.length ? scores.map(function (key) { return '<div class="ep-unified-score"><span>' + escapeHtml(key.replace(/[-_]/g, ' ').replace(':', ' · ')) + '</span><b>' + pct(p.best[key]) + '%</b></div>'; }).join('') : '<p>Complete a quiz to see your results here.</p>') + '</section>';
+    var p = getProgress(), answered = Math.max(0, Number(p.answered) || 0), correct = Math.max(0, Number(p.correct) || 0);
+    var accuracy = answered ? 100 * correct / answered : 0;
+    var xp = Math.max(0, Number(p.xp) || 0), lv = Math.floor(Math.sqrt(xp / 50)) + 1;
+    var low = 50 * (lv - 1) * (lv - 1), high = 50 * lv * lv;
+    var mistakeMap = p.mistakes || {}, best = p.best || {}, bank = window.BANK || [];
+    var names = {};
+    bank.forEach(function (d) { names[d.id] = d.name; });
+    var mistakes = Object.keys(mistakeMap).reduce(function (sum, key) { return sum + Object.keys(mistakeMap[key] || {}).length; }, 0);
+    var todayCount = p.day === today() ? Math.max(0, Number(p.today) || 0) : 0;
+    var scores = Object.keys(best).filter(function (key) { return Number.isFinite(Number(best[key])); }).sort(function (a,b) { return Number(best[b]) - Number(best[a]); }).slice(0, 8);
+    var priorities = Object.keys(mistakeMap).map(function (id) { return { id: id, name: names[id] || id.replace(/[-_]/g, ' '), count: Object.keys(mistakeMap[id] || {}).length }; }).filter(function (d) { return d.count > 0; }).sort(function (a,b) { return b.count - a.count; }).slice(0, 5);
+    var html = heading('YOUR LEARNING JOURNEY', 'Progress & performance', 'A clear picture of what you have accomplished and what to practice next.');
+    html += '<div class="ep-unified-stats ep-progress-stats"><div><span aria-hidden="true">🎯</span><b>' + pct(accuracy) + '%</b><small>Overall accuracy</small></div><div><span aria-hidden="true">🔥</span><b>' + (p.streak || 0) + '</b><small>Day streak</small></div><div><span aria-hidden="true">⭐</span><b>' + xp.toLocaleString() + '</b><small>XP earned</small></div><div><span aria-hidden="true">📚</span><b>' + answered.toLocaleString() + '</b><small>Questions answered</small></div></div>';
+    html += '<div class="ep-progress-grid"><section class="ep-unified-card"><span class="ep-progress-kicker">LEVEL PROGRESS</span><h2>Level ' + lv + '</h2><p><strong>' + (xp - low) + '</strong> / ' + (high - low) + ' XP toward Level ' + (lv + 1) + '</p>' + meter(100 * (xp - low) / (high - low)) + '</section>';
+    html += '<section class="ep-unified-card"><span class="ep-progress-kicker">DAILY CONSISTENCY</span><h2>Today’s goal</h2><p><strong>' + todayCount + '</strong> / 20 questions answered today</p>' + meter(todayCount * 5) + '</section></div>';
+    html += '<section class="ep-unified-card"><div class="ep-progress-section-title"><div><span class="ep-progress-kicker">FOCUS YOUR EFFORT</span><h2>Subjects to review</h2></div><span class="ep-progress-count">' + mistakes + ' saved mistakes</span></div>';
+    html += priorities.length ? priorities.map(function (d) { return '<div class="ep-progress-priority"><span><b>' + escapeHtml(d.name) + '</b><small>' + d.count + ' question' + (d.count === 1 ? '' : 's') + ' to revisit</small></span><span class="ep-progress-priority-tag">Review</span></div>'; }).join('') : '<p class="ep-progress-empty">No saved mistakes yet. Keep practicing and your review priorities will appear here.</p>';
+    html += '</section>';
+    html += '<section class="ep-unified-card"><span class="ep-progress-kicker">YOUR PERSONAL BEST</span><h2>Best quiz scores</h2>';
+    html += scores.length ? scores.map(function (key) { var parts = key.split(':'), label = names[parts[0]] || parts[0].replace(/[-_]/g,' '), mode = parts[1] || 'quiz'; return '<div class="ep-progress-score"><div class="ep-progress-score-label"><b>' + escapeHtml(label) + '</b><small>' + escapeHtml(mode === 'exam' ? 'Timed exam' : 'Practice') + '</small></div><div class="ep-progress-score-bar">' + meter(best[key]) + '</div><strong>' + pct(best[key]) + '%</strong></div>'; }).join('') : '<p class="ep-progress-empty">Complete a practice session or timed exam to start tracking your best scores.</p>';
+    html += '</section><p class="ep-progress-note">These insights reflect activity saved in this browser. Historical daily trends and cross-device sync are not available yet.</p>';
     return html;
   }
   var tasks = [['Review formulas', 'Review your notes for 5 minutes'], ['Practice questions', 'Answer 10 questions'], ['Take a mock exam', 'Try a timed paper'], ['Fix mistakes', 'Learn from missed answers']];
