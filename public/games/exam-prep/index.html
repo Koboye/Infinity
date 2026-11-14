@@ -402,7 +402,9 @@ body.ep-auth-locked > :not(#ep-auth-gate):not(script) { visibility:hidden !impor
   function catView(soft) {
     chrome('list'); setNav('sub');
     var c = catById(ui.cat), k = ui.search.trim().toLowerCase();
-    var list = BANK.filter(function (d) { return c.groups.indexOf(d.group) >= 0 && (!k || d.name.toLowerCase().indexOf(k) >= 0 || d.college.toLowerCase().indexOf(k) >= 0); });
+    var gradeId = window.infinityGetGradeId ? window.infinityGetGradeId() : '';
+    var gradeGroup = /^g[1-4]$/.test(gradeId) ? 'g1_4' : /^g[5-8]$/.test(gradeId) ? 'g5_8' : /^g(9|10|11)$/.test(gradeId) ? 'g9_10' : gradeId === 'g12' ? 'g12' : '';
+    var list = BANK.filter(function (d) { return c.groups.indexOf(d.group) >= 0 && (!gradeGroup || d.group === gradeGroup) && (!k || d.name.toLowerCase().indexOf(k) >= 0 || d.college.toLowerCase().indexOf(k) >= 0); });
     var colleges = []; list.forEach(function (d) { if (colleges.indexOf(d.college) < 0) colleges.push(d.college); });
     var html = '<div class="catv"><button type="button" class="btn alt sm back" id="dback">← All categories</button><h1>' + esc(c.name) + '</h1><p class="hint">' + esc(c.sub) + ' · ' + catCount(c).toLocaleString() + ' questions</p>' +
       '<label class="lbl" for="search">Find a subject</label><input id="search" type="search" autocomplete="off" placeholder="For example: Mathematics" value="' + esc(ui.search) + '"><div class="found">Showing ' + list.length + ' subject' + (list.length === 1 ? '' : 's') + '</div>';
@@ -534,6 +536,16 @@ body.ep-auth-locked > :not(#ep-auth-gate):not(script) { visibility:hidden !impor
     draw();
   }
   document.getElementById('home').onclick = function () { clearInterval(timer); document.onkeydown = null; dash(); };
+  // Once a student chooses a level on the sign-in screen, open that learning area.
+  function openStudentResources() {
+    var category = window.infinityGradeCategory && window.infinityGradeCategory();
+    if (!category || !catById(category)) return;
+    ui.cat = category; ui.search = '';
+    catView();
+  }
+  window.addEventListener('infinity-grade-changed', function (event) {
+    if (event.detail && event.detail.grade) openStudentResources();
+  });
   dash(true);
 })();
 </script>
