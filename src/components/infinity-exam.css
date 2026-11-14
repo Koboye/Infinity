@@ -1,185 +1,168 @@
-/* Infinity exam, practice, results and subjects. Same tokens as Home and Profile; light and dark. */
-.inf-root .inf-x{--x-violet:#5B34E6;--x-violet-2:#7B5CF5;--x-on:#fff;display:flex;flex-direction:column;gap:16px;padding-bottom:24px}
-@media (prefers-color-scheme:dark){.inf-root .inf-x{--x-violet:#B9A4FF;--x-violet-2:#9B82FF;--x-on:#1A0F4D}}
-/* soft lavender and sun backdrop behind the running exam */
-.inf-root:has(.inf-x-run){background:radial-gradient(900px 520px at 8% -8%,color-mix(in srgb,#7B5CF5 16%,transparent),transparent 70%),radial-gradient(760px 480px at 105% 100%,color-mix(in srgb,#FFC83D 18%,transparent),transparent 70%),var(--inf-paper);background-attachment:fixed}
+/* Infinity question screen, calculator, results, subjects and exams.
+   Phone layout is a fixed frame: top bar, progress, scrolling question, calculator dock, Previous/Next.
+   The calculator is a row of its own, so it can never sit on top of a question. */
+.inf-root .inf-x{--accent:var(--inf-violet);display:flex;flex-direction:column;gap:14px;min-width:0}
 .inf-root .inf-x h1,.inf-root .inf-x h2{margin:0}
-.inf-root .inf-x-top{display:flex;align-items:center;gap:14px}
-.inf-root .inf-x-top>div{flex:1;min-width:0}
-.inf-root .inf-x-top h1{font:800 clamp(1.45rem,4.6vw,2rem)/1.15 var(--inf-font-b);letter-spacing:-.02em;overflow-wrap:anywhere}
-.inf-root .inf-x-top p{margin:2px 0 0;color:var(--x-violet);font-weight:700;font-size:1.05rem}
-.inf-root .inf-x-badge{flex:0 0 auto;display:grid;place-items:center;width:58px;height:58px;border-radius:18px;color:#fff;font:800 1.5rem var(--inf-font-b);
-  background:linear-gradient(145deg,#8FB4FF,#4F7BFF);box-shadow:0 8px 18px rgba(79,123,255,.28)}
-.inf-root .inf-x-exit{flex:0 0 auto;display:inline-flex;align-items:center;gap:8px;min-height:50px;padding:8px 18px;border-radius:999px;font-weight:800;font-size:1.05rem;color:var(--inf-err);
-  background:var(--inf-card);border:1.5px solid color-mix(in srgb,var(--inf-err) 40%,var(--inf-line))}
+.inf-root .inf-x-icon{display:inline-grid;place-items:center;flex:0 0 auto;width:44px;height:44px;min-height:44px;padding:0;border-radius:50%;background:var(--inf-card);color:var(--inf-text)}
 
-/* stat bar + progress */
-.inf-root .inf-x-bar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) auto;align-items:center;gap:0;margin:0;padding:8px;border-radius:22px;background:var(--inf-card);border:1.5px solid var(--inf-line);box-shadow:0 10px 28px rgba(60,40,160,.07)}
-.inf-root .inf-x-bar>div{min-width:0}
-.inf-root .inf-x-bar>div+div{border-left:1px solid var(--inf-line)}
-.inf-root .inf-x-stat{display:flex;align-items:center;gap:12px;width:100%;min-height:52px;padding:6px 14px;border:0;border-radius:14px;background:none;color:var(--x-violet);text-align:left}
-.inf-root button.inf-x-stat:hover{background:color-mix(in srgb,var(--x-violet) 8%,transparent)}
-.inf-root .inf-x-stat>svg{flex:0 0 auto}
-.inf-root .inf-x-stat>span{display:flex;flex-direction:column;min-width:0}
-.inf-root .inf-x-stat small{color:var(--inf-text);font-size:.95rem;font-weight:600;white-space:nowrap}
-.inf-root .inf-x-stat b{font:800 1.5rem/1.1 var(--inf-font-b);color:var(--inf-text);font-variant-numeric:tabular-nums;white-space:nowrap}
-.inf-root .inf-x-bar .is-low b{color:var(--inf-err)}
-.inf-root .inf-x-bar .is-low{border-radius:14px;animation:inf-x-pulse 1s ease-in-out infinite}
-@keyframes inf-x-pulse{50%{background:color-mix(in srgb,var(--inf-err) 10%,transparent)}}
-.inf-root .inf-x-calcbtn{display:inline-flex;align-items:center;gap:10px;min-height:56px;margin-left:8px;padding:8px 20px;border-radius:18px;font:800 1.1rem var(--inf-font-b);color:var(--x-violet);
-  background:var(--inf-card);border:2px solid var(--x-violet)}
-.inf-root .inf-x-calcbtn:hover{border-color:var(--x-violet);background:color-mix(in srgb,var(--x-violet) 9%,var(--inf-card))}
-.inf-root button.inf-x-calcbtn[aria-pressed=true]:not(.inf-ghost){background:var(--x-violet);border-color:var(--x-violet);color:var(--x-on)}
-.inf-root .inf-x-prog{height:12px;border-radius:99px;background:color-mix(in srgb,var(--x-violet) 16%,var(--inf-card));overflow:hidden}
-.inf-root .inf-x-prog i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--x-violet),var(--x-violet-2));transition:width .3s ease}
+/* running frame */
+.inf-root .inf-app.is-running{height:100dvh;overflow:hidden;padding-top:max(12px,env(safe-area-inset-top));padding-bottom:max(10px,env(safe-area-inset-bottom))}
+.inf-root .inf-x-run{flex:1 1 0;min-height:0;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr);gap:12px;width:100%;max-width:760px;margin-inline:auto}
+.inf-root .inf-x-top{display:flex;align-items:center;gap:10px}
+.inf-root .inf-x-exit{display:inline-grid;place-items:center;flex:0 0 auto;width:44px;height:44px;min-height:44px;padding:0;border-radius:50%;background:var(--inf-card);color:var(--inf-text);border:1.5px solid var(--inf-line)}
+.inf-root .inf-x-title{flex:1;min-width:0}
+.inf-root .inf-x-title b{display:block;font:800 var(--fs-lg) var(--inf-font-b);line-height:1.15;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.inf-root .inf-x-title small{display:block;color:var(--accent);font-size:var(--fs-xs);font-weight:800;text-transform:uppercase;letter-spacing:.05em}
+.inf-root .inf-x-chip{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;min-height:44px;padding:6px 14px;border-radius:999px;background:var(--inf-card);border:1.5px solid var(--inf-line);color:var(--inf-violet)}
+.inf-root .inf-x-chip b{font:800 var(--fs-md) var(--inf-font-b);font-variant-numeric:tabular-nums;color:var(--inf-text)}
+.inf-root .inf-x-chip.is-ok{color:var(--inf-ok)}
+.inf-root .inf-x-chip.is-low{border-color:var(--inf-err);color:var(--inf-err);animation:inf-x-pulse 1s ease-in-out infinite}
+.inf-root .inf-x-chip.is-low b{color:var(--inf-err)}
+@keyframes inf-x-pulse{50%{background:color-mix(in srgb,var(--inf-err) 12%,var(--inf-card))}}
+.inf-root .inf-x-calcbtn{display:inline-grid;place-items:center;flex:0 0 auto;width:44px;height:44px;min-height:44px;padding:0;border-radius:50%;background:var(--inf-card);border:1.5px solid color-mix(in srgb,var(--inf-violet) 50%,var(--inf-line));color:var(--inf-violet)}
+.inf-root .inf-app button.inf-x-calcbtn[aria-pressed=true]{background:var(--inf-violet);border-color:var(--inf-violet);color:#fff}
+.inf-root .inf-x-meta{display:flex;align-items:center;gap:12px}
+.inf-root .inf-x-qn{display:inline-flex;align-items:center;gap:8px;flex:0 0 auto;min-height:40px;padding:6px 14px;border-radius:999px;font:800 var(--fs-sm) var(--inf-font-b);color:var(--inf-violet);background:color-mix(in srgb,var(--inf-violet) 9%,var(--inf-card));border-color:transparent}
+.inf-root .inf-x-prog{flex:1;height:10px;border-radius:99px;background:color-mix(in srgb,var(--inf-violet) 14%,var(--inf-card));overflow:hidden}
+.inf-root .inf-x-prog i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--inf-violet),var(--inf-violet-2));transition:width .3s ease}
+.inf-root .inf-x-body{min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:2px 2px 8px;scrollbar-width:thin}
 
 /* question card */
-.inf-root .inf-x-main{display:flex;flex-direction:column;gap:16px;min-width:0}
-.inf-root .inf-x-card{display:flex;flex-direction:column;gap:clamp(14px,3vw,20px);padding:clamp(16px,4vw,28px);border-radius:28px;background:var(--inf-card);border:1.5px solid var(--inf-line);box-shadow:0 14px 36px rgba(60,40,160,.08);animation:inf-x-in .24s ease}
+.inf-root .inf-x-card{display:flex;flex-direction:column;gap:16px;padding:clamp(16px,4vw,24px);border-radius:var(--r-lg);background:var(--inf-card);border:1.5px solid var(--inf-line);box-shadow:var(--sh);animation:inf-x-in .22s ease}
 @keyframes inf-x-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-.inf-root .inf-x-q{font:800 clamp(1.7rem,6vw,2.4rem)/1.2 var(--inf-font-b);letter-spacing:-.02em;text-align:center;margin:0 auto;max-width:28ch;text-wrap:balance;overflow-wrap:anywhere}
-.inf-root .inf-x-flag{align-self:flex-end;display:inline-flex;align-items:center;gap:6px;min-height:40px;margin:-8px -6px -10px 0;padding:6px 14px;border-radius:999px;font-size:.9rem;font-weight:700;color:var(--inf-mute)}
-.inf-root .inf-x-flag.is-on{color:#0F1B4C;background:#FFC83D;border-color:#FFC83D}
-.inf-root .inf-x-stage{display:grid;place-items:center;min-height:clamp(150px,34vw,230px);padding:clamp(14px,3vw,24px);border-radius:26px;background:color-mix(in srgb,var(--x-violet) 4%,var(--inf-card));border:1.5px solid var(--inf-line)}
-.inf-root .inf-x-stage>div{display:flex;flex-wrap:wrap;justify-content:center;gap:.06em .14em;max-width:calc(var(--per,3)*1.34em + .5em);font-size:clamp(2.8rem,12.5vw,4.4rem);line-height:1.12}
-.inf-root .inf-x-opts{display:grid;gap:12px}
-.inf-root .inf-x-opt{position:relative;display:flex;align-items:center;gap:clamp(14px,4vw,22px);width:100%;min-height:clamp(60px,15vw,72px);padding:10px 18px;text-align:left;border-radius:22px;
-  background:var(--inf-card);border:1.5px solid var(--inf-line);color:var(--inf-text);font:800 clamp(1.2rem,4vw,1.5rem)/1.3 var(--inf-font-b)}
-.inf-root .inf-x-opt:hover{border-color:var(--x-violet)}
-.inf-root .inf-x-let{flex:0 0 auto;display:grid;place-items:center;width:clamp(40px,11vw,48px);height:clamp(40px,11vw,48px);border-radius:50%;background:color-mix(in srgb,var(--x-violet) 12%,var(--inf-card));color:var(--inf-text);font:800 1.1rem var(--inf-font-b)}
+.inf-root .inf-x-qhead{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.inf-root .inf-x-qno{color:var(--inf-violet);font:800 var(--fs-sm) var(--inf-font-b);text-transform:uppercase;letter-spacing:.06em}
+.inf-root .inf-x-flag{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:4px 12px;border-radius:999px;font:700 var(--fs-xs) var(--inf-font-b);color:var(--inf-mute)}
+.inf-root .inf-app button.inf-x-flag[aria-pressed=true]{color:#0F1B4C;background:#FFC83D;border-color:#FFC83D}
+.inf-root .inf-x-q{font:800 clamp(1.25rem,4.4vw,1.65rem)/1.3 var(--inf-font-b);letter-spacing:-.015em;margin:0;overflow-wrap:anywhere;text-wrap:balance}
+.inf-root .inf-x-h2{font:800 var(--fs-lg) var(--inf-font-b)}
+.inf-root .inf-x-stage{display:grid;place-items:center;min-height:clamp(120px,28vw,190px);padding:clamp(12px,3vw,20px);border-radius:var(--r-md);background:color-mix(in srgb,var(--inf-violet) 5%,var(--inf-card));border:1.5px solid var(--inf-line)}
+.inf-root .inf-x-stage>div{display:flex;flex-wrap:wrap;justify-content:center;gap:.06em .14em;max-width:calc(var(--per,3)*1.34em + .5em);font-size:clamp(2.4rem,10vw,3.6rem);line-height:1.12}
+.inf-root .inf-x-opts{display:grid;gap:10px}
+.inf-root .inf-x-opt{position:relative;display:flex;align-items:center;gap:14px;width:100%;min-height:58px;padding:8px 14px;text-align:left;border-radius:var(--r-md);background:var(--inf-card);border:1.5px solid var(--inf-line);color:var(--inf-text);font:700 var(--fs-md)/1.3 var(--inf-font-b)}
+.inf-root .inf-x-opt:hover{border-color:var(--inf-violet)}
+.inf-root .inf-x-let{flex:0 0 auto;display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:color-mix(in srgb,var(--inf-violet) 12%,var(--inf-card));color:var(--inf-violet);font:800 var(--fs-md) var(--inf-font-b)}
 .inf-root .inf-x-txt{flex:1;min-width:0;overflow-wrap:anywhere}
-.inf-root .inf-x-mk{flex:0 0 auto;display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--x-violet);color:var(--x-on)}
-.inf-root .inf-x-opt.is-on{background:color-mix(in srgb,var(--x-violet) 11%,var(--inf-card));border:2px solid var(--x-violet);box-shadow:0 8px 22px color-mix(in srgb,var(--x-violet) 22%,transparent)}
-.inf-root .inf-x-opt.is-on .inf-x-let{background:var(--x-violet);color:var(--x-on)}
-.inf-root .inf-x-opt.is-right{background:color-mix(in srgb,var(--inf-ok) 14%,var(--inf-card));border-color:var(--inf-ok)}
+.inf-root .inf-x-mk{flex:0 0 auto;display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--inf-violet);color:#fff}
+.inf-root .inf-x-opt.is-on{background:color-mix(in srgb,var(--inf-violet) 10%,var(--inf-card));border:2px solid var(--inf-violet)}
+.inf-root .inf-x-opt.is-on .inf-x-let{background:var(--inf-violet);color:#fff}
+.inf-root .inf-x-opt.is-right{background:color-mix(in srgb,var(--inf-ok) 13%,var(--inf-card));border:2px solid var(--inf-ok)}
 .inf-root .inf-x-opt.is-right .inf-x-let,.inf-root .inf-x-opt.is-right .inf-x-mk{background:var(--inf-ok);color:#fff}
-.inf-root .inf-x-opt.is-wrong{background:color-mix(in srgb,var(--inf-err) 12%,var(--inf-card));border-color:var(--inf-err)}
+.inf-root .inf-x-opt.is-wrong{background:color-mix(in srgb,var(--inf-err) 11%,var(--inf-card));border:2px solid var(--inf-err)}
 .inf-root .inf-x-opt.is-wrong .inf-x-let,.inf-root .inf-x-opt.is-wrong .inf-x-mk{background:var(--inf-err);color:#fff}
-@media (prefers-color-scheme:dark){.inf-root .inf-x-opt.is-right .inf-x-let,.inf-root .inf-x-opt.is-right .inf-x-mk,.inf-root .inf-x-opt.is-wrong .inf-x-let,.inf-root .inf-x-opt.is-wrong .inf-x-mk{color:#0B1238}}
+@media (prefers-color-scheme:dark){.inf-root .inf-x-opt.is-right .inf-x-let,.inf-root .inf-x-opt.is-right .inf-x-mk,.inf-root .inf-x-opt.is-wrong .inf-x-let,.inf-root .inf-x-opt.is-wrong .inf-x-mk,.inf-root .inf-x-opt.is-on .inf-x-let,.inf-root .inf-x-mk{color:#0B1238}}
 .inf-root .inf-x-opt.is-dim{opacity:.55}
-.inf-root .inf-x-why{padding:14px 16px;border-radius:16px;background:color-mix(in srgb,var(--inf-text) 6%,transparent);border-left:4px solid var(--x-violet)}
-.inf-root .inf-x-why b{font:800 1.05rem var(--inf-font-b)}
-.inf-root .inf-x-why p{margin:4px 0 0;color:var(--inf-text)}
+.inf-root .inf-x-why{padding:12px 14px;border-radius:16px;background:color-mix(in srgb,var(--inf-violet) 7%,var(--inf-card));border-left:4px solid var(--inf-violet)}
+.inf-root .inf-x-why b{font:800 var(--fs-md) var(--inf-font-b)}
+.inf-root .inf-x-why p{margin:4px 0 0;font-size:var(--fs-sm)}
+.inf-root .inf-x-quiet{align-self:center;display:inline-flex;align-items:center;gap:8px;min-height:40px;border:0;background:none;color:var(--inf-mute);font:700 var(--fs-sm) var(--inf-font-b);text-decoration:underline;text-underline-offset:3px}
 
 /* bottom controls */
-.inf-root .inf-x-nav{display:flex;justify-content:space-between;gap:12px;position:sticky;bottom:max(10px,env(safe-area-inset-bottom));z-index:4;padding:8px;border-radius:26px;background:color-mix(in srgb,var(--inf-paper) 86%,transparent);backdrop-filter:blur(10px)}
-.inf-root .inf-x-prev,.inf-root .inf-x-ql,.inf-root .inf-x-next{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:60px;padding:10px 26px;border-radius:999px;font:800 1.15rem var(--inf-font-b)}
-.inf-root .inf-x-nav>button{flex:0 1 auto;min-width:min(44%,170px)}
-.inf-root .inf-x-prev{background:var(--inf-card);border:2px solid var(--inf-ink);color:var(--inf-text)}
-.inf-root .inf-x-prev:disabled{opacity:.45}
+.inf-root .inf-x-nav{display:flex;gap:10px}
+.inf-root .inf-x-prev,.inf-root .inf-x-ql,.inf-root .inf-x-next{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:54px;padding:8px 22px;border-radius:999px;font:800 var(--fs-md) var(--inf-font-b)}
+.inf-root .inf-x-nav>button{flex:1 1 0}
+.inf-root .inf-x-prev{background:var(--inf-card);border:1.5px solid var(--inf-line);color:var(--inf-text)}
+.inf-root .inf-x-prev:disabled{opacity:.4}
 .inf-root .inf-x-ql{background:var(--inf-card);border:1.5px solid var(--inf-line);color:var(--inf-text)}
-.inf-root .inf-x-next{background:#FFC83D;border:0;color:#0F1B4C;box-shadow:0 10px 24px rgba(255,184,0,.36)}
+.inf-root .inf-x-next{background:#FFC83D;border:0;color:#0F1B4C;box-shadow:0 8px 20px rgba(255,184,0,.32)}
 .inf-root .inf-x-next:hover{background:#FFD460;border:0}
-@media (prefers-color-scheme:dark){.inf-root .inf-x-prev{border-color:var(--inf-line)}}
-.inf-root .inf-x-break-btn{align-self:center;display:inline-flex;align-items:center;gap:8px;border:0;background:none;color:var(--inf-mute);font-weight:700;text-decoration:underline;text-underline-offset:3px}
-.inf-root .inf-x-break h2{font:800 1.3rem var(--inf-font-b);margin-bottom:12px;text-align:left}
-.inf-root .inf-x-break .inf-game-list{margin-bottom:16px}
+.inf-root .inf-x-next:disabled{background:var(--inf-line);color:var(--inf-mute);box-shadow:none;opacity:1}
+.inf-root .inf-x-next.is-bad{background:var(--inf-err);color:#fff;box-shadow:none}
+@media (prefers-color-scheme:dark){.inf-root .inf-x-next.is-bad{color:#0B1238}}
+.inf-root .inf-x-break h2{font:800 var(--fs-lg) var(--inf-font-b)}
 .inf-root .inf-x-break .inf-x-next{width:100%}
+.inf-root .inf-x-card>.inf-x-next{width:100%}
 
-/* calculator: docked inside the layout, so it never sits on top of the exam */
+/* calculator: its own grid row. The question scrolls above it and shrinks to make room. */
 .inf-root .inf-x-dock{min-width:0}
-.inf-root .inf-x-calc{display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:24px;background:var(--inf-card);border:1.5px solid var(--inf-line);box-shadow:0 14px 36px rgba(60,40,160,.12);outline:none}
-.inf-root .inf-x-calc:focus-visible{box-shadow:0 0 0 3px color-mix(in srgb,var(--x-violet) 35%,transparent)}
+.inf-root .inf-x-calc{display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:var(--r-md);background:var(--inf-card);border:1.5px solid var(--inf-line);box-shadow:var(--sh);outline:none}
+.inf-root .inf-x-calc:focus-visible{box-shadow:0 0 0 3px color-mix(in srgb,var(--inf-violet) 35%,transparent)}
 .inf-root .inf-x-calc-top{display:flex;align-items:center;gap:6px}
-.inf-root .inf-x-calc-ttl{display:inline-flex;align-items:center;gap:8px;flex:1;min-width:0;color:var(--x-violet);font:800 1.05rem var(--inf-font-b)}
-.inf-root .inf-x-calc-ib{display:grid;place-items:center;width:38px;height:38px;padding:0;border-radius:50%}
-.inf-root .inf-x-calc-scr{display:flex;flex-direction:column;align-items:flex-end;padding:8px 14px;border-radius:16px;background:var(--inf-paper);border:1.5px solid var(--inf-line);overflow:hidden}
-.inf-root .inf-x-calc-scr small{color:var(--inf-mute);font-size:.9rem;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
-.inf-root .inf-x-calc-scr output{font:800 clamp(1.7rem,6vw,2.1rem)/1.15 var(--inf-font-b);font-variant-numeric:tabular-nums;max-width:100%;overflow-x:auto;white-space:nowrap}
+.inf-root .inf-x-calc-ttl{display:inline-flex;align-items:center;gap:8px;flex:1;min-width:0;color:var(--inf-violet);font:800 var(--fs-sm) var(--inf-font-b)}
+.inf-root .inf-x-calc-ib{display:grid;place-items:center;width:34px;height:34px;min-height:34px;padding:0;border-radius:50%}
+.inf-root .inf-x-calc-scr{display:flex;flex-direction:column;align-items:flex-end;padding:6px 14px;border-radius:14px;background:var(--inf-paper);border:1.5px solid var(--inf-line);overflow:hidden}
+.inf-root .inf-x-calc-scr small{color:var(--inf-mute);font-size:var(--fs-xs);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.inf-root .inf-x-calc-scr output{font:800 1.75rem/1.15 var(--inf-font-b);font-variant-numeric:tabular-nums;max-width:100%;overflow-x:auto;white-space:nowrap}
 .inf-root .inf-x-calc-pad{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
-.inf-root .inf-x-calc-pad button{min-height:46px;padding:0;border-radius:14px;font:800 1.2rem var(--inf-font-b);background:var(--inf-paper);border:1.5px solid var(--inf-line)}
-.inf-root .inf-x-calc-pad [data-k=op]{background:color-mix(in srgb,var(--x-violet) 13%,var(--inf-card));border-color:color-mix(in srgb,var(--x-violet) 35%,var(--inf-line));color:var(--x-violet)}
+.inf-root .inf-x-calc-pad button{min-height:44px;padding:0;border-radius:13px;font:800 1.15rem var(--inf-font-b);background:var(--inf-paper);border:1.5px solid var(--inf-line)}
+.inf-root .inf-x-calc-pad [data-k=op]{background:color-mix(in srgb,var(--inf-violet) 13%,var(--inf-card));border-color:color-mix(in srgb,var(--inf-violet) 35%,var(--inf-line));color:var(--inf-violet)}
 .inf-root .inf-x-calc-pad [data-k=fn]{color:var(--inf-mute)}
 .inf-root .inf-x-calc-pad [data-k=eq]{background:#FFC83D;border-color:#FFC83D;color:#0F1B4C}
 .inf-root .inf-x-calc-pad button:active{transform:scale(.96)}
-/* Calculator layout. The exam body and the calculator are siblings, so the calculator takes its own space and never lies on top of a question. */
-.inf-root .inf-x-body{display:flex;flex-direction:column;gap:16px;min-width:0}
-.inf-root .inf-x-dock{min-width:0}
-.inf-root .inf-x.has-calc .inf-x-nav{position:static;padding:0;background:none;backdrop-filter:none}
-/* phones: the screen splits in two. The exam scrolls above, the calculator owns the strip below. */
-@media(max-width:699px){
-  .inf-root .inf-app:has(.inf-x.has-calc){height:100dvh;padding-bottom:max(8px,env(safe-area-inset-bottom));overflow:hidden}
-  .inf-root .inf-app:has(.inf-x.has-calc) .inf-header{display:none}
-  .inf-root .inf-x.has-calc{flex:1 1 0;min-height:0;padding-bottom:0;gap:10px}
-  .inf-root .inf-x.has-calc .inf-x-body{flex:1 1 0;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-bottom:12px}
-  .inf-root .inf-x.has-calc .inf-x-bar{position:sticky;top:0;z-index:3}
-  .inf-root .inf-x.has-calc .inf-x-dock{flex:0 0 auto}
-}
-/* tablets, landscape phones, desktop: the calculator sits beside the exam */
-@media(min-width:700px){
-  .inf-root .inf-x.has-calc{display:grid;grid-template-columns:minmax(0,1fr) 320px;column-gap:20px;align-items:start}
-  .inf-root .inf-x.has-calc .inf-x-dock{position:sticky;top:16px}
-  .inf-root .inf-x.has-calc .inf-x-nav{position:sticky;bottom:max(10px,env(safe-area-inset-bottom));padding:8px;background:color-mix(in srgb,var(--inf-paper) 86%,transparent);backdrop-filter:blur(10px)}
-  .inf-root .inf-x-calc-pad button{min-height:52px}
-  .inf-root .inf-x.has-calc .inf-x-stat>svg,.inf-root .inf-x.has-calc .inf-x-calcbtn span{display:none}
-  .inf-root .inf-x.has-calc .inf-x-calcbtn{min-width:56px;justify-content:center;padding:8px 14px}
-}
-@media(min-width:1000px){.inf-root .inf-app:has(.inf-x.has-calc){max-width:1120px}}
-@media(max-width:600px){
-  .inf-root .inf-x-calc{gap:8px;padding:10px;border-radius:20px}
-  .inf-root .inf-x-calc-pad{gap:5px}
-  .inf-root .inf-x-calc-pad button{min-height:42px;font-size:1.15rem}
-  .inf-root .inf-x-calc-scr{padding:6px 12px}
-  .inf-root .inf-x-bar{grid-template-columns:repeat(3,minmax(0,1fr)) auto;padding:6px}
-  .inf-root .inf-x-stat{padding:6px 8px;gap:8px}
-  .inf-root .inf-x-stat>svg{width:22px;height:22px}
-  .inf-root .inf-x-stat b{font-size:1.25rem}
-  .inf-root .inf-x-stat small{font-size:.82rem}
-  .inf-root .inf-x-calcbtn{margin-left:4px;padding:8px 14px;font-size:1rem}
-  .inf-root .inf-x-exit span{display:none}.inf-root .inf-x-exit{padding:8px 14px}
-}
-@media(max-width:440px){
-  .inf-root .inf-x-stat>svg{display:none}
-  .inf-root .inf-x-calcbtn span{display:none}.inf-root .inf-x-calcbtn{min-width:52px;padding:8px 12px;justify-content:center}
-  .inf-root .inf-x-flag span{display:none}.inf-root .inf-x-flag{width:40px;padding:0;justify-content:center}
-  .inf-root .inf-x-nav>button{min-width:0;flex:1}
+@media(max-height:760px){.inf-root .inf-x-calc-pad button{min-height:38px;font-size:1.05rem}.inf-root .inf-x-calc-pad{gap:5px}.inf-root .inf-x-calc-scr output{font-size:1.5rem}}
+@media(max-height:620px){.inf-root .inf-x-meta{display:none}.inf-root .inf-x-calc-pad button{min-height:34px}}
+/* wide screens: calculator beside the question */
+@media(min-width:900px){
+  .inf-root .inf-app:has(.inf-x-run.has-calc){max-width:1120px}
+  .inf-root .inf-x-run.has-calc{max-width:none;grid-template-columns:minmax(0,1fr) 340px;grid-template-rows:auto auto minmax(0,1fr) auto;column-gap:20px}
+  .inf-root .inf-x-run.has-calc>.inf-x-top,.inf-root .inf-x-run.has-calc>.inf-x-meta,.inf-root .inf-x-run.has-calc>.inf-x-body,.inf-root .inf-x-run.has-calc>.inf-x-nav{grid-column:1}
+  .inf-root .inf-x-run.has-calc>.inf-x-dock{grid-column:2;grid-row:2/span 2;align-self:start}
+  .inf-root .inf-x-calc-pad button{min-height:50px}
 }
 
 /* question list */
-.inf-root .inf-x-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(54px,1fr));gap:8px;margin:14px 0}
-.inf-root .inf-x-grid button{position:relative;min-height:54px;padding:0;border-radius:14px;font:700 1.05rem var(--inf-font-b);background:var(--inf-paper)}
-.inf-root .inf-x-grid .is-done{background:var(--x-violet);border-color:var(--x-violet);color:var(--x-on)}
+.inf-root .inf-x-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:8px}
+.inf-root .inf-x-grid button{position:relative;min-height:52px;padding:0;border-radius:14px;font:800 var(--fs-md) var(--inf-font-b);background:var(--inf-paper)}
+.inf-root .inf-x-grid .is-done{background:var(--inf-violet);border-color:var(--inf-violet);color:#fff}
 .inf-root .inf-x-grid .is-flag::after{content:"";position:absolute;top:5px;right:5px;width:10px;height:10px;border-radius:50%;background:#FFC83D;box-shadow:0 0 0 2px var(--inf-card)}
-.inf-root .inf-x-grid .is-now{outline:3px solid var(--x-violet);outline-offset:2px}
-.inf-root .inf-x-legend{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin:0 0 16px;color:var(--inf-mute);font-size:.9rem;font-weight:600}
+.inf-root .inf-x-grid .is-now{outline:3px solid var(--inf-violet);outline-offset:2px}
+.inf-root .inf-x-legend{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin:0;color:var(--inf-mute);font-size:var(--fs-xs);font-weight:700}
 .inf-root .inf-x-legend span{display:inline-block;width:12px;height:12px;border-radius:4px;margin-right:-6px}
-.inf-root .inf-x-legend .d1{background:var(--x-violet)}.inf-root .inf-x-legend .d2{background:#FFC83D;border-radius:50%}.inf-root .inf-x-legend .d3{border:2px solid #FFB800}
-.inf-root .inf-x-card>.inf-x-next{width:100%}
+.inf-root .inf-x-legend .d1{background:var(--inf-violet)}.inf-root .inf-x-legend .d2{background:#FFC83D;border-radius:50%}.inf-root .inf-x-legend .d3{border:2px solid #FFB800}
 
 /* results */
-.inf-root .inf-x-score{display:flex;align-items:center;gap:clamp(16px,4vw,28px);padding:clamp(18px,4vw,28px);border-radius:24px;background:#0F1B4C;color:#fff}
-.inf-root .inf-x-ring{flex:0 0 auto;width:clamp(104px,28vw,140px);height:auto}
-.inf-root .inf-x-pct{fill:#fff;font:700 1.9rem var(--inf-font-d)}
-.inf-root .inf-x-score h2{font:600 clamp(1.4rem,4vw,1.9rem)/1.15 var(--inf-font-d);color:#fff}
-.inf-root .inf-x-score p{margin:6px 0 0;color:#C9D1F7;font-size:1.05rem}
-.inf-root .inf-x-tally{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin:0}
-.inf-root .inf-x-tally>div{padding:14px;border-radius:16px;background:var(--inf-card);border:1.5px solid var(--inf-line)}
-.inf-root .inf-x-tally dd{margin:0;font:700 1.5rem var(--inf-font-d)}
-.inf-root .inf-x-tally dt{color:var(--inf-mute);font-size:.88rem;font-weight:600}
+.inf-root .inf-x-score{display:flex;align-items:center;gap:clamp(16px,4vw,26px);padding:clamp(18px,4vw,26px);border-radius:var(--r-lg);color:#fff;background:radial-gradient(120% 140% at 100% 0%,#8B5CFF 0%,transparent 60%),linear-gradient(135deg,#5B2CE8,#3F17B8);box-shadow:0 18px 38px rgba(70,30,190,.3)}
+.inf-root .inf-x-ring{flex:0 0 auto;width:clamp(100px,28vw,132px);height:auto}
+.inf-root .inf-x-pct{fill:#fff;font:800 1.9rem var(--inf-font-b)}
+.inf-root .inf-x-score h2{font:800 clamp(1.3rem,4vw,1.7rem)/1.15 var(--inf-font-b);color:#fff}
+.inf-root .inf-x-score p{margin:6px 0 0;color:#E8E1FF;font-size:var(--fs-md)}
+.inf-root .inf-x-top h1{font:800 clamp(1.45rem,4.6vw,1.9rem)/1.15 var(--inf-font-b)}
+.inf-root .inf-x-top>div:not(.inf-x-title) p{margin:2px 0 0;color:var(--inf-violet);font-weight:800}
+.inf-root .inf-x-tally{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:10px;margin:0}
+.inf-root .inf-x-tally>div{padding:14px;border-radius:var(--r-sm);background:var(--inf-card);border:1.5px solid var(--inf-line)}
+.inf-root .inf-x-tally dd{margin:0;font:800 var(--fs-xl) var(--inf-font-b);font-variant-numeric:tabular-nums}
+.inf-root .inf-x-tally dt{color:var(--inf-mute);font-size:var(--fs-xs);font-weight:700}
 .inf-root .inf-x-tally .ok dd{color:var(--inf-ok)}.inf-root .inf-x-tally .no dd{color:var(--inf-err)}
 .inf-root .inf-x-actions{display:flex;flex-wrap:wrap;gap:10px}
 .inf-root .inf-x-actions>button{flex:1 1 200px}
-.inf-root .inf-x-h{font:600 1.35rem var(--inf-font-d);margin-top:8px}
+.inf-root .inf-x-h{font:800 var(--fs-lg) var(--inf-font-b);margin-top:6px}
 .inf-root .inf-x-tabs{align-self:flex-start}
 .inf-root .inf-x-review{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none}
-.inf-root .inf-x-review li{display:flex;gap:14px;padding:14px 16px;border-radius:16px;background:var(--inf-card);border:1.5px solid var(--inf-line);border-left-width:5px}
+.inf-root .inf-x-review li{display:flex;gap:12px;padding:14px;border-radius:16px;background:var(--inf-card);border:1.5px solid var(--inf-line);border-left-width:5px}
 .inf-root .inf-x-review .is-ok{border-left-color:var(--inf-ok)}.inf-root .inf-x-review .is-bad{border-left-color:var(--inf-err)}.inf-root .inf-x-review .is-skip{border-left-color:var(--inf-mute)}
-.inf-root .inf-x-n{flex:0 0 auto;display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:color-mix(in srgb,var(--inf-text) 10%,transparent);font-weight:700}
-.inf-root .inf-x-review b{display:block;font-weight:700;overflow-wrap:anywhere}
-.inf-root .inf-x-review p{margin:4px 0 0;color:var(--inf-mute);font-size:.95rem}
-.inf-root .inf-x-review .inf-x-good{color:var(--inf-ok);font-weight:700}
+.inf-root .inf-x-n{flex:0 0 auto;display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:color-mix(in srgb,var(--inf-text) 10%,transparent);font-weight:800;font-size:var(--fs-sm)}
+.inf-root .inf-x-review b{display:block;font-weight:800;overflow-wrap:anywhere}
+.inf-root .inf-x-review p{margin:4px 0 0;color:var(--inf-mute);font-size:var(--fs-sm)}
+.inf-root .inf-x-review .inf-x-good{color:var(--inf-ok);font-weight:800}
 .inf-root .inf-x-review small{display:block;margin-top:6px;color:var(--inf-mute);line-height:1.45}
 
-/* subjects */
-.inf-root .inf-s-search{width:100%;min-height:54px;padding:12px 16px;border-radius:14px;border:1.5px solid var(--inf-line);background:var(--inf-card);color:var(--inf-text);font:500 1.0625rem var(--inf-font-b)}
-.inf-root .inf-s-search:focus{border-color:var(--inf-focus);outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--inf-focus) 22%,transparent)}
-.inf-root .inf-s-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:14px}
-.inf-root .inf-s-card{display:flex;flex-direction:column;gap:14px;padding:18px;border-radius:22px;
-  background:linear-gradient(160deg,color-mix(in srgb,var(--accent) 13%,var(--inf-card)),var(--inf-card) 70%);border:1.5px solid color-mix(in srgb,var(--accent) 26%,var(--inf-line))}
-.inf-root .inf-s-head{display:flex;gap:14px;align-items:center}
-.inf-root .inf-s-head h2{margin:0;font:600 1.25rem/1.2 var(--inf-font-d);overflow-wrap:anywhere}
-.inf-root .inf-s-head p{margin:2px 0 0;color:var(--inf-mute);font-size:.92rem;font-weight:600}
-.inf-root .inf-s-prog span{display:block;margin-top:6px;color:var(--inf-mute);font-size:.88rem;font-weight:600}
+/* segmented switch (results filter, settings) */
+.inf-root .inf-seg{display:inline-flex;gap:4px;padding:4px;border-radius:999px;background:color-mix(in srgb,var(--inf-violet) 9%,var(--inf-card));border:1.5px solid var(--inf-line)}
+.inf-root .inf-seg button{min-height:40px;padding:6px 16px;border:0;border-radius:999px;background:none;color:var(--inf-text);font:800 var(--fs-sm) var(--inf-font-b)}
+.inf-root .inf-app .inf-seg button[aria-pressed=true]{background:var(--inf-violet);color:#fff}
+@media (prefers-color-scheme:dark){.inf-root .inf-app .inf-seg button[aria-pressed=true]{color:#0B1238}}
+
+/* subjects and exams lists */
+.inf-root .inf-s-search{width:100%;min-height:52px;padding:12px 18px;border-radius:999px;border:1.5px solid var(--inf-line);background:var(--inf-card);color:var(--inf-text);font:600 var(--fs-md) var(--inf-font-b)}
+.inf-root .inf-s-search:focus{border-color:var(--inf-violet);outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--inf-violet) 22%,transparent)}
+.inf-root .inf-s-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,290px),1fr));gap:14px}
+.inf-root .inf-s-card{display:flex;flex-direction:column;gap:14px;padding:16px;border-radius:var(--r-md);box-shadow:var(--sh);
+  background:linear-gradient(160deg,color-mix(in srgb,var(--accent) 12%,var(--inf-card)),var(--inf-card) 70%);border:1.5px solid color-mix(in srgb,var(--accent) 26%,var(--inf-line))}
+.inf-root .inf-s-head{display:flex;gap:12px;align-items:center}
+.inf-root .inf-s-head h2{margin:0;font:800 var(--fs-lg) var(--inf-font-b);line-height:1.2;overflow-wrap:anywhere}
+.inf-root .inf-s-head p{margin:2px 0 0;color:var(--inf-mute);font-size:var(--fs-xs);font-weight:700}
+.inf-root .inf-s-prog span{display:block;margin-top:6px;color:var(--inf-mute);font-size:var(--fs-xs);font-weight:700}
 .inf-root .inf-s-act{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:auto}
-.inf-root .inf-s-act button{min-height:50px;font-size:1rem}
-@media(prefers-reduced-motion:reduce){.inf-root .inf-x-card,.inf-root .inf-x-bar .is-low{animation:none}.inf-root .inf-x-calc-pad button:active{transform:none}.inf-root .inf-x-prog i{transition:none}}
+.inf-root .inf-s-act button{min-height:48px;padding:8px 12px}
+.inf-root .inf-plan{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) auto;gap:10px;margin-top:12px}
+@media(max-width:560px){.inf-root .inf-plan{grid-template-columns:minmax(0,1fr) auto}.inf-root .inf-plan select{grid-column:1/-1}}
+.inf-root .inf-app .inf-plan select,.inf-root .inf-app .inf-plan input{min-height:50px;font-size:var(--fs-md);padding:8px 14px;border-radius:14px}
+.inf-root .inf-up-list{display:grid;gap:8px;margin:0;padding:0}
+.inf-root .inf-up-list li .inf-x-icon{width:36px;height:36px;min-height:36px;border:0;background:transparent;color:var(--inf-mute)}
+.inf-root .inf-list{display:grid;gap:10px;margin:0;padding:0;list-style:none}
+.inf-root .inf-list li{display:flex;align-items:center;gap:12px;padding:12px;border-radius:var(--r-md);background:var(--inf-card);border:1.5px solid color-mix(in srgb,var(--accent) 24%,var(--inf-line))}
+.inf-root .inf-list li>span:nth-child(2){flex:1;min-width:0}
+.inf-root .inf-list .inf-x-next{min-height:46px;padding:6px 18px;flex:0 0 auto}
+.inf-root .inf-hist{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.inf-root .inf-hist li{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border-radius:14px;background:var(--inf-paper)}
+@media(prefers-reduced-motion:reduce){.inf-root .inf-x-card,.inf-root .inf-x-chip.is-low{animation:none}.inf-root .inf-x-calc-pad button:active{transform:none}.inf-root .inf-x-prog i{transition:none}}

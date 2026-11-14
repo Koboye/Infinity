@@ -1,3 +1,9 @@
+## Unreleased — Infinity rebrand v10
+- New design system: violet + sun, one font family (Figtree / Noto Sans Ethiopic), one type scale, lavender background everywhere.
+- Home: "Continue learning" hero picks your next subject (weakest, last, or new), one progress card (daily goal ring, streak, XP, accuracy, level), subject tiles, upcoming exams.
+- New Exams tab: plan exam dates with countdowns, take timed exams, recent results.
+- Question screen redone; the calculator docks in its own row (beside the question on wide screens) and never covers the exam.
+- Profile simplified to photo, name, grade, learning progress, Settings, Account, Log out.
 # Changelog
 
 ## Unreleased — exam.pro rebrand, phase 2 (Category dashboard)

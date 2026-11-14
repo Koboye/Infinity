@@ -14,7 +14,7 @@ export function liveStreak(stats, now = new Date()) {
   if (!day || !stats.streak) return 0;
   return day === dayKey(now) || day === yesterdayKey(now) ? stats.streak : 0;
 }
-export function recordSession(stats, answered, correct, now = new Date(), subject = '') {
+export function recordSession(stats, answered, correct, now = new Date(), subject = '', mode = '') {
   const p = stats || {};
   const today = dayKey(now);
   const sameDay = p.day === today;
@@ -26,6 +26,8 @@ export function recordSession(stats, answered, correct, now = new Date(), subjec
     xp: (p.xp || 0) + correct * 10,
     days: pruneDays({...(p.days || {}), [today]: ((p.days || {})[today] || 0) + answered}, now),
     subjects: subject ? {...(p.subjects || {}), [subject]: {a: ((p.subjects || {})[subject]?.a || 0) + answered, c: ((p.subjects || {})[subject]?.c || 0) + correct}} : (p.subjects || {}),
+    last: subject || p.last || '',
+    history: subject ? [{s: subject, m: mode || 'practice', p: answered ? Math.round((correct / answered) * 100) : 0, n: answered, t: now.getTime()}, ...(p.history || [])].slice(0, 12) : (p.history || []),
     day: today,
     dayCount: (sameDay ? p.dayCount || 0 : 0) + answered,
     streak,
@@ -70,4 +72,25 @@ export function achievements(stats) {
     {id: 'xp500', title: 'XP collector', desc: 'Earn 500 XP', done: xp >= 500},
     {id: 'acc', title: 'Sharp mind', desc: '80% accuracy over 50+ answers', done: a >= 50 && acc >= 0.8},
   ];
+}
+
+/** What to study next: the subject the learner touched last, else their weakest, else the first one. Pure. */
+export function nextUp(stats, subjects) {
+  if (!subjects?.length) return null;
+  const by = (n) => subjects.find((d) => d.name === n);
+  const weak = subjectStats(stats).filter((x) => x.answered >= 5 && x.pct < 70 && by(x.name)).sort((a, b) => a.pct - b.pct)[0];
+  if (weak) return {subject: by(weak.name), why: 'weak', pct: weak.pct};
+  const last = by(stats?.last);
+  if (last) return {subject: last, why: 'last'};
+  const fresh = subjects.find((d) => !stats?.subjects?.[d.name]);
+  return {subject: fresh || subjects[0], why: 'new'};
+}
+
+/** Scheduled exams: {id, subject, date:'YYYY-MM-DD'}. Upcoming ones, soonest first, with whole days left. */
+export function upcomingExams(stats, now = new Date()) {
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  return (stats?.exams || [])
+    .map((e) => { const [y, m, d] = String(e.date).split('-').map(Number); return {...e, days: Math.round((new Date(y, (m || 1) - 1, d || 1).getTime() - today) / 86400000)}; })
+    .filter((e) => Number.isFinite(e.days) && e.days >= 0)
+    .sort((a, b) => a.days - b.days);
 }

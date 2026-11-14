@@ -332,3 +332,61 @@ html:has(.inf-root){font-size:100%}
 @keyframes inf-nudge{0%,100%{transform:translateX(0)}50%{transform:translateX(5px)}}
 @media(prefers-reduced-motion:reduce){.inf-root .inf-swipe span,.inf-root .inf-tl[aria-pressed=true]{animation:none}}
 
+
+/* ===== v10 Infinity rebrand: one violet-and-sun system, one font family, one type scale =====
+   Everything signed-in reads these tokens. The light page carries a soft lavender wash; dark mode keeps the same shapes. */
+.inf-root{
+  --inf-violet:#5B2CE8;--inf-violet-2:#7C4DFF;--inf-violet-ink:#3A12B8;
+  --inf-blue:#5B2CE8;--inf-focus:#5B2CE8;--inf-ink:#0F1B4C;--inf-ink2:#1B2A6B;--inf-sun:#FFC83D;
+  --inf-paper:#F4F2FF;--inf-card:#fff;--inf-line:#E4DFF8;--inf-mute:#5F6692;--inf-text:#0F1B4C;
+  --inf-font-b:'Figtree','Noto Sans Ethiopic',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --inf-font-d:var(--inf-font-b);
+  --fs-xs:.8125rem;--fs-sm:.9375rem;--fs-md:1.0625rem;--fs-lg:1.25rem;--fs-xl:1.625rem;--fs-2xl:2rem;
+  --r-sm:14px;--r-md:20px;--r-lg:28px;--sh:0 10px 30px rgba(70,40,170,.09);
+  font-size:var(--fs-md);line-height:1.5;
+  background:radial-gradient(820px 460px at -6% -8%,color-mix(in srgb,var(--inf-violet-2) 15%,transparent),transparent 70%),radial-gradient(640px 420px at 108% 6%,color-mix(in srgb,var(--inf-sun) 16%,transparent),transparent 72%),var(--inf-paper);
+  background-attachment:fixed;
+}
+@media (prefers-color-scheme:dark){
+  .inf-root{--inf-violet:#8F73FF;--inf-violet-2:#A78BFF;--inf-violet-ink:#D5C9FF;--inf-blue:#7C5CFF;--inf-focus:#FFC83D;
+    --inf-paper:#0B1238;--inf-card:#141E52;--inf-line:#2A3678;--inf-mute:#AEB8E8;--inf-text:#F2F4FF;--sh:0 10px 30px rgba(0,0,0,.28)}
+}
+html:has(.inf-root),html body:has(.inf-root){background:#F4F2FF}
+@media (prefers-color-scheme:dark){html:has(.inf-root),html body:has(.inf-root){background:#0B1238}}
+.inf-root h1,.inf-root h2,.inf-root h3{font-family:var(--inf-font-b);font-weight:800;letter-spacing:-.02em}
+.inf-root h1{font-size:clamp(1.6rem,5.2vw,2.1rem);line-height:1.15;margin-bottom:8px}
+.inf-root h2{font-size:var(--fs-lg);line-height:1.2;margin:0 0 10px}
+.inf-root .inf-primary:hover{background:var(--inf-violet-ink)}
+.inf-root .inf-app{padding-bottom:max(14px,env(safe-area-inset-bottom))}
+
+/* shell: header */
+.inf-root .inf-header{margin-bottom:18px}
+.inf-root .inf-brand{gap:10px}
+.inf-root .inf-brand strong{font:800 1.5rem var(--inf-font-b);letter-spacing:-.03em;color:var(--inf-text)}
+.inf-root .inf-head-r{display:flex;align-items:center;gap:10px}
+.inf-root .inf-gradepill{display:inline-flex;align-items:center;gap:8px;max-width:100%;padding:8px 16px;border-radius:999px;background:var(--inf-sun);color:#0F1B4C;font:800 var(--fs-md) var(--inf-font-b);line-height:1.1;white-space:nowrap}
+.inf-root .inf-gradepill.is-sm{padding:7px 14px;font-size:var(--fs-sm);background:var(--inf-card);border:1.5px solid var(--inf-line);color:var(--inf-text)}
+.inf-root .inf-ava{display:inline-grid;place-items:center;width:44px;height:44px;min-height:44px;padding:0;overflow:hidden;border-radius:50%;border:1.5px solid var(--inf-line);background:var(--inf-card);color:var(--inf-violet);font:800 1.1rem var(--inf-font-b)}
+.inf-root .inf-ava img{width:100%;height:100%;object-fit:cover}
+.inf-root .inf-ava-lg{width:72px;height:72px;font-size:1.8rem;cursor:default;background:linear-gradient(145deg,#FFD460,#FFB800);color:#0F1B4C;border:0}
+.inf-root .inf-ava-xl{width:116px;height:116px;font-size:3rem;cursor:default;background:linear-gradient(145deg,#FFD460,#FFB800);color:#0F1B4C;border:4px solid var(--inf-card);box-shadow:0 0 0 3px color-mix(in srgb,var(--inf-violet-2) 45%,transparent),var(--sh)}
+.inf-root .inf-ava-lg:hover,.inf-root .inf-ava-xl:hover{border-color:var(--inf-card)}
+
+/* shell: bottom bar, five tabs */
+.inf-root .inf-nav{grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;padding:6px;border-radius:26px;margin-top:18px;background:var(--inf-ink);box-shadow:0 14px 34px rgba(15,27,76,.3)}
+.inf-root .inf-nav button{min-height:58px;padding:8px 2px;border-radius:20px;font-size:.72rem;font-weight:700;letter-spacing:.01em;color:#C7CFF5;overflow:hidden}
+.inf-root .inf-nav button span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.inf-root .inf-nav button[aria-current=page]{background:#FFC83D;color:#0F1B4C;box-shadow:0 6px 16px rgba(255,184,0,.38)}
+@media (prefers-color-scheme:dark){.inf-root .inf-nav{background:#0A1040;border:1px solid var(--inf-line)}}
+
+/* games (also used by the exam game break) */
+.inf-root .inf-game-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.inf-root .inf-game-list button{display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;gap:8px;min-height:112px;padding:16px;text-align:left;border-radius:var(--r-md);
+  background:linear-gradient(150deg,color-mix(in srgb,var(--inf-violet-2) 14%,var(--inf-card)),var(--inf-card) 80%);border-color:color-mix(in srgb,var(--inf-violet) 22%,var(--inf-line))}
+.inf-root .inf-game-list button:hover{border-color:var(--inf-violet)}
+.inf-root .inf-game-list i{font-style:normal;display:grid;place-items:center;width:44px;height:44px;border-radius:14px;background:var(--inf-violet);color:#fff;font-size:1.2rem;font-weight:800}
+.inf-root .inf-game-list b{font:800 var(--fs-md) var(--inf-font-b);color:var(--inf-text)}
+@media(min-width:700px){.inf-root .inf-game-list{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.inf-root .inf-back{align-self:flex-start;min-height:44px;padding:8px 18px;border-radius:999px;background:var(--inf-violet);border-color:var(--inf-violet);color:#fff;font-weight:800}
+.inf-root .inf-card.inf-home{padding:0}
+.inf-root .inf-card:not(.inf-home){border-radius:var(--r-lg);box-shadow:var(--sh)}
