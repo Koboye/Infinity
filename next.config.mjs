@@ -5,7 +5,8 @@ const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  env: { NEXT_PUBLIC_APP_NAME: 'Gebeta', NEXT_PUBLIC_APP_VERSION: pkg.version },
+  env: { NEXT_PUBLIC_APP_NAME: 'Infinity', NEXT_PUBLIC_APP_VERSION: pkg.version },
+  async redirects() { return [{ source: '/games/exam-prep/index.html', destination: '/', permanent: false }]; },
   async headers() {
     const dev = process.env.NODE_ENV !== 'production';
     const sharedHeaders = [
