@@ -2,7 +2,7 @@
 import {useEffect, useRef, useState} from 'react';
 import ExamCalculator, {CALC_ICON} from './ExamCalculator';
 import {Svg, SubjectIcon, accentFor, when} from './HomeScreen';
-import {upcomingExams} from '@/lib/studyStreak';
+import {upcomingExams, liveStreak, todayCount, goalOf} from '@/lib/studyStreak';
 import {makeT} from '@/lib/infText';
 
 const T0 = makeT('en');
@@ -32,6 +32,8 @@ export function ExamRunner({exam, answers, seconds, flags, onPick, onGo, onFlag,
   const picked = answers[q.id], done = Object.keys(answers).length, locked = !exm && picked != null;
   const low = exm && seconds <= 60;
   const right = exam.questions.filter((x) => answers[x.id] === x.correct).length;
+  let combo = 0;
+  for (let k = exam.index; k >= 0 && answers[exam.questions[k].id] === exam.questions[k].correct; k--) combo++;
 
   useEffect(() => { bodyRef.current?.scrollTo?.({top: 0}); }, [exam.index, list, breakOpen]);
   useEffect(() => {
@@ -116,6 +118,7 @@ export function ExamRunner({exam, answers, seconds, flags, onPick, onGo, onFlag,
                 </button>
               ))}
             </div>
+            {locked && picked === q.correct && combo >= 2 && <div className="inf-x-combo" role="status"><span aria-hidden="true">🔥</span> {t('combo', {n: combo})}</div>}
             {locked && q.explanation && <div className="inf-x-why" role="status"><b>{picked === q.correct ? t('correctLabel') : t('wrongLabel')}</b><p>{q.explanation}</p></div>}
             <button type="button" className="inf-x-quiet" onClick={onBreak}><Svg size={18}>{G.game}</Svg>{t('gameBreak')}</button>
           </div>
@@ -137,7 +140,7 @@ export function ExamRunner({exam, answers, seconds, flags, onPick, onGo, onFlag,
 }
 
 /* ---------- results ---------- */
-export function ExamResults({exam, answers, seconds, onRetry, onBack, t = T0}) {
+export function ExamResults({exam, answers, seconds, onRetry, onBack, onNext, stats, t = T0}) {
   const [show, setShow] = useState('all');
   const N = exam.questions.length;
   const right = exam.questions.filter((q) => answers[q.id] === q.correct).length;
@@ -167,7 +170,9 @@ export function ExamResults({exam, answers, seconds, onRetry, onBack, t = T0}) {
         <div><dd>+{right * 10}</dd><dt>{t('xpEarned')}</dt></div>
         {used != null && <div><dd>{clock(used)}</dd><dt>{t('timeUsed')}</dt></div>}
       </dl>
+      {stats && <p className="inf-x-streak"><span aria-hidden="true">🔥</span> <b>{liveStreak(stats)}</b> {t('dayStreak')} · {Math.min(todayCount(stats), goalOf(stats))}/{goalOf(stats)}</p>}
       <div className="inf-x-actions">
+        {onNext && <button type="button" className="inf-x-next" onClick={onNext}>{t('nextRound')}</button>}
         {miss.length > 0 && <button type="button" className="inf-x-next" onClick={() => onRetry(true)}>{t('practiceMissed', {n: miss.length})}</button>}
         <button type="button" className="inf-x-prev" onClick={() => onRetry(false)}>{t('tryAgain')}</button>
         <button type="button" className="inf-x-ql" onClick={onBack}>{t('done')}</button>

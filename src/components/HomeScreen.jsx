@@ -73,7 +73,7 @@ export default function HomeScreen({name, subjects, stats, onContinue, onOpen, o
     <div className="inf-h">
       <header className="inf-h-hello">
         <h1>{greeting(t, now.getHours())}{name ? ', ' : ''}{name && <span>{name}</span>}</h1>
-        <p>{streak ? t('answerKeep', {n: goal}) : t('answerStart', {n: goal})}</p>
+        <p>{streak && !today ? t('saveStreak', {n: streak}) : streak ? t('answerKeep', {n: goal}) : t('answerStart', {n: goal})}</p>
       </header>
 
       {next ? (
