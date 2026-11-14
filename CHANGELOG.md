@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased — exam.pro upgrade, screen 2 (Home dashboard)
+- New "next up" card at the top, so a student is one tap from a question: it resumes an unfinished exam, or starts 10 fresh questions in the subject they studied last, or (first visit) 5 quick Grade 12 Mathematics questions.
+- New: level ring around the avatar that fills toward the next level ("20 XP to Level 4"), a time-of-day greeting, and a streak flame that only lights while the streak is alive.
+- New: daily goal ring (answered / 20) with a Monday–Sunday week row showing the days studied.
+- New: Daily challenge: the same 5 questions for everyone each day, +50 XP once per day, and a clear "done" state. Replaying never pays the bonus twice.
+- New: "Fix mistakes" tile starts a review of the subject with the most mistakes; with none, "Surprise me" starts 10 random questions.
+- Category cards: ready ones come first, "Soon" ones are dimmed. Total XP, accuracy and answered count have their own tiles. Everything fades in softly (off with reduced motion).
+- Progress now also remembers the last subject and the days studied (older saved progress still works).
+
 ## Unreleased — exam.pro upgrade, screen 1 (Splash)
 - Splash is now alive: drifting aurora light, twinkling stars, a floating emblem with a gold halo, a shimmering ".pro", and Learn · Practice · Excel that lands word by word.
 - New: live proof chips. The question total is read from the bank and counts up; "Free · works offline" is shown; returning students see their streak.
