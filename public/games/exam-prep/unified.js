@@ -84,11 +84,19 @@
     html += '</section><button type="button" class="ep-unified-action ep-plan-explore" id="ep-unified-study">Explore subjects →</button>';
     return html;
   }
+  var PROFILE = 'exampro.profile.v1';
   function profile() {
-    var p = getProgress(), xp = p.xp || 0, lv = Math.floor(Math.sqrt(xp / 50)) + 1;
-    return heading('YOUR SPACE', 'My profile', 'Your learning journey, all in one place.') +
-      '<section class="ep-unified-card ep-unified-profile"><div class="ep-unified-avatar">🎓</div><h2>ExamPro student</h2><p>Level ' + lv + ' · ' + xp + ' XP</p><div class="ep-unified-stats"><div>🔥<b>' + (p.streak || 0) + '</b><small>Streak</small></div><div>📚<b>' + (p.answered || 0) + '</b><small>Answered</small></div></div></section>' +
-      '<section class="ep-unified-card"><h2>About your progress</h2><p>Practice results are saved on this device. They are not automatically synchronized with the separate account-based ExamPrep app.</p></section>';
+    var p = getProgress(), prefs = read(PROFILE, {}), xp = Math.max(0, Number(p.xp) || 0), lv = Math.floor(Math.sqrt(xp / 50)) + 1;
+    var answered = Math.max(0, Number(p.answered) || 0), accuracy = answered ? Math.round(100 * (Number(p.correct) || 0) / answered) : 0;
+    var name = typeof prefs.name === 'string' && prefs.name.trim() ? prefs.name.trim().slice(0,50) : 'ExamPro student';
+    var focus = typeof prefs.focus === 'string' ? prefs.focus.slice(0,100) : '';
+    var goal = read('exampro.plan.settings.v1', {}).goal || 20;
+    return heading('YOUR LEARNING IDENTITY', 'Student profile', 'Make your learning space yours. Your progress stays connected to your practice on this device.') +
+      '<section class="ep-unified-card ep-unified-profile ep-profile-summary"><div class="ep-unified-avatar" aria-hidden="true">🎓</div><div><span class="ep-progress-kicker">STUDENT DASHBOARD</span><h2>' + escapeHtml(name) + '</h2><p>Level ' + lv + ' · ' + xp.toLocaleString() + ' XP earned</p>' + (focus ? '<p class="ep-profile-focus">🎯 ' + escapeHtml(focus) + '</p>' : '') + '</div></section>' +
+      '<div class="ep-unified-stats ep-profile-stats"><div>🔥<b>' + (p.streak || 0) + '</b><small>Day streak</small></div><div>📚<b>' + answered.toLocaleString() + '</b><small>Answered</small></div><div>🎯<b>' + accuracy + '%</b><small>Accuracy</small></div><div>⭐<b>' + lv + '</b><small>Level</small></div></div>' +
+      '<section class="ep-unified-card ep-profile-editor"><span class="ep-progress-kicker">PERSONALIZE</span><h2>About you</h2><p>Choose a display name and a study focus. These are private to this browser.</p><label>Display name<input id="ep-profile-name" type="text" maxlength="50" autocomplete="nickname" placeholder="How should we call you?" value="' + escapeHtml(prefs.name || '') + '"></label><label>My study focus<input id="ep-profile-focus" type="text" maxlength="100" placeholder="e.g. Prepare for Grade 12 Mathematics" value="' + escapeHtml(focus) + '"></label><button class="ep-unified-action" type="button" id="ep-profile-save">Save profile</button><p id="ep-profile-status" role="status" class="ep-profile-status"></p></section>' +
+      '<section class="ep-unified-card"><span class="ep-progress-kicker">YOUR LEARNING ROUTINE</span><h2>Study preferences</h2><div class="ep-unified-score"><span>Daily question goal</span><b>' + escapeHtml(goal) + ' questions</b></div><p>Change your goal and exam date from the Study Plan screen.</p><button class="ep-unified-action ep-profile-plan" type="button" id="ep-profile-plan">Open study plan →</button></section>' +
+      '<section class="ep-unified-card"><span class="ep-progress-kicker">DATA & PRIVACY</span><h2>Your progress, your data</h2><p>Practice records, study-plan settings and this profile are stored in this browser. They are not a Firebase account and do not sync across devices.</p><button class="ep-unified-action ep-profile-export" type="button" id="ep-profile-export">Export my learning data</button><p id="ep-export-status" role="status" class="ep-profile-status"></p></section>';
   }
   function close() {
     panel.hidden = true; app.hidden = false; nav.classList.remove('ep-unified-active');
@@ -117,6 +125,29 @@
       } catch (e) {
         var status = panel.querySelector('#ep-plan-status'); if (status) status.textContent = 'Unable to save settings. Please check browser storage permissions.';
       }
+    });
+    var profileSave = panel.querySelector('#ep-profile-save');
+    if (profileSave) profileSave.addEventListener('click', function () {
+      var name = panel.querySelector('#ep-profile-name').value.trim().slice(0,50);
+      var focus = panel.querySelector('#ep-profile-focus').value.trim().slice(0,100);
+      try {
+        localStorage.setItem(PROFILE, JSON.stringify({name:name,focus:focus}));
+        open('profile');
+        panel.querySelector('#ep-profile-status').textContent = 'Profile saved on this device.';
+      } catch (e) { panel.querySelector('#ep-profile-status').textContent = 'Unable to save. Check browser storage permissions.'; }
+    });
+    var profilePlan = panel.querySelector('#ep-profile-plan');
+    if (profilePlan) profilePlan.addEventListener('click', function () { open('plan'); });
+    var profileExport = panel.querySelector('#ep-profile-export');
+    if (profileExport) profileExport.addEventListener('click', function () {
+      try {
+        var data = {version:1,exportedAt:new Date().toISOString(),progress:getProgress(),profile:read(PROFILE,{}),studyPlan:read(PLAN,{}),studySettings:read('exampro.plan.settings.v1',{})};
+        var blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+        var url = URL.createObjectURL(blob), link = document.createElement('a');
+        link.href=url; link.download='exampro-learning-data.json'; document.body.appendChild(link); link.click(); link.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); },1000);
+        panel.querySelector('#ep-export-status').textContent = 'Your learning data export is ready.';
+      } catch (e) { panel.querySelector('#ep-export-status').textContent = 'Export could not be completed in this browser.'; }
     });
     var study = panel.querySelector('#ep-unified-study');
     if (study) study.addEventListener('click', function () { close(); document.getElementById('nv-sub').click(); });
