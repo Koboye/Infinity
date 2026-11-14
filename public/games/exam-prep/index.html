@@ -859,6 +859,29 @@ body.dash-on{background:#f4f7fd!important;background-image:none!important;color:
 .home2 .cats .cat:hover{border-color:#7399e5!important;transform:translateY(-2px)!important}
 .home2 .qtile{min-height:100px}
 @media(max-width:540px){.home2{padding:17px 12px 70px!important}.home2 .ep-home-group{margin-bottom:21px!important}.home2 .ep-home-label{font-size:9px}.home2 .qt{gap:9px!important}.home2 .qtile{padding:13px!important}.home2 .cats .cat{min-height:122px!important}}
+</style><style id="ep-home-organized-v6">
+.home2{max-width:720px!important;padding:25px 20px 85px!important}
+.home2 .ep-home-intro{margin-bottom:8px!important}
+.home2 .dhead{padding:8px 0 5px!important;margin-bottom:18px!important}
+.home2 .ep-home-find{margin-bottom:28px!important}
+.home2 .ep-home-group{margin-bottom:28px!important}
+.home2 .ep-home-label{font-size:11px!important;letter-spacing:.105em!important;color:#607498!important;margin-bottom:13px!important}
+.home2 .ep-home-label:after{background:#e1e7f2!important}
+.home2 .ep-home-focus .hero2{min-height:130px!important;border-radius:20px!important}
+.home2 .ep-home-routine{gap:12px!important}
+.home2 .ep-home-routine .gcard{min-height:112px!important;display:flex!important;align-items:center!important;gap:18px!important}
+.home2 .ep-home-routine .qtile{min-height:96px!important}
+.home2 .ep-home-achievements .dsum{gap:10px!important}
+.home2 .ep-home-achievements .dsum>div{padding:17px 9px!important}
+.home2 .ep-home-explore .ep-home-section-head{margin:0 0 15px!important}
+.home2 .ep-home-explore .dh2{font-size:22px!important;margin:0!important}
+.home2 .cats{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+.home2 .cats:has(> :only-child){grid-template-columns:1fr!important}
+.home2 .cats .cat{min-height:142px!important;display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:center!important;gap:6px!important}
+.home2 .cats .cat .tag{align-self:flex-end!important}
+.home2 .ep-kg-book-link{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:12px!important}
+.home2 .ep-kg-book-link span{font-size:11px!important;text-align:right}
+@media(max-width:520px){.home2{padding:17px 12px 76px!important}.home2 .ep-home-group{margin-bottom:23px!important}.home2 .ep-home-routine .gcard{gap:10px!important}.home2 .cats .cat{min-height:135px!important}.home2 .ep-home-explore .dh2{font-size:20px!important}}
 </style></head>
 <body class="sp-lock">
 <div class="splash" id="splash" role="dialog" aria-modal="true" aria-labelledby="sp-title" style="display:flex">
@@ -1058,16 +1081,16 @@ body.dash-on{background:#f4f7fd!important;background-image:none!important;color:
       '<div class="dwho"><h1>' + hi + (p.answered ? '' : ' 👋') + '</h1><small>' + (p.answered ? lv.need + ' XP to Level ' + (lv.l + 1) : 'Welcome to exam.pro') + '</small></div>' +
       '<span class="strk' + (alive ? ' on' : '') + '" aria-label="' + (alive ? p.streak + ' day streak' : 'No streak yet') + '"><span aria-hidden="true">🔥</span> ' + (alive ? p.streak : 0) + '</span></div>' +
       '<section class="ep-home-find"><form class="dsearch" id="dsf" role="search"><label class="sr" for="dsq">Search subjects and departments</label><input id="dsq" type="search" autocomplete="off" placeholder="Find a subject to learn…"><button type="submit" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg></button></form></section>' +
-      '<section class="ep-home-group ep-home-focus"><div class="ep-home-label">01 · CONTINUE LEARNING</div>' + (nx ? '<section class="hero2' + (nx.kind === 'resume' ? ' res' : '') + '" aria-label="Next up"><div class="h2t"><small>' + nx.kick + '</small><b>' + esc(nx.title) + '</b><span>' + esc(nx.sub) + '</span></div><button type="button" class="h2go" id="hgo">' + nx.btn + ' <span aria-hidden="true">→</span></button></section>' : '') + '</section>' +
-      '<section class="ep-home-group ep-home-routine"><div class="ep-home-label">02 · DAILY ROUTINE</div><section class="gcard" aria-label="Daily goal">' + ringSvg(gp, '5.4rem', 5, 'gr' + (gp >= 1 ? ' full' : ''), '<b>' + Math.min(p.today, dailyGoal()) + '</b><small>/' + dailyGoal() + '</small>') +
+      (nx ? '<section class="ep-home-group ep-home-focus"><div class="ep-home-label">01 · CONTINUE LEARNING</div>' + '<section class="hero2' + (nx.kind === 'resume' ? ' res' : '') + '" aria-label="Next up"><div class="h2t"><small>' + nx.kick + '</small><b>' + esc(nx.title) + '</b><span>' + esc(nx.sub) + '</span></div><button type="button" class="h2go" id="hgo">' + nx.btn + ' <span aria-hidden="true">→</span></button></section></section>' : '') +
+      '<section class="ep-home-group ep-home-routine"><div class="ep-home-label">' + (nx ? '02' : '01') + ' · DAILY ROUTINE</div><section class="gcard" aria-label="Daily goal">' + ringSvg(gp, '5.4rem', 5, 'gr' + (gp >= 1 ? ' full' : ''), '<b>' + Math.min(p.today, dailyGoal()) + '</b><small>/' + dailyGoal() + '</small>') +
       '<div class="gtxt"><b>' + (gp >= 1 ? 'Goal smashed 🎉' : p.today ? Math.max(0, dailyGoal() - p.today) + ' more to hit today’s goal' : 'Answer ' + dailyGoal() + ' questions today') + '</b>' + weekHtml(p) + '</div></section>' +
       '<div class="qt">' +
       (ch ? '<button type="button" class="qtile' + (chDone ? ' done' : '') + '" id="tchal"><span class="qi" aria-hidden="true">' + (chDone ? '✅' : '⚡') + '</span><b>' + (chDone ? 'Challenge done' : 'Daily challenge') + '</b><small>' + (chDone ? 'New one tomorrow' : '5 questions · +50 XP') + '</small></button>' : '') +
       (mist ? '<button type="button" class="qtile warn" id="tfix"><span class="qi" aria-hidden="true">📝</span><b>Fix mistakes</b><small>' + mMax + ' in ' + esc(dept(mDept).name) + '</small></button>'
         : '<button type="button" class="qtile" id="tsur"><span class="qi" aria-hidden="true">🎲</span><b>Surprise me</b><small>10 random questions</small></button>') + '</div>' +
-      '</section><section class="ep-home-group ep-home-achievements"><div class="ep-home-label">03 · YOUR ACHIEVEMENTS</div><div class="dsum" aria-label="Your progress"><div><b><span aria-hidden="true">⭐</span> ' + p.xp.toLocaleString() + '</b><small>total XP</small></div><div><b><span aria-hidden="true">🎯</span> ' + acc + '%</b><small>accuracy</small></div><div><b><span aria-hidden="true">📚</span> ' + p.answered.toLocaleString() + '</b><small>answered</small></div></div>' +
-      '</section><div class="ep-smart-tip"><span aria-hidden="true">🧠</span><div><strong>' + (mist ? 'Your next best move: review mistakes' : p.today < GOAL ? 'Keep your momentum going' : 'Great work — your daily goal is complete') + '</strong><small>' + (mist ? mist + ' saved mistakes across your subjects. Revisiting them helps you improve.' : p.today < dailyGoal() ? (dailyGoal() - p.today) + ' questions left to reach today’s goal. Short sessions add up.' : 'Explore another subject or take a refreshing break.') + '</small></div><button type="button" id="ep-smart-action">' + (mist ? 'Review' : 'Study') + ' →</button></div>' +
-      '<section class="ep-home-group ep-home-explore"><div class="ep-home-section-head"><span>EXPLORE</span><h2 class="dh2">' + (learner().stage ? 'Made for your level' : 'Choose your learning level') + '</h2></div>' +
+      '</section><section class="ep-home-group ep-home-achievements"><div class="ep-home-label">' + (nx ? '03' : '02') + ' · YOUR ACHIEVEMENTS</div><div class="dsum" aria-label="Your progress"><div><b><span aria-hidden="true">⭐</span> ' + p.xp.toLocaleString() + '</b><small>total XP</small></div><div><b><span aria-hidden="true">🎯</span> ' + acc + '%</b><small>accuracy</small></div><div><b><span aria-hidden="true">📚</span> ' + p.answered.toLocaleString() + '</b><small>answered</small></div></div>' +
+      '</section>' +
+      '<section class="ep-home-group ep-home-explore"><div class="ep-home-label">' + (nx ? '04' : '03') + ' · LEARNING PATH</div><div class="ep-home-section-head"><h2 class="dh2">' + (learner().stage ? 'Your subjects and lessons' : 'Choose your learning level') + '</h2></div>' +
       (learner().stage === 'kg' ? '<a class="ep-kg-book-link" href="kindergarten-book.html">📚 Open my Kindergarten Book <span>Read 7 fun lessons →</span></a><a class="ep-kg-book-link" href="kindergarten-amharic-book.html">🇪🇹 የአማርኛ መጽሐፍ <span>8 ምዕራፎች →</span></a><a class="ep-kg-book-link" href="kindergarten-alphabet-practice.html">🔤 ABC · ሀ ሁ ሂ <span>English & Amharic practice →</span></a>' : '') +
       '<div class="cats" role="group" aria-label="Learning categories">' + learnerCategories().slice().sort(function (a, b) { return (catCount(b) > 0) - (catCount(a) > 0); }).map(function (c, i) {
         var n = catCount(c), ready = n > 0;
@@ -1077,7 +1100,6 @@ body.dash-on{background:#f4f7fd!important;background-image:none!important;color:
     function buzz() { try { if (navigator.vibrate) navigator.vibrate(10); } catch (e) {} }
     var hg = document.getElementById('hgo');
     if (hg && nx) hg.onclick = function () { buzz(); if (nx.kind === 'resume') quiz(nx.rs.id, 'exam', null, nx.rs.label, nx.rs); else quiz(nx.d.id, 'practice', quickSet(nx.d, nx.n), 'Quick practice'); };
-    var smart = document.getElementById('ep-smart-action'); if (smart) smart.onclick = function () { if (mist && mDept) { var mm = load().mistakes[mDept] || {}; quiz(mDept, 'practice', Object.keys(mm).map(function (k) { return mm[k]; }), 'Fix my mistakes'); } else { document.querySelector('.home2 .cats')?.scrollIntoView({behavior:'smooth',block:'start'}); } };
     var tc = document.getElementById('tchal'); if (tc) tc.onclick = function () { buzz(); quiz(ch.d.id, 'practice', ch.ix.map(function (i) { return prep(ch.d.q[i], ch.d.id, i); }), 'Daily challenge'); };
     var tf = document.getElementById('tfix'); if (tf) tf.onclick = function () { buzz(); var m = load().mistakes[mDept] || {}; quiz(mDept, 'practice', Object.keys(m).map(function (k) { return m[k]; }), 'Fix my mistakes'); };
     var ts = document.getElementById('tsur'); if (ts) ts.onclick = function () { buzz(); var rd = learnerBank().filter(function (d) { return d.q.length >= 10; }); var d = rd[Math.floor(Math.random() * rd.length)]; if (d) quiz(d.id, 'practice', quickSet(d, 10), 'Surprise me'); };
