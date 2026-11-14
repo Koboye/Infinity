@@ -8,7 +8,7 @@ const nextConfig = {
   env: { NEXT_PUBLIC_APP_NAME: 'Gebeta', NEXT_PUBLIC_APP_VERSION: pkg.version },
   async headers() {
     const dev = process.env.NODE_ENV !== 'production';
-    return [{
+    const rules = [{
       source: '/(.*)',
       headers: [
         { key: 'X-Content-Type-Options', value: 'nosniff' },
@@ -32,6 +32,14 @@ const nextConfig = {
         ].join('; ') },
       ],
     }];
+    // Only the ExamPro game-break route may be framed by this same-origin app.
+    // All other pages retain DENY / frame-ancestors none.
+    const breakHeaders = rules[0].headers.map((h) => h.key === 'X-Frame-Options'
+      ? { ...h, value: 'SAMEORIGIN' }
+      : h.key === 'Content-Security-Policy'
+        ? { ...h, value: h.value.replace("frame-ancestors 'none'", "frame-ancestors 'self'") }
+        : h);
+    return [...rules, { source: '/break', headers: breakHeaders }];
   },
 };
 export default nextConfig;
