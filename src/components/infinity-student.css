@@ -406,3 +406,12 @@ html:has(.inf-root),html body:has(.inf-root){background:#F4F2FF}
 .inf-root .inf-x-streak b{color:var(--inf-text)}
 @keyframes inf-pop{0%{transform:scale(.7);opacity:0}70%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
 @media (prefers-reduced-motion:reduce){.inf-root .inf-x-combo{animation:none}}
+
+/* Smart home: week streak strip */
+.inf-root .inf-week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;list-style:none;margin:14px 0 4px;padding:0}
+.inf-root .inf-week li{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:.72rem;font-weight:700;color:var(--inf-mute)}
+.inf-root .inf-week i{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;border:1.5px dashed var(--inf-line);font-style:normal;font-size:1rem;color:var(--inf-text)}
+.inf-root .inf-week .is-part i{border-style:solid;background:var(--inf-card)}
+.inf-root .inf-week .is-full i{border-style:solid;border-color:#FFC83D;background:rgba(255,200,61,.22)}
+.inf-root .inf-week .is-today span{color:var(--inf-text)}
+.inf-root .inf-week .is-today i{box-shadow:0 0 0 2px var(--inf-text) inset}

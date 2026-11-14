@@ -1,5 +1,5 @@
 'use client';
-import {goalOf, liveStreak, levelFor, nextUp, todayCount, upcomingExams} from '@/lib/studyStreak';
+import {goalOf, liveStreak, levelFor, nextUp, todayCount, upcomingExams, weekActivity} from '@/lib/studyStreak';
 import {makeT} from '@/lib/infText';
 const T0 = makeT('en');
 
@@ -63,7 +63,7 @@ function Ring({value, goal, label}) {
   );
 }
 
-export default function HomeScreen({name, subjects, stats, onContinue, onOpen, onAll, onExams, now = new Date(), t = T0}) {
+export default function HomeScreen({name, subjects, stats, onContinue, onOpen, onAll, onExams, now = new Date(), lang = 'en', t = T0}) {
   const goal = goalOf(stats), today = todayCount(stats, now), streak = liveStreak(stats, now), left = Math.max(0, goal - today);
   const acc = stats.answered ? Math.round(((stats.correct || 0) / stats.answered) * 100) : 0;
   const lv = levelFor(stats.xp);
@@ -101,22 +101,9 @@ export default function HomeScreen({name, subjects, stats, onContinue, onOpen, o
             </ul>
           </div>
         </div>
+        <ol className="inf-week" aria-label={t('thisWeek')}>{weekActivity(stats, now, lang === 'am' ? 'am' : 'en').map((d) => <li key={d.key} className={(d.count >= goal ? 'is-full ' : d.count > 0 ? 'is-part ' : '') + (d.today ? 'is-today' : '')}><i aria-hidden="true">{d.count >= goal ? '🔥' : d.count > 0 ? '•' : ''}</i><span>{d.label.slice(0, 2)}</span></li>)}</ol>
         <div className="inf-lvl"><span>{t('levelN', {n: lv.level})}</span><div className="inf-bar" role="progressbar" aria-label={t('levelN', {n: lv.level})} aria-valuemin={0} aria-valuemax={lv.size} aria-valuenow={lv.into}><i style={{width: lv.into + '%'}} /></div><span>{t('xpToNext', {n: lv.size - lv.into, m: lv.level + 1})}</span></div>
       </section>
-
-      {subjects.length > 0 && (
-        <section aria-label={t('subjectsHead')}>
-          <div className="inf-row"><h2>{t('subjectsHead')}</h2>{subjects.length > 6 && <button type="button" className="inf-link" onClick={onAll}>{t('seeAll')}</button>}</div>
-          <div className="inf-tiles">
-            {subjects.slice(0, 6).map((d, i) => (
-              <button type="button" key={d.id} className="inf-tile" style={{'--accent': accentFor(d.name, i)}} onClick={() => onOpen(d)}>
-                <span className="inf-tile-ico"><SubjectIcon name={d.name} size={26} i={i} /></span>
-                <b>{d.name}</b>
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
 
       <section className="inf-panel inf-up" aria-label={t('upcomingExams')}>
         <h2><Svg size={22}><rect x="3.5" y="5" width="17" height="15" rx="3" /><path d="M3.5 10h17M8 3v4M16 3v4" /></Svg>{t('upcomingExams')}</h2>
