@@ -42,6 +42,7 @@ function allow(user) {
   if (user && submittingCredentials) return;
   currentUserId = user ? user.uid : null;
   window.infinityStudentUid = currentUserId;
+  window.infinityStudentName = user ? (user.displayName || (user.email ? user.email.split('@')[0] : 'Student')) : '';
   if (window.infinitySetProfileIdentity) window.infinitySetProfileIdentity(user);
   if (user) syncGradeField(user.uid);
   gate.hidden = !!user;
