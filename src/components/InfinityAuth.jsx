@@ -12,6 +12,10 @@ export const GRADES = [
 const label = (g) => g.id.startsWith('g') && g.id !== 'gk' && /^g\d+$/.test(g.id) ? g.id.slice(1) : g.name.replace('University / College', 'University').replace(/^KG /, '');
 const kind = (g) => /^kg/.test(g.id) ? 'KG' : /^g\d+$/.test(g.id) ? 'Grade' : g.id === 'uni' ? 'College /' : 'Exam';
 
+const groupOf = (g) => /^kg/.test(g.id) ? 'KG' : /^g\d+$/.test(g.id) ? (Number(g.id.slice(1)) <= 8 ? 'Primary' : 'Secondary') : g.id === 'uni' ? 'University' : 'NGAT';
+const GROUPS = ['KG', 'Primary', 'Secondary', 'University', 'NGAT'];
+const groupFirst = (grp) => GRADES.find((g) => groupOf(g) === grp).id;
+
 /* The Infinity mark: a lemniscate on a sun-yellow tile. */
 export function Mark({size = 40}) {
   return (
@@ -39,24 +43,44 @@ export function NavIcon({id}) {
   );
 }
 
-/* Swipeable level picker. Arrows and keyboard scrolling stay available. */
+/* Swipeable level picker: group chips jump along the track, arrows and keys step through levels. */
 export function GradePicker({grade, onChange}) {
   const track = useRef(null);
   const scroll = (dir) => track.current?.scrollBy({left: dir * 240, behavior: 'smooth'});
+  const reveal = (id) => track.current?.querySelector('[data-id="' + id + '"]')?.scrollIntoView({block: 'nearest', inline: 'center', behavior: 'smooth'});
+  const pick = (id) => { onChange(id); reveal(id); };
+  const step = (e) => {
+    const i = GRADES.findIndex((g) => g.id === grade);
+    const next = e.key === 'ArrowRight' ? Math.min(GRADES.length - 1, i + 1) : e.key === 'ArrowLeft' ? Math.max(0, i - 1) : -1;
+    if (next < 0) return;
+    e.preventDefault();
+    pick(GRADES[next].id);
+    track.current?.querySelector('[data-id="' + GRADES[next].id + '"]')?.focus();
+  };
+  const current = GRADES.find((g) => g.id === grade);
   return (
-    <div className="inf-grade" role="group" aria-label="Learning level">
-      <button type="button" className="inf-grade-arrow" aria-label="Previous levels" onClick={() => scroll(-1)}>‹</button>
-      <div className="inf-grade-track" ref={track}>
-        {GRADES.map((g) => (
-          <button
-            type="button" key={g.id} aria-pressed={grade === g.id}
-            onClick={(e) => { onChange(g.id); e.currentTarget.scrollIntoView({block: 'nearest', inline: 'center', behavior: 'smooth'}); }}
-          >
-            <small>{kind(g)}</small><b>{label(g)}</b>
-          </button>
+    <div className="inf-grade-wrap">
+      <div className="inf-groups" role="group" aria-label="Jump to a stage">
+        {GROUPS.map((grp) => (
+          <button type="button" key={grp} className="inf-chip" aria-pressed={current ? groupOf(current) === grp : false} onClick={() => pick(groupFirst(grp))}>{grp}</button>
         ))}
       </div>
-      <button type="button" className="inf-grade-arrow" aria-label="Next levels" onClick={() => scroll(1)}>›</button>
+      <div className="inf-grade" role="group" aria-label="Learning level">
+        <button type="button" className="inf-grade-arrow" aria-label="Previous levels" onClick={() => scroll(-1)}>‹</button>
+        <div className="inf-grade-track" ref={track} onKeyDown={step}>
+          {GRADES.map((g) => (
+            <button
+              type="button" key={g.id} data-id={g.id} aria-pressed={grade === g.id}
+              tabIndex={grade === g.id || (!grade && g.id === 'kg1') ? 0 : -1}
+              onClick={() => pick(g.id)}
+            >
+              <small>{kind(g)}</small><b>{label(g)}</b>
+            </button>
+          ))}
+        </div>
+        <button type="button" className="inf-grade-arrow" aria-label="Next levels" onClick={() => scroll(1)}>›</button>
+      </div>
+      <p className="inf-picked" aria-live="polite">{current ? <>Selected: <b>{current.name}</b> <span>{groupOf(current)}</span></> : 'Nothing selected yet'}</p>
     </div>
   );
 }
@@ -74,6 +98,7 @@ export default function AuthScreen({busy, error, notice, departments, onSubmit, 
   const [show, setShow] = useState(false);
   const [grade, setGrade] = useState('');
   const [dept, setDept] = useState('');
+  const [deptQuery, setDeptQuery] = useState('');
   const [localError, setLocalError] = useState('');
   const errId = useId();
 
@@ -99,14 +124,21 @@ export default function AuthScreen({busy, error, notice, departments, onSubmit, 
   const levelBlock = (
     <div className="inf-level">
       <p className="inf-level-label" id="inf-level-label">Your level <span>Slide to choose</span></p>
-      <GradePicker grade={grade} onChange={(g) => { setGrade(g); if (g !== 'uni') setDept(''); setLocalError(''); }} />
+      <GradePicker grade={grade} onChange={(g) => { setGrade(g); if (g !== 'uni') { setDept(''); setDeptQuery(''); } setLocalError(''); }} />
       {grade === 'uni' && (
-        <Field label="Department">
-          <select required value={dept} onChange={(e) => setDept(e.target.value)}>
-            <option value="">Choose department</option>
-            {departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-          </select>
-        </Field>
+        <>
+          {departments.length > 8 && (
+            <Field label="Find your department">
+              <input type="search" autoComplete="off" placeholder="Type to filter, e.g. Nursing" value={deptQuery} onChange={(e) => setDeptQuery(e.target.value)} />
+            </Field>
+          )}
+          <Field label="Department">
+            <select required value={dept} onChange={(e) => setDept(e.target.value)}>
+              <option value="">Choose department</option>
+              {departments.filter((d) => d.id === dept || d.name.toLowerCase().includes(deptQuery.trim().toLowerCase())).map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+            </select>
+          </Field>
+        </>
       )}
     </div>
   );

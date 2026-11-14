@@ -141,3 +141,23 @@ html body:has(.inf-root){overscroll-behavior:none}
 /* Sign-in polish */
 .inf-root .inf-auth-panel form>.inf-link.inf-forgot{display:block;margin:-4px 0 14px auto;text-align:right}
 .inf-root .inf-auth-panel header p{max-width:36ch}
+
+/* v2 polish: brand backdrop, grouped picker, fluid type */
+.inf-root{font-size:clamp(1rem,.95rem + .25vw,1.125rem)}
+.inf-auth-brand{position:relative;overflow:hidden;isolation:isolate;
+  background:radial-gradient(120% 90% at 100% 0%,var(--inf-blue) 0,transparent 55%),radial-gradient(90% 70% at 0% 100%,#3a2ea8 0,transparent 60%),var(--inf-ink)}
+.inf-auth-brand::before{content:"";position:absolute;z-index:-1;right:-14%;bottom:-18%;width:min(90vw,520px);aspect-ratio:2/1;opacity:.14;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 100'%3E%3Cpath d='M100 50C80 22 60 12 40 12a38 38 0 000 76c20 0 40-10 60-38s40-38 60-38a38 38 0 010 76c-20 0-40-10-60-38z' fill='none' stroke='%23FFC83D' stroke-width='9' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat}
+.inf-auth-brand::after{content:"";position:absolute;z-index:-1;inset:0;opacity:.08;
+  background-image:radial-gradient(#fff 1px,transparent 1.5px);background-size:22px 22px}
+.inf-auth-panel{background:linear-gradient(180deg,var(--inf-paper),color-mix(in srgb,var(--inf-paper) 92%,var(--inf-blue)))}
+.inf-auth-panel form{background:var(--inf-card);border:1.5px solid var(--inf-line);border-radius:24px;padding:clamp(20px,4vw,32px);
+  box-shadow:0 18px 48px color-mix(in srgb,var(--inf-ink) 12%,transparent)}
+.inf-root .inf-groups{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:2px 0 4px}
+.inf-root .inf-groups::-webkit-scrollbar{display:none}
+.inf-root .inf-chip{flex:0 0 auto;min-height:36px;padding:6px 14px;border-radius:999px;font-size:.88rem;border-color:var(--inf-line);background:var(--inf-paper)}
+.inf-root .inf-picked{margin:2px 0 14px;font-size:.95rem;color:var(--inf-mute)}
+.inf-root .inf-picked b{color:var(--inf-text)}
+.inf-root .inf-picked span{margin-left:6px;padding:2px 10px;border-radius:999px;background:color-mix(in srgb,var(--inf-sun) 35%,transparent);color:var(--inf-text);font-size:.8rem;font-weight:700}
+.inf-root .inf-grade-track button{transition:transform .18s,box-shadow .18s,background-color .15s}
+@media(prefers-reduced-motion:reduce){.inf-root .inf-grade-track button[aria-pressed=true]{transform:none}}
