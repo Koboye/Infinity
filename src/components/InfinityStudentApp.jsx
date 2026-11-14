@@ -22,6 +22,7 @@ import './infinity-student.css';
 import './infinity-auth.css';
 import './infinity-home.css';
 import './infinity-exam.css';
+import './infinity-profile.css';
 
 const levelCall=async(user,body)=>{const token=await user.getIdToken();const res=await fetch('/api/learner',{method:body?'POST':'GET',headers:{Authorization:'Bearer '+token,...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined,cache:'no-store'});const data=await res.json().catch(()=>({}));if(!res.ok)throw new Error(data.error||'Could not reach your account.');return data};
 const get=(key,fallback='')=>{try{return localStorage.getItem(key)||fallback}catch{return fallback}};

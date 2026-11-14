@@ -1,5 +1,5 @@
 'use client';
-import {useRef, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import {EmailAuthProvider, reauthenticateWithCredential, signOut, updatePassword, updateProfile} from 'firebase/auth';
 import {auth} from '@/lib/firebase';
 import {StatStrip} from './HomeScreen';
@@ -19,6 +19,7 @@ const I = {
   cam: <><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></>,
   trophy: <><path d="M8 4h8v6a4 4 0 01-8 0zM8 6H5a3 3 0 003 4M16 6h3a3 3 0 01-3 4M12 14v4M8.5 20h7" /></>,
   check: <path d="m5 12.5 4.5 4.5L19 7.5" />,
+  x: <path d="M6 6l12 12M18 6L6 18" />,
   globe: <><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" /></>,
   target: <><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1" /></>,
   down: <><path d="M12 4v11M7 11l5 5 5-5M5 20h14" /></>,
@@ -48,6 +49,12 @@ export default function ProfileScreen({user, gradeName, deptName, stats, notice,
   const [msg, setMsg] = useState({kind: '', text: ''});
   const file = useRef(null);
   const say = (kind, text) => setMsg({kind, text});
+  // Confirmations are toasts: they fade after a few seconds instead of sitting on the page.
+  useEffect(() => {
+    if (!msg.text) return;
+    const id = setTimeout(() => setMsg({kind: '', text: ''}), msg.kind === 'err' ? 8000 : 3800);
+    return () => clearTimeout(id);
+  }, [msg]);
 
   const shown = name || (user.email || '').split('@')[0] || 'Learner';
   const level = gradeName + (deptName ? ', ' + deptName : '');
@@ -114,80 +121,84 @@ export default function ProfileScreen({user, gradeName, deptName, stats, notice,
     </div>
   );
 
+  const row = (ico, title, sub, control, tone) => (
+    <li>
+      <span className="inf-p-ico" data-tone={tone}><Svg>{ico}</Svg></span>
+      <span className="inf-p-txt"><b>{title}</b>{sub && <small>{sub}</small>}</span>
+      {control}
+    </li>
+  );
+
   return (
     <div className="inf-h inf-p">
-      <header className="inf-h-hello">
-        <h1>{t('myProfile')}</h1>
-        <p>{t('journey')}</p>
-      </header>
-
-      <section className="inf-p-card" aria-label="Account">
-        <div className="inf-p-photo">
-          {photo ? <img src={photo} alt="" /> : <span aria-hidden="true">{shown.trim().charAt(0).toUpperCase()}</span>}
-          <button type="button" className="inf-p-cam" aria-label={t('changePhoto')} disabled={busy === 'photo'} onClick={() => file.current?.click()}><Svg size={18}>{I.cam}</Svg></button>
-          <input ref={file} type="file" accept="image/*" hidden onChange={pickPhoto} />
+      <section className="inf-p-hero" aria-label="Account">
+        <div className="inf-p-who">
+          <div className="inf-p-photo">
+            {photo ? <img src={photo} alt="" /> : <span aria-hidden="true">{shown.trim().charAt(0).toUpperCase()}</span>}
+            <button type="button" className="inf-p-cam" aria-label={t('changePhoto')} disabled={busy === 'photo'} onClick={() => file.current?.click()}><Svg size={18}>{I.cam}</Svg></button>
+            <input ref={file} type="file" accept="image/*" style={{display: 'none'}} tabIndex={-1} onChange={pickPhoto} />
+          </div>
+          <div className="inf-p-id">
+            {editing ? (
+              <form className="inf-p-name" onSubmit={saveName}>
+                <input aria-label={t('yourName')} autoFocus maxLength={60} value={draft} onChange={(e) => setDraft(e.target.value)} />
+                <button type="submit" className="inf-h-go" disabled={busy === 'name'}>{t('save')}</button>
+                <button type="button" className="inf-p-ghost" onClick={() => setEditing(false)}>{t('cancel')}</button>
+              </form>
+            ) : (
+              <h1>{shown}<button type="button" className="inf-p-edit" aria-label={t('editName')} onClick={() => { setDraft(name); setEditing(true); }}><Svg size={18}>{I.pen}</Svg></button></h1>
+            )}
+            <ul className="inf-p-chips">
+              {user.email && <li><Svg size={18}>{I.mail}</Svg><span>{user.email}</span></li>}
+              <li><Svg size={18}>{I.cap}</Svg><span>{level}</span></li>
+            </ul>
+          </div>
         </div>
-        <div className="inf-p-id">
-          {editing ? (
-            <form className="inf-p-name" onSubmit={saveName}>
-              <input aria-label={t('yourName')} autoFocus maxLength={60} value={draft} onChange={(e) => setDraft(e.target.value)} />
-              <button type="submit" className="inf-h-go" disabled={busy === 'name'}>{t('save')}</button>
-              <button type="button" className="inf-p-ghost" onClick={() => setEditing(false)}>{t('cancel')}</button>
-            </form>
-          ) : (
-            <h2>{shown}<button type="button" className="inf-p-edit" aria-label={t('editName')} onClick={() => { setDraft(name); setEditing(true); }}><Svg size={18}>{I.pen}</Svg></button></h2>
-          )}
-          {user.email && <p><Svg>{I.mail}</Svg><span>{user.email}</span></p>}
-          <p><Svg>{I.cap}</Svg><span>{level}</span></p>
+        <div className="inf-p-lv">
+          <div><b>{t('levelN', {n: lv.level})}</b><span>{t('xpToNext', {n: lv.size - lv.into, m: lv.level + 1})}</span></div>
+          <div className="inf-p-bar" role="progressbar" aria-label={t('levelN', {n: lv.level})} aria-valuemin={0} aria-valuemax={lv.size} aria-valuenow={lv.into}><i style={{width: lv.into + '%'}} /></div>
         </div>
         <svg className="inf-h-mark" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d="M24 24c-3.500-4.500-6.500-7-10-7a7 7 0 000 14c3.500 0 6.500-2.500 10-7s6.500-7 10-7a7 7 0 010 14c-3.500 0-6.500-2.500-10-7z" fill="none" stroke="currentColor" strokeWidth="3.600" strokeLinecap="round" /></svg>
       </section>
 
-      <section className="inf-p-level" aria-label="Level">
-        <div><b>{t('levelN', {n: lv.level})}</b><span>{t('xpToNext', {n: lv.size - lv.into, m: lv.level + 1})}</span></div>
-        <div className="inf-p-bar" role="progressbar" aria-valuemin={0} aria-valuemax={lv.size} aria-valuenow={lv.into}><i style={{width: lv.into + '%'}} /></div>
-      </section>
-
-      <div aria-live="polite">
-        {msg.text && <p role={msg.kind === 'err' ? 'alert' : undefined} className={msg.kind === 'err' ? 'inf-error' : 'inf-notice'}>{msg.text}</p>}
-        {!msg.text && error && <p role="alert" className="inf-error">{error}</p>}
-        {!msg.text && !error && notice && <p className="inf-notice">{notice}</p>}
-      </div>
+      {(error || notice) && !msg.text && <p role={error ? 'alert' : undefined} className={error ? 'inf-error inf-p-note' : 'inf-notice inf-p-note'}>{error || notice}</p>}
 
       <StatStrip stats={stats} t={t} />
 
-      <section className="inf-p-panel" aria-label="Last 7 days">
-        <div className="inf-p-head"><h3>{t('thisWeek')}</h3><span>{t('nAnsweredShort', {n: weekTotal})}</span></div>
+      <section className="inf-p-panel inf-p-weekp" aria-label="Last 7 days">
+        <div className="inf-p-head"><h2>{t('thisWeek')}</h2><span>{t('nAnsweredShort', {n: weekTotal})}</span></div>
         <div className="inf-p-week">
           {week.map((x) => (
             <div key={x.key} className={x.today ? 'is-today' : ''}>
-              <span className="inf-p-col"><i style={{height: Math.max(x.count ? 8 : 3, Math.round((x.count / peak) * 100)) + '%'}} title={x.count + ' answered'} /></span>
+              <em>{x.count || ''}</em>
+              <span className="inf-p-col"><i style={{height: Math.max(x.count ? 10 : 4, Math.round((x.count / peak) * 100)) + '%'}} title={x.count + ' answered'} /></span>
               <small>{x.label.slice(0, 3)}</small>
             </div>
           ))}
         </div>
+        {!weekTotal && <p className="inf-hint inf-p-empty">{t('weekEmpty')}</p>}
       </section>
 
-      <section className="inf-p-panel" aria-label="Subjects">
-        <div className="inf-p-head"><h3>{t('subjectAccuracy')}</h3></div>
+      <section className="inf-p-panel inf-p-subjp" aria-label="Subjects">
+        <div className="inf-p-head"><h2>{t('subjectAccuracy')}</h2></div>
         {subj.length ? (
           <ul className="inf-p-subj">
             {subj.slice(0, 8).map((x) => (
               <li key={x.name}>
                 <div><b>{x.name}</b><span>{t('pctAnswered', {p: x.pct, n: x.answered})}</span></div>
-                <div className="inf-p-bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={x.pct}><i style={{width: x.pct + '%'}} /></div>
+                <div className="inf-p-bar" role="progressbar" aria-label={x.name} aria-valuemin={0} aria-valuemax={100} aria-valuenow={x.pct}><i style={{width: x.pct + '%'}} /></div>
               </li>
             ))}
           </ul>
-        ) : <p className="inf-hint">{t('subjectEmpty')}</p>}
+        ) : <p className="inf-hint inf-p-empty">{t('subjectEmpty')}</p>}
       </section>
 
-      <section className="inf-p-panel" aria-label="Achievements">
-        <div className="inf-p-head"><h3>{t('achievements')}</h3><span>{t('ofN', {a: won, b: ach.length})}</span></div>
+      <section className="inf-p-panel inf-p-achp" aria-label="Achievements">
+        <div className="inf-p-head"><h2>{t('achievements')}</h2><span>{t('ofN', {a: won, b: ach.length})}</span></div>
         <ul className="inf-p-ach">
           {ach.map((x) => (
             <li key={x.id} className={x.done ? 'is-done' : ''}>
-              <span className="inf-p-medal" aria-hidden="true"><Svg size={20}>{x.done ? I.check : I.trophy}</Svg></span>
+              <span className="inf-p-medal" aria-hidden="true"><Svg size={22}>{x.done ? I.trophy : I.lock}</Svg></span>
               <span><b>{t('ach_' + x.id)}</b><small>{t('ach_' + x.id + '_d')}</small></span>
               <span className="inf-sr">{x.done ? t('earned') : t('locked')}</span>
             </li>
@@ -195,85 +206,77 @@ export default function ProfileScreen({user, gradeName, deptName, stats, notice,
         </ul>
       </section>
 
-      <section aria-label={t('settings')}>
-        <h3 className="inf-p-sh">{t('settings')}</h3>
-        <ul className="inf-p-list">
-          <li>
-            <span className="inf-p-ico"><Svg>{I.img}</Svg></span>
-            <span className="inf-p-txt"><b>{t('photo')}</b><small>{t('photoSub')}</small></span>
-            <span className="inf-p-pair">
-              <button type="button" className="inf-p-act" disabled={busy === 'photo'} onClick={() => file.current?.click()}>{t('change')}</button>
-              {photo && <button type="button" className="inf-p-act" disabled={busy === 'photo'} onClick={dropPhoto}>{t('remove')}</button>}
-            </span>
-          </li>
-          <li>
-            <span className="inf-p-ico"><Svg>{I.globe}</Svg></span>
-            <span className="inf-p-txt"><b>{t('language')}</b><small>{t('languageSub')}</small></span>
-            <Seg label={t('language')} value={lang} options={LANGS} onPick={(v) => onLang?.(v)} />
-          </li>
-          <li>
-            <span className="inf-p-ico"><Svg>{I.target}</Svg></span>
-            <span className="inf-p-txt"><b>{t('goal')}</b><small>{t('goalSub')}</small></span>
-            <Seg label={t('goal')} value={goal} options={GOALS.map((g) => [g, String(g)])} onPick={(v) => { onGoal?.(v); say('ok', t('goalSaved')); }} />
-          </li>
-          <li>
-            <span className="inf-p-ico"><Svg>{I.cap}</Svg></span>
-            <span className="inf-p-txt"><b>{t('myLevel')}</b><small>{t('myLevelSub')}</small></span>
-            <span className="inf-p-val">{gradeName}</span>
-          </li>
-          <li className="inf-p-col-li">
+      <section className="inf-p-groups" aria-label={t('settings')}>
+        <div>
+          <h2 className="inf-p-sh">{t('grpAccount')}</h2>
+          <ul className="inf-p-list">
+            {row(I.img, t('photo'), t('photoSub'),
+              <span className="inf-p-pair">
+                <button type="button" className="inf-p-act" disabled={busy === 'photo'} onClick={() => file.current?.click()}>{t('change')}</button>
+                {photo && <button type="button" className="inf-p-act" disabled={busy === 'photo'} onClick={dropPhoto}>{t('remove')}</button>}
+              </span>, 'blue')}
+            {row(I.cap, t('myLevel'), t('myLevelSub'), <span className="inf-p-val">{gradeName}</span>, 'blue')}
+            <li className="inf-p-col-li">
+              <div className="inf-p-row">
+                <span className="inf-p-ico" data-tone="blue"><Svg>{I.lock}</Svg></span>
+                <span className="inf-p-txt"><b>{t('password')}</b><small>{t('passwordSub')}</small></span>
+                <button type="button" className="inf-p-act" aria-expanded={pw} onClick={() => setPw((v) => !v)}>{pw ? t('close') : t('change')}</button>
+              </div>
+              {pw && (
+                <form className="inf-p-pw" onSubmit={savePw}>
+                  <label><span>{t('curPw')}</span><input type="password" autoComplete="current-password" required value={cur} onChange={(e) => setCur(e.target.value)} /></label>
+                  <label><span>{t('newPw')}</span><input type="password" autoComplete="new-password" required minLength={6} value={next} onChange={(e) => setNext(e.target.value)} /></label>
+                  <div className="inf-p-pw-act">
+                    <button type="submit" className="inf-p-save" disabled={busy === 'pw'}>{busy === 'pw' ? t('saving') : t('savePw')}</button>
+                    <button type="button" className="inf-link" onClick={() => onReset(user.email || '')}>{t('emailReset')}</button>
+                  </div>
+                </form>
+              )}
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <h2 className="inf-p-sh">{t('grpPrefs')}</h2>
+          <ul className="inf-p-list">
+            {row(I.globe, t('language'), t('languageSub'), <Seg label={t('language')} value={lang} options={LANGS} onPick={(v) => onLang?.(v)} />, 'violet')}
+            {row(I.target, t('goal'), t('goalSub'), <Seg label={t('goal')} value={goal} options={GOALS.map((g) => [g, String(g)])} onPick={(v) => { onGoal?.(v); say('ok', t('goalSaved')); }} />, 'violet')}
+          </ul>
+        </div>
+
+        <div>
+          <h2 className="inf-p-sh">{t('grpData')}</h2>
+          <ul className="inf-p-list">
+            {row(I.down, t('exportData'), t('exportSub'), <button type="button" className="inf-p-act" onClick={exportData}>{t('download')}</button>, 'green')}
+            {row(I.shield, t('legal'), '', <span className="inf-p-pair"><a className="inf-p-act" href="/privacy">{t('privacy')}</a><a className="inf-p-act" href="/terms">{t('terms')}</a></span>, 'green')}
+            {row(I.reset, t('resetProgress'), t('resetSub'), <button type="button" className="inf-p-act" onClick={clear}>{t('reset')}</button>, 'green')}
+          </ul>
+        </div>
+
+        <div className="inf-p-end">
+          <button type="button" className="inf-p-out" onClick={onSignOut}><Svg>{I.out}</Svg>{t('signOut')}</button>
+          <section className="inf-p-danger" aria-label={t('deleteTitle')}>
             <div className="inf-p-row">
-              <span className="inf-p-ico"><Svg>{I.lock}</Svg></span>
-              <span className="inf-p-txt"><b>{t('password')}</b><small>{t('passwordSub')}</small></span>
-              <button type="button" className="inf-p-act" aria-expanded={pw} onClick={() => setPw((v) => !v)}>{pw ? t('close') : t('change')}</button>
+              <span className="inf-p-ico"><Svg>{I.trash}</Svg></span>
+              <span className="inf-p-txt"><b>{t('deleteTitle')}</b><small>{t('deleteSub')}</small></span>
+              {!del && <button type="button" className="inf-p-act inf-p-bad" onClick={() => setDel(true)}>{t('deleteBtn')}</button>}
             </div>
-            {pw && (
-              <form className="inf-p-pw" onSubmit={savePw}>
-                <label><span>{t('curPw')}</span><input type="password" autoComplete="current-password" required value={cur} onChange={(e) => setCur(e.target.value)} /></label>
-                <label><span>{t('newPw')}</span><input type="password" autoComplete="new-password" required minLength={6} value={next} onChange={(e) => setNext(e.target.value)} /></label>
+            {del && (
+              <form className="inf-p-pw" onSubmit={deleteAccount}>
+                {hasPassword && <label><span>{t('deleteAsk')}</span><input type="password" autoComplete="current-password" required value={delPw} onChange={(e) => setDelPw(e.target.value)} /></label>}
                 <div className="inf-p-pw-act">
-                  <button type="submit" className="inf-primary" disabled={busy === 'pw'}>{busy === 'pw' ? t('saving') : t('savePw')}</button>
-                  <button type="button" className="inf-link" onClick={() => onReset(user.email || '')}>{t('emailReset')}</button>
+                  <button type="submit" className="inf-p-destroy" disabled={busy === 'del'}>{busy === 'del' ? t('saving') : t('deleteGo')}</button>
+                  <button type="button" className="inf-link" onClick={() => { setDel(false); setDelPw(''); }}>{t('cancel')}</button>
                 </div>
               </form>
             )}
-          </li>
-          <li>
-            <span className="inf-p-ico"><Svg>{I.down}</Svg></span>
-            <span className="inf-p-txt"><b>{t('exportData')}</b><small>{t('exportSub')}</small></span>
-            <button type="button" className="inf-p-act" onClick={exportData}>{t('download')}</button>
-          </li>
-          <li>
-            <span className="inf-p-ico"><Svg>{I.shield}</Svg></span>
-            <span className="inf-p-txt"><b>{t('legal')}</b></span>
-            <span className="inf-p-pair"><a className="inf-p-act" href="/privacy">{t('privacy')}</a><a className="inf-p-act" href="/terms">{t('terms')}</a></span>
-          </li>
-          <li>
-            <span className="inf-p-ico"><Svg>{I.reset}</Svg></span>
-            <span className="inf-p-txt"><b>{t('resetProgress')}</b><small>{t('resetSub')}</small></span>
-            <button type="button" className="inf-p-act" onClick={clear}>{t('reset')}</button>
-          </li>
-        </ul>
-      </section>
-
-      <button type="button" className="inf-p-out" onClick={onSignOut}><Svg>{I.out}</Svg>{t('signOut')}</button>
-
-      <section className="inf-p-danger" aria-label={t('deleteTitle')}>
-        <div className="inf-p-row">
-          <span className="inf-p-ico"><Svg>{I.trash}</Svg></span>
-          <span className="inf-p-txt"><b>{t('deleteTitle')}</b><small>{t('deleteSub')}</small></span>
-          {!del && <button type="button" className="inf-p-act inf-p-bad" onClick={() => setDel(true)}>{t('deleteBtn')}</button>}
+          </section>
         </div>
-        {del && (
-          <form className="inf-p-pw" onSubmit={deleteAccount}>
-            {hasPassword && <label><span>{t('deleteAsk')}</span><input type="password" autoComplete="current-password" required value={delPw} onChange={(e) => setDelPw(e.target.value)} /></label>}
-            <div className="inf-p-pw-act">
-              <button type="submit" className="inf-p-destroy" disabled={busy === 'del'}>{busy === 'del' ? t('saving') : t('deleteGo')}</button>
-              <button type="button" className="inf-link" onClick={() => { setDel(false); setDelPw(''); }}>{t('cancel')}</button>
-            </div>
-          </form>
-        )}
       </section>
+
+      <div className="inf-p-toasts" aria-live="polite">
+        {msg.text && <p role={msg.kind === 'err' ? 'alert' : undefined} className={'inf-p-toast' + (msg.kind === 'err' ? ' is-err' : '')}><Svg size={20}>{msg.kind === 'err' ? I.x : I.check}</Svg>{msg.text}</p>}
+      </div>
     </div>
   );
 }
