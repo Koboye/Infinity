@@ -91,7 +91,7 @@
     var name = typeof prefs.name === 'string' && prefs.name.trim() ? prefs.name.trim().slice(0,50) : 'ExamPro student';
     var focus = typeof prefs.focus === 'string' ? prefs.focus.slice(0,100) : '';
     var goal = read('exampro.plan.settings.v1', {}).goal || 20;
-    var stages = [{id:'',name:'Choose my learning level'}, {id:'g1',name:'Grade 1'}, {id:'g2',name:'Grade 2'}, {id:'g3',name:'Grade 3'}, {id:'g4',name:'Grade 4'}, {id:'g5',name:'Grade 5'}, {id:'g6',name:'Grade 6'}, {id:'g7',name:'Grade 7'}, {id:'g8',name:'Grade 8'}, {id:'g9',name:'Grade 9'}, {id:'g10',name:'Grade 10'}, {id:'g11',name:'Grade 11'}, {id:'g12',name:'Grade 12'}, {id:'university',name:'University / College'}, {id:'ngat',name:'NGAT / Graduate'}, {id:'gk',name:'General Knowledge'}];
+    var stages = [{id:'',name:'Choose my learning level'}, {id:'kg',name:'Kindergarten (KG)'}, {id:'g1',name:'Grade 1'}, {id:'g2',name:'Grade 2'}, {id:'g3',name:'Grade 3'}, {id:'g4',name:'Grade 4'}, {id:'g5',name:'Grade 5'}, {id:'g6',name:'Grade 6'}, {id:'g7',name:'Grade 7'}, {id:'g8',name:'Grade 8'}, {id:'g9',name:'Grade 9'}, {id:'g10',name:'Grade 10'}, {id:'g11',name:'Grade 11'}, {id:'g12',name:'Grade 12'}, {id:'university',name:'University / College'}, {id:'ngat',name:'NGAT / Graduate'}, {id:'gk',name:'General Knowledge'}];
     var stage = typeof prefs.stage === 'string' ? prefs.stage : '';
     var stageName = (stages.filter(function (x) { return x.id === stage; })[0] || stages[0]).name;
     var stageOptions = stages.map(function (x) { return '<option value="' + x.id + '"' + (stage === x.id ? ' selected' : '') + '>' + x.name + '</option>'; }).join('');
