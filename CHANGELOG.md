@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased — exam.pro rebrand, phase 2 (Category dashboard)
+- New: exam.pro home is now a dashboard: welcome and level, search, streak / XP / accuracy, daily goal, and six square category cards (KG, Grades 1–8, Grades 9–12, University & College, NGAT, General Knowledge).
+- Cards with questions in the bank (Grades 9–12, University & College) open their subjects; the others show "Soon" and explain it when tapped. No subjects are invented.
+- New: bottom navigation (Home, All subjects). Progress and Awards will be added when those screens exist.
+- The existing subject list, practice, timed exam and progress are unchanged.
+
 ## Unreleased — exam.pro rebrand, phase 1 (Splash)
 - New: exam.pro splash screen (crown + book emblem, "Learn · Practice · Excel", Get started button) in `public/games/exam-prep/`. Shown once per session; add `?splash=1` to preview it again.
 - New: exam.pro brand tokens (`--ep-*`: midnight navy, electric blue, royal violet, gold, green) for the screens that follow.
