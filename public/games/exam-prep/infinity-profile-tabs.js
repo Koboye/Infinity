@@ -5,11 +5,12 @@ var app=document.getElementById('app');
 var games=document.getElementById('nv-games'),profile=document.getElementById('nv-profile');
 var signedIn=false,uid='',email='',displayName='';
 function text(s){return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
-function key(s){return 'infinity.learning.'+s+'.'+uid;}
+
 function progress(){return window.infinityReadProgress?window.infinityReadProgress():{xp:0,streak:0,today:0,answered:0,correct:0,best:{},mistakes:{}};}
 function nav(name){if(window.infinitySetNav)window.infinitySetNav(name);document.body.classList.add('has-nav');document.body.classList.remove('dash-on');}
 function showProfile(){
  if(!signedIn)return;
+ if(window.infinityExamActive){alert('Finish or exit the current exam before opening Profile. Your answers will stay on screen.');return;}
  nav('profile');
  var p=progress(),grade=window.infinityGetGradeLabel?window.infinityGetGradeLabel():'',dept=window.infinityGetDepartmentId?window.infinityGetDepartmentId():'';
  var bank=window.BANK||[],department=bank.find(function(d){return d.id===dept;});
@@ -26,6 +27,7 @@ function showProfile(){
 }
 function showGames(){
  if(!signedIn)return;
+ if(window.infinityExamActive){window.examproOpenGameBreak();return;}
  nav('games');
  app.innerHTML='<section class="in-profile"><div class="in-profile-hero"><div class="in-avatar" aria-hidden="true">🎮</div><div><span class="in-grade-kicker">INFINITY BREAK TIME</span><h1>Games</h1><p>Take a short break and return to learning.</p></div></div><div class="in-profile-card"><h2>Choose a game</h2><div class="in-game-list"><button type="button" data-game="/games/addis-runner/index.html">🏃 Addis Runner</button><button type="button" data-game="/games/hill-climb-racer/index.html">🚙 Hill Climb</button><button type="button" data-game="/games/sky-crawler/index.html">🌌 Sky Crawler</button></div><p class="hint">Your study progress stays saved while you play.</p></div><button class="btn alt" id="in-game-back">Back to learning</button></section>';
  app.querySelectorAll('[data-game]').forEach(function(b){b.onclick=function(){window.examproOpenGameBreak();var frame=document.getElementById('exampro-game-frame');frame.src=b.getAttribute('data-game');};});
