@@ -46,19 +46,19 @@ const write = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
 
 const GAME_LIST_ONLINE = Object.values(GAMES).filter((g) => !g.offlineOnly && !g.comingSoon).map((g) => g.id);
 
-export default function GebetaApp() {
+export default function GebetaApp({ initialGame = null }) {
   const [lang, setLang] = useState('en');
   const [game, setGame] = useState('gebeta');
   const [muted, setMutedState] = useState(false);
   const [music, setMusicState] = useState(false);
   const [view, setView] = useState({ name: 'home' });
   useEffect(() => {
-    const requested = new URLSearchParams(window.location.search).get('game');
+    const requested = initialGame || new URLSearchParams(window.location.search).get('game');
     if (['gebeta', 'checkers', 'bingo'].includes(requested)) {
       setGame(requested);
       setView({ name: 'modes' });
     }
-  }, []);
+  }, [initialGame]);
   const [adShow, setAdShow] = useState(null);                // { ad, placement, resolve }: the full-screen ad on screen right now
   const adRef = useRef(null); adRef.current = adShow;
   const langRef = useRef(lang); langRef.current = lang;   // the ad picker reads the current language without re-creating runAd
