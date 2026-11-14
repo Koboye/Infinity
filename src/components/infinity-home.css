@@ -59,3 +59,26 @@
 .inf-root .inf-nav{padding:6px;border-radius:24px;gap:6px}
 .inf-root .inf-nav button{font-size:.82rem;font-weight:700}
 .inf-root .inf-nav button[aria-current=page]{background:#FFC83D;color:#0F1B4C;box-shadow:0 4px 14px rgba(255,184,0,.35)}
+
+/* Profile tab */
+.inf-root .inf-p-card{position:relative;overflow:hidden;isolation:isolate;display:flex;align-items:center;gap:clamp(16px,4vw,28px);padding:clamp(18px,4vw,28px);border-radius:24px;background:#0F1B4C;color:#fff}
+.inf-root .inf-p-avatar{flex:0 0 auto;display:grid;place-items:center;width:clamp(76px,20vw,104px);aspect-ratio:1;border-radius:50%;background:#FFC83D;color:#0F1B4C;
+  font:600 clamp(2rem,8vw,2.8rem) var(--inf-font-d);box-shadow:0 0 0 5px rgba(255,200,61,.28)}
+.inf-root .inf-p-id{min-width:0}
+.inf-root .inf-p-id h2{margin:0 0 8px;font:600 clamp(1.6rem,5vw,2.1rem)/1.1 var(--inf-font-d);color:#fff;overflow-wrap:anywhere}
+.inf-root .inf-p-id p{display:flex;align-items:center;gap:10px;margin:4px 0 0;color:#C9D1F7;font-size:1rem}
+.inf-root .inf-p-id p svg{flex:0 0 auto;color:#FFC83D}
+.inf-root .inf-p-id p span{min-width:0;overflow-wrap:anywhere}
+.inf-root .inf-p-list{display:flex;flex-direction:column;margin:0;padding:0;list-style:none;border-radius:20px;background:var(--inf-card);border:1.5px solid var(--inf-line);overflow:hidden}
+.inf-root .inf-p-list li{display:flex;align-items:center;gap:14px;padding:16px 18px}
+.inf-root .inf-p-list li+li{border-top:1px solid var(--inf-line)}
+.inf-root .inf-p-ico{flex:0 0 auto;display:grid;place-items:center;width:44px;height:44px;border-radius:12px;background:color-mix(in srgb,var(--inf-text) 8%,transparent);color:var(--inf-text)}
+.inf-root .inf-p-txt{flex:1 1 auto;min-width:0}
+.inf-root .inf-p-txt b{display:block;font:600 1.1rem var(--inf-font-d)}
+.inf-root .inf-p-txt small{display:block;margin-top:2px;color:var(--inf-mute);font-size:.9rem;line-height:1.4}
+.inf-root .inf-p-val{flex:0 0 auto;font-weight:700;color:var(--inf-mute)}
+.inf-root .inf-p-act{flex:0 0 auto;min-height:44px;padding:8px 16px;border-radius:999px;font-size:.95rem;font-weight:700}
+@media(max-width:520px){.inf-root .inf-p-list li{flex-wrap:wrap}.inf-root .inf-p-act{margin-left:58px}}
+.inf-root .inf-p-out{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:56px;border-radius:16px;font-size:1.0625rem;font-weight:700;
+  color:var(--inf-err);background:color-mix(in srgb,var(--inf-err) 8%,var(--inf-card));border-color:color-mix(in srgb,var(--inf-err) 35%,var(--inf-line))}
+.inf-root .inf-p-out:hover{border-color:var(--inf-err)}

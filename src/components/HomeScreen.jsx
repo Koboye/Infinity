@@ -48,11 +48,22 @@ function Ring({value, goal}) {
   );
 }
 
+export function StatStrip({stats, now = new Date()}) {
+  const streak = liveStreak(stats, now);
+  const acc = stats.answered ? Math.round(((stats.correct || 0) / stats.answered) * 100) : 0;
+  const figures = [['xp', stats.xp || 0, 'XP'], ['acc', acc + '%', 'Accuracy'], ['ans', stats.answered || 0, 'Answered'], ['streak', streak, 'Day streak']];
+  return (
+    <dl className="inf-h-stats" aria-label="Your progress">
+      {figures.map(([k, v, l]) => (
+        <div key={k}><span className="inf-h-ico" data-k={k}><Svg size={22}>{STAT[k]}</Svg></span><dd>{v}</dd><dt>{l}</dt></div>
+      ))}
+    </dl>
+  );
+}
+
 export default function HomeScreen({name, gradeName, subjects, stats, resume, onResume, onQuick, onOpen, onAll, onGames, now = new Date()}) {
   const today = todayCount(stats, now), streak = liveStreak(stats, now), left = Math.max(0, DAILY_GOAL - today);
   const total = subjects.reduce((n, d) => n + d.q.length, 0);
-  const acc = stats.answered ? Math.round(((stats.correct || 0) / stats.answered) * 100) : 0;
-  const figures = [['xp', stats.xp || 0, 'XP'], ['acc', acc + '%', 'Accuracy'], ['ans', stats.answered || 0, 'Answered'], ['streak', streak, 'Day streak']];
   return (
     <div className="inf-h">
       <header className="inf-h-hello">
@@ -72,11 +83,7 @@ export default function HomeScreen({name, gradeName, subjects, stats, resume, on
         <svg className="inf-h-mark" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path pathLength="100" d="M24 24c-3.500-4.500-6.500-7-10-7a7 7 0 000 14c3.500 0 6.500-2.500 10-7s6.500-7 10-7a7 7 0 010 14c-3.500 0-6.500-2.500-10-7z" fill="none" stroke="currentColor" strokeWidth="3.600" strokeLinecap="round" /></svg>
       </section>
 
-      <dl className="inf-h-stats" aria-label="Your progress">
-        {figures.map(([k, v, l]) => (
-          <div key={k}><span className="inf-h-ico" data-k={k}><Svg size={22}>{STAT[k]}</Svg></span><dd>{v}</dd><dt>{l}</dt></div>
-        ))}
-      </dl>
+      <StatStrip stats={stats} now={now} />
 
       <div className="inf-h-row"><h2>{gradeName} subjects</h2>{subjects.length > 8 && <button type="button" className="inf-link" onClick={onAll}>View all</button>}</div>
       {subjects.length ? (
