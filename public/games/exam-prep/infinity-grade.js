@@ -23,14 +23,14 @@
   function getGrade(){return grades.find(function(g){return g.id===selected();});}
   function updateLabel(){var label=document.getElementById('in-grade-current'),g=getGrade();if(label)label.textContent=g?g.name:'Choose your grade';}
   function show(required){if(open)return;open=true;lastFocus=document.activeElement;panel.hidden=false;panel.dataset.required=required?'true':'false';document.body.classList.add('in-grade-open');panel.querySelector('#in-grade-close').hidden=!!required;var first=panel.querySelector('[data-grade="'+(selected()||'kg')+'"]');(first||options.firstElementChild).focus();}
-  function close(){if(panel.dataset.required==='true'&&!selected())return;panel.hidden=true;open=false;document.body.classList.remove('in-grade-open');if(lastFocus&&lastFocus.isConnected)lastFocus.focus();}
+  function close(force){if(!force&&panel.dataset.required==='true'&&!selected())return;panel.hidden=true;open=false;document.body.classList.remove('in-grade-open');if(lastFocus&&lastFocus.isConnected)lastFocus.focus();}
   function choose(id){var g=grades.find(function(x){return x.id===id;});if(!g)return;try{localStorage.setItem(key(),g.id);}catch(e){}close();updateLabel();window.dispatchEvent(new CustomEvent('infinity-grade-changed',{detail:{grade:g.id,label:g.name}}));var target=document.querySelector('.cat[data-c="'+g.cat+'"]');if(target&&target.getAttribute('aria-disabled')!=='true')target.click();}
   options.addEventListener('click',function(e){var b=e.target.closest('[data-grade]');if(b)choose(b.dataset.grade);});
   panel.querySelector('#in-grade-close').addEventListener('click',close);
   panel.addEventListener('keydown',function(e){if(!open)return;if(e.key==='Escape'){e.preventDefault();close();}if(e.key==='Tab'){var focusable=Array.from(panel.querySelectorAll('button:not([hidden])'));var i=focusable.indexOf(document.activeElement);if(e.shiftKey&&i===0){e.preventDefault();focusable[focusable.length-1].focus();}else if(!e.shiftKey&&i===focusable.length-1){e.preventDefault();focusable[0].focus();}}});
   window.infinityShowGradePicker=function(){show(false);};
   window.infinityGetGradeLabel=function(){var g=getGrade();return g?g.name:'';};
-  window.addEventListener('infinity-auth-changed',function(e){if(!e.detail||!e.detail.uid){currentUser=null;close();return;}currentUser=e.detail.uid;updateLabel();if(!selected())show(true);});
+  window.addEventListener('infinity-auth-changed',function(e){if(!e.detail||!e.detail.uid){currentUser=null;close(true);return;}currentUser=e.detail.uid;updateLabel();if(!selected())show(true);});
   window.addEventListener('infinity-grade-changed',updateLabel);
   new MutationObserver(function(){updateLabel();}).observe(document.getElementById('app'),{childList:true});
 })();
