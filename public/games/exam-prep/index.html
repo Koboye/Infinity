@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#050B2E">
-<title>exam.pro · Learn · Practice · Excel — Grade 1–12, university, exit exams &amp; NGAT</title>
+<meta name="theme-color" content="#101e37">
+<title>Infinity · Exam Pro</title>
 <link rel="preload" href="fonts/figtree-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <style>
 @font-face{font-family:'Figtree';src:url(fonts/figtree-latin-wght-normal.woff2) format('woff2');font-weight:300 900;font-display:swap}
@@ -238,12 +238,12 @@ body.ep-auth-locked > :not(#ep-auth-gate):not(script) { visibility:hidden !impor
 <body class="ep-auth-locked">
 <div id="ep-auth-gate" role="dialog" aria-modal="true" aria-labelledby="ep-auth-title">
   <div class="ep-auth-card">
-    <h1 id="ep-auth-title">Sign in</h1><p>Sign in to continue learning with exam.pro.</p>
+    <h1 id="ep-auth-title">Sign in</h1><p>Choose your learning level, then sign in to open your resources.</p>
     <form id="ep-auth-form">
       <div id="ep-auth-name" hidden><label for="ep-display-name">Student name</label><input id="ep-display-name" name="displayName" autocomplete="name" maxlength="80"></div>
-      <label for="in-auth-grade">Learning level</label><select id="in-auth-grade" name="grade" required><option value="">Select your grade or program</option><option value="kg">Kindergarten</option><option value="g1">Grade 1</option><option value="g2">Grade 2</option><option value="g3">Grade 3</option><option value="g4">Grade 4</option><option value="g5">Grade 5</option><option value="g6">Grade 6</option><option value="g7">Grade 7</option><option value="g8">Grade 8</option><option value="g9">Grade 9</option><option value="g10">Grade 10</option><option value="g11">Grade 11</option><option value="g12">Grade 12</option><option value="uni">University &amp; College</option><option value="ngat">NGAT</option><option value="gk">General Knowledge</option></select>
+      <div class="in-auth-level-header"><strong>1. Choose your learning level</strong><span>Required for both sign in and sign up</span></div><label for="in-auth-grade">Grade or program</label><select id="in-auth-grade" name="grade" required><option value="">Select your grade or program</option><option value="kg">Kindergarten</option><option value="g1">Grade 1</option><option value="g2">Grade 2</option><option value="g3">Grade 3</option><option value="g4">Grade 4</option><option value="g5">Grade 5</option><option value="g6">Grade 6</option><option value="g7">Grade 7</option><option value="g8">Grade 8</option><option value="g9">Grade 9</option><option value="g10">Grade 10</option><option value="g11">Grade 11</option><option value="g12">Grade 12</option><option value="uni">University &amp; College</option><option value="ngat">NGAT</option><option value="gk">General Knowledge</option></select>
       <div id="in-auth-department-wrap" hidden><label for="in-auth-department">University department</label><select id="in-auth-department" name="department"><option value="">Select your department</option></select></div>
-      <label for="ep-auth-email">Email</label><input id="ep-auth-email" name="email" type="email" autocomplete="email" required>
+      <div class="in-auth-account-header">2. Your account</div><label for="ep-auth-email">Email</label><input id="ep-auth-email" name="email" type="email" autocomplete="email" required>
       <label for="ep-auth-password">Password</label><input id="ep-auth-password" name="password" type="password" autocomplete="current-password" minlength="6" required>
       <p id="ep-auth-message" role="alert" aria-live="polite"></p>
       <button id="ep-auth-submit" type="submit">Sign in</button>
