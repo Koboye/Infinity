@@ -80,3 +80,17 @@ test('ExamPro game break cannot render old catalog even on home navigation', () 
   assert.match(app, /examproBreak \? 'modes' : 'home'/);
   assert.match(app, /if \(examproBreak\) \{ body = <ModesScreen/);
 });
+
+test('kindergarten book and quiz are linked to the learner profile', () => {
+  const kgBook = readFileSync(base + 'kindergarten-book.html', 'utf8');
+  const kgBank = readFileSync(base + 'kindergarten-bank.js', 'utf8');
+  new vm.Script(kgBank);
+  assert.match(kgBook, /My Kindergarten Book/);
+  assert.match(kgBook, /Chapter/);
+  assert.match(kgBook, /exampro\.kg\.book\.v1/);
+  assert.match(kgBank, /kindergarten-foundations/);
+  assert.match(html, /src="kindergarten-bank\.js"/);
+  assert.match(html, /href="kindergarten-book\.html"/);
+  assert.match(html, /groups: \['kg'\]/);
+  assert.match(unified, /id:'kg',name:'Kindergarten \(KG\)'/);
+});
