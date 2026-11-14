@@ -1,0 +1,6 @@
+'use client';
+import Link from 'next/link';
+import { useEffect,useState } from 'react';
+import { useUser } from '@/lib/firebase.js';
+import { loadProgress,levelOf } from '@/lib/progress.js';
+export default function Profile(){const {user}=useUser();const [p,setP]=useState(null);useEffect(()=>setP(loadProgress()),[]);const lv=levelOf(p?.xp||0);return <div className="ep-route"><Link className="ep-back" href="/">← Home</Link><div className="ep-route-head"><span>YOUR SPACE</span><h1>Profile</h1></div><section className="card ep-profile-card"><div className="ep-avatar" aria-hidden="true">{(user?.displayName||user?.email||'S')[0].toUpperCase()}</div><h2>{user?.displayName||user?.email||'Student'}</h2><p className="hint">Level {lv.level} · {p?.xp||0} XP</p><div className="ep-profile-stats"><span>🔥 <b>{p?.streak||0}</b> day streak</span><span>🎯 <b>{p?.answered?Math.round(p.correct/p.answered*100):0}%</b> accuracy</span></div></section><nav className="ep-profile-links" aria-label="Profile options"><Link href="/account">👤 Account & subscription <span>›</span></Link><Link href="/progress">📊 My progress <span>›</span></Link><Link href="/plan">📋 Study plan <span>›</span></Link><Link href="/contribute">📚 Contribute questions <span>›</span></Link></nav></div>}
