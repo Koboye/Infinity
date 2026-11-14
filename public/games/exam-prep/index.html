@@ -471,6 +471,38 @@ body.dash-on{background:#080f32 radial-gradient(ellipse 80% 55% at 90% 0%,rgba(8
 @media(max-width:540px){.home2 .dhead{padding:14px;gap:10px}.home2 .gcard{padding:13px}.home2 .qt{gap:9px}.home2 .qtile{padding:13px;min-height:112px}.home2 .cats{gap:9px}.home2 .cat{min-height:142px}.ep-smart-tip{padding:14px;flex-wrap:wrap}.ep-smart-tip button{margin-left:40px}}
 @media(max-width:360px){.home2 .dwho h1{font-size:1.16rem}.home2 .qtile b{font-size:.88rem}.home2 .cat{min-height:134px}.ep-smart-tip button{width:100%;margin-left:0}}
 @media(prefers-reduced-motion:reduce){.home2 .cat,.home2 .qtile{transition:none!important;animation:none!important}}
+</style><style id="ep-screen-02">
+/* Screen 02 — learning path, grade/program and subject selection. */
+.catv{max-width:780px;margin:0 auto;padding:0 0 35px}
+.catv .pick-h{display:flex;align-items:center;gap:18px;padding:22px;margin:4px 0 16px;border-radius:24px;border:1px solid rgba(221,225,255,.21);background:radial-gradient(circle at 95% 0%,rgba(255,211,107,.23),transparent 48%),linear-gradient(125deg,#1b389e,#5c40b1);box-shadow:0 14px 30px rgba(4,11,57,.22)}
+.catv .pick-h-icon{display:grid;place-items:center;flex:none;width:76px;height:76px;border-radius:21px;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.2)}
+.catv .pick-h-icon svg{width:53px;height:53px}
+.catv .pick-h-copy{min-width:0}
+.catv .pick-eyebrow{display:block;font-size:10px;letter-spacing:.15em;font-weight:900;color:#ffe19a;margin-bottom:7px}
+.catv .pick-h h1{font-size:clamp(1.55rem,5vw,2.1rem);line-height:1.14;letter-spacing:-.04em}
+.catv .pick-h p{margin-top:6px;color:#e0e6ff;line-height:1.4}
+.catv .catp{padding:17px 20px;margin:0 0 24px;border:1px solid rgba(210,221,255,.18);border-radius:19px;background:rgba(255,255,255,.055)}
+.catv .catp-t{font-size:13px;line-height:1.45;color:#d2d9ff}
+.catv .catp-t b{color:#ffdf8d}
+.catv .catp .dbar{margin-top:11px;margin-bottom:0;height:9px}
+.catv .pk-l{font-size:1.16rem;letter-spacing:-.02em;margin:21px 0 12px}
+.catv .lv{gap:10px}
+.catv .lv button{aspect-ratio:auto;min-height:82px;border:1px solid rgba(214,223,255,.2);border-radius:17px;background:rgba(255,255,255,.075);font-size:clamp(1.25rem,4vw,1.6rem);box-shadow:0 7px 17px rgba(0,0,0,.1)}
+.catv .lv button small{font-size:11px;color:#d0d8ff}
+.catv .lv button[aria-pressed=true],.catv .prg button[aria-pressed=true]{background:linear-gradient(135deg,#335de4,#6b47cb);border-color:#ffda81;box-shadow:0 0 0 2px rgba(255,218,129,.24),0 12px 25px rgba(19,32,103,.25)}
+.catv .lv button.soon{opacity:.5}
+.catv .prg{gap:10px}
+.catv .prg button{min-height:70px;border-radius:17px;border:1px solid rgba(214,223,255,.2);background:rgba(255,255,255,.075);padding:15px 17px;line-height:1.3}
+.catv .prg button small{font-size:11px;color:#d1d9ff}
+.catv .sjs{gap:12px;margin-bottom:20px}
+.catv .sj{min-height:165px;border-radius:20px;border:2px solid transparent;background:linear-gradient(155deg,#fff,#e8edff);box-shadow:0 8px 23px rgba(0,0,0,.18);padding:17px 10px}
+.catv .sj[aria-pressed=true]{border-color:#ffcf63;box-shadow:0 0 0 2px rgba(255,211,107,.3),0 12px 28px rgba(0,0,0,.2)}
+.catv .sj svg{width:45px;height:45px}.catv .sj b{line-height:1.22}.catv .sj small{font-size:12px}.catv .sj .mb{margin-top:8px}
+.catv button:focus-visible,.pbar button:focus-visible{outline:3px solid #ffd36b;outline-offset:3px}
+@media(hover:hover){.catv .lv button:not(.soon):hover,.catv .prg button:hover,.catv .sj:hover{transform:translateY(-3px)}}
+@media(max-width:500px){.catv .pick-h{padding:17px;gap:12px}.catv .pick-h-icon{width:59px;height:59px;border-radius:16px}.catv .pick-h-icon svg{width:42px;height:42px}.catv .lv{grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}.catv .lv button{min-height:72px}.catv .sjs{gap:9px}.catv .sj{min-height:147px;padding:14px 7px}.catv .sj b{font-size:.9rem}}
+@media(max-width:360px){.catv .lv{grid-template-columns:repeat(2,minmax(0,1fr))}.catv .lv button{min-height:65px}.catv .pick-h{align-items:flex-start}.catv .pick-h h1{font-size:1.35rem}}
+@media(prefers-reduced-motion:reduce){.catv .sj,.catv .lv button,.catv .prg button{transition:none!important;animation:none!important}}
 </style></head>
 <body>
 <div class="splash" id="splash" role="dialog" aria-modal="true" aria-labelledby="sp-title" hidden>
@@ -721,7 +753,7 @@ body.dash-on{background:#080f32 radial-gradient(ellipse 80% 55% at 90% 0%,rgba(8
     var selD = subs.filter(function (d) { return d.id === ui.sel; })[0];
     function pctOf(list) { var t = 0, m = 0; list.forEach(function (d) { t += d.q.length; m += masteredOf(p, d); }); return { t: t, m: m, pct: t ? Math.round(m / t * 100) : 0, txt: pcTxt(m, t), w: pcW(m, t) }; }
     var all = pctOf(BANK.filter(function (d) { return c.groups.indexOf(d.group) >= 0; })), ct = pctOf(subs);
-    var html = '<div class="dash catv' + (soft ? '' : ' ent') + '"><div class="pick-h">' + ICON[c.icon] + '<div><h1>' + esc(c.name) + '</h1><p>' + esc(c.sub) + '</p></div></div>' +
+    var html = '<div class="dash catv' + (soft ? '' : ' ent') + '"><div class="pick-h"><div class="pick-h-icon">' + ICON[c.icon] + '</div><div class="pick-h-copy"><span class="pick-eyebrow">YOUR LEARNING PATH</span><h1>' + esc(c.name) + '</h1><p>' + esc(c.sub) + '</p></div></div>' +
       '<div class="catp"><div class="catp-t"><b>' + all.txt + '</b> mastered · ' + all.m.toLocaleString() + ' of ' + all.t.toLocaleString() + ' questions</div><div class="dbar" role="progressbar" aria-label="Mastery" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + all.pct + '"><i style="width:' + all.w + '%"></i></div></div>' +
       '<h2 class="pk-l" id="lvl">' + (isGrade ? 'Choose your grade' : 'Choose your program') + '</h2>' +
       (isGrade ? '<div class="lv" role="group" aria-labelledby="lvl">' + lvs.map(function (l) {
