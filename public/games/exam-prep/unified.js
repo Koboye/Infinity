@@ -96,12 +96,15 @@
     var stageName = (stages.filter(function (x) { return x.id === stage; })[0] || stages[0]).name;
     var stageOptions = stages.map(function (x) { return '<option value="' + x.id + '"' + (stage === x.id ? ' selected' : '') + '>' + x.name + '</option>'; }).join('');
 
-    return heading('YOUR LEARNING IDENTITY', 'Student profile', 'Make your learning space yours. Your progress stays connected to your practice on this device.') +
+    var signed = window.ExamProAuth && window.ExamProAuth.user;
+    var accountEmail = signed && signed.email ? signed.email : '';
+    return heading('YOUR LEARNING IDENTITY', 'Student profile', signed ? 'Your Firebase account and learning profile.' : 'Your learning profile is currently stored on this device.') +
+      '<section class="ep-unified-card ep-profile-account"><span class="ep-progress-kicker">ACCOUNT</span><h2>' + (signed ? 'Signed in' : 'Not signed in') + '</h2><p>' + (signed ? '📧 ' + escapeHtml(accountEmail) : 'Sign in to connect your learning profile to an account.') + '</p><button type="button" class="ep-unified-action" id="ep-profile-account-action">' + (signed ? 'Log out' : 'Sign in / Create account') + '</button><p class="ep-profile-status" id="ep-profile-account-status" role="status"></p></section>' +
       '<section class="ep-unified-card ep-unified-profile ep-profile-summary"><div class="ep-unified-avatar" aria-hidden="true">🎓</div><div><span class="ep-progress-kicker">STUDENT DASHBOARD</span><h2>' + escapeHtml(name) + '</h2><p>Level ' + lv + ' · ' + xp.toLocaleString() + ' XP earned</p>' + (focus ? '<p class="ep-profile-focus">🎯 ' + escapeHtml(focus) + '</p>' : '') + '</div></section>' +
       '<div class="ep-unified-stats ep-profile-stats"><div>🔥<b>' + (p.streak || 0) + '</b><small>Day streak</small></div><div>📚<b>' + answered.toLocaleString() + '</b><small>Answered</small></div><div>🎯<b>' + accuracy + '%</b><small>Accuracy</small></div><div>⭐<b>' + lv + '</b><small>Level</small></div></div>' +
       '<section class="ep-unified-card ep-profile-editor"><span class="ep-progress-kicker">YOUR REAL LEARNING PROFILE</span><h2>About you</h2><p>Your saved grade or university level controls the subjects shown on Home and in practice. Change it here whenever you want.</p><label>Display name<input id="ep-profile-name" type="text" maxlength="50" autocomplete="nickname" placeholder="How should we call you?" value="' + escapeHtml(prefs.name || '') + '"></label><label>My study focus<input id="ep-profile-focus" type="text" maxlength="100" placeholder="e.g. Prepare for Grade 12 Mathematics" value="' + escapeHtml(focus) + '"></label><label>My grade or program<select id="ep-profile-stage" aria-label="Your grade or program">' + stageOptions + '</select></label><p class="ep-profile-stage-note">Current learning path: <strong>' + escapeHtml(stageName) + '</strong>. Existing scores stay saved when you change levels.</p><button class="ep-unified-action" type="button" id="ep-profile-save">Save profile</button><p id="ep-profile-status" role="status" class="ep-profile-status"></p></section>' +
       '<section class="ep-unified-card"><span class="ep-progress-kicker">YOUR LEARNING ROUTINE</span><h2>Study preferences</h2><div class="ep-unified-score"><span>Daily question goal</span><b>' + escapeHtml(goal) + ' questions</b></div><p>Change your goal and exam date from the Study Plan screen.</p><button class="ep-unified-action ep-profile-plan" type="button" id="ep-profile-plan">Open study plan →</button></section>' +
-      '<section class="ep-unified-card"><span class="ep-progress-kicker">DATA & PRIVACY</span><h2>Your progress, your data</h2><p>Practice records, study-plan settings and this profile are stored in this browser. They are not a Firebase account and do not sync across devices.</p><button class="ep-unified-action ep-profile-export" type="button" id="ep-profile-export">Export my learning data</button><p id="ep-export-status" role="status" class="ep-profile-status"></p></section>';
+      '<section class="ep-unified-card"><span class="ep-progress-kicker">DATA & PRIVACY</span><h2>Your progress, your data</h2><p>Learning progress is saved in this browser. When signed in, ExamPro also attempts to sync your profile and progress to your Firebase account. If cloud access fails, local data remains available.</p><button class="ep-unified-action ep-profile-export" type="button" id="ep-profile-export">Export my learning data</button><p id="ep-export-status" role="status" class="ep-profile-status"></p></section>';
   }
   function close() {
     panel.hidden = true; app.hidden = false; nav.classList.remove('ep-unified-active'); document.body.classList.remove('ep-panel-open');
@@ -137,10 +140,26 @@
       var focus = panel.querySelector('#ep-profile-focus').value.trim().slice(0,100);
       var stage = panel.querySelector('#ep-profile-stage').value;
       try {
-        localStorage.setItem(PROFILE, JSON.stringify({name:name,focus:focus,stage:stage}));
+        var existing = read(PROFILE, {}); localStorage.setItem(PROFILE, JSON.stringify(Object.assign({}, existing, {name:name,focus:focus,stage:stage}))); if (window.ExamProAuth && window.ExamProAuth.user) window.ExamProAuth.saveProgress().catch(function (err) { console.warn('Profile cloud sync failed', err); });
         open('profile');
         panel.querySelector('#ep-profile-status').textContent = 'Profile and learning level saved. Home and subjects will now match your selection.';
       } catch (e) { panel.querySelector('#ep-profile-status').textContent = 'Unable to save. Check browser storage permissions.'; }
+    });
+    var accountAction = panel.querySelector('#ep-profile-account-action');
+    if (accountAction) accountAction.addEventListener('click', async function () {
+      var a = window.ExamProAuth;
+      if (!a) return;
+      if (!a.user) { close(); a.open(); return; }
+      if (!window.confirm('Log out of ExamPro on this device?')) return;
+      accountAction.disabled = true;
+      try {
+        await a.signOut();
+        close();
+        window.location.reload();
+      } catch (err) {
+        accountAction.disabled = false;
+        panel.querySelector('#ep-profile-account-status').textContent = 'Could not log out. Please try again.';
+      }
     });
     var profilePlan = panel.querySelector('#ep-profile-plan');
     if (profilePlan) profilePlan.addEventListener('click', function () { open('plan'); });
