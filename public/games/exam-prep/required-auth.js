@@ -39,6 +39,7 @@ function mode(up) {
 }
 function allow(user) {
   currentUserId = user ? user.uid : null;
+  window.infinityStudentUid = currentUserId;
   if (window.infinitySetProfileIdentity) window.infinitySetProfileIdentity(user);
   if (user) syncGradeField(user.uid);
   gate.hidden = !!user;
@@ -81,6 +82,7 @@ try {
       } else {
         const result = await signInWithEmailAndPassword(auth, email, password);
         rememberGrade(result.user.uid, requestedGrade);
+        rememberDepartment(result.user.uid, requestedGrade === 'uni' ? requestedDepartment : '');
       }
       form.reset();
       if (auth.currentUser) { syncGradeField(auth.currentUser.uid); window.dispatchEvent(new CustomEvent('infinity-grade-changed', { detail: { grade: selectedGrade(auth.currentUser.uid), department: selectedDepartment(auth.currentUser.uid) } })); }
