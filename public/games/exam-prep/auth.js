@@ -53,8 +53,8 @@ function close(){modal.hidden=true;document.body.style.overflow=''}
 $('ep-auth-back').onclick=close;$('ep-tab-in').onclick=()=>setMode('signin');$('ep-tab-up').onclick=()=>setMode('signup');
 function getLocal(key){try{return JSON.parse(localStorage.getItem(key)||'null')}catch{return null}}
 function putLocal(key,value){if(value!=null)localStorage.setItem(key,JSON.stringify(value))}
-const OWNER='exampro.active.uid';
-let creatingAccount=false;
+const OWNER='exampro.active.uid', EXAM='exampro.exam.v1';
+let creatingAccount=false,saveTimer=null;
 async function sync(u){
  if(!db||!api)return;
  const ref=api.doc(db,'students',u.uid);
@@ -62,7 +62,7 @@ async function sync(u){
  const remote=snap.exists()?snap.data():{};
  const prior=localStorage.getItem(OWNER);
  // Never attribute another student's browser records to this signed-in account.
- if(prior&&prior!==u.uid){[PROFILE,PROGRESS,PLAN].forEach(key=>localStorage.removeItem(key));}
+ if(prior&&prior!==u.uid){[PROFILE,PROGRESS,PLAN,EXAM].forEach(key=>localStorage.removeItem(key));}
  if(snap.exists()){
    for(const [key,val] of [[PROFILE,remote.profile],[PROGRESS,remote.progress],[PLAN,remote.plan]]){
      if(val&&typeof val==='object')putLocal(key,val);
@@ -80,7 +80,8 @@ async function ensureReady(){if(!auth||!api)throw Error('Secure sign-in is not c
 $('ep-auth-form').onsubmit=async e=>{e.preventDefault();if(busy)return;setBusy(true);message('');try{await ensureReady();let email=$('ep-auth-email').value.trim(),pass=$('ep-auth-password').value;let result;if(mode==='signup'){let name=$('ep-auth-name').value.trim(),stage=$('ep-auth-grade').value;if(!name||!stage)throw Error('Enter your name and choose your learning level.');creatingAccount=true;try{result=await api.createUserWithEmailAndPassword(auth,email,pass);await api.updateProfile(result.user,{displayName:name});putLocal(PROFILE,{...(getLocal(PROFILE)||{}),name,stage});}finally{creatingAccount=false;}}else result=await api.signInWithEmailAndPassword(auth,email,pass);await afterAuth(result.user)}catch(err){message(err.code==='auth/email-already-in-use'?'This email already has an account. Please sign in.':err.code==='auth/invalid-credential'?'Incorrect email or password.':({'auth/network-request-failed':'Network problem. Check your connection and try again.','auth/too-many-requests':'Too many attempts. Please try again later.','auth/weak-password':'Use a password with at least 6 characters.','auth/operation-not-allowed':'This sign-in method is not enabled in Firebase.'}[err.code]||err.message||'Sign-in failed.'))}finally{setBusy(false)}};
 $('ep-auth-google').onclick=async()=>{if(busy)return;setBusy(true);try{await ensureReady();const r=await api.signInWithPopup(auth,new api.GoogleAuthProvider());await afterAuth(r.user)}catch(e){message(e.message||'Google sign-in failed.')}finally{setBusy(false)}};
 $('ep-auth-reset').onclick=async()=>{try{await ensureReady();let email=$('ep-auth-email').value.trim();if(!email)throw Error('Enter your email first.');await api.sendPasswordResetEmail(auth,email);message('Password reset email sent.')}catch(e){message(e.message)}};
-window.ExamProAuth={open,close,get configured(){return !!(CONFIG&&CONFIG.apiKey&&CONFIG.projectId)},get user(){return user},signOut:async()=>{await ensureReady();await api.signOut(auth);user=null;[PROFILE,PROGRESS,PLAN].forEach(key=>localStorage.removeItem(key));localStorage.removeItem(OWNER);document.dispatchEvent(new Event('exampro:auth-changed'))},saveProgress:async()=>{if(!user||!db)return;await api.setDoc(api.doc(db,'students',user.uid),{profile:getLocal(PROFILE)||{},progress:getLocal(PROGRESS)||{},plan:getLocal(PLAN)||{},updatedAt:api.serverTimestamp()},{merge:true})}};
+window.ExamProAuth={open,close,get configured(){return !!(CONFIG&&CONFIG.apiKey&&CONFIG.projectId)},get user(){return user},signOut:async()=>{await ensureReady();clearTimeout(saveTimer);await api.signOut(auth);user=null;[PROFILE,PROGRESS,PLAN].forEach(key=>localStorage.removeItem(key));localStorage.removeItem(OWNER);document.dispatchEvent(new Event('exampro:auth-changed'))},saveProgress:async()=>{if(!user||!db)return;await api.setDoc(api.doc(db,'students',user.uid),{profile:getLocal(PROFILE)||{},progress:getLocal(PROGRESS)||{},plan:getLocal(PLAN)||{},updatedAt:api.serverTimestamp()},{merge:true})}};
+document.addEventListener('exampro:progress-updated',()=>{if(!user||!db||!api)return;clearTimeout(saveTimer);saveTimer=setTimeout(()=>window.ExamProAuth.saveProgress().catch(e=>console.warn('Progress sync failed',e)),1500)});
 // Periodically sync updated learning progress without blocking study sessions.
 setInterval(()=>{if(user&&db&&api&&document.visibilityState==='visible')window.ExamProAuth.saveProgress().catch(e=>console.warn('Background progress sync failed',e));},60000);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&user&&db&&api)window.ExamProAuth.saveProgress().catch(()=>{});});
