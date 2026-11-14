@@ -280,7 +280,7 @@ body.ep-auth-locked > :not(#ep-auth-gate):not(script) { visibility:hidden !impor
 <header class="top"><div class="wrap"><button class="brand" id="home" aria-label="exam.pro home"><svg class="logo" viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffd36b"/><stop offset="1" stop-color="#f5a623"/></linearGradient></defs><path d="M24 6 4 15l20 9 20-9z" fill="url(#lg)"/><path d="M12 21v8c0 3 5 6 12 6s12-3 12-6v-8l-12 5.4z" fill="#fff" opacity=".95"/><path d="M42 16v12" stroke="#ffd36b" stroke-width="2.4" stroke-linecap="round"/><path d="M8 40h32" stroke="#ffd36b" stroke-width="2.4" stroke-linecap="round"/></svg><span><span class="bt">exam<i>.pro</i></span><span class="bs">Learn · Practice · Excel</span></span></button><a href="/">← Games</a><div class="tsz" role="group" aria-label="Text size"><button id="tsd" type="button" aria-label="Smaller text">A−</button><button id="tsu" type="button" aria-label="Larger text">A+</button></div></div></header>
 <div class="toast" id="toast" aria-hidden="true"></div>
 <main class="wrap" id="app" aria-label="exam.pro"></main>
-<nav class="bnav" id="bnav" aria-label="Main"><button type="button" id="nv-home" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</button><button type="button" id="nv-sub"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16M4 12h16M4 19h10"/></svg>All subjects</button></nav>
+<nav class="bnav" id="bnav" aria-label="Main"><button type="button" id="nv-home" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</button><button type="button" id="nv-sub"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16M4 12h16M4 19h10"/></svg>All subjects</button><button type="button" id="nv-games" class="in-nav-extra">🎮 Games</button><button type="button" id="nv-profile" class="in-nav-extra">👤 Profile</button></nav>
 <script src="bank.js"></script>
 <script>
 // Derive university departments from the existing question bank; do not invent courses.
@@ -377,7 +377,7 @@ body.ep-auth-locked > :not(#ep-auth-gate):not(script) { visibility:hidden !impor
   function catById(id) { return CATS.filter(function (c) { return c.id === id; })[0]; }
   var tt = 0;
   function toast(t) { var e = document.getElementById('toast'); e.textContent = t; e.classList.add('on'); say(t); clearTimeout(tt); tt = setTimeout(function () { e.classList.remove('on'); }, 3200); }
-  function setNav(which) { document.getElementById('nv-home').setAttribute('aria-current', which === 'home' ? 'page' : 'false'); document.getElementById('nv-sub').setAttribute('aria-current', which === 'sub' ? 'page' : 'false'); }
+  function setNav(which) { document.getElementById('nv-home').setAttribute('aria-current', which === 'home' ? 'page' : 'false'); document.getElementById('nv-sub').setAttribute('aria-current', which === 'sub' ? 'page' : 'false'); document.getElementById('nv-games').setAttribute('aria-current', which === 'games' ? 'page' : 'false'); document.getElementById('nv-profile').setAttribute('aria-current', which === 'profile' ? 'page' : 'false'); }
   function chrome(mode) { var b = document.body.classList; b.toggle('dash-on', mode === 'dash'); b.toggle('has-nav', mode === 'dash' || mode === 'list'); }
   function dash(soft) {
     chrome('dash'); setNav('home'); ui.cat = null;
@@ -565,6 +565,10 @@ body.ep-auth-locked > :not(#ep-auth-gate):not(script) { visibility:hidden !impor
   window.addEventListener('infinity-grade-changed', function (event) {
     if (event.detail && event.detail.grade) openStudentResources();
   });
+  window.infinityNavigateHome = function(){dash();};
+  window.infinityNavigateResources = openStudentResources;
+  window.infinityReadProgress = function(){return load();};
+  window.infinitySetNav = setNav;
   dash(true);
 })();
 </script>
@@ -602,6 +606,7 @@ body.ep-auth-locked > :not(#ep-auth-gate):not(script) { visibility:hidden !impor
 })();
 </script>
 <script src="infinity-grade.js" defer></script>
+<script src="infinity-profile-tabs.js" defer></script>
 <script type="module" src="required-auth.js"></script>
 </body>
 </html>
