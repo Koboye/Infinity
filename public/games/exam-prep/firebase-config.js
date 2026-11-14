@@ -1,5 +1,10 @@
-// Public Firebase web-app configuration (not a secret). Fill from Firebase Console > Project settings > Your apps.
-// Enable Email/Password and Google providers under Authentication > Sign-in method.
-// Create Firestore and enforce rules restricting /students/{uid} to request.auth.uid == uid.
-// Without configuration the app does not claim to create accounts or sync student records.
-window.EXAMPRO_FIREBASE_CONFIG = window.EXAMPRO_FIREBASE_CONFIG || null;
+// Public Firebase Web SDK configuration for the existing ExamPro project.
+window.EXAMPRO_FIREBASE_CONFIG = {
+  apiKey: "AIzaSyD9jDk8gijMVAYrsFe4vpojI7GyZnkzGL8",
+  authDomain: "dagu-8348c.firebaseapp.com",
+  projectId: "dagu-8348c",
+  storageBucket: "dagu-8348c.firebasestorage.app",
+  messagingSenderId: "259738670911",
+  appId: "1:259738670911:web:c4d1116e3697a8f67c658a",
+  measurementId: "G-KJW3QQJ26X"
+};
