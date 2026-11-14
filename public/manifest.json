@@ -1,12 +1,12 @@
 {
-  "name": "Afro Zone",
-  "short_name": "Afro Zone",
-  "description": "Play Gebeta, Dama, Bingo and Afro Climb with friends online or against the computer. Works offline.",
+  "name": "Infinity · Exam Pro",
+  "short_name": "Infinity",
+  "description": "Infinity learning and exam preparation with games during study breaks.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#072A1F",
-  "theme_color": "#072A1F",
+  "background_color": "#101e37",
+  "theme_color": "#101e37",
   "icons": [
     {
       "src": "/icon-192.png",
@@ -32,51 +32,14 @@
   "dir": "ltr",
   "scope": "/",
   "categories": [
-    "games",
-    "board",
-    "entertainment"
+    "education",
+    "games"
   ],
   "shortcuts": [
     {
-      "name": "ገበጣ · Gebeta",
-      "short_name": "Gebeta",
-      "url": "/?game=gebeta",
-      "icons": [
-        {
-          "src": "/icon-192.png",
-          "sizes": "192x192",
-          "type": "image/png"
-        }
-      ]
-    },
-    {
-      "name": "ዳማ · Checkers",
-      "short_name": "Checkers",
-      "url": "/?game=checkers",
-      "icons": [
-        {
-          "src": "/icon-192.png",
-          "sizes": "192x192",
-          "type": "image/png"
-        }
-      ]
-    },
-    {
-      "name": "ቢንጎ · Bingo",
-      "short_name": "Bingo",
-      "url": "/?game=bingo",
-      "icons": [
-        {
-          "src": "/icon-192.png",
-          "sizes": "192x192",
-          "type": "image/png"
-        }
-      ]
-    },
-    {
-      "name": "አፍሮ ክላይም · Afro Climb",
-      "short_name": "Afro Climb",
-      "url": "/games/hillclimb-racing/index.html",
+      "name": "Exam Pro",
+      "short_name": "Exam Pro",
+      "url": "/games/exam-prep/index.html",
       "icons": [
         {
           "src": "/icon-192.png",
