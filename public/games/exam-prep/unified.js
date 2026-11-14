@@ -111,6 +111,7 @@
     panel.hidden = true; panel.classList.remove('ep-profile-layout'); app.hidden = false; nav.classList.remove('ep-unified-active'); document.body.classList.remove('ep-panel-open');
     nav.querySelectorAll('.ep-unified-tab').forEach(function (b) { b.removeAttribute('aria-current'); });
   }
+  window.ExamProUnified = { open: function(name){ open(name || 'profile'); } };
   function open(name) {
     if (document.body.classList.contains('exam-on')) return;
     panel.classList.toggle('ep-profile-layout', name === 'profile');
