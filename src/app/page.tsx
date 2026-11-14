@@ -1,22 +1,7 @@
-'use client';
-import dynamic from 'next/dynamic';
+import { redirect } from 'next/navigation';
 
-import ErrorGuard from '@/components/ErrorGuard';
-
-const GebetaApp = dynamic(() => import('@/components/GebetaApp'), {
-  ssr: false,
-  loading: () => (
-    <div className="boot" role="status" aria-label="Loading Afro Zone">
-      <div className="boot-card">
-        <img className="boot-logo" src="/icon-192.png" alt="" width={96} height={96} />
-        <div className="boot-name">AFRO ZONE</div>
-        <div className="boot-tag">Classic games, Ethiopian style</div>
-        <div className="boot-bar"><i /></div>
-      </div>
-    </div>
-  ),
-});
-
+// Infinity opens directly into Exam Pro's required sign-in / create-account screen.
+// The games remain available as an in-exam break, without a separate games dashboard.
 export default function Home() {
-  return <ErrorGuard><GebetaApp /></ErrorGuard>;
+  redirect('/games/exam-prep/index.html');
 }
