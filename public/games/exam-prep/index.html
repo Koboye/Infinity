@@ -743,6 +743,13 @@ body.exam-on .ep-nav-menu{display:none}
 .ep-break-player iframe{width:100%;flex:1;min-height:0;border:0;background:#071c17}
 .ep-break-player-bar button:focus-visible{outline:3px solid #f4ca66;outline-offset:2px}
 @media(max-width:540px){.ep-break-box{max-height:86dvh!important}.ep-break-games{grid-template-columns:1fr!important}.ep-break-player{height:92dvh}.ep-break-player-bar strong{flex-basis:100%}.ep-break-player-bar button{flex:1;font-size:12px}}
+</style><style id="ep-personalization-polish">
+#ep-unified-panel .ep-profile-editor select{display:block;width:100%;min-height:47px;padding:10px 13px;border-radius:12px;border:1px solid #cbd4ec;background:#fff;color:#1b2852;font:inherit}
+#ep-unified-panel .ep-profile-editor select:focus-visible{outline:3px solid #e6b53e;outline-offset:3px}
+#ep-unified-panel .ep-profile-stage-note{padding:11px 13px;border-radius:12px;background:#eef2ff;color:#344575;font-size:12px;line-height:1.5}
+.ep-break-player{max-width:100%;box-sizing:border-box}
+.ep-break-player iframe{display:block;min-height:0}
+@media(max-width:600px){.ep-break-player{width:100%;height:calc(100dvh - 32px)}.ep-break-shade{padding:10px!important}}
 </style></head>
 <body>
 <div class="splash" id="splash" role="dialog" aria-modal="true" aria-labelledby="sp-title" hidden>
@@ -952,7 +959,7 @@ body.exam-on .ep-nav-menu{display:none}
   function dash(soft) {
     chrome('dash'); setNav('home'); ui.cat = null; ui.search = '';
     var p = load(), acc = p.answered ? Math.round(p.correct / p.answered * 100) : 0, gp = Math.min(1, p.today / dailyGoal()), lv = lvInfo(p.xp), alive = streakAlive(p), hr = new Date().getHours();
-    var hi = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
+    var hi = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening'; var lp = learner(), firstName = typeof lp.name === 'string' ? lp.name.trim().split(/\s+/)[0].slice(0,24) : ''; if (firstName) hi += ', ' + esc(firstName);
     var nx = homeNext(p), ch = dailyChallenge(), chDone = p.chal === ymd();
     var mist = 0, mDept = null, mMax = 0; Object.keys(p.mistakes).forEach(function (k) { var n = Object.keys(p.mistakes[k]).length; mist += n; if (n > mMax && dept(k)) { mMax = n; mDept = k; } });
     var html = '<div class="dash home2"><div class="dhead">' + ringSvg(lv.pct, '3.6rem', 4, 'lvr', '<span class="dav2">L' + lv.l + '</span>') +
@@ -968,7 +975,7 @@ body.exam-on .ep-nav-menu{display:none}
         : '<button type="button" class="qtile" id="tsur"><span class="qi" aria-hidden="true">🎲</span><b>Surprise me</b><small>10 random questions</small></button>') + '</div>' +
       '<div class="dsum" aria-label="Your progress"><div><b><span aria-hidden="true">⭐</span> ' + p.xp.toLocaleString() + '</b><small>total XP</small></div><div><b><span aria-hidden="true">🎯</span> ' + acc + '%</b><small>accuracy</small></div><div><b><span aria-hidden="true">📚</span> ' + p.answered.toLocaleString() + '</b><small>answered</small></div></div>' +
       '<div class="ep-smart-tip"><span aria-hidden="true">🧠</span><div><strong>' + (mist ? 'Your next best move: review mistakes' : p.today < GOAL ? 'Keep your momentum going' : 'Great work — your daily goal is complete') + '</strong><small>' + (mist ? mist + ' saved mistakes across your subjects. Revisiting them helps you improve.' : p.today < dailyGoal() ? (dailyGoal() - p.today) + ' questions left to reach today’s goal. Short sessions add up.' : 'Explore another subject or take a refreshing break.') + '</small></div><button type="button" id="ep-smart-action">' + (mist ? 'Review' : 'Study') + ' →</button></div>' +
-      '<h2 class="dh2">Browse by level</h2>' +
+      '<h2 class="dh2">' + (learner().stage ? 'Your learning path' : 'Choose your learning level') + '</h2>' +
       '<div class="cats" role="group" aria-label="Learning categories">' + learnerCategories().slice().sort(function (a, b) { return (catCount(b) > 0) - (catCount(a) > 0); }).map(function (c, i) {
         var n = catCount(c), ready = n > 0;
         return '<button type="button" class="cat ' + (ready ? 'ready' : 'soon') + '" data-c="' + c.id + '" style="--c1:' + c.c[0] + ';--c2:' + c.c[1] + ';--i:' + i + '"' + (ready ? '' : ' aria-disabled="true"') + '><span class="tag">' + (ready ? n.toLocaleString() + ' questions' : 'Soon') + '</span>' + ICON[c.icon] + '<b>' + c.name + '</b><small>' + c.sub + '</small></button>';
