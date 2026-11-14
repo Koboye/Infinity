@@ -1114,11 +1114,22 @@ body.dash-on{background:#f4f7fd!important;background-image:none!important;color:
     function buzz() { try { if (navigator.vibrate) navigator.vibrate(10); } catch (e) {} }
     [].forEach.call(app.querySelectorAll('.ep-level-card'),function(b){b.onclick=function(){
       var id=b.getAttribute('data-level'),cat=id==='kg'?'kg':id==='sec'?'sec':id==='uni'?'uni':'pri';
-      ui.cat=cat;ui.cat2=cat;ui.lv=null;ui.sel=null;ui.search='';catView();
-      if(id==='g1_4'||id==='g5_8'){
-        var target= id==='g1_4'?1:5, choices=app.querySelectorAll('[data-grade],[data-lv]');
-        [].forEach.call(choices,function(x){var label=x.textContent||'';if(new RegExp('(?:Grade\\s*)?'+target+'(?:\\D|$)','i').test(label)){x.focus();}});
+      var choices=id==='g1_4'?[1,2,3,4]:id==='g5_8'?[5,6,7,8]:id==='sec'?[9,10,11,12]:[];
+      function selectStage(stage){
+        try{var profile=learner();profile.stage=stage;localStorage.setItem(PROFILE_KEY,JSON.stringify(profile));document.dispatchEvent(new Event('exampro:progress-updated'));if(window.ExamProAuth&&window.ExamProAuth.user)window.ExamProAuth.saveProgress().catch(function(e){console.warn('Stage sync pending',e)});}catch(e){toast('Could not save learning level.');return;}
+        ui.cat=cat;ui.cat2=cat;ui.lv=null;ui.sel=null;ui.search='';catView();
       }
+      if(!choices.length){selectStage(id==='uni'?'university':'kg');return;}
+      var overlay=document.createElement('div');overlay.className='ep-grade-overlay';
+      overlay.innerHTML='<div class="ep-grade-dialog" role="dialog" aria-modal="true" aria-labelledby="ep-grade-title"><button class="ep-grade-close" type="button" aria-label="Close">×</button><span class="ep-grade-kicker">PERSONALIZE YOUR PATH</span><h2 id="ep-grade-title">Choose your grade</h2><p>Get subjects and practice questions for your exact grade.</p><div class="ep-grade-choices">'+choices.map(function(n){return '<button type="button" data-grade-choice="g'+n+'">Grade '+n+' →</button>';}).join('')+'</div></div>';
+      document.body.appendChild(overlay);
+      var prev=document.activeElement;function dismiss(){document.removeEventListener('keydown',escGrade);overlay.remove();if(prev&&prev.focus)prev.focus();}
+      function escGrade(e){if(e.key==='Escape')dismiss();}
+      document.addEventListener('keydown',escGrade);
+      overlay.querySelector('.ep-grade-close').onclick=dismiss;
+      overlay.addEventListener('click',function(e){if(e.target===overlay)dismiss();});
+      [].forEach.call(overlay.querySelectorAll('[data-grade-choice]'),function(x){x.onclick=function(){var grade=x.getAttribute('data-grade-choice');dismiss();selectStage(grade);};});
+      overlay.querySelector('.ep-grade-close').focus();
     };});
     var quickPractice=document.getElementById('ep-short-practice');if(quickPractice)quickPractice.onclick=function(){if(nx){document.getElementById('hgo').click();}else{ui.cat=null;home();}};
     var quickExam=document.getElementById('ep-short-exam');if(quickExam)quickExam.onclick=function(){document.getElementById('nv-sub').click();};
