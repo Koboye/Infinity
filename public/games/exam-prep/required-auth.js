@@ -9,11 +9,18 @@ const toggle = document.getElementById('ep-auth-toggle');
 const message = document.getElementById('ep-auth-message');
 const nameField = document.getElementById('ep-auth-name');
 const gradeField = document.getElementById('in-auth-grade');
+const departmentField = document.getElementById('in-auth-department');
+const departmentStorageKey = uid => 'infinity.learning.department.' + uid;
+function rememberDepartment(uid, id) { try { localStorage.setItem(departmentStorageKey(uid), id); } catch (e) {} }
+function selectedDepartment(uid) { try { return localStorage.getItem(departmentStorageKey(uid)) || ''; } catch (e) { return ''; } }
 const gradeStorageKey = uid => 'infinity.learning.grade.' + uid;
 let currentUserId = null;
 function selectedGrade(uid) { try { return localStorage.getItem(gradeStorageKey(uid)) || ''; } catch (e) { return ''; } }
 function rememberGrade(uid, grade) { try { localStorage.setItem(gradeStorageKey(uid), grade); } catch (e) {} }
-function syncGradeField(uid) { if (!uid) return; const grade = selectedGrade(uid); if (grade) gradeField.value = grade; }
+function syncGradeField(uid) { if (!uid) return; const grade = selectedGrade(uid); if (grade) gradeField.value = grade;
+  gradeField.dispatchEvent(new Event('change'));
+  const department = selectedDepartment(uid);
+  if (department) departmentField.value = department; }
 
 let creating = false;
 let auth;
@@ -38,7 +45,7 @@ function allow(user) {
   const signout = document.getElementById('ep-auth-signout');
   signout.hidden = !user;
   window.dispatchEvent(new CustomEvent('infinity-auth-changed', { detail: { uid: user ? user.uid : null } }));
-  if (user) window.dispatchEvent(new CustomEvent('infinity-grade-changed', { detail: { grade: selectedGrade(user.uid) } }));
+  if (user) window.dispatchEvent(new CustomEvent('infinity-grade-changed', { detail: { grade: selectedGrade(user.uid), department: selectedDepartment(user.uid) } }));
   if (user) {
     const splash = document.getElementById('splash');
     if (splash && !splash.hidden) splash.style.zIndex = '100';
@@ -60,19 +67,22 @@ try {
     const email = form.elements.email.value.trim();
     const password = form.elements.password.value;
     const requestedGrade = gradeField.value;
+    const requestedDepartment = departmentField.value;
+    if (requestedGrade === 'uni' && !requestedDepartment) { status('Choose your university department.'); submit.disabled = false; departmentField.focus(); return; }
     if (!requestedGrade) { status('Choose your learning level before continuing.'); submit.disabled = false; gradeField.focus(); return; }
     try {
       if (creating) {
         const result = await createUserWithEmailAndPassword(auth, email, password);
         const displayName = form.elements.displayName.value.trim();
         rememberGrade(result.user.uid, requestedGrade);
+        rememberDepartment(result.user.uid, requestedGrade === 'uni' ? requestedDepartment : '');
         if (displayName) await updateProfile(result.user, { displayName });
       } else {
         const result = await signInWithEmailAndPassword(auth, email, password);
         rememberGrade(result.user.uid, requestedGrade);
       }
       form.reset();
-      if (auth.currentUser) { syncGradeField(auth.currentUser.uid); window.dispatchEvent(new CustomEvent('infinity-grade-changed', { detail: { grade: selectedGrade(auth.currentUser.uid) } })); }
+      if (auth.currentUser) { syncGradeField(auth.currentUser.uid); window.dispatchEvent(new CustomEvent('infinity-grade-changed', { detail: { grade: selectedGrade(auth.currentUser.uid), department: selectedDepartment(auth.currentUser.uid) } })); }
     } catch (error) {
       const errors = {
         'auth/email-already-in-use': 'This email already has an account. Please sign in.',
