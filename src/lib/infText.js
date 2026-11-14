@@ -1,0 +1,60 @@
+// Interface text for the Infinity study app: English and Amharic (አማርኛ).
+// t(key, {n: 5}) fills {n}. A missing Amharic string falls back to English, so the screen never shows a bare key.
+export const LANGS = [['en', 'English'], ['am', 'አማርኛ']];
+export const TEXT = {
+  en: {
+    nav_home: 'Home', nav_subjects: 'Subjects', nav_games: 'Games', nav_profile: 'Profile',
+    goodMorning: 'Good morning', goodAfternoon: 'Good afternoon', goodEvening: 'Good evening',
+    goalLeft: '{n} more questions to reach today’s goal.', goalLeft1: '1 more question to reach today’s goal.', goalDone: 'Today’s goal is done. Keep going.',
+    todayGoal: 'Today’s goal', answerKeep: 'Answer {n} questions to keep your streak.', answerStart: 'Answer {n} questions to start your streak.',
+    resume: 'Resume your exam', start: 'Start practice', more10: 'Practice 10 more',
+    xp: 'XP', accuracy: 'Accuracy', answered: 'Answered', streak: 'Day streak',
+    subjectsOf: '{g} subjects', viewAll: 'View all', nQuestions: '{n} questions', preparing: 'Questions for your level are being prepared. Come back soon.',
+    breakTitle: 'Need a break?', breakSub: 'Play a quick game and refresh your mind.', playGame: 'Play a game',
+    myProfile: 'My profile', journey: 'Your learning journey at Infinity.', levelN: 'Level {n}', xpToNext: '{n} XP to level {m}',
+    thisWeek: 'This week', nAnsweredShort: '{n} answered', subjectAccuracy: 'Subject accuracy', subjectEmpty: 'Finish a practice or exam and your results for each subject appear here.',
+    pctAnswered: '{p}% · {n} answered', achievements: 'Achievements', ofN: '{a} of {b}', earned: 'Earned', locked: 'Locked',
+    ach_first: 'First steps', ach_first_d: 'Answer your first question', ach_a50: 'Warming up', ach_a50_d: 'Answer 50 questions', ach_a250: 'Dedicated', ach_a250_d: 'Answer 250 questions',
+    ach_s3: 'On a roll', ach_s3_d: 'Reach a 3-day streak', ach_s7: 'Unstoppable', ach_s7_d: 'Reach a 7-day streak', ach_xp500: 'XP collector', ach_xp500_d: 'Earn 500 XP', ach_acc: 'Sharp mind', ach_acc_d: '80% accuracy over 50+ answers',
+    settings: 'Settings', photo: 'Profile picture', photoSub: 'Shown on your profile.', change: 'Change', remove: 'Remove', language: 'Language', languageSub: 'The language of menus and screens.',
+    goal: 'Daily goal', goalSub: 'Questions per day to keep your streak.', myLevel: 'My level', myLevelSub: 'Set when you signed up. You only see material for this level.',
+    password: 'Password', passwordSub: 'Change it here or get a reset link by email.', close: 'Close', curPw: 'Current password', newPw: 'New password', savePw: 'Save password', saving: 'Saving…', emailReset: 'Email me a reset link',
+    exportData: 'Download my data', exportSub: 'A file with your account details and progress.', download: 'Download', legal: 'Privacy and terms', privacy: 'Privacy', terms: 'Terms',
+    resetProgress: 'Reset progress', resetSub: 'Clear your XP, streak and subject results.', reset: 'Reset', resetConfirm: 'Reset your XP, streak, accuracy and subject results? This cannot be undone.',
+    signOut: 'Sign out', deleteTitle: 'Delete account', deleteSub: 'Permanently delete your account, progress, friends and coins. This cannot be undone.', deleteBtn: 'Delete my account',
+    deleteAsk: 'Enter your password to confirm.', deleteGo: 'Delete forever', cancel: 'Cancel', save: 'Save', yourName: 'Your name', editName: 'Edit name', changePhoto: 'Change photo',
+    nameSaved: 'Name updated.', photoSaved: 'Photo updated.', photoRemoved: 'Photo removed.', pwSaved: 'Password changed.', progressReset: 'Progress reset.', goalSaved: 'Daily goal updated.',
+    enterName: 'Enter your name.', choosePicture: 'Choose a picture file.', pwShort: 'Use at least 6 characters for the new password.', pwWrong: 'Your current password is incorrect.',
+    needsRecent: 'Sign out and sign in again, then retry.', tooMany: 'Too many attempts. Wait a minute and try again.', offline: 'No connection. Check your internet and try again.', generic: 'Something went wrong. Please try again.',
+  },
+  am: {
+    nav_home: 'ዋና ገጽ', nav_subjects: 'ትምህርቶች', nav_games: 'ጨዋታዎች', nav_profile: 'መገለጫ',
+    goodMorning: 'እንደምን አደሩ', goodAfternoon: 'እንደምን ዋሉ', goodEvening: 'እንደምን አመሹ',
+    goalLeft: 'የዛሬውን ግብ ለማሳካት {n} ጥያቄዎች ይቀራሉ።', goalLeft1: 'የዛሬውን ግብ ለማሳካት 1 ጥያቄ ይቀራል።', goalDone: 'የዛሬው ግብ ተሳክቷል። ይቀጥሉ።',
+    todayGoal: 'የዛሬ ግብ', answerKeep: 'ተከታታይነትዎን ለማቆየት {n} ጥያቄዎችን ይመልሱ።', answerStart: 'ተከታታይነትዎን ለመጀመር {n} ጥያቄዎችን ይመልሱ።',
+    resume: 'ፈተናዎን ይቀጥሉ', start: 'ልምምድ ጀምር', more10: 'ተጨማሪ 10 ተለማመድ',
+    xp: 'ነጥብ', accuracy: 'ትክክለኛነት', answered: 'የተመለሱ', streak: 'ተከታታይ ቀናት',
+    subjectsOf: 'የ{g} ትምህርቶች', viewAll: 'ሁሉንም ይመልከቱ', nQuestions: '{n} ጥያቄዎች', preparing: 'ለደረጃዎ ጥያቄዎች እየተዘጋጁ ነው። በቅርቡ ይመለሱ።',
+    breakTitle: 'እረፍት ይፈልጋሉ?', breakSub: 'ፈጣን ጨዋታ ተጫውተው አእምሮዎን ያድሱ።', playGame: 'ጨዋታ ተጫወት',
+    myProfile: 'የእኔ መገለጫ', journey: 'በኢንፊኒቲ ያለዎት የትምህርት ጉዞ።', levelN: 'ደረጃ {n}', xpToNext: 'ወደ ደረጃ {m} {n} ነጥብ ይቀራል',
+    thisWeek: 'በዚህ ሳምንት', nAnsweredShort: '{n} ተመልሰዋል', subjectAccuracy: 'የትምህርት ትክክለኛነት', subjectEmpty: 'ልምምድ ወይም ፈተና ሲጨርሱ የእያንዳንዱ ትምህርት ውጤት እዚህ ይታያል።',
+    pctAnswered: '{p}% · {n} ተመልሰዋል', achievements: 'ስኬቶች', ofN: '{a} ከ {b}', earned: 'ተገኝቷል', locked: 'ተቆልፏል',
+    ach_first: 'የመጀመሪያ እርምጃ', ach_first_d: 'የመጀመሪያ ጥያቄዎን ይመልሱ', ach_a50: 'ሙቀት መውሰድ', ach_a50_d: '50 ጥያቄዎችን ይመልሱ', ach_a250: 'ታታሪ', ach_a250_d: '250 ጥያቄዎችን ይመልሱ',
+    ach_s3: 'በጥሩ ሂደት', ach_s3_d: 'የ3 ቀን ተከታታይነት ያግኙ', ach_s7: 'የማይቆም', ach_s7_d: 'የ7 ቀን ተከታታይነት ያግኙ', ach_xp500: 'ነጥብ ሰብሳቢ', ach_xp500_d: '500 ነጥብ ያግኙ', ach_acc: 'ብሩህ አእምሮ', ach_acc_d: 'ከ50 በላይ መልሶች ላይ 80% ትክክለኛነት',
+    settings: 'ቅንብሮች', photo: 'የመገለጫ ፎቶ', photoSub: 'በመገለጫዎ ላይ ይታያል።', change: 'ቀይር', remove: 'አስወግድ', language: 'ቋንቋ', languageSub: 'የምናሌዎችና የገጾች ቋንቋ።',
+    goal: 'ዕለታዊ ግብ', goalSub: 'ተከታታይነትዎን ለማቆየት በቀን የሚመለሱ ጥያቄዎች።', myLevel: 'ደረጃዬ', myLevelSub: 'ሲመዘገቡ የተመረጠ ነው። ለዚህ ደረጃ የሆነ ይዘት ብቻ ያያሉ።',
+    password: 'የይለፍ ቃል', passwordSub: 'እዚህ ይቀይሩ ወይም በኢሜይል የመቀየሪያ ሊንክ ያግኙ።', close: 'ዝጋ', curPw: 'አሁን ያለው የይለፍ ቃል', newPw: 'አዲስ የይለፍ ቃል', savePw: 'የይለፍ ቃል አስቀምጥ', saving: 'በማስቀመጥ ላይ…', emailReset: 'የመቀየሪያ ሊንክ በኢሜይል ላክልኝ',
+    exportData: 'መረጃዬን አውርድ', exportSub: 'የመለያዎን ዝርዝርና ሂደት የያዘ ፋይል።', download: 'አውርድ', legal: 'ግላዊነትና ደንቦች', privacy: 'ግላዊነት', terms: 'ደንቦች',
+    resetProgress: 'ሂደትን አጽዳ', resetSub: 'ነጥብዎን፣ ተከታታይነትዎንና የትምህርት ውጤቶችዎን ያጥፉ።', reset: 'አጽዳ', resetConfirm: 'ነጥብዎን፣ ተከታታይነትዎን፣ ትክክለኛነትዎንና የትምህርት ውጤቶችዎን ማጽዳት ይፈልጋሉ? ይህ መመለስ አይችልም።',
+    signOut: 'ውጣ', deleteTitle: 'መለያ ሰርዝ', deleteSub: 'መለያዎን፣ ሂደትዎን፣ ጓደኞችዎንና ሳንቲሞችዎን እስከመጨረሻው ይሰርዛል። ይህ መመለስ አይችልም።', deleteBtn: 'መለያዬን ሰርዝ',
+    deleteAsk: 'ለማረጋገጥ የይለፍ ቃልዎን ያስገቡ።', deleteGo: 'ለዘላለም ሰርዝ', cancel: 'ተው', save: 'አስቀምጥ', yourName: 'ስምዎ', editName: 'ስም አርም', changePhoto: 'ፎቶ ቀይር',
+    nameSaved: 'ስምዎ ተዘምኗል።', photoSaved: 'ፎቶዎ ተዘምኗል።', photoRemoved: 'ፎቶው ተወግዷል።', pwSaved: 'የይለፍ ቃልዎ ተቀይሯል።', progressReset: 'ሂደትዎ ጸድቷል።', goalSaved: 'ዕለታዊ ግብዎ ተዘምኗል።',
+    enterName: 'ስምዎን ያስገቡ።', choosePicture: 'የምስል ፋይል ይምረጡ።', pwShort: 'አዲሱ የይለፍ ቃል ቢያንስ 6 ቁምፊ ይሁን።', pwWrong: 'አሁን ያለው የይለፍ ቃልዎ ትክክል አይደለም።',
+    needsRecent: 'ውጥተው እንደገና ይግቡና ይሞክሩ።', tooMany: 'ብዙ ሙከራዎች ተደርገዋል። ከአንድ ደቂቃ በኋላ ይሞክሩ።', offline: 'ግንኙነት የለም። ኢንተርኔትዎን ያረጋግጡና ይሞክሩ።', generic: 'የሆነ ችግር ተፈጥሯል። እባክዎ እንደገና ይሞክሩ።',
+  },
+};
+export const makeT = (lang = 'en') => (key, vars = {}) => {
+  const s = TEXT[lang]?.[key] ?? TEXT.en[key] ?? key;
+  return s.replace(/\{(\w+)\}/g, (_, k) => (vars[k] ?? ''));
+};
+export const GOALS = [5, 10, 20, 30];

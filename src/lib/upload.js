@@ -1,6 +1,6 @@
 // Chat files in Firebase Storage: photos, voice notes and documents. Files live under u/{myUid}/chat/... (only I can write there, see storage.rules);
 // the message carries the download link, so my friend can open it without any extra permission.
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { storage } from '@/lib/firebase';
 
 export const MAX_IMAGE_EDGE = 1600;
@@ -63,4 +63,10 @@ export async function uploadAvatar(uid, file) {
   const r = ref(storage, `u/${uid}/avatar.jpg`);
   await new Promise((ok, no) => uploadBytesResumable(r, blob, { contentType: 'image/jpeg' }).on('state_changed', null, no, ok));
   return getDownloadURL(r);
+}
+
+/** Remove the profile photo file (a missing file is fine). */
+export async function removeAvatar(uid) {
+  if (!storage || !uid) return;
+  try { await deleteObject(ref(storage, `u/${uid}/avatar.jpg`)); } catch { /* already gone */ }
 }

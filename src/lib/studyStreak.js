@@ -1,5 +1,7 @@
 // Daily goal + streak, kept in the learner's local stats. Pure, so it is easy to test.
 export const DAILY_GOAL = 10;
+// The learner can choose 5, 10, 20 or 30 questions a day; anything else falls back to 10.
+export const goalOf = (stats) => ([5, 10, 20, 30].includes(Number(stats?.goal)) ? Number(stats.goal) : DAILY_GOAL);
 const dayKey = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 const yesterdayKey = (d) => { const y = new Date(d); y.setDate(y.getDate() - 1); return dayKey(y); };
 
@@ -38,10 +40,10 @@ function pruneDays(days, now) {
   return Object.fromEntries(Object.entries(days).filter(([k]) => keep.has(k)));
 }
 /** Questions answered on each of the last 7 days, oldest first. */
-export function weekActivity(stats, now = new Date()) {
+export function weekActivity(stats, now = new Date(), locale = 'en') {
   return Array.from({length: 7}, (_, i) => {
     const d = daysAgo(now, 6 - i), key = dayKey(d);
-    return {key, label: d.toLocaleDateString('en', {weekday: 'short'}), count: Number(stats?.days?.[key]) || 0, today: i === 6};
+    return {key, label: d.toLocaleDateString(locale, {weekday: 'short'}), count: Number(stats?.days?.[key]) || 0, today: i === 6};
   });
 }
 /** Level 1 starts at 0 XP; every 100 XP is a new level. */

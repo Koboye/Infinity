@@ -64,7 +64,7 @@ export async function deleteAccount(db, auth, uid, bucket = null) {
   const name = u.exists ? u.data().usernameLower : null;
   if (name) { const n = await nameRef(db, name).get(); if (n.exists && n.data().uid === uid) await nameRef(db, name).delete(); }
   if (f.code) await db.collection('friendCodes').doc(f.code).delete().catch(() => {});
-  for (const col of ['friends', 'invites', 'presence', 'wallets', 'users']) await db.collection(col).doc(uid).delete().catch(() => {});
+  for (const col of ['friends', 'invites', 'presence', 'wallets', 'learners', 'passes', 'users']) await db.collection(col).doc(uid).delete().catch(() => {});
   if (bucket) { try { await bucket.deleteFiles({ prefix: `u/${uid}/` }); } catch { /* no files */ } }
   await auth.deleteUser(uid);
   return { ok: true };

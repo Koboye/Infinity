@@ -1,8 +1,10 @@
 'use client';
-import {DAILY_GOAL, liveStreak, todayCount} from '@/lib/studyStreak';
+import {goalOf, liveStreak, todayCount} from '@/lib/studyStreak';
+import {makeT} from '@/lib/infText';
+const T0 = makeT('en');
 
 const ACCENTS = ['#2748F0', '#B23FA8', '#6A3FD8', '#C9801A', '#0E8A6B', '#D6455D', '#0F8DB0', '#4E9A1F'];
-const greeting = (h) => (h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening');
+const greeting = (t, h) => t(h < 12 ? 'goodMorning' : h < 18 ? 'goodAfternoon' : 'goodEvening');
 
 /* Small line icons, picked from the subject's own name. Anything unmatched shows its initial. */
 const P = {
@@ -48,10 +50,10 @@ function Ring({value, goal}) {
   );
 }
 
-export function StatStrip({stats, now = new Date()}) {
+export function StatStrip({stats, now = new Date(), t = T0}) {
   const streak = liveStreak(stats, now);
   const acc = stats.answered ? Math.round(((stats.correct || 0) / stats.answered) * 100) : 0;
-  const figures = [['xp', stats.xp || 0, 'XP'], ['acc', acc + '%', 'Accuracy'], ['ans', stats.answered || 0, 'Answered'], ['streak', streak, 'Day streak']];
+  const figures = [['xp', stats.xp || 0, t('xp')], ['acc', acc + '%', t('accuracy')], ['ans', stats.answered || 0, t('answered')], ['streak', streak, t('streak')]];
   return (
     <dl className="inf-h-stats" aria-label="Your progress">
       {figures.map(([k, v, l]) => (
@@ -61,31 +63,32 @@ export function StatStrip({stats, now = new Date()}) {
   );
 }
 
-export default function HomeScreen({name, gradeName, subjects, stats, resume, onResume, onQuick, onOpen, onAll, onGames, now = new Date()}) {
-  const today = todayCount(stats, now), streak = liveStreak(stats, now), left = Math.max(0, DAILY_GOAL - today);
+export default function HomeScreen({name, gradeName, subjects, stats, resume, onResume, onQuick, onOpen, onAll, onGames, now = new Date(), t = T0}) {
+  const goal = goalOf(stats);
+  const today = todayCount(stats, now), streak = liveStreak(stats, now), left = Math.max(0, goal - today);
   const total = subjects.reduce((n, d) => n + d.q.length, 0);
   return (
     <div className="inf-h">
       <header className="inf-h-hello">
-        <h1>{greeting(now.getHours())}{name ? ', ' + name : ''}</h1>
-        <p>{left ? left + ' more ' + (left === 1 ? 'question' : 'questions') + ' to reach today’s goal.' : 'Today’s goal is done. Keep going.'}</p>
+        <h1>{greeting(t, now.getHours())}{name ? ', ' + name : ''}</h1>
+        <p>{left ? t(left === 1 ? 'goalLeft1' : 'goalLeft', {n: left}) : t('goalDone')}</p>
       </header>
 
-      <section className="inf-h-goal" aria-label="Today’s goal">
-        <Ring value={today} goal={DAILY_GOAL} />
+      <section className="inf-h-goal" aria-label={t('todayGoal')}>
+        <Ring value={today} goal={goal} />
         <div className="inf-h-goal-text">
-          <h2>Today’s goal</h2>
-          <p>Answer {DAILY_GOAL} questions to {streak ? 'keep your streak' : 'start your streak'}.</p>
+          <h2>{t('todayGoal')}</h2>
+          <p>{t(streak ? 'answerKeep' : 'answerStart', {n: goal})}</p>
           {resume
-            ? <button type="button" className="inf-h-go" onClick={onResume}>Resume your exam</button>
-            : total > 0 && <button type="button" className="inf-h-go" onClick={onQuick}>{left ? 'Start practice' : 'Practice 10 more'}</button>}
+            ? <button type="button" className="inf-h-go" onClick={onResume}>{t('resume')}</button>
+            : total > 0 && <button type="button" className="inf-h-go" onClick={onQuick}>{left ? t('start') : t('more10')}</button>}
         </div>
         <svg className="inf-h-mark" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path pathLength="100" d="M24 24c-3.500-4.500-6.500-7-10-7a7 7 0 000 14c3.500 0 6.500-2.500 10-7s6.500-7 10-7a7 7 0 010 14c-3.500 0-6.500-2.500-10-7z" fill="none" stroke="currentColor" strokeWidth="3.600" strokeLinecap="round" /></svg>
       </section>
 
-      <StatStrip stats={stats} now={now} />
+      <StatStrip stats={stats} now={now} t={t} />
 
-      <div className="inf-h-row"><h2>{gradeName} subjects</h2>{subjects.length > 8 && <button type="button" className="inf-link" onClick={onAll}>View all</button>}</div>
+      <div className="inf-h-row"><h2>{t('subjectsOf', {g: gradeName})}</h2>{subjects.length > 8 && <button type="button" className="inf-link" onClick={onAll}>{t('viewAll')}</button>}</div>
       {subjects.length ? (
         <div className="inf-h-grid">
           {subjects.slice(0, 8).map((d, i) => {
@@ -94,17 +97,17 @@ export default function HomeScreen({name, gradeName, subjects, stats, resume, on
               <button type="button" key={d.id} className="inf-h-card" style={{'--accent': ACCENTS[i % ACCENTS.length]}} onClick={() => onOpen(d)}>
                 <span className="inf-h-card-ico" aria-hidden="true">{ico ? <Svg size={26}>{ico}</Svg> : d.name.trim().charAt(0).toUpperCase()}</span>
                 <b>{d.name}</b>
-                <small>{d.q.length} questions</small>
+                <small>{t('nQuestions', {n: d.q.length})}</small>
                 <span className="inf-h-chev" aria-hidden="true"><Svg size={18}><path d="m9 6 6 6-6 6" /></Svg></span>
               </button>
             );
           })}
         </div>
-      ) : <p className="inf-hint">Questions for your level are being prepared. Come back soon.</p>}
+      ) : <p className="inf-hint">{t('preparing')}</p>}
 
       <section className="inf-h-break">
-        <div><h2>Need a break?</h2><p>Play a quick game and refresh your mind.</p></div>
-        <button type="button" onClick={onGames}>Play a game</button>
+        <div><h2>{t('breakTitle')}</h2><p>{t('breakSub')}</p></div>
+        <button type="button" onClick={onGames}>{t('playGame')}</button>
       </section>
     </div>
   );

@@ -126,3 +126,19 @@
 .inf-root .inf-p-pw-act .inf-primary{width:auto;min-height:50px;padding:10px 22px;border-radius:12px;background:#0F1B4C;border-color:#0F1B4C}
 @media (prefers-color-scheme:dark){.inf-root .inf-p-pw-act .inf-primary{background:#FFC83D;border-color:#FFC83D;color:#0F1B4C}}
 @media(prefers-reduced-motion:reduce){.inf-root .inf-p-bar i{transition:none}}
+
+/* Profile settings */
+.inf-root .inf-p-sh{margin:0 0 10px;font:600 1.25rem var(--inf-font-d)}
+.inf-root .inf-p-pair{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.inf-root .inf-p-act{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;min-height:44px;padding:8px 16px;border-radius:999px;border:1.5px solid var(--inf-line);background:transparent;color:var(--inf-text);font:700 .95rem var(--inf-font-b);text-decoration:none;cursor:pointer}
+.inf-root .inf-p-act:hover{border-color:var(--inf-blue)}
+.inf-root .inf-p-seg{display:flex;flex:0 0 auto;gap:4px;padding:4px;border-radius:12px;border:1.5px solid var(--inf-line);background:var(--inf-paper)}
+.inf-root .inf-p-seg button{min-height:40px;min-width:44px;padding:6px 12px;border:0;border-radius:9px;background:none;color:var(--inf-mute);font-weight:700}
+.inf-root .inf-p-seg button[aria-pressed=true]{background:#0F1B4C;color:#fff}
+@media (prefers-color-scheme:dark){.inf-root .inf-p-seg button[aria-pressed=true]{background:#FFC83D;color:#0F1B4C}}
+@media(max-width:560px){.inf-root .inf-p-list>li{flex-wrap:wrap}.inf-root .inf-p-list>li>:last-child:not(.inf-p-txt){margin-left:58px}}
+.inf-root .inf-p-danger{padding:16px 18px;border-radius:20px;border:1.5px solid color-mix(in srgb,var(--inf-err) 40%,var(--inf-line));background:color-mix(in srgb,var(--inf-err) 5%,var(--inf-card))}
+.inf-root .inf-p-danger .inf-p-ico{background:color-mix(in srgb,var(--inf-err) 14%,transparent);color:var(--inf-err)}
+.inf-root .inf-p-bad{color:var(--inf-err);border-color:color-mix(in srgb,var(--inf-err) 45%,var(--inf-line))}
+.inf-root .inf-p-destroy{min-height:50px;padding:10px 22px;border-radius:12px;border:0;background:#B3261E;color:#fff;font:700 1rem var(--inf-font-b)}
+.inf-root .inf-p-destroy:hover{background:#8F1E18;border:0}
