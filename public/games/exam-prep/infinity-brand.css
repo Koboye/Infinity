@@ -147,3 +147,21 @@ body.in-grade-open{overflow:hidden}
 #ep-auth-submit{margin-top:9px}
 @media(max-width:390px){.in-auth-grade-chip{min-width:65px;padding:9px 11px}.in-auth-slider{grid-template-columns:23px minmax(0,1fr) 23px}.in-auth-slide-arrow{width:23px}}
 @media(prefers-reduced-motion:reduce){.in-auth-grade-chip{transition:none}.in-auth-grade-track{scroll-behavior:auto}}
+
+/* Personalized Infinity Home */
+.in-home-path{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:24px;margin:16px 0;background:linear-gradient(115deg,#191f58,#5148d8 72%,#3b88e8);color:#fff;border-radius:24px;box-shadow:0 15px 32px #363bb332}
+.in-home-path h1{font-size:clamp(1.4rem,4vw,2rem);line-height:1.2;color:#fff;margin:7px 0!important}
+.in-home-path p{color:#e1e8ff;margin:0;font-size:.9rem}
+.in-home-kicker{font-size:.7rem;letter-spacing:.13em;font-weight:800;color:#b5fff0}
+.in-home-count{min-width:100px;text-align:center;border-radius:17px;background:#ffffff1b;border:1px solid #ffffff40;padding:12px;display:grid;gap:4px}
+.in-home-count strong{font-size:1.55rem;color:#fff}
+.in-home-count span{font-size:.7rem;color:#e4e7ff}
+.in-home-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:16px 0 22px}
+.in-home-action{display:flex;align-items:center;text-align:left;gap:14px;padding:18px;min-height:92px;background:#fff;border:1px solid #e0e6f5;border-radius:20px;box-shadow:0 8px 24px #17295a0a;color:#1d3156;font-size:1.5rem;cursor:pointer}
+.in-home-action.primary{background:#efefff;border-color:#d6d5ff}
+.in-home-action span{display:grid;gap:5px}
+.in-home-action b{font-size:1rem;color:#222f57}
+.in-home-action small{font-size:.76rem;color:#63738d;line-height:1.4}
+.in-home-action:hover{border-color:#665cdb;transform:translateY(-1px)}
+@media(max-width:520px){.in-home-path{padding:18px;align-items:flex-start}.in-home-count{min-width:83px;padding:10px}.in-home-actions{gap:9px}.in-home-action{padding:13px 10px;gap:8px;min-height:90px;font-size:1.25rem}.in-home-action b{font-size:.88rem}.in-home-action small{font-size:.7rem}}
+@media(prefers-reduced-motion:reduce){.in-home-action:hover{transform:none}}
