@@ -624,6 +624,31 @@ body.has-xbar .xb.main{min-width:125px}
 #ep-unified-panel .ep-progress-score>strong{width:43px;text-align:right;font-size:13px;color:#24305d;font-variant-numeric:tabular-nums}
 #ep-unified-panel .ep-progress-note{font-size:12px;color:#b9c5ed;line-height:1.55;margin:16px 4px}
 @media(max-width:560px){#ep-unified-panel .ep-progress-stats{grid-template-columns:repeat(2,minmax(0,1fr))}#ep-unified-panel .ep-progress-grid{grid-template-columns:1fr}#ep-unified-panel .ep-progress-stats>div{min-height:108px}#ep-unified-panel .ep-progress-score-label{width:43%}}
+</style><style id="ep-screen-07">
+/* Screen 07 — personalized study plan */
+#ep-unified-panel .ep-plan-overview{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px;margin:17px 0}
+#ep-unified-panel .ep-plan-overview>div{display:flex;flex-direction:column;gap:8px;min-height:138px;padding:19px;border-radius:19px;background:linear-gradient(145deg,#fff,#f0f2ff);border:1px solid #e2e5f5}
+#ep-unified-panel .ep-plan-overview small{font-size:10px;font-weight:900;letter-spacing:.1em;color:#6250b5}
+#ep-unified-panel .ep-plan-overview strong{font-size:clamp(16px,3vw,21px);color:#1a2659;line-height:1.25;overflow-wrap:anywhere}
+#ep-unified-panel .ep-plan-overview span{font-size:12px;color:#66708d;line-height:1.45}
+#ep-unified-panel .ep-plan-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;margin:17px 0}
+#ep-unified-panel .ep-plan-fields label{display:flex;flex-direction:column;gap:8px;color:#27325b;font-size:13px;font-weight:800}
+#ep-unified-panel .ep-plan-fields input,#ep-unified-panel .ep-plan-fields select{width:100%;min-height:46px;border:1px solid #cfd6eb;border-radius:12px;padding:9px 12px;background:#fff;color:#17224c;font:inherit}
+#ep-unified-panel .ep-plan-save-note{margin:9px 0 0;color:#397b5c;font-size:12px}
+#ep-unified-panel .ep-plan-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+#ep-unified-panel .ep-plan-section-head>span{font-size:12px;font-weight:850;padding:8px 11px;border-radius:999px;background:#eae6ff;color:#5d49bb;white-space:nowrap}
+#ep-unified-panel .ep-unified-task{padding:16px 3px}
+#ep-unified-panel .ep-unified-task span b{color:#202b57;font-size:14px}
+#ep-unified-panel .ep-unified-task span small{line-height:1.5}
+#ep-unified-panel .ep-plan-priority{display:flex;align-items:center;gap:13px;padding:14px 0;border-top:1px solid #e5e9f4}
+#ep-unified-panel .ep-plan-rank{flex:none;width:32px;height:32px;border-radius:10px;display:grid;place-items:center;background:#e8eaff;color:#5140af;font-weight:900}
+#ep-unified-panel .ep-plan-priority>div{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
+#ep-unified-panel .ep-plan-priority b{font-size:13px;color:#222c59;overflow-wrap:anywhere}
+#ep-unified-panel .ep-plan-priority small{font-size:11px;color:#6c7390}
+#ep-unified-panel .ep-plan-priority-badge{font-size:11px;font-weight:850;border-radius:999px;background:#fff0d8;color:#94601b;padding:7px 10px}
+#ep-unified-panel .ep-plan-explore{width:100%;min-height:48px;border-radius:13px;margin:8px 0 22px}
+#ep-unified-panel .ep-plan-settings button:focus-visible,#ep-unified-panel .ep-plan-fields :focus-visible{outline:3px solid #f4c351;outline-offset:3px}
+@media(max-width:580px){#ep-unified-panel .ep-plan-overview{grid-template-columns:1fr}#ep-unified-panel .ep-plan-overview>div{min-height:90px;padding:15px}#ep-unified-panel .ep-plan-fields{grid-template-columns:1fr}}
 </style></head>
 <body>
 <div class="splash" id="splash" role="dialog" aria-modal="true" aria-labelledby="sp-title" hidden>
