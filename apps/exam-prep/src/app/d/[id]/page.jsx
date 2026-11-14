@@ -17,9 +17,9 @@ export default function Department() {
   const topics = useMemo(() => [...new Set(all.map((x) => x.topic).filter(Boolean))].sort(), [all]);
   const qs = useMemo(() => (topic ? all.filter((x) => x.topic === topic) : all), [all, topic]);
   const examQs = useMemo(() => qs.slice(0, Math.min(n, qs.length)), [qs, n]);
-  const lengths = [...new Set([5, 10, 20, 30, max].filter((x) => x > 0 && x <= max))].sort((a, b) => a - b);
   if (!dept) return <div className="card"><h2>Department not found</h2><Link href="/">← All departments</Link></div>;
   const max = qs.length;
+  const lengths = [...new Set([5, 10, 20, 30, max].filter((x) => x > 0 && x <= max))].sort((a, b) => a - b);
   if (mode && data) return <Quiz key={mode + topic} dept={id} mode={mode === 'exam' ? 'exam' : 'practice'} label={mode === 'mistakes' ? 'Fix my mistakes' : topic || 'Practice'} questions={mode === 'exam' ? examQs : mode === 'mistakes' ? mist : qs} onExit={() => setMode(null)} />;
   return (
     <>
