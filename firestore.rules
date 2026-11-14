@@ -2,6 +2,21 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ExamPro student data: each authenticated student owns only their own document.
+    // Progress is self-reported study data, not a trusted exam certification.
+    match /students/{uid} {
+      allow get, create, update, delete: if request.auth != null
+        && request.auth.uid == uid
+        && (request.method == 'get' || (
+          request.resource.data.keys().hasOnly(['profile', 'progress', 'plan', 'updatedAt'])
+          && request.resource.data.profile is map
+          && request.resource.data.progress is map
+          && request.resource.data.plan is map
+          && request.resource.data.updatedAt == request.time
+        ));
+      allow list: if false;
+    }
+
     // Player profiles. Anyone signed in can read (leaderboard). A player may create their
     // own profile with starting stats and edit only cosmetic fields. Rating / wins / losses /
     // draws are written by the server (Admin SDK) after a match, never by the client.
