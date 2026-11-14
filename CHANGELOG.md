@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased — exam.pro rebrand, phase 3 (Grade / program and subject selection)
+- New: choosing a category opens a selection screen. Grades 9–12 shows grade tiles (9, 10, 11 are marked Soon; 12 is ready) and University & College shows its programs (colleges).
+- Subjects come only from the question bank for the chosen grade or program, as square cards with icons, question counts and a clear selected state.
+- Back and Continue sit in a fixed bottom bar; Continue stays disabled until a subject is picked and names the chosen subject. Returning from a subject keeps the selection.
+
 ## Unreleased — exam.pro rebrand, phase 2 (Category dashboard)
 - New: exam.pro home is now a dashboard: welcome and level, search, streak / XP / accuracy, daily goal, and six square category cards (KG, Grades 1–8, Grades 9–12, University & College, NGAT, General Knowledge).
 - Cards with questions in the bank (Grades 9–12, University & College) open their subjects; the others show "Soon" and explain it when tapped. No subjects are invented.

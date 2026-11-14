@@ -214,6 +214,42 @@ body.has-nav .bnav{display:flex}
 .toast.on{opacity:1}
 .catv .back{margin:0 0 .8rem}
 @media(prefers-reduced-motion:reduce){.cat.pick{animation:none;box-shadow:0 0 0 4px var(--ep-gold-soft)}}
+
+/* ── Phase 3: grade / program and subject selection ── */
+body.has-bar{padding-bottom:calc(6.2rem + env(safe-area-inset-bottom))}
+.pbar{position:fixed;left:0;right:0;bottom:0;z-index:40;display:none;gap:.6rem;padding:.7rem 1rem calc(.7rem + env(safe-area-inset-bottom));background:rgba(5,11,46,.95);backdrop-filter:blur(12px);border-top:1px solid rgba(255,255,255,.14)}
+body.has-bar .pbar{display:flex}
+.pbar .btn{min-height:3.4rem;border-radius:var(--ep-r-lg);font-size:1.05rem}
+.pbar .bk{flex:none;background:transparent;color:#fff;border:2px solid rgba(255,255,255,.4);box-shadow:none;padding:.6rem 1.2rem}
+.pbar .go{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pick-h{display:flex;align-items:center;gap:.9rem;margin:.2rem 0 1.2rem}
+.pick-h svg{width:3.6rem;height:3.6rem;flex:none}
+.pick-h h1{margin:0;font-size:clamp(1.5rem,6vw,2rem);font-weight:850;letter-spacing:-.03em;line-height:1.1}
+.pick-h p{margin:.15rem 0 0;color:#B9C6F5;font-size:.95rem}
+.pk-l{margin:1.1rem .1rem .6rem;font-size:1.15rem;font-weight:800;color:#fff}
+.lv{display:grid;grid-template-columns:repeat(4,1fr);gap:.6rem}
+.lv button{aspect-ratio:1/1;display:grid;place-items:center;align-content:center;gap:.1rem;border:2px solid rgba(255,255,255,.16);border-radius:var(--ep-r-lg);background:rgba(255,255,255,.1);color:#fff;font:inherit;font-size:1.7rem;font-weight:850;cursor:pointer;position:relative;transition:transform .12s,background .15s}
+.lv button small{font-size:.7rem;font-weight:700;color:#B9C6F5}
+.lv button:active{transform:scale(.94)}
+.lv button[aria-pressed=true]{background:linear-gradient(160deg,#4B83FF,#1747D6);border-color:var(--ep-gold-soft);box-shadow:0 0 0 3px rgba(255,226,154,.35),0 8px 18px rgba(23,71,214,.5)}
+.lv button.soon{opacity:.5;border-style:dashed}
+.prg{display:grid;grid-template-columns:1fr;gap:.6rem}
+@media(min-width:560px){.prg{grid-template-columns:1fr 1fr}}
+.prg button{display:flex;align-items:center;justify-content:space-between;gap:.6rem;text-align:left;min-height:3.6rem;padding:.7rem 1rem;border:2px solid rgba(255,255,255,.16);border-radius:var(--ep-r-lg);background:rgba(255,255,255,.1);color:#fff;font:inherit;font-weight:750;cursor:pointer}
+.prg button small{flex:none;color:#B9C6F5;font-weight:600;font-size:.8rem}
+.prg button[aria-pressed=true]{background:linear-gradient(160deg,#4B83FF,#1747D6);border-color:var(--ep-gold-soft);box-shadow:0 0 0 3px rgba(255,226,154,.35)}
+.prg button[aria-pressed=true] small{color:#fff}
+.lv button:focus-visible,.prg button:focus-visible,.sj:focus-visible{outline:3px solid var(--ep-gold-soft);outline-offset:2px}
+.sjs{display:grid;grid-template-columns:repeat(2,1fr);gap:.7rem}
+@media(min-width:560px){.sjs{grid-template-columns:repeat(3,1fr)}}
+.sj{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.3rem;text-align:center;min-height:8.6rem;padding:.9rem .6rem;border:3px solid transparent;border-radius:var(--ep-r-xl);background:linear-gradient(170deg,#fff,#E4ECFF);color:#0B1245;font:inherit;cursor:pointer;box-shadow:0 8px 18px rgba(0,0,0,.28);transition:transform .12s,border-color .15s}
+.sj:active{transform:scale(.96)}
+.sj svg{width:2.8rem;height:2.8rem}
+.sj b{font-size:1rem;line-height:1.15;font-weight:850}
+.sj small{font-size:.8rem;font-weight:600;color:#4A5A8C}
+.sj[aria-pressed=true]{border-color:var(--ep-gold);box-shadow:0 0 0 3px rgba(245,184,46,.45),0 8px 18px rgba(0,0,0,.3)}
+.sj[aria-pressed=true]::after{content:"✓";position:absolute;top:.5rem;right:.5rem;width:1.6rem;height:1.6rem;border-radius:50%;display:grid;place-items:center;background:#0B7A45;color:#fff;font-weight:900;font-size:.9rem}
+.pk-e{color:#B9C6F5;margin:.6rem .1rem}
 </style>
 </head>
 <body>
@@ -242,6 +278,7 @@ body.has-nav .bnav{display:flex}
 <path d="M0 90v-1c70-8 140-4 200 3s130 9 200 2v-4z" fill="#DA121A"/></svg></div></div>
 <a class="skip" href="#app">Skip to content</a><div id="live" class="sr" role="status" aria-live="polite"></div>
 <header class="top"><div class="wrap"><button class="brand" id="home" aria-label="exam.pro home"><svg class="logo" viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffd36b"/><stop offset="1" stop-color="#f5a623"/></linearGradient></defs><path d="M24 6 4 15l20 9 20-9z" fill="url(#lg)"/><path d="M12 21v8c0 3 5 6 12 6s12-3 12-6v-8l-12 5.4z" fill="#fff" opacity=".95"/><path d="M42 16v12" stroke="#ffd36b" stroke-width="2.4" stroke-linecap="round"/><path d="M8 40h32" stroke="#ffd36b" stroke-width="2.4" stroke-linecap="round"/></svg><span><span class="bt">exam<i>.pro</i></span><span class="bs">Learn · Practice · Excel</span></span></button><a href="/">← Games</a><div class="tsz" role="group" aria-label="Text size"><button id="tsd" type="button" aria-label="Smaller text">A−</button><button id="tsu" type="button" aria-label="Larger text">A+</button></div></div></header>
+<div class="pbar" id="pbar"></div>
 <div class="toast" id="toast" aria-hidden="true"></div>
 <main class="wrap" id="app" aria-label="exam.pro"></main>
 <nav class="bnav" id="bnav" aria-label="Main"><button type="button" id="nv-home" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</button><button type="button" id="nv-sub"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16M4 12h16M4 19h10"/></svg>All subjects</button></nav>
@@ -331,9 +368,9 @@ body.has-nav .bnav{display:flex}
   var tt = 0;
   function toast(t) { var e = document.getElementById('toast'); e.textContent = t; e.classList.add('on'); say(t); clearTimeout(tt); tt = setTimeout(function () { e.classList.remove('on'); }, 3200); }
   function setNav(which) { document.getElementById('nv-home').setAttribute('aria-current', which === 'home' ? 'page' : 'false'); document.getElementById('nv-sub').setAttribute('aria-current', which === 'sub' ? 'page' : 'false'); }
-  function chrome(mode) { var b = document.body.classList; b.toggle('dash-on', mode === 'dash'); b.toggle('has-nav', mode === 'dash' || mode === 'list'); }
+  function chrome(mode) { var b = document.body.classList; b.toggle('dash-on', mode === 'dash' || mode === 'pick'); b.toggle('has-nav', mode === 'dash' || mode === 'list'); b.toggle('has-bar', mode === 'pick'); }
   function dash(soft) {
-    chrome('dash'); setNav('home'); ui.cat = null;
+    chrome('dash'); setNav('home'); ui.cat = null; ui.search = '';
     var p = load(), acc = p.answered ? Math.round(p.correct / p.answered * 100) : 0, pct = Math.min(100, Math.round(p.today / GOAL * 100));
     var html = '<div class="dash"><div class="dhead"><span class="dav" aria-hidden="true">L' + level(p.xp) + '</span><div><small>' + (p.answered ? 'Welcome back' : 'Welcome to exam.pro') + '</small><b>Student · Level ' + level(p.xp) + '</b></div></div>' +
       '<form class="dsearch" id="dsf" role="search"><label class="sr" for="dsq">Search subjects and departments</label><input id="dsq" type="search" autocomplete="off" placeholder="Search subjects"><button type="submit" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg></button></form>' +
@@ -349,7 +386,7 @@ body.has-nav .bnav{display:flex}
       b.onclick = function () {
         var c = catById(b.getAttribute('data-c'));
         if (!catCount(c)) { toast(c.name + ' questions are coming soon. Grades 9–12 and University are ready now.'); return; }
-        b.classList.add('pick'); setTimeout(function () { ui.cat = c.id; ui.search = ''; catView(); }, 240);
+        b.classList.add('pick'); setTimeout(function () { if (ui.cat2 !== c.id) { ui.lv = null; ui.sel = null; } ui.cat2 = c.id; ui.cat = c.id; ui.search = ''; catView(); }, 240);
       };
     });
     document.getElementById('dsf').onsubmit = function (e) {
@@ -359,23 +396,65 @@ body.has-nav .bnav{display:flex}
     };
     if (!soft) landed('Home', 'h1');
   }
+  var SI = {
+    calc: '<svg viewBox="0 0 48 48" aria-hidden="true"><rect x="7" y="4" width="34" height="40" rx="6" fill="#2F6BFF"/><rect x="12" y="9" width="24" height="9" rx="2.5" fill="#DCE7FF"/><g fill="#fff"><circle cx="16" cy="26" r="2.6"/><circle cx="24" cy="26" r="2.6"/><circle cx="32" cy="26" r="2.6"/><circle cx="16" cy="34" r="2.6"/><circle cx="24" cy="34" r="2.6"/><circle cx="32" cy="34" r="2.6" fill="#FFD36B"/></g></svg>',
+    book: '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 12c-5-3-12-3-18-1v26c6-2 13-2 18 1 5-3 12-3 18-1V11c-6-2-13-2-18 1z" fill="#fff" stroke="#6D4CF0" stroke-width="3" stroke-linejoin="round"/><path d="M24 12v26" stroke="#6D4CF0" stroke-width="3"/></svg>',
+    flask: '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M19 6h10M21 6v13L9 38a4 4 0 0 0 3.5 6h23a4 4 0 0 0 3.5-6L27 19V6" fill="#fff" stroke="#139A55" stroke-width="3" stroke-linejoin="round"/><path d="M14 31h20l5 8a3 3 0 0 1-2.6 4.5H11.6A3 3 0 0 1 9 39z" fill="#1DB66A"/></svg>',
+    atom: '<svg viewBox="0 0 48 48" aria-hidden="true"><g fill="none" stroke="#2F6BFF" stroke-width="3"><ellipse cx="24" cy="24" rx="19" ry="7.5"/><ellipse cx="24" cy="24" rx="19" ry="7.5" transform="rotate(60 24 24)"/><ellipse cx="24" cy="24" rx="19" ry="7.5" transform="rotate(120 24 24)"/></g><circle cx="24" cy="24" r="4.2" fill="#F5B82E"/></svg>',
+    leaf: '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M8 40C8 20 20 8 40 8c0 20-12 32-32 32z" fill="#1DB66A"/><path d="M8 40 28 20" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>',
+    globe: '<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="19" fill="#1E88E5"/><path d="M14 15c5-3 10 0 8 5s-7 3-8 8-7-3-5-8z" fill="#43A047"/><path d="M29 25c5-2 9 3 5 8s-7 1-7-4z" fill="#43A047"/><ellipse cx="24" cy="24" rx="8" ry="19" fill="none" stroke="#fff" stroke-width="1.5" opacity=".5"/></svg>',
+    scroll: '<svg viewBox="0 0 48 48" aria-hidden="true"><rect x="9" y="6" width="30" height="36" rx="5" fill="#FFE29A" stroke="#B45A00" stroke-width="3"/><path d="M16 16h16M16 24h16M16 32h10" stroke="#B45A00" stroke-width="3" stroke-linecap="round"/></svg>',
+    scale: '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 7v33M12 41h24M8 15h32" stroke="#6D4CF0" stroke-width="3.2" stroke-linecap="round"/><path d="M8 15 2 29h12zM40 15l-6 14h12z" fill="#B792FF" stroke="#6D4CF0" stroke-width="2" stroke-linejoin="round"/></svg>',
+    bars: '<svg viewBox="0 0 48 48" aria-hidden="true"><rect x="7" y="26" width="9" height="15" rx="2.5" fill="#F5B82E"/><rect x="19.5" y="15" width="9" height="26" rx="2.5" fill="#2F6BFF"/><rect x="32" y="6" width="9" height="35" rx="2.5" fill="#1DB66A"/></svg>',
+    bulb: '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 4a13 13 0 0 0-7 24v5h14v-5A13 13 0 0 0 24 4z" fill="#FFD36B" stroke="#B45A00" stroke-width="2.5"/><path d="M19 38h10M20 43h8" stroke="#B45A00" stroke-width="3" stroke-linecap="round"/></svg>',
+    chip: '<svg viewBox="0 0 48 48" aria-hidden="true"><rect x="12" y="12" width="24" height="24" rx="4" fill="#2F6BFF"/><rect x="19" y="19" width="10" height="10" rx="2" fill="#fff"/><path d="M18 5v7M30 5v7M18 36v7M30 36v7M5 18h7M5 30h7M36 18h7M36 30h7" stroke="#6D4CF0" stroke-width="3" stroke-linecap="round"/></svg>',
+    cross: '<svg viewBox="0 0 48 48" aria-hidden="true"><rect x="6" y="6" width="36" height="36" rx="9" fill="#E8F7EE" stroke="#139A55" stroke-width="3"/><path d="M24 14v20M14 24h20" stroke="#139A55" stroke-width="5" stroke-linecap="round"/></svg>'
+  };
+  function subjIcon(n) {
+    n = n.toLowerCase();
+    var map = [['math|statistic', 'calc'], ['chem|pharm', 'flask'], ['phys', 'atom'], ['bio|plant', 'leaf'], ['geograph', 'globe'], ['histor', 'scroll'], ['civic|law', 'scale'], ['econom|account|manage|business', 'bars'], ['apt|psych', 'bulb'], ['comput|software|information|engineer', 'chip'], ['medic|nurs|health', 'cross'], ['english|language|amharic|literature', 'book']];
+    for (var i = 0; i < map.length; i++) if (new RegExp(map[i][0]).test(n)) return SI[map[i][1]];
+    return SI.book;
+  }
+  // The levels of a category come from the data: grades for secondary, colleges (programs) for university.
+  function levelsFor(c) {
+    if (c.id === 'sec') return [['9', 'g9_10'], ['10', 'g9_10'], ['11', 'g11'], ['12', 'g12']].map(function (x) { return { id: x[0], label: x[0], group: x[1], name: 'Grade ' + x[0] }; })
+      .map(function (l) { l.subjects = BANK.filter(function (d) { return d.group === l.group; }); return l; });
+    var out = [], seen = {}; BANK.forEach(function (d) { if (c.groups.indexOf(d.group) >= 0 && !seen[d.college]) { seen[d.college] = 1; out.push({ id: d.college, label: d.college, name: d.college, subjects: [] }); } });
+    out.forEach(function (l) { l.subjects = BANK.filter(function (d) { return c.groups.indexOf(d.group) >= 0 && d.college === l.id; }); });
+    return out;
+  }
   function catView(soft) {
-    chrome('list'); setNav('sub');
-    var c = catById(ui.cat), k = ui.search.trim().toLowerCase();
-    var list = BANK.filter(function (d) { return c.groups.indexOf(d.group) >= 0 && (!k || d.name.toLowerCase().indexOf(k) >= 0 || d.college.toLowerCase().indexOf(k) >= 0); });
-    var colleges = []; list.forEach(function (d) { if (colleges.indexOf(d.college) < 0) colleges.push(d.college); });
-    var html = '<div class="catv"><button type="button" class="btn alt sm back" id="dback">← All categories</button><h1>' + esc(c.name) + '</h1><p class="hint">' + esc(c.sub) + ' · ' + catCount(c).toLocaleString() + ' questions</p>' +
-      '<label class="lbl" for="search">Find a subject</label><input id="search" type="search" autocomplete="off" placeholder="For example: Mathematics" value="' + esc(ui.search) + '"><div class="found">Showing ' + list.length + ' subject' + (list.length === 1 ? '' : 's') + '</div>';
-    colleges.forEach(function (cn, ci) {
-      var ds = list.filter(function (d) { return d.college === cn; }), n = ds.reduce(function (t, d) { return t + d.q.length; }, 0);
-      html += '<details class="card college" ' + (ci === 0 || k ? 'open' : '') + '><summary>' + esc(cn) + ' <span class="pill">' + n.toLocaleString() + ' questions</span></summary><div class="grid mt">' +
-        ds.map(function (d) { return '<button class="dept" data-d="' + esc(d.id) + '"><b>' + esc(d.name) + '</b><small>' + d.q.length + ' questions</small></button>'; }).join('') + '</div></details>';
+    chrome('pick');
+    var c = catById(ui.cat), lvs = levelsFor(c), isGrade = c.id === 'sec';
+    var cur = lvs.filter(function (l) { return l.id === ui.lv; })[0];
+    if (!cur || !cur.subjects.length) { cur = lvs.filter(function (l) { return l.subjects.length; })[0]; ui.lv = cur ? cur.id : null; ui.sel = null; }
+    var subs = cur ? cur.subjects : [], selD = ui.sel && subs.filter(function (d) { return d.id === ui.sel; })[0];
+    if (!selD) ui.sel = null;
+    var html = '<div class="dash catv"><div class="pick-h">' + ICON[c.icon] + '<div><h1>' + esc(c.name) + '</h1><p>' + esc(c.sub) + '</p></div></div>' +
+      '<h2 class="pk-l" id="lvl">' + (isGrade ? 'Choose your grade' : 'Choose your program') + '</h2>' +
+      (isGrade ? '<div class="lv" role="group" aria-labelledby="lvl">' + lvs.map(function (l) {
+        var ok = l.subjects.length; return '<button type="button" data-l="' + esc(l.id) + '" aria-pressed="' + (cur && cur.id === l.id) + '"' + (ok ? '' : ' class="soon" aria-disabled="true"') + ' aria-label="' + l.name + (ok ? '' : ', coming soon') + '">' + l.label + (ok ? '' : '<small>Soon</small>') + '</button>'; }).join('') + '</div>'
+        : '<div class="prg" role="group" aria-labelledby="lvl">' + lvs.map(function (l) { return '<button type="button" data-l="' + esc(l.id) + '" aria-pressed="' + (cur && cur.id === l.id) + '">' + esc(l.label) + '<small>' + l.subjects.length + ' ' + (l.subjects.length === 1 ? 'subject' : 'subjects') + '</small></button>'; }).join('') + '</div>') +
+      '<h2 class="pk-l" id="sjl">Choose your subject</h2>' +
+      (subs.length ? '<div class="sjs" role="group" aria-labelledby="sjl">' + subs.map(function (d) {
+        return '<button type="button" class="sj" data-d="' + esc(d.id) + '" aria-pressed="' + (ui.sel === d.id) + '">' + subjIcon(d.name) + '<b>' + esc(d.name) + '</b><small>' + d.q.length + ' questions</small></button>'; }).join('') + '</div>' : '<p class="pk-e">No subjects here yet.</p>') + '</div>';
+    app.innerHTML = html;
+    var bar = document.getElementById('pbar');
+    bar.innerHTML = '<button type="button" class="btn bk" id="pbk"><span aria-hidden="true">←</span> Back</button><button type="button" class="btn gold go" id="pgo"' + (ui.sel ? '' : ' disabled') + '>' + (ui.sel ? 'Continue to ' + esc(selD.name) : 'Choose a subject') + '</button>';
+    function again(sel) { var y = window.scrollY; catView(true); window.scrollTo(0, y); var n = app.querySelector(sel); if (n) n.focus({ preventScroll: true }); }
+    [].forEach.call(app.querySelectorAll('[data-l]'), function (b) {
+      b.onclick = function () {
+        var id = b.getAttribute('data-l'), l = lvs.filter(function (x) { return x.id === id; })[0];
+        if (!l.subjects.length) { toast(l.name + ' questions are coming soon. Grade 12 is ready now.'); return; }
+        if (ui.lv !== id) { ui.lv = id; ui.sel = null; } again('[data-l="' + id + '"]'); say(l.name + ' selected');
+      };
     });
-    if (!colleges.length) html += '<p class="hint">Nothing matches “' + esc(ui.search) + '”.</p>';
-    app.innerHTML = html + '</div>';
-    document.getElementById('dback').onclick = function () { ui.search = ''; dash(); };
-    var s = document.getElementById('search'); s.oninput = function () { ui.search = s.value; var pos = s.selectionStart; catView(true); var n = document.getElementById('search'); n.focus(); n.setSelectionRange(pos, pos); };
-    [].forEach.call(app.querySelectorAll('[data-d]'), function (b) { b.onclick = function () { deptPage(b.getAttribute('data-d'), ''); }; });
+    [].forEach.call(app.querySelectorAll('.sj'), function (b) {
+      b.onclick = function () { var id = b.getAttribute('data-d'); ui.sel = ui.sel === id ? null : id; again('[data-d="' + id + '"]'); say(ui.sel ? dept(id).name + ' selected' : 'Selection cleared'); };
+    });
+    document.getElementById('pbk').onclick = function () { ui.search = ''; dash(); };
+    document.getElementById('pgo').onclick = function () { if (ui.sel) deptPage(ui.sel, ''); };
     if (!soft) landed(c.name, 'h1');
   }
   document.getElementById('nv-home').onclick = function () { dash(); };
@@ -425,7 +504,7 @@ body.has-nav .bnav{display:flex}
     var pool = d.q.filter(function (r) { return !topic || r[4] === topic; }), max = pool.length;
     var sizes = [5, 10, 20, 30, 50, 100, max].filter(function (x, i, a) { return x <= max && a.indexOf(x) === i; }).sort(function (a, b) { return a - b; });
     var b1 = p.best[id + ':practice'], b2 = p.best[id + ':exam'];
-    app.innerHTML = '<p style="margin:2px 0 12px"><a href="#" id="back">← All subjects</a></p><section class="card hero"><h1>' + esc(d.name) + '</h1><p>' + d.q.length + ' questions with explanations</p></section>' +
+    app.innerHTML = '<p style="margin:2px 0 12px"><a href="#" id="back">← Back to subjects</a></p><section class="card hero"><h1>' + esc(d.name) + '</h1><p>' + d.q.length + ' questions with explanations</p></section>' +
       (mist ? '<div class="card" style="border-color:var(--bad)"><h2>📝 Fix my mistakes</h2><p class="hint">' + mist + ' question(s) you got wrong. Answer one correctly and it leaves the list.</p><button class="btn" id="fix">Practise my mistakes (' + mist + ')</button></div>' : '') +
       (topics.length > 1 ? '<div class="chips"><button data-t="" aria-pressed="' + (!topic) + '" class="' + (!topic ? 'on' : '') + '">All</button>' + topics.map(function (t) { return '<button data-t="' + esc(t) + '" aria-pressed="' + (topic === t) + '" class="' + (topic === t ? 'on' : '') + '">' + esc(t) + '</button>'; }).join('') + '</div>' : '') +
       '<div class="card"><h2>Practice ' + (b1 ? '<span class="pill good">best ' + b1 + '%</span>' : '') + '</h2><p class="hint">See the answer and a smart explanation after every question.</p><button class="btn" id="prac">Start practice (' + max + ')</button></div>' +
