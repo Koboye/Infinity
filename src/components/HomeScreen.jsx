@@ -89,13 +89,7 @@ export default function HomeScreen({name, subjects, stats, onContinue, onOpen, o
         </section>
       ) : <p className="inf-hint">{t('preparing')}</p>}
 
-      <div className="inf-quick">
-        <button type="button" onClick={onExams}><Svg size={22}><path d="M3 9.5 12 5l9 4.5-9 4.5z" /><path d="M7 11.5V16c0 1.4 2.2 2.5 5 2.5s5-1.1 5-2.5v-4.5" /></Svg><b>{t('quickExam')}</b></button>
-        <button type="button" onClick={onGames}><Svg size={22}><rect x="3" y="8" width="18" height="10" rx="5" /><path d="M8 11v4M6 13h4M16 12h.01M18 14h.01" /></Svg><b>{t('quickGames')}</b></button>
-      </div>
-
       <section className="inf-panel inf-pg" aria-label={t('yourProgress')}>
-        <h2>{t('yourProgress')}</h2>
         <div className="inf-pg-row">
           <Ring value={today} goal={goal} label={Math.min(today, goal) + ' / ' + goal} />
           <div className="inf-pg-side">
@@ -108,7 +102,6 @@ export default function HomeScreen({name, subjects, stats, onContinue, onOpen, o
           </div>
         </div>
         <ol className="inf-week" aria-label={t('thisWeek')}>{weekActivity(stats, now, lang === 'am' ? 'am' : 'en').map((d) => <li key={d.key} className={(d.count >= goal ? 'is-full ' : d.count > 0 ? 'is-part ' : '') + (d.today ? 'is-today' : '')}><i aria-hidden="true">{d.count >= goal ? '🔥' : d.count > 0 ? '•' : ''}</i><span>{d.label.slice(0, 2)}</span></li>)}</ol>
-        <div className="inf-lvl"><span>{t('levelN', {n: lv.level})}</span><div className="inf-bar" role="progressbar" aria-label={t('levelN', {n: lv.level})} aria-valuemin={0} aria-valuemax={lv.size} aria-valuenow={lv.into}><i style={{width: lv.into + '%'}} /></div><span>{t('xpToNext', {n: lv.size - lv.into, m: lv.level + 1})}</span></div>
       </section>
 
       {server && (bonusLine(t, server) || server.hasGroup) && (
@@ -118,18 +111,22 @@ export default function HomeScreen({name, subjects, stats, onContinue, onOpen, o
         </section>
       )}
 
-      <section className="inf-panel inf-up" aria-label={t('upcomingExams')}>
-        <h2><Svg size={22}><rect x="3.5" y="5" width="17" height="15" rx="3" /><path d="M3.5 10h17M8 3v4M16 3v4" /></Svg>{t('upcomingExams')}</h2>
-        {up ? (
+      {up ? (
+        <section className="inf-panel inf-up" aria-label={t('upcomingExams')}>
+          <h2><Svg size={22}><rect x="3.5" y="5" width="17" height="15" rx="3" /><path d="M3.5 10h17M8 3v4M16 3v4" /></Svg>{t('upcomingExams')}</h2>
           <button type="button" className="inf-up-item" onClick={onExams}>
             <span className="inf-up-ico" style={{'--accent': accentFor(up.subject)}}><SubjectIcon name={up.subject} size={22} /></span>
             <span><b>{up.subject}</b><small>{up.date}</small></span>
             <em className={up.days <= 1 ? 'is-soon' : ''}>{when(t, up.days)}</em>
           </button>
-        ) : (
-          <div className="inf-empty"><b>{t('noUpcoming')}</b><small>{t('noUpcomingSub')}</small><button type="button" className="inf-ghost-btn" onClick={onExams}>{t('planExam')}</button></div>
-        )}
-      </section>
+        </section>
+      ) : (
+        <button type="button" className="inf-plan-row" onClick={onExams}>
+          <span className="inf-plan-ico"><Svg size={22}><rect x="3.5" y="5" width="17" height="15" rx="3" /><path d="M3.5 10h17M8 3v4M16 3v4" /></Svg></span>
+          <span><b>{t('planExam')}</b><small>{t('noUpcomingSub')}</small></span>
+          <Svg size={20}><path d="M9 5l7 7-7 7" /></Svg>
+        </button>
+      )}
     </div>
   );
 }

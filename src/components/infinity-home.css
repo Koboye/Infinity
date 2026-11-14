@@ -88,3 +88,19 @@
 .inf-root .inf-quick button:hover{border-color:var(--inf-violet)}
 /* calmer empty exam card */
 .inf-root .inf-up .inf-empty{padding:14px 12px;gap:2px}
+
+/* home v2: calmer */
+.inf-root .inf-h{gap:14px}
+.inf-root .inf-pg{padding:16px}
+.inf-root .inf-pg .inf-pills{display:flex;flex-wrap:wrap;gap:6px 16px}
+.inf-root .inf-pg .inf-pills li{flex-direction:row;align-items:center;gap:6px;padding:0;background:none;border-radius:0}
+.inf-root .inf-pg .inf-pills b{font-size:var(--fs-md)}
+.inf-root .inf-pg .inf-pills span{font-size:.74rem}
+.inf-root .inf-reward{padding:14px}
+.inf-root .inf-plan-row{display:flex;align-items:center;gap:12px;width:100%;min-height:64px;padding:12px 14px;text-align:left;border-radius:var(--r-md);background:var(--inf-card);border:1.5px dashed color-mix(in srgb,var(--inf-violet) 40%,var(--inf-line));color:var(--inf-text)}
+.inf-root .inf-plan-row>span:nth-child(2){flex:1;min-width:0}
+.inf-root .inf-plan-row b{display:block;font:800 var(--fs-md) var(--inf-font-b)}
+.inf-root .inf-plan-row small{display:block;color:var(--inf-mute);font-size:var(--fs-xs);font-weight:600}
+.inf-root .inf-plan-row>svg{color:var(--inf-mute);flex:0 0 auto}
+.inf-root .inf-plan-ico{flex:0 0 auto;display:grid;place-items:center;width:42px;height:42px;border-radius:13px;background:color-mix(in srgb,var(--inf-violet) 14%,var(--inf-card));color:var(--inf-violet)}
+.inf-root .inf-plan-row:hover{border-color:var(--inf-violet)}
