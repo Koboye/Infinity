@@ -325,8 +325,9 @@ body.ep-auth-locked > :not(#ep-auth-gate):not(script) { visibility:hidden !impor
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function ymd(d) { d = d || new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
   function yest() { var d = new Date(); d.setDate(d.getDate() - 1); return ymd(d); }
-  function load() { var s = { xp: 0, streak: 0, last: '', day: '', today: 0, best: {}, mistakes: {}, answered: 0, correct: 0 }; try { Object.assign(s, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) {} if (s.day !== ymd()) s.today = 0; return s; }
-  function save(s) { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {} }
+  function progressKey() { var uid = window.infinityStudentUid; return uid ? KEY + '.uid.' + uid : KEY + '.unauthenticated'; }
+  function load() { var s = { xp: 0, streak: 0, last: '', day: '', today: 0, best: {}, mistakes: {}, answered: 0, correct: 0 }; try { Object.assign(s, JSON.parse(localStorage.getItem(progressKey()) || '{}')); } catch (e) {} if (s.day !== ymd()) s.today = 0; return s; }
+  function save(s) { try { localStorage.setItem(progressKey(), JSON.stringify(s)); } catch (e) {} }
   function level(xp) { var l = Math.floor(Math.sqrt(xp / 50)); return l + 1; }
   function shuffle(a) { var b = a.slice(); for (var i = b.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = b[i]; b[i] = b[j]; b[j] = t; } return b; }
   function prep(raw, dept, i) {
@@ -502,12 +503,13 @@ body.ep-auth-locked > :not(#ep-auth-gate):not(script) { visibility:hidden !impor
   // ── quiz
   var timer = null;
   function quiz(id, mode, qs, label) {
+    window.infinityExamActive = true;
     chrome(null);
     clearInterval(timer);
     var set = shuffle(qs), i = 0, picked = {}, combo = 0, bestCombo = 0, xp = 0, flash = null, left = Math.max(1, Math.ceil(set.length * 1.2)) * 60, done = false;
     var lastQ = null, PRAISE = ['Nice!', 'Great!', 'On fire!', 'Unstoppable!', 'Genius!'];
     function finish() {
-      clearInterval(timer); done = true;
+      clearInterval(timer); done = true; window.infinityExamActive = false;
       var score = set.filter(function (q) { return picked[q.id] === q.answer; }).length, pct = set.length ? Math.round(score / set.length * 100) : 0;
       if (mode === 'exam') set.forEach(function (q) { if (picked[q.id] != null) xp += record(id, q, picked[q.id] === q.answer, 0).gain; });
       var s = load(), k = id + ':' + mode; if (pct > (s.best[k] || 0)) { s.best[k] = pct; save(s); }
@@ -537,7 +539,7 @@ body.ep-auth-locked > :not(#ep-auth-gate):not(script) { visibility:hidden !impor
         (reveal && flash ? '<div class="flash ' + (flash.ok ? 'ok' : 'err') + '">' + esc(flash.text) + ' · +' + flash.gain + ' XP</div>' : '') + (reveal ? explain(q, c) : '') +
         '<div class="row sp mt"><button class="btn alt" id="quit">Quit</button><span class="row">' + (mode === 'exam' ? '<button class="btn alt" id="game-break" type="button">🎮 Play Game</button>' : '') + (mode === 'exam' && i > 0 ? '<button class="btn alt" id="prev">Back</button>' : '') + '<button class="btn ' + (i + 1 >= set.length ? 'gold' : '') + '" id="next" ' + (mode === 'practice' && c == null ? 'disabled' : '') + '>' + (i + 1 < set.length ? 'Next →' : 'Finish') + '</button></span></div><p class="hint" style="margin:.6em 0 0">Tip: press A–D to answer, Enter for next.</p></div>';
       [].forEach.call(app.querySelectorAll('[data-k]'), function (b) { b.onclick = function () { choose(+b.getAttribute('data-k')); }; });
-      document.getElementById('next').onclick = next; var gb = document.getElementById('game-break'); if (gb) gb.onclick = window.examproOpenGameBreak; document.getElementById('quit').onclick = function () { clearInterval(timer); document.onkeydown = null; deptPage(id, ''); };
+      document.getElementById('next').onclick = next; var gb = document.getElementById('game-break'); if (gb) gb.onclick = window.examproOpenGameBreak; document.getElementById('quit').onclick = function () { window.infinityExamActive = false; clearInterval(timer); document.onkeydown = null; deptPage(id, ''); };
       var pv = document.getElementById('prev'); if (pv) pv.onclick = function () { i--; draw(); };
       if (reveal) { var ex = app.querySelector('.explain'); if (ex) { ex.setAttribute('tabindex', '-1'); ex.setAttribute('role', 'region'); ex.setAttribute('aria-label', 'Explanation'); ex.focus(); } say(c === q.answer ? 'Correct.' : 'Not quite. The correct answer is ' + L[q.answer] + '.'); }
       else if (c != null) { var ob = app.querySelector('[data-k="' + c + '"]'); if (ob) ob.focus({ preventScroll: true }); }
@@ -557,6 +559,7 @@ body.ep-auth-locked > :not(#ep-auth-gate):not(script) { visibility:hidden !impor
   document.getElementById('home').onclick = function () { clearInterval(timer); document.onkeydown = null; dash(); };
   // Once a student chooses a level on the sign-in screen, open that learning area.
   function openStudentResources() {
+    if (window.infinityExamActive) return;
     var category = window.infinityGradeCategory && window.infinityGradeCategory();
     if (!category || !catById(category)) return;
     ui.cat = category; ui.search = '';
@@ -565,9 +568,11 @@ body.ep-auth-locked > :not(#ep-auth-gate):not(script) { visibility:hidden !impor
   window.addEventListener('infinity-grade-changed', function (event) {
     if (event.detail && event.detail.grade) openStudentResources();
   });
-  window.infinityNavigateHome = function(){dash();};
+  window.infinityNavigateHome = function(){if (!window.infinityExamActive) dash();};
   window.infinityNavigateResources = openStudentResources;
   window.infinityReadProgress = function(){return load();};
+  window.infinityExamActive = false;
+  window.infinityCanNavigate = function(){return !window.infinityExamActive;};
   window.infinitySetNav = setNav;
   dash(true);
 })();
