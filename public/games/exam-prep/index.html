@@ -666,6 +666,32 @@ body.has-xbar .xb.main{min-width:125px}
 #ep-unified-panel .ep-profile-plan{border-radius:12px;margin-top:8px}
 #ep-unified-panel .ep-profile-export{border-radius:12px;background:#263c91;margin-top:7px}
 @media(max-width:550px){#ep-unified-panel .ep-profile-summary{gap:14px;padding:18px}#ep-unified-panel .ep-profile-summary .ep-unified-avatar{width:68px;height:68px;font-size:36px;border-radius:19px}#ep-unified-panel .ep-profile-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style><style id="ep-screen-09">
+/* Screen 09 — game breaks are available during study AND exams. */
+body.exam-on .ep-break-floating{display:inline-flex}
+.ep-break-floating{display:none;position:fixed;right:16px;top:calc(10px + env(safe-area-inset-top));z-index:110;align-items:center;justify-content:center;min-height:42px;padding:10px 15px;border:1px solid rgba(255,255,255,.4);border-radius:999px;background:linear-gradient(120deg,#ffe68d,#ffbd48);color:#19244d;font:850 12px var(--sans);box-shadow:0 8px 22px rgba(0,0,0,.25);cursor:pointer}
+.ep-break-shade{z-index:300;backdrop-filter:blur(7px);background:rgba(5,10,32,.82)}
+.ep-break-box{width:min(640px,100%);max-height:min(90dvh,820px);padding:clamp(18px,4vw,28px);border-radius:25px;background:linear-gradient(150deg,#fff,#f4f5ff);color:#18234d;overscroll-behavior:contain}
+.ep-break-heading{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:9px}
+.ep-break-eyebrow{font-size:11px;letter-spacing:.14em;font-weight:900;color:#6850c5}
+.ep-break-x{width:38px;height:38px;border:0;border-radius:12px;background:#e8e9f7;color:#27345f;cursor:pointer;font-weight:800}
+.ep-break-box h2{font-size:clamp(22px,5vw,29px);line-height:1.2;letter-spacing:-.035em;margin:0 0 10px;color:#18234d}
+.ep-break-box p{color:#58617f;line-height:1.5;margin:0 0 15px}
+.ep-break-warning,.ep-break-info{padding:12px 14px;border-radius:13px;font-size:13px!important}
+.ep-break-warning{background:#fff0d4;color:#815012!important;border:1px solid #f6d89e}
+.ep-break-info{background:#e8f2ff;color:#284c87!important}
+.ep-break-section{margin-top:19px}
+.ep-break-section h3{font-size:13px;letter-spacing:.02em;color:#27345f;margin:0 0 10px}
+.ep-break-games{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.ep-break-games a{min-width:0;min-height:79px;gap:10px;padding:13px;background:#fff;border:1px solid #e0e5f5;border-radius:16px;transition:transform .15s,border-color .15s}
+.ep-break-game-icon{display:grid;place-items:center;flex:none;width:45px;height:45px;border-radius:13px;background:#eff0ff;font-size:24px!important}
+.ep-break-game-label{min-width:0;flex:1}.ep-break-game-label strong{font-size:13px;color:#1d2b55}.ep-break-game-label small{font-size:11px;line-height:1.4;color:#65708b}
+.ep-break-arrow{font-size:17px;color:#6350c7!important}
+.ep-break-close{min-height:47px;border-radius:13px;background:#5941c8;margin-top:20px}
+.ep-break-shade a:focus-visible,.ep-break-shade button:focus-visible,.ep-break-floating:focus-visible{outline:3px solid #f5b73f;outline-offset:3px}
+@media(hover:hover){.ep-break-games a:hover{transform:translateY(-2px);border-color:#7665d6}}
+@media(max-width:510px){.ep-break-games{grid-template-columns:1fr}.ep-break-games a{min-height:66px}.ep-break-box{max-height:90dvh}.ep-break-floating{right:10px;top:calc(7px + env(safe-area-inset-top));padding:8px 11px}}
+@media(prefers-reduced-motion:reduce){.ep-break-games a{transition:none}}
 </style></head>
 <body>
 <div class="splash" id="splash" role="dialog" aria-modal="true" aria-labelledby="sp-title" hidden>
