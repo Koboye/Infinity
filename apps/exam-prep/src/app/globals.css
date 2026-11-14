@@ -86,3 +86,16 @@ label { display:block; font-size:14px; font-weight:600; margin:10px 0 4px; } .hi
 .ep-footer-note { color:var(--muted); font-size:12px; margin-top:18px; }
 @media(max-width:520px) { .ep-focus { padding:21px; } .ep-department { grid-template-columns:1fr auto; } .ep-department small { display:none; } }
 @media(prefers-reduced-motion:reduce) { .ep-goal-track span { transition:none; } }
+
+
+/* Floating exam calculator: only mounted in timed exams. */
+.exam-calc { position:fixed; z-index:30; bottom:max(18px,env(safe-area-inset-bottom)); right:18px; display:flex; flex-direction:column; align-items:flex-end; gap:10px; }
+.exam-calc-toggle { border:0; border-radius:999px; padding:12px 17px; background:#ffcd5a; color:#201b45; box-shadow:0 8px 25px #0003; font:inherit; font-weight:800; cursor:pointer; }
+.exam-calc-panel { width:min(300px,calc(100vw - 36px)); background:var(--card); color:var(--ink); border:1px solid var(--line); border-radius:19px; box-shadow:0 18px 60px #0004; padding:14px; }
+.exam-calc-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+.exam-calc-head button { background:transparent; border:0; color:var(--ink); font-size:25px; cursor:pointer; }
+.exam-calc-display { display:block; min-height:54px; padding:12px; background:var(--soft); border-radius:10px; text-align:right; font-size:21px; overflow-wrap:anywhere; }
+.exam-calc-keys { display:grid; grid-template-columns:repeat(4,1fr); gap:7px; margin-top:12px; }
+.exam-calc-keys button { min-height:44px; border:1px solid var(--line); border-radius:10px; background:var(--card); color:var(--ink); font:inherit; font-weight:700; cursor:pointer; }
+.exam-calc-keys button:last-child { background:var(--brand); color:#fff; }
+@media(max-width:380px) { .exam-calc-toggle span { display:none; } }
