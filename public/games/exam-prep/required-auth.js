@@ -8,6 +8,13 @@ const submit = document.getElementById('ep-auth-submit');
 const toggle = document.getElementById('ep-auth-toggle');
 const message = document.getElementById('ep-auth-message');
 const nameField = document.getElementById('ep-auth-name');
+const gradeField = document.getElementById('in-auth-grade');
+const gradeStorageKey = uid => 'infinity.learning.grade.' + uid;
+let currentUserId = null;
+function selectedGrade(uid) { try { return localStorage.getItem(gradeStorageKey(uid)) || ''; } catch (e) { return ''; } }
+function rememberGrade(uid, grade) { try { localStorage.setItem(gradeStorageKey(uid), grade); } catch (e) {} }
+function syncGradeField(uid) { if (!uid) return; const grade = selectedGrade(uid); if (grade) gradeField.value = grade; }
+
 let creating = false;
 let auth;
 
@@ -20,14 +27,18 @@ function mode(up) {
   nameField.hidden = !up;
   nameField.required = up;
   form.elements.password.autocomplete = up ? 'new-password' : 'current-password';
+  gradeField.required = true;
   status('');
 }
 function allow(user) {
+  currentUserId = user ? user.uid : null;
+  if (user) syncGradeField(user.uid);
   gate.hidden = !!user;
   document.body.classList.toggle('ep-auth-locked', !user);
   const signout = document.getElementById('ep-auth-signout');
   signout.hidden = !user;
   window.dispatchEvent(new CustomEvent('infinity-auth-changed', { detail: { uid: user ? user.uid : null } }));
+  if (user) window.dispatchEvent(new CustomEvent('infinity-grade-changed', { detail: { grade: selectedGrade(user.uid) } }));
   if (user) {
     const splash = document.getElementById('splash');
     if (splash && !splash.hidden) splash.style.zIndex = '100';
@@ -48,15 +59,20 @@ try {
     status('');
     const email = form.elements.email.value.trim();
     const password = form.elements.password.value;
+    const requestedGrade = gradeField.value;
+    if (!requestedGrade) { status('Choose your learning level before continuing.'); submit.disabled = false; gradeField.focus(); return; }
     try {
       if (creating) {
         const result = await createUserWithEmailAndPassword(auth, email, password);
         const displayName = form.elements.displayName.value.trim();
+        rememberGrade(result.user.uid, requestedGrade);
         if (displayName) await updateProfile(result.user, { displayName });
       } else {
-        await signInWithEmailAndPassword(auth, email, password);
+        const result = await signInWithEmailAndPassword(auth, email, password);
+        rememberGrade(result.user.uid, requestedGrade);
       }
       form.reset();
+      if (auth.currentUser) { syncGradeField(auth.currentUser.uid); window.dispatchEvent(new CustomEvent('infinity-grade-changed', { detail: { grade: selectedGrade(auth.currentUser.uid) } })); }
     } catch (error) {
       const errors = {
         'auth/email-already-in-use': 'This email already has an account. Please sign in.',
