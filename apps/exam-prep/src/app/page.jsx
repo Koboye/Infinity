@@ -55,6 +55,7 @@ export default function Home() {
         <div className="ep-goal-track" role="progressbar" aria-label="Daily goal" aria-valuenow={goalPct} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${goalPct}%` }} /></div>
       </section>
 
+      <div className="ep-home-shortcuts"><Link href="/levels">🎓 Choose level</Link><Link href="/progress">📊 My progress</Link><Link href="/plan">📋 Study plan</Link><Link href="/profile">👤 Profile</Link></div>
       <section className="ep-explore" aria-labelledby="ep-explore-title">
         <div className="ep-section-heading"><div><span className="ep-eyebrow">EXPLORE</span><h2 id="ep-explore-title">Find your subject</h2></div>{mistakes > 0 && <span className="ep-review-count">📝 {mistakes} to review</span>}</div>
         <label className="ep-search-label" htmlFor="ep-search">Search subjects or departments</label>
