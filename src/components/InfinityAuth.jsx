@@ -118,6 +118,17 @@ export function DepartmentPicker({departments, value, onChange}) {
   );
 }
 
+/* Sign-up progress: the logo loop itself fills in as the person moves through the steps. */
+function InfinityProgress({step, total}) {
+  const d = 'M24 24c-3.500-4.500-6.500-7-10-7a7 7 0 000 14c3.500 0 6.500-2.500 10-7s6.500-7 10-7a7 7 0 010 14c-3.500 0-6.500-2.500-10-7z';
+  return (
+    <svg className="inf-progress" viewBox="4 13 40 22" role="img" aria-label={'Step ' + step + ' of ' + total}>
+      <path className="trk" d={d} />
+      <path className="fill" d={d} pathLength="100" strokeDashoffset={100 - (100 * step) / total} />
+    </svg>
+  );
+}
+
 function Field({label, children}) {
   return <label className="inf-field"><span>{label}</span>{children}</label>;
 }
@@ -189,7 +200,7 @@ export default function AuthScreen({busy, error, notice, departments, onSubmit, 
       <section className="inf-auth-panel">
         <form onSubmit={submit} noValidate={false} aria-labelledby="inf-auth-title">
           <header>
-            {signup && <div className="inf-steps" role="img" aria-label={'Step ' + step + ' of ' + total}>{Array.from({length: total}, (_, i) => <i key={i} className={step > i ? 'on' : ''} />)}</div>}
+            {signup && <InfinityProgress step={step} total={total} />}
             <h2 id="inf-auth-title">{title}</h2>
             <p>{sub}</p>
           </header>
