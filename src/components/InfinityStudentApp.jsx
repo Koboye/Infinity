@@ -9,6 +9,7 @@ import {ExamRunner,ExamResults,ExamScreen} from './ExamScreens';
 import {initialOf} from './HomeScreen';
 import {makeT} from '@/lib/infText';
 import {STRINGS} from '@/lib/i18n';
+import {GameIcon} from './GameIcons';
 import {gameInfo} from '@/lib/games.js';
 import {recordSession,liveStreak} from '@/lib/studyStreak';
 import {fetchStudy,reportSession,bonusLine} from '@/lib/studyClient';
@@ -33,6 +34,7 @@ const put=(key,value)=>{try{localStorage.setItem(key,value)}catch{}};
 const bankFor=(bank,grade,dept)=>bank.filter(d=>grade==='uni'?d.group==='uni'&&d.id===dept:grade==='g12'?d.group==='g12':grade==='ngat'||grade==='gk'?d.group===grade:d.grade===grade);
 const GAMES=[['gebeta','Gebeta'],['checkers','Dama'],['bingo','Bingo'],['runner','Addis Runner'],['hill','Hill Climb']];
 const MODES=[['ai','🤖'],['pass','🤝'],['online','🌍'],['rank','🏆']],LEVELS=['easy','medium','hard'];
+const ICON_KEY={gebeta:'gebeta',checkers:'checkers',bingo:'bingo',runner:'runner',hill:'car'};
 const GAME_COLOR={gebeta:'#6A3FD8',checkers:'#E8641B',bingo:'#12A06B',runner:'#1F7AE0',hill:'#D6455D'};
 const GAME_ICON={gebeta:'●●',checkers:'◐',bingo:'№',runner:'🏃',hill:'🚙'};
 const TABS=['home','exams','games','profile'];
@@ -80,7 +82,7 @@ export default function InfinityStudentApp(){
   <p className="inf-modehint">{t('hint'+mode.charAt(0).toUpperCase()+mode.slice(1))}</p>
   {mode==='ai'&&<div className="inf-lvlbar" role="group" aria-label={t('levelLabel')}>{LEVELS.map(l=><button type="button" key={l} aria-pressed={plevel===l} onClick={()=>pickLevel(l)}>{t('lvl'+l.charAt(0).toUpperCase()+l.slice(1))}</button>)}</div>}
   {vg&&<div className="inf-vsheet" role="group" aria-label={t('variantPick')}><p>{GAMES.find(x=>x[0]===vg)[1]} · {t('variantPick')}</p><div>{gameInfo(vg).rulesets.map(r=><button type="button" key={r} aria-pressed={ruleOf(vg)===r} onClick={()=>pickRule(vg,r)}>{ruleName(vg,r)}</button>)}</div></div>}
-  <div className="inf-game-list">{list.map(([id,title])=><div className="inf-gt" key={id} style={{'--g':GAME_COLOR[id]}}><button type="button" className="inf-gmain" onClick={()=>{setGame(id);setBreakMenu(false);setVarFor('')}}><i aria-hidden="true">{GAME_ICON[id]}</i><b>{title}</b><small>{tileCap(mode)}</small></button>{HAS_VAR.includes(id)&&mode!=='rank'&&<button type="button" className="inf-gvar" aria-expanded={vg===id} aria-label={t('variantChip')+': '+title} onClick={()=>setVarFor(vg===id?'':id)}>{ruleName(id,ruleOf(id))} ▾</button>}</div>)}</div></>};
+  {[['board',list.filter(([id])=>HAS_VAR.includes(id))],['arcade',list.filter(([id])=>!HAS_VAR.includes(id))]].filter(x=>x[1].length).map(([k,items])=><section key={k} className="inf-ggroup"><h2>{t(k==='board'?'boardGames':'arcadeGames')}</h2><div className="inf-game-list">{items.map(([id,title])=><div className="inf-gt" key={id} style={{'--g':GAME_COLOR[id]}}><button type="button" className="inf-gmain" onClick={()=>{setGame(id);setBreakMenu(false);setVarFor('')}}><span className="inf-gico" aria-hidden="true"><GameIcon game={ICON_KEY[id]} size={56}/></span><b>{title}</b><small>{tileCap(mode)}</small></button>{HAS_VAR.includes(id)&&mode!=='rank'&&<button type="button" className="inf-gvar" aria-expanded={vg===id} aria-label={t('variantChip')+': '+title} onClick={()=>setVarFor(vg===id?'':id)}>{ruleName(id,ruleOf(id))} ▾</button>}</div>)}</div></section>)}</>};
  const games=gamePanel();
  const gamesTab=<div className="inf-h"><header className="inf-h-hello"><h1>{t('gamesTitle')}</h1><p>{t('gamesSub')}</p>{bonusLine(t,server)&&<p className="inf-bonus-hint">{bonusLine(t,server)}</p>}</header>{games}</div>;
  if(!ready||(user&&!levelReady))return <div className="inf-root"><main className="inf-app inf-loading" aria-busy="true"><Mark size={64} live/><p>Loading your study space…</p></main></div>;

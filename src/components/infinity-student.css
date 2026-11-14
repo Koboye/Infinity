@@ -471,3 +471,10 @@ html.inf-protected input,html.inf-protected textarea,html.inf-protected [content
 html.inf-protected img,html.inf-protected svg{-webkit-user-drag:none;user-drag:none;-webkit-touch-callout:none}
 html.inf-away body::after{content:"";position:fixed;inset:0;z-index:2147483647;background:#0A1040}
 @media print{html.inf-protected body{display:none!important}}
+
+/* games: grouped, with the original game icons */
+.inf-root .inf-ggroup{margin-top:18px}
+.inf-root .inf-ggroup h2{margin:0 0 10px;font:800 var(--fs-md) var(--inf-font-b);color:var(--inf-mute)}
+.inf-root .inf-ggroup .inf-game-list{margin-top:0}
+.inf-root .inf-gico{display:block;width:56px;height:56px;filter:drop-shadow(0 6px 10px rgba(0,0,0,.28))}
+.inf-root .inf-gico svg{display:block;width:56px;height:56px}

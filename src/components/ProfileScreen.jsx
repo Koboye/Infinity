@@ -26,7 +26,7 @@ const friendly = (e, t) => ({
 }[e?.code] || e?.message || t('generic'));
 
 export default function ProfileScreen({user, gradeName, deptName, stats, notice, error, onReset, onSignOut, onProfile, onClearProgress, onDeleted, onGoal, onLang, lang = 'en', t = makeT('en')}) {
-  const [view, setView] = useState('main');
+  const [more, setMore] = useState(false), [editName, setEditName] = useState(false);
   const [name, setName] = useState(user.displayName || '');
   const [photo, setPhoto] = useState(user.photoURL || '');
   const [draft, setDraft] = useState(user.displayName || '');
@@ -52,7 +52,7 @@ export default function ProfileScreen({user, gradeName, deptName, stats, notice,
     const v = draft.trim();
     if (!v) return say('err', t('enterName'));
     setBusy('name'); say('', '');
-    try { await updateProfile(user, {displayName: v}); setName(v); onProfile?.(); say('ok', t('nameSaved')); }
+    try { await updateProfile(user, {displayName: v}); setName(v); setEditName(false); onProfile?.(); say('ok', t('nameSaved')); }
     catch (err) { say('err', friendly(err, t)); } finally { setBusy(''); }
   };
   const pickPhoto = async (e) => {
@@ -103,86 +103,7 @@ export default function ProfileScreen({user, gradeName, deptName, stats, notice,
       {options.map(([v, text]) => <button key={v} type="button" aria-pressed={value === v} onClick={() => onPick(v)}>{text}</button>)}
     </div>
   );
-  const Head = ({title}) => (
-    <header className="inf-sub-head">
-      <button type="button" className="inf-x-icon" aria-label={t('back')} onClick={() => setView('main')}><Svg size={22}>{I.back}</Svg></button>
-      <h1>{title}</h1>
-    </header>
-  );
-  const Row = ({icon, label, sub, onClick, tone}) => (
-    <li><button type="button" className="inf-menu-row" data-tone={tone} onClick={onClick}>
-      <span className="inf-menu-ico"><Svg size={22}>{icon}</Svg></span>
-      <span className="inf-menu-txt"><b>{label}</b>{sub && <small>{sub}</small>}</span>
-      <Svg size={20}>{I.chev}</Svg>
-    </button></li>
-  );
-
   const toast = <div className="inf-toasts" aria-live="polite">{msg.text && <p role={msg.kind === 'err' ? 'alert' : undefined} className={'inf-toast' + (msg.kind === 'err' ? ' is-err' : '')}><Svg size={20}>{msg.kind === 'err' ? I.x : I.check}</Svg>{msg.text}</p>}</div>;
-
-  if (view === 'settings') return (
-    <div className="inf-h inf-p">
-      <Head title={t('settings')} />
-      <section className="inf-panel inf-set">
-        <div className="inf-set-row"><div><b>{t('language')}</b><small>{t('languageSub')}</small></div><Seg label={t('language')} value={lang} options={LANGS} onPick={(v) => onLang?.(v)} /></div>
-        <div className="inf-set-row"><div><b>{t('goal')}</b><small>{t('goalSub')}</small></div><Seg label={t('goal')} value={goal} options={GOALS.map((g) => [g, String(g)])} onPick={(v) => { onGoal?.(v); say('ok', t('goalSaved')); }} /></div>
-        <ReminderRow t={t} lang={lang} say={say} />
-      </section>
-      <p className="inf-legal"><a href="/privacy">{t('privacy')}</a> · <a href="/terms">{t('terms')}</a></p>
-      {toast}
-    </div>
-  );
-
-  if (view === 'account') return (
-    <div className="inf-h inf-p">
-      <Head title={t('account')} />
-      <section className="inf-panel inf-set">
-        <div className="inf-acc-photo">
-          <span className="inf-ava inf-ava-lg">{photo ? <img src={photo} alt="" /> : initialOf(shown)}</span>
-          <span className="inf-pair">
-            <button type="button" className="inf-ghost-btn" disabled={busy === 'photo'} onClick={() => file.current?.click()}>{t('change')}</button>
-            {photo && <button type="button" className="inf-ghost-btn" disabled={busy === 'photo'} onClick={dropPhoto}>{t('remove')}</button>}
-          </span>
-        </div>
-        <form className="inf-field-row" onSubmit={saveName}>
-          <label><span>{t('nameLabel')}</span><input aria-label={t('yourName')} maxLength={60} value={draft} onChange={(e) => setDraft(e.target.value)} /></label>
-          <button type="submit" className="inf-x-next" disabled={busy === 'name' || draft.trim() === name}>{t('save')}</button>
-        </form>
-        <div className="inf-kv"><span>{t('yourGrade')}</span><b>{level}</b></div>
-        {user.email && <div className="inf-kv"><span>Email</span><b>{user.email}</b></div>}
-        {hasPassword && (
-          <div className="inf-fold">
-            <button type="button" className="inf-fold-btn" aria-expanded={pw} onClick={() => setPw((v) => !v)}><b>{t('password')}</b><span>{pw ? t('close') : t('change')}</span></button>
-            {pw && (
-              <form className="inf-fold-body" onSubmit={savePw}>
-                <label><span>{t('curPw')}</span><input type="password" autoComplete="current-password" required value={cur} onChange={(e) => setCur(e.target.value)} /></label>
-                <label><span>{t('newPw')}</span><input type="password" autoComplete="new-password" required minLength={6} value={next} onChange={(e) => setNext(e.target.value)} /></label>
-                <button type="submit" className="inf-x-next" disabled={busy === 'pw'}>{busy === 'pw' ? t('saving') : t('savePw')}</button>
-                <button type="button" className="inf-link" onClick={() => onReset(user.email || '')}>{t('emailReset')}</button>
-              </form>
-            )}
-          </div>
-        )}
-      </section>
-
-      <section className="inf-panel inf-set">
-        <div className="inf-set-row"><div><b>{t('exportData')}</b><small>{t('exportSub')}</small></div><button type="button" className="inf-ghost-btn" onClick={exportData}>{t('download')}</button></div>
-        <div className="inf-set-row"><div><b>{t('resetProgress')}</b><small>{t('resetSub')}</small></div><button type="button" className="inf-ghost-btn" onClick={clear}>{t('reset')}</button></div>
-      </section>
-
-      <section className="inf-panel inf-danger" aria-label={t('deleteTitle')}>
-        <div className="inf-set-row"><div><b>{t('deleteTitle')}</b><small>{t('deleteSub')}</small></div>{!del && <button type="button" className="inf-ghost-btn is-bad" onClick={() => setDel(true)}>{t('deleteBtn')}</button>}</div>
-        {del && (
-          <form className="inf-fold-body" onSubmit={deleteAccount}>
-            {hasPassword && <label><span>{t('deleteAsk')}</span><input type="password" autoComplete="current-password" required value={delPw} onChange={(e) => setDelPw(e.target.value)} /></label>}
-            <button type="submit" className="inf-x-next is-bad" disabled={busy === 'del'}>{busy === 'del' ? t('saving') : t('deleteGo')}</button>
-            <button type="button" className="inf-link" onClick={() => { setDel(false); setDelPw(''); }}>{t('cancel')}</button>
-          </form>
-        )}
-      </section>
-      <input ref={file} type="file" accept="image/*" style={{display: 'none'}} tabIndex={-1} onChange={pickPhoto} />
-      {toast}
-    </div>
-  );
 
   return (
     <div className="inf-h inf-p">
@@ -192,27 +113,65 @@ export default function ProfileScreen({user, gradeName, deptName, stats, notice,
           <button type="button" className="inf-me-edit" aria-label={t('changePhoto')} disabled={busy === 'photo'} onClick={() => file.current?.click()}><Svg size={18}>{I.pen}</Svg></button>
           <input ref={file} type="file" accept="image/*" style={{display: 'none'}} tabIndex={-1} onChange={pickPhoto} />
         </div>
-        <h1>{shown}</h1>
+        {editName ? (
+          <form className="inf-name-form" onSubmit={saveName}>
+            <input aria-label={t('yourName')} maxLength={60} autoFocus value={draft} onChange={(e) => setDraft(e.target.value)} />
+            <button type="submit" className="inf-x-next" disabled={busy === 'name' || !draft.trim() || draft.trim() === name}>{t('save')}</button>
+            <button type="button" className="inf-x-icon" aria-label={t('cancel')} onClick={() => { setEditName(false); setDraft(name); }}><Svg size={20}>{I.x}</Svg></button>
+          </form>
+        ) : <h1 className="inf-name">{shown}<button type="button" className="inf-x-icon" aria-label={t('nameLabel')} onClick={() => { setDraft(name); setEditName(true); }}><Svg size={18}>{I.pen}</Svg></button></h1>}
         <span className="inf-gradepill"><Svg size={18}>{I.cap}</Svg>{level}</span>
+        <div className="inf-me-lvl">
+          <div className="inf-lp-head"><b>{t('levelN', {n: lv.level})}</b><small>{t('xpToNext', {n: lv.size - lv.into, m: lv.level + 1})}</small></div>
+          <div className="inf-bar inf-bar-lg" role="progressbar" aria-label={t('learningProgress')} aria-valuemin={0} aria-valuemax={lv.size} aria-valuenow={lv.into}><i style={{width: lv.into + '%'}} /></div>
+        </div>
       </section>
 
       {(error || notice) && !msg.text && <p role={error ? 'alert' : undefined} className={error ? 'inf-error inf-note' : 'inf-notice inf-note'}>{error || notice}</p>}
 
-      <section className="inf-panel inf-lp" aria-label={t('learningProgress')}>
-        <div className="inf-lp-head"><h2>{t('learningProgress')}</h2><b>{t('levelN', {n: lv.level})}</b></div>
-        <div className="inf-bar inf-bar-lg" role="progressbar" aria-label={t('learningProgress')} aria-valuemin={0} aria-valuemax={lv.size} aria-valuenow={lv.into}><i style={{width: lv.into + '%'}} /></div>
-        <small>{t('xpToNext', {n: lv.size - lv.into, m: lv.level + 1})}</small>
+      <section className="inf-panel inf-set" aria-label={t('settings')}>
+        <div className="inf-set-row"><div><b>{t('language')}</b></div><Seg label={t('language')} value={lang} options={LANGS} onPick={(v) => onLang?.(v)} /></div>
+        <div className="inf-set-row"><div><b>{t('goal')}</b></div><Seg label={t('goal')} value={goal} options={GOALS.map((g) => [g, String(g)])} onPick={(v) => { onGoal?.(v); say('ok', t('goalSaved')); }} /></div>
+        <ReminderRow t={t} lang={lang} say={say} />
       </section>
 
-      <ul className="inf-menu">
-        <Row icon={I.gear} label={t('settings')} sub={t('settingsSub')} tone="violet" onClick={() => setView('settings')} />
-        <Row icon={I.user} label={t('account')} sub={t('profileSub')} tone="violet" onClick={() => setView('account')} />
-        <li><button type="button" className="inf-menu-row" data-tone="red" onClick={onSignOut}>
-          <span className="inf-menu-ico"><Svg size={22}>{I.out}</Svg></span>
-          <span className="inf-menu-txt"><b>{t('logOut')}</b></span>
-          <Svg size={20}>{I.chev}</Svg>
-        </button></li>
-      </ul>
+      <button type="button" className="inf-ghost-btn inf-logout" onClick={onSignOut}><Svg size={20}>{I.out}</Svg>{t('logOut')}</button>
+
+      <section className="inf-panel inf-more" aria-label={t('account')}>
+        <button type="button" className="inf-fold-btn" aria-expanded={more} onClick={() => setMore((v) => !v)}><b>{t('account')}</b><span>{more ? t('close') : t('change')}</span></button>
+        {more && (
+          <div className="inf-more-body">
+            {user.email && <div className="inf-kv"><span>Email</span><b>{user.email}</b></div>}
+            {photo && <div className="inf-set-row"><div><b>{t('changePhoto')}</b></div><button type="button" className="inf-ghost-btn" disabled={busy === 'photo'} onClick={dropPhoto}>{t('remove')}</button></div>}
+            {hasPassword && (
+              <div className="inf-fold">
+                <button type="button" className="inf-fold-btn" aria-expanded={pw} onClick={() => setPw((v) => !v)}><b>{t('password')}</b><span>{pw ? t('close') : t('change')}</span></button>
+                {pw && (
+                  <form className="inf-fold-body" onSubmit={savePw}>
+                    <label><span>{t('curPw')}</span><input type="password" autoComplete="current-password" required value={cur} onChange={(e) => setCur(e.target.value)} /></label>
+                    <label><span>{t('newPw')}</span><input type="password" autoComplete="new-password" required minLength={6} value={next} onChange={(e) => setNext(e.target.value)} /></label>
+                    <button type="submit" className="inf-x-next" disabled={busy === 'pw'}>{busy === 'pw' ? t('saving') : t('savePw')}</button>
+                    <button type="button" className="inf-link" onClick={() => onReset(user.email || '')}>{t('emailReset')}</button>
+                  </form>
+                )}
+              </div>
+            )}
+            <div className="inf-set-row"><div><b>{t('exportData')}</b></div><button type="button" className="inf-ghost-btn" onClick={exportData}>{t('download')}</button></div>
+            <div className="inf-set-row"><div><b>{t('resetProgress')}</b></div><button type="button" className="inf-ghost-btn" onClick={clear}>{t('reset')}</button></div>
+            <div className="inf-set-row"><div><b>{t('deleteTitle')}</b></div>{!del && <button type="button" className="inf-ghost-btn is-bad" onClick={() => setDel(true)}>{t('deleteBtn')}</button>}</div>
+            {del && (
+              <form className="inf-fold-body" onSubmit={deleteAccount}>
+                <small>{t('deleteSub')}</small>
+                {hasPassword && <label><span>{t('deleteAsk')}</span><input type="password" autoComplete="current-password" required value={delPw} onChange={(e) => setDelPw(e.target.value)} /></label>}
+                <button type="submit" className="inf-x-next is-bad" disabled={busy === 'del'}>{busy === 'del' ? t('saving') : t('deleteGo')}</button>
+                <button type="button" className="inf-link" onClick={() => { setDel(false); setDelPw(''); }}>{t('cancel')}</button>
+              </form>
+            )}
+          </div>
+        )}
+      </section>
+
+      <p className="inf-legal"><a href="/privacy">{t('privacy')}</a> · <a href="/terms">{t('terms')}</a></p>
       {toast}
     </div>
   );

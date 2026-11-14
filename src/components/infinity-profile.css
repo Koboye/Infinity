@@ -60,3 +60,16 @@
 .inf-root .inf-toast svg{color:#7BE0B5}
 .inf-root .inf-toast.is-err{background:var(--inf-err);color:#fff}.inf-root .inf-toast.is-err svg{color:#fff}
 @media (prefers-color-scheme:dark){.inf-root .inf-toast{background:#2A3678}.inf-root .inf-toast.is-err{color:#0B1238}.inf-root .inf-toast.is-err svg{color:#0B1238}}
+
+/* profile: one simple page */
+.inf-root .inf-p .inf-name{display:flex;align-items:center;justify-content:center;gap:6px}
+.inf-root .inf-p .inf-name .inf-x-icon{width:36px;height:36px;min-height:36px;border:0;background:transparent;color:var(--inf-mute)}
+.inf-root .inf-name-form{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;max-width:420px}
+.inf-root .inf-name-form input{flex:1;min-width:0;min-height:48px;padding:8px 14px;border-radius:14px;font-size:var(--fs-md)}
+.inf-root .inf-name-form .inf-x-next{min-height:48px;padding:6px 16px}
+.inf-root .inf-me-lvl{width:100%;max-width:420px;margin-top:6px}
+.inf-root .inf-me-lvl .inf-lp-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:8px}
+.inf-root .inf-me-lvl small{color:var(--inf-mute);font-weight:700}
+.inf-root .inf-logout{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:52px}
+.inf-root .inf-more .inf-fold-btn{width:100%}
+.inf-root .inf-more-body{display:grid;gap:12px;margin-top:12px}
