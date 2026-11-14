@@ -55,3 +55,26 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #6b61
 .splash{background:radial-gradient(circle at 50% 25%,#4046a4,#0b1438 75%)!important}
 @media(max-width:480px){.ep-auth-card{padding:24px!important;border-radius:24px!important}.dhead{padding:16px!important}#exampro-game-break .game-break-bar{gap:8px}}
 @media(prefers-reduced-motion:reduce){.cat{transition:none}}
+
+/* Infinity learning path */
+.in-grade-row{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:18px 22px;margin:0 0 16px;background:linear-gradient(105deg,#fff,#f0f1ff);border:1px solid #e0e4f8;border-radius:20px;box-shadow:0 8px 25px #25347a0b}
+.in-grade-row>div{display:grid;gap:3px}
+.in-grade-eyebrow{font-size:.68rem;letter-spacing:.15em;font-weight:800;color:#625bd4}
+#in-grade-current{font-size:1.2rem;color:#14244a}
+#in-grade-change{white-space:nowrap}
+body.in-grade-open{overflow:hidden}
+#in-grade-picker[hidden]{display:none!important}
+#in-grade-picker{position:fixed;inset:0;z-index:2147483646;display:grid;place-items:center;padding:20px;background:rgba(10,18,51,.74);backdrop-filter:blur(12px);overflow:auto}
+.in-grade-sheet{width:min(100%,650px);max-height:min(88dvh,800px);overflow:auto;padding:clamp(22px,4vw,36px);background:#fff;border:1px solid #fff;border-radius:30px;box-shadow:0 30px 90px #050b2e70}
+.in-grade-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:15px}
+.in-grade-heading h2{margin:10px 0 8px;color:#14244a;font-size:clamp(1.6rem,4vw,2.2rem);letter-spacing:-.04em;line-height:1.12}
+.in-grade-heading p,.in-grade-footnote{color:#61708a;font-size:.93rem;line-height:1.5}
+.in-grade-kicker{font-size:.72rem;letter-spacing:.12em;color:#5046db;font-weight:900}
+#in-grade-close{border:1px solid #e2e7f5;border-radius:50%;background:#f5f6ff;width:42px;height:42px;flex-shrink:0;color:#39416b;font-size:1rem;cursor:pointer}
+#in-grade-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:24px}
+.in-grade-option{background:#f6f8ff;border:1px solid #e0e5f7;border-radius:14px;min-height:57px;padding:10px 8px;color:#243657;font-weight:750;font-size:.9rem;cursor:pointer;transition:background .16s,transform .16s}
+.in-grade-option:hover,.in-grade-option:focus-visible{background:#e7eaff;border-color:#645be3;transform:translateY(-1px)}
+.in-grade-option[data-grade="uni"],.in-grade-option[data-grade="ngat"],.in-grade-option[data-grade="gk"]{background:#edf8f7;border-color:#d6efec}
+.in-grade-footnote{margin:20px 0 0}
+@media(max-width:480px){.in-grade-row{padding:14px;gap:8px}.in-grade-row .btn{font-size:.78rem;padding:10px}.in-grade-sheet{padding:20px;border-radius:24px}#in-grade-options{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.in-grade-option{min-height:52px}}
+@media(prefers-reduced-motion:reduce){.in-grade-option{transition:none}}
