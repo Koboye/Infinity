@@ -750,7 +750,7 @@ body.exam-on .ep-nav-menu{display:none}
 .ep-break-player{max-width:100%;box-sizing:border-box}
 .ep-break-player iframe{display:block;min-height:0}
 @media(max-width:600px){.ep-break-player{width:100%;height:calc(100dvh - 32px)}.ep-break-shade{padding:10px!important}}
-</style></head>
+</style><style>.ep-kg-book-link{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:linear-gradient(110deg,#254bc2,#7152ce);color:#fff!important;padding:18px 20px;border-radius:16px;text-decoration:none;font-weight:850;margin:16px 0;box-shadow:0 8px 22px #213caa25}.ep-kg-book-link span{font-size:12px;font-weight:650;color:#e5ebff}</style></head>
 <body>
 <div class="splash" id="splash" role="dialog" aria-modal="true" aria-labelledby="sp-title" hidden>
 <div class="sp-aurora" aria-hidden="true"><i></i><i></i><i></i></div><div class="sp-stars" aria-hidden="true"></div>
@@ -785,6 +785,7 @@ body.exam-on .ep-nav-menu{display:none}
 <nav class="bnav" id="bnav" aria-label="Main"><button type="button" id="nv-home" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</button><button type="button" id="nv-sub"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16M4 12h16M4 19h10"/></svg>All subjects</button></nav>
 <script src="bank.js"></script>
 <script src="primary-bank.js"></script>
+<script src="kindergarten-bank.js"></script>
 <script>
 (function () {
   'use strict';
@@ -804,6 +805,7 @@ body.exam-on .ep-nav-menu{display:none}
   function learner() { try { var p = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}'); return p && typeof p === 'object' ? p : {}; } catch (e) { return {}; } }
   function learnerGroup() {
     var x = learner().stage;
+    if (x === 'kg') return ['kg'];
     if (x === 'university') return ['uni', 'fresh'];
     if (x === 'ngat') return ['ngat'];
     if (x === 'gk') return ['gk'];
@@ -815,11 +817,12 @@ body.exam-on .ep-nav-menu{display:none}
   function learnerBank() { var groups = learnerGroup(), stage = learner().stage; return groups ? BANK.filter(function (d) { if (groups.indexOf(d.group) < 0) return false; if (/^g[1-8]$/.test(stage || '')) return Number(d.grade) === Number(stage.slice(1)); return true; }) : BANK; }
   function learnerCategories() {
     var x = learner().stage;
+    if (x === 'kg') return CATS.filter(function (c) { return c.id === 'kg'; });
     if (x === 'university') return CATS.filter(function (c) { return c.id === 'uni'; });
     if (x === 'ngat') return CATS.filter(function (c) { return c.id === 'ngat'; });
     if (x === 'gk') return CATS.filter(function (c) { return c.id === 'gk'; });
     if (/^g([1-9]|1[0-2])$/.test(x || '')) return CATS.filter(function (c) { return c.id === (Number(x.slice(1)) <= 8 ? 'pri' : 'sec'); });
-    return CATS.filter(function (c) { return c.id !== 'kg'; });
+    return CATS;
   }
   var ui = { group: 'all', search: '', cat: null };
   var live = document.getElementById('live'), SC = [0.9, 1, 1.12, 1.25, 1.4], ZK = 'exampro.textsize', zi = 1;
@@ -905,7 +908,7 @@ body.exam-on .ep-nav-menu{display:none}
     gk: '<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="24" fill="#1E88E5"/><path d="M19 20c7-5 14 0 11 7s-9 4-11 11-9-4-6-10z" fill="#43A047"/><path d="M38 33c7-3 12 4 7 11s-9 1-9-5z" fill="#43A047"/><ellipse cx="32" cy="32" rx="10" ry="24" fill="none" stroke="#fff" stroke-width="1.6" opacity=".5"/><path d="M8 32h48" stroke="#fff" stroke-width="1.6" opacity=".5"/></svg>'
   };
   var CATS = [
-    { id: 'kg', icon: 'kg', name: 'Kindergarten', short: 'KG', sub: 'Early learning', groups: [], c: ['#9ADBFF', '#6CC1F5'] },
+    { id: 'kg', icon: 'kg', name: 'Kindergarten', short: 'KG', sub: 'Early learning', groups: ['kg'], c: ['#9ADBFF', '#6CC1F5'] },
     { id: 'pri', icon: 'pri', name: 'Grades 1–8', short: 'Primary school', sub: 'Primary school', groups: ['g1_4', 'g5_8'], c: ['#B5EBA8', '#7FD98F'] },
     { id: 'sec', icon: 'sec', name: 'Grades 9–12', short: 'Secondary school', sub: 'Secondary school', groups: ['g9_10', 'g12'], c: ['#DCC2FF', '#B792FF'] },
     { id: 'uni', icon: 'uni', name: 'University & College', short: 'University', sub: 'Exit exams', groups: ['uni', 'fresh'], c: ['#FFE0A0', '#FFBE55'] },
@@ -976,6 +979,7 @@ body.exam-on .ep-nav-menu{display:none}
       '<div class="dsum" aria-label="Your progress"><div><b><span aria-hidden="true">⭐</span> ' + p.xp.toLocaleString() + '</b><small>total XP</small></div><div><b><span aria-hidden="true">🎯</span> ' + acc + '%</b><small>accuracy</small></div><div><b><span aria-hidden="true">📚</span> ' + p.answered.toLocaleString() + '</b><small>answered</small></div></div>' +
       '<div class="ep-smart-tip"><span aria-hidden="true">🧠</span><div><strong>' + (mist ? 'Your next best move: review mistakes' : p.today < GOAL ? 'Keep your momentum going' : 'Great work — your daily goal is complete') + '</strong><small>' + (mist ? mist + ' saved mistakes across your subjects. Revisiting them helps you improve.' : p.today < dailyGoal() ? (dailyGoal() - p.today) + ' questions left to reach today’s goal. Short sessions add up.' : 'Explore another subject or take a refreshing break.') + '</small></div><button type="button" id="ep-smart-action">' + (mist ? 'Review' : 'Study') + ' →</button></div>' +
       '<h2 class="dh2">' + (learner().stage ? 'Your learning path' : 'Choose your learning level') + '</h2>' +
+      (learner().stage === 'kg' ? '<a class="ep-kg-book-link" href="kindergarten-book.html">📚 Open my Kindergarten Book <span>Read 7 fun lessons →</span></a>' : '') +
       '<div class="cats" role="group" aria-label="Learning categories">' + learnerCategories().slice().sort(function (a, b) { return (catCount(b) > 0) - (catCount(a) > 0); }).map(function (c, i) {
         var n = catCount(c), ready = n > 0;
         return '<button type="button" class="cat ' + (ready ? 'ready' : 'soon') + '" data-c="' + c.id + '" style="--c1:' + c.c[0] + ';--c2:' + c.c[1] + ';--i:' + i + '"' + (ready ? '' : ' aria-disabled="true"') + '><span class="tag">' + (ready ? n.toLocaleString() + ' questions' : 'Soon') + '</span>' + ICON[c.icon] + '<b>' + c.name + '</b><small>' + c.sub + '</small></button>';
@@ -1024,6 +1028,7 @@ body.exam-on .ep-nav-menu{display:none}
   }
   // The levels of a category come from the data: grades for secondary, colleges (programs) for university.
   function levelsFor(c) {
+    if (c.id === 'kg') return [{id:'kg',label:'Kindergarten',name:'Kindergarten',subjects:learnerBank().filter(function(d){return d.group === 'kg';})}];
     if (c.id === 'sec') return [['9', 'g9_10'], ['10', 'g9_10'], ['11', 'g11'], ['12', 'g12']].filter(function (x) { var st = learner().stage; return !/^g([1-9]|1[0-2])$/.test(st || '') || x[0] === st.slice(1); }).map(function (x) { return { id: x[0], label: x[0], group: x[1], name: 'Grade ' + x[0] }; })
       .map(function (l) { l.subjects = BANK.filter(function (d) { return d.group === l.group; }); return l; });
     var out = [], seen = {}; BANK.forEach(function (d) { if (learnerBank().indexOf(d) >= 0 && c.groups.indexOf(d.group) >= 0 && !seen[d.college]) { seen[d.college] = 1; out.push({ id: d.college, label: d.college, name: d.college, subjects: [] }); } });
@@ -1046,7 +1051,7 @@ body.exam-on .ep-nav-menu{display:none}
     var selD = subs.filter(function (d) { return d.id === ui.sel; })[0];
     function pctOf(list) { var t = 0, m = 0; list.forEach(function (d) { t += d.q.length; m += masteredOf(p, d); }); return { t: t, m: m, pct: t ? Math.round(m / t * 100) : 0, txt: pcTxt(m, t), w: pcW(m, t) }; }
     var all = pctOf(learnerBank().filter(function (d) { return c.groups.indexOf(d.group) >= 0; })), ct = pctOf(subs);
-    var html = '<div class="dash catv' + (soft ? '' : ' ent') + '"><div class="pick-h"><div class="pick-h-icon">' + ICON[c.icon] + '</div><div class="pick-h-copy"><span class="pick-eyebrow">YOUR LEARNING PATH</span><h1>' + esc(c.name) + '</h1><p>' + esc(c.sub) + '</p></div></div>' +
+    var html = '<div class="dash catv' + (soft ? '' : ' ent') + '">' + (c.id === 'kg' ? '<a class="ep-kg-book-link" href="kindergarten-book.html">📚 Read the Kindergarten Book <span>7 illustrated chapters →</span></a>' : '') + '<div class="pick-h"><div class="pick-h-icon">' + ICON[c.icon] + '</div><div class="pick-h-copy"><span class="pick-eyebrow">YOUR LEARNING PATH</span><h1>' + esc(c.name) + '</h1><p>' + esc(c.sub) + '</p></div></div>' +
       '<div class="catp"><div class="catp-t"><b>' + all.txt + '</b> mastered · ' + all.m.toLocaleString() + ' of ' + all.t.toLocaleString() + ' questions</div><div class="dbar" role="progressbar" aria-label="Mastery" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + all.pct + '"><i style="width:' + all.w + '%"></i></div></div>' +
       '<h2 class="pk-l" id="lvl">' + (isGrade ? 'Choose your grade' : 'Choose your program') + '</h2>' +
       (isGrade ? '<div class="lv" role="group" aria-labelledby="lvl">' + lvs.map(function (l) {
