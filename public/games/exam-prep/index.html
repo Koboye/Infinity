@@ -722,6 +722,27 @@ body.exam-on .ep-nav-menu{display:none}
 @media(max-width:600px){.bnav{gap:2px;padding-left:5px;padding-right:5px}.bnav button,.bnav .ep-unified-tab{min-width:0;max-width:none;flex:1;padding:6px 2px;font-size:10px;line-height:1.3;white-space:normal;text-align:center}.bnav button svg{width:19px;height:19px}.ep-onboard-tip{flex-wrap:wrap}.ep-onboard-tip button{margin-left:auto}}
 @media(max-width:380px){.ep-nav-menu{padding:8px;font-size:11px}.ep-onboard-tip button{width:100%}}
 @media(prefers-reduced-motion:reduce){.ep-nav-links button,.ep-onboard-tip{transition:none!important}}
+</style><style id="ep-production-fixes">
+.ep-break-shade{padding:16px!important;align-items:center!important;justify-content:center!important;z-index:900!important}
+.ep-break-box{width:min(720px,100%)!important;max-height:88dvh!important;overflow-y:auto!important;scrollbar-gutter:stable;padding:clamp(18px,3vw,30px)!important}
+.ep-break-box[hidden]{display:none!important}
+.ep-break-box h2{font-size:clamp(21px,3vw,28px)!important;line-height:1.2!important}
+.ep-break-games{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
+.ep-break-games a{min-width:0!important;min-height:78px!important;background:#fff!important;border:1px solid #dce3f5!important;color:#1a2854!important;padding:12px!important;text-decoration:none!important}
+.ep-break-games a:hover{border-color:#6e61ce!important;background:#f5f4ff!important}
+.ep-break-games a strong{font-size:14px!important;color:#182552!important}
+.ep-break-games a small{font-size:11px!important;color:#626d87!important;line-height:1.4!important}
+.ep-break-game-icon{width:44px!important;height:44px!important;display:grid!important;place-items:center!important;background:#f0efff!important;border-radius:12px!important;font-size:22px!important}
+.ep-break-game-label{min-width:0!important;flex:1!important}
+.ep-break-arrow{margin-left:auto!important;color:#5d49c4!important}
+.ep-break-player{display:flex;flex-direction:column;width:min(1100px,100%);height:min(92dvh,850px);background:#0c1530;border:1px solid #53618d;border-radius:19px;overflow:hidden;box-shadow:0 24px 75px #0009}
+.ep-break-player-bar{display:flex;flex-wrap:wrap;align-items:center;gap:9px;padding:12px 14px;background:#101c3f;color:#fff}
+.ep-break-player-bar strong{flex:1;min-width:120px;font-size:14px}
+.ep-break-player-bar button{min-height:40px;padding:9px 12px;border-radius:11px;border:1px solid #7e8bb8;background:#263866;color:#fff;font-weight:800;cursor:pointer}
+.ep-break-player-bar button:last-child{background:#f4cc6c;color:#182344;border-color:#f4cc6c}
+.ep-break-player iframe{width:100%;flex:1;min-height:0;border:0;background:#071c17}
+.ep-break-player-bar button:focus-visible{outline:3px solid #f4ca66;outline-offset:2px}
+@media(max-width:540px){.ep-break-box{max-height:86dvh!important}.ep-break-games{grid-template-columns:1fr!important}.ep-break-player{height:92dvh}.ep-break-player-bar strong{flex-basis:100%}.ep-break-player-bar button{flex:1;font-size:12px}}
 </style></head>
 <body>
 <div class="splash" id="splash" role="dialog" aria-modal="true" aria-labelledby="sp-title" hidden>
@@ -790,6 +811,7 @@ body.exam-on .ep-nav-menu{display:none}
   function yest() { var d = new Date(); d.setDate(d.getDate() - 1); return ymd(d); }
   function load() { var s = { xp: 0, streak: 0, last: '', day: '', today: 0, best: {}, mistakes: {}, answered: 0, correct: 0 }; try { Object.assign(s, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) {} if (s.day !== ymd()) s.today = 0; return s; }
   function save(s) { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {} }
+  function dailyGoal() { try { var x = JSON.parse(localStorage.getItem('exampro.plan.settings.v1') || '{}'); var n = Number(x.goal); return [10,20,30,50,100].indexOf(n) >= 0 ? n : GOAL; } catch (e) { return GOAL; } }
   function level(xp) { var l = Math.floor(Math.sqrt(xp / 50)); return l + 1; }
   function shuffle(a) { var b = a.slice(); for (var i = b.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = b[i]; b[i] = b[j]; b[j] = t; } return b; }
   function prep(raw, dept, i) {
@@ -884,7 +906,7 @@ body.exam-on .ep-nav-menu{display:none}
   }
   function dash(soft) {
     chrome('dash'); setNav('home'); ui.cat = null; ui.search = '';
-    var p = load(), acc = p.answered ? Math.round(p.correct / p.answered * 100) : 0, gp = Math.min(1, p.today / GOAL), lv = lvInfo(p.xp), alive = streakAlive(p), hr = new Date().getHours();
+    var p = load(), acc = p.answered ? Math.round(p.correct / p.answered * 100) : 0, gp = Math.min(1, p.today / dailyGoal()), lv = lvInfo(p.xp), alive = streakAlive(p), hr = new Date().getHours();
     var hi = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
     var nx = homeNext(p), ch = dailyChallenge(), chDone = p.chal === ymd();
     var mist = 0, mDept = null, mMax = 0; Object.keys(p.mistakes).forEach(function (k) { var n = Object.keys(p.mistakes[k]).length; mist += n; if (n > mMax && dept(k)) { mMax = n; mDept = k; } });
@@ -1010,7 +1032,7 @@ body.exam-on .ep-nav-menu{display:none}
   function home(soft) {
     if (ui.cat) return catView(soft);
     chrome('list'); setNav('sub');
-    var p = load(), k = ui.search.trim().toLowerCase(), acc = p.answered ? Math.round(p.correct / p.answered * 100) : 0, pct = Math.min(100, Math.round(p.today / GOAL * 100));
+    var p = load(), k = ui.search.trim().toLowerCase(), acc = p.answered ? Math.round(p.correct / p.answered * 100) : 0, pct = Math.min(100, Math.round(p.today / dailyGoal() * 100));
     var mist = 0; Object.keys(p.mistakes).forEach(function (d) { mist += Object.keys(p.mistakes[d]).length; });
     var gi = function (g) { for (var i = 0; i < STAGES.length; i++) if (STAGES[i].id === g) return i; return 99; };
     var list = BANK.filter(function (d) { return (ui.group === 'all' || d.group === ui.group) && (!k || d.name.toLowerCase().indexOf(k) >= 0 || d.college.toLowerCase().indexOf(k) >= 0); });
