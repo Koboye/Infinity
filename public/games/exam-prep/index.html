@@ -1073,13 +1073,14 @@ body.dash-on{background:#f4f7fd!important;background-image:none!important;color:
   }
   function dash(soft) {
     chrome('dash'); setNav('home'); ui.cat = null; ui.search = '';
-    var p = load(), acc = p.answered ? Math.round(p.correct / p.answered * 100) : 0, gp = Math.min(1, p.today / dailyGoal()), lv = lvInfo(p.xp), alive = streakAlive(p), hr = new Date().getHours();
-    var hi = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening'; var lp = learner(), firstName = typeof lp.name === 'string' ? lp.name.trim().split(/\s+/)[0].slice(0,24) : ''; if (firstName) hi += ', ' + esc(firstName);
+    var p = load(), acc = p.answered ? Math.min(100, Math.max(0, Math.round(p.correct / p.answered * 100))) : 0, gp = Math.max(0,Math.min(1, p.today / dailyGoal())), lv = lvInfo(p.xp), alive = streakAlive(p), hr = new Date().getHours();
+    var hi = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening'; var lp = learner(), signedUser = window.ExamProAuth && window.ExamProAuth.user, displayName = (typeof lp.name === 'string' && lp.name.trim()) ? lp.name : (signedUser && signedUser.displayName || ''), firstName = displayName.trim().split(/\s+/)[0].slice(0,24); if (firstName) hi += ', ' + esc(firstName);
     var nx = homeNext(p), ch = dailyChallenge(), chDone = p.chal === ymd();
     var mist = 0, mDept = null, mMax = 0; Object.keys(p.mistakes).forEach(function (k) { var n = Object.keys(p.mistakes[k]).length; mist += n; if (n > mMax && dept(k)) { mMax = n; mDept = k; } });
     var html = '<div class="dash home2"><div class="ep-home-intro"><span>YOUR LEARNING SPACE</span><small>One step every day ✨</small></div><div class="dhead">' + ringSvg(lv.pct, '3.6rem', 4, 'lvr', '<span class="dav2">L' + lv.l + '</span>') +
       '<div class="dwho"><h1>' + hi + (p.answered ? '' : ' 👋') + '</h1><small>' + (p.answered ? lv.need + ' XP to Level ' + (lv.l + 1) : 'Welcome to exam.pro') + '</small></div>' +
       '<span class="strk' + (alive ? ' on' : '') + '" aria-label="' + (alive ? p.streak + ' day streak' : 'No streak yet') + '"><span aria-hidden="true">🔥</span> ' + (alive ? p.streak : 0) + '</span></div>' +
+      (!lp.stage ? '<div class="ep-home-setup"><span>🎓 <strong>Personalize your learning</strong><small>Choose your grade to see the right subjects and practice.</small></span><button type="button" id="ep-home-set-grade">Set my grade →</button></div>' : '') +
       '<section class="ep-home-find"><form class="dsearch" id="dsf" role="search"><label class="sr" for="dsq">Search subjects and departments</label><input id="dsq" type="search" autocomplete="off" placeholder="Find a subject to learn…"><button type="submit" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg></button></form></section>' +
       (nx ? '<section class="ep-home-group ep-home-focus"><div class="ep-home-label">01 · CONTINUE LEARNING</div>' + '<section class="hero2' + (nx.kind === 'resume' ? ' res' : '') + '" aria-label="Next up"><div class="h2t"><small>' + nx.kick + '</small><b>' + esc(nx.title) + '</b><span>' + esc(nx.sub) + '</span></div><button type="button" class="h2go" id="hgo">' + nx.btn + ' <span aria-hidden="true">→</span></button></section></section>' : '') +
       '<section class="ep-home-group ep-home-routine"><div class="ep-home-label">' + (nx ? '02' : '01') + ' · DAILY ROUTINE</div><section class="gcard" aria-label="Daily goal">' + ringSvg(gp, '5.4rem', 5, 'gr' + (gp >= 1 ? ' full' : ''), '<b>' + Math.min(p.today, dailyGoal()) + '</b><small>/' + dailyGoal() + '</small>') +
@@ -1098,6 +1099,7 @@ body.dash-on{background:#f4f7fd!important;background-image:none!important;color:
       }).join('') + '</div></section></div>';
     app.innerHTML = html;
     function buzz() { try { if (navigator.vibrate) navigator.vibrate(10); } catch (e) {} }
+    var setupGrade = document.getElementById('ep-home-set-grade'); if (setupGrade) setupGrade.onclick = function(){ if(window.ExamProUnified && typeof window.ExamProUnified.open === 'function') window.ExamProUnified.open('profile'); else { var tab=document.querySelector('[data-ep-tab="profile"]'); if(tab) tab.click(); } };
     var hg = document.getElementById('hgo');
     if (hg && nx) hg.onclick = function () { buzz(); if (nx.kind === 'resume') quiz(nx.rs.id, 'exam', null, nx.rs.label, nx.rs); else quiz(nx.d.id, 'practice', quickSet(nx.d, nx.n), 'Quick practice'); };
     var tc = document.getElementById('tchal'); if (tc) tc.onclick = function () { buzz(); quiz(ch.d.id, 'practice', ch.ix.map(function (i) { return prep(ch.d.q[i], ch.d.id, i); }), 'Daily challenge'); };
