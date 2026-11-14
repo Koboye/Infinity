@@ -91,10 +91,15 @@
     var name = typeof prefs.name === 'string' && prefs.name.trim() ? prefs.name.trim().slice(0,50) : 'ExamPro student';
     var focus = typeof prefs.focus === 'string' ? prefs.focus.slice(0,100) : '';
     var goal = read('exampro.plan.settings.v1', {}).goal || 20;
+    var stages = [{id:'',name:'Choose my learning level'}, {id:'g1',name:'Grade 1'}, {id:'g2',name:'Grade 2'}, {id:'g3',name:'Grade 3'}, {id:'g4',name:'Grade 4'}, {id:'g5',name:'Grade 5'}, {id:'g6',name:'Grade 6'}, {id:'g7',name:'Grade 7'}, {id:'g8',name:'Grade 8'}, {id:'g9',name:'Grade 9'}, {id:'g10',name:'Grade 10'}, {id:'g11',name:'Grade 11'}, {id:'g12',name:'Grade 12'}, {id:'university',name:'University / College'}, {id:'ngat',name:'NGAT / Graduate'}, {id:'gk',name:'General Knowledge'}];
+    var stage = typeof prefs.stage === 'string' ? prefs.stage : '';
+    var stageName = (stages.filter(function (x) { return x.id === stage; })[0] || stages[0]).name;
+    var stageOptions = stages.map(function (x) { return '<option value="' + x.id + '"' + (stage === x.id ? ' selected' : '') + '>' + x.name + '</option>'; }).join('');
+
     return heading('YOUR LEARNING IDENTITY', 'Student profile', 'Make your learning space yours. Your progress stays connected to your practice on this device.') +
       '<section class="ep-unified-card ep-unified-profile ep-profile-summary"><div class="ep-unified-avatar" aria-hidden="true">🎓</div><div><span class="ep-progress-kicker">STUDENT DASHBOARD</span><h2>' + escapeHtml(name) + '</h2><p>Level ' + lv + ' · ' + xp.toLocaleString() + ' XP earned</p>' + (focus ? '<p class="ep-profile-focus">🎯 ' + escapeHtml(focus) + '</p>' : '') + '</div></section>' +
       '<div class="ep-unified-stats ep-profile-stats"><div>🔥<b>' + (p.streak || 0) + '</b><small>Day streak</small></div><div>📚<b>' + answered.toLocaleString() + '</b><small>Answered</small></div><div>🎯<b>' + accuracy + '%</b><small>Accuracy</small></div><div>⭐<b>' + lv + '</b><small>Level</small></div></div>' +
-      '<section class="ep-unified-card ep-profile-editor"><span class="ep-progress-kicker">PERSONALIZE</span><h2>About you</h2><p>Choose a display name and a study focus. These are private to this browser.</p><label>Display name<input id="ep-profile-name" type="text" maxlength="50" autocomplete="nickname" placeholder="How should we call you?" value="' + escapeHtml(prefs.name || '') + '"></label><label>My study focus<input id="ep-profile-focus" type="text" maxlength="100" placeholder="e.g. Prepare for Grade 12 Mathematics" value="' + escapeHtml(focus) + '"></label><button class="ep-unified-action" type="button" id="ep-profile-save">Save profile</button><p id="ep-profile-status" role="status" class="ep-profile-status"></p></section>' +
+      '<section class="ep-unified-card ep-profile-editor"><span class="ep-progress-kicker">YOUR REAL LEARNING PROFILE</span><h2>About you</h2><p>Your saved grade or university level controls the subjects shown on Home and in practice. Change it here whenever you want.</p><label>Display name<input id="ep-profile-name" type="text" maxlength="50" autocomplete="nickname" placeholder="How should we call you?" value="' + escapeHtml(prefs.name || '') + '"></label><label>My study focus<input id="ep-profile-focus" type="text" maxlength="100" placeholder="e.g. Prepare for Grade 12 Mathematics" value="' + escapeHtml(focus) + '"></label><button class="ep-unified-action" type="button" id="ep-profile-save">Save profile</button><p id="ep-profile-status" role="status" class="ep-profile-status"></p></section>' +
       '<section class="ep-unified-card"><span class="ep-progress-kicker">YOUR LEARNING ROUTINE</span><h2>Study preferences</h2><div class="ep-unified-score"><span>Daily question goal</span><b>' + escapeHtml(goal) + ' questions</b></div><p>Change your goal and exam date from the Study Plan screen.</p><button class="ep-unified-action ep-profile-plan" type="button" id="ep-profile-plan">Open study plan →</button></section>' +
       '<section class="ep-unified-card"><span class="ep-progress-kicker">DATA & PRIVACY</span><h2>Your progress, your data</h2><p>Practice records, study-plan settings and this profile are stored in this browser. They are not a Firebase account and do not sync across devices.</p><button class="ep-unified-action ep-profile-export" type="button" id="ep-profile-export">Export my learning data</button><p id="ep-export-status" role="status" class="ep-profile-status"></p></section>';
   }
@@ -130,10 +135,11 @@
     if (profileSave) profileSave.addEventListener('click', function () {
       var name = panel.querySelector('#ep-profile-name').value.trim().slice(0,50);
       var focus = panel.querySelector('#ep-profile-focus').value.trim().slice(0,100);
+      var stage = panel.querySelector('#ep-profile-stage').value;
       try {
-        localStorage.setItem(PROFILE, JSON.stringify({name:name,focus:focus}));
+        localStorage.setItem(PROFILE, JSON.stringify({name:name,focus:focus,stage:stage}));
         open('profile');
-        panel.querySelector('#ep-profile-status').textContent = 'Profile saved on this device.';
+        panel.querySelector('#ep-profile-status').textContent = 'Profile and learning level saved. Home and subjects will now match your selection.';
       } catch (e) { panel.querySelector('#ep-profile-status').textContent = 'Unable to save. Check browser storage permissions.'; }
     });
     var profilePlan = panel.querySelector('#ep-profile-plan');
