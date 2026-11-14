@@ -1,0 +1,114 @@
+/* Infinity sign in / sign up: classic.
+   Ivory paper, ink navy, one gold accent. Fraunces for headlines, Figtree for everything else.
+   Type scale is shared with the app (see .inf-root in infinity-student.css), so nothing jumps
+   when you move between sign in and the study space. Follows the system light or dark setting. */
+.inf-root:has(.inf-auth){
+  --inf-paper:#FBF8F1;--inf-card:#FFFFFF;--inf-text:#0F1B4C;--inf-mute:#5A6285;--inf-line:#DDD6C4;--inf-field:#FFFFFF;
+  --inf-blue:#1B2A6B;--inf-focus:#1B2A6B;--inf-err:#A61B1B;--inf-ok:#0E7A55;
+  background:var(--inf-paper);
+}
+@media (prefers-color-scheme:dark){
+  .inf-root:has(.inf-auth){--inf-paper:#0B1238;--inf-card:#111A4A;--inf-text:#F5F1E6;--inf-mute:#B4BCE6;--inf-line:#2B3877;--inf-field:#0B1238;
+    --inf-blue:#FFC83D;--inf-focus:#FFC83D;--inf-err:#FFB4AB;--inf-ok:#7BE0B5}
+}
+html:has(.inf-auth),html body:has(.inf-auth){background:#FBF8F1}
+@media (prefers-color-scheme:dark){html:has(.inf-auth),html body:has(.inf-auth){background:#0B1238}}
+
+/* Frame: stacked on phones, split from 900px. No seams, the root paints the viewport. */
+.inf-root .inf-app.inf-auth{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto 1fr;gap:0;width:100%;max-width:none;min-height:100dvh;padding:0;background:none;overflow:visible}
+.inf-root .inf-auth-brand,.inf-root .inf-auth-panel{position:relative;min-width:0;background:none;border-radius:0;text-align:left}
+.inf-root .inf-auth-brand::before,.inf-root .inf-auth-brand::after{display:none}
+
+/* Brand panel */
+.inf-root .inf-auth-brand{background:#0F1B4C;color:#F5F1E6;padding:max(18px,env(safe-area-inset-top)) clamp(20px,5vw,32px) 18px;display:flex;flex-direction:column;justify-content:space-between}
+.inf-root .inf-lockup{display:flex;align-items:center;gap:12px;font:600 1.55rem var(--inf-font-d);letter-spacing:-.01em;color:#fff}
+.inf-root .inf-brand-copy{display:none}
+.inf-root .inf-auth-brand h1{font:600 clamp(2rem,3.4vw,2.9rem)/1.12 var(--inf-font-d);letter-spacing:-.015em;color:#fff;margin:0 0 16px;max-width:16ch}
+.inf-root .inf-auth-brand p{display:block;margin:0;color:#C9D1F7;font-size:1.0625rem;line-height:1.6;max-width:38ch}
+.inf-root .inf-ladder{display:flex;flex-wrap:wrap;gap:8px;margin:28px 0 0;padding:0;list-style:none}
+.inf-root .inf-ladder li{padding:7px 14px;border:1px solid rgba(255,200,61,.5);border-radius:999px;color:#FFE08A;font-size:.9rem;font-weight:600;background:none}
+
+/* Form panel */
+.inf-root .inf-auth-panel{display:flex;justify-content:center;align-items:flex-start;padding:clamp(24px,5vw,40px) clamp(18px,5vw,32px) calc(36px + env(safe-area-inset-bottom))}
+.inf-root .inf-auth-panel form{width:min(100%,440px);padding:0;background:none;border:0;border-radius:0;box-shadow:none;backdrop-filter:none}
+
+.inf-root .inf-mode{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;margin:0 0 28px;border:1.5px solid var(--inf-line);border-radius:14px;background:var(--inf-card)}
+.inf-root .inf-mode button{min-height:44px;padding:8px 10px;border:0;border-radius:10px;background:none;color:var(--inf-mute);font-size:.98rem;font-weight:700}
+.inf-root .inf-mode button[aria-pressed=true]{background:#0F1B4C;color:#fff}
+@media (prefers-color-scheme:dark){.inf-root .inf-mode button[aria-pressed=true]{background:#FFC83D;color:#0F1B4C}}
+
+.inf-root .inf-prog{margin:0 0 28px}
+.inf-root .inf-prog span{display:block;margin:0 0 8px;font-size:.9rem;font-weight:700;color:var(--inf-mute)}
+.inf-root .inf-prog div{height:6px;border-radius:99px;background:var(--inf-line);overflow:hidden}
+.inf-root .inf-prog i{display:block;height:100%;border-radius:99px;background:#0F1B4C;transition:width .3s ease}
+@media (prefers-color-scheme:dark){.inf-root .inf-prog i{background:#FFC83D}}
+
+.inf-root .inf-auth-panel header{margin:0 0 24px;text-align:left}
+.inf-root .inf-auth-panel h2,.inf-root .inf-auth-panel header h2{margin:0 0 8px;font:600 clamp(1.9rem,5vw,2.35rem)/1.1 var(--inf-font-d);letter-spacing:-.015em;color:var(--inf-text);text-shadow:none}
+.inf-root .inf-auth-panel header p{margin:0;max-width:44ch;font-size:1.0625rem;line-height:1.55;color:var(--inf-mute)}
+
+/* Fields: visible labels, one height */
+.inf-root .inf-field{display:block;margin:0 0 18px}
+.inf-root .inf-lab{display:block;margin:0 0 7px;font-size:.95rem;font-weight:700;color:var(--inf-text)}
+.inf-root .inf-ctl{position:relative;display:flex;align-items:center}
+.inf-root .inf-app.inf-auth input:not([type=range]):not([type=checkbox]){width:100%;min-height:54px;padding:12px 52px 12px 16px;font:500 1.0625rem var(--inf-font-b);color:var(--inf-text);
+  background:var(--inf-field);border:1.5px solid var(--inf-line);border-radius:12px;box-shadow:none}
+.inf-root .inf-app.inf-auth input:focus{border-color:var(--inf-focus);box-shadow:0 0 0 3px color-mix(in srgb,var(--inf-focus) 22%,transparent);outline:none}
+.inf-root .inf-ctl .inf-eye{position:absolute;right:6px;display:grid;place-items:center;width:42px;height:42px;min-height:42px;padding:0;border:0;border-radius:10px;background:none;color:var(--inf-mute)}
+.inf-root .inf-ico{width:22px;height:22px}
+.inf-root .inf-ok{position:absolute;right:14px;display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--inf-ok)}
+.inf-root .inf-ok-ico{width:14px;height:14px;stroke-width:3.4;color:#fff}
+.inf-root .inf-fine{margin:-6px 0 14px;font-size:.9rem;color:var(--inf-mute)}
+.inf-root .inf-slide>.inf-link.inf-forgot{display:block;margin:-6px 0 18px auto;text-align:right}
+
+/* Actions */
+.inf-root .inf-auth-panel .inf-primary{display:flex;align-items:center;justify-content:center;width:100%;min-height:56px;margin-top:6px;padding:12px 22px;
+  font:700 1.0625rem var(--inf-font-b);color:#fff;background:#0F1B4C;border:1.5px solid #0F1B4C;border-radius:12px;box-shadow:none;animation:none}
+.inf-root .inf-auth-panel .inf-primary:hover:not(:disabled){background:#1B2A6B;border-color:#1B2A6B}
+.inf-root .inf-auth-panel .inf-primary[data-ready]{background:#0F1B4C}
+.inf-root .inf-auth-panel .inf-primary:disabled{background:var(--inf-line);border-color:var(--inf-line);color:var(--inf-mute)}
+@media (prefers-color-scheme:dark){
+  .inf-root .inf-auth-panel .inf-primary{background:#FFC83D;border-color:#FFC83D;color:#0F1B4C}
+  .inf-root .inf-auth-panel .inf-primary:hover:not(:disabled){background:#FFD460;border-color:#FFD460}
+  .inf-root .inf-auth-panel .inf-primary[data-ready]{background:#FFC83D}
+}
+.inf-root .inf-auth-panel .inf-link{display:block;margin:12px auto 0;font-size:1rem;font-weight:700;color:var(--inf-text);text-decoration:underline;text-underline-offset:3px}
+.inf-root .inf-auth-panel .inf-error{margin:0 0 14px;text-align:left}
+.inf-root .inf-auth-panel .inf-notice{margin:0 0 14px;text-align:left}
+
+/* Level picker, restyled to match: no emoji, quiet tiles, ink selection */
+.inf-root:has(.inf-auth) .inf-tabs{background:var(--inf-card);border:1.5px solid var(--inf-line);border-radius:14px}
+.inf-root:has(.inf-auth) .inf-tabs button{border-radius:10px;color:var(--inf-mute);font-size:.95rem;min-height:44px}
+.inf-root:has(.inf-auth) .inf-tabs button.is-on{background:#0F1B4C;color:#fff;box-shadow:none}
+@media (prefers-color-scheme:dark){.inf-root:has(.inf-auth) .inf-tabs button.is-on{background:#FFC83D;color:#0F1B4C}}
+.inf-root:has(.inf-auth) .inf-pane{--tone:var(--inf-line);background:var(--inf-card);border:1.5px solid var(--inf-line);border-radius:16px}
+.inf-root:has(.inf-auth) .inf-pane-head{position:static;max-width:none;margin:0 2px 10px}
+.inf-root:has(.inf-auth) .inf-pane-head b{font:600 1.05rem var(--inf-font-d)}
+.inf-root:has(.inf-auth) .inf-tl{min-width:68px;min-height:72px;border-radius:12px;background:var(--inf-paper);border:1.5px solid var(--inf-line);color:var(--inf-text)}
+.inf-root:has(.inf-auth) .inf-tl b{font:700 1.2rem var(--inf-font-b)}
+.inf-root:has(.inf-auth) .inf-tl[aria-pressed=true]{background:#0F1B4C;border-color:#0F1B4C;color:#fff;box-shadow:none;transform:none;animation:none}
+.inf-root:has(.inf-auth) .inf-chk{background:#FFC83D;color:#0F1B4C;box-shadow:0 0 0 2px var(--inf-card)}
+.inf-root:has(.inf-auth) .inf-grade-arrow{background:var(--inf-card);border-color:var(--inf-line);color:var(--inf-text)}
+.inf-root:has(.inf-auth) .inf-dept-track button{background:var(--inf-card);color:var(--inf-text);border-color:var(--inf-line);border-radius:12px}
+.inf-root:has(.inf-auth) .inf-dept-track button span{background:#0F1B4C;color:#fff;border-radius:10px}
+.inf-root:has(.inf-auth) .inf-dept-track button[aria-pressed=true]{background:#0F1B4C;border-color:#0F1B4C;color:#fff;animation:none}
+.inf-root:has(.inf-auth) .inf-dept-track button[aria-pressed=true] span{background:#FFC83D;color:#0F1B4C}
+@media (prefers-color-scheme:dark){
+  .inf-root:has(.inf-auth) .inf-tl[aria-pressed=true],.inf-root:has(.inf-auth) .inf-dept-track button[aria-pressed=true]{background:#FFC83D;border-color:#FFC83D;color:#0F1B4C}
+  .inf-root:has(.inf-auth) .inf-dept-track button span{background:#2B3877;color:#fff}
+}
+
+/* Phones: slim brand bar. The headline stays in the document for screen readers. */
+@media(max-width:899px){
+  .inf-root .inf-auth-brand{padding-block:max(14px,env(safe-area-inset-top)) 14px}
+  .inf-root .inf-brand-copy{display:block}
+  .inf-root .inf-brand-copy>*{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+}
+/* Desktop split */
+@media(min-width:900px){
+  .inf-root .app.inf-auth,.inf-root .inf-app.inf-auth{grid-template-columns:minmax(0,5fr) minmax(0,6fr);grid-template-rows:1fr}
+  .inf-root .inf-auth-brand{padding:48px clamp(36px,5vw,72px);min-height:100dvh}
+  .inf-root .inf-brand-copy{display:block;margin-bottom:12vh}
+  .inf-root .inf-auth-panel{align-items:center;padding:48px}
+}
+@media(prefers-reduced-motion:reduce){.inf-root .inf-prog i{transition:none}}

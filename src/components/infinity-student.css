@@ -6,7 +6,7 @@
   --inf-ink:#0F1B4C;--inf-ink2:#1B2A6B;--inf-blue:#2748F0;--inf-sun:#FFC83D;
   --inf-paper:#F5F7FF;--inf-card:#fff;--inf-text:#0F1B4C;--inf-mute:#566089;--inf-line:#DDE3F7;
   --inf-field:#fff;--inf-err:#B3261E;--inf-ok:#0E7A55;--inf-focus:#2748F0;
-  --inf-font-d:'Bricolage Grotesque','Noto Sans Ethiopic',system-ui,sans-serif;
+  --inf-font-d:'Fraunces','Noto Serif Ethiopic',Georgia,serif;
   --inf-font-b:'Figtree','Noto Sans Ethiopic',system-ui,sans-serif;
   --inf-r:20px;
   min-height:100dvh;background:var(--inf-paper);color:var(--inf-text);font-family:var(--inf-font-b);
@@ -143,7 +143,7 @@ html body:has(.inf-root){overscroll-behavior:none}
 .inf-root .inf-auth-panel header p{max-width:36ch}
 
 /* v2 polish: brand backdrop, grouped picker, fluid type */
-.inf-root{font-size:clamp(1rem,.95rem + .25vw,1.125rem)}
+.inf-root{font-size:clamp(1rem,.96rem + .2vw,1.0625rem)}
 .inf-auth-brand{position:relative;overflow:hidden;isolation:isolate;
   background:radial-gradient(120% 90% at 100% 0%,var(--inf-blue) 0,transparent 55%),radial-gradient(90% 70% at 0% 100%,#3a2ea8 0,transparent 60%),var(--inf-ink)}
 .inf-auth-brand::before{content:"";position:absolute;z-index:-1;right:-14%;bottom:-18%;width:min(90vw,520px);aspect-ratio:2/1;opacity:.14;
@@ -271,8 +271,7 @@ html:has(.inf-root),html body:has(.inf-root){overflow-x:clip;max-width:100%}
 @media(prefers-reduced-motion:reduce){.inf-root .inf-mark.is-live path{animation:none;stroke-dasharray:none}}
 
 /* v6 bigger everything: the auth and app pages scale up, forms are roomier and touch targets larger */
-html:has(.inf-root){font-size:112.5%}
-@media(min-width:900px){html:has(.inf-root){font-size:125%}}
+html:has(.inf-root){font-size:100%}
 .inf-root .inf-auth-panel form{width:min(100%,620px);padding:clamp(24px,5vw,40px)}
 .inf-root .inf-auth-panel{padding-inline:clamp(14px,4vw,28px)}
 .inf-root .inf-auth-panel h2,.inf-root .inf-auth-panel header h2{font-size:clamp(2rem,6vw,2.5rem)}
@@ -361,85 +360,3 @@ html:has(.inf-root){font-size:112.5%}
 @keyframes inf-nudge{0%,100%{transform:translateX(0)}50%{transform:translateX(5px)}}
 @media(prefers-reduced-motion:reduce){.inf-root .inf-swipe span,.inf-root .inf-tl[aria-pressed=true]{animation:none}}
 
-/* ===== v8 rebrand: auth screens =====
-   Scoped with :has(.inf-auth) so home, subjects and games are untouched. */
-html:has(.inf-auth){font-size:100%}
-.inf-root:has(.inf-auth){
-  --inf-ink:#0A0B3A;--inf-paper:#0B0C45;--inf-card:#1A1670;--inf-field:rgba(52,40,170,.55);
-  --inf-text:#F7F4FF;--inf-mute:#CFC7F5;--inf-line:rgba(190,172,255,.38);--inf-blue:#8D5CFF;--inf-focus:#FFC83D;
-  --inf-err:#FFC2CC;--inf-ok:#7BE0B5;color-scheme:dark;
-  background:radial-gradient(90% 46% at 50% 0%,#4A2CC9 0,transparent 72%),radial-gradient(70% 44% at 100% 100%,#5B34E0 0,transparent 72%),linear-gradient(180deg,#0E1164,#0A0B42 55%,#130C5E);
-}
-.inf-root .inf-app.inf-auth{position:relative;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto 1fr;min-height:100dvh;background:none;overflow:hidden}
-.inf-root .inf-bg{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
-.inf-root .inf-auth-brand,.inf-root .inf-auth-panel{position:relative;z-index:1}
-
-/* header: laurel + logo + tagline */
-.inf-root .inf-auth-brand{background:none;border-radius:0;text-align:center;display:block;padding:max(26px,env(safe-area-inset-top)) 18px 4px}
-.inf-root .inf-auth-brand::before,.inf-root .inf-auth-brand::after{display:none}
-.inf-root .inf-lockup{display:flex;justify-content:center;align-items:center;gap:12px;font:800 2.1rem var(--inf-font-d);letter-spacing:-.03em;color:#fff}
-.inf-root .inf-laurel{width:22px;height:44px;flex:0 0 auto}
-.inf-root .inf-tag{display:flex;justify-content:center;align-items:center;gap:12px;margin-top:6px;font-size:.7rem;font-weight:700;letter-spacing:.34em;text-transform:uppercase;color:#D7CCFF}
-.inf-root .inf-tag i{width:5px;height:5px;border-radius:50%;background:#9B7BFF;flex:0 0 auto}
-
-/* card */
-.inf-root .inf-auth-panel{display:grid;place-items:start center;background:none;padding:16px 14px calc(34px + env(safe-area-inset-bottom))}
-.inf-root .inf-auth-panel form{width:min(100%,440px);padding:clamp(20px,5vw,30px) clamp(18px,5vw,30px) 26px;border-radius:36px;
-  background:linear-gradient(165deg,rgba(158,118,255,.55) 0,rgba(78,56,214,.46) 38%,rgba(36,30,158,.62) 100%);
-  border:1.5px solid rgba(205,188,255,.55);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
-  box-shadow:0 30px 80px rgba(8,6,52,.6),0 0 64px rgba(122,77,255,.28),inset 0 1px 0 rgba(255,255,255,.18)}
-.inf-root .inf-auth-panel header{margin:0 0 18px;text-align:center}
-.inf-root .inf-auth-panel h2,.inf-root .inf-auth-panel header h2{margin:6px 0 8px;font-size:clamp(1.85rem,7vw,2.25rem);font-weight:800;letter-spacing:-.025em;color:#fff;text-shadow:0 2px 14px rgba(20,10,90,.5)}
-.inf-root .inf-auth-panel header p{margin:0 auto;max-width:32ch;font-size:1rem;line-height:1.45;color:#EAE4FF}
-.inf-root .inf-hero-art{display:block;width:150px;height:auto;margin:0 auto -2px;filter:drop-shadow(0 10px 18px rgba(10,6,70,.45))}
-.inf-root .inf-foot-art{display:block;width:min(100%,250px);height:auto;margin:16px auto 0}
-@media(max-height:760px){.inf-root .inf-hero-art{width:112px}.inf-root .inf-foot-art{width:200px;margin-top:8px}}
-
-/* step dots */
-.inf-root .inf-dots{display:flex;align-items:center;justify-content:center;margin:0 0 10px}
-.inf-root .inf-dots i{display:grid;place-items:center;flex:0 0 auto;width:22px;height:22px;border-radius:50%;border:2px solid #C9B8FF;background:#8F62FF}
-.inf-root .inf-dots i.now{background:#fff;border-color:#fff;box-shadow:0 0 0 5px rgba(255,255,255,.18)}
-.inf-root .inf-dots i.next{width:14px;height:14px;border-color:#7C68F0;background:#5B47DA}
-.inf-root .inf-dots span{width:30px;height:3px;border-radius:2px;background:rgba(190,170,255,.45)}
-.inf-root .inf-dots span.on{background:#C9B8FF}
-.inf-root .inf-dot-tick{width:12px;height:12px;stroke-width:3.4;color:#fff}
-
-/* fields: pill, leading icon, trailing eye or check */
-.inf-root .inf-field{display:block;margin:0 0 14px;font-size:1rem}
-.inf-root .inf-ctl{position:relative;display:flex;align-items:center}
-.inf-root .inf-ico{position:absolute;left:20px;width:22px;height:22px;color:#F1ECFF;pointer-events:none}
-.inf-root:has(.inf-auth) .inf-app input:not([type=range]):not([type=checkbox]){width:100%;min-height:58px;padding:12px 56px 12px 56px;font-size:1rem;font-weight:500;
-  color:#fff;background:var(--inf-field);border:1.5px solid rgba(190,172,255,.42);border-radius:999px;box-shadow:inset 0 2px 8px rgba(10,6,70,.25)}
-.inf-root:has(.inf-auth) .inf-app input:focus{border-color:#FFC83D;box-shadow:0 0 0 4px rgba(255,200,61,.2);outline:none}
-.inf-root:has(.inf-auth) .inf-app input::placeholder{color:#E3DCFF;opacity:.9}
-.inf-root .inf-ctl .inf-eye{position:absolute;right:10px;display:grid;place-items:center;width:42px;height:42px;min-height:42px;padding:0;border:0;border-radius:50%;background:none;color:#F1ECFF}
-.inf-root .inf-ctl .inf-eye .inf-ico{position:static}
-.inf-root .inf-ok{position:absolute;right:14px;display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#18B26B;box-shadow:0 0 0 3px rgba(24,178,107,.25)}
-.inf-root .inf-ok-ico{width:16px;height:16px;stroke-width:3.4;color:#fff}
-.inf-root .inf-slide>.inf-link.inf-forgot{display:block;margin:-4px 4px 16px auto;text-align:right}
-
-/* links + primary button */
-.inf-root:has(.inf-auth) .inf-link{font-size:1rem;font-weight:700;color:#DCCFFF}
-.inf-root .inf-switch{margin:16px 0 0;font-size:1rem;color:#EAE4FF}
-.inf-root:has(.inf-auth) .inf-primary{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;min-height:60px;margin-top:6px;padding:12px 22px;
-  font-size:1.18rem;font-weight:800;color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:999px;
-  background:linear-gradient(180deg,#9462FF 0,#6035F0 100%);box-shadow:0 12px 30px rgba(84,44,230,.55),inset 0 1px 0 rgba(255,255,255,.35)}
-.inf-root:has(.inf-auth) .inf-primary:hover{background:linear-gradient(180deg,#A070FF 0,#6A40FA 100%)}
-.inf-root:has(.inf-auth) .inf-primary:disabled{background:rgba(120,100,230,.42);border-color:rgba(255,255,255,.18);color:#E3DCFF;box-shadow:none;opacity:1}
-.inf-root .inf-arrow{width:22px;height:22px;flex:0 0 auto;stroke-width:2.4}
-.inf-root:has(.inf-auth) .inf-primary[data-ready]{animation:inf-glow8 1.8s ease-in-out infinite}
-@keyframes inf-glow8{0%,100%{box-shadow:0 12px 30px rgba(84,44,230,.55),0 0 0 0 rgba(160,120,255,.55)}50%{box-shadow:0 12px 30px rgba(84,44,230,.55),0 0 0 9px rgba(160,120,255,0)}}
-@media(prefers-reduced-motion:reduce){.inf-root:has(.inf-auth) .inf-primary[data-ready]{animation:none}}
-.inf-root .inf-auth-panel .inf-error{text-align:center}
-
-/* level picker inside the glass card */
-.inf-root:has(.inf-auth) .inf-tabs{background:rgba(214,202,255,.22);border-color:rgba(214,202,255,.4)}
-.inf-root:has(.inf-auth) .inf-pane{background:rgba(30,22,130,.4)}
-.inf-root:has(.inf-auth) .inf-tl{background:rgba(40,30,150,.5)}
-.inf-root:has(.inf-auth) .inf-tl[aria-pressed=true]{background:var(--inf-sun)}
-.inf-root:has(.inf-auth) .inf-grade-arrow{background:rgba(40,30,150,.55);border-color:rgba(190,172,255,.4);color:#fff}
-.inf-root:has(.inf-auth) .inf-dept-track button{background:rgba(40,30,150,.5);color:#fff}
-.inf-root:has(.inf-auth) .inf-dept-track button[aria-pressed=true]{background:var(--inf-sun);color:#0F1B4C}
-.inf-root:has(.inf-auth) .inf-dept-track button span{background:#7A4DFF}
-@media(max-width:520px){.inf-root .inf-tl{min-width:66px}.inf-root .inf-tabs button{font-size:.88rem;gap:5px}}
-.inf-root .inf-pane-head{position:sticky;left:14px;width:max-content;max-width:calc(100vw - 110px)}
