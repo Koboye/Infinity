@@ -1,0 +1,2 @@
+import Link from 'next/link';
+export default function Welcome() { return <section className="ep-splash"><div className="ep-splash-mark" aria-hidden="true">🎓</div><h1>Exam<span>Pro</span></h1><p>Learn · Practice · Excel</p><div className="ep-splash-land">Ethiopia's smart learning platform</div><Link className="ep-splash-cta" href="/levels">Get started →</Link><Link className="ep-splash-sign" href="/account">Sign in</Link></section>; }
