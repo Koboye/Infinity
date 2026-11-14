@@ -52,15 +52,37 @@
     html += '</section><p class="ep-progress-note">These insights reflect activity saved in this browser. Historical daily trends and cross-device sync are not available yet.</p>';
     return html;
   }
-  var tasks = [['Review formulas', 'Review your notes for 5 minutes'], ['Practice questions', 'Answer 10 questions'], ['Take a mock exam', 'Try a timed paper'], ['Fix mistakes', 'Learn from missed answers']];
+  var tasks = [
+    ['Warm up', 'Review one topic or formula for 5 minutes'],
+    ['Target weak areas', 'Practice questions in a subject needing review'],
+    ['Exam practice', 'Complete a focused or timed question session'],
+    ['Reflect and improve', 'Revisit mistakes and read explanations']
+  ];
   function plan() {
-    var saved = read(PLAN, {}), done = saved.day === today() && Array.isArray(saved.done) ? saved.done.filter(function (i) { return Number.isInteger(i) && i >= 0 && i < tasks.length; }) : [];
-    var p = getProgress(), weak = Object.keys(p.mistakes || {}).map(function (id) { return { id: id, count: Object.keys(p.mistakes[id] || {}).length }; }).sort(function (a,b) { return b.count - a.count; }).filter(function (x) { return x.count > 0; });
-    var html = heading('STAY CONSISTENT', 'My study plan', 'Four small steps for today.');
-    if (weak.length) html += '<section class="ep-unified-card"><h2>Your review priorities</h2><p>Based on saved mistakes.</p>' + weak.slice(0,3).map(function (x) { return '<div class="ep-unified-score"><span>' + escapeHtml(x.id.replace(/-/g,' ')) + '</span><b>' + x.count + ' to review</b></div>'; }).join('') + '</section>';
-    html += '<section class="ep-unified-card"><h2>Today\'s checklist</h2><p>' + done.length + ' of 4 completed · resets daily</p>' + meter(done.length * 25);
-    html += tasks.map(function (t, i) { return '<label class="ep-unified-task"><input type="checkbox" data-task="' + i + '"' + (done.indexOf(i) >= 0 ? ' checked' : '') + '><span><b>' + t[0] + '</b><small>' + t[1] + '</small></span></label>'; }).join('');
-    return html + '</section><button type="button" class="ep-unified-action" id="ep-unified-study">Explore subjects →</button>';
+    var saved = read(PLAN, {}), settings = read('exampro.plan.settings.v1', {});
+    var done = saved.day === today() && Array.isArray(saved.done) ? saved.done.filter(function (i) { return Number.isInteger(i) && i >= 0 && i < tasks.length; }) : [];
+    var p = getProgress(), names = {}, bank = window.BANK || [];
+    bank.forEach(function (d) { names[d.id] = d.name; });
+    var weak = Object.keys(p.mistakes || {}).map(function (id) { return { id:id, name:names[id] || id.replace(/[-_]/g,' '), count:Object.keys(p.mistakes[id] || {}).length }; }).filter(function (x) { return x.count > 0; }).sort(function (a,b) { return b.count - a.count; });
+    var daily = Math.max(5, Math.min(100, Number(settings.goal) || 20));
+    var answeredToday = p.day === today() ? Math.max(0, Number(p.today) || 0) : 0;
+    var examDate = /^\d{4}-\d{2}-\d{2}$/.test(settings.examDate || '') ? settings.examDate : '';
+    var daysLeft = null;
+    if (examDate) {
+      var parts = examDate.split('-').map(Number), target = new Date(parts[0], parts[1]-1, parts[2]), now = new Date();
+      now.setHours(0,0,0,0);
+      if (target.getFullYear() === parts[0] && target.getMonth() === parts[1]-1 && target.getDate() === parts[2]) daysLeft = Math.round((target - now)/86400000);
+    }
+    var focus = weak.length ? weak[0].name : 'Build your foundation';
+    var html = heading('YOUR PERSONAL STUDY ROUTINE', 'My study plan', 'A practical daily routine guided by your progress and the mistakes you save.');
+    html += '<div class="ep-plan-overview"><div><small>YOUR NEXT FOCUS</small><strong>' + escapeHtml(focus) + '</strong><span>' + (weak.length ? weak[0].count + ' missed questions to revisit' : 'Start practicing to unlock tailored recommendations') + '</span></div><div><small>DAILY TARGET</small><strong>' + answeredToday + ' / ' + daily + '</strong><span>Questions answered today</span></div><div><small>EXAM COUNTDOWN</small><strong>' + (daysLeft == null ? 'Not set' : daysLeft < 0 ? 'Passed' : daysLeft === 0 ? 'Today' : daysLeft + ' days') + '</strong><span>' + (daysLeft == null ? 'Add your exam date below' : 'Based on your selected date') + '</span></div></div>';
+    html += '<section class="ep-unified-card ep-plan-settings"><span class="ep-progress-kicker">MAKE IT YOURS</span><h2>Your exam preparation settings</h2><div class="ep-plan-fields"><label>Exam date <input id="ep-plan-date" type="date" value="' + escapeHtml(examDate) + '"></label><label>Daily question goal <select id="ep-plan-goal">' + [10,20,30,50,100].map(function (n) { return '<option value="' + n + '"' + (daily === n ? ' selected' : '') + '>' + n + ' questions</option>'; }).join('') + '</select></label></div><button type="button" class="ep-unified-action" id="ep-plan-save">Save my plan</button><p class="ep-plan-save-note" id="ep-plan-status" role="status"></p></section>';
+    html += '<section class="ep-unified-card"><div class="ep-plan-section-head"><div><span class="ep-progress-kicker">YOUR DAILY ROUTINE</span><h2>Today’s checklist</h2></div><span>' + done.length + ' / ' + tasks.length + ' done</span></div><p>Complete each step at your own pace. The checklist resets each day.</p>' + meter(done.length / tasks.length * 100);
+    html += tasks.map(function (t, i) { return '<label class="ep-unified-task"><input type="checkbox" data-task="' + i + '"' + (done.indexOf(i) >= 0 ? ' checked' : '') + '><span><b>' + t[0] + '</b><small>' + (i === 1 && weak.length ? 'Focus on ' + escapeHtml(weak[0].name) + ' · ' + weak[0].count + ' saved mistakes' : t[1]) + '</small></span></label>'; }).join('');
+    html += '</section><section class="ep-unified-card"><span class="ep-progress-kicker">RECOMMENDED REVIEW ORDER</span><h2>Where to focus next</h2>';
+    html += weak.length ? weak.slice(0,5).map(function (x,i) { return '<div class="ep-plan-priority"><span class="ep-plan-rank">' + (i+1) + '</span><div><b>' + escapeHtml(x.name) + '</b><small>' + x.count + ' saved mistake' + (x.count === 1 ? '' : 's') + '</small></div><span class="ep-plan-priority-badge">Review</span></div>'; }).join('') : '<p>Complete some practice questions first. Your most-missed subjects will appear here automatically.</p>';
+    html += '</section><button type="button" class="ep-unified-action ep-plan-explore" id="ep-unified-study">Explore subjects →</button>';
+    return html;
   }
   function profile() {
     var p = getProgress(), xp = p.xp || 0, lv = Math.floor(Math.sqrt(xp / 50)) + 1;
@@ -84,6 +106,17 @@
         try { localStorage.setItem(PLAN, JSON.stringify({day:today(), done:done})); } catch (e) {}
         open('plan');
       });
+    });
+    var planSave = panel.querySelector('#ep-plan-save');
+    if (planSave) planSave.addEventListener('click', function () {
+      var date = panel.querySelector('#ep-plan-date').value, goal = Number(panel.querySelector('#ep-plan-goal').value);
+      try {
+        localStorage.setItem('exampro.plan.settings.v1', JSON.stringify({examDate:date,goal:goal}));
+        open('plan');
+        var status = panel.querySelector('#ep-plan-status'); if (status) status.textContent = 'Your study settings have been saved on this device.';
+      } catch (e) {
+        var status = panel.querySelector('#ep-plan-status'); if (status) status.textContent = 'Unable to save settings. Please check browser storage permissions.';
+      }
     });
     var study = panel.querySelector('#ep-unified-study');
     if (study) study.addEventListener('click', function () { close(); document.getElementById('nv-sub').click(); });
