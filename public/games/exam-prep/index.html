@@ -1348,13 +1348,12 @@ body.dash-on{background:#f4f7fd!important;background-image:none!important;color:
 })();
 </script>
 <script>
-// exam.pro splash: shown once per browser session (add ?splash=1 to the address to preview it again).
+// exam.pro welcome: shown before the dashboard on every fresh visit.
 (function () {
   var sp = document.getElementById('splash'), go = document.getElementById('sp-go'), SK = 'exampro.splash.seen';
   if (!sp || !go) return;
-  var seen = false; try { seen = localStorage.getItem(SK) === '1' || sessionStorage.getItem(SK) === '1'; } catch (e) {}
-  if (/[?&]splash=1\b/.test(location.search)) seen = false;
-  if (seen) { sp.remove(); return; }
+  // Show welcome on every fresh visit; allow explicit deep-link bypass only.
+  if (location.search.includes('skipWelcome=1')) { sp.remove(); return; }
   var behind = [document.querySelector('.top'), document.getElementById('app'), document.querySelector('.skip')].filter(Boolean);
   function setBehind(on) { behind.forEach(function (n) { if (on) n.setAttribute('inert', ''); else n.removeAttribute('inert'); }); }
   function close() {
