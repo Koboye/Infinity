@@ -451,3 +451,23 @@ html:has(.inf-root),html body:has(.inf-root){background:#F4F2FF}
 .inf-root .inf-lvlbar button{flex:1;min-height:40px;padding:6px 10px;border-radius:999px;border:1.5px solid var(--inf-line);background:transparent;color:var(--inf-text);font:800 var(--fs-sm) var(--inf-font-b)}
 .inf-root .inf-lvlbar button[aria-pressed=true]{background:var(--inf-violet);border-color:var(--inf-violet);color:#fff}
 @media (prefers-color-scheme:dark){.inf-root .inf-lvlbar button[aria-pressed=true]{color:#0B1238}}
+
+/* game tiles with a variant chip */
+.inf-root .inf-gt{display:flex;flex-direction:column;gap:6px;min-width:0}
+.inf-root .inf-game-list .inf-gmain{width:100%}
+.inf-root .inf-game-list .inf-gvar{min-height:38px;padding:6px 12px;display:block;border-radius:999px;background:transparent;border:1.5px solid color-mix(in srgb,var(--g) 45%,var(--inf-line));box-shadow:none;color:var(--inf-text);font:800 var(--fs-xs) var(--inf-font-b);text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.inf-root .inf-game-list .inf-gvar[aria-expanded=true]{background:color-mix(in srgb,var(--g) 18%,var(--inf-card));border-color:var(--g)}
+.inf-root .inf-vsheet{margin-top:12px;padding:12px;border-radius:var(--r-md);background:var(--inf-card);border:1.5px solid var(--inf-line)}
+.inf-root .inf-vsheet p{margin:0 0 8px;font:800 var(--fs-sm) var(--inf-font-b)}
+.inf-root .inf-vsheet>div{display:flex;flex-wrap:wrap;gap:8px}
+.inf-root .inf-vsheet button{min-height:40px;padding:6px 14px;border-radius:999px;border:1.5px solid var(--inf-line);background:transparent;color:var(--inf-text);font:800 var(--fs-sm) var(--inf-font-b)}
+.inf-root .inf-vsheet button[aria-pressed=true]{background:var(--inf-violet);border-color:var(--inf-violet);color:#fff}
+@media (prefers-color-scheme:dark){.inf-root .inf-vsheet button[aria-pressed=true]{color:#0B1238}}
+.inf-root .inf-game-list{margin-top:14px}
+
+/* content guard: no selecting, saving or printing the app's content (inputs stay usable) */
+html.inf-protected body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+html.inf-protected input,html.inf-protected textarea,html.inf-protected [contenteditable=true]{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
+html.inf-protected img,html.inf-protected svg{-webkit-user-drag:none;user-drag:none;-webkit-touch-callout:none}
+html.inf-away body::after{content:"";position:fixed;inset:0;z-index:2147483647;background:#0A1040}
+@media print{html.inf-protected body{display:none!important}}

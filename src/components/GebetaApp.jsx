@@ -48,7 +48,7 @@ const GAME_LIST_ONLINE = Object.values(GAMES).filter((g) => !g.offlineOnly && !g
 
 // `embedded` = rendered as the Games zone of the Infinity shell: the shell owns the brand header, bottom nav and language,
 // so this component drops its own Tibeb strip, bottom nav and language switch, and reports play state back to the shell.
-export default function GebetaApp({ initialGame = null, embedded = false, onExit = null, lang: shellLang = null, onPlayingChange = null, quickMode = 'ai', quickLevel = 'medium' }) {
+export default function GebetaApp({ initialGame = null, embedded = false, onExit = null, lang: shellLang = null, onPlayingChange = null, quickMode = 'ai', quickLevel = 'medium', quickRuleset = '' }) {
   const [lang, setLang] = useState('en');
   const [game, setGame] = useState('gebeta');
   const [muted, setMutedState] = useState(false);
@@ -323,9 +323,9 @@ export default function GebetaApp({ initialGame = null, embedded = false, onExit
     launched.current = true;
     const info = gameInfo(game);
     // the Games tab's mode bar decides what one tap does: computer, two players on one phone, online lobby, or the ranking
-    const run = quickMode === 'online' ? Promise.resolve(go('online'))
+    const run = quickMode === 'online' ? Promise.resolve(go('online', gameInfo(game).rulesets.includes(quickRuleset) ? { ruleset: quickRuleset } : {}))
       : quickMode === 'rank' ? Promise.resolve(go('leaders'))
-      : startLevel({ mode: quickMode === 'pass' && !gameInfo(game).noPass ? 'pass' : 'ai', game, level: quickLevel, ruleset: info.defaultRuleset, target: info.defaultTarget, opts: { ultra: false, suddenDeath: false, careless: false, cards: 1 } });
+      : startLevel({ mode: quickMode === 'pass' && !gameInfo(game).noPass ? 'pass' : 'ai', game, level: quickLevel, ruleset: info.rulesets.includes(quickRuleset) ? quickRuleset : info.defaultRuleset, target: info.defaultTarget, opts: { ultra: false, suddenDeath: false, careless: false, cards: 1 } });
     run
       .then((r) => { if (r === 'error' && viewRef.current.name === 'launch') home(); })
       .catch(() => { if (viewRef.current.name === 'launch') home(); });
