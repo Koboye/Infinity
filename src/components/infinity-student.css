@@ -393,3 +393,10 @@ html:has(.inf-auth){font-size:100%}
 .inf-root .inf-dept-track button{font-size:1rem;min-height:68px;border-radius:18px;background:var(--inf-field)}
 .inf-root .inf-dept-track button span{background:var(--inf-violet);font-size:1rem}
 .inf-root .inf-dept-track button[aria-pressed=true]{background:var(--inf-sun);color:#0F1B4C}
+
+/* v7 fix: the auth screen is always dark, so group captions always use the bright tones */
+.inf-root:has(.inf-auth) .inf-stage[data-tone=kg]{--tone:#FFC83D}
+.inf-root:has(.inf-auth) .inf-stage[data-tone=pri]{--tone:#9FB2FF}
+.inf-root:has(.inf-auth) .inf-stage[data-tone=sec]{--tone:#C3AAFF}
+.inf-root:has(.inf-auth) .inf-stage[data-tone=uni]{--tone:#5FE0B8}
+.inf-root:has(.inf-auth) .inf-stage[data-tone=exam]{--tone:#FF9AAB}
