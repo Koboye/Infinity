@@ -94,3 +94,15 @@ test('kindergarten book and quiz are linked to the learner profile', () => {
   assert.match(html, /groups: \['kg'\]/);
   assert.match(unified, /id:'kg',name:'Kindergarten \(KG\)'/);
 });
+
+test('kindergarten English ABC and Amharic fidel practice is accessible', () => {
+  const practice = readFileSync(base + 'kindergarten-alphabet-practice.html', 'utf8');
+  assert.match(practice, /ABC · ሀ ሁ ሂ/);
+  assert.match(practice, /exampro\.kg\.alphabet\.v1/);
+  assert.match(practice, /speechSynthesis/);
+  assert.match(practice, /Practice Quiz/);
+  assert.match(html, /href="kindergarten-alphabet-practice\.html"/);
+  const script = practice.match(/<script>([\s\S]*?)<\/script>/);
+  assert.ok(script);
+  new vm.Script(script[1]);
+});
