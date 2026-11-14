@@ -649,6 +649,23 @@ body.has-xbar .xb.main{min-width:125px}
 #ep-unified-panel .ep-plan-explore{width:100%;min-height:48px;border-radius:13px;margin:8px 0 22px}
 #ep-unified-panel .ep-plan-settings button:focus-visible,#ep-unified-panel .ep-plan-fields :focus-visible{outline:3px solid #f4c351;outline-offset:3px}
 @media(max-width:580px){#ep-unified-panel .ep-plan-overview{grid-template-columns:1fr}#ep-unified-panel .ep-plan-overview>div{min-height:90px;padding:15px}#ep-unified-panel .ep-plan-fields{grid-template-columns:1fr}}
+</style><style id="ep-screen-08">
+/* Screen 08 — student profile, personalization and data ownership */
+#ep-unified-panel .ep-profile-summary{display:flex;align-items:center;gap:23px;background:linear-gradient(135deg,#fff,#f0f2ff);padding:clamp(20px,5vw,30px)}
+#ep-unified-panel .ep-profile-summary .ep-unified-avatar{display:grid;place-items:center;flex:none;width:92px;height:92px;border-radius:26px;background:linear-gradient(145deg,#e3e9ff,#e8ddff);font-size:48px}
+#ep-unified-panel .ep-profile-summary h2{font-size:clamp(1.35rem,4vw,1.85rem);margin:0 0 5px;letter-spacing:-.03em;overflow-wrap:anywhere}
+#ep-unified-panel .ep-profile-summary p{margin:5px 0;color:#56607e}
+#ep-unified-panel .ep-profile-focus{display:inline-block;padding:7px 11px;border-radius:999px;background:#eee9ff;color:#5d49ad!important;font-size:12px}
+#ep-unified-panel .ep-profile-stats{grid-template-columns:repeat(4,minmax(0,1fr));gap:11px}
+#ep-unified-panel .ep-profile-stats>div{min-height:113px;justify-content:center;border-radius:18px;background:linear-gradient(145deg,#fff,#f1f3ff);border:1px solid #e2e6f4}
+#ep-unified-panel .ep-profile-editor label{display:flex;flex-direction:column;gap:8px;margin:15px 0;color:#26335c;font-size:13px;font-weight:800}
+#ep-unified-panel .ep-profile-editor input{width:100%;min-height:47px;padding:11px 13px;border-radius:12px;border:1px solid #cbd4ec;background:#fff;color:#1b2852;font:inherit}
+#ep-unified-panel .ep-profile-editor input:focus-visible,#ep-unified-panel .ep-profile-editor button:focus-visible,#ep-unified-panel .ep-profile-export:focus-visible{outline:3px solid #e6b53e;outline-offset:3px}
+#ep-unified-panel .ep-profile-editor .ep-unified-action{min-height:45px;border-radius:12px;margin-top:3px}
+#ep-unified-panel .ep-profile-status{font-size:12px;line-height:1.5;color:#287651;margin:10px 0 0}
+#ep-unified-panel .ep-profile-plan{border-radius:12px;margin-top:8px}
+#ep-unified-panel .ep-profile-export{border-radius:12px;background:#263c91;margin-top:7px}
+@media(max-width:550px){#ep-unified-panel .ep-profile-summary{gap:14px;padding:18px}#ep-unified-panel .ep-profile-summary .ep-unified-avatar{width:68px;height:68px;font-size:36px;border-radius:19px}#ep-unified-panel .ep-profile-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style></head>
 <body>
 <div class="splash" id="splash" role="dialog" aria-modal="true" aria-labelledby="sp-title" hidden>
