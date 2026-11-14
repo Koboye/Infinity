@@ -1398,7 +1398,7 @@ body.dash-on{background:#f4f7fd!important;background-image:none!important;color:
     sp.classList.add('out'); document.removeEventListener('keydown', onKey);
     setTimeout(function () { sp.remove(); document.body.classList.remove('sp-lock'); setBehind(false); var a = document.getElementById('app'); a.setAttribute('tabindex', '-1'); a.focus({ preventScroll: true }); }, 350);
   }
-  function onKey(e) { if (e.key === 'Escape') { close(); setTimeout(function () { if (window.ExamProAuth && !window.ExamProAuth.user) window.ExamProAuth.open(); }, 400); } }
+  function onKey(e) { if (e.key === 'Escape') { if (window.ExamProAuth && !window.ExamProAuth.user) window.ExamProAuth.open(); else close(); } }
   sp.querySelectorAll('[data-lang]').forEach(function(button){button.addEventListener('click',function(){var lang=button.getAttribute('data-lang');sp.querySelectorAll('[data-lang]').forEach(function(b){b.classList.toggle('active',b===button);b.setAttribute('aria-pressed',String(b===button));});sp.querySelectorAll('[data-en][data-am]').forEach(function(el){el.textContent=el.getAttribute('data-'+lang);});sp.setAttribute('lang',lang==='am'?'am':'en');});});
   // Personalise: live numbers from the bank, and a streak nudge for returning students.
   (function () {
@@ -1422,7 +1422,26 @@ body.dash-on{background:#f4f7fd!important;background-image:none!important;color:
     }
   })();
   sp.hidden = false; sp.style.display = 'flex'; document.body.classList.add('sp-lock'); setBehind(true);
-  go.addEventListener('click', function () { close(); setTimeout(function () { if (window.ExamProAuth && !window.ExamProAuth.user) window.ExamProAuth.open(); }, 400); }); document.addEventListener('keydown', onKey); go.focus({ preventScroll: true });
+  // Keep the welcome screen mounted behind authentication, so the dashboard
+  // never flashes and Back returns to welcome rather than exposing Home.
+  var transitioning = false;
+  go.addEventListener('click', function () {
+    if (transitioning) return;
+    if (window.ExamProAuth && !window.ExamProAuth.user) {
+      window.ExamProAuth.open();
+    } else {
+      transitioning = true;
+      close();
+    }
+  });
+  document.addEventListener('exampro:auth-changed', function (event) {
+    if (event.detail && event.detail.uid && !transitioning && sp.isConnected) {
+      transitioning = true;
+      close();
+    }
+  });
+  document.addEventListener('keydown', onKey);
+  go.focus({ preventScroll: true });
 })();
 </script>
 <script src="firebase-config.js"></script>
