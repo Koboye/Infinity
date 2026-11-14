@@ -415,17 +415,24 @@ body.ep-auth-locked > :not(#ep-auth-gate):not(script) { visibility:hidden !impor
     chrome('list'); setNav('sub');
     var c = catById(ui.cat), k = ui.search.trim().toLowerCase();
     var gradeId = window.infinityGetGradeId ? window.infinityGetGradeId() : '';
-    var gradeGroup = /^g[1-4]$/.test(gradeId) ? 'g1_4' : /^g[5-8]$/.test(gradeId) ? 'g5_8' : /^g(9|10|11)$/.test(gradeId) ? 'g9_10' : gradeId === 'g12' ? 'g12' : '';
-    var list = BANK.filter(function (d) { return c.groups.indexOf(d.group) >= 0 && (!gradeGroup || d.group === gradeGroup) && (!k || d.name.toLowerCase().indexOf(k) >= 0 || d.college.toLowerCase().indexOf(k) >= 0); });
+    var departmentId = window.infinityGetDepartmentId ? window.infinityGetDepartmentId() : '';
+    // Only show resources explicitly tagged for this grade; grouped questions are not individual-grade resources.
+    var list = BANK.filter(function (d) {
+      if (c.groups.indexOf(d.group) < 0) return false;
+      if (gradeId === 'kg' || /^g(?:[1-9]|10|11)$/.test(gradeId)) return d.grade === gradeId;
+      if (gradeId === 'g12' && d.group !== 'g12') return false;
+      if (gradeId === 'uni' && (!departmentId || d.id !== departmentId)) return false;
+      return !k || d.name.toLowerCase().indexOf(k) >= 0 || d.college.toLowerCase().indexOf(k) >= 0;
+    }).filter(function(d){return !k || d.name.toLowerCase().indexOf(k)>=0 || d.college.toLowerCase().indexOf(k)>=0;});
     var colleges = []; list.forEach(function (d) { if (colleges.indexOf(d.college) < 0) colleges.push(d.college); });
-    var html = '<div class="catv"><button type="button" class="btn alt sm back" id="dback">← All categories</button><h1>' + esc(c.name) + '</h1><p class="hint">' + esc(c.sub) + ' · ' + catCount(c).toLocaleString() + ' questions</p>' +
+    var html = '<div class="catv"><button type="button" class="btn alt sm back" id="dback">← All categories</button><h1>' + esc((window.infinityGetGradeLabel && window.infinityGetGradeLabel()) || c.name) + '</h1><p class="hint">' + esc(c.sub) + ' · ' + list.reduce(function(n,d){return n+d.q.length;},0).toLocaleString() + ' matching questions</p>' +
       '<label class="lbl" for="search">Find a subject</label><input id="search" type="search" autocomplete="off" placeholder="For example: Mathematics" value="' + esc(ui.search) + '"><div class="found">Showing ' + list.length + ' subject' + (list.length === 1 ? '' : 's') + '</div>';
     colleges.forEach(function (cn, ci) {
       var ds = list.filter(function (d) { return d.college === cn; }), n = ds.reduce(function (t, d) { return t + d.q.length; }, 0);
       html += '<details class="card college" ' + (ci === 0 || k ? 'open' : '') + '><summary>' + esc(cn) + ' <span class="pill">' + n.toLocaleString() + ' questions</span></summary><div class="grid mt">' +
         ds.map(function (d) { return '<button class="dept" data-d="' + esc(d.id) + '"><b>' + esc(d.name) + '</b><small>' + d.q.length + ' questions</small></button>'; }).join('') + '</div></details>';
     });
-    if (!colleges.length) html += '<p class="hint">Nothing matches “' + esc(ui.search) + '”.</p>';
+    if (!colleges.length) html += '<div class="card" style="padding:24px"><h2>Resources for this level are being prepared</h2><p class="hint">No questions in the current bank are tagged for your exact selected grade or department. Your learning level is saved, and unrelated materials are hidden.</p></div>';
     app.innerHTML = html + '</div>';
     document.getElementById('dback').onclick = function () { ui.search = ''; dash(); };
     var s = document.getElementById('search'); s.oninput = function () { ui.search = s.value; var pos = s.selectionStart; catView(true); var n = document.getElementById('search'); n.focus(); n.setSelectionRange(pos, pos); };
