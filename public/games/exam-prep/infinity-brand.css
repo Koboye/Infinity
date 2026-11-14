@@ -111,3 +111,12 @@ body.in-grade-open{overflow:hidden}
 .in-game-list button{border:1px solid #e0e4f8;border-radius:16px;background:#f4f5ff;padding:22px 10px;min-height:92px;font:700 1rem inherit;color:#3333a1;cursor:pointer}
 .in-game-list button:hover{background:#e9eaff}
 @media(max-width:540px){.in-profile-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.in-game-list{grid-template-columns:1fr}.in-game-list button{min-height:62px}.in-profile-hero{padding:18px}.in-profile-card{padding:17px}}
+
+/* The learning-level selector is always visible on sign-in and sign-up. */
+#ep-auth-gate[hidden],#in-auth-department-wrap[hidden]{display:none!important}
+.in-auth-level-header{display:flex;flex-direction:column;gap:4px;padding:14px 15px;background:#eeedff;border:1px solid #dedcff;border-radius:14px;margin:20px 0 12px;color:#302b92}
+.in-auth-level-header strong{font-size:1rem}
+.in-auth-level-header span{font-size:.78rem;color:#52617a}
+.in-auth-account-header{font-size:.9rem;font-weight:800;color:#344363;margin:20px 0 8px}
+#ep-auth-form #in-auth-grade{display:block!important;visibility:visible!important;opacity:1!important;width:100%;appearance:auto;-webkit-appearance:menulist;min-height:54px;border:2px solid #625be0!important;background:#fff!important;color:#18294b!important;font-size:1rem}
+#ep-auth-form #in-auth-department-wrap:not([hidden]){display:block}
