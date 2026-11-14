@@ -263,3 +263,9 @@ html:has(.inf-root),html body:has(.inf-root){overflow-x:clip;max-width:100%}
   border-style:dashed;border-color:var(--inf-blue);background:transparent}
 .inf-root .inf-gamebar b{color:var(--inf-blue)}
 @media (prefers-color-scheme:dark){.inf-root .inf-gamebar b{color:var(--inf-sun)}}
+
+/* brand: the loading mark draws its own loop */
+.inf-root .inf-mark{display:block;flex:0 0 auto;filter:drop-shadow(0 6px 14px color-mix(in srgb,#FFB800 35%,transparent))}
+.inf-root .inf-mark.is-live path{stroke-dasharray:38 62;animation:inf-run 1.5s linear infinite}
+@keyframes inf-run{to{stroke-dashoffset:-100}}
+@media(prefers-reduced-motion:reduce){.inf-root .inf-mark.is-live path{animation:none;stroke-dasharray:none}}

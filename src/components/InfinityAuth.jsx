@@ -17,11 +17,15 @@ const GROUPS = ['KG', 'Primary', 'Secondary', 'University', 'NGAT'];
 const groupFirst = (grp) => GRADES.find((g) => groupOf(g) === grp).id;
 
 /* The Infinity mark: a lemniscate on a sun-yellow tile. */
-export function Mark({size = 40}) {
+export function Mark({size = 40, live = false}) {
   return (
-    <svg className="inf-mark" width={size} height={size} viewBox="0 0 48 48" role="img" aria-label="Infinity">
-      <rect width="48" height="48" rx="14" fill="var(--inf-sun)" />
+    <svg className={'inf-mark' + (live ? ' is-live' : '')} width={size} height={size} viewBox="0 0 48 48" role="img" aria-label="Infinity">
+      <defs>
+        <linearGradient id="inf-mark-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#FFDB6B" /><stop offset="1" stopColor="#FFB800" /></linearGradient>
+      </defs>
+      <rect width="48" height="48" rx="14" fill="url(#inf-mark-g)" />
       <path
+        pathLength="100"
         d="M24 24c-3.500-4.500-6.500-7-10-7a7 7 0 000 14c3.500 0 6.500-2.500 10-7s6.500-7 10-7a7 7 0 010 14c-3.500 0-6.500-2.500-10-7z"
         fill="none" stroke="var(--inf-ink)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"
       />

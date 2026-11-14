@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 96" role="img" aria-label="Infinity">
+  <defs><linearGradient id="t" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFDB6B"/><stop offset="1" stop-color="#FFB800"/></linearGradient></defs>
+  <g transform="translate(8 8) scale(1.6667)"><rect width="48" height="48" rx="14" fill="url(#t)"/><path d="M24 24c-3.500-4.500-6.500-7-10-7a7 7 0 000 14c3.500 0 6.500-2.500 10-7s6.500-7 10-7a7 7 0 010 14c-3.500 0-6.500-2.500-10-7z" fill="none" stroke="#0F1B4C" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></g>
+  <text x="104" y="62" font-family="Bricolage Grotesque, Figtree, system-ui, sans-serif" font-size="44" font-weight="800" letter-spacing="-1.5" fill="#0F1B4C">Infinity</text>
+</svg>

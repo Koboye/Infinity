@@ -37,7 +37,7 @@ export default function InfinityStudentApp(){
  useEffect(()=>{if(!user||!levelReady)return;try{const u=new URL(window.location.href),g=u.searchParams.get('game');if(g&&GAMES.some(x=>x[0]===g)){setTab('games');setGame(g);u.searchParams.delete('game');window.history.replaceState(null,'',u.pathname+u.search+u.hash)}}catch{}},[user,levelReady]);
  const saveLevel=async()=>{setError('');setLevelBusy(true);try{const acc=await levelCall(user,{grade:pick,dept:pickDept});setGrade(acc.grade);setDept(acc.dept)}catch(err){setError(err.message||'Could not save your level.')}finally{setLevelBusy(false)}};
  const games=<div className="inf-game-list">{GAMES.map(([id,title])=><button type="button" key={id} onClick={()=>{setGame(id);setBreakMenu(false)}}>{title}</button>)}</div>;
- if(!ready||(user&&!levelReady))return <div className="inf-root"><main className="inf-app inf-loading" aria-busy="true"><Mark size={56}/><p>Loading your study space…</p></main></div>;
+ if(!ready||(user&&!levelReady))return <div className="inf-root"><main className="inf-app inf-loading" aria-busy="true"><Mark size={64} live/><p>Loading your study space…</p></main></div>;
  if(!user)return <div className="inf-root"><AuthScreen busy={busy} error={error} notice={notice} departments={departments} onSubmit={submitAuth} onReset={resetPassword} onClearError={()=>{setError('');setNotice('')}}/></div>;
  const question=exam&&!exam.done?exam.questions[exam.index]:null;
  return <div className="inf-root"><main className="inf-app"><header className="inf-header"><span className="inf-brand"><Mark size={34}/><strong>Infinity</strong></span><span className="inf-user" title={user.email}>{grade&&<b>{gradeName}</b>}{(user.displayName||user.email||'').split(' ')[0]}</span></header>
