@@ -137,3 +137,7 @@ html body:has(.inf-root){overscroll-behavior:none}
 .inf-stats span{color:var(--inf-mute);font-size:.88rem;font-weight:600}
 .inf-root .inf-card>button.inf-primary{margin-top:6px}
 .inf-root .inf-card input[aria-label="Search subjects"]{margin:6px 0 12px}
+
+/* Sign-in polish */
+.inf-root .inf-auth-panel form>.inf-link.inf-forgot{display:block;margin:-4px 0 14px auto;text-align:right}
+.inf-root .inf-auth-panel header p{max-width:36ch}
