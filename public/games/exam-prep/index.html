@@ -750,7 +750,17 @@ body.exam-on .ep-nav-menu{display:none}
 .ep-break-player{max-width:100%;box-sizing:border-box}
 .ep-break-player iframe{display:block;min-height:0}
 @media(max-width:600px){.ep-break-player{width:100%;height:calc(100dvh - 32px)}.ep-break-shade{padding:10px!important}}
-</style><style>.ep-kg-book-link{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:linear-gradient(110deg,#254bc2,#7152ce);color:#fff!important;padding:18px 20px;border-radius:16px;text-decoration:none;font-weight:850;margin:16px 0;box-shadow:0 8px 22px #213caa25}.ep-kg-book-link span{font-size:12px;font-weight:650;color:#e5ebff}</style></head>
+</style><style>.ep-kg-book-link{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:linear-gradient(110deg,#254bc2,#7152ce);color:#fff!important;padding:18px 20px;border-radius:16px;text-decoration:none;font-weight:850;margin:16px 0;box-shadow:0 8px 22px #213caa25}.ep-kg-book-link span{font-size:12px;font-weight:650;color:#e5ebff}</style><style id="ep-welcome-cleanup">
+.splash{min-height:100dvh;justify-content:center;padding:clamp(18px,4vh,44px) 18px;background:radial-gradient(ellipse at 50% 25%,#243f98 0%,#111d59 55%,#081238 100%)}
+.splash .sp-main{width:min(100%,470px);max-width:470px;margin:0;padding:clamp(22px,4vw,38px) clamp(18px,4vw,32px);border:1px solid rgba(255,255,255,.18);border-radius:28px;background:rgba(255,255,255,.07);box-shadow:0 22px 65px rgba(0,0,0,.24);backdrop-filter:blur(14px)}
+.splash .sp-art,.splash .sp-stars{display:none}.splash .sp-aurora{opacity:.28}
+.splash .sp-emblem{width:clamp(96px,16vh,132px)}.splash .sp-word{font-size:clamp(43px,8vw,62px);margin-top:4px}
+.splash .sp-slogan{font-size:clamp(12px,2.5vw,15px);margin-top:8px}.splash .sp-mission{font-size:clamp(17px,3vw,22px);margin-top:20px}
+.splash .sp-chips{margin-top:18px;gap:7px}.splash .sp-chips span{font-size:12px;padding:7px 10px}
+.splash .sp-go{width:100%;max-width:300px;min-height:52px;margin-top:22px;font-size:17px;animation:spUp .6s 1.2s both}
+@media(max-height:650px){.splash .sp-main{padding:14px 18px}.splash .sp-emblem{width:78px}.splash .sp-mission{margin-top:10px}.splash .sp-chips{margin-top:10px}.splash .sp-go{margin-top:12px}}
+@media(max-width:390px){.splash .sp-main{border-radius:20px}.splash .sp-chips span{font-size:11px}}
+</style></head>
 <body>
 <div class="splash" id="splash" role="dialog" aria-modal="true" aria-labelledby="sp-title" hidden>
 <div class="sp-aurora" aria-hidden="true"><i></i><i></i><i></i></div><div class="sp-stars" aria-hidden="true"></div>
@@ -1299,13 +1309,13 @@ body.exam-on .ep-nav-menu{display:none}
 (function () {
   var sp = document.getElementById('splash'), go = document.getElementById('sp-go'), SK = 'exampro.splash.seen';
   if (!sp || !go) return;
-  var seen = false; try { seen = sessionStorage.getItem(SK) === '1'; } catch (e) {}
+  var seen = false; try { seen = localStorage.getItem(SK) === '1' || sessionStorage.getItem(SK) === '1'; } catch (e) {}
   if (/[?&]splash=1\b/.test(location.search)) seen = false;
   if (seen) { sp.remove(); return; }
   var behind = [document.querySelector('.top'), document.getElementById('app'), document.querySelector('.skip')].filter(Boolean);
   function setBehind(on) { behind.forEach(function (n) { if (on) n.setAttribute('inert', ''); else n.removeAttribute('inert'); }); }
   function close() {
-    try { sessionStorage.setItem(SK, '1'); } catch (e) {}
+    try { sessionStorage.setItem(SK, '1'); localStorage.setItem(SK, '1'); } catch (e) {}
     try { if (navigator.vibrate) navigator.vibrate(12); } catch (e) {}
     sp.classList.add('out'); document.removeEventListener('keydown', onKey);
     setTimeout(function () { sp.remove(); document.body.classList.remove('sp-lock'); setBehind(false); var a = document.getElementById('app'); a.setAttribute('tabindex', '-1'); a.focus({ preventScroll: true }); }, 350);
