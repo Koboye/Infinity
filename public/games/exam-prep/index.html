@@ -1493,6 +1493,41 @@ body.dash-on{background:#f4f7fd!important;background-image:none!important;color:
 @media(max-width:760px){#ep-unified-panel.ep-profile-layout{grid-template-columns:minmax(0,1fr)!important;width:min(100% - 24px,540px)!important;gap:12px!important;padding-top:14px!important}#ep-unified-panel.ep-profile-layout>*{grid-column:1!important;grid-row:auto!important}#ep-unified-panel.ep-profile-layout>.ep-unified-hero{padding:25px!important}#ep-unified-panel.ep-profile-layout>.ep-unified-card{padding:21px!important}#ep-unified-panel.ep-profile-layout>.ep-profile-stats{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}}
 @media(prefers-reduced-motion:no-preference){#ep-unified-panel.ep-profile-layout .ep-unified-action{transition:transform .15s,box-shadow .15s}#ep-unified-panel.ep-profile-layout .ep-unified-action:hover{transform:translateY(-1px);box-shadow:0 5px 14px #163e9020}}
 </style>
+<style id="ep-profile-smart-2026">
+/* Smart profile: quiet surfaces, deliberate spacing, no cramped multi-column forms. */
+#ep-unified-panel.ep-profile-layout{max-width:860px!important;width:calc(100% - 36px)!important;display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:14px!important;padding:18px 0 118px!important}
+#ep-unified-panel.ep-profile-layout>*{grid-column:1!important;grid-row:auto!important}
+#ep-unified-panel.ep-profile-layout>.ep-unified-back{margin:0!important;justify-self:start}
+#ep-unified-panel.ep-profile-layout>.ep-unified-hero{padding:26px 30px!important;background:linear-gradient(115deg,#153985,#304eb0)!important;border-radius:19px!important;box-shadow:none!important}
+#ep-unified-panel.ep-profile-layout>.ep-unified-hero h1{font-size:30px!important;margin:6px 0!important}
+#ep-unified-panel.ep-profile-layout>.ep-unified-card{padding:25px 28px!important;border-radius:17px!important;box-shadow:0 2px 9px rgba(18,38,88,.045)!important;border:1px solid #e1e7f2!important;background:#fff!important}
+#ep-unified-panel.ep-profile-layout>.ep-profile-summary{display:flex!important;gap:20px!important;align-items:center!important;background:linear-gradient(115deg,#f8faff,#edf3ff)!important}
+#ep-unified-panel.ep-profile-layout>.ep-profile-summary h2{font-size:26px!important;margin:4px 0!important}
+#ep-unified-panel.ep-profile-layout>.ep-profile-summary .ep-unified-avatar{width:70px!important;height:70px!important;font-size:36px!important;border-radius:18px!important}
+#ep-unified-panel.ep-profile-layout>.ep-profile-stats{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:12px!important;margin:0!important}
+#ep-unified-panel.ep-profile-layout>.ep-profile-stats>div{min-height:92px!important;padding:13px 8px!important;border:1px solid #e1e7f2!important;border-radius:14px!important;box-shadow:none!important;background:#fff!important}
+#ep-unified-panel.ep-profile-layout>.ep-profile-stats b{font-size:26px!important}
+#ep-unified-panel.ep-profile-layout>.ep-profile-account{display:flex!important;flex-wrap:wrap;align-items:center;gap:5px 18px;border-left:1px solid #e1e7f2!important}
+#ep-unified-panel.ep-profile-layout>.ep-profile-account>.ep-progress-kicker{flex-basis:100%}
+#ep-unified-panel.ep-profile-layout>.ep-profile-account h2{margin:3px 0!important;font-size:18px!important}
+#ep-unified-panel.ep-profile-layout>.ep-profile-account p:not(.ep-profile-status){flex:1 1 220px;margin:0!important;overflow-wrap:anywhere}
+#ep-unified-panel.ep-profile-layout>.ep-profile-account .ep-unified-action{margin-left:auto!important;background:#f2f5fd!important;color:#30468e!important;border:1px solid #dfe6f5!important}
+#ep-unified-panel.ep-profile-layout .ep-unified-card h2{font-size:21px!important;margin:6px 0 10px!important}
+#ep-unified-panel.ep-profile-layout .ep-unified-card p{font-size:14px!important;line-height:1.6!important}
+#ep-unified-panel.ep-profile-layout .ep-profile-editor label{font-size:13px!important;margin:16px 0!important;gap:7px!important}
+#ep-unified-panel.ep-profile-layout .ep-profile-editor input,#ep-unified-panel.ep-profile-layout .ep-profile-editor select{width:100%!important;box-sizing:border-box!important;min-height:49px!important;font-size:15px!important}
+#ep-unified-panel.ep-profile-layout .ep-unified-action{font-size:13px!important;min-height:44px!important;border-radius:10px!important}
+#ep-unified-panel.ep-profile-layout .ep-progress-kicker{font-size:10px!important;letter-spacing:.11em!important}
+@media(min-width:940px){
+#ep-unified-panel.ep-profile-layout{max-width:1040px!important;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)!important;gap:16px 20px!important}
+#ep-unified-panel.ep-profile-layout>.ep-unified-back,#ep-unified-panel.ep-profile-layout>.ep-unified-hero,#ep-unified-panel.ep-profile-layout>.ep-profile-stats,#ep-unified-panel.ep-profile-layout>.ep-profile-account{grid-column:1/-1!important}
+#ep-unified-panel.ep-profile-layout>.ep-profile-summary{grid-column:1/-1!important}
+#ep-unified-panel.ep-profile-layout>.ep-profile-editor{grid-column:1!important;grid-row:6/8!important}
+#ep-unified-panel.ep-profile-layout>.ep-unified-card:has(.ep-profile-plan){grid-column:2!important;grid-row:6!important}
+#ep-unified-panel.ep-profile-layout>.ep-unified-card:has(.ep-profile-export){grid-column:2!important;grid-row:7!important}
+}
+@media(max-width:560px){#ep-unified-panel.ep-profile-layout{width:calc(100% - 24px)!important;gap:11px!important}#ep-unified-panel.ep-profile-layout>.ep-unified-hero{padding:23px 20px!important}#ep-unified-panel.ep-profile-layout>.ep-unified-card{padding:20px!important}#ep-unified-panel.ep-profile-layout>.ep-profile-stats{grid-template-columns:repeat(2,minmax(0,1fr))!important}#ep-unified-panel.ep-profile-layout>.ep-profile-account .ep-unified-action{margin-left:0!important}}
+</style>
 <script src="firebase-config.js"></script>
 <script src="auth.js"></script>
 <script src="unified.js"></script>
