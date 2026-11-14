@@ -43,44 +43,67 @@ export function NavIcon({id}) {
   );
 }
 
-/* Swipeable level picker: group chips jump along the track, arrows and keys step through levels. */
+/* Level picker: one sliding strip, grouped by stage with a caption over each group.
+   Chips jump between stages, arrows and arrow keys step through levels, the choice is centred. */
+const STAGES = [
+  {key: 'KG', caption: 'Kindergarten', tone: 'kg'},
+  {key: 'Primary', caption: 'Primary · Grades 1–8', tone: 'pri'},
+  {key: 'Secondary', caption: 'Secondary · Grades 9–12', tone: 'sec'},
+  {key: 'University', caption: 'College / University', tone: 'uni'},
+  {key: 'NGAT', caption: 'NGAT', tone: 'exam'},
+];
+const SUB = (g) => g.id === 'uni' ? 'Pick department next' : g.id === 'ngat' ? 'Exam preparation' : '';
+
 export function GradePicker({grade, onChange}) {
   const track = useRef(null);
-  const scroll = (dir) => track.current?.scrollBy({left: dir * 240, behavior: 'smooth'});
-  const reveal = (id) => track.current?.querySelector('[data-id="' + id + '"]')?.scrollIntoView({block: 'nearest', inline: 'center', behavior: 'smooth'});
+  const [stage, setStage] = useState('');
+  const find = (id) => track.current?.querySelector('[data-id="' + id + '"]');
+  const reveal = (id, smooth = true) => find(id)?.scrollIntoView({block: 'nearest', inline: 'center', behavior: smooth ? 'smooth' : 'auto'});
   const pick = (id) => { onChange(id); reveal(id); };
+  const jump = (key) => { setStage(key); track.current?.querySelector('[data-stage="' + key + '"]')?.scrollIntoView({block: 'nearest', inline: 'start', behavior: 'smooth'}); };
+  const scroll = (dir) => track.current?.scrollBy({left: dir * 220, behavior: 'smooth'});
   const step = (e) => {
     const i = GRADES.findIndex((g) => g.id === grade);
     const next = e.key === 'ArrowRight' ? Math.min(GRADES.length - 1, i + 1) : e.key === 'ArrowLeft' ? Math.max(0, i - 1) : -1;
     if (next < 0) return;
     e.preventDefault();
     pick(GRADES[next].id);
-    track.current?.querySelector('[data-id="' + GRADES[next].id + '"]')?.focus();
+    find(GRADES[next].id)?.focus();
   };
   const current = GRADES.find((g) => g.id === grade);
+  const active = current ? groupOf(current) : stage;
   return (
     <div className="inf-grade-wrap">
       <div className="inf-groups" role="group" aria-label="Jump to a stage">
-        {GROUPS.map((grp) => (
-          <button type="button" key={grp} className="inf-chip" aria-pressed={current ? groupOf(current) === grp : false} onClick={() => pick(groupFirst(grp))}>{grp}</button>
+        {STAGES.map((st) => (
+          <button type="button" key={st.key} className="inf-chip" data-tone={st.tone} aria-pressed={active === st.key} onClick={() => jump(st.key)}>{st.key}</button>
         ))}
       </div>
-      <div className="inf-grade" role="group" aria-label="Learning level">
+      <div className="inf-grade" role="radiogroup" aria-label="Learning level">
         <button type="button" className="inf-grade-arrow" aria-label="Previous levels" onClick={() => scroll(-1)}>‹</button>
         <div className="inf-grade-track" ref={track} onKeyDown={step}>
-          {GRADES.map((g) => (
-            <button
-              type="button" key={g.id} data-id={g.id} aria-pressed={grade === g.id}
-              tabIndex={grade === g.id || (!grade && g.id === 'kg1') ? 0 : -1}
-              onClick={() => pick(g.id)}
-            >
-              <small>{kind(g)}</small><b>{label(g)}</b>
-            </button>
+          {STAGES.map((st) => (
+            <div className="inf-stage" data-stage={st.key} data-tone={st.tone} key={st.key}>
+              <p className="inf-stage-cap">{st.caption}</p>
+              <div className="inf-stage-tiles">
+                {GRADES.filter((g) => groupOf(g) === st.key).map((g) => (
+                  <button
+                    type="button" role="radio" key={g.id} data-id={g.id} aria-checked={grade === g.id} aria-pressed={grade === g.id}
+                    className={g.id === 'uni' || g.id === 'ngat' ? 'inf-wide' : ''}
+                    tabIndex={grade === g.id || (!grade && g.id === 'kg1') ? 0 : -1}
+                    onClick={() => pick(g.id)}
+                  >
+                    <small>{kind(g)}</small><b>{label(g)}</b>{SUB(g) && <em>{SUB(g)}</em>}
+                    {grade === g.id && <i className="inf-tick" aria-hidden="true">✓</i>}
+                  </button>
+                ))}
+              </div>
+            </div>
           ))}
         </div>
         <button type="button" className="inf-grade-arrow" aria-label="Next levels" onClick={() => scroll(1)}>›</button>
       </div>
-      <p className="inf-picked" aria-live="polite">{current ? <>Selected: <b>{current.name}</b> <span>{groupOf(current)}</span></> : 'Nothing selected yet'}</p>
+      <p className="inf-picked" aria-live="polite">{current ? <>Selected: <b>{current.name}</b> <span>{groupOf(current)}</span></> : 'Slide and tap your level'}</p>
     </div>
   );
 }
