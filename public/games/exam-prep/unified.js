@@ -88,7 +88,8 @@
   function profile() {
     var p = getProgress(), prefs = read(PROFILE, {}), xp = Math.max(0, Number(p.xp) || 0), lv = Math.floor(Math.sqrt(xp / 50)) + 1;
     var answered = Math.max(0, Number(p.answered) || 0), accuracy = answered ? Math.round(100 * (Number(p.correct) || 0) / answered) : 0;
-    var name = typeof prefs.name === 'string' && prefs.name.trim() ? prefs.name.trim().slice(0,50) : 'ExamPro student';
+    var signedUser = window.ExamProAuth && window.ExamProAuth.user;
+    var name = typeof prefs.name === 'string' && prefs.name.trim() ? prefs.name.trim().slice(0,50) : signedUser && signedUser.displayName ? signedUser.displayName.slice(0,50) : 'ExamPro student';
     var focus = typeof prefs.focus === 'string' ? prefs.focus.slice(0,100) : '';
     var goal = read('exampro.plan.settings.v1', {}).goal || 20;
     var stages = [{id:'',name:'Choose my learning level'}, {id:'kg',name:'Kindergarten (KG)'}, {id:'g1',name:'Grade 1'}, {id:'g2',name:'Grade 2'}, {id:'g3',name:'Grade 3'}, {id:'g4',name:'Grade 4'}, {id:'g5',name:'Grade 5'}, {id:'g6',name:'Grade 6'}, {id:'g7',name:'Grade 7'}, {id:'g8',name:'Grade 8'}, {id:'g9',name:'Grade 9'}, {id:'g10',name:'Grade 10'}, {id:'g11',name:'Grade 11'}, {id:'g12',name:'Grade 12'}, {id:'university',name:'University / College'}, {id:'ngat',name:'NGAT / Graduate'}, {id:'gk',name:'General Knowledge'}];
@@ -102,16 +103,17 @@
       '<section class="ep-unified-card ep-profile-account"><span class="ep-progress-kicker">ACCOUNT</span><h2>' + (signed ? 'Signed in' : 'Not signed in') + '</h2><p>' + (signed ? '📧 ' + escapeHtml(accountEmail) : 'Sign in to connect your learning profile to an account.') + '</p><button type="button" class="ep-unified-action" id="ep-profile-account-action">' + (signed ? 'Log out' : 'Sign in / Create account') + '</button><p class="ep-profile-status" id="ep-profile-account-status" role="status"></p></section>' +
       '<section class="ep-unified-card ep-unified-profile ep-profile-summary"><div class="ep-unified-avatar" aria-hidden="true">🎓</div><div><span class="ep-progress-kicker">STUDENT DASHBOARD</span><h2>' + escapeHtml(name) + '</h2><p>Level ' + lv + ' · ' + xp.toLocaleString() + ' XP earned</p>' + (focus ? '<p class="ep-profile-focus">🎯 ' + escapeHtml(focus) + '</p>' : '') + '</div></section>' +
       '<div class="ep-unified-stats ep-profile-stats"><div>🔥<b>' + (p.streak || 0) + '</b><small>Day streak</small></div><div>📚<b>' + answered.toLocaleString() + '</b><small>Answered</small></div><div>🎯<b>' + accuracy + '%</b><small>Accuracy</small></div><div>⭐<b>' + lv + '</b><small>Level</small></div></div>' +
-      '<section class="ep-unified-card ep-profile-editor"><span class="ep-progress-kicker">YOUR REAL LEARNING PROFILE</span><h2>About you</h2><p>Your saved grade or university level controls the subjects shown on Home and in practice. Change it here whenever you want.</p><label>Display name<input id="ep-profile-name" type="text" maxlength="50" autocomplete="nickname" placeholder="How should we call you?" value="' + escapeHtml(prefs.name || '') + '"></label><label>My study focus<input id="ep-profile-focus" type="text" maxlength="100" placeholder="e.g. Prepare for Grade 12 Mathematics" value="' + escapeHtml(focus) + '"></label><label>My grade or program<select id="ep-profile-stage" aria-label="Your grade or program">' + stageOptions + '</select></label><p class="ep-profile-stage-note">Current learning path: <strong>' + escapeHtml(stageName) + '</strong>. Existing scores stay saved when you change levels.</p><button class="ep-unified-action" type="button" id="ep-profile-save">Save profile</button><p id="ep-profile-status" role="status" class="ep-profile-status"></p></section>' +
+      '<section class="ep-unified-card ep-profile-editor"><span class="ep-progress-kicker">YOUR REAL LEARNING PROFILE</span><h2>About you</h2><p>Your saved grade or university level controls the subjects shown on Home and in practice. Change it here whenever you want.</p><label>Display name<input id="ep-profile-name" type="text" maxlength="50" autocomplete="nickname" placeholder="How should we call you?" value="' + escapeHtml(name === 'ExamPro student' ? '' : name) + '"></label><label>My study focus<input id="ep-profile-focus" type="text" maxlength="100" placeholder="e.g. Prepare for Grade 12 Mathematics" value="' + escapeHtml(focus) + '"></label><label>My grade or program<select id="ep-profile-stage" aria-label="Your grade or program">' + stageOptions + '</select></label><p class="ep-profile-stage-note">Current learning path: <strong>' + escapeHtml(stageName) + '</strong>. Existing scores stay saved when you change levels.</p><button class="ep-unified-action" type="button" id="ep-profile-save">Save profile</button><p id="ep-profile-status" role="status" class="ep-profile-status"></p></section>' +
       '<section class="ep-unified-card"><span class="ep-progress-kicker">YOUR LEARNING ROUTINE</span><h2>Study preferences</h2><div class="ep-unified-score"><span>Daily question goal</span><b>' + escapeHtml(goal) + ' questions</b></div><p>Change your goal and exam date from the Study Plan screen.</p><button class="ep-unified-action ep-profile-plan" type="button" id="ep-profile-plan">Open study plan →</button></section>' +
       '<section class="ep-unified-card"><span class="ep-progress-kicker">DATA & PRIVACY</span><h2>Your progress, your data</h2><p>Learning progress is saved in this browser. When signed in, ExamPro also attempts to sync your profile and progress to your Firebase account. If cloud access fails, local data remains available.</p><button class="ep-unified-action ep-profile-export" type="button" id="ep-profile-export">Export my learning data</button><p id="ep-export-status" role="status" class="ep-profile-status"></p></section>';
   }
   function close() {
-    panel.hidden = true; app.hidden = false; nav.classList.remove('ep-unified-active'); document.body.classList.remove('ep-panel-open');
+    panel.hidden = true; panel.classList.remove('ep-profile-layout'); app.hidden = false; nav.classList.remove('ep-unified-active'); document.body.classList.remove('ep-panel-open');
     nav.querySelectorAll('.ep-unified-tab').forEach(function (b) { b.removeAttribute('aria-current'); });
   }
   function open(name) {
     if (document.body.classList.contains('exam-on')) return;
+    panel.classList.toggle('ep-profile-layout', name === 'profile');
     panel.innerHTML = '<button type="button" class="ep-unified-back" id="ep-unified-back">← Back to learning</button>' + (name === 'progress' ? progress() : name === 'plan' ? plan() : profile());
     panel.hidden = false; app.hidden = true; nav.classList.add('ep-unified-active'); document.body.classList.add('ep-panel-open');
     nav.querySelectorAll('.ep-unified-tab').forEach(function (b) { b.setAttribute('aria-current', b.dataset.panel === name ? 'page' : 'false'); });
@@ -142,7 +144,7 @@
       try {
         var existing = read(PROFILE, {}); localStorage.setItem(PROFILE, JSON.stringify(Object.assign({}, existing, {name:name,focus:focus,stage:stage}))); if (window.ExamProAuth && window.ExamProAuth.user) window.ExamProAuth.saveProgress().catch(function (err) { console.warn('Profile cloud sync failed', err); });
         open('profile');
-        panel.querySelector('#ep-profile-status').textContent = 'Profile and learning level saved. Home and subjects will now match your selection.';
+        panel.querySelector('#ep-profile-status').textContent = 'Profile saved on this device. Cloud sync runs when available.';
       } catch (e) { panel.querySelector('#ep-profile-status').textContent = 'Unable to save. Check browser storage permissions.'; }
     });
     var accountAction = panel.querySelector('#ep-profile-account-action');
