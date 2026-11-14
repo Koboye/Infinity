@@ -386,6 +386,10 @@ body.ep-auth-locked > :not(#ep-auth-gate):not(script) { visibility:hidden !impor
         b.classList.add('pick'); setTimeout(function () { ui.cat = c.id; ui.search = ''; catView(); }, 240);
       };
     });
+    var gradeLabel = document.getElementById('in-grade-current');
+    if (gradeLabel) gradeLabel.textContent = (window.infinityGetGradeLabel && window.infinityGetGradeLabel()) || 'Choose your grade';
+    var gradeChange = document.getElementById('in-grade-change');
+    if (gradeChange) gradeChange.onclick = function () { if (window.infinityShowGradePicker) window.infinityShowGradePicker(); };
     document.getElementById('dsf').onsubmit = function (e) {
       e.preventDefault(); var v = document.getElementById('dsq').value.trim();
       if (!v) { toast('Type a subject or department to search.'); document.getElementById('dsq').focus(); return; }
