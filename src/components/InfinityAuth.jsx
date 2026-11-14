@@ -43,24 +43,20 @@ export function NavIcon({id}) {
   );
 }
 
-/* Level picker: one sliding strip, grouped by stage with a caption over each group.
-   Chips jump between stages, arrows and arrow keys step through levels, the choice is centred. */
+/* Level picker: one clean sliding strip. Tap a tile, it centres, pops and buzzes. */
 const STAGES = [
   {key: 'KG', caption: 'Kindergarten', tone: 'kg'},
-  {key: 'Primary', caption: 'Primary · Grades 1–8', tone: 'pri'},
-  {key: 'Secondary', caption: 'Secondary · Grades 9–12', tone: 'sec'},
-  {key: 'University', caption: 'College / University', tone: 'uni'},
-  {key: 'NGAT', caption: 'NGAT', tone: 'exam'},
+  {key: 'Primary', caption: 'Primary', tone: 'pri'},
+  {key: 'Secondary', caption: 'Secondary', tone: 'sec'},
+  {key: 'University', caption: 'College', tone: 'uni'},
+  {key: 'NGAT', caption: 'Exam', tone: 'exam'},
 ];
-const SUB = (g) => g.id === 'uni' ? 'Pick department next' : g.id === 'ngat' ? 'Exam preparation' : '';
 
 export function GradePicker({grade, onChange}) {
   const track = useRef(null);
-  const [stage, setStage] = useState('');
   const find = (id) => track.current?.querySelector('[data-id="' + id + '"]');
-  const reveal = (id, smooth = true) => find(id)?.scrollIntoView({block: 'nearest', inline: 'center', behavior: smooth ? 'smooth' : 'auto'});
-  const pick = (id) => { onChange(id); reveal(id); };
-  const jump = (key) => { setStage(key); track.current?.querySelector('[data-stage="' + key + '"]')?.scrollIntoView({block: 'nearest', inline: 'start', behavior: 'smooth'}); };
+  const reveal = (id) => find(id)?.scrollIntoView({block: 'nearest', inline: 'center', behavior: 'smooth'});
+  const pick = (id) => { onChange(id); reveal(id); try { navigator.vibrate?.(12); } catch {} };
   const scroll = (dir) => track.current?.scrollBy({left: dir * 220, behavior: 'smooth'});
   const step = (e) => {
     const i = GRADES.findIndex((g) => g.id === grade);
@@ -70,40 +66,29 @@ export function GradePicker({grade, onChange}) {
     pick(GRADES[next].id);
     find(GRADES[next].id)?.focus();
   };
-  const current = GRADES.find((g) => g.id === grade);
-  const active = current ? groupOf(current) : stage;
   return (
-    <div className="inf-grade-wrap">
-      <div className="inf-groups" role="group" aria-label="Jump to a stage">
+    <div className="inf-grade" role="radiogroup" aria-label="Learning level">
+      <button type="button" className="inf-grade-arrow" aria-label="Previous levels" onClick={() => scroll(-1)}>‹</button>
+      <div className="inf-grade-track" ref={track} onKeyDown={step}>
         {STAGES.map((st) => (
-          <button type="button" key={st.key} className="inf-chip" data-tone={st.tone} aria-pressed={active === st.key} onClick={() => jump(st.key)}>{st.key}</button>
+          <div className="inf-stage" data-tone={st.tone} key={st.key}>
+            <p className="inf-stage-cap">{st.caption}</p>
+            <div className="inf-stage-tiles">
+              {GRADES.filter((g) => groupOf(g) === st.key).map((g) => (
+                <button
+                  type="button" role="radio" key={g.id} data-id={g.id} aria-checked={grade === g.id} aria-pressed={grade === g.id}
+                  className={g.id === 'uni' || g.id === 'ngat' ? 'inf-wide' : ''}
+                  tabIndex={grade === g.id || (!grade && g.id === 'kg1') ? 0 : -1}
+                  onClick={() => pick(g.id)}
+                >
+                  <small>{kind(g)}</small><b>{label(g)}</b>
+                </button>
+              ))}
+            </div>
+          </div>
         ))}
       </div>
-      <div className="inf-grade" role="radiogroup" aria-label="Learning level">
-        <button type="button" className="inf-grade-arrow" aria-label="Previous levels" onClick={() => scroll(-1)}>‹</button>
-        <div className="inf-grade-track" ref={track} onKeyDown={step}>
-          {STAGES.map((st) => (
-            <div className="inf-stage" data-stage={st.key} data-tone={st.tone} key={st.key}>
-              <p className="inf-stage-cap">{st.caption}</p>
-              <div className="inf-stage-tiles">
-                {GRADES.filter((g) => groupOf(g) === st.key).map((g) => (
-                  <button
-                    type="button" role="radio" key={g.id} data-id={g.id} aria-checked={grade === g.id} aria-pressed={grade === g.id}
-                    className={g.id === 'uni' || g.id === 'ngat' ? 'inf-wide' : ''}
-                    tabIndex={grade === g.id || (!grade && g.id === 'kg1') ? 0 : -1}
-                    onClick={() => pick(g.id)}
-                  >
-                    <small>{kind(g)}</small><b>{label(g)}</b>{SUB(g) && <em>{SUB(g)}</em>}
-                    {grade === g.id && <i className="inf-tick" aria-hidden="true">✓</i>}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-        <button type="button" className="inf-grade-arrow" aria-label="Next levels" onClick={() => scroll(1)}>›</button>
-      </div>
-      <p className="inf-picked" aria-live="polite">{current ? <>Selected: <b>{current.name}</b> <span>{groupOf(current)}</span></> : 'Slide and tap your level'}</p>
+      <button type="button" className="inf-grade-arrow" aria-label="Next levels" onClick={() => scroll(1)}>›</button>
     </div>
   );
 }
@@ -146,7 +131,6 @@ export default function AuthScreen({busy, error, notice, departments, onSubmit, 
 
   const levelBlock = (
     <div className="inf-level">
-      <p className="inf-level-label" id="inf-level-label">Your level <span>Slide to choose</span></p>
       <GradePicker grade={grade} onChange={(g) => { setGrade(g); if (g !== 'uni') { setDept(''); setDeptQuery(''); } setLocalError(''); }} />
       {grade === 'uni' && (
         <>
@@ -166,12 +150,14 @@ export default function AuthScreen({busy, error, notice, departments, onSubmit, 
     </div>
   );
 
-  const title = !signup ? 'Welcome back' : step === 1 ? 'Create your account' : 'Choose your level';
-  const sub = !signup ? 'Sign in to continue. Your level is saved on your account.' : step === 1 ? 'Free to start. Takes under a minute.' : 'Saved on your account. You will only see material for this level.';
-  const cta = !signup ? 'Sign in' : step === 1 ? 'Continue' : 'Create account';
+  const title = !signup ? 'Welcome back' : step === 1 ? 'Create your account' : 'What do you study?';
+  const sub = !signup ? 'Sign in to continue. Your level is saved on your account.' : step === 1 ? 'Free to start. Takes under a minute.' : 'Pick once. We only show material for your level.';
+  const chosen = GRADES.find((g) => g.id === grade);
+  const ready = signup && step === 2 && !!grade && (grade !== 'uni' || !!dept);
+  const cta = !signup ? 'Sign in' : step === 1 ? 'Continue' : ready ? 'Start as ' + chosen.name.replace('University / College', 'University') + ' →' : 'Slide and pick your level';
 
   return (
-    <main className="inf-app inf-auth">
+    <main className={'inf-app inf-auth' + (signup && step === 2 ? ' is-compact' : '')}>
       <section className="inf-auth-brand" aria-hidden="false">
         <div className="inf-lockup"><Mark size={48} /><span>Infinity</span></div>
         <h1>Prepare for every exam, from Kindergarten to university.</h1>
@@ -184,7 +170,7 @@ export default function AuthScreen({busy, error, notice, departments, onSubmit, 
       <section className="inf-auth-panel">
         <form onSubmit={submit} noValidate={false} aria-labelledby="inf-auth-title">
           <header>
-            {signup && <p className="inf-step">Step {step} of 2</p>}
+            {signup && <div className="inf-steps" role="img" aria-label={'Step ' + step + ' of 2'}><i className="on" /><i className={step === 2 ? 'on' : ''} /></div>}
             <h2 id="inf-auth-title">{title}</h2>
             <p>{sub}</p>
           </header>
@@ -220,7 +206,7 @@ export default function AuthScreen({busy, error, notice, departments, onSubmit, 
             {notice && !shownError && <p className="inf-notice">{notice}</p>}
           </div>
 
-          <button className="inf-primary" type="submit" disabled={busy}>{busy ? 'Please wait…' : cta}</button>
+          <button className="inf-primary" type="submit" data-ready={ready || undefined} disabled={busy || (signup && step === 2 && !ready)}>{busy ? 'Please wait…' : cta}</button>
           {signup && step === 2 && (
             <button type="button" className="inf-link" onClick={() => { setStep(1); setLocalError(''); }}>Back</button>
           )}

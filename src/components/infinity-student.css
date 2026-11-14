@@ -209,3 +209,29 @@ html:has(.inf-root),html body:has(.inf-root){overflow-x:clip;max-width:100%}
 /* caption stays visible while its group scrolls */
 .inf-root .inf-stage-cap{position:sticky;left:2px;width:max-content;max-width:calc(100vw - 120px);overflow:hidden;text-overflow:ellipsis}
 .inf-root .inf-app input::placeholder{color:var(--inf-mute);opacity:.8}
+
+/* v4 simple + sticky-fun: one strip, no chips, compact hero, reactive button */
+.inf-root .inf-stage-tiles{border-top:0;padding-top:0}
+.inf-root .inf-stage-cap{margin:0 0 6px 4px;font-size:.7rem}
+.inf-root .inf-grade-track{gap:22px}
+.inf-root .inf-grade-track button{min-width:72px;min-height:88px}
+.inf-root .inf-grade-track button b{font-size:1.9rem}
+.inf-root .inf-grade-track button[aria-pressed=true]{animation:inf-pop .32s cubic-bezier(.3,1.6,.5,1)}
+@keyframes inf-pop{0%{transform:scale(.88)}100%{transform:translateY(-3px) scale(1.04)}}
+.inf-root .inf-tick{display:none}
+@media(pointer:coarse){.inf-root .inf-grade{grid-template-columns:minmax(0,1fr)}.inf-root .inf-grade-arrow{display:none}}
+.inf-root .inf-steps{display:flex;gap:6px;margin:0 0 14px}
+.inf-root .inf-steps i{flex:1;height:5px;border-radius:99px;background:var(--inf-line)}
+.inf-root .inf-steps i.on{background:var(--inf-blue)}
+@media (prefers-color-scheme:dark){.inf-root .inf-steps i.on{background:var(--inf-sun)}}
+.inf-root .inf-primary[data-ready]{animation:inf-glow 1.8s ease-in-out infinite}
+@keyframes inf-glow{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--inf-blue) 45%,transparent)}50%{box-shadow:0 0 0 8px color-mix(in srgb,var(--inf-blue) 0%,transparent)}}
+.inf-root .inf-primary:disabled{background:var(--inf-line);border-color:var(--inf-line);color:var(--inf-mute);opacity:1}
+@media(max-width:899px){
+  .inf-root .inf-auth-brand p,.inf-root .inf-ladder{display:none}
+  .inf-root .inf-auth-brand h1{font-size:clamp(1.35rem,4.6vw,1.9rem)}
+  .inf-root .inf-auth.is-compact .inf-auth-brand h1{display:none}
+  .inf-root .inf-auth.is-compact .inf-auth-brand{padding-bottom:16px}
+}
+@media(prefers-reduced-motion:reduce){.inf-root .inf-grade-track button[aria-pressed=true],.inf-root .inf-primary[data-ready]{animation:none}}
+.inf-root .inf-auth.is-compact .inf-auth-brand::before{display:none}
