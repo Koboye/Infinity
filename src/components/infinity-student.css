@@ -1,1 +1,117 @@
-.inf-app{min-height:100dvh;max-width:960px;margin:0 auto;padding:22px 18px 100px;color:#eaf1ff;font-family:system-ui,sans-serif;background:#0c1630}.inf-app *{box-sizing:border-box}.inf-app h1{font-size:clamp(1.6rem,4vw,2.4rem);margin:0 0 16px}.inf-app h2{font-size:1.3rem;margin:18px 0 10px}.inf-app button,.inf-app input,.inf-app select{font:inherit;border-radius:12px;padding:12px;border:1px solid #465d83}.inf-app button{background:#233a62;color:#fff;cursor:pointer;margin:4px}.inf-app button:hover{background:#355584}.inf-app button:focus-visible{outline:3px solid #6cd7ff}.inf-app button[aria-pressed=true],.inf-app button[aria-current=page],.inf-app .inf-primary{background:#39b6ed;color:#09172c;font-weight:800}.inf-app button:disabled{opacity:.4;cursor:not-allowed}.inf-app input,.inf-app select{background:#142440;color:#fff;width:100%;margin:6px 0 14px}.inf-app label{display:block;margin:8px 0}.inf-header{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:22px;border-bottom:1px solid #3c4c68;padding-bottom:16px}.inf-header strong{font-size:1.5rem}.inf-header span{overflow-wrap:anywhere}.inf-card{background:#14223e;border:1px solid #344c74;border-radius:24px;padding:22px;box-shadow:0 12px 38px #0003}.inf-auth{display:grid;place-items:center;padding:32px 14px}.inf-auth-card{width:min(100%,570px);padding:28px;background:#14223e;border-radius:24px}.inf-auth-card form{display:grid;gap:6px}.inf-grade{display:grid;grid-template-columns:42px minmax(0,1fr) 42px;align-items:center;gap:5px;margin:12px 0}.inf-grade-track{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:thin;padding:10px 0}.inf-grade-track button{min-width:136px;min-height:84px;scroll-snap-align:center;white-space:normal;flex-shrink:0;font-weight:700}.inf-subjects,.inf-game-list,.inf-options{display:grid;gap:10px;margin:14px 0}.inf-subjects article{padding:14px;background:#1a3052;border-radius:16px}.inf-game-list{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}.inf-options button{text-align:left;min-height:52px}.inf-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}.inf-break{padding:16px;border:1px solid #6f90be;border-radius:16px;margin-top:14px}.inf-playing{min-height:70dvh}.inf-playing iframe{width:100%;height:75dvh;border:0;border-radius:14px}.inf-nav{position:sticky;bottom:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:#101e38;border:1px solid #344c74;border-radius:18px;padding:8px;gap:4px;margin-top:24px;z-index:3}.inf-nav button{font-size:.83rem;padding:12px 4px;margin:0}.inf-error{color:#ffb3b3}@media(max-width:480px){.inf-app{padding:12px 10px 40px}.inf-card{padding:14px}.inf-header span{font-size:.75rem}.inf-grade-track button{min-width:116px}.inf-nav button{font-size:.7rem}}
+/* Infinity student app: brand system.
+   Tokens come from design/rebrand (ink, blue, sun, paper). Every rule is scoped to
+   .inf-root so the legacy game stylesheets cannot leak in, and the root paints the
+   whole viewport so there is no seam at the edges. */
+.inf-root{
+  --inf-ink:#0F1B4C;--inf-ink2:#1B2A6B;--inf-blue:#2748F0;--inf-sun:#FFC83D;
+  --inf-paper:#F5F7FF;--inf-card:#fff;--inf-text:#0F1B4C;--inf-mute:#566089;--inf-line:#DDE3F7;
+  --inf-field:#fff;--inf-err:#B3261E;--inf-ok:#0E7A55;--inf-focus:#2748F0;
+  --inf-font-d:'Bricolage Grotesque','Noto Sans Ethiopic',system-ui,sans-serif;
+  --inf-font-b:'Figtree','Noto Sans Ethiopic',system-ui,sans-serif;
+  --inf-r:20px;
+  min-height:100dvh;background:var(--inf-paper);color:var(--inf-text);font-family:var(--inf-font-b);
+  font-size:1.0625rem;line-height:1.55;-webkit-font-smoothing:antialiased;color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  .inf-root{--inf-paper:#0B1238;--inf-card:#141E52;--inf-text:#F2F4FF;--inf-mute:#AEB8E8;--inf-line:#2A3678;
+    --inf-field:#0F1845;--inf-err:#FFB4AB;--inf-ok:#7BE0B5;--inf-focus:#FFC83D;color-scheme:dark}
+}
+/* Paint the page behind the app too (overscroll, notch, desktop gutters). */
+html:has(.inf-root),html body:has(.inf-root){background:#F5F7FF}
+@media (prefers-color-scheme:dark){html:has(.inf-root),html body:has(.inf-root){background:#0B1238}}
+html body:has(.inf-root){overscroll-behavior:none}
+
+.inf-root *,.inf-root *::before,.inf-root *::after{box-sizing:border-box}
+.inf-root .inf-app{min-height:100dvh;max-width:960px;margin:0 auto;padding:max(18px,env(safe-area-inset-top)) 18px 24px;display:flex;flex-direction:column}
+.inf-root h1,.inf-root h2,.inf-root h3{font-family:var(--inf-font-d);color:var(--inf-text);line-height:1.1;letter-spacing:-.02em;margin:0}
+.inf-root h1{font-size:clamp(1.9rem,5vw,2.6rem);font-weight:800;margin-bottom:12px}
+.inf-root h2{font-size:1.45rem;font-weight:700;margin:22px 0 10px}
+.inf-root h3{font-size:1.15rem;font-weight:700;margin:16px 0 8px}
+.inf-root p{margin:0 0 10px;font-size:1rem;overflow-wrap:anywhere}
+
+/* Controls */
+.inf-root button{font:inherit;font-weight:600;color:var(--inf-text);background:transparent;border:1.5px solid var(--inf-line);
+  border-radius:14px;padding:12px 16px;min-height:48px;margin:0;cursor:pointer;transition:background-color .15s,border-color .15s,transform .1s}
+.inf-root button:hover{border-color:var(--inf-blue)}
+.inf-root button:active:not(:disabled){transform:scale(.98)}
+.inf-root button:disabled{opacity:.5;cursor:not-allowed}
+.inf-root :is(button,input,select,a):focus-visible{outline:3px solid var(--inf-focus);outline-offset:2px;box-shadow:none}
+.inf-root .inf-primary,.inf-root button[aria-current=page]{background:var(--inf-blue);border-color:var(--inf-blue);color:#fff;font-weight:700}
+.inf-root .inf-primary:hover{background:#1c38d0;border-color:#1c38d0}
+.inf-root button[aria-pressed=true]:not(.inf-ghost){background:var(--inf-sun);border-color:var(--inf-sun);color:#0F1B4C;font-weight:700}
+.inf-root .inf-link{border:0;background:none;padding:6px 2px;min-height:40px;color:var(--inf-blue);font-weight:700;text-decoration:underline;text-underline-offset:3px}
+@media (prefers-color-scheme:dark){.inf-root .inf-link{color:var(--inf-sun)}}
+.inf-root .inf-ghost{border:0;background:none;color:var(--inf-mute);padding:8px 12px;min-height:40px}
+.inf-root .inf-field{display:block;margin:0 0 14px;font-size:.95rem;font-weight:600}
+.inf-root .inf-field>span:first-child{display:block;margin-bottom:6px}
+.inf-root .inf-app input:not([type=range]):not([type=checkbox]),.inf-root .inf-app select{
+  display:block;width:100%;min-height:52px;padding:12px 14px;font:inherit;font-size:1rem;font-weight:500;color:var(--inf-text);
+  background:var(--inf-field);border:1.5px solid var(--inf-line);border-radius:14px;box-shadow:none}
+.inf-root .inf-app input:focus,.inf-root .inf-app select:focus{border-color:var(--inf-blue);box-shadow:0 0 0 3px color-mix(in srgb,var(--inf-blue) 25%,transparent);outline:none}
+.inf-root .inf-pass{position:relative;display:block}
+.inf-root .inf-pass input{padding-right:84px!important}
+.inf-root .inf-pass .inf-ghost{position:absolute;right:4px;top:50%;transform:translateY(-50%)}
+.inf-root .inf-error{color:var(--inf-err);font-weight:600;margin:4px 0 12px}
+.inf-root .inf-notice{color:var(--inf-ok);font-weight:600;margin:4px 0 12px}
+
+/* Level picker */
+.inf-root .inf-grade{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;gap:6px;margin:14px 0}
+.inf-root .inf-grade-arrow{padding:0;min-width:44px;font-size:1.4rem;line-height:1}
+.inf-root .inf-grade-track{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding:6px 2px;-webkit-overflow-scrolling:touch}
+.inf-root .inf-grade-track::-webkit-scrollbar{display:none}
+.inf-root .inf-grade-track button{flex:0 0 auto;min-width:128px;min-height:72px;scroll-snap-align:center;white-space:normal;background:var(--inf-card)}
+
+/* Auth */
+.inf-root .inf-app.inf-auth{max-width:none;padding:0;display:grid;grid-template-columns:1fr;grid-template-rows:auto 1fr}
+.inf-auth-brand{background:var(--inf-ink);color:#fff;padding:max(22px,env(safe-area-inset-top)) 22px 28px;border-radius:0 0 28px 28px}
+.inf-root .inf-auth-brand h1{color:#fff;font-size:clamp(1.5rem,5.4vw,2.9rem);max-width:18ch;margin:22px 0 10px}
+.inf-root .inf-auth-brand p{color:#C9D1F7;max-width:36ch;display:none}
+.inf-lockup{display:flex;align-items:center;gap:12px;font:800 1.6rem var(--inf-font-d);letter-spacing:-.03em}
+.inf-ladder{display:none;list-style:none;margin:26px 0 0;padding:0;gap:8px;flex-wrap:wrap}
+.inf-ladder li{padding:8px 14px;border-radius:999px;background:rgba(255,255,255,.1);color:#E6EAFF;font-weight:600;font-size:.95rem}
+.inf-auth-panel{display:grid;place-items:start center;padding:26px 18px calc(32px + env(safe-area-inset-bottom))}
+.inf-auth-panel form{width:min(100%,460px)}
+.inf-auth-panel header{margin-bottom:18px}
+.inf-root .inf-auth-panel h2{margin:0 0 6px;font-size:1.7rem}
+.inf-root .inf-auth-panel header p{color:var(--inf-mute);margin:0}
+.inf-root .inf-step{color:var(--inf-blue);font-weight:700;font-size:.9rem;margin-bottom:4px}
+@media (prefers-color-scheme:dark){.inf-root .inf-step{color:var(--inf-sun)}}
+.inf-auth-panel .inf-primary{width:100%;margin-top:4px}
+.inf-root .inf-forgot{margin:-6px 0 8px}
+.inf-root .inf-switch{margin:18px 0 0;text-align:center;color:var(--inf-mute)}
+.inf-auth-panel form>.inf-link{display:block;margin:10px auto 0}
+@media(min-width:640px){.inf-root .inf-auth-brand p{display:block}.inf-ladder{display:flex}}
+@media(min-width:900px){
+  .inf-root .inf-app.inf-auth{grid-template-columns:minmax(0,5fr) minmax(0,6fr);grid-template-rows:1fr}
+  .inf-auth-brand{border-radius:0;padding:48px 44px;display:flex;flex-direction:column;justify-content:center}
+  .inf-auth-panel{place-items:center;padding:48px}
+}
+
+/* Signed-in shell */
+.inf-header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:20px}
+.inf-brand{display:flex;align-items:center;gap:10px}
+.inf-brand strong{font:800 1.4rem var(--inf-font-d);letter-spacing:-.03em}
+.inf-user{max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;color:var(--inf-mute);
+  padding:6px 14px;border-radius:999px;border:1.5px solid var(--inf-line);background:var(--inf-card)}
+.inf-root .inf-loading{align-items:center;justify-content:center;gap:12px;text-align:center}
+.inf-root .inf-loading p{color:var(--inf-mute)}
+.inf-card{background:var(--inf-card);border:1.5px solid var(--inf-line);border-radius:var(--inf-r);padding:24px;flex:1 0 auto}
+.inf-subjects,.inf-game-list,.inf-options{display:grid;gap:10px;margin:14px 0}
+.inf-subjects{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+.inf-subjects>button{text-align:left;background:var(--inf-paper)}
+.inf-root .inf-subjects article{padding:16px;background:var(--inf-paper);border:1.5px solid var(--inf-line);border-radius:16px}
+.inf-root .inf-subjects article h2{margin:0 0 4px;font-size:1.15rem}
+.inf-root .inf-subjects article button{margin:6px 6px 0 0}
+.inf-game-list{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
+.inf-options button{text-align:left;min-height:56px;background:var(--inf-paper)}
+.inf-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.inf-break{padding:16px;border:1.5px dashed var(--inf-blue);border-radius:16px;margin-top:16px}
+.inf-playing{min-height:70dvh;display:flex;flex-direction:column;gap:12px}
+.inf-playing iframe{width:100%;height:75dvh;border:0;border-radius:16px;background:var(--inf-card)}
+.inf-nav{position:sticky;bottom:max(10px,env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;
+  margin-top:20px;padding:6px;background:var(--inf-ink);border-radius:20px;z-index:3;box-shadow:0 10px 30px rgba(15,27,76,.28)}
+.inf-root .inf-nav button{display:flex;flex-direction:column;align-items:center;gap:2px;border:0;border-radius:14px;color:#C9D1F7;font-size:.78rem;padding:8px 2px;min-height:56px}
+.inf-root .inf-nav button:hover{background:rgba(255,255,255,.08)}
+.inf-root .inf-nav button[aria-current=page]{background:var(--inf-sun);color:#0F1B4C}
+@media(max-width:480px){.inf-root .inf-app{padding-left:12px;padding-right:12px}.inf-card{padding:18px}.inf-root .inf-app.inf-auth{padding:0}}
+@media(prefers-reduced-motion:reduce){.inf-root *{transition:none!important;scroll-behavior:auto!important}}
