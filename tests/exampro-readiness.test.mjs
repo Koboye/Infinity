@@ -106,3 +106,15 @@ test('kindergarten English ABC and Amharic fidel practice is accessible', () => 
   assert.ok(script);
   new vm.Script(script[1]);
 });
+
+test('kindergarten alphabet supports large individual letters and fullscreen', () => {
+  const page = readFileSync(base + 'kindergarten-alphabet-practice.html', 'utf8');
+  assert.match(page, /id="fullscreen-toggle"/);
+  assert.match(page, /requestFullscreen/);
+  assert.match(page, /class="picture"/);
+  assert.match(page, /class="family-strip"/);
+  assert.match(page, /class="letter-picker"/);
+  const script = page.match(/<script>([\s\S]*?)<\/script>/);
+  assert.ok(script);
+  new vm.Script(script[1]);
+});
