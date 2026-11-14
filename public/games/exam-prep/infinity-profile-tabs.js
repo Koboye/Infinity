@@ -31,12 +31,12 @@ function showGames(){
  nav('games');
  app.innerHTML='<section class="in-profile"><div class="in-profile-hero"><div class="in-avatar" aria-hidden="true">🎮</div><div><span class="in-grade-kicker">INFINITY BREAK TIME</span><h1>Games</h1><p>Take a short break and return to learning.</p></div></div><div class="in-profile-card"><h2>Choose a game</h2><div class="in-game-list"><button type="button" id="in-board-games">🎲 Gebeta · Dama · Bingo</button><button type="button" data-game="/games/addis-runner/index.html">🏃 Addis Runner</button><button type="button" data-game="/games/hill-climb-racer/index.html">🚙 Hill Climb</button></div><p class="hint">Your study progress stays saved while you play.</p></div><button class="btn alt" id="in-game-back">Back to learning</button></section>';
  app.querySelectorAll('[data-game]').forEach(function(b){b.onclick=function(){window.examproOpenGameBreak();var frame=document.getElementById('exampro-game-frame');frame.src=b.getAttribute('data-game');};});
- document.getElementById('in-board-games').onclick=function(){window.location.assign('/games/board-games');};
+ document.getElementById('in-board-games').onclick=function(){window.examproOpenGameBreak();document.getElementById('exampro-game-frame').src='/games/board-games';};
  document.getElementById('in-game-back').onclick=function(){if(window.infinityNavigateResources)window.infinityNavigateResources();};
 }
 games.addEventListener('click',showGames);
 profile.addEventListener('click',showProfile);
-window.addEventListener('infinity-auth-changed',function(e){signedIn=!!(e.detail&&e.detail.uid);uid=signedIn?e.detail.uid:'';if(!signedIn){email='';displayName='';}else{var emailInput=document.getElementById('ep-auth-email');email=emailInput?emailInput.value.trim():'';}});
+window.addEventListener('infinity-auth-changed',function(e){signedIn=!!(e.detail&&e.detail.uid);uid=signedIn?e.detail.uid:'';if(!signedIn){email='';displayName='';}});
 window.addEventListener('infinity-grade-changed',function(){if(profile.getAttribute('aria-current')==='page')showProfile();});
 window.infinitySetProfileIdentity=function(user){email=user&&user.email||'';displayName=user&&user.displayName||'';};
 })();
