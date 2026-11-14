@@ -201,90 +201,56 @@ export function ExamResults({exam, answers, seconds, onRetry, onBack, onNext, st
   );
 }
 
-/* ---------- subjects ---------- */
-export function SubjectsScreen({subjects, stats, search, onSearch, gradeName, onStart, t = T0}) {
-  const list = subjects.filter((d) => d.name.toLowerCase().includes(search.trim().toLowerCase()));
+/* ---------- exam tab: every subject in one list, practice or exam in one tap, plan a date inline ---------- */
+const todayStr = (d = new Date()) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+export function ExamScreen({subjects, stats, search, onSearch, onStart, onSchedule, onUnschedule, gradeName, now = new Date(), t = T0}) {
+  const [planFor, setPlanFor] = useState(''), [date, setDate] = useState('');
+  const up = upcomingExams(stats, now);
+  const next = (name) => up.find((e) => e.subject === name);
+  const pctOf = (name) => { const r = stats?.subjects?.[name]; return r?.a ? Math.round((r.c / r.a) * 100) : null; };
+  // smart order: subjects with an exam coming first (soonest on top), then the weakest, then the ones not started yet
+  const rank = (d) => { const e = next(d.name), p = pctOf(d.name); return e ? e.days : p == null ? 5000 : 1000 + p; };
+  const q = search.trim().toLowerCase();
+  const list = subjects.filter((d) => d.name.toLowerCase().includes(q)).sort((a, b) => rank(a) - rank(b));
+  const save = (name) => { if (!date) return; onSchedule({id: Date.now().toString(36), subject: name, date}); setPlanFor(''); setDate(''); };
   return (
-    <div className="inf-h inf-s">
-      <header className="inf-h-hello"><h1>{t('subjectsTitle')}</h1><p>{gradeName}</p></header>
-      <input type="search" className="inf-s-search" aria-label={t('searchSubjects')} placeholder={t('searchSubjects')} value={search} onChange={(e) => onSearch(e.target.value)} />
+    <div className="inf-h inf-s inf-ex">
+      <header className="inf-h-hello"><h1>{t('examsTitle')}</h1><p>{gradeName ? gradeName + ' · ' : ''}{t('examsSub')}</p></header>
+
+      {subjects.length > 6 && <input type="search" className="inf-s-search" aria-label={t('searchSubjects')} placeholder={t('searchSubjects')} value={search} onChange={(e) => onSearch(e.target.value)} />}
+
       {list.length ? (
-        <div className="inf-s-grid">
+        <ul className="inf-ex-list">
           {list.map((d, i) => {
-            const res = stats?.subjects?.[d.name], pct = res?.a ? Math.round((res.c / res.a) * 100) : null;
+            const pct = pctOf(d.name), e = next(d.name), open = planFor === d.name;
             return (
-              <article key={d.id} className="inf-s-card" style={{'--accent': accentFor(d.name, i)}}>
-                <div className="inf-s-head">
+              <li key={d.id} className={'inf-ex-card' + (e && e.days <= 3 ? ' is-soon' : '')} style={{'--accent': accentFor(d.name, i)}}>
+                <div className="inf-ex-top">
                   <span className="inf-tile-ico" aria-hidden="true"><SubjectIcon name={d.name} size={26} i={i} /></span>
-                  <div><h2>{d.name}</h2><p>{t('nQuestions', {n: d.q.length})} · {t('minutes', {n: Math.round(examSeconds(d.q.length) / 60)})}</p></div>
+                  <div className="inf-ex-name">
+                    <h2>{d.name}</h2>
+                    <p>{t('nQuestions', {n: d.q.length})} · {t('minutes', {n: Math.round(examSeconds(d.q.length) / 60)})}</p>
+                  </div>
+                  {e
+                    ? <button type="button" className={'inf-ex-when' + (e.days <= 1 ? ' is-soon' : '')} aria-label={t('removeExam') + ': ' + d.name} onClick={() => onUnschedule(e.id)}>{when(t, e.days)}<Svg size={14}>{G.cross}</Svg></button>
+                    : <button type="button" className="inf-x-icon inf-ex-cal" aria-label={t('planExam') + ': ' + d.name} aria-expanded={open} onClick={() => { setPlanFor(open ? '' : d.name); setDate(''); }}><Svg size={20}><rect x="3.5" y="5" width="17" height="15" rx="3" /><path d="M3.5 10h17M8 3v4M16 3v4" /></Svg></button>}
                 </div>
-                <div className="inf-s-prog">
-                  <div className="inf-bar"><i style={{width: (pct ?? 0) + '%'}} /></div>
-                  <span>{pct == null ? t('notStarted') : t('accuracyP', {p: pct})}</span>
-                </div>
+                <div className="inf-ex-prog"><div className="inf-bar"><i style={{width: (pct ?? 0) + '%'}} /></div><span>{pct == null ? t('notStarted') : t('accuracyP', {p: pct})}</span></div>
+                {open && (
+                  <div className="inf-ex-plan">
+                    <input type="date" aria-label={t('pickDate')} min={todayStr(now)} value={date} onChange={(ev) => setDate(ev.target.value)} />
+                    <button type="button" className="inf-x-next" disabled={!date} onClick={() => save(d.name)}>{t('saveDate')}</button>
+                  </div>
+                )}
                 <div className="inf-s-act">
                   <button type="button" className="inf-x-next" onClick={() => onStart(d, 'practice')}>{t('practice')}</button>
                   <button type="button" className="inf-x-prev" onClick={() => onStart(d, 'exam')}>{t('startExam')}</button>
                 </div>
-              </article>
+              </li>
             );
           })}
-        </div>
-      ) : <p className="inf-hint">{subjects.length ? t('noMatch') : t('noSubjects')}</p>}
-    </div>
-  );
-}
-
-/* ---------- exams: plan, take, review ---------- */
-const todayStr = (d = new Date()) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-export function ExamsScreen({subjects, stats, onStart, onSchedule, onUnschedule, gradeName, now = new Date(), t = T0}) {
-  const [subject, setSubject] = useState(''), [date, setDate] = useState('');
-  const up = upcomingExams(stats, now);
-  const add = (e) => { e.preventDefault(); if (!subject || !date) return; onSchedule({id: Date.now().toString(36), subject, date}); setSubject(''); setDate(''); };
-  return (
-    <div className="inf-h inf-s">
-      <header className="inf-h-hello"><h1>{t('examsTitle')}</h1><p>{t('examsSub')}</p></header>
-
-      <section className="inf-panel" aria-label={t('upcomingExams')}>
-        <h2>{t('upcomingExams')}</h2>
-        {up.length > 0 && (
-          <ul className="inf-up-list">
-            {up.map((e) => (
-              <li key={e.id}>
-                <span className="inf-up-ico" style={{'--accent': accentFor(e.subject)}}><SubjectIcon name={e.subject} size={22} /></span>
-                <span><b>{e.subject}</b><small>{e.date}</small></span>
-                <em className={e.days <= 1 ? 'is-soon' : ''}>{when(t, e.days)}</em>
-                <button type="button" className="inf-x-icon" aria-label={t('removeExam') + ': ' + e.subject} onClick={() => onUnschedule(e.id)}><Svg size={18}>{G.cross}</Svg></button>
-              </li>
-            ))}
-          </ul>
-        )}
-        {subjects.length > 0 && (
-          <form className="inf-plan" onSubmit={add}>
-            <select aria-label={t('chooseSubject')} value={subject} onChange={(e) => setSubject(e.target.value)} required>
-              <option value="">{t('chooseSubject')}</option>
-              {subjects.map((d) => <option key={d.id} value={d.name}>{d.name}</option>)}
-            </select>
-            <input type="date" aria-label={t('examDate')} min={todayStr(now)} value={date} onChange={(e) => setDate(e.target.value)} required />
-            <button type="submit" className="inf-x-next">{t('addExam')}</button>
-          </form>
-        )}
-        {!up.length && <p className="inf-hint">{t('noUpcomingSub')}</p>}
-      </section>
-
-      <section aria-label={t('takeExam')}>
-        <div className="inf-row"><h2>{t('takeExam')}</h2></div>
-        <ul className="inf-list">
-          {subjects.map((d, i) => (
-            <li key={d.id} style={{'--accent': accentFor(d.name, i)}}>
-              <span className="inf-tile-ico" aria-hidden="true"><SubjectIcon name={d.name} size={24} i={i} /></span>
-              <span><b>{d.name}</b><small>{t('nQuestions', {n: d.q.length})} · {t('minutes', {n: Math.round(examSeconds(d.q.length) / 60)})}</small></span>
-              <button type="button" className="inf-x-next" onClick={() => onStart(d, 'exam')}>{t('startNow')}</button>
-            </li>
-          ))}
         </ul>
-        {!subjects.length && <p className="inf-hint">{t('noSubjects')}</p>}
-      </section>
+      ) : <p className="inf-hint">{subjects.length ? t('noMatch') : t('noSubjects')}</p>}
 
       <section className="inf-panel" aria-label={t('recentResults')}>
         <h2>{t('recentResults')}</h2>

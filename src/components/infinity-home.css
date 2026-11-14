@@ -79,3 +79,12 @@
 .inf-root .inf-ghost-btn.is-bad:hover{background:color-mix(in srgb,var(--inf-err) 9%,transparent)}
 @media(prefers-reduced-motion:reduce){.inf-root .inf-ring-fg,.inf-root .inf-bar i{transition:none}}
 .inf-root .inf-card.inf-home{background:transparent;border:0;padding:0;box-shadow:none;border-radius:0}
+
+/* quick actions under the hero */
+.inf-root .inf-quick{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:-4px}
+.inf-root .inf-quick button{display:flex;align-items:center;justify-content:center;gap:10px;min-height:56px;padding:10px 12px;border-radius:18px;background:var(--inf-card);border:1.5px solid var(--inf-line);box-shadow:var(--sh);color:var(--inf-text)}
+.inf-root .inf-quick button svg{color:var(--inf-violet);flex:0 0 auto}
+.inf-root .inf-quick b{font:800 var(--fs-md) var(--inf-font-b);line-height:1.15}
+.inf-root .inf-quick button:hover{border-color:var(--inf-violet)}
+/* calmer empty exam card */
+.inf-root .inf-up .inf-empty{padding:14px 12px;gap:2px}

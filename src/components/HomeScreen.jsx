@@ -64,7 +64,7 @@ function Ring({value, goal, label}) {
   );
 }
 
-export default function HomeScreen({name, subjects, stats, onContinue, onOpen, onAll, onExams, onRank, server, now = new Date(), lang = 'en', t = T0}) {
+export default function HomeScreen({name, subjects, stats, onContinue, onOpen, onAll, onExams, onGames, onRank, server, now = new Date(), lang = 'en', t = T0}) {
   const goal = goalOf(stats), today = todayCount(stats, now), streak = liveStreak(stats, now), left = Math.max(0, goal - today);
   const acc = stats.answered ? Math.round(((stats.correct || 0) / stats.answered) * 100) : 0;
   const lv = levelFor(stats.xp);
@@ -88,6 +88,11 @@ export default function HomeScreen({name, subjects, stats, onContinue, onOpen, o
           <span className="inf-hero-art" aria-hidden="true"><SubjectIcon name={next.subject.name} size={54} /></span>
         </section>
       ) : <p className="inf-hint">{t('preparing')}</p>}
+
+      <div className="inf-quick">
+        <button type="button" onClick={onExams}><Svg size={22}><path d="M3 9.5 12 5l9 4.5-9 4.5z" /><path d="M7 11.5V16c0 1.4 2.2 2.5 5 2.5s5-1.1 5-2.5v-4.5" /></Svg><b>{t('quickExam')}</b></button>
+        <button type="button" onClick={onGames}><Svg size={22}><rect x="3" y="8" width="18" height="10" rx="5" /><path d="M8 11v4M6 13h4M16 12h.01M18 14h.01" /></Svg><b>{t('quickGames')}</b></button>
+      </div>
 
       <section className="inf-panel inf-pg" aria-label={t('yourProgress')}>
         <h2>{t('yourProgress')}</h2>

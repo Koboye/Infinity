@@ -3,12 +3,12 @@
 export const LANGS = [['en', 'English'], ['am', 'አማርኛ']];
 export const TEXT = {
   en: {
-    nav_exams: 'Exams', done: 'Done', continueLearning: 'Continue learning', continueBtn: 'Continue', yourProgress: 'Your progress', dayStreak: 'Day streak',
+    nav_exams: 'Exam', done: 'Done', continueLearning: 'Continue learning', continueBtn: 'Continue', yourProgress: 'Your progress', dayStreak: 'Day streak',
     whyWeak: 'Your weakest subject: {p}% right. Let’s fix it.', whyLast: 'Pick up where you left off.', whyNew: 'A fresh start. 10 questions.',
     toGoal: '{n} to reach today’s goal', goalReached: 'Goal reached today', subjectsHead: 'Subjects', seeAll: 'See all',
     upcomingExams: 'Upcoming exams', noUpcoming: 'No upcoming exams', noUpcomingSub: 'Plan one and we will count the days down.', planExam: 'Plan an exam',
-    today: 'Today', tomorrow: 'Tomorrow', inDays: 'In {n} days', examsTitle: 'Exams', examsSub: 'Timed practice and your exam plan.', scheduleTitle: 'Plan an exam', chooseSubject: 'Choose a subject', examDate: 'Exam date', addExam: 'Add', removeExam: 'Remove',
-    takeExam: 'Take a timed exam', recentResults: 'Recent results', noResults: 'Your exam and practice scores will appear here.', modePracticeShort: 'Practice', startNow: 'Start', gamesTitle: 'Games', gamesSub: 'A short break keeps your mind fresh.',
+    today: 'Today', tomorrow: 'Tomorrow', inDays: 'In {n} days', examsTitle: 'Exam', examsSub: 'Pick a subject. Practice or take a timed exam.', scheduleTitle: 'Plan an exam', chooseSubject: 'Choose a subject', examDate: 'Exam date', addExam: 'Add', removeExam: 'Remove',
+    takeExam: 'Take a timed exam', recentResults: 'Recent results', noResults: 'Your exam and practice scores will appear here.', modePracticeShort: 'Practice', startNow: 'Start', quickExam: 'Take an exam', quickGames: 'Play a game', playBtn: 'Play', saveDate: 'Save', pickDate: 'Pick the exam date', planShort: 'Plan', examOn: 'Exam {d}', gamesTitle: 'Games', gamesSub: 'Tap a game. It starts right away.',
     learningProgress: 'Learning progress', back: 'Back', account: 'Account', logOut: 'Log out', profileSub: 'Name, photo, password and data', settingsSub: 'Language and daily goal', yourGrade: 'Grade',
     nameLabel: 'Name', dangerZone: 'Danger zone', calcOpen: 'Open calculator', questionN: 'Question {n}',
     nav_home: 'Home', nav_subjects: 'Subjects', nav_games: 'Games', nav_profile: 'Profile',
@@ -47,12 +47,12 @@ export const TEXT = {
     needsRecent: 'Sign out and sign in again, then retry.', tooMany: 'Too many attempts. Wait a minute and try again.', offline: 'No connection. Check your internet and try again.', generic: 'Something went wrong. Please try again.',
   },
   am: {
-    nav_exams: 'ፈተናዎች', done: 'ተጠናቋል', continueLearning: 'ትምህርትዎን ይቀጥሉ', continueBtn: 'ቀጥል', yourProgress: 'ሂደትዎ', dayStreak: 'ተከታታይ ቀናት',
+    nav_exams: 'ፈተና', done: 'ተጠናቋል', continueLearning: 'ትምህርትዎን ይቀጥሉ', continueBtn: 'ቀጥል', yourProgress: 'ሂደትዎ', dayStreak: 'ተከታታይ ቀናት',
     whyWeak: 'በጣም ደካማ ትምህርትዎ፦ {p}% ትክክል። እናሻሽለው።', whyLast: 'ካቆሙበት ይቀጥሉ።', whyNew: 'አዲስ ጅምር። 10 ጥያቄዎች።',
     toGoal: 'የዛሬውን ግብ ለማሳካት {n} ይቀራል', goalReached: 'የዛሬው ግብ ተሳክቷል', subjectsHead: 'ትምህርቶች', seeAll: 'ሁሉንም ይመልከቱ',
     upcomingExams: 'የሚመጡ ፈተናዎች', noUpcoming: 'የሚመጣ ፈተና የለም', noUpcomingSub: 'አንድ ያቅዱ፣ ቀናቱን እንቆጥራለን።', planExam: 'ፈተና ያቅዱ',
-    today: 'ዛሬ', tomorrow: 'ነገ', inDays: 'በ{n} ቀን ውስጥ', examsTitle: 'ፈተናዎች', examsSub: 'የጊዜ ገደብ ያለው ልምምድና የፈተና እቅድዎ።', scheduleTitle: 'ፈተና ያቅዱ', chooseSubject: 'ትምህርት ይምረጡ', examDate: 'የፈተና ቀን', addExam: 'ጨምር', removeExam: 'አስወግድ',
-    takeExam: 'የጊዜ ገደብ ያለው ፈተና ውሰድ', recentResults: 'የቅርብ ውጤቶች', noResults: 'የፈተናና የልምምድ ውጤቶችዎ እዚህ ይታያሉ።', modePracticeShort: 'ልምምድ', startNow: 'ጀምር', gamesTitle: 'ጨዋታዎች', gamesSub: 'አጭር እረፍት አእምሮን ያድሳል።',
+    today: 'ዛሬ', tomorrow: 'ነገ', inDays: 'በ{n} ቀን ውስጥ', examsTitle: 'ፈተና', examsSub: 'ትምህርት ይምረጡ። ይለማመዱ ወይም ፈተና ይውሰዱ።', scheduleTitle: 'ፈተና ያቅዱ', chooseSubject: 'ትምህርት ይምረጡ', examDate: 'የፈተና ቀን', addExam: 'ጨምር', removeExam: 'አስወግድ',
+    takeExam: 'የጊዜ ገደብ ያለው ፈተና ውሰድ', recentResults: 'የቅርብ ውጤቶች', noResults: 'የፈተናና የልምምድ ውጤቶችዎ እዚህ ይታያሉ።', modePracticeShort: 'ልምምድ', startNow: 'ጀምር', quickExam: 'ፈተና ውሰድ', quickGames: 'ጨዋታ ተጫወት', playBtn: 'ተጫወት', saveDate: 'አስቀምጥ', pickDate: 'የፈተና ቀን ይምረጡ', planShort: 'አቅድ', examOn: 'ፈተና {d}', gamesTitle: 'ጨዋታዎች', gamesSub: 'ጨዋታ ይንኩ። ወዲያው ይጀምራል።',
     learningProgress: 'የትምህርት ሂደት', back: 'ተመለስ', account: 'መለያ', logOut: 'ውጣ', profileSub: 'ስም፣ ፎቶ፣ የይለፍ ቃልና መረጃ', settingsSub: 'ቋንቋና ዕለታዊ ግብ', yourGrade: 'ክፍል',
     nameLabel: 'ስም', dangerZone: 'አደገኛ ቀጠና', calcOpen: 'ካልኩሌተር ክፈት', questionN: 'ጥያቄ {n}',
     nav_home: 'ዋና ገጽ', nav_subjects: 'ትምህርቶች', nav_games: 'ጨዋታዎች', nav_profile: 'መገለጫ',

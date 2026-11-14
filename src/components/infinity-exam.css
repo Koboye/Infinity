@@ -166,3 +166,19 @@
 .inf-root .inf-hist{display:grid;gap:8px;margin:0;padding:0;list-style:none}
 .inf-root .inf-hist li{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border-radius:14px;background:var(--inf-paper)}
 @media(prefers-reduced-motion:reduce){.inf-root .inf-x-card,.inf-root .inf-x-chip.is-low{animation:none}.inf-root .inf-x-calc-pad button:active{transform:none}.inf-root .inf-x-prog i{transition:none}}
+
+/* exam tab: one list of subjects */
+.inf-root .inf-ex-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:12px;margin:0;padding:0;list-style:none}
+.inf-root .inf-ex-card{display:flex;flex-direction:column;gap:12px;padding:14px;border-radius:var(--r-md);box-shadow:var(--sh);background:linear-gradient(160deg,color-mix(in srgb,var(--accent) 12%,var(--inf-card)),var(--inf-card) 70%);border:1.5px solid color-mix(in srgb,var(--accent) 26%,var(--inf-line))}
+.inf-root .inf-ex-card.is-soon{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}
+.inf-root .inf-ex-top{display:flex;align-items:center;gap:12px}
+.inf-root .inf-ex-name{flex:1;min-width:0}
+.inf-root .inf-ex-name h2{margin:0;font:800 var(--fs-lg) var(--inf-font-b);line-height:1.2;overflow-wrap:anywhere}
+.inf-root .inf-ex-name p{margin:2px 0 0;color:var(--inf-mute);font-size:var(--fs-xs);font-weight:700}
+.inf-root .inf-ex-cal{flex:0 0 auto;width:44px;height:44px;min-height:44px;padding:0;border-radius:14px;background:transparent;border:1.5px solid var(--inf-line);color:var(--inf-mute)}
+.inf-root .inf-ex-when{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:4px 10px;border-radius:999px;background:color-mix(in srgb,var(--inf-violet) 12%,var(--inf-card));border:0;color:var(--inf-violet);font:800 var(--fs-xs) var(--inf-font-b);white-space:nowrap}
+.inf-root .inf-ex-when.is-soon{background:color-mix(in srgb,#D6455D 14%,var(--inf-card));color:#D6455D}
+.inf-root .inf-ex-prog span{display:block;margin-top:6px;color:var(--inf-mute);font-size:var(--fs-xs);font-weight:700}
+.inf-root .inf-ex-plan{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px}
+.inf-root .inf-app .inf-ex-plan input{min-height:48px;font-size:var(--fs-md);padding:8px 14px;border-radius:14px}
+.inf-root .inf-ex-plan .inf-x-next{min-height:48px;padding:6px 18px}

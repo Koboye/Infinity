@@ -24,7 +24,7 @@ import PassSheet from './PassSheet';
 import FriendsScreen, { InviteInbox, carRaceUrl } from './Friends';
 import { useSocial } from '@/lib/useSocial';
 import { Home, Setup, RulesScreen, AuthForm, Lobby, Leaders, ProfileScreen, ProgressScreen, SettingsScreen, Tibeb, readPendingSignup, clearPendingSignup } from './Screens';
-import { isPlayable, GAMES } from '@/lib/games.js';
+import { isPlayable, GAMES, gameInfo } from '@/lib/games.js';
 import Coach, { needsCoach } from './Coach';
 import { usePhoto, getPhoto, storePhoto } from '@/lib/photo';
 import { setCurrentGame, visit, onUnlock, load as loadProgress, mergeProgress, saveMerged } from '@/lib/progress';
@@ -58,7 +58,7 @@ export default function GebetaApp({ initialGame = null, embedded = false, onExit
     const requested = initialGame || new URLSearchParams(window.location.search).get('game');
     if (['gebeta', 'checkers', 'bingo'].includes(requested)) {
       setGame(requested);
-      setView({ name: 'modes' });
+      setView({ name: embedded ? 'launch' : 'modes' });   // inside the Infinity shell one tap starts a game; elsewhere show the modes
     }
   }, [initialGame]);
   const [adShow, setAdShow] = useState(null);                // { ad, placement, resolve }: the full-screen ad on screen right now
@@ -247,7 +247,7 @@ export default function GebetaApp({ initialGame = null, embedded = false, onExit
   };
   const dismissInvite = (inv) => apiCall({ action: 'inviteDismiss', id: inv.id }, { retries: 0 }).catch(() => {});
   const leaving = useRef(false);
-  const leaveGame = async () => { if (leaving.current) return; leaving.current = true; try { if (await confirm(t.leaveConfirm)) { if (embedded) setView({ name: 'modes' }); else home(); } } finally { leaving.current = false; } };
+  const leaveGame = async () => { if (leaving.current) return; leaving.current = true; try { if (await confirm(t.leaveConfirm)) home(); } finally { leaving.current = false; } };
 
   // The phone's BACK button works like the ‹ button instead of closing the app: one screen up, a confirmation inside a game, and a
   // second press within 2 s at the home screen to really leave. A spare history entry is kept under the app so Back is always ours to handle.
@@ -313,6 +313,18 @@ export default function GebetaApp({ initialGame = null, embedded = false, onExit
     setToast({ text: r.error }); setTimeout(() => setToast(null), 3500);
   };
 
+  // One tap from the Infinity Games tab: straight into a game against the computer (medium, default rules).
+  const launched = useRef(false);
+  useEffect(() => {
+    if (view.name !== 'launch') { launched.current = false; return; }
+    if (launched.current) return;
+    launched.current = true;
+    const info = gameInfo(game);
+    startLevel({ mode: 'ai', game, level: 'medium', ruleset: info.defaultRuleset, target: info.defaultTarget, opts: { ultra: false, suddenDeath: false, careless: false, cards: 1 } });
+    const fallback = setTimeout(() => { if (viewRef.current.name === 'launch') setView({ name: 'modes' }); }, 8000);   // never leave a blank screen
+    return () => clearTimeout(fallback);
+  }, [view.name, game]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Hill Climb is a stand-alone page: with the paywall on, the home screen opens it only with an open pass (the game page then spends a level per start).
   const openClimb = async () => {
     const enter = () => { globalThis.location.href = '/games/hillclimb-racing/index.html'; };
@@ -327,6 +339,7 @@ export default function GebetaApp({ initialGame = null, embedded = false, onExit
   let body;
   switch (view.name) {
     case 'home': body = <Home t={t} go={go} onlineOn={onlineAvailable} user={user} profile={profile} game={game} onPickGame={(g) => { pickGame(g); if (isPlayable(g)) go('modes'); }} onClimb={openClimb} />; break;
+    case 'launch': body = <div className="panel"><p className="muted" style={{ textAlign: 'center' }} role="status">…</p></div>; break;
     case 'modes': body = <ModesScreen t={t} lang={lang} game={game} go={go} onlineOn={onlineAvailable} />; break;
     case 'ai': case 'pass': body = <Setup t={t} mode={view.name} game={game} initialRuleset={view.ruleset} onHelp={(type) => go('rules', { type })} onStart={(o) => startLevel({ mode: view.name, game, ...o })} />; break;
     case 'game': {
