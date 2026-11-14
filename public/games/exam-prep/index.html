@@ -436,6 +436,27 @@ body.has-xbar .xbar{display:flex}
 .ep-break-games a strong{display:block}.ep-break-games a small{display:block;color:var(--muted);font-size:12px}
 .ep-break-games a>span:first-child{font-size:26px}.ep-break-games a>span:last-child{margin-left:auto;color:var(--brand)}
 .ep-break-close{display:block;width:100%;margin-top:16px;border:0;background:var(--brand);color:white;padding:13px;border-radius:12px;font:800 14px var(--sans);cursor:pointer}
+</style><style id="ep-smart-home">
+/* Smart ExamPro dashboard: adaptive, readable, responsive */
+.home2{max-width:760px!important}
+.home2 .dhead{padding:16px 18px;border:1px solid rgba(255,255,255,.15);border-radius:23px;background:linear-gradient(125deg,rgba(55,76,181,.33),rgba(97,56,170,.2));box-shadow:0 10px 28px rgba(3,9,39,.12)}
+.home2 .dwho h1{font-family:var(--sans);font-size:clamp(1.2rem,4vw,1.7rem);font-weight:850}
+.home2 .dsearch{margin-top:16px}.home2 .dsearch input{border-radius:16px}
+.home2 .hero2{border-radius:25px;background:radial-gradient(circle at 95% 5%,rgba(255,208,85,.36),transparent 43%),linear-gradient(120deg,#162c9c,#6141b6);border:1px solid rgba(255,255,255,.22);box-shadow:0 16px 32px rgba(9,16,75,.25)}
+.home2 .hero2 .h2go{box-shadow:0 7px 18px rgba(0,0,0,.17)}
+.home2 .gcard{border-radius:20px;background:linear-gradient(130deg,rgba(69,99,198,.26),rgba(255,255,255,.06))}
+.home2 .qtile{border-radius:20px;min-height:112px}
+.home2 .qtile:hover,.home2 .cat:hover{transform:translateY(-3px)}
+.home2 .dsum{border-radius:20px;overflow:hidden}
+.home2 .dh2{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.home2 .cats{gap:12px}
+.home2 .cat{aspect-ratio:auto;min-height:155px;box-shadow:0 7px 18px rgba(0,0,0,.2);transition:transform .15s,box-shadow .15s}
+.home2 .cat:focus-visible,.home2 button:focus-visible{outline:3px solid #ffd36b;outline-offset:3px}
+.ep-smart-tip{display:flex;align-items:center;gap:13px;padding:16px 18px;margin:0 0 15px;border-radius:18px;background:linear-gradient(105deg,rgba(255,211,107,.17),rgba(118,86,229,.2));border:1px solid rgba(255,211,107,.32);color:#fff}
+.ep-smart-tip>span{font-size:25px}.ep-smart-tip strong{display:block;font-size:14px}.ep-smart-tip small{display:block;color:#cdd5ff;font-size:12px;line-height:1.45}
+.ep-smart-tip button{margin-left:auto;background:#ffd36b;border:0;border-radius:12px;padding:9px 12px;font:800 12px var(--sans);color:#142150;white-space:nowrap;cursor:pointer}
+@media(max-width:430px){.home2 .dhead{padding:13px}.home2 .cat{min-height:139px}.ep-smart-tip{padding:13px;flex-wrap:wrap}.ep-smart-tip button{margin-left:38px}}
+@media(prefers-reduced-motion:reduce){.home2 .cat,.home2 .qtile{transition:none!important;animation:none!important}}
 </style></head>
 <body>
 <div class="splash" id="splash" role="dialog" aria-modal="true" aria-labelledby="sp-title" hidden>
@@ -614,6 +635,7 @@ body.has-xbar .xbar{display:flex}
       (mist ? '<button type="button" class="qtile warn" id="tfix"><span class="qi" aria-hidden="true">📝</span><b>Fix mistakes</b><small>' + mMax + ' in ' + esc(dept(mDept).name) + '</small></button>'
         : '<button type="button" class="qtile" id="tsur"><span class="qi" aria-hidden="true">🎲</span><b>Surprise me</b><small>10 random questions</small></button>') + '</div>' +
       '<div class="dsum" aria-label="Your progress"><div><b><span aria-hidden="true">⭐</span> ' + p.xp.toLocaleString() + '</b><small>total XP</small></div><div><b><span aria-hidden="true">🎯</span> ' + acc + '%</b><small>accuracy</small></div><div><b><span aria-hidden="true">📚</span> ' + p.answered.toLocaleString() + '</b><small>answered</small></div></div>' +
+      '<div class="ep-smart-tip"><span aria-hidden="true">🧠</span><div><strong>' + (mist ? 'Your next best move: review mistakes' : p.today < GOAL ? 'Keep your momentum going' : 'Great work — your daily goal is complete') + '</strong><small>' + (mist ? mist + ' saved mistakes across your subjects. Revisiting them helps you improve.' : p.today < GOAL ? (GOAL - p.today) + ' questions left to reach today’s goal. Short sessions add up.' : 'Explore another subject or take a refreshing break.') + '</small></div><button type="button" id="ep-smart-action">' + (mist ? 'Review' : 'Study') + ' →</button></div>' +
       '<h2 class="dh2">Browse by level</h2>' +
       '<div class="cats" role="group" aria-label="Learning categories">' + CATS.slice().sort(function (a, b) { return (catCount(b) > 0) - (catCount(a) > 0); }).map(function (c, i) {
         var n = catCount(c), ready = n > 0;
@@ -623,6 +645,7 @@ body.has-xbar .xbar{display:flex}
     function buzz() { try { if (navigator.vibrate) navigator.vibrate(10); } catch (e) {} }
     var hg = document.getElementById('hgo');
     if (hg && nx) hg.onclick = function () { buzz(); if (nx.kind === 'resume') quiz(nx.rs.id, 'exam', null, nx.rs.label, nx.rs); else quiz(nx.d.id, 'practice', quickSet(nx.d, nx.n), 'Quick practice'); };
+    var smart = document.getElementById('ep-smart-action'); if (smart) smart.onclick = function () { if (mist && mDept) { var mm = load().mistakes[mDept] || {}; quiz(mDept, 'practice', Object.keys(mm).map(function (k) { return mm[k]; }), 'Fix my mistakes'); } else { document.querySelector('.home2 .cats')?.scrollIntoView({behavior:'smooth',block:'start'}); } };
     var tc = document.getElementById('tchal'); if (tc) tc.onclick = function () { buzz(); quiz(ch.d.id, 'practice', ch.ix.map(function (i) { return prep(ch.d.q[i], ch.d.id, i); }), 'Daily challenge'); };
     var tf = document.getElementById('tfix'); if (tf) tf.onclick = function () { buzz(); var m = load().mistakes[mDept] || {}; quiz(mDept, 'practice', Object.keys(m).map(function (k) { return m[k]; }), 'Fix my mistakes'); };
     var ts = document.getElementById('tsur'); if (ts) ts.onclick = function () { buzz(); var rd = BANK.filter(function (d) { return d.q.length >= 10; }); var d = rd[Math.floor(Math.random() * rd.length)]; if (d) quiz(d.id, 'practice', quickSet(d, 10), 'Surprise me'); };
