@@ -1,6 +1,7 @@
 'use client';
 import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import Explain from './Explain.jsx';
+import ExamCalculator from './ExamCalculator.jsx';
 import { recordAnswer, saveBest, loadProgress, DAILY_GOAL } from '@/lib/progress.js';
 
 const shuffle = (a) => { const b = [...a]; for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
@@ -112,6 +113,7 @@ export default function Quiz({ questions, mode, onExit, dept = '', label = '' })
         </div>
       </div>
       <p className="hint kb">Tip: press A–D to answer, Enter for next.</p>
+      {mode === 'exam' && <ExamCalculator />}
     </div>
   );
 }
