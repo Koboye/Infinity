@@ -1077,10 +1077,23 @@ body.dash-on{background:#f4f7fd!important;background-image:none!important;color:
     var hi = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening'; var lp = learner(), signedUser = window.ExamProAuth && window.ExamProAuth.user, displayName = (typeof lp.name === 'string' && lp.name.trim()) ? lp.name : (signedUser && signedUser.displayName || ''), firstName = displayName.trim().split(/\s+/)[0].slice(0,24); if (firstName) hi += ', ' + esc(firstName);
     var nx = homeNext(p), ch = dailyChallenge(), chDone = p.chal === ymd();
     var mist = 0, mDept = null, mMax = 0; Object.keys(p.mistakes).forEach(function (k) { var n = Object.keys(p.mistakes[k]).length; mist += n; if (n > mMax && dept(k)) { mMax = n; mDept = k; } });
+    var levelCards = [
+      {id:'kg',icon:'🧸',title:'Kindergarten',sub:'Early learning',color:'orange'},
+      {id:'g1_4',icon:'🔤',title:'Grades 1–4',sub:'Foundations',color:'green'},
+      {id:'g5_8',icon:'📗',title:'Grades 5–8',sub:'Middle school',color:'teal'},
+      {id:'sec',icon:'🔬',title:'Grades 9–12',sub:'Secondary school',color:'blue'},
+      {id:'uni',icon:'🎓',title:'University / College',sub:'Higher education',color:'purple'}
+    ];
+    var stageCards = levelCards.map(function(c){
+      var active = c.id==='kg' ? lp.stage==='kg' : c.id==='g1_4' ? /^g[1-4]$/.test(lp.stage||'') : c.id==='g5_8' ? /^g[5-8]$/.test(lp.stage||'') : c.id==='sec' ? /^g(9|10|11|12)$/.test(lp.stage||'') : lp.stage==='university';
+      return '<button type="button" class="ep-level-card ep-level-'+c.color+(active?' is-current':'')+'" data-level="'+c.id+'" aria-label="Explore '+c.title+'"><span class="ep-level-illustration" aria-hidden="true">'+c.icon+'</span><span class="ep-level-copy"><b>'+c.title+'</b><small>'+c.sub+'</small></span><span class="ep-level-arrow" aria-hidden="true">→</span>'+(active?'<span class="ep-level-current">YOUR LEVEL</span>':'')+'</button>';
+    }).join('');
     var html = '<div class="dash home2"><div class="ep-home-intro"><span>YOUR LEARNING SPACE</span><small>One step every day ✨</small></div><div class="dhead">' + ringSvg(lv.pct, '3.6rem', 4, 'lvr', '<span class="dav2">L' + lv.l + '</span>') +
       '<div class="dwho"><h1>' + hi + (p.answered ? '' : ' 👋') + '</h1><small>' + (p.answered ? lv.need + ' XP to Level ' + (lv.l + 1) : 'Welcome to exam.pro') + '</small></div>' +
       '<span class="strk' + (alive ? ' on' : '') + '" aria-label="' + (alive ? p.streak + ' day streak' : 'No streak yet') + '"><span aria-hidden="true">🔥</span> ' + (alive ? p.streak : 0) + '</span></div>' +
       (!lp.stage ? '<div class="ep-home-setup"><span>🎓 <strong>Personalize your learning</strong><small>Choose your grade to see the right subjects and practice.</small></span><button type="button" id="ep-home-set-grade">Set my grade →</button></div>' : '') +
+      '<section class="ep-home-levels" aria-labelledby="ep-levels-title"><div class="ep-levels-heading"><span>🎯</span><div><h2 id="ep-levels-title">Choose your learning level</h2><p>Explore lessons, practice and exams designed for your stage.</p></div></div><div class="ep-level-grid">'+stageCards+'</div></section>' +
+      '<section class="ep-home-shortcuts" aria-label="Quick learning actions"><button type="button" id="ep-short-practice">📖 <span>Practice</span></button><button type="button" id="ep-short-exam">⏱️ <span>Timed exams</span></button><button type="button" id="ep-short-challenge">🏆 <span>Challenge</span></button><button type="button" id="ep-short-progress">📊 <span>My progress</span></button></section>' +
       '<section class="ep-home-find"><form class="dsearch" id="dsf" role="search"><label class="sr" for="dsq">Search subjects and departments</label><input id="dsq" type="search" autocomplete="off" placeholder="Find a subject to learn…"><button type="submit" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg></button></form></section>' +
       (nx ? '<section class="ep-home-group ep-home-focus"><div class="ep-home-label">01 · CONTINUE LEARNING</div>' + '<section class="hero2' + (nx.kind === 'resume' ? ' res' : '') + '" aria-label="Next up"><div class="h2t"><small>' + nx.kick + '</small><b>' + esc(nx.title) + '</b><span>' + esc(nx.sub) + '</span></div><button type="button" class="h2go" id="hgo">' + nx.btn + ' <span aria-hidden="true">→</span></button></section></section>' : '') +
       '<section class="ep-home-group ep-home-routine"><div class="ep-home-label">' + (nx ? '02' : '01') + ' · DAILY ROUTINE</div><section class="gcard" aria-label="Daily goal">' + ringSvg(gp, '5.4rem', 5, 'gr' + (gp >= 1 ? ' full' : ''), '<b>' + Math.min(p.today, dailyGoal()) + '</b><small>/' + dailyGoal() + '</small>') +
@@ -1099,6 +1112,18 @@ body.dash-on{background:#f4f7fd!important;background-image:none!important;color:
       }).join('') + '</div></section></div>';
     app.innerHTML = html;
     function buzz() { try { if (navigator.vibrate) navigator.vibrate(10); } catch (e) {} }
+    [].forEach.call(app.querySelectorAll('.ep-level-card'),function(b){b.onclick=function(){
+      var id=b.getAttribute('data-level'),cat=id==='kg'?'kg':id==='sec'?'sec':id==='uni'?'uni':'pri';
+      ui.cat=cat;ui.cat2=cat;ui.lv=null;ui.sel=null;ui.search='';catView();
+      if(id==='g1_4'||id==='g5_8'){
+        var target= id==='g1_4'?1:5, choices=app.querySelectorAll('[data-grade],[data-lv]');
+        [].forEach.call(choices,function(x){var label=x.textContent||'';if(new RegExp('(?:Grade\\s*)?'+target+'(?:\\D|$)','i').test(label)){x.focus();}});
+      }
+    };});
+    var quickPractice=document.getElementById('ep-short-practice');if(quickPractice)quickPractice.onclick=function(){if(nx){document.getElementById('hgo').click();}else{ui.cat=null;home();}};
+    var quickExam=document.getElementById('ep-short-exam');if(quickExam)quickExam.onclick=function(){document.getElementById('nv-sub').click();};
+    var quickChallenge=document.getElementById('ep-short-challenge');if(quickChallenge)quickChallenge.onclick=function(){var t=document.getElementById('tchal');if(t)t.click();else toast('Daily challenge will appear when questions are available.');};
+    var quickProgress=document.getElementById('ep-short-progress');if(quickProgress)quickProgress.onclick=function(){if(window.ExamProUnified)window.ExamProUnified.open('progress');};
     var setupGrade = document.getElementById('ep-home-set-grade'); if (setupGrade) setupGrade.onclick = function(){ if(window.ExamProUnified && typeof window.ExamProUnified.open === 'function') window.ExamProUnified.open('profile'); else { var tab=document.querySelector('[data-ep-tab="profile"]'); if(tab) tab.click(); } };
     var hg = document.getElementById('hgo');
     if (hg && nx) hg.onclick = function () { buzz(); if (nx.kind === 'resume') quiz(nx.rs.id, 'exam', null, nx.rs.label, nx.rs); else quiz(nx.d.id, 'practice', quickSet(nx.d, nx.n), 'Quick practice'); };
