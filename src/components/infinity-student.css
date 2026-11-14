@@ -235,3 +235,31 @@ html:has(.inf-root),html body:has(.inf-root){overflow-x:clip;max-width:100%}
 }
 @media(prefers-reduced-motion:reduce){.inf-root .inf-grade-track button[aria-pressed=true],.inf-root .inf-primary[data-ready]{animation:none}}
 .inf-root .inf-auth.is-compact .inf-auth-brand::before{display:none}
+
+/* v5 home */
+.inf-root .inf-card.inf-home{background:transparent;border:0;padding:0}
+.inf-root .inf-hello{margin:0 0 12px;font:700 1.05rem var(--inf-font-d);color:var(--inf-mute)}
+.inf-root .inf-hero{display:flex;align-items:center;gap:18px;padding:20px;border-radius:24px;color:#fff;
+  background:radial-gradient(120% 120% at 100% 0%,var(--inf-blue) 0,transparent 60%),var(--inf-ink)}
+.inf-root .inf-hero h1{color:#fff;font-size:clamp(1.25rem,4.4vw,1.7rem);margin:0 0 8px;line-height:1.15}
+.inf-root .inf-streak{display:flex;align-items:center;gap:6px;margin:0;font-weight:700;color:var(--inf-sun)}
+.inf-root .inf-ring{flex:0 0 auto}
+.inf-root .inf-ring-n{fill:#fff;font:800 1.5rem var(--inf-font-d)}
+.inf-root .inf-cta{width:100%;margin:14px 0 0;min-height:56px;font-size:1.05rem;border-radius:18px}
+.inf-root .inf-mini{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0 6px}
+.inf-root .inf-mini div{padding:12px;border-radius:16px;background:var(--inf-card);border:1.5px solid var(--inf-line);text-align:center}
+.inf-root .inf-mini b{display:block;font:800 1.35rem var(--inf-font-d);line-height:1.1}
+.inf-root .inf-mini span{font-size:.8rem;font-weight:600;color:var(--inf-mute)}
+.inf-root .inf-row{display:flex;justify-content:space-between;align-items:baseline;margin-top:8px}
+.inf-root .inf-row h2{margin:14px 0 8px;font-size:1.2rem}
+.inf-root .inf-tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media(min-width:640px){.inf-root .inf-tiles{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.inf-root .inf-tile{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:14px;min-height:112px;border-radius:20px;
+  background:color-mix(in srgb,var(--accent) 9%,var(--inf-card));border-color:color-mix(in srgb,var(--accent) 30%,var(--inf-line))}
+.inf-root .inf-tile b{font:700 1.05rem var(--inf-font-d);line-height:1.2}
+.inf-root .inf-tile small{color:var(--inf-mute);font-weight:600}
+.inf-root .inf-tile-dot{display:grid;place-items:center;width:36px;height:36px;margin-bottom:8px;border-radius:12px;background:var(--accent);color:#fff;font:800 1.1rem var(--inf-font-d)}
+.inf-root .inf-gamebar{display:flex;justify-content:space-between;align-items:center;width:100%;margin-top:14px;padding:14px 18px;border-radius:18px;
+  border-style:dashed;border-color:var(--inf-blue);background:transparent}
+.inf-root .inf-gamebar b{color:var(--inf-blue)}
+@media (prefers-color-scheme:dark){.inf-root .inf-gamebar b{color:var(--inf-sun)}}

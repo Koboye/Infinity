@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+const { recordSession, todayCount, liveStreak, DAILY_GOAL } = await import('../src/lib/studyStreak.js');
+const d = (s) => new Date(s + 'T12:00:00');
+let s = recordSession({}, 10, 7, d('2026-11-10'));
+assert.equal(s.streak, 1); assert.equal(s.xp, 70); assert.equal(todayCount(s, d('2026-11-10')), 10);
+s = recordSession(s, 5, 5, d('2026-11-10'));
+assert.equal(s.streak, 1, 'same day does not extend'); assert.equal(todayCount(s, d('2026-11-10')), 15);
+s = recordSession(s, 3, 1, d('2026-11-11'));
+assert.equal(s.streak, 2); assert.equal(todayCount(s, d('2026-11-11')), 3); assert.equal(todayCount(s, d('2026-11-12')), 0);
+assert.equal(liveStreak(s, d('2026-11-12')), 2, 'still alive the day after');
+assert.equal(liveStreak(s, d('2026-11-13')), 0, 'a missed day ends it');
+s = recordSession(s, 1, 1, d('2026-11-14'));
+assert.equal(s.streak, 1); assert.equal(s.best, 2);
+assert.equal(DAILY_GOAL, 10);
+console.log('ok study-streak');
