@@ -426,7 +426,17 @@ body.has-xbar .xbar{display:flex}
 .bnav .ep-unified-tab[aria-current="page"]{color:var(--brand);font-weight:800}
 @media(max-width:520px){.ep-unified-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.bnav .ep-unified-tab{font-size:10px;padding-inline:3px}}
 </style>
-</head>
+<style id="ep-break-styles">
+.ep-break-open{background:linear-gradient(135deg,#ffe783,#ffbe37);border:0;border-radius:999px;padding:9px 13px;color:#13221c;font:800 12px/1.2 var(--sans);cursor:pointer;white-space:nowrap}
+.ep-break-shade{position:fixed;inset:0;z-index:200;background:rgba(3,12,23,.72);display:flex;align-items:center;justify-content:center;padding:16px}
+.ep-break-box{width:min(460px,100%);max-height:min(85dvh,720px);overflow:auto;background:var(--card);color:var(--ink);border-radius:23px;padding:23px;box-shadow:0 22px 70px #0006}
+.ep-break-box h2{font-size:25px;margin:5px 0}.ep-break-box p{font-size:14px;color:var(--muted);margin:5px 0 17px}
+.ep-break-games{display:grid;gap:9px}
+.ep-break-games a{display:flex;align-items:center;gap:13px;background:var(--soft);border:1px solid var(--line);border-radius:13px;padding:13px;text-decoration:none;color:var(--ink)}
+.ep-break-games a strong{display:block}.ep-break-games a small{display:block;color:var(--muted);font-size:12px}
+.ep-break-games a>span:first-child{font-size:26px}.ep-break-games a>span:last-child{margin-left:auto;color:var(--brand)}
+.ep-break-close{display:block;width:100%;margin-top:16px;border:0;background:var(--brand);color:white;padding:13px;border-radius:12px;font:800 14px var(--sans);cursor:pointer}
+</style></head>
 <body>
 <div class="splash" id="splash" role="dialog" aria-modal="true" aria-labelledby="sp-title" hidden>
 <div class="sp-aurora" aria-hidden="true"><i></i><i></i><i></i></div><div class="sp-stars" aria-hidden="true"></div>
@@ -453,7 +463,7 @@ body.has-xbar .xbar{display:flex}
 <path d="M0 90v-3c70-11 140-7 200 1s130 11 200 1v5z" fill="#FCDD09"/>
 <path d="M0 90v-1c70-8 140-4 200 3s130 9 200 2v-4z" fill="#DA121A"/></svg></div></div>
 <a class="skip" href="#app">Skip to content</a><div id="live" class="sr" role="status" aria-live="polite"></div>
-<header class="top"><div class="wrap"><button class="brand" id="home" aria-label="exam.pro home"><svg class="logo" viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffd36b"/><stop offset="1" stop-color="#f5a623"/></linearGradient></defs><path d="M24 6 4 15l20 9 20-9z" fill="url(#lg)"/><path d="M12 21v8c0 3 5 6 12 6s12-3 12-6v-8l-12 5.4z" fill="#fff" opacity=".95"/><path d="M42 16v12" stroke="#ffd36b" stroke-width="2.4" stroke-linecap="round"/><path d="M8 40h32" stroke="#ffd36b" stroke-width="2.4" stroke-linecap="round"/></svg><span><span class="bt">exam<i>.pro</i></span><span class="bs">Learn · Practice · Excel</span></span></button><a href="/">← Games</a><div class="tsz" role="group" aria-label="Text size"><button id="tsd" type="button" aria-label="Smaller text">A−</button><button id="tsu" type="button" aria-label="Larger text">A+</button></div></div></header>
+<header class="top"><div class="wrap"><button class="brand" id="home" aria-label="exam.pro home"><svg class="logo" viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffd36b"/><stop offset="1" stop-color="#f5a623"/></linearGradient></defs><path d="M24 6 4 15l20 9 20-9z" fill="url(#lg)"/><path d="M12 21v8c0 3 5 6 12 6s12-3 12-6v-8l-12 5.4z" fill="#fff" opacity=".95"/><path d="M42 16v12" stroke="#ffd36b" stroke-width="2.4" stroke-linecap="round"/><path d="M8 40h32" stroke="#ffd36b" stroke-width="2.4" stroke-linecap="round"/></svg><span><span class="bt">exam<i>.pro</i></span><span class="bs">Learn · Practice · Excel</span></span></button><button type="button" id="ep-break-open" class="ep-break-open" aria-haspopup="dialog" aria-controls="ep-break-dialog">🎮 Take a break</button><div class="tsz" role="group" aria-label="Text size"><button id="tsd" type="button" aria-label="Smaller text">A−</button><button id="tsu" type="button" aria-label="Larger text">A+</button></div></div></header>
 <div class="pbar" id="pbar"></div>
 <div class="xbar" id="xbar"></div>
 <div class="toast" id="toast" aria-hidden="true"></div>
@@ -939,5 +949,6 @@ body.has-xbar .xbar{display:flex}
 })();
 </script>
 <script src="unified.js"></script>
+<script src="break-games.js"></script>
 </body>
 </html>
