@@ -27,6 +27,7 @@ function allow(user) {
   document.body.classList.toggle('ep-auth-locked', !user);
   const signout = document.getElementById('ep-auth-signout');
   signout.hidden = !user;
+  window.dispatchEvent(new CustomEvent('infinity-auth-changed', { detail: { uid: user ? user.uid : null } }));
   if (user) {
     const splash = document.getElementById('splash');
     if (splash && !splash.hidden) splash.style.zIndex = '100';
