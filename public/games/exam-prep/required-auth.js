@@ -39,6 +39,7 @@ function mode(up) {
 }
 function allow(user) {
   currentUserId = user ? user.uid : null;
+  if (window.infinitySetProfileIdentity) window.infinitySetProfileIdentity(user);
   if (user) syncGradeField(user.uid);
   gate.hidden = !!user;
   document.body.classList.toggle('ep-auth-locked', !user);
