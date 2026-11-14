@@ -1653,6 +1653,18 @@ body.dash-on #app{max-width:100%!important}
 @media(max-width:370px){.home2 .ep-level-grid{grid-template-columns:1fr 1fr}.home2 .ep-level-copy b{font-size:14px}.home2 .ep-level-arrow{width:25px;height:25px}}
 @media(prefers-reduced-motion:reduce){.home2 .ep-level-card{transition:none}}
 </style>
+<style id="ep-grade-picker-style">
+.ep-grade-overlay{position:fixed;inset:0;z-index:99999;display:grid;place-items:center;padding:18px;background:#020b23cc;backdrop-filter:blur(7px)}
+.ep-grade-dialog{position:relative;width:min(100%,460px);background:#10285e;color:#fff;border:1px solid #617fd4;border-radius:23px;box-shadow:0 25px 70px #0009;padding:30px}
+.ep-grade-kicker{font-size:11px;font-weight:900;letter-spacing:.14em;color:#ffd16b}
+.ep-grade-dialog h2{color:#fff;font-size:29px;margin:9px 0}
+.ep-grade-dialog p{font-size:14px;line-height:1.5;color:#c8d8ff;margin:0 0 22px}
+.ep-grade-close{position:absolute;right:17px;top:15px;background:#ffffff19;color:#fff;border:1px solid #ffffff44;width:37px;height:37px;border-radius:10px;font-size:25px;cursor:pointer}
+.ep-grade-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+.ep-grade-choices button{background:linear-gradient(125deg,#284fa6,#423db0);color:#fff;border:1px solid #7898ed;border-radius:13px;min-height:65px;font-size:17px;font-weight:800;cursor:pointer}
+.ep-grade-choices button:hover{background:#4269ca}
+.ep-grade-choices button:focus-visible,.ep-grade-close:focus-visible{outline:3px solid #ffcf61;outline-offset:3px}
+</style>
 <script src="firebase-config.js"></script>
 <script src="auth.js"></script>
 <script src="unified.js"></script>
