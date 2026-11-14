@@ -48,7 +48,7 @@ const GAME_LIST_ONLINE = Object.values(GAMES).filter((g) => !g.offlineOnly && !g
 
 // `embedded` = rendered as the Games zone of the Infinity shell: the shell owns the brand header, bottom nav and language,
 // so this component drops its own Tibeb strip, bottom nav and language switch, and reports play state back to the shell.
-export default function GebetaApp({ initialGame = null, embedded = false, onExit = null, lang: shellLang = null, onPlayingChange = null }) {
+export default function GebetaApp({ initialGame = null, embedded = false, onExit = null, lang: shellLang = null, onPlayingChange = null, quickMode = 'ai', quickLevel = 'medium' }) {
   const [lang, setLang] = useState('en');
   const [game, setGame] = useState('gebeta');
   const [muted, setMutedState] = useState(false);
@@ -257,7 +257,7 @@ export default function GebetaApp({ initialGame = null, embedded = false, onExit
     if (sheet) { setSheet(null); if (view.name === 'launch') home(); return 'stay'; }
     if (view.name === 'game' || view.name === 'room') { leaveGame(); return 'stay'; }
     if (view.name === 'rules' && (view.hub || view.fromHub)) { if (view.hub) home(); else go('rules', { hub: true }); return 'stay'; }
-    if (['ai', 'pass', 'online', 'leaders', 'rules'].includes(view.name)) { go('modes'); return 'stay'; }
+    if (['ai', 'pass', 'online', 'leaders', 'rules'].includes(view.name)) { if (embedded) home(); else go('modes'); return 'stay'; }
     if (view.name !== 'home') { home(); return 'stay'; }
     if (Date.now() - exitArm.current < 2000) return 'exit';
     exitArm.current = Date.now(); setToast({ text: t.pressBackAgain, info: true }); setTimeout(() => setToast(null), 2000); return 'stay';
@@ -322,7 +322,11 @@ export default function GebetaApp({ initialGame = null, embedded = false, onExit
     if (!authReady || launched.current) return undefined;
     launched.current = true;
     const info = gameInfo(game);
-    startLevel({ mode: 'ai', game, level: 'medium', ruleset: info.defaultRuleset, target: info.defaultTarget, opts: { ultra: false, suddenDeath: false, careless: false, cards: 1 } })
+    // the Games tab's mode bar decides what one tap does: computer, two players on one phone, online lobby, or the ranking
+    const run = quickMode === 'online' ? Promise.resolve(go('online'))
+      : quickMode === 'rank' ? Promise.resolve(go('leaders'))
+      : startLevel({ mode: quickMode === 'pass' && !gameInfo(game).noPass ? 'pass' : 'ai', game, level: quickLevel, ruleset: info.defaultRuleset, target: info.defaultTarget, opts: { ultra: false, suddenDeath: false, careless: false, cards: 1 } });
+    run
       .then((r) => { if (r === 'error' && viewRef.current.name === 'launch') home(); })
       .catch(() => { if (viewRef.current.name === 'launch') home(); });
     const fallback = setTimeout(() => { if (viewRef.current.name === 'launch' && !sheetRef.current && !adRef.current) home(); }, 12000);
@@ -395,7 +399,7 @@ export default function GebetaApp({ initialGame = null, embedded = false, onExit
       {sheet?.type === 'pass' && <PassSheet lang={lang} onClose={() => { setSheet(null); if (viewRef.current.name === 'launch') home(); }} onUnlocked={() => { const o = sheet.then; setSheet(null); if (o?.climb) openClimb(); else if (o) startLevel(o); }} />}
       <header className="topbar">
         {view.name === 'home' ? <span className="topbar-spacer" /> :
-          <button className="icon-btn" onClick={view.name === 'game' ? leaveGame : view.name === 'rules' && view.hub ? home : view.name === 'rules' && view.fromHub ? () => go('rules', { hub: true }) : ['ai', 'pass', 'online', 'leaders', 'rules'].includes(view.name) ? () => go('modes') : home} aria-label={t.backHome}>‹</button>}
+          <button className="icon-btn" onClick={view.name === 'game' ? leaveGame : view.name === 'rules' && view.hub ? home : view.name === 'rules' && view.fromHub ? () => go('rules', { hub: true }) : ['ai', 'pass', 'online', 'leaders', 'rules'].includes(view.name) && !embedded ? () => go('modes') : home} aria-label={t.backHome}>‹</button>}
         <h2 className="topbar-title">{view.name === 'home' || view.name === 'modes' ? '' : titles[view.name] || (view.name === 'room' ? `# ${view.code}` : 'ገበጣ')}</h2>
         <div className="topbar-actions">
           {onlineAvailable && <RewardedAdButton lang={lang} signedIn={!!user} onNeedSignIn={() => go('online')} />}
