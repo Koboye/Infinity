@@ -15,6 +15,7 @@ function rememberDepartment(uid, id) { try { localStorage.setItem(departmentStor
 function selectedDepartment(uid) { try { return localStorage.getItem(departmentStorageKey(uid)) || ''; } catch (e) { return ''; } }
 const gradeStorageKey = uid => 'infinity.learning.grade.' + uid;
 let currentUserId = null;
+let submittingCredentials = false;
 function selectedGrade(uid) { try { return localStorage.getItem(gradeStorageKey(uid)) || ''; } catch (e) { return ''; } }
 function rememberGrade(uid, grade) { try { localStorage.setItem(gradeStorageKey(uid), grade); } catch (e) {} }
 function syncGradeField(uid) { if (!uid) return; const grade = selectedGrade(uid); if (grade) gradeField.value = grade;
@@ -38,6 +39,7 @@ function mode(up) {
   status('');
 }
 function allow(user) {
+  if (user && submittingCredentials) return;
   currentUserId = user ? user.uid : null;
   window.infinityStudentUid = currentUserId;
   if (window.infinitySetProfileIdentity) window.infinitySetProfileIdentity(user);
@@ -65,13 +67,14 @@ try {
   form.addEventListener('submit', async event => {
     event.preventDefault();
     submit.disabled = true;
+    submittingCredentials = true;
     status('');
     const email = form.elements.email.value.trim();
     const password = form.elements.password.value;
     const requestedGrade = gradeField.value;
     const requestedDepartment = departmentField.value;
-    if (requestedGrade === 'uni' && !requestedDepartment) { status('Choose your university department.'); submit.disabled = false; departmentField.focus(); return; }
-    if (!requestedGrade) { status('Choose your learning level before continuing.'); submit.disabled = false; gradeField.focus(); return; }
+    if (requestedGrade === 'uni' && !requestedDepartment) { status('Choose your university department.'); submittingCredentials = false; submit.disabled = false; departmentField.focus(); return; }
+    if (!requestedGrade) { status('Choose your learning level before continuing.'); submittingCredentials = false; submit.disabled = false; gradeField.focus(); return; }
     try {
       if (creating) {
         const result = await createUserWithEmailAndPassword(auth, email, password);
@@ -95,7 +98,7 @@ try {
         'auth/too-many-requests': 'Too many attempts. Please try again later.'
       };
       status(errors[error.code] || 'Could not authenticate. Please try again.');
-    } finally { submit.disabled = false; }
+    } finally { submittingCredentials = false; if (auth.currentUser) allow(auth.currentUser); submit.disabled = false; }
   });
   document.getElementById('ep-auth-signout').addEventListener('click', () => signOut(auth));
 } catch (error) {
