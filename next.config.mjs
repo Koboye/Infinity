@@ -8,12 +8,9 @@ const nextConfig = {
   env: { NEXT_PUBLIC_APP_NAME: 'Gebeta', NEXT_PUBLIC_APP_VERSION: pkg.version },
   async headers() {
     const dev = process.env.NODE_ENV !== 'production';
-    return [{
-      source: '/(.*)',
-      headers: [
+    const sharedHeaders = [
         { key: 'X-Content-Type-Options', value: 'nosniff' },
         { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-        { key: 'X-Frame-Options', value: 'DENY' },
         { key: 'Permissions-Policy', value: 'camera=(self), microphone=(self), geolocation=(self), payment=(), usb=(), interest-cohort=()' },
         { key: 'Cross-Origin-Opener-Policy', value: 'same-origin-allow-popups' }, // Google sign-in popup keeps working
         ...(dev ? [] : [{ key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains' }]),
@@ -30,8 +27,17 @@ const nextConfig = {
           "form-action 'self'",
           "frame-ancestors 'none'",
         ].join('; ') },
-      ],
-    }];
+      ];
+    // Only the embedded game pages may be framed by Infinity itself.
+    // Every other route retains DENY / frame-ancestors none.
+    return [
+      { source: '/games/:path*', headers: sharedHeaders.map(h =>
+        h.key === 'Content-Security-Policy'
+          ? { ...h, value: h.value.replace("frame-ancestors 'none'", "frame-ancestors 'self'") }
+          : h
+      ).concat([{ key: 'X-Frame-Options', value: 'SAMEORIGIN' }]) },
+      { source: '/((?!games/).*)', headers: sharedHeaders.concat([{ key: 'X-Frame-Options', value: 'DENY' }]) },
+    ];
   },
 };
 export default nextConfig;
