@@ -401,7 +401,7 @@ body.ep-auth-locked > :not(#ep-auth-gate):not(script) { visibility:hidden !impor
     var html = '<div class="dash"><div class="dhead"><span class="dav" aria-hidden="true">L' + level(p.xp) + '</span><div><small>' + (p.answered ? 'Welcome back' : 'Welcome to Infinity') + '</small><b>' + esc(studentName) + ' · Level ' + level(p.xp) + '</b></div></div>' +
       '<div class="in-grade-row"><div><small class="in-grade-eyebrow">YOUR LEARNING PATH</small><strong id="in-grade-current">Choose your grade</strong></div><button type="button" class="btn alt" id="in-grade-change">Change grade ↗</button></div>' +
       '<div class="in-home-path"><div><span class="in-home-kicker">YOUR STUDY SPACE</span><h1>' + esc(gradeName || 'Choose your learning level') + '</h1><p>' + esc(department ? department.name : (studentCategory ? studentCategory.sub : 'Choose your grade to see your subjects')) + '</p></div><div class="in-home-count"><strong>' + scopedCount.toLocaleString() + '</strong><span>Available questions</span></div></div>' +
-      '<div class="in-home-actions"><button type="button" id="in-home-subjects" class="in-home-action primary">📚 <span><b>My Subjects</b><small>Open your learning resources</small></span></button><button type="button" id="in-home-games" class="in-home-action">🎮 <span><b>Game Break</b><small>Play and return to learning</small></span></button></div>' +
+      '<div class="in-home-actions"><button type="button" id="in-home-subjects" class="in-home-action primary">📚 <span><b>My Subjects</b><small>Open your learning resources</small></span></button></div>' +
       '<form class="dsearch" id="dsf" role="search"><label class="sr" for="dsq">Search subjects and departments</label><input id="dsq" type="search" autocomplete="off" placeholder="Search subjects"><button type="submit" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg></button></form>' +
       '<h1>What would you like to study today?</h1>' +
       '<div class="dsum" aria-label="Your progress"><div><b><span aria-hidden="true">🔥</span> ' + p.streak + '</b><small>day streak</small></div><div><b><span aria-hidden="true">⭐</span> ' + p.xp + '</b><small>XP</small></div><div><b><span aria-hidden="true">🎯</span> ' + acc + '%</b><small>accuracy</small></div></div>' +
@@ -414,7 +414,6 @@ body.ep-auth-locked > :not(#ep-auth-gate):not(script) { visibility:hidden !impor
       b.onclick=function(){if(window.infinityExamActive)return;deptPage(b.getAttribute('data-home-dept'),'');};
     });
     document.getElementById('in-home-subjects').onclick = function(){openStudentResources();};
-    document.getElementById('in-home-games').onclick = function(){document.getElementById('nv-games').click();};
     var gradeLabel = document.getElementById('in-grade-current');
     if (gradeLabel) gradeLabel.textContent = (window.infinityGetGradeLabel && window.infinityGetGradeLabel()) || 'Choose your grade';
     var gradeChange = document.getElementById('in-grade-change');
@@ -624,7 +623,7 @@ body.ep-auth-locked > :not(#ep-auth-gate):not(script) { visibility:hidden !impor
 </style>
 <div id="exampro-game-break" role="dialog" aria-modal="true" aria-label="Game break" hidden>
   <div class="game-break-bar"><strong>🎮 Game break — exam timer paused</strong><button type="button" id="exampro-game-return">Return to Exam</button></div>
-  <div class="game-break-bar"><button type="button" data-game="/games/addis-runner/index.html">Addis Runner</button><button type="button" data-game="/games/hill-climb-racer/index.html">Hill Climb</button></div>
+  <div class="game-break-bar"><button type="button" data-game="/games/board-games">Gebeta · Dama · Bingo</button><button type="button" data-game="/games/addis-runner/index.html">Addis Runner</button><button type="button" data-game="/games/hill-climb-racer/index.html">Hill Climb</button></div>
   <iframe id="exampro-game-frame" title="Game break" loading="lazy" allow="fullscreen"></iframe>
 </div>
 <script>
