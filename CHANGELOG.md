@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased — exam.pro rebrand, phase 4 (Exam interface)
+- New exam and practice screen: subject and grade/program header, live timer (exam), progress bar, "Question n of N", large question type with real superscripts for powers (x^2) and a square-root sign, A–D answer cards, and a fixed Flag / Previous / Next bar.
+- New: question navigator (answered, current, flagged), text-size controls, and a Submit confirmation that lists unanswered and flagged questions. Leaving an exam or practice asks first.
+- Exam progress is saved on the device after every action and can be resumed from the subject page. The timer uses a fixed end time, so it stays correct when the app is in the background; when time ends the exam is submitted automatically.
+- Scoring, XP, streaks, explanations and the mistakes list are unchanged. The calculator comes in phase 5; the results screen in phase 6.
+
 ## Unreleased — exam.pro rebrand, phase 3 (Grade / program and subject selection)
 - New: choosing a category opens a selection screen. Grades 9–12 shows grade tiles (9, 10, 11 are marked Soon; 12 is ready) and University & College shows its programs (colleges).
 - Subjects come only from the question bank for the chosen grade or program, as square cards with icons, question counts and a clear selected state.
