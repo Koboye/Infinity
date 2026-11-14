@@ -48,10 +48,19 @@ const GAME_LIST_ONLINE = Object.values(GAMES).filter((g) => !g.offlineOnly && !g
 
 export default function GebetaApp() {
   const [lang, setLang] = useState('en');
-  const [game, setGame] = useState('gebeta');
+  // Infinity deep-links to the original React games, without replacing their engines.
+  const [game, setGame] = useState(() => {
+    if (typeof window === 'undefined') return 'gebeta';
+    const requested = new URLSearchParams(window.location.search).get('game');
+    return ['gebeta', 'checkers', 'bingo'].includes(requested) ? requested : 'gebeta';
+  });
   const [muted, setMutedState] = useState(false);
   const [music, setMusicState] = useState(false);
-  const [view, setView] = useState({ name: 'home' });
+  const [view, setView] = useState(() => {
+    if (typeof window === 'undefined') return { name: 'home' };
+    const requested = new URLSearchParams(window.location.search).get('game');
+    return ['gebeta', 'checkers', 'bingo'].includes(requested) ? { name: 'modes' } : { name: 'home' };
+  });
   const [adShow, setAdShow] = useState(null);                // { ad, placement, resolve }: the full-screen ad on screen right now
   const adRef = useRef(null); adRef.current = adShow;
   const langRef = useRef(lang); langRef.current = lang;   // the ad picker reads the current language without re-creating runAd
