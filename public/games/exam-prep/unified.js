@@ -44,6 +44,7 @@
     var saved = read(PLAN, {}), done = saved.day === today() && Array.isArray(saved.done) ? saved.done.filter(function (i) { return Number.isInteger(i) && i >= 0 && i < tasks.length; }) : [];
     var p = getProgress(), weak = Object.keys(p.mistakes || {}).map(function (id) { return { id: id, count: Object.keys(p.mistakes[id] || {}).length }; }).sort(function (a,b) { return b.count - a.count; }).filter(function (x) { return x.count > 0; });
     var html = heading('STAY CONSISTENT', 'My study plan', 'Four small steps for today.');
+    if (weak.length) html += '<section class="ep-unified-card"><h2>Your review priorities</h2><p>Based on saved mistakes.</p>' + weak.slice(0,3).map(function (x) { return '<div class="ep-unified-score"><span>' + escapeHtml(x.id.replace(/-/g,' ')) + '</span><b>' + x.count + ' to review</b></div>'; }).join('') + '</section>';
     html += '<section class="ep-unified-card"><h2>Today\'s checklist</h2><p>' + done.length + ' of 4 completed · resets daily</p>' + meter(done.length * 25);
     html += tasks.map(function (t, i) { return '<label class="ep-unified-task"><input type="checkbox" data-task="' + i + '"' + (done.indexOf(i) >= 0 ? ' checked' : '') + '><span><b>' + t[0] + '</b><small>' + t[1] + '</small></span></label>'; }).join('');
     return html + '</section><button type="button" class="ep-unified-action" id="ep-unified-study">Explore subjects →</button>';
