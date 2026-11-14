@@ -777,6 +777,7 @@ body.exam-on .ep-nav-menu{display:none}
 <main class="wrap" id="app" aria-label="exam.pro"></main>
 <nav class="bnav" id="bnav" aria-label="Main"><button type="button" id="nv-home" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</button><button type="button" id="nv-sub"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16M4 12h16M4 19h10"/></svg>All subjects</button></nav>
 <script src="bank.js"></script>
+<script src="primary-bank.js"></script>
 <script>
 (function () {
   'use strict';
@@ -804,7 +805,7 @@ body.exam-on .ep-nav-menu{display:none}
     }
     return null;
   }
-  function learnerBank() { var groups = learnerGroup(); return groups ? BANK.filter(function (d) { return groups.indexOf(d.group) >= 0; }) : BANK; }
+  function learnerBank() { var groups = learnerGroup(), stage = learner().stage; return groups ? BANK.filter(function (d) { if (groups.indexOf(d.group) < 0) return false; if (/^g[1-8]$/.test(stage || '')) return Number(d.grade) === Number(stage.slice(1)); return true; }) : BANK; }
   function learnerCategories() {
     var x = learner().stage;
     if (x === 'university') return CATS.filter(function (c) { return c.id === 'uni'; });
