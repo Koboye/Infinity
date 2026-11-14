@@ -63,7 +63,7 @@ export default function Home() {
           {GROUPS.map(([id, name]) => <button key={id} type="button" aria-pressed={group === id} className={group === id ? 'active' : ''} onClick={() => setGroup(id)}>{name}</button>)}
         </div>
         <div className="ep-college-list">
-          {colleges.map((c) => <details key={c.id} className="ep-college" open={!!q || group !== 'all' ? undefined : undefined}>
+          {colleges.map((c) => <details key={c.id} className="ep-college">
             <summary><span className="ep-college-name">{c.name}</span><span className="ep-college-meta">{c.depts.length} subjects <span aria-hidden="true">⌄</span></span></summary>
             <div className="ep-departments">
               {c.depts.map((d) => <Link key={d.id} href={`/d/${d.id}`} className="ep-department"><span>{d.name}</span><small>{counts[d.id] ? `${counts[d.id]} questions` : 'Explore subject'}</small><span aria-hidden="true">→</span></Link>)}
